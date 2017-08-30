@@ -26,7 +26,7 @@ class AutoSlim(BaseAlgorithm):
         pass
 ```
 
-1. Develop new algorithm components (optional)
+2. Develop new algorithm components (optional)
 
 AutoSlim can directly use class `OneShotChannelMutator` as core functions provider. If it can not meet your needs, you can develop new algorithm components for your algorithm like `OneShotChannalMutator`. We will take `OneShotChannelMutator` as an example to introduce how to develop a new algorithm component:
 
@@ -63,7 +63,7 @@ from .one_shot_channel_mutator import OneShotChannelMutator
  __all__ = [..., 'OneShotChannelMutator']
 ```
 
-1. Rewrite its train_step
+3. Rewrite its train_step
 
 Develop key logic of your algorithm in function`train_step`
 
@@ -117,11 +117,11 @@ class AutoSlim(BaseAlgorithm):
         return total_losses
 ```
 
-1. Add your custom functions (optional)
+4. Add your custom functions (optional)
 
 After finishing your key logic in function `train_step`, if you also need other custom functions, you can add them in class `AutoSlim`.
 
-1. Import the class
+5. Import the class
 
 You can either add the following line to `mmrazor/models/algorithms/__init__.py`
 
@@ -141,7 +141,7 @@ custom_imports = dict(
 
 to the config file to avoid modifying the original code.
 
-1. Use the algorithm in your config file
+6. Use the algorithm in your config file
 
 ```Python
 model = dict(

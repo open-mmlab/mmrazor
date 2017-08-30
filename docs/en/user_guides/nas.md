@@ -20,7 +20,7 @@ class SPOS(BaseAlgorithm):
         pass
 ```
 
-1. Develop new algorithm components (optional)
+2. Develop new algorithm components (optional)
 
 SPOS can directly use class `OneShotModuleMutator` as core functions provider. If mutators provided in MMRazor don’t meet your needs, you can develop new algorithm components for your algorithm like `OneShotModuleMutator`, we will take `OneShotModuleMutator` as an example to introduce how to develop a new algorithm component:
 
@@ -76,7 +76,7 @@ mutator=dict(type='mmrazor.OneShotModuleMutator')
 
 For further information, please refer to [Mutator ](https://aicarrier.feishu.cn/docx/doxcnmcie75HcbqkfBGaEoemBKg)for more details.
 
-1. Rewrite its `loss` function.
+3. Rewrite its `loss` function.
 
 Develop key logic of your algorithm in function`loss`. When having special steps to optimize, you should rewrite the function `train_step`.
 
@@ -102,11 +102,11 @@ class SPOS(BaseAlgorithm):
             return self.architecture(batch_inputs, data_samples, mode='loss')
 ```
 
-1. Add your custom functions (optional)
+4. Add your custom functions (optional)
 
 After finishing your key logic in function `loss`, if you also need other custom functions, you can add them in class `SPOS` as follows.
 
-1. Import the class
+5. Import the class
 
 You can either add the following line to `mmrazor/models/algorithms/nas/__init__.py`
 
@@ -126,7 +126,7 @@ custom_imports = dict(
 
 to the config file to avoid modifying the original code.
 
-1. Use the algorithm in your config file
+6. Use the algorithm in your config file
 
 ```Python
 model = dict(
