@@ -195,7 +195,7 @@ distiller=dict(
                     type='ChannelWiseDivergence',    # kd-loss type
                     name='loss_cwd_logits',          # name this loss in order to easy get the output of this loss
                     tau=5,                           # temperature coefficient
-                    losss_weight=3,                        # weight of this loss
+                    loss_weight=3,                        # weight of this loss
                 )
             ])
     ]),
