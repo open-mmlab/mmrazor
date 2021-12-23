@@ -46,7 +46,7 @@ MMRazor 是一个基于 PyTorch 的模型压缩开源工具箱. 它是 [OpenMMLa
 
 </details>
 
-下面是MMRazor设计和实现的概括图, 如果想了解更多的细节，请参考 [tutorials](/docs/en/tutorials/overview.md)。
+下面是MMRazor设计和实现的概括图, 如果想了解更多的细节，请参考 [tutorials](/docs/en/tutorials/Tutorial_1_overview.md)。
 <div align="center">
   <img src="resources/design_and_implement.png" style="zoom:100%"/>
 </div>
@@ -94,14 +94,14 @@ v0.1.0 版本已经在 2021.12.23 发布
 ## 快速入门
 请参考 [get_started.md](/docs/en/get_started.md) 学习 MMRazor 的基本使用。 我们也提供了一些进阶教程:
 
-- [overview](/docs/en/tutorials/overview.md)
-- [learn about configs](/docs/en/tutorials/learn_about_configs.md)
-- [customize architectures](/docs/en/tutorials/customize_architectures.md)
-- [customize nas algorithms](/docs/en/tutorials/customize_nas_algorithms.md)
-- [customize pruning algorithms](/docs/en/tutorials/customize_pruning_algorithms.md)
-- [customize kd algorithms](/docs/en/tutorials/customize_kd_algorithms.md)
-- [customize mixed algorithms with our algorithm_components](/docs/en/tutorials/customize_mixed_algorithms_with_out_algorithms_components.md)
-- [apply existing algorithms to other existing tasks](/docs/en/tutorials/apply_existing_algorithms_to_new_tasks.md)
+- [overview](/docs/en/tutorials/Tutorial_1_overview.md)
+- [learn about configs](/docs/en/tutorials/Tutorial_2_learn_about_configs.md)
+- [customize architectures](/docs/en/tutorials/Tutorial_3_customize_architectures.md)
+- [customize nas algorithms](/docs/en/tutorials/Tutorial_4_customize_nas_algorithms.md)
+- [customize pruning algorithms](/docs/en/tutorials/Tutorial_5_customize_pruning_algorithms.md)
+- [customize kd algorithms](/docs/en/tutorials/Tutorial_6_customize_kd_algorithms.md)
+- [customize mixed algorithms with our algorithm_components](/docs/en/tutorials/Tutorial_7_customize_mixed_algorithms_with_out_algorithms_components.md)
+- [apply existing algorithms to other existing tasks](/docs/en/tutorials/Tutorial_8_apply_existing_algorithms_to_new_tasks.md)
 
 ## 引用
 
