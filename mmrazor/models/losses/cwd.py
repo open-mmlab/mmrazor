@@ -9,6 +9,7 @@ from ..builder import LOSSES
 @LOSSES.register_module()
 class ChannelWiseDivergence(nn.Module):
     """PyTorch version of `Channel-wise Distillation for Semantic Segmentation.
+
     <https://arxiv.org/abs/2011.13256>`_.
 
     Args:
