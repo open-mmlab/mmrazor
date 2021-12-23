@@ -32,11 +32,11 @@ To help the users have a basic idea of a complete config and the modules in a ge
 
 ### An example of NAS - spos
 
-```Python
+```python
 _base_ = [
-    '../_base_/datasets/mmcls/imagenet_bs128_spos.py',     # data
-    '../_base_/schedules/mmcls/imagenet_bs1024_spos.py',   # training schedule
-    '../_base_/mmcls_runtime.py'                           # runtime setting
+    '../../_base_/datasets/mmcls/imagenet_bs128_colorjittor.py',     # data
+    '../../_base_/schedules/mmcls/imagenet_bs1024_spos.py',   # training schedule
+    '../../_base_/mmcls_runtime.py'                           # runtime setting
 ]
 
 # need to specify some parameters baesd on _base_ by rewriting
@@ -51,7 +51,7 @@ model = dict(
     backbone=dict(
         type='SearchableShuffleNetV2',              # Backbones name
         widen_factor=1.0,
-        norm_cfg=norm_cfg)),
+        norm_cfg=norm_cfg),
     neck=dict(type='GlobalAveragePooling'),         # neck network name
     head=dict(
         type='LinearClsHead',                       # linear classification head
@@ -99,11 +99,11 @@ algorithm = dict(
 
 ### An example of KD - cwd
 
-```Python
+```python
 _base_ = [
-    '../_base_/datasets/mmseg/cityscapes.py',       # data
-    '../_base_/schedules/mmseg/schedule_80k.py',    # training schedule
-    '../_base_/mmseg_runtime.py'                    # runtime setting
+    '../../_base_/datasets/mmseg/cityscapes.py',       # data
+    '../../_base_/schedules/mmseg/schedule_80k.py',    # training schedule
+    '../../_base_/mmseg_runtime.py'                    # runtime setting
 ]
 
 # specify norm_cfg for teacher and student as follows
@@ -195,7 +195,7 @@ distiller=dict(
                     type='ChannelWiseDivergence',    # kd-loss type
                     name='loss_cwd_logits',          # name this loss in order to easy get the output of this loss
                     tau=5,                           # temperature coefficient
-                    weight=3,                        # weight of this loss
+                    losss_weight=3,                        # weight of this loss
                 )
             ])
     ]),
@@ -215,11 +215,11 @@ algorithm = dict(
 
 ### An example of pruning - autoslim
 
-```Python
+```python
 _base_ = [
-    '../_base_/datasets/mmcls/imagenet_bs256_autoslim.py',   # data
-    '../_base_/schedules/mmcls/imagenet_bs2048_autoslim.py', # training schedule
-    '../_base_/mmcls_runtime.py'                             # runtime setting
+    '../../_base_/datasets/mmcls/imagenet_bs256_autoslim.py',   # data
+    '../../_base_/schedules/mmcls/imagenet_bs2048_autoslim.py', # training schedule
+    '../../_base_/mmcls_runtime.py'                             # runtime setting
 ]
 
 # need to specify some parameters baesd on _base_ by rewriting
@@ -252,7 +252,7 @@ distiller = dict(
                     type='KLDivergence',
                     name='loss_kd',
                     tau=1,
-                    weight=1,
+                    loss_weight=1,
                 )
             ]),
     ])

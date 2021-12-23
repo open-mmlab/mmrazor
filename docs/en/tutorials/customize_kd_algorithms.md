@@ -6,7 +6,7 @@ Here we show how to develop new KD algorithms with an example of cwd.
 
     Create a new file `mmrazor/models/algorithms/kd.py`, class `Distillation` inherits from class `BaseAlgorithm`
 
-    ```Python
+    ```python
     from mmrazor.models.builder import ALGORITHMS
     from .base import BaseAlgorithm
 
@@ -29,39 +29,39 @@ Here we show how to develop new KD algorithms with an example of cwd.
 
     b. Finish the functions you need, eg: `build_teacher`, `compute_distill_loss` and so on
 
-        ```Python
-        from mmrazor.models.builder import DISTILLERS
-        from .single_teacher import SingleTeacherDistiller
+    ```python
+    from mmrazor.models.builder import DISTILLERS
+    from .single_teacher import SingleTeacherDistiller
 
-        @DISTILLERS.register_module()
-        class MultiTeachersDistiller(SingleTeacherDistiller):
-            def __init__(self, teacher, teacher_ckpt, teacher_trainable, **kwargs):
-                super(MultiTeachersDistiller,
-                    self).__init__(teacher, teacher_trainable, **kwargs)
+    @DISTILLERS.register_module()
+    class MultiTeachersDistiller(SingleTeacherDistiller):
+        def __init__(self, teacher, teacher_ckpt, teacher_trainable, **kwargs):
+            super(MultiTeachersDistiller,
+                self).__init__(teacher, teacher_trainable, **kwargs)
 
-            def build_teacher(self, cfgs, ckpts):
-                pass
+        def build_teacher(self, cfgs, ckpts):
+            pass
 
-            def exec_teacher_forward(self, data, return_output):
-                pass
+        def exec_teacher_forward(self, data, return_output):
+            pass
 
-            def compute_distill_loss(self):
-                pass
-        ```
+        def compute_distill_loss(self):
+            pass
+    ```
 
    c. Import the module in `mmrazor/models/distillers/__init__.py`
 
-        ```Python
-        from .multi_teachers import MultiTeachersDistiller
+    ```python
+    from .multi_teachers import MultiTeachersDistiller
 
-        __all__ = [..., 'MultiTeachersDistiller']
-        ```
+    __all__ = [..., 'MultiTeachersDistiller']
+    ```
 
 3. Rewrite its train_step
 
     Develop key logic of your algorithm in function`train_step`
 
-    ```Python
+    ```python
     from mmrazor.models.builder import ALGORITHMS
     from .base import BaseAlgorithm
 
@@ -101,7 +101,7 @@ Here we show how to develop new KD algorithms with an example of cwd.
 
     You can either add the following line to `mmrazor/models/algorithms/__init__.py`
 
-    ```Python
+    ```python
     from .kd import Distillation
 
     __all__ = [..., 'Distillation']
@@ -109,7 +109,7 @@ Here we show how to develop new KD algorithms with an example of cwd.
 
     or alternatively add
 
-    ```Python
+    ```python
     custom_imports = dict(
         imports=['mmrazor.models.algorithms.spos'],
         allow_failed_imports=False)
@@ -119,7 +119,7 @@ Here we show how to develop new KD algorithms with an example of cwd.
 
 6. Use the algorithm in your config file
 
-    ```Python
+    ```python
     algorithm = dict(
         type='Distillation',
         distiller=dict(type='MultiTeachersDistiller', ...),  # you can also use your new algorithm components here
