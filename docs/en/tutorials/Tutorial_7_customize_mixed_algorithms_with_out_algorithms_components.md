@@ -8,7 +8,7 @@ The sandwich rule and inplace distillation was introduced to enhance training pr
 
 2. As the slimmable training is the first step of `Autoslim`, we do not need to register a new algorithm, but rewrite the `train_step`function in AutoSlim as follows:
 
-    ```Python
+    ```python
     from mmrazor.models.builder import ALGORITHMS
     from .base import BaseAlgorithm
 
@@ -30,7 +30,7 @@ The sandwich rule and inplace distillation was introduced to enhance training pr
 
 3. Use the algorithm in your config file
 
-    ```Python
+    ```python
     algorithm = dict(
         type='AutoSlim',
         architecture=...,

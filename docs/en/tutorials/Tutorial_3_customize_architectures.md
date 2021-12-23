@@ -10,7 +10,7 @@ Here we show how to add a new searchable backbone with an example of searchable_
 
     Create a new file `mmrazor/models/architectures/components/backbones/searchable_shufflenet_v2.py`, class `SearchableShuffleNetV2` inherits from `BaseBackBone` of mmcls, which is the codebase that you will to build model.
 
-    ```Python
+    ```python
     import torch.nn as nn
     from mmcls.models.backbones.base_backbone import BaseBackbone
     from mmcls.models.builder import BACKBONES
@@ -40,7 +40,7 @@ Here we show how to add a new searchable backbone with an example of searchable_
 
 2. Replace layers with placeholders
 
-    ```Python
+    ```python
     from ...utils import Placeholder
 
     @BACKBONES.register_module()
@@ -82,13 +82,13 @@ Here we show how to add a new searchable backbone with an example of searchable_
 
     You can either add the following line to `mmrazor/models/architectures/components/backbones/__init__.py`
 
-    ```Python
+    ```python
     from .searchable_shufflenet_v2 import SearchableShuffleNetV2
     ```
 
     or alternatively add
 
-    ```Python
+    ```python
     custom_imports = dict(
         imports=['mmrazor.models.architectures.components.backbones.searchable_shufflenet_v2'],
         allow_failed_imports=False)
@@ -98,7 +98,7 @@ Here we show how to add a new searchable backbone with an example of searchable_
 
 4. Use the backbone in your config file
 
-    ```Python
+    ```python
     architecture = dict(
         type=xxx,
         model=dict(
@@ -118,7 +118,7 @@ Here we show how to add a new backbone with an example of xxxNet.
 
     Create a new file `mmrazor/models/architectures/components/backbones/xxxnet.py`.
 
-    ```Python
+    ```python
     import torch.nn as nn
     from ..builder import BACKBONES
 
@@ -136,13 +136,13 @@ Here we show how to add a new backbone with an example of xxxNet.
 
     You can either add the following line to `mmrazor/models/architectures/components/backbones/__init__.py`
 
-    ```Python
+    ```python
     from .xxxnet import xxxNet
     ```
 
     or alternatively add
 
-    ```Python
+    ```python
     custom_imports = dict(
         imports=['mmrazor.models.architectures.components.backbones.xxxnet'],
         allow_failed_imports=False)
@@ -152,7 +152,7 @@ Here we show how to add a new backbone with an example of xxxNet.
 
 3. Use the backbone in your config file
 
-    ```Python
+    ```python
     architecture = dict(
         type=xxx,
         model=dict(

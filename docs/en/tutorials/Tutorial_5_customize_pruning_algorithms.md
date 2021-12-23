@@ -6,7 +6,7 @@ Here we show how to develop new Pruning algorithms with an example of AutoSlim.
 
     Create a new file `mmrazor/models/algorithms/autoslim.py`, class `AutoSlim` inherits from class `BaseAlgorithm`
 
-    ```Python
+    ```python
     from mmrazor.models.builder import ALGORITHMS
     from .base import BaseAlgorithm
 
@@ -32,7 +32,7 @@ Here we show how to develop new Pruning algorithms with an example of AutoSlim.
 
     b. Finish the functions you need, eg: `sample_subnet`, `set_subnet` and so on
 
-   ```Python
+   ```python
    from mmrazor.models.builder import PRUNERS, build_mutable
    from .structure_pruning import StructurePruner
 
@@ -56,7 +56,7 @@ Here we show how to develop new Pruning algorithms with an example of AutoSlim.
 
    c. Import the module in `mmrazor/models/pruners/__init__.py`
 
-   ```Python
+   ```python
     from .ratio_pruning import RatioPruner
 
     __all__ = [..., 'RatioPruner']
@@ -66,7 +66,7 @@ Here we show how to develop new Pruning algorithms with an example of AutoSlim.
 
     Develop key logic of your algorithm in function`train_step`
 
-    ```Python
+    ```python
     from mmrazor.models.builder import ALGORITHMS
     from .base import BaseAlgorithm
 
@@ -102,7 +102,7 @@ Here we show how to develop new Pruning algorithms with an example of AutoSlim.
 
     You can either add the following line to `mmrazor/models/algorithms/__init__.py`
 
-    ```Python
+    ```python
     from .autoslim import AutoSlim
 
     __all__ = [..., 'AutoSlim']
@@ -110,7 +110,7 @@ Here we show how to develop new Pruning algorithms with an example of AutoSlim.
 
     Or alternatively add
 
-    ```Python
+    ```python
     custom_imports = dict(
         imports=['mmrazor.models.algorithms.spos'],
         allow_failed_imports=False)
@@ -120,7 +120,7 @@ Here we show how to develop new Pruning algorithms with an example of AutoSlim.
 
 6. Use the algorithm in your config file
 
-    ```Python
+    ```python
     algorithm = dict(
         type='AutoSlim',
         architecture=...,
