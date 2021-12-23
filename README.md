@@ -95,14 +95,14 @@ Please refer to [get_started.md](/docs/en/get_started.md) for installation.
 ## Getting Started
 Please refer to [train.md](/docs/en/train.md) and [test.md](/docs/en/test.md) for the basic usage of MMRazor. There are also tutorials:
 
-- [overview](/docs/en/tutorials/Tutorial_1_overview.md)
-- [learn about configs](/docs/en/tutorials/Tutorial_2_learn_about_configs.md)
-- [customize architectures](/docs/en/tutorials/Tutorial_3_customize_architectures.md)
-- [customize nas algorithms](/docs/en/tutorials/Tutorial_4_customize_nas_algorithms.md)
-- [customize pruning algorithms](/docs/en/tutorials/Tutorial_5_customize_pruning_algorithms.md)
-- [customize kd algorithms](/docs/en/tutorials/Tutorial_6_customize_kd_algorithms.md)
-- [customize mixed algorithms with our algorithm_components](/docs/en/tutorials/Tutorial_7_customize_mixed_algorithms_with_out_algorithms_components.md)
-- [apply existing algorithms to other existing tasks](/docs/en/tutorials/Tutorial_8_apply_existing_algorithms_to_new_tasks.md)
+- [overview](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_1_overview.html)
+- [learn about configs](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_2_learn_about_configs.html)
+- [customize architectures](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_3_customize_architectures.html)
+- [customize nas algorithms](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_4_customize_nas_algorithms.html)
+- [customize pruning algorithms](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_5_customize_pruning_algorithms.html)
+- [customize kd algorithms](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_6_customize_kd_algorithms.html)
+- [customize mixed algorithms with our algorithm_components](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_7_customize_mixed_algorithms_with_out_algorithms_components.html)
+- [apply existing algorithms to other existing tasks](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_8_apply_existing_algorithms_to_new_tasks.html)
 
 ## Citation
 
