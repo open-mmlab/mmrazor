@@ -1,14 +1,26 @@
 # Tutorial 1: Overview
 
-MMRazor is an OpenMMLab model compression toolbox to help users slim their models, which includes 4 mainstream technologies: 1）Neural Architecture Search（NAS） 2）Pruning  3）Knowledge Distillation（KD）4）quantization（to do in next stage plan）
+MMRazor is a model compression toolkit for model slimming and AutoML, which includes 3 mainstream technologies:
 
-## Core Features
+- Neural Architecture Search (NAS)
+- Pruning
+- Knowledge Distillation (KD)
+- Quantization (in the next release)
 
-- **Consistency** : MMRazor's design and style are similar to OpenMMLab, so MMRazor is friendly for the users of OpenMMLab other codebases to slim their pre-trained models. You can even quickly apply our pruning and KD algorithms to your models without changing the model definition code.
+It is a part of the [OpenMMLab](https://openmmlab.com/) project.
 
-- **Flexibility** : Several lightweight algorithms are loose coupling in MMRazor，which can be combined to use.
+## Major features:
+- **Compatibility**
 
-- **Universality** : It is loose coupling between lightweight algorithms and tasks. You can easily apply existing algorithms to new tasks.
+  MMRazor can be easily applied to various projects in OpenMMLab, due to similar architecture design of OpenMMLab as well as the decoupling of slimming algorithms and vision tasks.
+
+- **Flexibility**
+
+  Different algorithms, e.g., NAS, pruning and KD, can be incorporated in a plug-n-play manner to build a more powerful system.
+
+- **Convenience**
+
+  With better modular design, developers can implement new model compression algorithms with only a few codes, or even by simply modifying config files.
 
 ## Design and implement
 
