@@ -25,7 +25,7 @@ class GeneralDistill(BaseAlgorithm):
         self.with_teacher_loss = with_teacher_loss
 
     def train_step(self, data, optimizer):
-
+        """"""
         losses = dict()
         if self.with_teacher_loss:
             teacher_losses = self.distiller.exec_teacher_forward(data)

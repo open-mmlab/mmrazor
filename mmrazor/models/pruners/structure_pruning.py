@@ -69,12 +69,11 @@ def register_parser(parser_dict, name=None, force=False):
 
 @PRUNERS.register_module()
 class StructurePruner(BaseModule, metaclass=ABCMeta):
-    """Base class for structure pruning.
-
-    This class defines the basic functions of a structure pruner. Any pruner
-    that inherits this class should at least define its own `sample_subnet` and
-    `set_min_channel` functions. This part is being continuously optimized, and
-     there may be major changes in the future.
+    """Base class for structure pruning. This class defines the basic functions
+    of a structure pruner. Any pruner that inherits this class should at least
+    define its own `sample_subnet` and `set_min_channel` functions. This part
+    is being continuously optimized, and there may be major changes in the
+    future.
 
     Args:
         except_start_keys (List[str]): the module whose name start with a

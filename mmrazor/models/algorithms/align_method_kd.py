@@ -10,6 +10,7 @@ class AlignMethodDistill(GeneralDistill):
         super(AlignMethodDistill, self).__init__(**kwargs)
 
     def train_step(self, data, optimizer):
+
         with self.distiller.context_manager:
             outputs = super().train_step(data, optimizer)
         return outputs

@@ -1,5 +1,5 @@
 _base_ = [
-    '../../_base_/datasets/mmcls/cifar10_bs16.py', 
+    '../../_base_/datasets/mmcls/cifar10_bs16.py',
     '../../_base_/mmcls_runtime.py'
 ]
 

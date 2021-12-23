@@ -8,17 +8,17 @@ from ..builder import LOSSES
 
 @LOSSES.register_module()
 class WSLD(nn.Module):
+    """PyTorch version of `Rethinking Soft Labels for Knowledge
+    Distillation: A Bias-Variance Tradeoff Perspective
+    <https://arxiv.org/abs/2102.00650>`_.
+
+    Args:
+        tau (float): Temperature coefficient. Defaults to 1.0.
+        weight (float): Weight of loss. Defaults to 1.0.
+        num_classes (int): Defaults to 1000.
+    """
 
     def __init__(self, tau=1.0, loss_weight=1.0, num_classes=1000):
-        """PyTorch version of `Rethinking Soft Labels for Knowledge
-        Distillation: A Bias-Variance Tradeoff Perspective
-        <https://arxiv.org/abs/2102.00650>`_.
-
-        Args:
-            tau (float): Temperature coefficient. Defaults to 1.0.
-            weight (float): Weight of loss. Defaults to 1.0.
-            num_classes (int): Defaults to 1000.
-        """
         super(WSLD, self).__init__()
 
         self.tau = tau
