@@ -12,7 +12,7 @@
 
 - [MMCV](https://mmcv.readthedocs.io/en/latest/#installation)
 
-**Note:** You need to run `pip uninstall mmcv` first if you have mmcv installed. If mmcv and mmcv-full are both installed, there will be `ModuleNotFoundError`
+**Note:** You need to run `pip uninstall mmcv` first if you have mmcv installed. If mmcv and mmcv-full are both installed, there will be `ModuleNotFoundError`.
 
 ## Installation
 
@@ -35,7 +35,7 @@
     conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch
     ```
 
-    `E.g.2` If you have CUDA 9.2 installed under `/usr/local/cuda` and would like to install PyTorch 1.3.1, you need to install the prebuilt PyTorch with CUDA 9.2.
+    `E.g.2` If you have CUDA 9.2 installed under `/usr/local/cuda` and would like to install PyTorch 1.5.1, you need to install the prebuilt PyTorch with CUDA 9.2.
 
     ```Bash
     conda install pytorch==1.5.1 torchvision==0.6.1 cudatoolkit=9.2 -c pytorch
@@ -105,7 +105,7 @@ conda activate openmmlab
 
 conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
 # install the latest mmcv
-pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu102/torch1.9.0/index.html
+pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu102/torch1.10.0/index.html
 # install mmrazor
 git clone https://github.com/open-mmlab/mmrazor.git
 cd mmrazor

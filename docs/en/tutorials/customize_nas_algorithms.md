@@ -1,6 +1,6 @@
 # Toturial 4: Customize NAS algorithms
 
-Here we show how to develop new NAS algorithms with an example of SPOS
+Here we show how to develop new NAS algorithms with an example of SPOS.
 
 1. Register a new algorithm
 

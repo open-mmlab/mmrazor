@@ -1,6 +1,6 @@
 # Toturial 6: Customize KD algorithms
 
-Here we show how to develop new KD algorithms with an example of cwd
+Here we show how to develop new KD algorithms with an example of cwd.
 
 1. Register a new algorithm
 

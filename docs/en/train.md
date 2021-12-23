@@ -45,13 +45,7 @@ python tools/${task}/train_${task}.py ${CONFIG_FILE} --cfg-options algorithm.cha
 
 Different from NAS, the argument that needs to be specified here is `channel_cfg` instead of `mutable_cfg`.
 
-- `CHANNEL_CFG_PATH`: Path of `channel_cfg`. `channel_cfg` represents **config for channel of the subnet searched out**, used to specify different subnets for testing. An example for `channel_cfg` can be found [here](/configs/pruning/autoslim/autoslim_220M.yaml), and the usage can be found [here](/configs/pruning/autoslim/README.md#subnet-retraining-on-imagenet).
-
-### Split Checkpoint
-
-```bash
-python tools/${task}/train_${task}.py ${CONFIG_FILE} ${CHECKPOINT_PATH} --channel-cfgs ${CHANNEL_CFG_PATH} [optional arguments]
-```
+- `CHANNEL_CFG_PATH`: Path of `channel_cfg`. `channel_cfg` represents **config for channel of the subnet searched out**, used to specify different subnets for testing. An example for `channel_cfg` can be found [here](/configs/pruning/autoslim/AUTOSLIM_MBV2_220M_OFFICIAL.yaml), and the usage can be found [here](/configs/pruning/autoslim/README.md#subnet-retraining-on-imagenet).
 
 ## Distillation
 

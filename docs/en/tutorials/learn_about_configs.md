@@ -4,7 +4,7 @@ We use python files as our config system. You can find all the provided configs 
 
 ## Config Name Style
 
-We follow the below convention to name config files. Contributors are advised to follow the same style. The config file names are divided into four parts: algorithm info, module information, training information and data information. Logically, different parts are concatenated by underscores
+We follow the below convention to name config files. Contributors are advised to follow the same style. The config file names are divided into four parts: algorithm info, module information, training information and data information. Logically, different parts are concatenated by underscores.
 
 `'_'`, and words in the same part are concatenated by dashes `'-'`.
 
@@ -12,17 +12,17 @@ We follow the below convention to name config files. Contributors are advised to
 {algorithm info}_{model info}_[experiment setting]_{training info}_{data info}.py
 ```
 
-`{xxx}`is required field and `[yyy]`is optional.
+`{xxx}` is required field and `[yyy]` is optional.
 
-- `algorithm info`：algorithm information, algorithm name, such as spos, autoslim, cwd, etc.;
+- `algorithm info`: algorithm information, algorithm name, such as spos, autoslim, cwd, etc.;
 
-- `model info`： model information, model name to be slimmed, such as shufflenet, faster rcnn, etc;
+- `model info`: model information, model name to be slimmed, such as shufflenet, faster rcnn, etc;
 
-- `experiment setting`: optional, it is used to describe important information about algorithm or model, such as there are 3 stages in spos: pre-training supernet, search, retrain subnet,  you can use it to specify which stage, you also can use it to specify teacher network and student network in KD.
+- `experiment setting`: optional, it is used to describe important information about algorithm or model, such as there are 3 stages in spos: pre-training supernet, search, retrain subnet,  you can use it to specify which stage, you also can use it to specify teacher network and student network in KD;
 
-- `training info`：Training information, some training schedule, including batch size, lr schedule, data augment and the like;
+- `training info`: Training information, some training schedule, including batch size, lr schedule, data augment and the like;
 
-- `data info`：Data information, dataset name, input size and so on, such as imagenet, cifar, etc.
+- `data info`: Data information, dataset name, input size and so on, such as imagenet, cifar, etc.
 
 ## Config System
 

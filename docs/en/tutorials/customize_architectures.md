@@ -164,4 +164,4 @@ Here we show how to add a new backbone with an example of xxxNet.
             ...
     ```
 
-    How to add other model components is similar to backbone's. For more details, please refer to other codebases' docs
+    How to add other model components is similar to backbone's. For more details, please refer to other codebases' docs.

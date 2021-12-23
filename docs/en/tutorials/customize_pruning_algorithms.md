@@ -1,6 +1,6 @@
 # Tutorial 5: Customize Pruning algorithms
 
-Here we show how to develop new Pruning algorithms with an example of AutoSlim
+Here we show how to develop new Pruning algorithms with an example of AutoSlim.
 
 1. Register a new algorithm
 

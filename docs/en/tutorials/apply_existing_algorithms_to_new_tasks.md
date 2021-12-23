@@ -1,6 +1,6 @@
 # Tutorial 8: Apply existing algorithms to new tasks
 
-Here we show how to apply existing algorithms to other existing tasks with an example of SPOS & DetNAS
+Here we show how to apply existing algorithms to other existing tasks with an example of SPOS & DetNAS.
 
 1. Register a new algorithm for the other existing task with an existing algorithm
 
