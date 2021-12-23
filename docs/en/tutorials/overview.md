@@ -4,7 +4,7 @@ MMRazor is an OpenMMLab model compression toolbox to help users slim their model
 
 ## Core Features
 
-- **Consistency** : MMRazor's design and style are similar to OpenMMLab's, so MMRazor is friendly for the users of OpenMMLab's other codebases to slim their pre-trained models. You can even quickly apply our pruning and KD algorithms to your models without changing the model definition code.
+- **Consistency** : MMRazor's design and style are similar to OpenMMLab, so MMRazor is friendly for the users of OpenMMLab other codebases to slim their pre-trained models. You can even quickly apply our pruning and KD algorithms to your models without changing the model definition code.
 
 - **Flexibility** : Several lightweight algorithms are loose coupling in MMRazor，which can be combined to use.
 
@@ -32,10 +32,10 @@ Architecture is similar to a model wrapper and can be easily combined with other
 Algorithm components can be flexibly called by each lightweight algorithm. Thanks to the componentization of the algorithm, it can be used alone or in combination in the specific lightweight algorithm. It only needs to rewrite train_step to
 realize the specific call logic of algorithm components.
 
-The overall style of MMRazor is same as OpenMMLab's . Both of them can flexibly configure the experiment through Config. Config mainly includes two parts, one is specific to MMRazor algorithm, and the other part can reuse the experimental
+The overall style of MMRazor is same as OpenMMLab . Both of them can flexibly configure the experiment through Config. Config mainly includes two parts, one is specific to MMRazor algorithm, and the other part can reuse the experimental
 configuration of other OpenMMLab repos. Including model definition, data processing, training schedule, etc.
 
-Thanks to OpenMMLab's powerful and highly flexible config mode and registry mechanism, MMRazor can perform ablation experiments by editing configuration files without changing the code.
+Thanks to OpenMMLab powerful and highly flexible config mode and registry mechanism, MMRazor can perform ablation experiments by editing configuration files without changing the code.
 
 ## Key Concepts
 
