@@ -6,7 +6,7 @@ Here we show how to apply existing algorithms to other existing tasks with an ex
 
     Create a new file `mmrazor/models/algorithms/detnas.py`, class `DetNAS` inherits from class `SPOS`
 
-    ```Python
+    ```python
     from mmrazor.models.builder import ALGORITHMS
     from .spos import SPOS
 
@@ -21,7 +21,7 @@ Here we show how to apply existing algorithms to other existing tasks with an ex
 
     If you need other custom functions according to the other existing task, you can add them in class `DetNAS` as follows.
 
-    ```Python
+    ```python
     class DetNAS(SPOS):
 
         ...
@@ -49,13 +49,13 @@ Here we show how to apply existing algorithms to other existing tasks with an ex
 
     You can either add the following line to `mmrazor/models/algorithms/__init__.py`
 
-    ```Python
+    ```python
     from .detnas import DetNAS
     ```
 
     or alternatively add
 
-    ```Python
+    ```python
     custom_imports = dict(
         imports=['mmrazor.models.algorithms.detnas'],
         allow_failed_imports=False)
@@ -65,7 +65,7 @@ Here we show how to apply existing algorithms to other existing tasks with an ex
 
 4. Use the algorithm in your config file
 
-    ```Python
+    ```python
     algorithm = dict(
         type='DetNAS',
         ...
