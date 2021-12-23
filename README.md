@@ -65,29 +65,6 @@ v0.1.0 was released in 12/23/2021.
 
 Results and models are available in the [model zoo](/docs/en/model_zoo.md).
 
-Supported algorithms:
-
-- <details open><summary>Neural Architecture Search</summary>
-
-  - [x] [DARTS(ICLR'2019)](/configs/nas/darts)
-
-  - [x] [DetNAS(NeurIPS'2019)](/configs/nas/detnas)
-
-  - [x] [SPOS(ECCV'2020)](/configs/nas/spos)
-</details>
-
-- <details open><summary>Pruning</summary>
-
-  - [x] [AutoSlim(NeurIPS'2019)](/configs/pruning/autoslim)
-</details>
-
-- <details open><summary>Knowledge Distillation</summary>
-
-  - [x] [CWD(ICCV'2021)](/configs/distill/cwd)
-
-  - [x] [WSLD(ICLR'2021)](/configs/distill/wsld)
-</details>
-
 ## Installation
 
 Please refer to [get_started.md](/docs/en/get_started.md) for installation.
@@ -110,7 +87,7 @@ If you find this project useful in your research, please consider cite:
 
 ```BibTeX
 @misc{2021mmrazor,
-    title={OpenMMLab's Model Compression Toolbox and Benchmark},
+    title={OpenMMLab Model Compression Toolbox and Benchmark},
     author={MMRazor Contributors},
     howpublished = {\url{https://github.com/open-mmlab/mmrazor}},
     year={2021}
@@ -133,9 +110,9 @@ We wish that the toolbox and benchmark could serve the growing research communit
 - [MIM](https://github.com/open-mmlab/mim): MIM Installs OpenMMLab Packages.
 - [MMClassification](https://github.com/open-mmlab/mmclassification): OpenMMLab image classification toolbox and benchmark.
 - [MMDetection](https://github.com/open-mmlab/mmdetection): OpenMMLab detection toolbox and benchmark.
-- [MMDetection3D](https://github.com/open-mmlab/mmdetection3d): OpenMMLab's next-generation platform for general 3D object detection.
+- [MMDetection3D](https://github.com/open-mmlab/mmdetection3d): OpenMMLab next-generation platform for general 3D object detection.
 - [MMSegmentation](https://github.com/open-mmlab/mmsegmentation): OpenMMLab semantic segmentation toolbox and benchmark.
-- [MMAction2](https://github.com/open-mmlab/mmaction2): OpenMMLab's next-generation action understanding toolbox and benchmark.
+- [MMAction2](https://github.com/open-mmlab/mmaction2): OpenMMLab next-generation action understanding toolbox and benchmark.
 - [MMTracking](https://github.com/open-mmlab/mmtracking): OpenMMLab video perception toolbox and benchmark.
 - [MMPose](https://github.com/open-mmlab/mmpose): OpenMMLab pose estimation toolbox and benchmark.
 - [MMEditing](https://github.com/open-mmlab/mmediting): OpenMMLab image and video editing toolbox.

@@ -109,7 +109,7 @@ v0.1.0 版本已经在 2021.12.23 发布
 
 ```BibTeX
 @misc{2021mmrazor,
-    title={OpenMMLab's Model Compression Toolbox and Benchmark},
+    title={OpenMMLab Model Compression Toolbox and Benchmark},
     author={MMRazor Contributors},
     howpublished = {\url{https://github.com/open-mmlab/mmrazor}},
     year={2021}
