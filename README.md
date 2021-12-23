@@ -65,29 +65,6 @@ v0.1.0 was released in 12/23/2021.
 
 Results and models are available in the [model zoo](/docs/en/model_zoo.md).
 
-Supported algorithms:
-
-- <details open><summary>Neural Architecture Search</summary>
-
-  - [x] [DARTS(ICLR'2019)](/configs/nas/darts)
-
-  - [x] [DetNAS(NeurIPS'2019)](/configs/nas/detnas)
-
-  - [x] [SPOS(ECCV'2020)](/configs/nas/spos)
-</details>
-
-- <details open><summary>Pruning</summary>
-
-  - [x] [AutoSlim(NeurIPS'2019)](/configs/pruning/autoslim)
-</details>
-
-- <details open><summary>Knowledge Distillation</summary>
-
-  - [x] [CWD(ICCV'2021)](/configs/distill/cwd)
-
-  - [x] [WSLD(ICLR'2021)](/configs/distill/wsld)
-</details>
-
 ## Installation
 
 Please refer to [get_started.md](/docs/en/get_started.md) for installation.
