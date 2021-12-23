@@ -18,34 +18,27 @@ English | [简体中文](/README_zh-CN.md)
 
 ## Introduction
 
-MMRazor is an open source model compression toolbox based on PyTorch. It is
-a part of the [OpenMMLab](https://openmmlab.com/) project.
+MMRazor is a model compression toolkit for model slimming and AutoML, which includes 3 mainstream technologies:
 
+- Neural Architecture Search (NAS)
+- Pruning
+- Knowledge Distillation (KD)
+- Quantization (in the next release)
 
-<details open><summary>Major features</summary>
+It is a part of the [OpenMMLab](https://openmmlab.com/) project.
 
-- **All in one**
+Major features:
+- **Compatibility**
 
-  MMRazor includes Neural Architecture Search（NAS), Knowledge Distillation（KD), Pruning, and Quantization（coming soon).
-  And it supports the combination of different types of algorithms.
+  MMRazor can be easily applied to various projects in OpenMMLab, due to similar architecture design of OpenMMLab as well as the decoupling of slimming algorithms and vision tasks.
 
-- **General CV Model Compression ToolBox**
+- **Flexibility**
 
-  Thanks to OpenMMLab, the algorithms in MMRazor can be quickly applied to different CV tasks, making the development of model compression algorithms once and for all.
+  Different algorithms, e.g., NAS, pruning and KD, can be incorporated in a plug-n-play manner to build a more powerful system.
 
-- **Decouple model and compression algorithm**
+- **Convenience**
 
-  MMRazor has a variety of built-in automation mechanisms, allowing developers to implement model compression algorithms without modifying the raw model code, such as:
-  - OP can be modified code-free.
-  - Feature maps in the middle layers can be obtained code-free.
-  - Automatically obtain and analyze the connection between nn.Module.
-  - And More ...
-
-- **Flexible and Modular Design**
-
-  We decompose the model compression algorithms into different components, making it much easier and more flexible to build a new algorithm by combining different components.
-
-</details>
+  With better modular design, developers can implement new model compression algorithms with only a few codes, or even by simply modifying config files.
 
 Below is an overview of MMRazor's design and implementation, please refer to [tutorials](/docs/en/tutorials/Tutorial_1_overview.md) for more details.
 <div align="center">
