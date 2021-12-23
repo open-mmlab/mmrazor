@@ -31,7 +31,7 @@ a part of the [OpenMMLab](https://openmmlab.com/) project.
 
 - **General CV Model Compression ToolBox**
 
-  Thanks to OpenMMLab, the algorithms in MMRazor can be quickly applied to different cv tasks, making the development of model compression algorithms once and for all.
+  Thanks to OpenMMLab, the algorithms in MMRazor can be quickly applied to different CV tasks, making the development of model compression algorithms once and for all.
 
 - **Decouple model and compression algorithm**
 
@@ -145,4 +145,4 @@ We wish that the toolbox and benchmark could serve the growing research communit
 - [MMFewShot](https://github.com/open-mmlab/mmfewshot): OpenMMLab FewShot Learning Toolbox and Benchmark.
 - [MMHuman3D](https://github.com/open-mmlab/mmhuman3d): OpenMMLab 3D Human Parametric Model Toolbox and Benchmark.
 - [MMSelfSup](https://github.com/open-mmlab/mmselfsup): OpenMMLab self-supervised learning Toolbox and Benchmark.
-- [MMRazor](https://github.com/open-mmlab/mmrazor): OpenMMLab model compression Toolbox and Benchmark.
+- [MMRazor](https://github.com/open-mmlab/mmrazor): OpenMMLab Model Compression Toolbox and Benchmark.

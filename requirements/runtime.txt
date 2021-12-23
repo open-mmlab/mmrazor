@@ -1,3 +1,2 @@
 mmcls
 ordered_set
-PyYAML<=5.4.1

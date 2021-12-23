@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+# Copyright (c) Microsoft Corporation.
 import copy
 
 import torch

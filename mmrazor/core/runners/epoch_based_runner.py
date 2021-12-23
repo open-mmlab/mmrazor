@@ -101,7 +101,7 @@ class MultiLoaderEpochBasedRunner(EpochBasedRunner):
 
             # modify the hook's ``_set_lr``
             # the only difference from BasedRunner's ``register_lr_hook``
-            hook._set_lr = partial(lr, freeze_optimizers=freeze_optimizers)
+            hook._set_lr = partial(set_lr, freeze_optimizers=freeze_optimizers)
         else:
             hook = lr_config
 
