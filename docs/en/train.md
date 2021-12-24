@@ -35,7 +35,7 @@ python tools/${task}/train_${task}.py ${CONFIG_FILE} --cfg-options algorithm.mut
 
 ## Pruning
 
-Pruning has the four steps, including **supernet pre-training**, **search for subnet on the trained supernet**, **subnet retraining** and **split checkpoint**. The command of first two steps are similar to NAS, except here we need to use `CONFIG_FILE` of Pruning. Commands of two other steps are as follows.
+Pruning has four steps, including **supernet pre-training**, **search for subnet on the trained supernet**, **subnet retraining** and **split checkpoint**. The commands of the first two steps are similar to NAS, except that we need to use `CONFIG_FILE` of Pruning here. The commands of the two other steps are as follows.
 
 ### Subnet Retraining
 

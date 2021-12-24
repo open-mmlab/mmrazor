@@ -15,9 +15,9 @@ The usage of optional arguments are the same as corresponding tasks like mmclass
 ## Pruning
 
 ### Split Checkpoint(Optional)
-If you train a slimmable model during retrain, checkpoints of different subnets are
+If you train a slimmable model during retraining, checkpoints of different subnets are
 actually fused in only one checkpoint. You can split this checkpoint to
-multiple independent checkpoints by using following command
+multiple independent checkpoints by using the following command
 
 ```bash
 python tools/model_converters/split_checkpoint.py ${CONFIG_FILE} ${CHECKPOINT_PATH} --channel-cfgs ${CHANNEL_CFG_PATH} [optional arguments]
@@ -39,7 +39,7 @@ python tools/${task}/test_${task}.py ${CONFIG_FILE} ${CHECKPOINT_PATH} --cfg-opt
 
 ## Distillation
 
-To test distillation method, you can use following command
+To test distillation method, you can use the following command
 
 ```bash
 python tools/${task}/test_${task}.py ${CONFIG_FILE} ${CHECKPOINT_PATH} [optional arguments]

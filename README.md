@@ -30,7 +30,7 @@ It is a part of the [OpenMMLab](https://openmmlab.com/) project.
 Major features:
 - **Compatibility**
 
-  MMRazor can be easily applied to various projects in OpenMMLab, due to similar architecture design of OpenMMLab as well as the decoupling of slimming algorithms and vision tasks.
+  MMRazor can be easily applied to various projects in OpenMMLab, due to the similar architecture design of OpenMMLab as well as the decoupling of slimming algorithms and vision tasks.
 
 - **Flexibility**
 
