@@ -23,7 +23,7 @@ If this PR introduces a new feature, it is better to list some use cases here an
 
 - [ ] Pre-commit or other linting tools are used to fix the potential lint issues.
 - [ ] Bug fixes are fully covered by unit tests, the case that causes the bug should be added in the unit tests.
-- [ ] The modification is covered by complete unit tests. If not, please add more unit test to ensure the correctness.
+- [ ] The modification is covered by complete unit tests. If not, please add more unit tests to ensure the correctness.
 - [ ] The documentation has been modified accordingly, like docstring or example tutorials.
 
 **After PR**:

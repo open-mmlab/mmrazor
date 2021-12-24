@@ -8,7 +8,7 @@ Here we show how to add a new searchable backbone with an example of searchable_
 
 1. Define a new backbone
 
-    Create a new file `mmrazor/models/architectures/components/backbones/searchable_shufflenet_v2.py`, class `SearchableShuffleNetV2` inherits from `BaseBackBone` of mmcls, which is the codebase that you will to build model.
+    Create a new file `mmrazor/models/architectures/components/backbones/searchable_shufflenet_v2.py`, class `SearchableShuffleNetV2` inherits from `BaseBackBone` of mmcls, which is the codebase that you will to build the model.
 
     ```python
     import torch.nn as nn

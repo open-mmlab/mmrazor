@@ -1,10 +1,10 @@
 # Tutorial 7: Customize mixed algorithms with our algorithm components
 
-Here we show how to customize  mixed algorithms with our algorithm components. We take the slimmable training in autoslim as an example.
+Here we show how to customize mixed algorithms with our algorithm components. We take the slimmable training in autoslim as an example.
 
-The sandwich rule and inplace distillation was introduced to enhance training process. The sandwich rule means that we train the model at smallest width, largest width and (n − 2) random widths, instead of n random widths. By inplace distillation, we use the predicted label of the model at the largest width as the training label for other widths, while for the largest width we use ground truth. So both the KD algorithm and the pruning algorithm are used in slimmable training.
+The sandwich rule and inplace distillation were introduced to enhance the training process. The sandwich rule means that we train the model at smallest width, largest width and (n − 2) random widths, instead of n random widths. By inplace distillation, we use the predicted label of the model at the largest width as the training label for other widths, while for the largest width we use ground truth. So both the KD algorithm and the pruning algorithm are used in slimmable training.
 
-1. In distillation part, we can directly use SelfDistiller in `mmrazor/models/distillers/self_distiller.py`. If distillers provided in MMRazor don't meet your needs, you can develop new algorithm components for your algorithm as step2 in Tutorial 6.
+1. In the distillation part, we can directly use SelfDistiller in `mmrazor/models/distillers/self_distiller.py`. If distillers provided in MMRazor don't meet your needs, you can develop new algorithm components for your algorithm as step2 in Tutorial 6.
 
 2. As the slimmable training is the first step of `Autoslim`, we do not need to register a new algorithm, but rewrite the `train_step`function in AutoSlim as follows:
 

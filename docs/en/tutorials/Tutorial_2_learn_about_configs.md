@@ -28,7 +28,7 @@ We follow the below convention to name config files. Contributors are advised to
 
 Same as MMDetection, we incorporate modular and inheritance design into our config system, which is convenient to conduct various experiments.
 
-To help the users have a basic idea of a complete config and the modules in a generation system, we make brief comments on the configs of some examples as the following. For more detailed usage and the corresponding alternative for each modules, please refer to the API documentation.
+To help the users have a basic idea of a complete config and the modules in a generation system, we make brief comments on the configs of some examples as the following. For more detailed usage and the corresponding alternative for each module, please refer to the API documentation.
 
 ### An example of NAS - spos
 

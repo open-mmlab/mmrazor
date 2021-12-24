@@ -12,7 +12,7 @@ It is a part of the [OpenMMLab](https://openmmlab.com/) project.
 ## Major features:
 - **Compatibility**
 
-  MMRazor can be easily applied to various projects in OpenMMLab, due to similar architecture design of OpenMMLab as well as the decoupling of slimming algorithms and vision tasks.
+  MMRazor can be easily applied to various projects in OpenMMLab, due to the similar architecture design of OpenMMLab as well as the decoupling of slimming algorithms and vision tasks.
 
 - **Flexibility**
 
@@ -26,11 +26,11 @@ It is a part of the [OpenMMLab](https://openmmlab.com/) project.
 
 ![design_and_implement](../imgs/tutorials/overview/design_and_implement.png)
 
-In terms of overall design, MMRazor mainly includes Component and Algorithm.
+In terms of the overall design, MMRazor mainly includes Component and Algorithm.
 
-Component can be divided into basic component and algorithm component. Basic
+Component can be divided into basic component and algorithm component. The basic
 component consists of searcher, OP, Mutables and other modules in the figure,
-which provide basic function support for algorithm component. Algorithm component
+which provides basic function support for algorithm component. Algorithm component
 consists of Mutator, Pruner, Distiller and other modules in the figure. They
 provide core functionality for implementing various lightweight algorithms.
 The combination of Algorithm and Application can realize the purpose of slimming
@@ -63,7 +63,7 @@ MMRazor consists of 4 main parts: 1) apis, 2) core, 3) models, 4) datasets. mode
 
   - **Mutator**: Core functions provider of different types of NAS, mainly include some functions of changing the structure of architecture.
   - **Pruner**: Core functions provider of different types of pruning, mainly includes some functions of changing the structure of architecture and getting channel group.
-  - **Distiller**: Core functions provider of different types of KD, mainly includes functions of  registering some forward hooks, calculate the kd-loss and so on.
+  - **Distiller**: Core functions provider of different types of KD, mainly includes functions of registering some forward hooks, calculate the kd-loss and so on.
   - **Quantizer**: Core functions provider of different types of quantization. It will come soon.
 
 - **Base components**: Core components of architecture and some algorithm components
