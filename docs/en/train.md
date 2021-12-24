@@ -9,7 +9,7 @@ Currently our algorithms support [mmclassification](https://mmclassification.rea
 
 ## NAS
 
-Three are three steps to start neural network search(NAS), including **supernet pre-training**, **search for subnet on the trained supernet** and **subnet retraining**.
+There are three steps to start neural network search(NAS), including **supernet pre-training**, **search for subnet on the trained supernet** and **subnet retraining**.
 
 ### Supernet Pre-training
 
