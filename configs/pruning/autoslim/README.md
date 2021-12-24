@@ -60,7 +60,7 @@ python ./tools/mmcls/train_mmcls.py \
 
 ### Split checkpoint
 <pre>
-python ./tools/mmcls/split_checkpoint.py \
+python ./tools/model_converters/split_checkpoint.py \
   configs/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k.py \
   <em>your_retraining_checkpoint_path</em> \
   --channel-cfgs configs/pruning/autoslim/AUTOSLIM_MBV2_530M_OFFICIAL.yaml configs/pruning/autoslim/AUTOSLIM_MBV2_320M_OFFICIAL.yaml configs/pruning/autoslim/AUTOSLIM_MBV2_220M_OFFICIAL.yaml
