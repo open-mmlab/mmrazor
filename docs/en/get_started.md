@@ -48,8 +48,8 @@
 It is recommended to install MMRazor with [MIM](https://github.com/open-mmlab/mim), which automatically handles the dependencies of OpenMMLab projects, including mmcv and other python packages.
 
 ```Bash
-pip install openmin
-min install mmrazor
+pip install openmim
+mim install mmrazor
 ```
 
 Or you can still install MMRazor manually
