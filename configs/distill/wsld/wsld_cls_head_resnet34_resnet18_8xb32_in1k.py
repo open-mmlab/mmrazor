@@ -44,7 +44,7 @@ teacher = dict(
 algorithm = dict(
     type='GeneralDistill',
     architecture=dict(
-        type='MMDetArchitecture',
+        type='MMClsArchitecture',
         model=student,
     ),
     with_student_loss=True,
