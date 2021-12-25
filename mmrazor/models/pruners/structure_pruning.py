@@ -75,6 +75,8 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
     is being continuously optimized, and there may be major changes in the
     future.
 
+    Reference to https://github.com/jshilong/FisherPruning
+
     Args:
         except_start_keys (List[str]): the module whose name start with a
             string in except_start_keys will not be prune.
