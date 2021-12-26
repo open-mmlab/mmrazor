@@ -31,9 +31,9 @@ class ChannelWiseDivergence(nn.Module):
 
         Args:
             preds_S (torch.Tensor): The student model prediction with
-                shape (N, C, W, H).
+                shape (N, C, H, W).
             preds_T (torch.Tensor): The teacher model prediction with
-                shape (N, C, W, H).
+                shape (N, C, H, W).
 
         Return:
             torch.Tensor: The calculated loss value.
