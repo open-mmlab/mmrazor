@@ -30,14 +30,14 @@ class KLDivergence(nn.Module):
 
         Args:
             preds_S (torch.Tensor): The student model prediction with
-                shape (N, C, H, W).
+                shape (N, C, H, W) or shape (N, C).
             preds_T (torch.Tensor): The teacher model prediction with
-                shape (N, C, H, W).
+                shape (N, C, H, W) or shape (N, C).
 
         Return:
             torch.Tensor: The calculated loss value.
         """
-        N, C = preds_S.shape
+        N = preds_S.shape[0]
         preds_T = preds_T.detach()
         softmax_pred_T = F.softmax(preds_T / self.tau, dim=1)
 

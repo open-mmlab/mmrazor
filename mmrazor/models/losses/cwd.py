@@ -39,7 +39,7 @@ class ChannelWiseDivergence(nn.Module):
             torch.Tensor: The calculated loss value.
         """
         assert preds_S.shape[-2:] == preds_T.shape[-2:]
-        N, C, W, H = preds_S.shape
+        N, C, H, W = preds_S.shape
 
         softmax_pred_T = F.softmax(preds_T.view(-1, W * H) / self.tau, dim=1)
 
