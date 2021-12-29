@@ -24,7 +24,7 @@ class BaseAlgorithm(BaseModule):
             for pruning.
         distiller (dict): Config for pruner, which is an algorithm component
             for knowledge distillation.
-        retraining (bool): Whether is in retraning stage, if False,
+        retraining (bool): Whether is in retraining stage, if False,
             it is in pre-training stage.
         init_cfg (dict): Init config for ``BaseModule``.
         mutable_cfg (dict): Config for mutable of the subnet searched out,

@@ -32,6 +32,8 @@ class GeneralDistill(BaseAlgorithm):
             teacher_losses = add_prefix(teacher_losses, 'teacher')
             losses.update(teacher_losses)
         else:
+            # Just to be able to trigger the forward hooks that
+            # have been registered
             _ = self.distiller.exec_teacher_forward(data)
 
         if self.with_student_loss:
@@ -40,6 +42,8 @@ class GeneralDistill(BaseAlgorithm):
             student_losses = add_prefix(student_losses, 'student')
             losses.update(student_losses)
         else:
+            # Just to be able to trigger the forward hooks that
+            # have been registered
             _ = self.distiller.exec_student_forward(self.architecture, data)
 
         distill_losses = self.distiller.compute_distill_loss(data)
