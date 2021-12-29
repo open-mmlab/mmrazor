@@ -47,6 +47,7 @@ class KLDivergence(nn.Module):
                 shape (N, C, H, W) or shape (N, C).
             preds_T (torch.Tensor): The teacher model prediction with
                 shape (N, C, H, W) or shape (N, C).
+
         Return:
             torch.Tensor: The calculated loss value.
         """
