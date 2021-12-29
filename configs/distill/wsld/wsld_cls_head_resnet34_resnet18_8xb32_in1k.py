@@ -48,6 +48,9 @@ algorithm = dict(
         model=student,
     ),
     with_student_loss=True,
+    # teacher_trainable and with_teacher_loss have a dependency
+    # relationship, if teacher_trainable is false, then
+    # with_teacher_loss must be false.
     with_teacher_loss=False,
     distiller=dict(
         type='SingleTeacherDistiller',

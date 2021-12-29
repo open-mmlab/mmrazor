@@ -14,7 +14,7 @@ class WSLD(nn.Module):
 
     Args:
         tau (float): Temperature coefficient. Defaults to 1.0.
-        weight (float): Weight of loss. Defaults to 1.0.
+        loss_weight (float): Weight of loss. Defaults to 1.0.
         num_classes (int): Defaults to 1000.
     """
 

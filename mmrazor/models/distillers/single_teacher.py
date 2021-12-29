@@ -14,9 +14,10 @@ class SingleTeacherDistiller(BaseDistiller):
     Args:
         teacher (dict): The config dict for teacher.
         teacher_trainable (bool): Whether the teacher is trainable.
+            Default: False.
         teacher_norm_eval (bool): Whether to set teacher's norm layers to eval
             mode, namely, freeze running stats (mean and var). Note: Effect on
-            Batch Norm and its variants only. Default: False.
+            Batch Norm and its variants only. Default: True.
         components (dict): The details of the distillation. It usually includes
             the module names of the teacher and the student, and the losses
             used in the distillation.
@@ -225,7 +226,7 @@ class SingleTeacherDistiller(BaseDistiller):
             teacher_outputs = self.get_teacher_outputs(teacher_module_name)
 
             # One module maybe have N outputs, such as the shareable head in
-            # Retinanet.
+            # RetinaNet.
             for out_idx, (s_out, t_out) in enumerate(
                     zip(student_outputs, teacher_outputs)):
 
@@ -234,6 +235,7 @@ class SingleTeacherDistiller(BaseDistiller):
                     loss_name = f'{loss.name}.{out_idx}'
                     # TODO ugly implementation.
                     # Pass the gt_label to loss function.
+                    # Only used by WSLD.
                     loss_module.current_data = data
                     losses[loss_name] = loss_module(s_out, t_out)
                     loss_module.current_data = None

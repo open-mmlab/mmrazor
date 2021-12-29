@@ -101,7 +101,7 @@ class BaseDistiller(BaseModule, metaclass=ABCMeta):
     For python function's outputs, obtained by a specific context manager.
 
     Args:
-        align_functions (dict): The details of the functions which outputs need
+        align_methods (dict): The details of the functions which outputs need
         to be obtained.
     """
 
