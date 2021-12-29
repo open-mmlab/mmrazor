@@ -30,9 +30,9 @@ class KLDivergence(nn.Module):
 
         Args:
             preds_S (torch.Tensor): The student model prediction with
-                shape (N, C, W, H).
+                shape (N, num_classes).
             preds_T (torch.Tensor): The teacher model prediction with
-                shape (N, C, W, H).
+                shape (N, num_classes).
 
         Return:
             torch.Tensor: The calculated loss value.
