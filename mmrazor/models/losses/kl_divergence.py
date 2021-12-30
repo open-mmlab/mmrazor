@@ -56,7 +56,5 @@ class KLDivergence(nn.Module):
         softmax_pred_T = F.softmax(preds_T / self.tau, dim=1)
         logsoftmax_preds_S = F.log_softmax(preds_S / self.tau, dim=1)
         loss = (self.tau**2) * F.kl_div(
-            logsoftmax_preds_S,
-            softmax_pred_T,
-            reduction=self.reduction)
+            logsoftmax_preds_S, softmax_pred_T, reduction=self.reduction)
         return self.loss_weight * loss
