@@ -20,7 +20,7 @@ The command you executed.
 ```
 
 ### Post related information
-1. The output of `pip list | grep "mmcv\|mmcls\|^torch"`
+1. The output of `pip list | grep "mmcv\|mmrazor\|^torch"`
 [here]
 2. Your config file if you modified it or created a new one.
 ```python
@@ -28,7 +28,7 @@ The command you executed.
 ```
 3. Your train log file if you meet the problem during training.
 [here]
-4. Other code you modified in the `mmcls` folder.
+4. Other code you modified in the `mmrazor` folder.
 [here]
 
 ### Additional context
