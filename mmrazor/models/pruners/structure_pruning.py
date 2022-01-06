@@ -152,8 +152,13 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         self.channel_spaces = self.build_channel_spaces(name2module)
 
     @abstractmethod
-    def sample_subnet(self):
+    def sample_subnet(self, searching=False):
         """Sample a subnet from the supernet.
+
+        Args:
+            searching(bool): Whether is in search stage. During search stage,
+                we do not need to broadcast every ``out_mask``. It is enough to
+                broadcast the whole ``subnet_dict`` after ``sample_subnet``.
 
         Returns:
             dict: Record the information to build the subnet from the supernet,
