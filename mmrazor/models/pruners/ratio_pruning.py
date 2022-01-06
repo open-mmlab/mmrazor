@@ -39,7 +39,10 @@ class RatioPruner(StructurePruner):
         new_channels = int(round(out_channels * random_ratio))
         assert new_channels > 0, \
             'Output channels should be a positive integer.'
-        new_out_mask = torch.zeros_like(out_mask)
+        if torch.cuda.is_available():
+            new_out_mask = torch.zeros_like(out_mask).cuda()
+        else:
+            new_out_mask = torch.zeros_like(out_mask)
         new_out_mask[:, :new_channels] = 1
 
         if dist.is_available() and dist.is_initialized() and not searching:
