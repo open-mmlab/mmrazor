@@ -272,7 +272,7 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         """Set the number of channels each layer to maximum."""
         subnet_dict = dict()
         for space_id, out_mask in self.channel_spaces.items():
-            new_out_mask = torch.ones_like(out_mask)
+            new_out_mask = torch.ones_like(out_mask).bool()
             subnet_dict[space_id] = new_out_mask
         self.set_subnet(subnet_dict)
 
@@ -392,21 +392,24 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         if type(module).__name__ == 'Conv2d':
             module.register_buffer(
                 'in_mask',
-                module.weight.new_ones((1, module.in_channels, 1, 1), ))
+                module.weight.new_ones((1, module.in_channels, 1, 1), ).bool())
             module.register_buffer(
                 'out_mask',
-                module.weight.new_ones((1, module.out_channels, 1, 1), ))
+                module.weight.new_ones(
+                    (1, module.out_channels, 1, 1), ).bool())
             module.forward = self.modify_conv_forward(module)
         if type(module).__name__ == 'Linear':
             module.register_buffer(
-                'in_mask', module.weight.new_ones((1, module.in_features), ))
+                'in_mask',
+                module.weight.new_ones((1, module.in_features), ).bool())
             module.register_buffer(
-                'out_mask', module.weight.new_ones((1, module.out_features), ))
+                'out_mask',
+                module.weight.new_ones((1, module.out_features), ).bool())
             module.forward = self.modify_fc_forward(module)
         if isinstance(module, nn.modules.batchnorm._BatchNorm):
             module.register_buffer(
                 'out_mask',
-                module.weight.new_ones((1, len(module.weight), 1, 1), ))
+                module.weight.new_ones((1, len(module.weight), 1, 1), ).bool())
 
     def find_node_parents(self, paths):
         """Find the parent node of a node.
@@ -543,7 +546,7 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
                 new_mask.extend([1] * channels_per_bin if mask else [0] *
                                 channels_per_bin)
             new_mask.extend([0] * (channel_num % max_channel_bins))
-            new_mask = torch.tensor(new_mask).reshape(*shape)
+            new_mask = torch.tensor(new_mask).reshape(*shape).bool()
             subnet_dict[space_id] = new_mask
         self.set_subnet(subnet_dict)
 

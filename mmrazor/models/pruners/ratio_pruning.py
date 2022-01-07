@@ -38,8 +38,8 @@ class RatioPruner(StructurePruner):
         new_channels = int(round(out_channels * random_ratio))
         assert new_channels > 0, \
             'Output channels should be a positive integer.'
-        new_out_mask = torch.zeros_like(out_mask)
-        new_out_mask[:, :new_channels] = 1
+        new_out_mask = torch.zeros_like(out_mask).bool()
+        new_out_mask[:, :new_channels] = True
 
         return new_out_mask
 
@@ -65,8 +65,8 @@ class RatioPruner(StructurePruner):
             new_channels = int(round(out_channels * random_ratio))
             assert new_channels > 0, \
                 'Output channels should be a positive integer.'
-            new_out_mask = torch.zeros_like(out_mask)
-            new_out_mask[:, :new_channels] = 1
+            new_out_mask = torch.zeros_like(out_mask).bool()
+            new_out_mask[:, :new_channels] = True
 
             subnet_dict[space_id] = new_out_mask
 
@@ -97,8 +97,8 @@ class RatioPruner(StructurePruner):
                 continue
 
             out_channels = channels_per_layer['out_channels']
-            out_mask = torch.zeros_like(module.out_mask)
-            out_mask[:, :out_channels] = 1
+            out_mask = torch.zeros_like(module.out_mask).bool()
+            out_mask[:, :out_channels] = True
 
             space_id = self.get_space_id(name)
             if space_id in subnet_dict:
