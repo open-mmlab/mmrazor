@@ -1,5 +1,5 @@
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    Tutorial_1_overview.md
    Tutorial_2_learn_about_configs.md

@@ -83,7 +83,7 @@ html_theme_path = [pytorch_sphinx_theme.get_html_theme_path()]
 
 html_theme_options = {
     'logo_url':
-    'https://mmrazor.readthedocs.io/en/latest/',
+    'https://mmrazor.readthedocs.io/zh_CN/latest/',
     'menu': [
         {
             'name': 'GitHub',
@@ -91,40 +91,28 @@ html_theme_options = {
         },
         {
             'name':
-            'Upstream',
+            '上游库',
             'children': [{
-                'name':
-                'MMCV',
-                'url':
-                'https://github.com/open-mmlab/mmcv',
-                'description':
-                'Foundational library for computer vision'
+                'name': 'MMCV',
+                'url': 'https://github.com/open-mmlab/mmcv',
+                'description': '基础视觉库'
             }, {
-                'name':
-                'MMDetection',
-                'url':
-                'https://github.com/open-mmlab/mmdetection',
-                'description':
-                'Object detection toolbox and benchmark'
+                'name': 'MMDetection',
+                'url': 'https://github.com/open-mmlab/mmdetection',
+                'description': '目标检测工具箱'
             }, {
-                'name':
-                'MMClassification',
-                'url':
-                'https://github.com/open-mmlab/mmclassification',
-                'description':
-                'Image classification toolbox and benchmark'
+                'name': 'MMClassification',
+                'url': 'https://github.com/open-mmlab/mmclassification',
+                'description': '图像分类工具箱'
             }, {
-                'name':
-                'MMSegmentation',
-                'url':
-                'https://github.com/open-mmlab/mmsegmentation',
-                'description':
-                'Semantic segmentation toolbox and benchmark'
+                'name': 'MMSegmentation',
+                'url': 'https://github.com/open-mmlab/mmsegmentation',
+                'description': '语义分割工具箱'
             }]
         },
     ],
     'menu_lang':
-    'en'
+    'cn'
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -133,7 +121,7 @@ html_theme_options = {
 html_static_path = ['_static']
 html_css_files = ['css/readthedocs.css']
 
-language = 'en'
+language = 'zh_CN'
 
 # -- Extension configuration -------------------------------------------------
 # Ignore >>> when copying code
