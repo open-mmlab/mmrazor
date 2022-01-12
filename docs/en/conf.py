@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'MMRazor'
-copyright = '2021-2030, OpenMMLab'
+copyright = '2018-2021, OpenMMLab'
 author = 'MMRazor Authors'
 version_file = '../../mmrazor/version.py'
 
@@ -82,8 +82,6 @@ html_theme = 'pytorch_sphinx_theme'
 html_theme_path = [pytorch_sphinx_theme.get_html_theme_path()]
 
 html_theme_options = {
-    'logo_url':
-    'https://mmrazor.readthedocs.io/en/latest/',
     'menu': [
         {
             'name': 'GitHub',
@@ -91,40 +89,90 @@ html_theme_options = {
         },
         {
             'name':
-            'Upstream',
-            'children': [{
-                'name':
-                'MMCV',
-                'url':
-                'https://github.com/open-mmlab/mmcv',
-                'description':
-                'Foundational library for computer vision'
-            }, {
-                'name':
-                'MMDetection',
-                'url':
-                'https://github.com/open-mmlab/mmdetection',
-                'description':
-                'Object detection toolbox and benchmark'
-            }, {
-                'name':
-                'MMClassification',
-                'url':
-                'https://github.com/open-mmlab/mmclassification',
-                'description':
-                'Image classification toolbox and benchmark'
-            }, {
-                'name':
-                'MMSegmentation',
-                'url':
-                'https://github.com/open-mmlab/mmsegmentation',
-                'description':
-                'Semantic segmentation toolbox and benchmark'
-            }]
+            'Docs',
+            'children': [
+                {
+                    'name': 'MMCV',
+                    'url': 'https://mmcv.readthedocs.io/en/latest/',
+                },
+                {
+                    'name': 'MIM',
+                    'url': 'https://openmim.readthedocs.io/en/latest/'
+                },
+                {
+                    'name': 'MMAction2',
+                    'url': 'https://mmaction2.readthedocs.io/en/latest/',
+                },
+                {
+                    'name': 'MMClassification',
+                    'url':
+                    'https://mmclassification.readthedocs.io/en/latest/',
+                },
+                {
+                    'name': 'MMDetection',
+                    'url': 'https://mmdetection.readthedocs.io/en/latest/',
+                },
+                {
+                    'name': 'MMDetection3D',
+                    'url': 'https://mmdetection3d.readthedocs.io/en/latest/',
+                },
+                {
+                    'name': 'MMEditing',
+                    'url': 'https://mmediting.readthedocs.io/en/latest/',
+                },
+                {
+                    'name': 'MMGeneration',
+                    'url': 'https://mmgeneration.readthedocs.io/en/latest/',
+                },
+                {
+                    'name': 'MMOCR',
+                    'url': 'https://mmocr.readthedocs.io/en/latest/',
+                },
+                {
+                    'name': 'MMPose',
+                    'url': 'https://mmpose.readthedocs.io/en/latest/',
+                },
+                {
+                    'name': 'MMSegmentation',
+                    'url': 'https://mmsegmentation.readthedocs.io/en/latest/',
+                },
+                {
+                    'name': 'MMTracking',
+                    'url': 'https://mmtracking.readthedocs.io/en/latest/',
+                },
+                {
+                    'name': 'MMFlow',
+                    'url': 'https://mmflow.readthedocs.io/en/latest/',
+                },
+                {
+                    'name': 'MMFewShot',
+                    'url': 'https://mmfewshot.readthedocs.io/en/latest/',
+                },
+            ]
         },
-    ],
-    'menu_lang':
-    'en'
+        {
+            'name':
+            'OpenMMLab',
+            'children': [
+                {
+                    'name': 'Homepage',
+                    'url': 'https://openmmlab.com/'
+                },
+                {
+                    'name': 'GitHub',
+                    'url': 'https://github.com/open-mmlab/'
+                },
+                {
+                    'name': 'Twitter',
+                    'url': 'https://twitter.com/OpenMMLab'
+                },
+                {
+                    'name': 'Zhihu',
+                    'url': 'https://zhihu.com/people/openmmlab'
+                },
+            ]
+        },
+    ]
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -132,8 +180,6 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 html_css_files = ['css/readthedocs.css']
-
-language = 'en'
 
 # -- Extension configuration -------------------------------------------------
 # Ignore >>> when copying code
