@@ -528,7 +528,8 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         """
         channel_bins_dict = dict()
         for space_id in self.channel_spaces.keys():
-            channel_bins_dict[space_id] = torch.ones((max_channel_bins, ))
+            channel_bins_dict[space_id] = torch.ones(
+                (max_channel_bins, )).bool()
         return channel_bins_dict
 
     def set_channel_bins(self, channel_bins_dict, max_channel_bins):
