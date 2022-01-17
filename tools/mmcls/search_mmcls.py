@@ -147,7 +147,7 @@ def main():
             model = model.cpu()
         else:
             model = MMDataParallel(model, device_ids=[0])
-        model.CLASSES = CLASSES
+        model.architecture.model.CLASSES = CLASSES
         test_fn = single_gpu_test
 
     else:

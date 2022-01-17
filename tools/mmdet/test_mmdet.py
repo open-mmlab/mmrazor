@@ -183,9 +183,9 @@ def main():
     # old versions did not save class info in checkpoints, this walkaround is
     # for backward compatibility
     if 'CLASSES' in checkpoint.get('meta', {}):
-        model.CLASSES = checkpoint['meta']['CLASSES']
+        model.architecture.model.CLASSES = checkpoint['meta']['CLASSES']
     else:
-        model.CLASSES = dataset.CLASSES
+        model.architecture.model.CLASSES = dataset.CLASSES
 
     if not distributed:
         model = MMDataParallel(model, device_ids=[0])
