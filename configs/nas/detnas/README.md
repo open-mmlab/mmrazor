@@ -32,15 +32,15 @@ Object detectors are usually equipped with backbone networks designed for image 
 ## Getting Started
 ### Step 1: Supernet pre-training on ImageNet
 ```bash
-python ./tools/mmdet/train_mmdet.py \
-  configs/nas/detnas/detnas_shufflenet_supernet_imagenet.py \
+python ./tools/mmcls/train_mmcls.py \
+  configs/nas/detnas/detnas_supernet_shufflenetv2_8xb128_in1k.py \
   --work-dir $WORK_DIR
 ```
 
 ### Step 2: Supernet fine-tuning on COCO
 ```bash
 python ./tools/mmdet/train_mmdet.py \
-  configs/nas/detnas/detnas_frcnn_shufflenet_fpn_supernet_coco_1x.py \
+  configs/nas/detnas/detnas_supernet_frcnn_shufflenetv2_fpn_1x_coco.py \
   --work-dir $WORK_DIR \
   --cfg-options load_from=$STEP1_CKPT
 ```
@@ -48,15 +48,15 @@ python ./tools/mmdet/train_mmdet.py \
 ### Step 3: Search for subnet on the trained supernet
 ```
 python ./tools/mmdet/search_mmdet.py \
-  configs/nas/detnas/detnas_frcnn_shufflenet_fpn_evolution_search_coco.py \
+  configs/nas/detnas/detnas_evolution_search_frcnn_shufflenetv2_fpn_coco.py \
   $STEP2_CKPT \
   --work-dir $WORK_DIR
 ```
 
 ### Step 4: Subnet retraining on ImageNet
 ```
-python ./tools/mmdet/train_mmdet.py \
-  configs/nas/detnas/detnas_shufflenet_subnet_imagenet.py \
+python ./tools/mmcls/train_mmcls.py \
+  configs/nas/detnas/detnas_subnet_shufflenetv2_8xb128_in1k.py \
   --work-dir $WORK_DIR \
   --cfg-options algorithm.mutable_cfg=$STEP3_SUBNET_YAML
 ```
@@ -64,7 +64,7 @@ python ./tools/mmdet/train_mmdet.py \
 ### Step 5: Subnet fine-tuning on COCO
 ```
 python ./tools/mmdet/train_mmdet.py \
-  configs/nas/detnas/detnas_frcnn_shufflenet_fpn_subnet_coco_1x.py \
+  configs/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco.py \
   --work-dir $WORK_DIR \
-  --cfg-options algorithm.mutable_cfg=$STEP3_SUBNET_YAML load_from=$STEP$_CKPT
+  --cfg-options algorithm.mutable_cfg=$STEP3_SUBNET_YAML load_from=$STEP4_CKPT
 ```
