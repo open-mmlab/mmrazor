@@ -1,5 +1,5 @@
 _base_ = [
-    './spos_shufflenetv2_supernet_8xb128_in1k.py',
+    './spos_supernet_shufflenetv2_8xb128_in1k.py',
 ]
 
 algorithm = dict(retraining=True)
