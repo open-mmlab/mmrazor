@@ -171,32 +171,35 @@ def main():
         dist=distributed,
         shuffle=False)
 
-    # build the model and load checkpoint
+    # build the algorithm and load checkpoint
     cfg.algorithm.architecture.model.train_cfg = None
-    model = build_algorithm(cfg.algorithm)
+    algorithm = build_algorithm(cfg.algorithm)
+    model = algorithm.architecture.model
+
     fp16_cfg = cfg.get('fp16', None)
     if fp16_cfg is not None:
         wrap_fp16_model(model)
-    checkpoint = load_checkpoint(model, args.checkpoint, map_location='cpu')
+    checkpoint = load_checkpoint(
+        algorithm, args.checkpoint, map_location='cpu')
     if args.fuse_conv_bn:
         model = fuse_conv_bn(model)
     # old versions did not save class info in checkpoints, this walkaround is
     # for backward compatibility
     if 'CLASSES' in checkpoint.get('meta', {}):
-        model.architecture.model.CLASSES = checkpoint['meta']['CLASSES']
+        model.CLASSES = checkpoint['meta']['CLASSES']
     else:
-        model.architecture.model.CLASSES = dataset.CLASSES
+        model.CLASSES = dataset.CLASSES
 
     if not distributed:
-        model = MMDataParallel(model, device_ids=[0])
-        outputs = single_gpu_test(model, data_loader, args.show, args.show_dir,
-                                  args.show_score_thr)
+        algorithm = MMDataParallel(algorithm, device_ids=[0])
+        outputs = single_gpu_test(algorithm, data_loader, args.show,
+                                  args.show_dir, args.show_score_thr)
     else:
-        model = MMDistributedDataParallel(
-            model.cuda(),
+        algorithm = MMDistributedDataParallel(
+            algorithm.cuda(),
             device_ids=[torch.cuda.current_device()],
             broadcast_buffers=False)
-        outputs = multi_gpu_test(model, data_loader, args.tmpdir,
+        outputs = multi_gpu_test(algorithm, data_loader, args.tmpdir,
                                  args.gpu_collect)
 
     rank, _ = get_dist_info()
