@@ -4,9 +4,8 @@ import warnings
 import numpy as np
 import torch
 from mmcv.parallel import MMDataParallel, MMDistributedDataParallel
-from mmcv.runner import (HOOKS, EpochBasedRunner, Fp16OptimizerHook,
-                         OptimizerHook, build_runner)
-from mmcv.utils import build_from_cfg
+from mmcv.runner import (EpochBasedRunner, Fp16OptimizerHook, OptimizerHook,
+                         build_runner)
 from mmdet.core import DistEvalHook, EvalHook
 from mmdet.datasets import (build_dataloader, build_dataset,
                             replace_ImageToTensor)
