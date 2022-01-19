@@ -128,12 +128,5 @@ def test_bcnet_pruner():
     for space_id in subnet_dict.keys():
         assert subnet_dict[space_id].sum() > 0
         assert complementary_subnet[space_id].sum() > 0
-        # If a layer has maximum channels, then the complementary layer also
-        # has maximum channels
-        if subnet_dict[space_id].sum() == subnet_dict[space_id].numel():
-            assert torch.equal(subnet_dict[space_id],
-                               complementary_subnet[space_id])
-            print(1)
-        else:
-            assert subnet_dict[space_id].sum() + complementary_subnet[
-                space_id].sum() == subnet_dict[space_id].numel()
+        min_channels = round(subnet_dict[space_id].numel() * pruner.min_ratio)
+        assert subnet_dict[space_id].sum() + complementary_subnet[space_id].sum() == subnet_dict[space_id].numel() + 2 * min_channels

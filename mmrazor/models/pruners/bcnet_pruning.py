@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import torch
+
 from mmrazor.models.builder import PRUNERS
 from .ratio_pruning import RatioPruner
 
@@ -15,8 +17,7 @@ class BCNetPruner(RatioPruner):
     def get_complementary_subnet(self, subnet_dict):
         subnet_dict_comp = dict()
         for key, val in subnet_dict.items():
-            # If a layer has maximum channels, then the complementary layer
-            # also has maximum channels
-            subnet_dict_comp[key] = val if val.sum() == val.numel(
-            ) else ~val.flip(1)
+            min_channels = round(val.numel() * self.min_ratio)
+            mask_comp = torch.cat([val[:, :min_channels], ~val[:, min_channels:].flip(1)], dim=1)
+            subnet_dict_comp[key] = mask_comp
         return subnet_dict_comp
