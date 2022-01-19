@@ -64,7 +64,7 @@ def test_ratio_pruner():
     # test channel bins
     pruner.set_min_channel()
     channel_bins_dict = pruner.get_max_channel_bins(max_channel_bins=4)
-    pruner.set_channel_bins(channel_bins_dict, 4)
+    pruner.set_channel_bins(channel_bins_dict)
     for name, module in architecture.model.named_modules():
         if hasattr(module, 'in_mask'):
             assert module.in_mask.sum() == module.in_mask.numel()

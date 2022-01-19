@@ -532,28 +532,25 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
                 (max_channel_bins, )).bool()
         return channel_bins_dict
 
-    def set_channel_bins(self, channel_bins_dict, max_channel_bins):
+    def set_channel_bins(self, channel_bins_dict):
         """Set subnet according to the number of channel bins in a layer.
 
         Args:
             channel_bins_dict (dict): The number of bins in each layer. Key is
                 the space_id of each layer and value is the corresponding
                 mask of channel bin.
-            max_channel_bins (int): The max number of bins in each layer.
         """
         subnet_dict = dict()
         for space_id, bin_mask in channel_bins_dict.items():
-            mask = self.channel_spaces[space_id]
-            shape = mask.shape
-            channel_num = shape[1]
-            channels_per_bin = channel_num // max_channel_bins
-            new_mask = []
-            for mask in bin_mask:
-                new_mask.extend([1] * channels_per_bin if mask else [0] *
-                                channels_per_bin)
-            new_mask.extend([0] * (channel_num % max_channel_bins))
-            new_mask = torch.tensor(new_mask).reshape(*shape).bool()
-            subnet_dict[space_id] = new_mask
+            out_mask = self.channel_spaces[space_id]
+            out_channels = out_mask.size(1)
+
+            new_channels = round((bin_mask.sum() / bin_mask.numel()).item() *
+                                 out_channels)
+            new_out_mask = torch.zeros_like(out_mask).bool()
+            new_out_mask[:, :new_channels] = True
+
+            subnet_dict[space_id] = new_out_mask
         self.set_subnet(subnet_dict)
 
     def trace_non_pass_path(self, grad_fn, module2name, var2module, cur_path,

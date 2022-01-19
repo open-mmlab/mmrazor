@@ -106,8 +106,7 @@ class GreedySearcher():
                 continue
 
             if flops <= target:
-                algorithm.pruner.set_channel_bins(subnet,
-                                                  self.max_channel_bins)
+                algorithm.pruner.set_channel_bins(subnet)
                 channel_cfg = algorithm.pruner.export_subnet()
                 result_subnet.append(channel_cfg)
                 result_flops.append(flops)
@@ -133,8 +132,7 @@ class GreedySearcher():
                         # subnet is invalid
                         continue
 
-                    algorithm.pruner.set_channel_bins(new_subnet,
-                                                      self.max_channel_bins)
+                    algorithm.pruner.set_channel_bins(new_subnet)
 
                     outputs = self.test_fn(self.algorithm_for_test,
                                            self.dataloader)
@@ -160,8 +158,7 @@ class GreedySearcher():
                         'configurations.')
 
                 subnet = best_subnet
-                algorithm.pruner.set_channel_bins(subnet,
-                                                  self.max_channel_bins)
+                algorithm.pruner.set_channel_bins(subnet)
                 flops = algorithm.get_subnet_flops()
                 self.logger.info(
                     f'Greedy find model, score: {best_score}, FLOPS: {flops}')
@@ -174,7 +171,7 @@ class GreedySearcher():
                 mmcv.fileio.dump(save_for_resume,
                                  osp.join(self.work_dir, 'latest.pkl'))
 
-            algorithm.pruner.set_channel_bins(subnet, self.max_channel_bins)
+            algorithm.pruner.set_channel_bins(subnet)
             channel_cfg = algorithm.pruner.export_subnet()
             result_subnet.append(channel_cfg)
             result_flops.append(flops)
