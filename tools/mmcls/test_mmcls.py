@@ -117,12 +117,14 @@ def main():
         shuffle=False,
         round_up=True)
 
-    # build the model and load checkpoint
-    model = build_algorithm(cfg.algorithm)
+    # build the algorithm and load checkpoint
+    algorithm = build_algorithm(cfg.algorithm)
+    model = algorithm.architecture.model
     fp16_cfg = cfg.get('fp16', None)
     if fp16_cfg is not None:
         wrap_fp16_model(model)
-    checkpoint = load_checkpoint(model, args.checkpoint, map_location='cpu')
+    checkpoint = load_checkpoint(
+        algorithm, args.checkpoint, map_location='cpu')
 
     if 'CLASSES' in checkpoint.get('meta', {}):
         CLASSES = checkpoint['meta']['CLASSES']
@@ -135,19 +137,19 @@ def main():
 
     if not distributed:
         if args.device == 'cpu':
-            model = model.cpu()
+            algorithm = algorithm.cpu()
         else:
-            model = MMDataParallel(model, device_ids=[0])
+            algorithm = MMDataParallel(algorithm, device_ids=[0])
         model.CLASSES = CLASSES
         show_kwargs = {} if args.show_options is None else args.show_options
-        outputs = single_gpu_test(model, data_loader, args.show, args.show_dir,
-                                  **show_kwargs)
+        outputs = single_gpu_test(algorithm, data_loader, args.show,
+                                  args.show_dir, **show_kwargs)
     else:
-        model = MMDistributedDataParallel(
-            model.cuda(),
+        algorithm = MMDistributedDataParallel(
+            algorithm.cuda(),
             device_ids=[torch.cuda.current_device()],
             broadcast_buffers=False)
-        outputs = multi_gpu_test(model, data_loader, args.tmpdir,
+        outputs = multi_gpu_test(algorithm, data_loader, args.tmpdir,
                                  args.gpu_collect)
 
     rank, _ = get_dist_info()

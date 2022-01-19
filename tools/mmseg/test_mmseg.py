@@ -148,15 +148,17 @@ def main():
         dist=distributed,
         shuffle=False)
 
-    # build the model and load checkpoint
+    # build the algorithm and load checkpoint
     # Difference from mmsegmentation
     cfg.algorithm.architecture.model.train_cfg = None
-    model = build_algorithm(cfg.algorithm)
+    algorithm = build_algorithm(cfg.algorithm)
+    model = algorithm.architecture.model
 
     fp16_cfg = cfg.get('fp16', None)
     if fp16_cfg is not None:
         wrap_fp16_model(model)
-    checkpoint = load_checkpoint(model, args.checkpoint, map_location='cpu')
+    checkpoint = load_checkpoint(
+        algorithm, args.checkpoint, map_location='cpu')
     if 'CLASSES' in checkpoint.get('meta', {}):
         model.CLASSES = checkpoint['meta']['CLASSES']
     else:
@@ -197,9 +199,9 @@ def main():
         tmpdir = None
 
     if not distributed:
-        model = MMDataParallel(model, device_ids=[0])
+        algorithm = MMDataParallel(algorithm, device_ids=[0])
         results = single_gpu_test(
-            model,
+            algorithm,
             data_loader,
             args.show,
             args.show_dir,
@@ -209,12 +211,12 @@ def main():
             format_only=args.format_only or eval_on_format_results,
             format_args=eval_kwargs)
     else:
-        model = MMDistributedDataParallel(
-            model.cuda(),
+        algorithm = MMDistributedDataParallel(
+            algorithm.cuda(),
             device_ids=[torch.cuda.current_device()],
             broadcast_buffers=False)
         results = multi_gpu_test(
-            model,
+            algorithm,
             data_loader,
             args.tmpdir,
             args.gpu_collect,

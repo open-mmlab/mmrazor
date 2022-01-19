@@ -124,14 +124,16 @@ def main():
         shuffle=False,
         round_up=True)
 
-    # build the model and load checkpoint
-    model = build_algorithm(cfg.algorithm)
+    # build the algorithm and load checkpoint
+    algorithm = build_algorithm(cfg.algorithm)
+    model = algorithm.architecture.model
 
     fp16_cfg = cfg.get('fp16', None)
     if fp16_cfg is not None:
         wrap_fp16_model(model)
 
-    checkpoint = load_checkpoint(model, args.checkpoint, map_location='cpu')
+    checkpoint = load_checkpoint(
+        algorithm, args.checkpoint, map_location='cpu')
 
     if 'CLASSES' in checkpoint.get('meta', {}):
         CLASSES = checkpoint['meta']['CLASSES']
@@ -144,15 +146,15 @@ def main():
 
     if not distributed:
         if args.device == 'cpu':
-            model = model.cpu()
+            algorithm = algorithm.cpu()
         else:
-            model = MMDataParallel(model, device_ids=[0])
+            algorithm = MMDataParallel(algorithm, device_ids=[0])
         model.CLASSES = CLASSES
         test_fn = single_gpu_test
 
     else:
-        model = MMDistributedDataParallel(
-            model.cuda(),
+        algorithm = MMDistributedDataParallel(
+            algorithm.cuda(),
             device_ids=[torch.cuda.current_device()],
             broadcast_buffers=False)
         test_fn = multi_gpu_test
@@ -161,7 +163,7 @@ def main():
     searcher = build_searcher(
         cfg.searcher,
         default_args=dict(
-            algorithm=model,
+            algorithm=algorithm,
             dataloader=data_loader,
             test_fn=test_fn,
             work_dir=cfg.work_dir,

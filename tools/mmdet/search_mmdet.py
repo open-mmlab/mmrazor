@@ -154,6 +154,7 @@ def main():
     model_cfg.train_cfg = None
     algorithm = build_algorithm(cfg.algorithm)
     model = algorithm.architecture.model
+
     fp16_cfg = cfg.get('fp16', None)
     if fp16_cfg is not None:
         wrap_fp16_model(model)
