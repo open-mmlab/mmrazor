@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import numpy as np
 import torch
 
 from ..builder import SEARCHERS
@@ -38,7 +39,8 @@ class BCNetSearcher(EvolutionSearcher):
             assert len(subnet_l) == len(subnet_r)
             for i, space_id in enumerate(sorted(subnet_l.keys())):
                 out_mask = subnet_l[space_id]
-                width = out_mask.sum().item()
+                # channels to channel_bins
+                width = round(out_mask.sum() * self.max_channel_bins / out_mask.numel())
                 loss_matrix[i, width - self.min_channel_bins] += loss
                 layer_width_cnt[i, width - self.min_channel_bins] += 1
 
@@ -57,3 +59,41 @@ class BCNetSearcher(EvolutionSearcher):
         space_flops = self.algorithm.get_space_flops()
         for i, space_id in enumerate(sorted(space_flops.keys())):
             F[i, :, :] = space_flops[space_id] * temp
+
+        # output sample possibility is softmax of P
+        P = torch.autograd.Variable(torch.randn_like(loss_matrix), requires_grad=True)
+        optim = torch.optim.SGD([P], lr=0.01)
+
+        for _ in range(100000):
+            optim.zero_grad()
+            prob = F.softmax(P, dim=1)
+            prob_shift = F.pad(prob, (0, 0, 0, 1), value=1.0 / num_width)[1:, :]
+            z = (prob * loss_matrix).sum(dim=1)
+
+            F_e = (F * prob.view(num_space_id, num_width, 1) * prob_shift.view(num_space_id, 1, num_width)).sum()
+            loss = z.mean() + (1.0 - F_e / self.flops_limit) ** 2
+            loss.backward()
+            optim.step()
+            if _ % 10000 == 0:
+                self.logger.info(f'Initialize Prior Population: Epoch {_} Loss {loss.item()}')
+
+        P.detach_()
+        prob = F.softmax(P, dim=1).cpu().numpy()
+        self.logger.info(f'Initialize Prior Population Done: P {prob}')
+
+        for _ in range(self.population_num):
+            while 1:
+                subnet_dict = dict()
+                for i, space_id in enumerate(sorted(self.algorithm.pruner.channel_spaces.keys())):
+                    out_mask = self.algorithm.pruner.channel_spaces[space_id]
+                    out_channels = out_mask.size(1)
+                    width = np.random.choice(a=np.arange(self.min_channel_bins, self.max_channel_bins + 1),
+                                             p=prob[i])
+                    new_channels = round(width / self.max_channel_bins * out_channels)
+                    new_out_mask = torch.zeros_like(out_mask).bool()
+                    new_out_mask[:, :new_channels] = True
+                    subnet_dict[space_id] = new_out_mask
+                self.algorithm.pruner.set_subnet(subnet_dict)
+                if self.check_constraints():
+                    self.candidate_pool.append(subnet_dict)
+                    break
