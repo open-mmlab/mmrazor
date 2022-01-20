@@ -17,7 +17,7 @@ mmseg
     :members:
 
 mmrazor.core
---------------
+------------
 
 hooks
 ^^^^^
@@ -30,7 +30,7 @@ optimizer
     :members:
 
 runners
-^^^^^^^^^^
+^^^^^^^
 .. automodule:: mmrazor.core.runners
     :members:
 
@@ -48,7 +48,7 @@ mmrazor.datasets
 ----------------
 
 datasets
-^^^^^^^^^^
+^^^^^^^^
 .. automodule:: mmrazor.datasets
     :members:
 
@@ -93,4 +93,9 @@ ops
 pruners
 ^^^^^^^
 .. automodule:: mmrazor.models.pruners
+    :members:
+
+mmrazor.utils
+-------------
+.. automodule:: mmrazor.utils
     :members:

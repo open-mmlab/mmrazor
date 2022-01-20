@@ -16,6 +16,7 @@ from mmcv.runner import get_dist_info, init_dist
 # Differences from mmclassification
 from mmrazor.apis.mmcls.train import set_random_seed, train_model
 from mmrazor.models import build_algorithm
+from mmrazor.utils import setup_multi_processes
 
 
 def parse_args():
@@ -75,6 +76,10 @@ def main():
     cfg = Config.fromfile(args.config)
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
+
+    # set multi-process settings
+    setup_multi_processes(cfg)
+
     # set cudnn_benchmark
     if cfg.get('cudnn_benchmark', False):
         torch.backends.cudnn.benchmark = True
