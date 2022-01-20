@@ -18,6 +18,7 @@ from mmrazor.core.distributed_wrapper import DistributedDataParallelWrapper
 from mmrazor.core.hooks import DistSamplerSeedHook
 from mmrazor.core.optimizer import build_optimizers
 from mmrazor.datasets.utils import split_dataset
+from mmrazor.utils import find_latest_checkpoint
 
 
 def set_random_seed(seed, deterministic=False):
@@ -205,6 +206,12 @@ def train_model(model,
             priority = hook_cfg.pop('priority', 'NORMAL')
             hook = build_from_cfg(hook_cfg, HOOKS)
             runner.register_hook(hook, priority=priority)
+
+    resume_from = None
+    if cfg.resume_from is None and cfg.get('auto_resume'):
+        resume_from = find_latest_checkpoint(cfg.work_dir)
+    if resume_from is not None:
+        cfg.resume_from = resume_from
 
     if cfg.resume_from:
         runner.resume(cfg.resume_from)
