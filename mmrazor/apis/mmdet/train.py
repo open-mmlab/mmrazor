@@ -42,7 +42,6 @@ def train_detector(model,
                    distributed=False,
                    validate=False,
                    timestamp=None,
-                   device='cuda',
                    meta=None):
     """Copy from mmdetection and modify some codes.
 
@@ -103,13 +102,7 @@ def train_detector(model,
                 broadcast_buffers=False,
                 find_unused_parameters=find_unused_parameters)
     else:
-        if device == 'cuda':
-            model = MMDataParallel(
-                model.cuda(cfg.gpu_ids[0]), device_ids=cfg.gpu_ids)
-        elif device == 'cpu':
-            model = model.cpu()
-        else:
-            raise ValueError(F'unsupported device name {device}.')
+        model = MMDataParallel(model, device_ids=cfg.gpu_ids)
 
     # build optimizers
     # Difference from mmdetection.
