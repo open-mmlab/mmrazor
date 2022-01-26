@@ -10,6 +10,7 @@ import argparse
 import os
 import os.path as osp
 import time
+import warnings
 
 import mmcv
 import torch
@@ -39,6 +40,12 @@ def parse_args():
         action='store_true',
         help='Whether to fuse conv and bn, this will slightly increase'
         'the inference speed')
+    parser.add_argument(
+        '--gpu-ids',
+        type=int,
+        nargs='+',
+        help='(Deprecated, please use --gpu-id) ids of gpus to use '
+        '(only applicable to non-distributed training)')
     parser.add_argument(
         '--gpu-id',
         type=int,
@@ -154,7 +161,14 @@ def main():
             for ds_cfg in cfg.data.test:
                 ds_cfg.pipeline = replace_ImageToTensor(ds_cfg.pipeline)
 
-    cfg.gpu_ids = [args.gpu_id]
+    if args.gpu_ids is not None:
+        cfg.gpu_ids = args.gpu_ids[0:1]
+        warnings.warn('`--gpu-ids` is deprecated, please use `--gpu-id`. '
+                      'Because we only support single GPU mode in '
+                      'non-distributed testing. Use the first GPU '
+                      'in `gpu_ids` now.')
+    else:
+        cfg.gpu_ids = [args.gpu_id]
 
     # init distributed env first, since logger depends on the dist info.
     if args.launcher == 'none':
