@@ -10,6 +10,7 @@ import argparse
 import os
 import os.path as osp
 import time
+import warnings
 
 import mmcv
 import torch
@@ -23,6 +24,7 @@ from mmdet.datasets import (build_dataloader, build_dataset,
                             replace_ImageToTensor)
 
 from mmrazor.models.builder import build_algorithm
+from mmrazor.utils import setup_multi_processes
 
 
 def parse_args():
@@ -39,6 +41,18 @@ def parse_args():
         action='store_true',
         help='Whether to fuse conv and bn, this will slightly increase'
         'the inference speed')
+    parser.add_argument(
+        '--gpu-ids',
+        type=int,
+        nargs='+',
+        help='(Deprecated, please use --gpu-id) ids of gpus to use '
+        '(only applicable to non-distributed training)')
+    parser.add_argument(
+        '--gpu-id',
+        type=int,
+        default=0,
+        help='id of gpu to use '
+        '(only applicable to non-distributed testing)')
     parser.add_argument(
         '--format-only',
         action='store_true',
@@ -114,6 +128,10 @@ def main():
     cfg = Config.fromfile(args.config)
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
+
+    # set multi-process settings
+    setup_multi_processes(cfg)
+
     # set cudnn_benchmark
     if cfg.get('cudnn_benchmark', False):
         torch.backends.cudnn.benchmark = True
@@ -147,6 +165,15 @@ def main():
         if samples_per_gpu > 1:
             for ds_cfg in cfg.data.test:
                 ds_cfg.pipeline = replace_ImageToTensor(ds_cfg.pipeline)
+
+    if args.gpu_ids is not None:
+        cfg.gpu_ids = args.gpu_ids[0:1]
+        warnings.warn('`--gpu-ids` is deprecated, please use `--gpu-id`. '
+                      'Because we only support single GPU mode in '
+                      'non-distributed testing. Use the first GPU '
+                      'in `gpu_ids` now.')
+    else:
+        cfg.gpu_ids = [args.gpu_id]
 
     # init distributed env first, since logger depends on the dist info.
     if args.launcher == 'none':
@@ -191,7 +218,7 @@ def main():
         model.CLASSES = dataset.CLASSES
 
     if not distributed:
-        algorithm = MMDataParallel(algorithm, device_ids=[0])
+        algorithm = MMDataParallel(algorithm, device_ids=cfg.gpu_ids)
         outputs = single_gpu_test(algorithm, data_loader, args.show,
                                   args.show_dir, args.show_score_thr)
     else:
