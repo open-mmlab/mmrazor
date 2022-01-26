@@ -40,6 +40,12 @@ def parse_args():
         help='Whether to fuse conv and bn, this will slightly increase'
         'the inference speed')
     parser.add_argument(
+        '--gpu-id',
+        type=int,
+        default=0,
+        help='id of gpu to use '
+        '(only applicable to non-distributed testing)')
+    parser.add_argument(
         '--format-only',
         action='store_true',
         help='Format the output results without perform evaluation. It is'
@@ -148,6 +154,8 @@ def main():
             for ds_cfg in cfg.data.test:
                 ds_cfg.pipeline = replace_ImageToTensor(ds_cfg.pipeline)
 
+    cfg.gpu_ids = [args.gpu_id]
+
     # init distributed env first, since logger depends on the dist info.
     if args.launcher == 'none':
         distributed = False
@@ -191,7 +199,7 @@ def main():
         model.CLASSES = dataset.CLASSES
 
     if not distributed:
-        algorithm = MMDataParallel(algorithm, device_ids=[0])
+        algorithm = MMDataParallel(algorithm, device_ids=cfg.gpu_ids)
         outputs = single_gpu_test(algorithm, data_loader, args.show,
                                   args.show_dir, args.show_score_thr)
     else:
