@@ -24,6 +24,7 @@ from mmseg.apis import multi_gpu_test, single_gpu_test
 from mmseg.datasets import build_dataloader, build_dataset
 
 from mmrazor.models.builder import build_algorithm
+from mmrazor.utils import setup_multi_processes
 
 
 def parse_args():
@@ -38,6 +39,12 @@ def parse_args():
     parser.add_argument(
         '--aug-test', action='store_true', help='Use Flip and Multi scale aug')
     parser.add_argument('--out', help='output result file in pickle format')
+    parser.add_argument(
+        '--gpu-id',
+        type=int,
+        default=0,
+        help='id of gpu to use '
+        '(only applicable to non-distributed testing)')
     parser.add_argument(
         '--format-only',
         action='store_true',
@@ -111,6 +118,10 @@ def main():
     cfg = mmcv.Config.fromfile(args.config)
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
+
+    # set multi-process settings
+    setup_multi_processes(cfg)
+
     # set cudnn_benchmark
     if cfg.get('cudnn_benchmark', False):
         torch.backends.cudnn.benchmark = True
@@ -123,6 +134,8 @@ def main():
     # Difference from mmsegmentation
     cfg.algorithm.architecture.model.pretrained = None
     cfg.data.test.test_mode = True
+
+    cfg.gpu_ids = [args.gpu_id]
 
     # init distributed env first, since logger depends on the dist info.
     if args.launcher == 'none':
@@ -199,7 +212,7 @@ def main():
         tmpdir = None
 
     if not distributed:
-        algorithm = MMDataParallel(algorithm, device_ids=[0])
+        algorithm = MMDataParallel(algorithm, device_ids=cfg.gpu_ids)
         results = single_gpu_test(
             algorithm,
             data_loader,

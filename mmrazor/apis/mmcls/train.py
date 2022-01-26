@@ -8,10 +8,8 @@ from mmcls.core import DistOptimizerHook
 from mmcls.datasets import build_dataloader, build_dataset
 from mmcls.utils import get_root_logger
 from mmcv.parallel import MMDataParallel, MMDistributedDataParallel
-from mmcv.runner import (HOOKS, EpochBasedRunner, Fp16OptimizerHook,
-                         build_runner)
+from mmcv.runner import EpochBasedRunner, Fp16OptimizerHook, build_runner
 from mmcv.runner.hooks import DistEvalHook, EvalHook
-from mmcv.utils import build_from_cfg
 
 # Differences from mmclassification.
 from mmrazor.core.distributed_wrapper import DistributedDataParallelWrapper
@@ -192,20 +190,6 @@ def train_model(model,
         # Refers to https://github.com/open-mmlab/mmcv/issues/1261
         runner.register_hook(
             eval_hook(val_dataloader, **eval_cfg), priority='LOW')
-
-    # user-defined hooks
-    if cfg.get('custom_hooks', None):
-        custom_hooks = cfg.custom_hooks
-        assert isinstance(custom_hooks, list), \
-            f'custom_hooks expect list type, but got {type(custom_hooks)}'
-        for hook_cfg in cfg.custom_hooks:
-            assert isinstance(hook_cfg, dict), \
-                'Each item in custom_hooks expects dict type, but got ' \
-                f'{type(hook_cfg)}'
-            hook_cfg = hook_cfg.copy()
-            priority = hook_cfg.pop('priority', 'NORMAL')
-            hook = build_from_cfg(hook_cfg, HOOKS)
-            runner.register_hook(hook, priority=priority)
 
     resume_from = None
     if cfg.resume_from is None and cfg.get('auto_resume'):
