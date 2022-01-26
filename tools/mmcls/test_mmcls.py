@@ -79,6 +79,12 @@ def parse_args():
         choices=['cpu', 'cuda'],
         default='cuda',
         help='device used for testing')
+    parser.add_argument(
+        '--gpu-id',
+        type=int,
+        default=0,
+        help='id of gpu to use '
+        '(only applicable to non-distributed testing)')
     args = parser.parse_args()
     if 'LOCAL_RANK' not in os.environ:
         os.environ['LOCAL_RANK'] = str(args.local_rank)
@@ -98,6 +104,8 @@ def main():
 
     assert args.metrics or args.out, \
         'Please specify at least one of output path and evaluation metrics.'
+
+    cfg.gpu_ids = [args.gpu_id]
 
     # init distributed env first, since logger depends on the dist info.
     if args.launcher == 'none':
@@ -139,7 +147,7 @@ def main():
         if args.device == 'cpu':
             algorithm = algorithm.cpu()
         else:
-            algorithm = MMDataParallel(algorithm, device_ids=[0])
+            algorithm = MMDataParallel(algorithm, device_ids=cfg.gpu_ids)
         model.CLASSES = CLASSES
         show_kwargs = {} if args.show_options is None else args.show_options
         outputs = single_gpu_test(algorithm, data_loader, args.show,

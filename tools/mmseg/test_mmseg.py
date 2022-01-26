@@ -39,6 +39,12 @@ def parse_args():
         '--aug-test', action='store_true', help='Use Flip and Multi scale aug')
     parser.add_argument('--out', help='output result file in pickle format')
     parser.add_argument(
+        '--gpu-id',
+        type=int,
+        default=0,
+        help='id of gpu to use '
+        '(only applicable to non-distributed testing)')
+    parser.add_argument(
         '--format-only',
         action='store_true',
         help='Format the output results without perform evaluation. It is'
@@ -124,6 +130,8 @@ def main():
     cfg.algorithm.architecture.model.pretrained = None
     cfg.data.test.test_mode = True
 
+    cfg.gpu_ids = [args.gpu_id]
+
     # init distributed env first, since logger depends on the dist info.
     if args.launcher == 'none':
         distributed = False
@@ -199,7 +207,7 @@ def main():
         tmpdir = None
 
     if not distributed:
-        algorithm = MMDataParallel(algorithm, device_ids=[0])
+        algorithm = MMDataParallel(algorithm, device_ids=cfg.gpu_ids)
         results = single_gpu_test(
             algorithm,
             data_loader,

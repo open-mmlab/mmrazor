@@ -12,6 +12,7 @@ import copy
 import os
 import os.path as osp
 import time
+import warnings
 
 import mmcv
 import torch
@@ -40,20 +41,25 @@ def parse_args():
     group_gpus.add_argument(
         '--gpus',
         type=int,
-        help='number of gpus to use '
+        help='(Deprecated, please use --gpu-id) number of gpus to use '
         '(only applicable to non-distributed training)')
     group_gpus.add_argument(
         '--gpu-ids',
         type=int,
         nargs='+',
-        help='ids of gpus to use '
+        help='(Deprecated, please use --gpu-id) ids of gpus to use '
+        '(only applicable to non-distributed training)')
+    group_gpus.add_argument(
+        '--gpu-id',
+        type=int,
+        default=0,
+        help='id of gpu to use '
         '(only applicable to non-distributed training)')
     parser.add_argument('--seed', type=int, default=None, help='random seed')
     parser.add_argument(
         '--deterministic',
         action='store_true',
         help='whether to set deterministic options for CUDNN backend.')
-
     parser.add_argument(
         '--cfg-options',
         nargs='+',
@@ -64,7 +70,6 @@ def parse_args():
         'It also allows nested list/tuple values, e.g. key="[(a,b),(c,d)]" '
         'Note that the quotation marks are necessary and that no white space '
         'is allowed.')
-
     parser.add_argument(
         '--launcher',
         choices=['none', 'pytorch', 'slurm', 'mpi'],
@@ -102,10 +107,19 @@ def main():
                                 osp.splitext(osp.basename(args.config))[0])
     if args.resume_from is not None:
         cfg.resume_from = args.resume_from
+    if args.gpus is not None:
+        cfg.gpu_ids = range(1)
+        warnings.warn('`--gpus` is deprecated because we only support '
+                      'single GPU mode in non-distributed training. '
+                      'Use `gpus=1` now.')
     if args.gpu_ids is not None:
-        cfg.gpu_ids = args.gpu_ids
-    else:
-        cfg.gpu_ids = range(1) if args.gpus is None else range(args.gpus)
+        cfg.gpu_ids = args.gpu_ids[0:1]
+        warnings.warn('`--gpu-ids` is deprecated, please use `--gpu-id`. '
+                      'Because we only support single GPU mode in '
+                      'non-distributed training. Use the first GPU '
+                      'in `gpu_ids` now.')
+    if args.gpus is None and args.gpu_ids is None:
+        cfg.gpu_ids = [args.gpu_id]
 
     # init distributed env first, since logger depends on the dist info.
     if args.launcher == 'none':
