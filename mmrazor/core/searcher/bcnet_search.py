@@ -111,7 +111,7 @@ class BCNetSearcher(EvolutionSearcher):
         mutation_subnet_dict = copy.deepcopy(candidate)
         for name, mask in candidate.items():
             if np.random.random_sample() < prob:
-                mutation_subnet_dict[name] = self.get_channel_mask(mask, searching=True)
+                mutation_subnet_dict[name] = self.algorithm.pruner.get_channel_mask(mask, searching=True)
         return mutation_subnet_dict
 
     def crossover(self, candidate1, candidate2):
@@ -160,6 +160,14 @@ class BCNetSearcher(EvolutionSearcher):
             broadcast_candidate_pool = broadcast_object_list(
                 broadcast_candidate_pool)
             self.candidate_pool = broadcast_candidate_pool
+        elif self.resume_from is not None:
+            searcher_resume = mmcv.fileio.load(self.resume_from)
+            for k in searcher_resume.keys():
+                setattr(self, k, searcher_resume[k])
+            epoch_start = int(searcher_resume['epoch'])
+            self.logger.info('#' * 100)
+            self.logger.info(f'Resume from epoch: {epoch_start}')
+            self.logger.info('#' * 100)
 
         epoch_start = 0
         self.logger.info('Experiment setting:')
