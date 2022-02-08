@@ -54,21 +54,29 @@ mim install mmrazor
 
 Or you can still install MMRazor manually
 
-1. Install mmcv-full.
+1. Install mmcv-full, we recommend you to install the pre-build package as below.
 
-    ```Bash
-    pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/{cu_version}/{torch_version}/index.html
-    ```
-
-    Please replace `{cu_version}` and `{torch_version}` in the url to your desired one. For example, to install the latest `mmcv-full` with `CUDA 10.2` and `PyTorch 1.10.0`, use the following command:
-
-    ```Bash
+    ```shell
+    # pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/{cu_version}/{torch_version}/index.html
     pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu102/torch1.10.0/index.html
     ```
 
-    See [here](https://github.com/open-mmlab/mmcv#installation) for different versions of MMCV compatible to different PyTorch and CUDA versions.
+    mmcv-full is only compiled on PyTorch 1.x.0 because the compatibility usually holds between 1.x.0 and 1.x.1. If your PyTorch version is 1.x.1, you can install mmcv-full compiled with PyTorch 1.x.0 and it usually works well.
 
-    Optionally, you can compile mmcv from source if you need to develop both mmcv and mmdet. Refer to the [guide](https://github.com/open-mmlab/mmcv#installation) for details.
+    ```
+    # We can ignore the micro version of PyTorch
+    pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu102/torch1.10/index.html
+    ```
+
+    See [here](https://mmcv.readthedocs.io/en/latest/get_started/installation.html) for different versions of MMCV compatible to different PyTorch and CUDA versions.
+    Optionally you can choose to compile mmcv from source by the following command
+
+    ```shell
+    git clone https://github.com/open-mmlab/mmcv.git
+    cd mmcv
+    MMCV_WITH_OPS=1 pip install -e .  # package mmcv-full will be installed after this step
+    cd ..
+    ```
 
 2. Install MMRazor.
 
@@ -78,13 +86,13 @@ Or you can still install MMRazor manually
     pip install mmrazor
     ```
 
-    ​    or:
+    ​or:
 
     ```Bash
     pip install git+https://github.com/open-mmlab/mmrazor.git # install the master branch
     ```
 
-    ​    Instead, if you would like to install MMRazor in `dev` mode, run following:
+    ​Instead, if you would like to install MMRazor in `dev` mode, run following:
 
     ```Bash
     git clone https://github.com/open-mmlab/mmrazor.git
