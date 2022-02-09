@@ -33,7 +33,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [3.7]
-        torch: [1.5.1, 1.6.0, 1.7.1, 1.8.0, 1.8.1, 1.9.0, 1.10.2]
+        torch: [1.5.1, 1.6.0, 1.7.1, 1.8.0, 1.8.1, 1.9.0, 1.10.0, 1.10.1, 1.10.2]
         experimental: [true]
         include:
           - torch: 1.5.1
@@ -77,6 +77,17 @@ jobs:
           - torch: 1.9.0
             torchvision: 0.10.0
             mmcv: 1.9
+            python-version: 3.9
+          - torch: 1.10.0
+            torchvision: 0.11.1
+            mmcv: 1.10
+          - torch: 1.10.0
+            torchvision: 0.11.1
+            mmcv: 1.10
+            python-version: 3.8
+          - torch: 1.10.0
+            torchvision: 0.11.1
+            mmcv: 1.10
             python-version: 3.9
           - torch: 1.10.1
             torchvision: 0.11.2
