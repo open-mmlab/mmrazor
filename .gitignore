@@ -112,7 +112,7 @@ venv.bak/
 *.pkl.json
 *.log.json
 /work_dirs
-/mmcls/.mim
+/mmrazor/.mim
 
 # Pytorch
 *.pth
