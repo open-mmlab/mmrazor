@@ -1,5 +1,5 @@
-# AUTOSLIM
-> [AUTOSLIM: TOWARDS ONE-SHOT ARCHITECTURE SEARCH FOR CHANNEL NUMBERS](https://arxiv.org/abs/1903.11728)
+# AutoSlim
+> [AutoSlim: Towards One-Shot Architecture Search for Channel Numbers](https://arxiv.org/abs/1903.11728)
 
 ## Abstract
 

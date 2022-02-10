@@ -1,5 +1,5 @@
 # CWD
-> [CHANNEL-WISE KNOWLEDGE DISTILLATION FOR DENSE PREDICTION](https://arxiv.org/abs/2011.13256)
+> [Channel-wise Knowledge Distillation for Dense Prediction](https://arxiv.org/abs/2011.13256)
 
 ## Abstract
 

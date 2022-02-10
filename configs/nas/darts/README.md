@@ -1,5 +1,5 @@
 # DARTS
-> [DARTS: DIFFERENTIABLE ARCHITECTURE SEARCH](https://arxiv.org/abs/1806.09055)
+> [DARTS: Differentiable Architecture Search](https://arxiv.org/abs/1806.09055)
 
 ## Abstract
 

@@ -1,6 +1,6 @@
 # WSLD
 
-> [RETHINKING SOFT LABELS FOR KNOWLEDGE DISTILLATION: A BIAS-VARIANCE TRADEOFF PERSPECTIVE](https://arxiv.org/abs/2102.00650)
+> [Rethinking Soft Labels for Knowledge Distillation: A Bias-Variance Tradeoff Perspective](https://arxiv.org/abs/2102.00650)
 
 Knowledge distillation is an effective approach to leverage a well-trained network
 or an ensemble of them, named as the teacher, to guide the training of a student
