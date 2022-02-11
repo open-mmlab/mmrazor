@@ -49,7 +49,13 @@ def test_ratio_pruner():
     pruner.prepare_from_supernet(architecture)
     assert hasattr(pruner, 'search_spaces')
 
+    # test set_min_channel
     pruner.set_min_channel()
+    for module_name in pruner.modules_have_child:
+        module = pruner.name2module[module_name]
+        assert module.out_mask.sum() == round(module.out_mask.numel() / 8)
+
+    # test set_max_channel
     pruner.set_max_channel()
     for name, module in architecture.model.named_modules():
         if hasattr(module, 'in_mask'):

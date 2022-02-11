@@ -5,7 +5,6 @@ import os.path as osp
 import warnings
 
 import mmcv
-import torch
 from mmcv.runner import get_dist_info
 
 from ..builder import SEARCHERS
@@ -129,11 +128,12 @@ class GreedySearcher():
                 for i, name in enumerate(sorted(subnet.keys())):
                     new_subnet = copy.deepcopy(subnet)
                     # we prune the very last channel bin
-                    last_bin_ind = torch.where(new_subnet[name])[0][-1]
+                    new_subnet[name] -= 1
+                    # last_bin_ind = torch.where(new_subnet[name])[0][-1]
                     # The ``new_subnet`` on different ranks are the same,
                     # so we do not need to broadcast here.
-                    new_subnet[name][last_bin_ind] = False
-                    if torch.sum(new_subnet[name]) > 0:
+                    # new_subnet[name][last_bin_ind] = False
+                    if new_subnet[name] <= 0:
                         # subnet is invalid
                         continue
 

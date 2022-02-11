@@ -35,7 +35,7 @@ class RatioPruner(StructurePruner):
             'All the numbers in ``ratios`` should be positive.'
 
     def sample_subnet(self):
-        """Random sample subnet by random mask.
+        """Random sample subnet.
 
         Returns:
             dict: Record the information to build the subnet from the supernet,
@@ -43,33 +43,55 @@ class RatioPruner(StructurePruner):
                 spaces, and its values are corresponding sampled out_mask.
         """
         subnet_dict = dict()
-        for space_id, channel_bin_mask in self.search_spaces.items():
-            num_channel_bin = np.random.randint(1, self.channel_bins + 1)
-            new_channel_bin_mask = torch.zeros_like(channel_bin_mask).bool()
-            new_channel_bin_mask[:num_channel_bin] = True
-            subnet_dict[space_id] = new_channel_bin_mask
+        for space_id in self.search_spaces.keys():
+            num_channel_bins = np.random.randint(1, self.channel_bins + 1)
+            subnet_dict[space_id] = num_channel_bins
         return subnet_dict
 
-    def channel_bin2channel(self, channel_bin_mask, channel_mask):
-        num_channels = channel_mask.size(1)
-        ratio = self.ratios[channel_bin_mask.sum().item() - 1]
-        out_channels = round(num_channels * ratio)
+    def channel_bin2channel(self, num_channel_bins, channel_mask):
+        """Calculate the mask of the output channels through the number of
+        ``channel_bins``.
+
+        Args:
+            num_channel_bins (int): The number of ``channel_bins``.
+            channel_mask (torch.Tensor): The ``out_mask`` of a module.
+
+        Returns:
+            torch.Tensor: The mask of the output channels which is calculated
+                according to ``num_channel_bins``.
+        """
+        raw_out_channels = channel_mask.size(1)
+        ratio = self.ratios[num_channel_bins - 1]
+        out_channels = round(raw_out_channels * ratio)
         new_channel_mask = torch.zeros_like(channel_mask).bool()
         new_channel_mask[:, :out_channels] = True
 
         return new_channel_mask
 
     def channel2channel_bin(self, channel_mask):
-        num_channels = channel_mask.numel()
+        """Calculate the number of ``channel_bins`` through the mask of the
+        output channels.
+
+        Args:
+            channel_mask: The mask of the output channels
+
+        Returns:
+            int: The number of ``channel_bins`` which is calculated
+                according to ``channel_mask``.
+        """
+        raw_out_channels = channel_mask.numel()
         out_channels = channel_mask.sum().item()
-        ratio = out_channels / num_channels
+        ratio = out_channels / raw_out_channels
+        # todo: a hacky way to convert channel_mask to num_channel_bin,
+        #  maybe we can add a new key, ``out_channel_bin``, to the
+        #  channel_cfg yaml file.
+        # Find a value from ``self.ratios`` that is closest to ``ratio`` and
+        # get the index of this value
         ratio_ind = self.ratios.index(
             min(self.ratios, key=lambda x: abs(x - ratio)))
-        out_channel_bin = ratio_ind + 1
-        channel_bin_mask = torch.zeros((self.channel_bins, )).bool()
-        channel_bin_mask[:out_channel_bin] = True
+        num_channel_bins = ratio_ind + 1
 
-        return channel_bin_mask
+        return num_channel_bins
 
     def set_subnet(self, subnet_dict):
         """Modify the in_mask and out_mask of modules in supernet according to
@@ -127,32 +149,24 @@ class RatioPruner(StructurePruner):
     def set_min_channel(self):
         """Set the number of channels each layer to minimum."""
         subnet_dict = dict()
-        for space_id, channel_bin_mask in self.search_spaces.items():
-            new_channel_bin_mask = torch.zeros_like(channel_bin_mask).bool()
-            new_channel_bin_mask[0] = True
-            subnet_dict[space_id] = new_channel_bin_mask
-
+        for space_id in self.search_spaces.keys():
+            subnet_dict[space_id] = 1
         self.set_subnet(subnet_dict)
 
     def set_max_channel(self):
         """Set the number of channels each layer to maximum."""
         subnet_dict = dict()
-        for space_id, channel_bin_mask in self.search_spaces.items():
-            subnet_dict[space_id] = torch.ones_like(channel_bin_mask).bool()
+        for space_id in self.search_spaces.keys():
+            subnet_dict[space_id] = self.channel_bins
         self.set_subnet(subnet_dict)
 
     def get_max_channel_bins(self):
         """Get the max number of channel bins of all the groups which can be
-        pruned during searching.
-
-        Args:
-            max_channel_bins (int): The max number of bins in each layer.
-        """
-        channel_bins_dict = dict()
+        pruned during searching."""
+        subnet_dict = dict()
         for space_id in self.search_spaces.keys():
-            channel_bins_dict[space_id] = torch.ones(
-                (self.channel_bins, )).bool()
-        return channel_bins_dict
+            subnet_dict[space_id] = self.channel_bins
+        return subnet_dict
 
     def build_search_spaces(self):
         """Build channel search space.
@@ -180,7 +194,7 @@ class RatioPruner(StructurePruner):
             else:
                 space_id = module_name
             if space_id not in search_spaces:
-                search_spaces[space_id] = torch.ones(self.channel_bins)
+                search_spaces[space_id] = self.channel_bins
                 module = self.name2module[module_name]
                 self.space_id2out_mask[space_id] = module.out_mask
 
@@ -202,7 +216,7 @@ class RatioPruner(StructurePruner):
                 switch subnet. Defaults to None.
         """
         subnet_dict = dict()
-        for name, channels_per_layer in channel_cfg.items():
+        for name, channel_cfg_per_layer in channel_cfg.items():
             module = self.name2module[name]
             if (isinstance(module, SwitchableBatchNorm2d)
                     and subnet_ind is not None):
@@ -210,19 +224,16 @@ class RatioPruner(StructurePruner):
                 module.index = subnet_ind
                 continue
 
-            out_channels = channels_per_layer['out_channels']
+            out_channels = channel_cfg_per_layer['out_channels']
             channel_mask = torch.zeros_like(module.out_mask).bool()
             channel_mask[:, :out_channels] = True
-            out_mask = self.channel2channel_bin(channel_mask)
-            print(channels_per_layer['out_channels'],
-                  channels_per_layer['raw_out_channels'],
-                  out_mask.sum().item())
+            num_channel_bins = self.channel2channel_bin(channel_mask)
 
             space_id = self.get_space_id(name)
             if space_id in subnet_dict:
-                assert torch.equal(subnet_dict[space_id], out_mask)
+                assert subnet_dict[space_id] == num_channel_bins
             elif space_id is not None:
-                subnet_dict[space_id] = out_mask
+                subnet_dict[space_id] = num_channel_bins
 
         self.set_subnet(subnet_dict)
 
