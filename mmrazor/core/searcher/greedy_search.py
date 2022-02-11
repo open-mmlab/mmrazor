@@ -2,6 +2,7 @@
 import copy
 import os
 import os.path as osp
+import warnings
 
 import mmcv
 import torch
@@ -71,8 +72,13 @@ class GreedySearcher():
         self.test_fn = test_fn
         self.work_dir = work_dir
         self.logger = logger
+
+        warnings.warn(
+            '``max_channel_bins`` and ``min_channel_bins`` will be deprecated.'
+        )
         self.max_channel_bins = max_channel_bins
         self.min_channel_bins = min_channel_bins
+
         self.metrics = metrics
         self.metric_options = metric_options
         self.score_key = score_key
@@ -95,8 +101,7 @@ class GreedySearcher():
             result_subnet, result_flops = [], []
             # We start with the largest model
             algorithm.pruner.set_max_channel()
-            max_subnet = algorithm.pruner.get_max_channel_bins(
-                self.max_channel_bins)
+            max_subnet = algorithm.pruner.get_max_channel_bins()
             # channel_cfg
             subnet = max_subnet
             flops = algorithm.get_subnet_flops()
@@ -106,8 +111,7 @@ class GreedySearcher():
                 continue
 
             if flops <= target:
-                algorithm.pruner.set_channel_bins(subnet,
-                                                  self.max_channel_bins)
+                algorithm.pruner.set_subnet(subnet)
                 channel_cfg = algorithm.pruner.export_subnet()
                 result_subnet.append(channel_cfg)
                 result_flops.append(flops)
@@ -125,17 +129,15 @@ class GreedySearcher():
                 for i, name in enumerate(sorted(subnet.keys())):
                     new_subnet = copy.deepcopy(subnet)
                     # we prune the very last channel bin
-                    last_bin_ind = torch.where(new_subnet[name] == 1)[0][-1]
+                    last_bin_ind = torch.where(new_subnet[name])[0][-1]
                     # The ``new_subnet`` on different ranks are the same,
                     # so we do not need to broadcast here.
-                    new_subnet[name][last_bin_ind] = 0
-                    if torch.sum(new_subnet[name]) < self.min_channel_bins:
+                    new_subnet[name][last_bin_ind] = False
+                    if torch.sum(new_subnet[name]) > 0:
                         # subnet is invalid
                         continue
 
-                    algorithm.pruner.set_channel_bins(new_subnet,
-                                                      self.max_channel_bins)
-
+                    algorithm.pruner.set_subnet(new_subnet)
                     outputs = self.test_fn(self.algorithm_for_test,
                                            self.dataloader)
                     broadcast_scores = [None]
@@ -160,8 +162,7 @@ class GreedySearcher():
                         'configurations.')
 
                 subnet = best_subnet
-                algorithm.pruner.set_channel_bins(subnet,
-                                                  self.max_channel_bins)
+                algorithm.pruner.set_subnet(subnet)
                 flops = algorithm.get_subnet_flops()
                 self.logger.info(
                     f'Greedy find model, score: {best_score}, FLOPS: {flops}')
@@ -174,7 +175,7 @@ class GreedySearcher():
                 mmcv.fileio.dump(save_for_resume,
                                  osp.join(self.work_dir, 'latest.pkl'))
 
-            algorithm.pruner.set_channel_bins(subnet, self.max_channel_bins)
+            algorithm.pruner.set_subnet(subnet)
             channel_cfg = algorithm.pruner.export_subnet()
             result_subnet.append(channel_cfg)
             result_flops.append(flops)

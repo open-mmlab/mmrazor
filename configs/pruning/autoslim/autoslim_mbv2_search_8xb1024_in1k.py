@@ -7,7 +7,6 @@ algorithm = dict(distiller=None, input_shape=(3, 224, 224))
 searcher = dict(
     type='GreedySearcher',
     target_flops=[500000000, 300000000, 200000000],
-    max_channel_bins=12,
     metrics='accuracy')
 
 data = dict(samples_per_gpu=1024, workers_per_gpu=4)

@@ -37,34 +37,20 @@ def test_ratio_pruner():
     imgs = torch.randn(16, 3, 224, 224)
     label = torch.randint(0, 1000, (16, ))
 
+    pruner_cfg_ = deepcopy(pruner_cfg)
+    pruner_cfg_['ratios'].insert(0, 0)
+    with pytest.raises(AssertionError):
+        # All the numbers in ``ratios`` should be positive
+        PRUNERS.build(pruner_cfg_)
+
     architecture = ARCHITECTURES.build(architecture_cfg)
     pruner = PRUNERS.build(pruner_cfg)
 
     pruner.prepare_from_supernet(architecture)
-    assert hasattr(pruner, 'channel_spaces')
+    assert hasattr(pruner, 'search_spaces')
 
-    # test set_min_channel
-    pruner_cfg_ = deepcopy(pruner_cfg)
-    pruner_cfg_['ratios'].insert(0, 0)
-    pruner_ = PRUNERS.build(pruner_cfg_)
-    architecture_ = ARCHITECTURES.build(architecture_cfg)
-    pruner_.prepare_from_supernet(architecture_)
-    with pytest.raises(AssertionError):
-        # Output channels should be a positive integer not zero
-        pruner_.set_min_channel()
-
-    # test set_max_channel
-    pruner.set_max_channel()
-    for name, module in architecture.model.named_modules():
-        if hasattr(module, 'in_mask'):
-            assert module.in_mask.sum() == module.in_mask.numel()
-        if hasattr(module, 'out_mask'):
-            assert module.out_mask.sum() == module.out_mask.numel()
-
-    # test channel bins
     pruner.set_min_channel()
-    channel_bins_dict = pruner.get_max_channel_bins(max_channel_bins=4)
-    pruner.set_channel_bins(channel_bins_dict, 4)
+    pruner.set_max_channel()
     for name, module in architecture.model.named_modules():
         if hasattr(module, 'in_mask'):
             assert module.in_mask.sum() == module.in_mask.numel()

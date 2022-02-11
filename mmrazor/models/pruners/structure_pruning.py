@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
+import warnings
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 from types import MethodType
@@ -149,7 +150,7 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
                 if name in name2module:
                     self.modules_have_child.add(name)
 
-        self.channel_spaces = self.build_channel_spaces(name2module)
+        self.search_spaces = self.build_search_spaces()
 
     @abstractmethod
     def sample_subnet(self):
@@ -271,7 +272,7 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
     def set_max_channel(self):
         """Set the number of channels each layer to maximum."""
         subnet_dict = dict()
-        for space_id, out_mask in self.channel_spaces.items():
+        for space_id, out_mask in self.search_spaces.items():
             new_out_mask = torch.ones_like(out_mask).bool()
             subnet_dict[space_id] = new_out_mask
         self.set_subnet(subnet_dict)
@@ -438,11 +439,8 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
                 node2parents[leaf_name] = OrderedSet()
         return node2parents
 
-    def build_channel_spaces(self, name2module):
+    def build_search_spaces(self):
         """Build channel search space.
-
-        Args:
-            name2module (dict): A mapping between module_name and module.
 
         Return:
             dict: The channel search space. The key is space_id and the value
@@ -462,8 +460,8 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
                 space_id = self.module2group[module_name]
             else:
                 space_id = module_name
-            module = name2module[module_name]
             if space_id not in search_space:
+                module = self.name2module[module_name]
                 search_space[space_id] = module.out_mask
 
         return search_space
@@ -521,8 +519,14 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         Args:
             max_channel_bins (int): The max number of bins in each layer.
         """
+        # deprecate arguments warning
+        warnings.warn(
+            '``get_max_channel_bins`` will be deprecated as not all the '
+            'structure pruning algorithms divide the channels into '
+            'channel bins.')
+
         channel_bins_dict = dict()
-        for space_id in self.channel_spaces.keys():
+        for space_id in self.search_spaces.keys():
             channel_bins_dict[space_id] = torch.ones(
                 (max_channel_bins, )).bool()
         return channel_bins_dict
@@ -536,19 +540,23 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
                 mask of channel bin.
             max_channel_bins (int): The max number of bins in each layer.
         """
+        # deprecate arguments warning
+        warnings.warn('``set_channel_bins`` will be deprecated as not all the '
+                      'structure pruning algorithms divide the channels into '
+                      'channel bins.')
+
         subnet_dict = dict()
-        for space_id, bin_mask in channel_bins_dict.items():
-            mask = self.channel_spaces[space_id]
-            shape = mask.shape
-            channel_num = shape[1]
-            channels_per_bin = channel_num // max_channel_bins
-            new_mask = []
-            for mask in bin_mask:
-                new_mask.extend([1] * channels_per_bin if mask else [0] *
-                                channels_per_bin)
-            new_mask.extend([0] * (channel_num % max_channel_bins))
-            new_mask = torch.tensor(new_mask).reshape(*shape).bool()
-            subnet_dict[space_id] = new_mask
+        for space_id, channel_bin_mask in channel_bins_dict.items():
+            out_mask = self.search_spaces[space_id]
+            out_channels = out_mask.size(1)
+
+            new_channels = round(
+                (channel_bin_mask.sum() / channel_bin_mask.numel()).item() *
+                out_channels)
+            new_out_mask = torch.zeros_like(out_mask).bool()
+            new_out_mask[:, :new_channels] = True
+
+            subnet_dict[space_id] = new_out_mask
         self.set_subnet(subnet_dict)
 
     def trace_non_pass_path(self, grad_fn, module2name, var2module, cur_path,
