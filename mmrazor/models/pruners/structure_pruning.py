@@ -512,12 +512,13 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
             if hasattr(module, 'running_var'):
                 module.running_var = module.running_var[:out_channels]
 
-    def get_max_channel_bins(self, max_channel_bins):
+    def get_max_channel_bins(self, max_channel_bins=None):
         """Get the max number of channel bins of all the groups which can be
         pruned during searching.
 
         Args:
-            max_channel_bins (int): The max number of bins in each layer.
+            max_channel_bins (int | optional): The max number of bins
+                in each layer.
         """
         # deprecate arguments warning
         warnings.warn(

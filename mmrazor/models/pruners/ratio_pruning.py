@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import warnings
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -160,9 +162,12 @@ class RatioPruner(StructurePruner):
             subnet_dict[space_id] = self.channel_bins
         self.set_subnet(subnet_dict)
 
-    def get_max_channel_bins(self):
+    def get_max_channel_bins(self, max_channel_bins=None):
         """Get the max number of channel bins of all the groups which can be
         pruned during searching."""
+        # deprecate arguments warning
+        warnings.warn(
+            'The useless argument ``max_channel_bins`` will be deprecated.')
         subnet_dict = dict()
         for space_id in self.search_spaces.keys():
             subnet_dict[space_id] = self.channel_bins
