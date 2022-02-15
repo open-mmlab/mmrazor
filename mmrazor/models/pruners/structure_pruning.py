@@ -151,6 +151,8 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
 
         self.channel_spaces = self.build_channel_spaces(name2module)
 
+        self._reset_norm_running_stats(supernet)
+
     @abstractmethod
     def sample_subnet(self):
         """Sample a subnet from the supernet.
@@ -733,3 +735,11 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
                 if cur_path.pop(-1) != f'{name}_item_{i}':
                     print(f'{name}_item_{i}')
         cur_path.pop(-1)
+
+    @staticmethod
+    def _reset_norm_running_stats(supernet):
+        from torch.nn.modules.batchnorm import _NormBase
+
+        for module in supernet.modules():
+            if isinstance(module, _NormBase):
+                module.reset_parameters()

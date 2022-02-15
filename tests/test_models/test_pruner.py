@@ -34,6 +34,10 @@ def test_ratio_pruner():
         type='RatioPruner',
         ratios=[1 / 8, 2 / 8, 3 / 8, 4 / 8, 5 / 8, 6 / 8, 7 / 8, 1.0])
 
+    _test_reset_bn_running_stats(architecture_cfg, pruner_cfg, False)
+    with pytest.raises(AssertionError):
+        _test_reset_bn_running_stats(architecture_cfg, pruner_cfg, True)
+
     imgs = torch.randn(16, 3, 224, 224)
     label = torch.randint(0, 1000, (16, ))
 
@@ -80,3 +84,57 @@ def test_ratio_pruner():
     pruner.deploy_subnet(architecture, subnet_dict)
     losses = architecture(imgs, return_loss=True, gt_label=label)
     assert losses['loss'].item() > 0
+
+
+def _test_reset_bn_running_stats(architecture_cfg, pruner_cfg, should_fail):
+    import os
+    import random
+
+    import numpy as np
+
+    def set_seed(seed: int) -> None:
+        random.seed(seed)
+        os.environ['PYTHONHASHSEED'] = str(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+
+    output_list = []
+
+    def output_hook(self, input, output) -> None:
+        output_list.append(output)
+
+    set_seed(1024)
+
+    imgs = torch.randn(16, 3, 224, 224)
+
+    torch_rng_state = torch.get_rng_state()
+    np_rng_state = np.random.get_state()
+    random_rng_state = random.getstate()
+
+    architecture1 = ARCHITECTURES.build(architecture_cfg)
+    pruner1 = PRUNERS.build(pruner_cfg)
+    if should_fail:
+        pruner1._reset_norm_running_stats = lambda *_: None
+    set_seed(1)
+    pruner1.prepare_from_supernet(architecture1)
+    architecture1.model.head.fc.register_forward_hook(output_hook)
+    architecture1.eval()
+    architecture1(imgs, return_loss=False)
+
+    set_seed(1024)
+    torch.set_rng_state(torch_rng_state)
+    np.random.set_state(np_rng_state)
+    random.setstate(random_rng_state)
+
+    architecture2 = ARCHITECTURES.build(architecture_cfg)
+    pruner2 = PRUNERS.build(pruner_cfg)
+    if should_fail:
+        pruner2._reset_norm_running_stats = lambda *_: None
+    set_seed(2)
+    pruner2.prepare_from_supernet(architecture2)
+    architecture2.model.head.fc.register_forward_hook(output_hook)
+    architecture2.eval()
+    architecture2(imgs, return_loss=False)
+
+    assert torch.equal(output_list[0].norm(p='fro'),
+                       output_list[1].norm(p='fro'))
