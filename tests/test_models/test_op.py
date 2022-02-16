@@ -100,12 +100,12 @@ def test_mbv2_series():
     tensor = torch.randn(16, 16, 32, 32)
 
     kernel_sizes = (3, 5, 7)
-    expand_factors = (3, 6)
+    expand_ratios = (3, 6)
     strides = (1, 2)
     se_cfgs = (None, None)
 
     for kernel_size in kernel_sizes:
-        for expand_factor in expand_factors:
+        for expand_ratio in expand_ratios:
             for stride in strides:
                 for se_cfg in se_cfgs:
                     op_cfg = dict(
@@ -113,7 +113,7 @@ def test_mbv2_series():
                         in_channels=16,
                         out_channels=16,
                         kernel_size=kernel_size,
-                        expand_factor=expand_factor,
+                        expand_ratio=expand_ratio,
                         se_cfg=se_cfg,
                         stride=stride)
 

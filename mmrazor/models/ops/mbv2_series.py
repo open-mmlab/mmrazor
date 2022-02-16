@@ -4,6 +4,7 @@ import torch.utils.checkpoint as cp
 from mmcls.models.utils import SELayer
 from mmcv.cnn import ConvModule
 from mmcv.cnn.bricks import DropPath
+
 from ..builder import OPS
 from .base import BaseOP
 
@@ -14,7 +15,7 @@ class MBV2Block(BaseOP):
 
     Args:
         kernel_size (int): Size of the convolving kernel.
-        expand_factor (int): The input channels' expand factor of the depthwise
+        expand_ratio (int): The input channels' expand factor of the depthwise
              convolution.
         se_cfg (dict, optional): Config dict for se layer. Defaults to None,
             which means no se layer.
@@ -34,7 +35,7 @@ class MBV2Block(BaseOP):
 
     def __init__(self,
                  kernel_size,
-                 expand_factor,
+                 expand_ratio,
                  se_cfg=None,
                  conv_cfg=None,
                  norm_cfg=dict(type='BN'),
@@ -44,7 +45,8 @@ class MBV2Block(BaseOP):
                  **kwargs):
 
         super(MBV2Block, self).__init__(**kwargs)
-        self.with_res_shortcut = (self.stride == 1 and self.in_channels == self.out_channels)
+        self.with_res_shortcut = (
+            self.stride == 1 and self.in_channels == self.out_channels)
         assert self.stride in [1, 2]
         self.kernel_size = kernel_size
         self.conv_cfg = conv_cfg
@@ -54,7 +56,7 @@ class MBV2Block(BaseOP):
         self.drop_path = DropPath(
             drop_path_rate) if drop_path_rate > 0 else nn.Identity()
         self.with_se = se_cfg is not None
-        self.mid_channels = self.in_channels * expand_factor
+        self.mid_channels = self.in_channels * expand_ratio
         self.with_expand_conv = (self.mid_channels != self.in_channels)
 
         if self.with_se:
@@ -94,6 +96,7 @@ class MBV2Block(BaseOP):
 
     def forward(self, x):
         """Forward function.
+
         Args:
             x (torch.Tensor): The input tensor.
         Returns:
@@ -124,5 +127,3 @@ class MBV2Block(BaseOP):
             out = _inner_forward(x)
 
         return out
-
-
