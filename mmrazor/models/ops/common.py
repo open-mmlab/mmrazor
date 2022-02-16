@@ -1,8 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from mmcv.cnn import ConvModule
 
-from .base import BaseOP
 from ..builder import OPS
+from .base import BaseOP
+
 
 @OPS.register_module()
 class Identity(BaseOP):
@@ -20,7 +21,7 @@ class Identity(BaseOP):
     def __init__(self,
                  conv_cfg=None,
                  norm_cfg=dict(type='BN'),
-                 act_cfg=None, 
+                 act_cfg=None,
                  **kwargs):
         super(Identity, self).__init__(**kwargs)
 
@@ -30,14 +31,14 @@ class Identity(BaseOP):
 
         if self.stride != 1 or self.in_channels != self.out_channels:
             self.downsample = ConvModule(
-                    self.in_channels,
-                    self.out_channels,
-                    kernel_size=1,
-                    stride=self.stride,
-                    padding=0,
-                    conv_cfg=self.conv_cfg,
-                    norm_cfg=self.norm_cfg,
-                    act_cfg=self.act_cfg)
+                self.in_channels,
+                self.out_channels,
+                kernel_size=1,
+                stride=self.stride,
+                padding=0,
+                conv_cfg=self.conv_cfg,
+                norm_cfg=self.norm_cfg,
+                act_cfg=self.act_cfg)
         else:
             self.downsample = None
 
@@ -45,5 +46,3 @@ class Identity(BaseOP):
         if self.downsample is not None:
             x = self.downsample(x)
         return x
-
-
