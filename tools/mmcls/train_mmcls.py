@@ -173,7 +173,12 @@ def main():
     algorithm = build_algorithm(cfg.algorithm)
     algorithm.init_weights()
 
-    datasets = [build_dataset(cfg.data.train)]
+    datasets = []
+    train_dataset = build_dataset(cfg.data.train)
+    if cfg.data.get('train_val', None):
+        train_dataset = [train_dataset]
+        train_dataset.append(build_dataset(cfg.data.train_val))
+    datasets.append(train_dataset)
     if len(cfg.workflow) == 2:
         val_dataset = copy.deepcopy(cfg.data.val)
         val_dataset.pipeline = cfg.data.train.pipeline
@@ -181,10 +186,14 @@ def main():
     if cfg.checkpoint_config is not None:
         # save mmcls version, config file content and class names in
         # checkpoints as meta data
+        if isinstance(datasets[0], list):
+            classes = datasets[0][0].CLASSES
+        else:
+            classes = datasets[0].CLASSES
         cfg.checkpoint_config.meta = dict(
             mmcls_version=__version__,
             config=cfg.pretty_text,
-            CLASSES=datasets[0].CLASSES)
+            CLASSES=classes)
     # add an attribute for visualization convenience
     train_mmcls_model(
         # Difference from mmclassification
