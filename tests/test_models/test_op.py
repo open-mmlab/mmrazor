@@ -4,6 +4,40 @@ import torch
 from mmrazor.models.builder import OPS
 
 
+def test_common_ops():
+    tensor = torch.randn(16, 16, 32, 32)
+
+    # test stride != 1
+    identity_cfg = dict(
+        type='Identity', in_channels=16, out_channels=16, stride=2)
+
+    op = OPS.build(identity_cfg)
+
+    # test forward
+    outputs = op(tensor)
+    assert outputs.size(1) == 16 and outputs.size(2) == 16
+
+    # test stride == 1
+    identity_cfg = dict(
+        type='Identity', in_channels=16, out_channels=16, stride=1)
+
+    op = OPS.build(identity_cfg)
+
+    # test forward
+    outputs = op(tensor)
+    assert outputs.size(1) == 16 and outputs.size(2) == 32
+
+    # test in_channels != out_channels
+    identity_cfg = dict(
+        type='Identity', in_channels=8, out_channels=16, stride=1)
+
+    op = OPS.build(identity_cfg)
+
+    # test forward
+    outputs = op(tensor[:, :8])
+    assert outputs.size(1) == 16 and outputs.size(2) == 32
+
+
 def test_shuffle_series():
 
     tensor = torch.randn(16, 16, 32, 32)
@@ -59,6 +93,36 @@ def test_shuffle_series():
     # test forward
     outputs = op(tensor)
     assert outputs.size(1) == 16 and outputs.size(2) == 32
+
+
+def test_mbv2_series():
+
+    tensor = torch.randn(16, 16, 32, 32)
+
+    kernel_sizes = (3, 5, 7)
+    expand_factors = (3, 6)
+    strides = (1, 2)
+    se_cfgs = (None, None)
+
+    for kernel_size in kernel_sizes:
+        for expand_factor in expand_factors:
+            for stride in strides:
+                for se_cfg in se_cfgs:
+                    op_cfg = dict(
+                        type='MBV2Block',
+                        in_channels=16,
+                        out_channels=16,
+                        kernel_size=kernel_size,
+                        expand_factor=expand_factor,
+                        se_cfg=se_cfg,
+                        stride=stride)
+
+                    op = OPS.build(op_cfg)
+
+                    # test forward
+                    outputs = op(tensor)
+                    assert outputs.size(1) == 16 and outputs.size(
+                        2) == 32 // stride
 
 
 def test_darts_series():
