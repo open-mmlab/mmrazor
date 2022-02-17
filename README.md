@@ -77,7 +77,7 @@ Results and models are available in the [model zoo](/docs/en/model_zoo.md).
 
 ## Installation
 
-Please refer to [get_started.md](/docs/en/get_started.md) for installation.
+Please refer to [get_started.md](/docs/en/get_started.md) for installation and [dataset_prepare.md](docs/en/dataset_prepare.md) for dataset preparation.
 
 ## Getting Started
 Please refer to [train.md](/docs/en/train.md) and [test.md](/docs/en/test.md) for the basic usage of MMRazor. There are also tutorials:

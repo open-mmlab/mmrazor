@@ -103,7 +103,7 @@ v0.1.0 版本已经在 2021.12.23 发布
 
 ## 安装
 
-请参考 [get_started.md](/docs/en/get_started.md) 进行安装。
+请参考 [get_started.md](/docs/en/get_started.md) 进行安装，并参考[dataset_prepare.md](docs/en/dataset_prepare.md)准备数据。
 
 ## 快速入门
 请参考 [get_started.md](/docs/en/get_started.md) 学习 MMRazor 的基本使用。 我们也提供了一些进阶教程:
