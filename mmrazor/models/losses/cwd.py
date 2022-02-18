@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from mmseg.ops import resize
 from ..builder import LOSSES
 
 
@@ -38,6 +38,11 @@ class ChannelWiseDivergence(nn.Module):
         Return:
             torch.Tensor: The calculated loss value.
         """
+        preds_S = resize(
+            input=preds_S,
+            size=preds_T.shape[-2:],
+            mode='bilinear',
+            align_corners=True)
         assert preds_S.shape[-2:] == preds_T.shape[-2:]
         N, C, H, W = preds_S.shape
 
