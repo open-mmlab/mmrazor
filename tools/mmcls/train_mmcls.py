@@ -191,9 +191,7 @@ def main():
         else:
             classes = datasets[0].CLASSES
         cfg.checkpoint_config.meta = dict(
-            mmcls_version=__version__,
-            config=cfg.pretty_text,
-            CLASSES=classes)
+            mmcls_version=__version__, config=cfg.pretty_text, CLASSES=classes)
     # add an attribute for visualization convenience
     train_mmcls_model(
         # Difference from mmclassification
