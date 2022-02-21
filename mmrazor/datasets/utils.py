@@ -62,4 +62,3 @@ if __name__ == '__main__':
     import sys
 
     split_dataset_txt(sys.argv[1], sys.argv[2])
-
