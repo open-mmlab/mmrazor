@@ -1,5 +1,22 @@
 <div align="center">
   <img src="resources/mmrazor-logo.png" width="600"/>
+  <div>&nbsp;</div>
+  <div align="center">
+    <b><font size="5">OpenMMLab website</font></b>
+    <sup>
+      <a href="https://openmmlab.com">
+        <i><font size="4">HOT</font></i>
+      </a>
+    </sup>
+    &nbsp;&nbsp;&nbsp;&nbsp;
+    <b><font size="5">OpenMMLab platform</font></b>
+    <sup>
+      <a href="https://platform.openmmlab.com">
+        <i><font size="4">TRY IT OUT</font></i>
+      </a>
+    </sup>
+  </div>
+  <div>&nbsp;</div>
 </div>
 <br />
 
@@ -116,3 +133,4 @@ We wish that the toolbox and benchmark could serve the growing research communit
 - [MMHuman3D](https://github.com/open-mmlab/mmhuman3d): OpenMMLab 3D Human Parametric Model Toolbox and Benchmark.
 - [MMSelfSup](https://github.com/open-mmlab/mmselfsup): OpenMMLab self-supervised learning Toolbox and Benchmark.
 - [MMRazor](https://github.com/open-mmlab/mmrazor): OpenMMLab Model Compression Toolbox and Benchmark.
+- [MMDeploy](https://github.com/open-mmlab/mmdeploy): OpenMMLab Model Deployment Framework.

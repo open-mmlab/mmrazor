@@ -1,4 +1,4 @@
-_base_ = ['./spos_shufflenetv2_supernet_8xb128_in1k.py']
+_base_ = ['./spos_supernet_shufflenetv2_8xb128_in1k.py']
 
 data = dict(
     samples_per_gpu=2048,

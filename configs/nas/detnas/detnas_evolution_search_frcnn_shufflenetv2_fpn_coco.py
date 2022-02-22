@@ -1,4 +1,4 @@
-_base_ = ['./detnas_frcnn_shufflenet_fpn_supernet_coco_1x.py']
+_base_ = ['./detnas_supernet_frcnn_shufflenetv2_fpn_1x_coco.py']
 
 data = dict(
     samples_per_gpu=128,

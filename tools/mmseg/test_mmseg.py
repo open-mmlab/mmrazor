@@ -24,6 +24,7 @@ from mmseg.apis import multi_gpu_test, single_gpu_test
 from mmseg.datasets import build_dataloader, build_dataset
 
 from mmrazor.models.builder import build_algorithm
+from mmrazor.utils import setup_multi_processes
 
 
 def parse_args():
@@ -38,6 +39,12 @@ def parse_args():
     parser.add_argument(
         '--aug-test', action='store_true', help='Use Flip and Multi scale aug')
     parser.add_argument('--out', help='output result file in pickle format')
+    parser.add_argument(
+        '--gpu-id',
+        type=int,
+        default=0,
+        help='id of gpu to use '
+        '(only applicable to non-distributed testing)')
     parser.add_argument(
         '--format-only',
         action='store_true',
@@ -111,6 +118,10 @@ def main():
     cfg = mmcv.Config.fromfile(args.config)
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
+
+    # set multi-process settings
+    setup_multi_processes(cfg)
+
     # set cudnn_benchmark
     if cfg.get('cudnn_benchmark', False):
         torch.backends.cudnn.benchmark = True
@@ -123,6 +134,8 @@ def main():
     # Difference from mmsegmentation
     cfg.algorithm.architecture.model.pretrained = None
     cfg.data.test.test_mode = True
+
+    cfg.gpu_ids = [args.gpu_id]
 
     # init distributed env first, since logger depends on the dist info.
     if args.launcher == 'none':
@@ -148,15 +161,17 @@ def main():
         dist=distributed,
         shuffle=False)
 
-    # build the model and load checkpoint
+    # build the algorithm and load checkpoint
     # Difference from mmsegmentation
     cfg.algorithm.architecture.model.train_cfg = None
-    model = build_algorithm(cfg.algorithm)
+    algorithm = build_algorithm(cfg.algorithm)
+    model = algorithm.architecture.model
 
     fp16_cfg = cfg.get('fp16', None)
     if fp16_cfg is not None:
         wrap_fp16_model(model)
-    checkpoint = load_checkpoint(model, args.checkpoint, map_location='cpu')
+    checkpoint = load_checkpoint(
+        algorithm, args.checkpoint, map_location='cpu')
     if 'CLASSES' in checkpoint.get('meta', {}):
         model.CLASSES = checkpoint['meta']['CLASSES']
     else:
@@ -197,9 +212,9 @@ def main():
         tmpdir = None
 
     if not distributed:
-        model = MMDataParallel(model, device_ids=[0])
+        algorithm = MMDataParallel(algorithm, device_ids=cfg.gpu_ids)
         results = single_gpu_test(
-            model,
+            algorithm,
             data_loader,
             args.show,
             args.show_dir,
@@ -209,12 +224,12 @@ def main():
             format_only=args.format_only or eval_on_format_results,
             format_args=eval_kwargs)
     else:
-        model = MMDistributedDataParallel(
-            model.cuda(),
+        algorithm = MMDistributedDataParallel(
+            algorithm.cuda(),
             device_ids=[torch.cuda.current_device()],
             broadcast_buffers=False)
         results = multi_gpu_test(
-            model,
+            algorithm,
             data_loader,
             args.tmpdir,
             args.gpu_collect,

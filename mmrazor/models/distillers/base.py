@@ -120,7 +120,7 @@ class BaseDistiller(BaseModule, metaclass=ABCMeta):
             self.context_manager = ConversionContext(align_methods)
 
     @abstractmethod
-    def prepare_from_student(self, supernet):
+    def prepare_from_student(self, student):
         """Register forward hooks to students and teachers."""
         pass
 

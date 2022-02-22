@@ -131,7 +131,19 @@ def add_mim_extension():
 
             if mode == 'symlink':
                 src_relpath = osp.relpath(src_path, osp.dirname(tar_path))
-                os.symlink(src_relpath, tar_path)
+                try:
+                    os.symlink(src_relpath, tar_path)
+                except OSError:
+                    # Creating a symbolic link on windows may raise an
+                    # `OSError: [WinError 1314]` due to privilege. If
+                    # the error happens, the src file will be copied
+                    mode = 'copy'
+                    warnings.warn(
+                        f'Failed to create a symbolic link for {src_relpath}, '
+                        f'and it will be copied to {tar_path}')
+                else:
+                    continue
+
             elif mode == 'copy':
                 if osp.isfile(src_path):
                     shutil.copyfile(src_path, tar_path)
@@ -151,10 +163,7 @@ if __name__ == '__main__':
         description='OpenMMLab Model Compression Toolbox and Benchmark',
         long_description=readme(),
         long_description_content_type='text/markdown',
-        author='MMRazor Contributors',
-        author_email='openmmlab@gmail.com',
         keywords='computer vision, model compression',
-        url='https://github.com/open-mmlab/mmrazor',
         packages=find_packages(exclude=('configs', 'tools', 'demo')),
         include_package_data=True,
         classifiers=[
@@ -167,8 +176,16 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 3.7',
             'Programming Language :: Python :: 3.8',
             'Programming Language :: Python :: 3.9',
+            'Topic :: Scientific/Engineering :: Artificial Intelligence',
         ],
+        url='https://github.com/open-mmlab/mmrazor',
+        author='MMRazor Contributors',
+        author_email='openmmlab@gmail.com',
         license='Apache License 2.0',
-        tests_require=parse_requirements('requirements/tests.txt'),
         install_requires=parse_requirements('requirements/runtime.txt'),
+        extras_require={
+            'all': parse_requirements('requirements.txt'),
+            'tests': parse_requirements('requirements/tests.txt'),
+            'optional': parse_requirements('requirements/optional.txt'),
+        },
         zip_safe=False)

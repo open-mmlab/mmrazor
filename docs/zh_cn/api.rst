@@ -17,7 +17,7 @@ mmseg
     :members:
 
 mmrazor.core
---------------
+------------
 
 hooks
 ^^^^^

@@ -1,5 +1,5 @@
 Welcome to MMRazor's documentation!
-=======================================
+===================================
 
 .. toctree::
    :maxdepth: 2
@@ -20,6 +20,11 @@ Welcome to MMRazor's documentation!
    :caption: Tutorials
 
    tutorials/index.rst
+
+.. toctree::
+   :caption: Switch Language
+
+   switch_language.md
 
 .. toctree::
    :caption: API Reference
