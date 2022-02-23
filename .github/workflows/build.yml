@@ -116,10 +116,12 @@ jobs:
         run: pip install pip --upgrade --user
       - name: Install PyTorch
         run: pip install torch==${{matrix.torch}} torchvision==${{matrix.torchvision}} -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html
+      - name: Install OpenCV
+        run: |
+          pip install opencv-python>=3
       - name: Install MMCV
         run: |
-          pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/${{matrix.mmcv_link}}/index.html
-          python -c 'import mmcv; print(mmcv.__version__)'
+          pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cpu/torch1.8/index.html --only-binary mmcv-full
       - name: Install unittest dependencies
         run: |
           pip install -r requirements.txt
