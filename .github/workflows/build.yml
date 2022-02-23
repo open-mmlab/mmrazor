@@ -6,82 +6,57 @@ name: build
 on:
   push:
     paths-ignore:
-      - 'README.md'
-      - 'README_zh-CN.md'
-      - 'model-index.yml'
-      - 'configs/**'
-      - 'docs/**'
-      - '.dev_scripts/**'
+      - "README.md"
+      - "README_zh-CN.md"
+      - "model-index.yml"
+      - "configs/**"
+      - "docs/**"
+      - ".dev_scripts/**"
 
   pull_request:
     paths-ignore:
-      - 'README.md'
-      - 'README_zh-CN.md'
-      - 'model-index.yml'
-      - 'configs/**'
-      - 'docs/**'
-      - '.dev_scripts/**'
+      - "README.md"
+      - "README_zh-CN.md"
+      - "model-index.yml"
+      - "configs/**"
+      - "docs/**"
+      - ".dev_scripts/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build_cpu:
+  test_linux:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
-        torch: [1.5.1, 1.6.0, 1.7.1, 1.8.0, 1.9.0, 1.10.1]
+        torch:
+          [1.5.1+cpu, 1.6.0+cpu, 1.7.1+cpu, 1.8.0+cpu, 1.9.0+cpu, 1.10.1+cpu]
         include:
-          - torch: 1.5.1
-            torchvision: 0.6.1
-            torch_version: 1.5
-          - torch: 1.6.0
-            torchvision: 0.7.0
-            torch_version: 1.6
-          - torch: 1.7.1
-            torchvision: 0.8.2
-            torch_version: 1.7
-          - torch: 1.8.0
-            torchvision: 0.9.0
-            torch_version: 1.8
-          - torch: 1.8.0
-            torchvision: 0.9.0
-            torch_version: 1.8
-          - torch: 1.8.0
-            torchvision: 0.9.0
-            torch_version: 1.8
-          - torch: 1.9.0
-            torchvision: 0.10.0
-            torch_version: 1.9
-          - torch: 1.9.0
-            torchvision: 0.10.0
-            torch_version: 1.9
-          - torch: 1.9.0
-            torchvision: 0.10.0
-            torch_version: 1.9
-          - torch: 1.10.1
-            torchvision: 0.11.2
-            torch_version: 1.10
-          - torch: 1.10.1
-            torchvision: 0.11.2
-            torch_version: 1.10
-          - torch: 1.10.1
-            torchvision: 0.11.2
-            torch_version: 1.10
-        exclude:
-          - torch: 1.5.1
+          - torch: 1.5.1+cpu
+            torchvision: 0.6.1+cpu
+            mmcv_link: cpu/torch1.5
+            python-version: 3.7
+          - torch: 1.6.0+cpu
+            torchvision: 0.7.0+cpu
+            mmcv_link: cpu/torch1.6
+            python-version: 3.7
+          - torch: 1.7.1+cpu
+            torchvision: 0.8.2+cpu
+            mmcv_link: cpu/torch1.7
+            python-version: 3.7
+          - torch: 1.8.0+cpu
+            torchvision: 0.9.0+cpu
+            mmcv_link: cpu/torch1.8
             python-version: 3.8
-          - torch: 1.5.1
-            python-version: 3.9
-          - torch: 1.6.0
+          - torch: 1.9.0+cpu
+            torchvision: 0.10.0+cpu
+            mmcv_link: cpu/torch1.9
             python-version: 3.8
-          - torch: 1.6.0
-            python-version: 3.9
-          - torch: 1.7.1
-            python-version: 3.8
-          - torch: 1.7.1
+          - torch: 1.10.1+cpu
+            torchvision: 0.11.2+cpu
+            mmcv_link: cpu/torch1.10
             python-version: 3.9
 
     steps:
@@ -90,14 +65,13 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Pillow
-        run: pip install Pillow==6.2.2
-        if: ${{matrix.torchvision < 0.5}}
+      - name: Upgrade pip
+        run: pip install pip --upgrade
       - name: Install PyTorch
-        run: pip install torch==${{matrix.torch}}+cpu torchvision==${{matrix.torchvision}}+cpu -f https://download.pytorch.org/whl/cpu/torch_stable.html
+        run: pip install torch==${{matrix.torch}} torchvision==${{matrix.torchvision}} -f https://download.pytorch.org/whl/torch_stable.html
       - name: Install MMCV
         run: |
-          pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cpu/torch${{matrix.torch_version}}/index.html
+          pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/${{matrix.mmcv_link}}/index.html
           python -c 'import mmcv; print(mmcv.__version__)'
       - name: Install mmcls dependencies
         run: |
@@ -116,8 +90,8 @@ jobs:
           coverage report -m --omit="mmrazor/apis/*"
       # Only upload coverage report for python3.7 && pytorch1.5
       - name: Upload coverage to Codecov
-        if: ${{matrix.torch == '1.5.0' && matrix.python-version == '3.7'}}
-        uses: codecov/codecov-action@v1.0.10
+        if: ${{matrix.torch == '1.5.1+cpu' && matrix.python-version == '3.7'}}
+        uses: codecov/codecov-action@v2
         with:
           file: ./coverage.xml
           flags: unittests
