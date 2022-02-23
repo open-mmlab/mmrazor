@@ -115,7 +115,7 @@ jobs:
       - name: Upgrade pip
         run: pip install pip --upgrade --user
       - name: Install PyTorch
-        run: pip install torch==${{matrix.torch}} torchvision==${{matrix.torchvision}} -f https://download.pytorch.org/whl/torch_stable.html
+        run: pip install torch==${{matrix.torch}} torchvision==${{matrix.torchvision}} -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html
       - name: Install MMCV
         run: |
           pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/${{matrix.mmcv_link}}/index.html
