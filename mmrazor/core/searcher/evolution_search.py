@@ -41,6 +41,7 @@ class EvolutionSearcher():
                  test_fn,
                  work_dir,
                  logger,
+                 candidate_pool_init=None,
                  candidate_pool_size=50,
                  candidate_top_k=10,
                  constraints=dict(flops=330 * 1e6),
@@ -64,6 +65,10 @@ class EvolutionSearcher():
         self.metric_options = metric_options
         self.score_key = score_key
         self.candidate_pool = list()
+        if candidate_pool_init is not None:
+            assert isinstance(candidate_pool_init, str)
+            self.candidate_pool = mmcv.file.load(
+                candidate_pool_init)[:candidate_pool_size]
         self.candidate_pool_size = candidate_pool_size
         self.max_epoch = max_epoch
         self.test_fn = test_fn
