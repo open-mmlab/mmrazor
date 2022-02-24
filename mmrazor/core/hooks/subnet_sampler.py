@@ -1,7 +1,9 @@
 import math
+import os
 import random
 from abc import abstractmethod
 
+import mmcv
 import numpy as np
 from mmcls.models.losses import accuracy
 from mmcv.runner import HOOKS, Hook
@@ -95,7 +97,6 @@ class GreedySamplerHook(BaseSamplerHook):
         self.eval_kwargs = eval_kwargs
 
     def _update_candidate_pool(self):
-        assert len(self.candidate_pool) > 0
         self.candidate_pool.sort(key=lambda x: x[1], reverse=True)
         self.candidate_pool = self.candidate_pool[:self.pool_size]
 
@@ -123,6 +124,18 @@ class GreedySamplerHook(BaseSamplerHook):
                 subnet_for_train = self._do_sample(runner)
             runner.model.module.subnet = broadcast_object_list(
                 [subnet_for_train])[0]
+
+    def after_train_iter(self, runner):
+        if runner.iter >= runner.max_iters - 1:
+            runner.logger.info(
+                f'cur_iter: {runner.iter}; max_iters: {runner.max_iters}')
+            if runner.rank == 0:
+                self._save_candidate_pool(runner)
+
+    def _save_candidate_pool(self, runner):
+        save_path = os.path.join(runner.work_dir, 'candidate_pool.pkl')
+        mmcv.fileio.dump(self.candidate_pool, save_path)
+        runner.logger.info(f'candidate_pool.pkl saved in {runner.work_dir}')
 
     def _do_sample(self, runner):
         if not hasattr(runner.model, 'module'):
