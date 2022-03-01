@@ -1,7 +1,7 @@
 Import:
-  - configs/distill/cwd/metafile.yaml
-  - configs/distill/wsld/metafile.yaml
-  - configs/nas/darts/metafile.yaml
-  - configs/nas/detnas/metafile.yaml
-  - configs/nas/spos/metafile.yaml
-  - configs/pruning/autoslim/metafile.yaml
+  - configs/distill/cwd/metafile.yml
+  - configs/distill/wsld/metafile.yml
+  - configs/nas/darts/metafile.yml
+  - configs/nas/detnas/metafile.yml
+  - configs/nas/spos/metafile.yml
+  - configs/pruning/autoslim/metafile.yml
