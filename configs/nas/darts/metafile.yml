@@ -2,7 +2,7 @@ Collections:
   - Name: Darts
     Metadata:
       Training Data:
-      - CIFAR-10
+        - CIFAR-10
     Paper:
       URL: https://arxiv.org/abs/1806.09055
       Title: DARTS:Differentiable Architecture Search
@@ -19,10 +19,10 @@ Models:
       Params(M): 3.42
       Mutable: https://download.openmmlab.com/mmrazor/v0.1/nas/darts/darts_subnetnet_1xb96_cifar10/darts_subnetnet_1xb96_cifar10_acc-97.32_20211222-e5727921_mutable_cfg.yaml
     Results:
-    - Task: Image Classification
-      Dataset: CIFAR-10
-      Metrics:
-        Top 1 Accuracy: 97.32
-        Top 5 Accuracy: 99.94
+      - Task: Image Classification
+        Dataset: CIFAR-10
+        Metrics:
+          Top 1 Accuracy: 97.32
+          Top 5 Accuracy: 99.94
     Config: configs/nas/darts/darts_subnetnet_1xb96_cifar10.py
     Weights: https://download.openmmlab.com/mmrazor/v0.1/nas/darts/darts_subnetnet_1xb96_cifar10/darts_subnetnet_1xb96_cifar10_acc-97.32_20211222-e5727921.pth

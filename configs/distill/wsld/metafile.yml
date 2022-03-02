@@ -2,7 +2,7 @@ Collections:
   - Name: WSLD
     Metadata:
       Training Data:
-      - ImageNet-1k
+        - ImageNet-1k
     Paper:
       URL: https://arxiv.org/abs/2102.00650
       Title: Rethinking Soft Labels for Knowledge Distillation:A Bias-Variance Tradeoff Perspective
@@ -21,11 +21,11 @@ Models:
       Teacher: R-34
       Teacher Checkpoint: https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth
     Results:
-    - Task: Image Classification
-      Dataset: ImageNet-1k
-      Metrics:
-        Top 1 Accuracy: 71.54
-        Top 1 Accuracy:(S): 69.90
-        Top 1 Accuracy:(T): 73.62
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 71.54
+          Top 1 Accuracy:(S): 69.90
+          Top 1 Accuracy:(T): 73.62
     Config: configs/distill/wsld/wsld_cls_head_resnet34_resnet18_8xb32_in1k.py
     Weights: https://download.openmmlab.com/mmrazor/v0.1/distill/wsld/wsld_cls_head_resnet34_resnet18_8xb32_in1k/wsld_cls_head_resnet34_resnet18_8xb32_in1k_acc-71.54_20211222-91f28cf6.pth

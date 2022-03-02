@@ -2,7 +2,7 @@ Collections:
   - Name: AutoSlim
     Metadata:
       Training Data:
-      - ImageNet-1k
+        - ImageNet-1k
     Paper:
       URL: https://arxiv.org/abs/1903.11728
       Title: AutoSlim:Towards One-Shot Architecture Search for Channel Numbers
@@ -21,11 +21,11 @@ Models:
       Supernet: MobileNet v2(x1.5)
       Channel: https://download.openmmlab.com/mmrazor/v0.1/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k/autoslim_mbv2_subnet_8xb256_in1k_flops-0.53M_acc-74.23_20211222-e5208bbd_channel_cfg.yaml
     Results:
-    - Task: Image Classification
-      Dataset: ImageNet-1k
-      Metrics:
-        Top 1 Accuracy: 74.23
-        Top 5 Accuracy: 91.74
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 74.23
+          Top 5 Accuracy: 91.74
     Config: configs/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k.py
     Weights: https://download.openmmlab.com/mmrazor/v0.1/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k/autoslim_mbv2_subnet_8xb256_in1k_flops-0.53M_acc-74.23_20211222-e5208bbd.pth
   - Name: autoslim_mbv2_subnet_8xb256_in1k
@@ -36,11 +36,11 @@ Models:
       Supernet: MobileNet v2(x1.5)
       Channel: https://download.openmmlab.com/mmrazor/v0.1/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k/autoslim_mbv2_subnet_8xb256_in1k_flops-0.32M_acc-72.73_20211222-b5b0b33c_channel_cfg.yaml
     Results:
-    - Task: Image Classification
-      Dataset: ImageNet-1k
-      Metrics:
-        Top 1 Accuracy: 72.73
-        Top 5 Accuracy: 90.83
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 72.73
+          Top 5 Accuracy: 90.83
     Config: configs/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k.py
     Weights: https://download.openmmlab.com/mmrazor/v0.1/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k/autoslim_mbv2_subnet_8xb256_in1k_flops-0.32M_acc-72.73_20211222-b5b0b33c.pth
   - Name: autoslim_mbv2_subnet_8xb256_in1k
