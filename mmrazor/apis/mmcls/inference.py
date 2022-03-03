@@ -1,20 +1,18 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Union, Optional, Dict
 import warnings
-
-from torch import nn
+from typing import Dict, Optional, Union
 
 import mmcv
 from mmcv.runner import load_checkpoint
+from torch import nn
 
 from mmrazor.models import build_algorithm
 
 
-def init_mmcls_model(
-        config: Union[str, mmcv.Config],
-        checkpoint: Optional[str] = None,
-        device: str = 'cuda:0',
-        options: Optional[Dict] = None) -> nn.Module:
+def init_mmcls_model(config: Union[str, mmcv.Config],
+                     checkpoint: Optional[str] = None,
+                     device: str = 'cuda:0',
+                     options: Optional[Dict] = None) -> nn.Module:
     """Initialize a mmcls model from config file.
 
     Args:

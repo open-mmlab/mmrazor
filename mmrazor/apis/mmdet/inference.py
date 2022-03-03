@@ -1,22 +1,19 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Union, Optional, Dict
 import warnings
-
-from torch import nn
+from typing import Dict, Optional, Union
 
 import mmcv
 from mmcv.runner import load_checkpoint
-
 from mmdet.core import get_classes
+from torch import nn
 
 from mmrazor.models import build_algorithm
 
 
-def init_mmdet_model(
-        config: Union[str, mmcv.Config],
-        checkpoint: Optional[str] = None,
-        device: str = 'cuda:0',
-        cfg_options: Optional[Dict] = None) -> nn.Module:
+def init_mmdet_model(config: Union[str, mmcv.Config],
+                     checkpoint: Optional[str] = None,
+                     device: str = 'cuda:0',
+                     cfg_options: Optional[Dict] = None) -> nn.Module:
     """Initialize a mmdet model from config file.
 
     Args:

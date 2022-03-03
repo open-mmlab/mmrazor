@@ -1,18 +1,16 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Union, Optional
-
-from torch import nn
+from typing import Optional, Union
 
 import mmcv
 from mmcv.runner import load_checkpoint
+from torch import nn
 
 from mmrazor.models import build_algorithm
 
 
-def init_mmseg_model(
-        config: Union[str, mmcv.Config],
-        checkpoint: Optional[str] = None,
-        device: str = 'cuda:0') -> nn.Module:
+def init_mmseg_model(config: Union[str, mmcv.Config],
+                     checkpoint: Optional[str] = None,
+                     device: str = 'cuda:0') -> nn.Module:
     """Initialize a mmseg model from config file.
 
     Args:
@@ -30,13 +28,13 @@ def init_mmseg_model(
     elif not isinstance(config, mmcv.Config):
         raise TypeError('config must be a filename or Config object, '
                         'but got {}'.format(type(config)))
-    
+
     model_cfg = config.algorithm.architecture.model
     model_cfg.pretrained = None
     model_cfg.train_cfg = None
     algorithm = build_algorithm(config.algorithm)
     model = algorithm.architecture.model
-    
+
     if checkpoint is not None:
         checkpoint = load_checkpoint(model, checkpoint, map_location='cpu')
         model.CLASSES = checkpoint['meta']['CLASSES']
@@ -44,5 +42,5 @@ def init_mmseg_model(
     model.cfg = config  # save the config in the model for convenience
     model.to(device)
     model.eval()
-    
+
     return model
