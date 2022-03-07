@@ -35,6 +35,10 @@ class SearchableMobileNetV2(BaseBackbone):
             memory while slowing down the training speed. Default: False.
         arch_setting_type (str): Specify architecture setting.
             Default: 'original'.
+        init_cfg (dict | list[dict]): initialization configuration dict to
+            define initializer. OpenMMLab has implemented 6 initializers
+            including ``Constant``, ``Xavier``, ``Normal``, ``Uniform``,
+            ``Kaiming``, and ``Pretrained``.
     """
 
     # Parameters to build layers. 3 parameters are needed to construct a
@@ -168,6 +172,12 @@ class SearchableMobileNetV2(BaseBackbone):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        """Forward computation.
+
+        Args:
+            x (tensor | tuple[tensor]): x could be a Torch.tensor or a tuple of
+                Torch.tensor, containing input data for forward computation.
+        """
         x = self.conv1(x)
 
         outs = []
@@ -180,6 +190,7 @@ class SearchableMobileNetV2(BaseBackbone):
         return tuple(outs)
 
     def _freeze_stages(self):
+        """Freeze params not to update in the specified stages."""
         if self.frozen_stages >= 0:
             for param in self.conv1.parameters():
                 param.requires_grad = False
@@ -190,6 +201,11 @@ class SearchableMobileNetV2(BaseBackbone):
                 param.requires_grad = False
 
     def train(self, mode=True):
+        """Set module status before forward computation.
+
+        Args:
+            mode (bool): Whether it is train_mode or test_mode
+        """
         super(SearchableMobileNetV2, self).train(mode)
         self._freeze_stages()
         if mode and self.norm_eval:
