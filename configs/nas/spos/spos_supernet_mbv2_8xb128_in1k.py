@@ -26,7 +26,7 @@ model = dict(
 mutator = dict(
     type='OneShotMutator',
     placeholder_mapping=dict(
-        all_blocks=dict(
+        searchable_blocks=dict(
             type='OneShotOP',
             choices=dict(
                 mbv2_k3e3=dict(
@@ -65,7 +65,16 @@ mutator = dict(
                     expand_ratio=6,
                     norm_cfg=norm_cfg,
                     act_cfg=dict(type='ReLU6')),
-                identity=dict(type='Identity')))))
+                identity=dict(type='Identity'))),
+        first_blocks=dict(
+            type='OneShotOP',
+            choices=dict(
+                mbv2_k3e1=dict(
+                    type='MBV2Block',
+                    kernel_size=3,
+                    expand_ratio=1,
+                    norm_cfg=norm_cfg,
+                    act_cfg=dict(type='ReLU6')), ))))
 
 algorithm = dict(
     type='SPOS',

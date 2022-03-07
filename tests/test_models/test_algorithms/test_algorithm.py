@@ -259,7 +259,7 @@ def test_spos_mbv2():
     mutator_cfg = dict(
         type='OneShotMutator',
         placeholder_mapping=dict(
-            all_blocks=dict(
+            searchable_blocks=dict(
                 type='OneShotOP',
                 choices=dict(
                     mbv2_k3e3=dict(
@@ -292,7 +292,15 @@ def test_spos_mbv2():
                         kernel_size=7,
                         expand_ratio=6,
                         act_cfg=dict(type='ReLU6')),
-                    identity=dict(type='Identity')))))
+                    identity=dict(type='Identity'))),
+            first_blocks=dict(
+                type='OneShotOP',
+                choices=dict(
+                    mbv2_k3e1=dict(
+                        type='MBV2Block',
+                        kernel_size=3,
+                        expand_ratio=1,
+                        act_cfg=dict(type='ReLU6')), ))))
 
     algorithm_cfg = dict(
         type='SPOS',

@@ -48,7 +48,7 @@ class SearchableMobileNetV2(BaseBackbone):
 
     def __init__(self,
                  first_channels=32,
-                 last_channels=1200,
+                 last_channels=1280,
                  widen_factor=1.,
                  out_indices=(7, ),
                  frozen_stages=-1,

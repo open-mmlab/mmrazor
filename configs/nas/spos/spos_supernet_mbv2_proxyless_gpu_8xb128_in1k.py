@@ -3,7 +3,7 @@ _base_ = [
     '../../_base_/schedules/mmcls/imagenet_bs1024_spos.py',
     '../../_base_/mmcls_runtime.py'
 ]
-norm_cfg = dict(type='BN', eps=1e-3)
+norm_cfg = dict(type='BN')
 model = dict(
     type='mmcls.ImageClassifier',
     backbone=dict(
