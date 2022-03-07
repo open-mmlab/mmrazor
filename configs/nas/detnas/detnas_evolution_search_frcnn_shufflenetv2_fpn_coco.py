@@ -5,6 +5,8 @@ data = dict(
     workers_per_gpu=8,
 )
 
+algorithm = dict(bn_training_mode=False)
+
 searcher = dict(
     type='EvolutionSearcher',
     metrics='bbox',
