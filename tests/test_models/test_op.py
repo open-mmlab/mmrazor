@@ -95,27 +95,42 @@ def test_shuffle_series():
     assert outputs.size(1) == 16 and outputs.size(2) == 32
 
 
-def test_mbv2_series():
+def test_mb_series():
 
     tensor = torch.randn(16, 16, 32, 32)
 
     kernel_sizes = (3, 5, 7)
     expand_ratios = (3, 6)
     strides = (1, 2)
-    se_cfgs = (None, None)
+    se_cfg_1 = dict(
+        ratio=4,
+        act_cfg=(dict(type='HSwish'),
+                 dict(
+                     type='HSigmoid',
+                     bias=3,
+                     divisor=6,
+                     min_value=0,
+                     max_value=1)))
+    se_cfgs = (None, se_cfg_1)
+    drop_path_rates = (0, 0.2)
+    with_cps = (True, False)
 
     for kernel_size in kernel_sizes:
         for expand_ratio in expand_ratios:
             for stride in strides:
                 for se_cfg in se_cfgs:
-                    op_cfg = dict(
-                        type='MBV2Block',
-                        in_channels=16,
-                        out_channels=16,
-                        kernel_size=kernel_size,
-                        expand_ratio=expand_ratio,
-                        se_cfg=se_cfg,
-                        stride=stride)
+                    for drop_path_rate in drop_path_rates:
+                        for with_cp in with_cps:
+                            op_cfg = dict(
+                                type='MBBlock',
+                                in_channels=16,
+                                out_channels=16,
+                                kernel_size=kernel_size,
+                                expand_ratio=expand_ratio,
+                                se_cfg=se_cfg,
+                                drop_path_rate=drop_path_rate,
+                                with_cp=with_cp,
+                                stride=stride)
 
                     op = OPS.build(op_cfg)
 

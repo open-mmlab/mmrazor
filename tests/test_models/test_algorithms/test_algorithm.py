@@ -236,11 +236,11 @@ def test_spos():
     assert flops_supernet > flops_subnet_spos > 0
 
 
-def test_spos_mbv2():
+def test_spos_mb():
 
     model_cfg = dict(
         type='mmcls.ImageClassifier',
-        backbone=dict(type='SearchableMobileNetV2', widen_factor=1.0),
+        backbone=dict(type='SearchableMobileNet', widen_factor=1.0),
         neck=dict(type='mmcls.GlobalAveragePooling'),
         head=dict(
             type='mmcls.LinearClsHead',
@@ -263,32 +263,32 @@ def test_spos_mbv2():
                 type='OneShotOP',
                 choices=dict(
                     mbv2_k3e3=dict(
-                        type='MBV2Block',
+                        type='MBBlock',
                         kernel_size=3,
                         expand_ratio=3,
                         act_cfg=dict(type='ReLU6')),
                     mbv2_k5e3=dict(
-                        type='MBV2Block',
+                        type='MBBlock',
                         kernel_size=5,
                         expand_ratio=3,
                         act_cfg=dict(type='ReLU6')),
                     mbv2_k7e3=dict(
-                        type='MBV2Block',
+                        type='MBBlock',
                         kernel_size=7,
                         expand_ratio=3,
                         act_cfg=dict(type='ReLU6')),
                     mbv2_k3e6=dict(
-                        type='MBV2Block',
+                        type='MBBlock',
                         kernel_size=3,
                         expand_ratio=6,
                         act_cfg=dict(type='ReLU6')),
                     mbv2_k5e6=dict(
-                        type='MBV2Block',
+                        type='MBBlock',
                         kernel_size=5,
                         expand_ratio=6,
                         act_cfg=dict(type='ReLU6')),
                     mbv2_k7e6=dict(
-                        type='MBV2Block',
+                        type='MBBlock',
                         kernel_size=7,
                         expand_ratio=6,
                         act_cfg=dict(type='ReLU6')),
@@ -297,7 +297,7 @@ def test_spos_mbv2():
                 type='OneShotOP',
                 choices=dict(
                     mbv2_k3e1=dict(
-                        type='MBV2Block',
+                        type='MBBlock',
                         kernel_size=3,
                         expand_ratio=1,
                         act_cfg=dict(type='ReLU6')), ))))
