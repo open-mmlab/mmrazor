@@ -5,6 +5,6 @@ except (ImportError, ModuleNotFoundError):
     mmdet = None
 
 if mmdet is not None:
-    from .train import set_random_seed, train_detector
+    from .train import train_detector
 
-    __all__ = ['set_random_seed', 'train_detector']
+    __all__ = ['train_detector']
