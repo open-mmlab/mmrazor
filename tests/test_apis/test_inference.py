@@ -26,7 +26,7 @@ def test_init_mmcls_model():
     assert hasattr(model, 'neck')
     assert hasattr(model, 'head')
 
-    img = mmcv.imread(Path(__file__).parent / 'data/color.jpg', 'color')
+    img = mmcv.imread(Path(__file__).parent.parent / 'data/color.jpg', 'color')
     result = inference_model(model, img)
     assert isinstance(result, dict)
     assert result.get('pred_label') is not None
@@ -47,7 +47,7 @@ def test_init_mmdet_model():
         cfg_options={'algorithm.mutable_cfg': mutable_file})
     assert not hasattr(model, 'architecture')
 
-    img = mmcv.imread(Path(__file__).parent / 'data/color.jpg', 'color')
+    img = mmcv.imread(Path(__file__).parent.parent / 'data/color.jpg', 'color')
     result = inference_detector(model, img)
     assert isinstance(result, list)
 
@@ -73,6 +73,6 @@ def test_init_mmseg_model():
     assert hasattr(model, 'decode_head')
     assert hasattr(model, 'auxiliary_head')
 
-    img = mmcv.imread(Path(__file__).parent / 'data/color.jpg', 'color')
+    img = mmcv.imread(Path(__file__).parent.parent / 'data/color.jpg', 'color')
     result = inference_segmentor(model, img)
     assert result[0].shape == (300, 400)
