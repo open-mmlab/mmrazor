@@ -1,0 +1,66 @@
+stage_0_block_0:
+  chosen:
+  - mbv2_k3e1
+stage_1_block_0:
+  chosen:
+  - mbv2_k5e3
+stage_1_block_1:
+  chosen:
+  - mbv2_k5e3
+stage_1_block_2:
+  chosen:
+  - identity
+stage_1_block_3:
+  chosen:
+  - mbv2_k3e3
+stage_2_block_0:
+  chosen:
+  - mbv2_k3e3
+stage_2_block_1:
+  chosen:
+  - identity
+stage_2_block_2:
+  chosen:
+  - identity
+stage_2_block_3:
+  chosen:
+  - mbv2_k3e3
+stage_3_block_0:
+  chosen:
+  - mbv2_k7e6
+stage_3_block_1:
+  chosen:
+  - identity
+stage_3_block_2:
+  chosen:
+  - mbv2_k7e3
+stage_3_block_3:
+  chosen:
+  - mbv2_k7e3
+stage_4_block_0:
+  chosen:
+  - mbv2_k3e3
+stage_4_block_1:
+  chosen:
+  - mbv2_k3e3
+stage_4_block_2:
+  chosen:
+  - mbv2_k7e3
+stage_4_block_3:
+  chosen:
+  - mbv2_k5e3
+stage_5_block_0:
+  chosen:
+  - mbv2_k5e6
+stage_5_block_1:
+  chosen:
+  - mbv2_k7e3
+stage_5_block_2:
+  chosen:
+  - mbv2_k7e3
+stage_5_block_3:
+  chosen:
+  - mbv2_k7e3
+stage_6_block_0:
+  chosen:
+  - mbv2_k5e6
