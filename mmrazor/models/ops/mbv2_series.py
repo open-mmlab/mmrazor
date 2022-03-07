@@ -83,7 +83,7 @@ class MBV2Block(BaseOP):
             norm_cfg=norm_cfg,
             act_cfg=act_cfg)
         if self.with_se:
-            self.se = SELayer(**se_cfg)
+            self.se = SELayer(self.mid_channels, **se_cfg)
         self.linear_conv = ConvModule(
             in_channels=self.mid_channels,
             out_channels=self.out_channels,
