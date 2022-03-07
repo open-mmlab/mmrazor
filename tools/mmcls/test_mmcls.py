@@ -98,8 +98,7 @@ def main():
     cfg = mmcv.Config.fromfile(args.config)
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
-    print(cfg.pretty_text)
-    exit(0)
+
     # set multi-process settings
     setup_multi_processes(cfg)
 
