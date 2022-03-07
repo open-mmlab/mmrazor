@@ -1,5 +1,5 @@
 _base_ = [
-    './spos_subnet_mbv2_proxyless_gpu_8xb128_in1k.py',
+    './spos_subnet_mb_proxyless_gpu_8xb128_in1k.py',
 ]
 
 img_norm_cfg = dict(mean=[0., 0., 0.], std=[1., 1., 1.], to_rgb=False)

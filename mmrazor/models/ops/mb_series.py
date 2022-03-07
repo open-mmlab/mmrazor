@@ -10,8 +10,8 @@ from .base import BaseOP
 
 
 @OPS.register_module()
-class MBV2Block(BaseOP):
-    """MobilenetV2 block for Searchable backbone.
+class MBBlock(BaseOP):
+    """Mobilenet block for Searchable backbone.
 
     Args:
         kernel_size (int): Size of the convolving kernel.
@@ -44,7 +44,7 @@ class MBV2Block(BaseOP):
                  with_cp=False,
                  **kwargs):
 
-        super(MBV2Block, self).__init__(**kwargs)
+        super(MBBlock, self).__init__(**kwargs)
         self.with_res_shortcut = (
             self.stride == 1 and self.in_channels == self.out_channels)
         assert self.stride in [1, 2]

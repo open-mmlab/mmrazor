@@ -7,7 +7,7 @@ norm_cfg = dict(type='BN')
 model = dict(
     type='mmcls.ImageClassifier',
     backbone=dict(
-        type='SearchableMobileNetV2',
+        type='SearchableMobileNet',
         first_channels=40,
         last_channels=1728,
         widen_factor=1.0,
@@ -35,37 +35,37 @@ mutator = dict(
             type='OneShotOP',
             choices=dict(
                 mbv2_k3e3=dict(
-                    type='MBV2Block',
+                    type='MBBlock',
                     kernel_size=3,
                     expand_ratio=3,
                     norm_cfg=norm_cfg,
                     act_cfg=dict(type='ReLU6')),
                 mbv2_k5e3=dict(
-                    type='MBV2Block',
+                    type='MBBlock',
                     kernel_size=5,
                     expand_ratio=3,
                     norm_cfg=norm_cfg,
                     act_cfg=dict(type='ReLU6')),
                 mbv2_k7e3=dict(
-                    type='MBV2Block',
+                    type='MBBlock',
                     kernel_size=7,
                     expand_ratio=3,
                     norm_cfg=norm_cfg,
                     act_cfg=dict(type='ReLU6')),
                 mbv2_k3e6=dict(
-                    type='MBV2Block',
+                    type='MBBlock',
                     kernel_size=3,
                     expand_ratio=6,
                     norm_cfg=norm_cfg,
                     act_cfg=dict(type='ReLU6')),
                 mbv2_k5e6=dict(
-                    type='MBV2Block',
+                    type='MBBlock',
                     kernel_size=5,
                     expand_ratio=6,
                     norm_cfg=norm_cfg,
                     act_cfg=dict(type='ReLU6')),
                 mbv2_k7e6=dict(
-                    type='MBV2Block',
+                    type='MBBlock',
                     kernel_size=7,
                     expand_ratio=6,
                     norm_cfg=norm_cfg,
@@ -75,7 +75,7 @@ mutator = dict(
             type='OneShotOP',
             choices=dict(
                 mbv2_k3e1=dict(
-                    type='MBV2Block',
+                    type='MBBlock',
                     kernel_size=3,
                     expand_ratio=1,
                     norm_cfg=norm_cfg,

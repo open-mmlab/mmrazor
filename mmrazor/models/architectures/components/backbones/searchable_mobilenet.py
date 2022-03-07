@@ -10,8 +10,8 @@ from ...utils import Placeholder
 
 
 @BACKBONES.register_module()
-class SearchableMobileNetV2(BaseBackbone):
-    """Searchable MobileNetV2 backbone.
+class SearchableMobileNet(BaseBackbone):
+    """Searchable MobileNet backbone.
 
     Args:
         first_channels (int): Channel width of first ConvModule. Default: 32.
@@ -69,7 +69,7 @@ class SearchableMobileNetV2(BaseBackbone):
                          val=1,
                          layer=['_BatchNorm', 'GroupNorm'])
                  ]):
-        super(SearchableMobileNetV2, self).__init__(init_cfg)
+        super(SearchableMobileNet, self).__init__(init_cfg)
 
         arch_settings = self.arch_settings_dict.get(arch_setting_type)
         if arch_settings is None:
@@ -206,7 +206,7 @@ class SearchableMobileNetV2(BaseBackbone):
         Args:
             mode (bool): Whether it is train_mode or test_mode
         """
-        super(SearchableMobileNetV2, self).train(mode)
+        super(SearchableMobileNet, self).train(mode)
         self._freeze_stages()
         if mode and self.norm_eval:
             for m in self.modules():

@@ -1,5 +1,5 @@
 _base_ = [
-    './spos_supernet_mbv2_8xb128_in1k.py',
+    './spos_supernet_mb_8xb128_in1k.py',
 ]
 
 algorithm = dict(retraining=True)

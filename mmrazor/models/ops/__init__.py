@@ -2,10 +2,10 @@
 from .common import Identity
 from .darts_series import (DartsDilConv, DartsPoolBN, DartsSepConv,
                            DartsSkipConnect, DartsZero)
-from .mbv2_series import MBV2Block
+from .mb_series import MBBlock
 from .shufflenet_series import ShuffleBlock, ShuffleXception
 
 __all__ = [
     'ShuffleBlock', 'ShuffleXception', 'DartsPoolBN', 'DartsDilConv',
-    'DartsSepConv', 'DartsSkipConnect', 'DartsZero', 'MBV2Block', 'Identity'
+    'DartsSepConv', 'DartsSkipConnect', 'DartsZero', 'MBBlock', 'Identity'
 ]
