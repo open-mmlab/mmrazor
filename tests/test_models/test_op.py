@@ -95,7 +95,7 @@ def test_shuffle_series():
     assert outputs.size(1) == 16 and outputs.size(2) == 32
 
 
-def test_mb_series():
+def test_mobilenet_series():
 
     tensor = torch.randn(16, 16, 32, 32)
 
