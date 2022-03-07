@@ -14,6 +14,8 @@ class SearchableMobileNetV2(BaseBackbone):
     """Searchable MobileNetV2 backbone.
 
     Args:
+        first_channels (int): Channel width of first ConvModule. Default: 32.
+        last_channels (int): Channel width of last ConvModule. Default: 1200.
         widen_factor (float): Width multiplier, multiply number of
             channels in each layer by this amount. Default: 1.0.
         out_indices (None or Sequence[int]): Output from which stages.
@@ -31,14 +33,22 @@ class SearchableMobileNetV2(BaseBackbone):
             and its variants only. Default: False.
         with_cp (bool): Use checkpoint or not. Using checkpoint will save some
             memory while slowing down the training speed. Default: False.
+        arch_setting_type (str): Specify architecture setting.
+            Default: 'original'.
     """
 
     # Parameters to build layers. 3 parameters are needed to construct a
     # layer, from left to right: channel, num_blocks, stride.
-    arch_settings = [[16, 1, 1], [24, 2, 2], [32, 3, 2], [64, 4, 2],
-                     [96, 3, 1], [160, 3, 2], [320, 1, 1]]
+    arch_settings_dict = {
+        'original': [[16, 1, 1], [24, 2, 2], [32, 3, 2], [64, 4, 2],
+                     [96, 3, 1], [160, 3, 2], [320, 1, 1]],
+        'proxyless_gpu': [[24, 1, 1], [32, 4, 2], [56, 4, 2], [112, 4, 2],
+                          [128, 4, 1], [256, 4, 2], [432, 1, 1]],
+    }
 
     def __init__(self,
+                 first_channels=32,
+                 last_channels=1200,
                  widen_factor=1.,
                  out_indices=(7, ),
                  frozen_stages=-1,
@@ -47,6 +57,7 @@ class SearchableMobileNetV2(BaseBackbone):
                  act_cfg=dict(type='ReLU6'),
                  norm_eval=False,
                  with_cp=False,
+                 arch_setting_type='original',
                  init_cfg=[
                      dict(type='Kaiming', layer=['Conv2d']),
                      dict(
@@ -55,6 +66,13 @@ class SearchableMobileNetV2(BaseBackbone):
                          layer=['_BatchNorm', 'GroupNorm'])
                  ]):
         super(SearchableMobileNetV2, self).__init__(init_cfg)
+
+        arch_settings = self.arch_settings_dict.get(arch_setting_type)
+        if arch_settings is None:
+            raise ValueError(f'Expect `arch_setting_type`: '
+                             f'{list(self.arch_settings_dict.keys())}, '
+                             f'but got: {arch_setting_type}')
+        self.arch_settings = arch_settings
         self.widen_factor = widen_factor
         self.out_indices = out_indices
         for index in out_indices:
@@ -73,7 +91,7 @@ class SearchableMobileNetV2(BaseBackbone):
         self.norm_eval = norm_eval
         self.with_cp = with_cp
 
-        self.in_channels = make_divisible(32 * widen_factor, 8)
+        self.in_channels = make_divisible(first_channels * widen_factor, 8)
 
         self.conv1 = ConvModule(
             in_channels=3,
@@ -100,9 +118,9 @@ class SearchableMobileNetV2(BaseBackbone):
             self.layers.append(layer_name)
 
         if widen_factor > 1.0:
-            self.out_channel = int(1280 * widen_factor)
+            self.out_channel = int(last_channels * widen_factor)
         else:
-            self.out_channel = 1280
+            self.out_channel = last_channels
 
         layer = ConvModule(
             in_channels=self.in_channels,
@@ -130,9 +148,15 @@ class SearchableMobileNetV2(BaseBackbone):
         for i in range(num_blocks):
             if i >= 1:
                 stride = 1
+            # HACK
+            # do not search first block
+            if stage_idx == 0:
+                group = 'first_blocks'
+            else:
+                group = 'searchable_blocks'
             layers.append(
                 Placeholder(
-                    group='all_blocks',
+                    group=group,
                     space_id=f'stage_{stage_idx}_block_{i}',
                     choice_args=dict(
                         in_channels=self.in_channels,
