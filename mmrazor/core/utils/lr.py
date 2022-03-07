@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 def set_lr(runner, lr_groups, freeze_optimizers=[]):
     """Set specified learning rate in optimizer."""
     if isinstance(runner.optimizer, dict):

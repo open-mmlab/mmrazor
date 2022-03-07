@@ -1,5 +1,7 @@
-# SINGLE PATH ONE-SHOT NEURAL ARCHITECTURE SEARCH WITH UNIFORM SAMPLING
+# SPOS
+> [Single Path One-Shot Neural Architecture Search with Uniform Sampling](https://arxiv.org/abs/1904.00420)
 
+<!-- [ALGORITHM] -->
 
 ## Abstract
 
@@ -8,29 +10,9 @@ Comprehensive experiments verify that our approach is flexible and effective. It
 
 ![pipeline](/docs/en/imgs/model_zoo/spos/pipeline.jpg)
 
-## Citation
 
-```latex
-@inproceedings{guo2020single,
-  title={Single path one-shot neural architecture search with uniform sampling},
-  author={Guo, Zichao and Zhang, Xiangyu and Mu, Haoyuan and Heng, Wen and Liu, Zechun and Wei, Yichen and Sun, Jian},
-  booktitle={European Conference on Computer Vision},
-  pages={544--560},
-  year={2020},
-  organization={Springer}
-}
-```
 
-## Results and models
-|Dataset|       Supernet      | Subnet | Params(M) | Flops(G) | Top-1 (%) | Top-5 (%) | Config | Download | Remarks |
-|:---------------------:|:---------------------:|:------:|:---------:|:--------:|:---------:|:---------:|:------:|:---------|:---------:|
-|ImageNet|   ShuffleNetV2      |[mutable](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v0.1/nas/spos/spos_shufflenetv2_subnet_8xb128_in1k/spos_shufflenetv2_subnet_8xb128_in1k_flops_0.33M_acc_73.87_20211222-454627be_mutable_cfg.yaml?versionId=CAEQHxiBgICw5b6I7xciIGY5MjVmNWFhY2U5MjQzN2M4NDViYzI2YWRmYWE1YzQx)|    3.35    |  0.33        |     73.87  |    91.6   |[config](./spos_subnet_shufflenetv2_8xb128_in1k.py)|[model](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v0.1/nas/spos/spos_shufflenetv2_subnet_8xb128_in1k/spos_shufflenetv2_subnet_8xb128_in1k_flops_0.33M_acc_73.87_20211222-1f0a0b4d.pth?versionId=CAEQHxiBgIDK5b6I7xciIDM1YjIwZjQxN2UyMDRjYjA5YTM5NTBlMGNhMTdkNjI2) &#124; [log](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v0.1/nas/spos/spos_shufflenetv2_subnet_8xb128_in1k/spos_shufflenetv2_subnet_8xb128_in1k_flops_0.33M_acc_73.87_20211222-1f0a0b4d.log.json?versionId=CAEQHxiBgIDr9cuL7xciIDBmOTZiZGUyYjRiMDQ5NzhhZjY0NWUxYmUzNDlmNTg5)| MMRazor searched
-
-**Note**:
-1. There are some small differences in our experiment in order to be consistent with other repos in OpenMMLab. For example,
-normalize images in data preprocessing; resize by cv2 rather than PIL in training; dropout is not used in network.
-2. We also retrain the subnet reported in paper with their official code, Top-1 is 73.6 and Top-5 is 91.6
-## Getting Started
+## Introduction
 ### Supernet pre-training on ImageNet
 ```bash
 python ./tools/mmcls/train_mmcls.py \
@@ -51,4 +33,27 @@ python ./tools/mmcls/train_mmcls.py \
   configs/nas/spos/spos_subnet_shufflenetv2_8xb128_in1k.py \
   --work-dir $WORK_DIR \
   --cfg-options algorithm.mutable_cfg=$STEP2_SUBNET_YAML
+```
+
+## Results and models
+|Dataset|       Supernet      | Subnet | Params(M) | Flops(G) | Top-1 (%) | Top-5 (%) | Config | Download | Remarks |
+|:---------------------:|:---------------------:|:------:|:---------:|:--------:|:---------:|:---------:|:------:|:---------|:---------:|
+|ImageNet|   ShuffleNetV2      |[mutable](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v0.1/nas/spos/spos_shufflenetv2_subnet_8xb128_in1k/spos_shufflenetv2_subnet_8xb128_in1k_flops_0.33M_acc_73.87_20211222-454627be_mutable_cfg.yaml?versionId=CAEQHxiBgICw5b6I7xciIGY5MjVmNWFhY2U5MjQzN2M4NDViYzI2YWRmYWE1YzQx)|    3.35    |  0.33        |     73.87  |    91.6   |[config](./spos_subnet_shufflenetv2_8xb128_in1k.py)|[model](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v0.1/nas/spos/spos_shufflenetv2_subnet_8xb128_in1k/spos_shufflenetv2_subnet_8xb128_in1k_flops_0.33M_acc_73.87_20211222-1f0a0b4d.pth?versionId=CAEQHxiBgIDK5b6I7xciIDM1YjIwZjQxN2UyMDRjYjA5YTM5NTBlMGNhMTdkNjI2) &#124; [log](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v0.1/nas/spos/spos_shufflenetv2_subnet_8xb128_in1k/spos_shufflenetv2_subnet_8xb128_in1k_flops_0.33M_acc_73.87_20211222-1f0a0b4d.log.json?versionId=CAEQHxiBgIDr9cuL7xciIDBmOTZiZGUyYjRiMDQ5NzhhZjY0NWUxYmUzNDlmNTg5)| MMRazor searched
+
+**Note**:
+1. There are some small differences in our experiment in order to be consistent with other repos in OpenMMLab. For example,
+normalize images in data preprocessing; resize by cv2 rather than PIL in training; dropout is not used in network.
+2. We also retrain the subnet reported in paper with their official code, Top-1 is 73.6 and Top-5 is 91.6
+
+## Citation
+
+```latex
+@inproceedings{guo2020single,
+  title={Single path one-shot neural architecture search with uniform sampling},
+  author={Guo, Zichao and Zhang, Xiangyu and Mu, Haoyuan and Heng, Wen and Liu, Zechun and Wei, Yichen and Sun, Jian},
+  booktitle={European Conference on Computer Vision},
+  pages={544--560},
+  year={2020},
+  organization={Springer}
+}
 ```
