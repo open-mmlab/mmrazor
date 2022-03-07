@@ -12,7 +12,7 @@ from mmrazor.models import build_algorithm
 def init_mmcls_model(config: Union[str, mmcv.Config],
                      checkpoint: Optional[str] = None,
                      device: str = 'cuda:0',
-                     options: Optional[Dict] = None) -> nn.Module:
+                     cfg_options: Optional[Dict] = None) -> nn.Module:
     """Initialize a mmcls model from config file.
 
     Args:
@@ -20,7 +20,8 @@ def init_mmcls_model(config: Union[str, mmcv.Config],
             object.
         checkpoint (str, optional): Checkpoint path. If left as None, the model
             will not load any weights.
-        options (dict): Options to override some settings in the used config.
+        cfg_options (dict): cfg_options to override some settings in the used
+            config.
 
     Returns:
         nn.Module: The constructed classifier.
@@ -30,8 +31,8 @@ def init_mmcls_model(config: Union[str, mmcv.Config],
     elif not isinstance(config, mmcv.Config):
         raise TypeError('config must be a filename or Config object, '
                         f'but got {type(config)}')
-    if options is not None:
-        config.merge_from_dict(options)
+    if cfg_options is not None:
+        config.merge_from_dict(cfg_options)
 
     model_cfg = config.algorithm.architecture.model
     model_cfg.pretrained = None
