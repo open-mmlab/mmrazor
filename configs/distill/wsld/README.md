@@ -1,5 +1,11 @@
-# RETHINKING SOFT LABELS FOR KNOWLEDGE DISTILLATION: A BIAS-VARIANCE TRADEOFF PERSPECTIVE
+# WSLD
 
+
+
+> [Rethinking Soft Labels for Knowledge Distillation: A Bias-Variance Tradeoff Perspective](https://arxiv.org/abs/2102.00650)
+
+<!-- [ALGORITHM] -->
+## Abstract
 Knowledge distillation is an effective approach to leverage a well-trained network
 or an ensemble of them, named as the teacher, to guide the training of a student
 network. The outputs from the teacher network are used as soft labels for supervising the training of a new network. Recent studies (Muller et al., 2019; Yuan ¨
@@ -16,6 +22,15 @@ weighted soft labels to help the network adaptively handle the sample-wise biasv
 effectiveness of our method.
 
 ![pipeline](/docs/en/imgs/model_zoo/wsld/pipeline.png)
+
+## Results and models
+### Classification
+|Location|Dataset|Teacher|Student|Acc|Acc(T)|Acc(S)|Config | Download |
+:--------:|:---------:|:---------:|:---------:|:---------:|:---------:|:---------:|:------:|:---------|
+| cls head     |ImageNet|[resnet34](https://github.com/open-mmlab/mmclassification/blob/master/configs/resnet/resnet34_8xb32_in1k.py)|[resnet18](https://github.com/open-mmlab/mmclassification/blob/master/configs/resnet/resnet18_8xb32_in1k.py)| 71.54 |    73.62 |    69.90  |[config](./wsld_cls_head_resnet34_resnet18_8xb32_in1k.py)|[teacher](https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth) &#124;[model](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v0.1/distill/wsld/wsld_cls_head_resnet34_resnet18_8xb32_in1k/wsld_cls_head_resnet34_resnet18_8xb32_in1k_acc-71.54_20211222-91f28cf6.pth?versionId=CAEQHxiBgMC6memK7xciIGMzMDFlYTA4YzhlYTRiMTNiZWU0YTVhY2I5NjVkMjY2) &#124; [log](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v0.1/distill/wsld/wsld_cls_head_resnet34_resnet18_8xb32_in1k/wsld_cls_head_resnet34_resnet18_8xb32_in1k_20211221_181516.log.json?versionId=CAEQHxiBgIDLmemK7xciIGNkM2FiN2Y4N2E5YjRhNDE4NDVlNmExNDczZDIxN2E5)|
+
+
+
 ## Citation
 ```latex
 @inproceedings{zhou2021wsl,
@@ -25,9 +40,3 @@ effectiveness of our method.
   year={2021}
 }
 ```
-
-## Results and models
-### Classification
-|Location|Dataset|Teacher|Student|Acc|Acc(T)|Acc(S)|Config | Download |
-:--------:|:---------:|:---------:|:---------:|:---------:|:---------:|:---------:|:------:|:---------|
-| cls head     |ImageNet|[resnet34](https://github.com/open-mmlab/mmclassification/blob/master/configs/resnet/resnet34_8xb32_in1k.py)|[resnet18](https://github.com/open-mmlab/mmclassification/blob/master/configs/resnet/resnet18_8xb32_in1k.py)| 71.54 |    73.62 |    69.90  |[config](./wsld_cls_head_resnet34_resnet18_8xb32_in1k.py)|[teacher](https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth) &#124;[model](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v0.1/distill/wsld/wsld_cls_head_resnet34_resnet18_8xb32_in1k/wsld_cls_head_resnet34_resnet18_8xb32_in1k_acc-71.54_20211222-91f28cf6.pth?versionId=CAEQHxiBgMC6memK7xciIGMzMDFlYTA4YzhlYTRiMTNiZWU0YTVhY2I5NjVkMjY2) &#124; [log](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v0.1/distill/wsld/wsld_cls_head_resnet34_resnet18_8xb32_in1k/wsld_cls_head_resnet34_resnet18_8xb32_in1k_20211221_181516.log.json?versionId=CAEQHxiBgIDLmemK7xciIGNkM2FiN2Y4N2E5YjRhNDE4NDVlNmExNDczZDIxN2E5)|

@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from mmcls.models.builder import HEADS
 from mmcls.models.heads import LinearClsHead
 from torch import nn
