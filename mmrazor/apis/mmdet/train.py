@@ -15,6 +15,7 @@ from mmdet.utils import get_root_logger
 from mmrazor.core.distributed_wrapper import DistributedDataParallelWrapper
 from mmrazor.core.hooks import DistSamplerSeedHook
 from mmrazor.core.optimizer import build_optimizers
+from mmrazor.utils import find_latest_checkpoint
 
 
 def set_random_seed(seed, deterministic=False):
@@ -180,6 +181,12 @@ def train_detector(model,
         eval_hook = DistEvalHook if distributed else EvalHook
         runner.register_hook(
             eval_hook(val_dataloader, **eval_cfg), priority='LOW')
+
+    resume_from = None
+    if cfg.resume_from is None and cfg.get('auto_resume'):
+        resume_from = find_latest_checkpoint(cfg.work_dir)
+    if resume_from is not None:
+        cfg.resume_from = resume_from
 
     if cfg.resume_from:
         runner.resume(cfg.resume_from)
