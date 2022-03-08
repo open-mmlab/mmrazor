@@ -236,6 +236,90 @@ def test_spos():
     assert flops_supernet > flops_subnet_spos > 0
 
 
+def test_spos_mobilenet():
+
+    model_cfg = dict(
+        type='mmcls.ImageClassifier',
+        backbone=dict(type='SearchableMobileNet', widen_factor=1.0),
+        neck=dict(type='mmcls.GlobalAveragePooling'),
+        head=dict(
+            type='mmcls.LinearClsHead',
+            num_classes=1000,
+            in_channels=1280,
+            loss=dict(type='mmcls.CrossEntropyLoss', loss_weight=1.0),
+            topk=(1, 5),
+        ),
+    )
+
+    architecture_cfg = dict(
+        type='MMClsArchitecture',
+        model=model_cfg,
+    )
+
+    mutator_cfg = dict(
+        type='OneShotMutator',
+        placeholder_mapping=dict(
+            searchable_blocks=dict(
+                type='OneShotOP',
+                choices=dict(
+                    mb_k3e3=dict(
+                        type='MBBlock',
+                        kernel_size=3,
+                        expand_ratio=3,
+                        act_cfg=dict(type='ReLU6')),
+                    mb_k5e3=dict(
+                        type='MBBlock',
+                        kernel_size=5,
+                        expand_ratio=3,
+                        act_cfg=dict(type='ReLU6')),
+                    mb_k7e3=dict(
+                        type='MBBlock',
+                        kernel_size=7,
+                        expand_ratio=3,
+                        act_cfg=dict(type='ReLU6')),
+                    mb_k3e6=dict(
+                        type='MBBlock',
+                        kernel_size=3,
+                        expand_ratio=6,
+                        act_cfg=dict(type='ReLU6')),
+                    mb_k5e6=dict(
+                        type='MBBlock',
+                        kernel_size=5,
+                        expand_ratio=6,
+                        act_cfg=dict(type='ReLU6')),
+                    mb_k7e6=dict(
+                        type='MBBlock',
+                        kernel_size=7,
+                        expand_ratio=6,
+                        act_cfg=dict(type='ReLU6')),
+                    identity=dict(type='Identity'))),
+            first_blocks=dict(
+                type='OneShotOP',
+                choices=dict(
+                    mb_k3e1=dict(
+                        type='MBBlock',
+                        kernel_size=3,
+                        expand_ratio=1,
+                        act_cfg=dict(type='ReLU6')), ))))
+
+    algorithm_cfg = dict(
+        type='SPOS',
+        architecture=architecture_cfg,
+        mutator=mutator_cfg,
+        retraining=False,
+    )
+
+    imgs = torch.randn(16, 3, 224, 224)
+    label = torch.randint(0, 1000, (16, ))
+
+    algorithm_cfg_ = deepcopy(algorithm_cfg)
+    algorithm = ALGORITHMS.build(algorithm_cfg_)
+
+    # test forward
+    losses = algorithm(imgs, return_loss=True, gt_label=label)
+    assert losses['loss'].item() > 0
+
+
 def test_detnas():
     config_path = os.path.join(
         dirname(dirname(dirname(__file__))),

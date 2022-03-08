@@ -1,0 +1,7 @@
+Import:
+  - configs/distill/cwd/metafile.yml
+  - configs/distill/wsld/metafile.yml
+  - configs/nas/darts/metafile.yml
+  - configs/nas/detnas/metafile.yml
+  - configs/nas/spos/metafile.yml
+  - configs/pruning/autoslim/metafile.yml

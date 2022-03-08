@@ -4,7 +4,7 @@ _base_ = [
     '../../_base_/mmdet_runtime.py'
 ]
 
-norm_cfg = dict(type='BN', requires_grad=True)
+norm_cfg = dict(type='SyncBN', requires_grad=True)
 model = dict(
     type='mmdet.FasterRCNN',
     backbone=dict(
