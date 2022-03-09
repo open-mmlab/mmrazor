@@ -10,6 +10,7 @@ from mmrazor.apis import init_mmcls_model, init_mmdet_model, init_mmseg_model
 
 
 def _sync_bn2bn(config: mmcv.Config) -> None:
+
     def dfs(cfg_dict) -> None:
         if isinstance(cfg_dict, dict):
             for k, v in cfg_dict.items():
@@ -17,7 +18,7 @@ def _sync_bn2bn(config: mmcv.Config) -> None:
                     if v['type'] == 'SyncBN':
                         v['type'] = 'BN'
                 dfs(v)
-    
+
     dfs(config._cfg_dict)
 
 
