@@ -23,7 +23,7 @@ from mmdet import __version__
 from mmdet.datasets import build_dataset
 from mmdet.utils import collect_env, get_root_logger
 
-from mmrazor.apis import set_random_seed, train_detector
+from mmrazor.apis import set_random_seed, train_mmdet_model
 from mmrazor.models import build_algorithm
 from mmrazor.utils import setup_multi_processes
 
@@ -185,7 +185,7 @@ def main():
             CLASSES=datasets[0].CLASSES)
     # add an attribute for visualization convenience
     algorithm.CLASSES = datasets[0].CLASSES
-    train_detector(
+    train_mmdet_model(
         algorithm,
         datasets,
         cfg,

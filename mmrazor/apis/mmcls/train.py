@@ -16,14 +16,14 @@ from mmrazor.core.optimizer import build_optimizers
 from mmrazor.datasets.utils import split_dataset
 
 
-def train_model(model,
-                dataset,
-                cfg,
-                distributed=False,
-                validate=False,
-                timestamp=None,
-                device='cuda',
-                meta=None):
+def train_mmcls_model(model,
+                      dataset,
+                      cfg,
+                      distributed=False,
+                      validate=False,
+                      timestamp=None,
+                      device='cuda',
+                      meta=None):
     """Copy from mmclassification and modify some codes.
 
     This is an ugly implementation, and will be deprecated in the future. In

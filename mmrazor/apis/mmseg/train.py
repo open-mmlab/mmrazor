@@ -12,13 +12,13 @@ from mmrazor.core.distributed_wrapper import DistributedDataParallelWrapper
 from mmrazor.core.optimizer import build_optimizers
 
 
-def train_segmentor(model,
-                    dataset,
-                    cfg,
-                    distributed=False,
-                    validate=False,
-                    timestamp=None,
-                    meta=None):
+def train_mmseg_model(model,
+                      dataset,
+                      cfg,
+                      distributed=False,
+                      validate=False,
+                      timestamp=None,
+                      meta=None):
     """Copy from mmsegmentation and modify some codes.
 
     This is an ugly implementation, and will be deprecated in the future. In

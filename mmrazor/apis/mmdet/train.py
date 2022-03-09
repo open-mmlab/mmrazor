@@ -15,13 +15,13 @@ from mmrazor.core.hooks import DistSamplerSeedHook
 from mmrazor.core.optimizer import build_optimizers
 
 
-def train_detector(model,
-                   dataset,
-                   cfg,
-                   distributed=False,
-                   validate=False,
-                   timestamp=None,
-                   meta=None):
+def train_mmdet_model(model,
+                      dataset,
+                      cfg,
+                      distributed=False,
+                      validate=False,
+                      timestamp=None,
+                      meta=None):
     """Copy from mmdetection and modify some codes.
 
     This is an ugly implementation, and will be deprecated in the future. In

@@ -15,7 +15,7 @@ from mmcv import Config, DictAction
 from mmcv.runner import get_dist_info, init_dist
 
 # Differences from mmclassification
-from mmrazor.apis.mmcls.train import set_random_seed, train_model
+from mmrazor.apis import set_random_seed, train_mmcls_model
 from mmrazor.models import build_algorithm
 from mmrazor.utils import setup_multi_processes
 
@@ -174,7 +174,7 @@ def main():
             config=cfg.pretty_text,
             CLASSES=datasets[0].CLASSES)
     # add an attribute for visualization convenience
-    train_model(
+    train_mmcls_model(
         # Difference from mmclassification
         # replace `model` to `algorithm`
         algorithm,
