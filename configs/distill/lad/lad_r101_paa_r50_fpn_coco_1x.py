@@ -70,7 +70,7 @@ student = dict(
         nms=dict(type='nms', iou_threshold=0.6),
         max_per_img=100))
 
-teacher_ckpt = 'https://download.openmmlab.com/mmdetection/v2.0/paa/paa_r50_fpn_1x_coco/paa_r50_fpn_1x_coco_20200821-936edec3.pth'  # noqa
+teacher_ckpt = 'http://download.openmmlab.com/mmdetection/v2.0/paa/paa_r101_fpn_1x_coco/paa_r101_fpn_1x_coco_20200821-0a1825a4.pth'  # noqa
 teacher = dict(
     type='mmdet.PAA',
     init_cfg=dict(type='Pretrained', checkpoint=teacher_ckpt),
