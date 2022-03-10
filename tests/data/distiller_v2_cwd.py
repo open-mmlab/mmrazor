@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 norm_cfg = dict(type='BN', requires_grad=True)
 
 # pspnet r18

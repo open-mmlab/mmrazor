@@ -81,16 +81,14 @@ teacher = dict(
 # algorithm setting
 algorithm = dict(
     type='GeneralDistill',
-    architecture=dict(
-        type='MMSegArchitecture',
-        model=student),
+    architecture=dict(type='MMSegArchitecture', model=student),
     distiller=dict(
         type='SingleTeacherDistillerV2',
         teacher=teacher,
         teacher_trainable=False,
-        student_recorder_cfg=dict( 
+        student_recorder_cfg=dict(
             outputs=dict(sources=['decode_head.conv_seg'])),
-        teacher_recorder_cfg=dict( 
+        teacher_recorder_cfg=dict(
             outputs=dict(sources=['decode_head.conv_seg'])),
         components=[
             dict(
@@ -101,12 +99,11 @@ algorithm = dict(
                     dict(source_type='outputs', source='decode_head.conv_seg'),
                 ],
                 loss=dict(
-                        type='ChannelWiseDivergence',
-                        tau=1,
-                        loss_weight=5,
-                    )),
+                    type='ChannelWiseDivergence',
+                    tau=1,
+                    loss_weight=5,
+                )),
         ]),
 )
-
 
 find_unused_parameters = True

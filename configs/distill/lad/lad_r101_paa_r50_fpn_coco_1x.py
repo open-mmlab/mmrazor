@@ -147,7 +147,7 @@ algorithm = dict(
         type='SingleTeacherDistillerV2',
         teacher=teacher,
         teacher_trainable=False,
-        rewriters = [
+        rewriters=[
             dict(
                 function='PAAHead.get_targets',
                 dependent_module='mmdet.models')
