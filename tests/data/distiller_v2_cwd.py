@@ -83,11 +83,6 @@ algorithm = dict(
         type='SingleTeacherDistillerV2',
         teacher=teacher,
         teacher_trainable=False,
-        rewriters = [
-            dict(
-                function='EncoderDecoder._decode_head_forward_train',
-                dependent_module='mmseg.models')
-        ],
         student_recorder_cfg=dict( 
             outputs=dict(sources=['decode_head.conv_seg']),
             inputs=dict(sources=['decode_head.conv_seg']),
