@@ -1,15 +1,153 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from unicodedata import name
+
 import torch
 import torch.nn as nn
+from mmcv.runner import BaseModule
+from mmcv.utils import import_modules_from_strings
 from torch.nn.modules.batchnorm import _BatchNorm
 
 from ..builder import DISTILLERS, MODELS, build_loss
-from .base import BaseDistiller
+
+
+class DistillRewriter():
+
+    def __init__(self,
+                 function,
+                 dependent_module,
+                 source='teacher',
+                 target='student'):
+        assert source in ['student', 'teacher']
+        assert target in ['student', 'teacher']
+        self.current_mode = 'eval'
+        self.source_data = None
+        self.source = source
+        self.target = target
+        imported_module = import_modules_from_strings(  # noqa: F841
+            dependent_module)
+        raw_func = eval(f'imported_module.{function}')
+        wrap_func = self.function_rewrite_wrapper(raw_func)  # noqa: F841
+        exec(f'imported_module.{function} = wrap_func')
+
+    def set_current_mode(self, mode):
+        assert mode in ['student', 'teacher', 'eval']
+        self.current_mode = mode
+
+    def function_rewrite_wrapper(self, raw_func):
+
+        def wrap_func(*args, **kwargs):
+            if self.current_mode == self.target:
+                assert self.source_data is not None
+                outputs = self.source_data
+            elif self.current_mode == self.source:
+                outputs = raw_func(*args, **kwargs)
+                self.source_data = outputs
+            elif self.current_mode == 'eval':
+                outputs = raw_func(*args, **kwargs)
+            else:
+                raise RuntimeError
+            return outputs
+
+        return wrap_func
+
+
+class Recorder():
+
+    def __init__(self, model, inputs, outputs, weights, functions,
+                 **kwargs) -> None:
+        self.outputs = dict()
+        self.inputs = dict()
+        self.weights = dict()
+        self.functions = dict()
+        self.recording = False
+
+        for param_name, param in model.named_parameters():
+            if param_name in weights.sources:
+                self.weights[param_name] = param
+
+        self.module2name = {}
+        for module_name, module in model.named_modules():
+            self.module2name[module] = module_name
+        self.name2module = dict(model.named_modules())
+
+        for module_name in outputs.sources:
+            self.outputs[module_name] = list()
+            module = self.name2module[module_name]
+            module.register_forward_hook(self.forward_output_hook)
+
+        for module_name in inputs.sources:
+            self.inputs[module_name] = list()
+            module = self.name2module[module_name]
+            module.register_forward_hook(self.forward_input_hook)
+
+        for func_name, mapping_module in zip(functions.sources,
+                                             functions.mapping_modules):
+            imported_module = import_modules_from_strings(  # noqa: F841
+                mapping_module)
+            raw_func = eval(f'imported_module.{func_name}')
+            full_func_name = f'{mapping_module}.{func_name}'
+            wrap_func = self.function_hook_wrapper(  # noqa: F841
+                raw_func, full_func_name)
+            exec(f'imported_module.{func_name} = wrap_func')
+
+    def reset_record_items(self):
+        for key in self.outputs.keys():
+            self.outputs[key] = list()
+        for key in self.inputs.keys():
+            self.inputs[key] = list()
+        for key in self.functions.keys():
+            self.functions[key] = list()
+
+    def set_recording(self, recording):
+        self.recording = recording
+
+    def get_record_item(self, source_type, source, index=None):
+        source_items = getattr(self, source_type)
+        item = source_items[source]
+        if index:
+            assert isinstance(index, int)
+            assert isinstance(index, (list, tuple))
+            assert index < len(item)
+            return item[index]
+        else:
+            return item
+
+    def function_hook_wrapper(self, raw_func, func_name):
+
+        def wrap_func(*args, **kwargs):
+            outputs = raw_func(*args, **kwargs)
+            if self.recording:
+                self.functions[func_name] = outputs
+            return outputs
+
+        return wrap_func
+
+    def forward_input_hook(self, module, inputs, outputs):
+        """Save the module's forward output.
+
+        Args:
+            module (:obj:`torch.nn.Module`): The module to register hook.
+            inputs (tuple): The input of the module.
+            outputs (tuple): The output of the module.
+        """
+        if self.recording:
+            module_name = self.module2name[module]
+            self.inputs[module_name].append(inputs)
+
+    def forward_output_hook(self, module, inputs, outputs):
+        """Save the module's forward output.
+
+        Args:
+            module (:obj:`torch.nn.Module`): The module to register hook.
+            inputs (tuple): The input of the module.
+            outputs (tuple): The output of the module.
+        """
+        if self.recording:
+            module_name = self.module2name[module]
+            self.outputs[module_name].append(outputs)
 
 
 @DISTILLERS.register_module()
-class SingleTeacherDistillerV2(BaseDistiller):
+class SingleTeacherDistillerV2(BaseModule):
     """Distiller with single teacher.
 
     Args:
@@ -26,8 +164,9 @@ class SingleTeacherDistillerV2(BaseDistiller):
 
     def __init__(self,
                  teacher,
-                 student_recorder,
-                 teacher_recorder,
+                 student_recorder_cfg,
+                 teacher_recorder_cfg,
+                 rewriters=tuple(),
                  teacher_trainable=False,
                  teacher_norm_eval=True,
                  components=tuple(),
@@ -37,30 +176,19 @@ class SingleTeacherDistillerV2(BaseDistiller):
         self.teacher_norm_eval = teacher_norm_eval
         self.teacher = self.build_teacher(teacher)
 
-        self.student_recorder = student_recorder
-        self.teacher_recorder = teacher_recorder
+        self.student_recorder_cfg = student_recorder_cfg
+        self.teacher_recorder_cfg = teacher_recorder_cfg
 
         self.components = components
         self.losses = nn.ModuleDict()
-        self.align_modules = nn.ModuleDict()
-
-        # Record the featuremaps that need to calculate the distillation loss.
-        
-
-        
 
         for i, component in enumerate(self.components):
-
-            # # If the number of featuremap channels of student and teacher are
-            # # inconsistent, they need to be aligned by a 1x1 convolution
-            # align_module_cfg = getattr(component, 'align_module', None)
-            # if align_module_cfg is not None:
-            #     align_module_name = f'component_{i}'
-            #     align_module = self.build_align_module(align_module_cfg)
-            #     self.align_modules[align_module_name] = align_module
-
-            loss_name = f'component.{i}'
+            loss_name = f'loss_{i}'
             self.losses[loss_name] = build_loss(component.loss)
+
+        self.rewriters = list()
+        for rewriter_cfg in rewriters:
+            self.rewriters.append(DistillRewriter(**rewriter_cfg))
 
     def build_teacher(self, cfg):
         """Build a model from the `cfg`."""
@@ -68,25 +196,6 @@ class SingleTeacherDistillerV2(BaseDistiller):
         teacher = MODELS.build(cfg)
 
         return teacher
-
-    def build_align_module(self, cfg):
-        """Build ``align_module`` from the `cfg`.
-
-        ``align_module`` is needed when the number of channels output by the
-        teacher module is not equal to that of the student module, or for some
-        other reasons.
-
-        Args:
-            cfg (dict): The config dict for ``align_module``.
-        """
-
-        in_channels = cfg.student_channels
-        out_channels = cfg.teacher_channels
-        if cfg.type == 'conv2d':
-            align_module = nn.Conv2d(in_channels, out_channels, 1)
-        elif cfg.type == 'linear':
-            align_module = nn.Linear(in_channels, out_channels)
-        return align_module
 
     def prepare_from_student(self, student):
         """Registers a global forward hook for each teacher module and student
@@ -99,98 +208,10 @@ class SingleTeacherDistillerV2(BaseDistiller):
 
         # Record the mapping relationship between student's modules and module
         # names.
-
-        for name, param in student.model.named_parameters():
-            if name in self.student_recorder.weight.keys:
-                key = f'weight::{name}'
-                self.student_pool[key] = param
-
-        for name, param in self.teacher.model.named_parameters():
-            if name in self.teacher_recorder.weight.keys:
-                key = f'weight::{name}'
-                self.teacher_pool[key] = param
-        
-        self.student_module2name = {}
-        for name, module in student.model.named_modules():
-            self.student_module2name[module] = name
-        self.student_name2module = dict(student.model.named_modules())
-
-        # Record the mapping relationship between teacher's modules and module
-        # names.
-        self.teacher_module2name = {}
-        for name, module in self.teacher.named_modules():
-            self.teacher_module2name[module] = name
-        self.teacher_name2module = dict(self.teacher.named_modules())
-
-        # Register forward hooks for modules that need to participate in loss
-        # calculation.
-        self.student_pool = dict()
-        self.teacher_pool = dict()
-
-        if hasattr(self.student_recorders.output, 'indices'):
-            assert len(self.student_recorders.output.keys) == len(self.student_recorders.output.indices)
-            for module_name, index in zip(self.student_recorders.output.keys,self.student_recorders.output.indices):
-                key = f'output::{module_name}::{index}'
-                self.student_pool[key] = list()
-                student_module = self.student_name2module[module_name]
-                student_module.register_forward_hook(self.student_forward_output_hook)
-        else:
-            for module_name in self.student_recorders.output.keys:
-                key = f'output::{module_name}'
-                self.student_pool[key] = list()
-                student_module = self.student_name2module[module_name]
-                student_module.register_forward_hook(self.student_forward_output_hook)
-
-        if hasattr(self.teacher_recorders.output, 'indices'):
-            assert len(self.teacher_recorders.output.keys) == len(self.teacher_recorders.output.indices)
-            for module_name, index in zip(self.teacher_recorders.output.keys,self.teacher_recorders.output.indices):
-                key = f'output::{module_name}::{index}'
-                self.teacher_pool[key] = list()
-                
-        else:
-            for module_name in self.teacher_recorders.output.keys:
-                key = f'output::{module_name}'
-                self.teacher_pool[key] = list()
-        for component in self.components:
-            student_module_name = component['student_module']
-            teacher_module_name = component['teacher_module']
-
-            student_module = self.student_name2module[student_module_name]
-            teacher_module = self.teacher_name2module[teacher_module_name]
-
-            student_module.register_forward_hook(
-                self.student_forward_output_hook)
-            teacher_module.register_forward_hook(
-                self.teacher_forward_output_hook)
-
-    def teacher_forward_output_hook(self, module, inputs, outputs):
-        """Save the module's forward output.
-
-        Args:
-            module (:obj:`torch.nn.Module`): The module to register hook.
-            inputs (tuple): The input of the module.
-            outputs (tuple): The output of the module.
-        """
-        if self.training:
-            self.teacher_outputs[self.teacher_module2name[module]].append(
-                outputs)
-
-    def student_forward_output_hook(self, module, inputs, outputs):
-        """Save the module's forward output.
-
-        Args:
-            module (:obj:`torch.nn.Module`): The module to register hook.
-            inputs (tuple): The input of the module.
-            outputs (tuple): The output of the module.
-        """
-        if self.training:
-            self.student_outputs[self.student_module2name[module]].append(
-                outputs)
-
-    def reset_outputs(self, outputs):
-        """Reset the teacher's outputs or student's outputs."""
-        for key in outputs.keys():
-            outputs[key] = list()
+        self.student_recorder = Recorder(student.model,
+                                         **self.student_recorder_cfg)
+        self.teacher_recorder = Recorder(self.teacher,
+                                         **self.teacher_recorder_cfg)
 
     def exec_teacher_forward(self, data):
         """Execute the teacher's forward function.
@@ -200,16 +221,22 @@ class SingleTeacherDistillerV2(BaseDistiller):
         """
 
         # Convert the context manager's mode to teacher.
-        self.reset_ctx_teacher_mode(True)
+        self.teacher_recorder.set_recording(True)
         # Clear the saved data of the last forward。
-        self.reset_outputs(self.teacher_outputs)
+        self.teacher_recorder.reset_record_items()
+
+        for rewriter in self.rewriters:
+            rewriter.set_current_mode('teacher')
 
         if self.teacher_trainable:
             output = self.teacher(**data)
         else:
             with torch.no_grad():
                 output = self.teacher(**data)
+        self.teacher_recorder.set_recording(False)
 
+        for rewriter in self.rewriters:
+            rewriter.set_current_mode('eval')
         return output
 
     def exec_student_forward(self, student, data):
@@ -219,11 +246,16 @@ class SingleTeacherDistillerV2(BaseDistiller):
         ``student_outputs``.
         """
         # Convert the context manager's mode to teacher.
-        self.reset_ctx_teacher_mode(False)
+        self.student_recorder.set_recording(True)
         # Clear the saved data of the last forward。
-        self.reset_outputs(self.student_outputs)
-
+        # self.reset_outputs(self.student_outputs)
+        self.student_recorder.reset_record_items()
+        for rewriter in self.rewriters:
+            rewriter.set_current_mode('student')
         output = student(**data)
+        self.student_recorder.set_recording(False)
+        for rewriter in self.rewriters:
+            rewriter.set_current_mode('eval')
         return output
 
     def train(self, mode=True):
@@ -234,10 +266,6 @@ class SingleTeacherDistillerV2(BaseDistiller):
                 if isinstance(m, _BatchNorm):
                     m.eval()
 
-    def get_teacher_outputs(self, teacher_module_names):
-        """Get the outputs according module name."""
-        return [self.teacher_outputs[name] for name in teacher_module_names]
-
     def compute_distill_loss(self, data=None):
         """Compute the distillation loss."""
 
@@ -245,30 +273,30 @@ class SingleTeacherDistillerV2(BaseDistiller):
 
         for i, component in enumerate(self.components):
             # Get the student's outputs.
-            student_module_names = component['student_modules']
-            student_outputs = [self.student_outputs[name] for name in student_module_names]
-
-            # # Align student output's channels with teacher.
-            # align_module_name = f'component_{i}'
-            # if align_module_name in self.align_modules:
-            #     align_module = self.align_modules[align_module_name]
-            #     student_outputs = [
-            #         align_module(s_out) for s_out in student_outputs
-            #     ]
+            student_items = list()
+            for item_cfg in component.student_items:
+                item = self.student_recorder.get_record_item(**item_cfg)
+                if isinstance(item, (list, tuple)) and len(item) == 1:
+                    student_items.append(item[0])
+                else:
+                    student_items.append(item)
 
             # Get the teacher's outputs.
-            teacher_module_names = component['teacher_modules']
-            teacher_outputs = self.get_teacher_outputs(teacher_module_names)
+            teacher_items = list()
+            for item_cfg in component.teacher_items:
+                item = self.teacher_recorder.get_record_item(**item_cfg)
+                if isinstance(item, (list, tuple)) and len(item) == 1:
+                    teacher_items.append(item[0])
+                else:
+                    teacher_items.append(item)
 
-            # One module maybe have N outputs, such as the shareable head in
-            # RetinaNet.
-            loss_name = f'component.{i}'
+            loss_name = f'loss_{i}'
             loss_module = self.losses[loss_name]
             # TODO ugly implementation.
             # Pass the gt_label to loss function.
             # Only used by WSLD.
             loss_module.current_data = data
-            losses[loss_name] = loss_module(*student_outputs, *teacher_outputs)
+            losses[loss_name] = loss_module(*student_items, *teacher_items)
             loss_module.current_data = None
 
         return losses
