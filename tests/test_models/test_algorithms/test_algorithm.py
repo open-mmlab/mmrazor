@@ -436,3 +436,16 @@ def test_cwd():
     # test algorithm train_step
     losses = algorithm.train_step(mm_inputs, None)
     assert losses['loss'].item() > 0
+
+
+def test_distiller_v2():
+    config_path = './tests/data/distiller_v2_cwd.py'
+
+    config = Config.fromfile(config_path)
+
+    mm_inputs = _demo_mm_inputs(input_shape=(16, 3, 256, 256), num_classes=19)
+    algorithm = ALGORITHMS.build(config.algorithm)
+
+    # test algorithm train_step
+    losses = algorithm.train_step(mm_inputs, None)
+    assert losses['loss'].item() > 0
