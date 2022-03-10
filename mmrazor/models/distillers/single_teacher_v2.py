@@ -206,11 +206,17 @@ class SingleTeacherDistillerV2(BaseModule):
                 in the distillation.
         """
 
-        # Record the mapping relationship between student's modules and module
-        # names.
-        self.student_recorder = Recorder(student.model,
+        
+        if self.student_recorder_cfg is None:
+            self.student_recorder = None
+        else:
+            self.student_recorder = Recorder(student.model,
                                          **self.student_recorder_cfg)
-        self.teacher_recorder = Recorder(self.teacher,
+
+        if self.teacher_recorder_cfg is None:
+            self.teacher_recorder = None
+        else:
+            self.teacher_recorder = Recorder(self.teacher,
                                          **self.teacher_recorder_cfg)
 
     def exec_teacher_forward(self, data):
@@ -219,11 +225,10 @@ class SingleTeacherDistillerV2(BaseModule):
         After this function, the teacher's featuremaps will be saved in
         ``teacher_outputs``.
         """
-
-        # Convert the context manager's mode to teacher.
-        self.teacher_recorder.set_recording(True)
-        # Clear the saved data of the last forward。
-        self.teacher_recorder.reset_record_items()
+        if self.teacher_recorder is not None:
+            self.teacher_recorder.set_recording(True)
+            # Clear the saved data of the last forward。
+            self.teacher_recorder.reset_record_items()
 
         for rewriter in self.rewriters:
             rewriter.set_current_mode('teacher')
@@ -233,7 +238,9 @@ class SingleTeacherDistillerV2(BaseModule):
         else:
             with torch.no_grad():
                 output = self.teacher(**data)
-        self.teacher_recorder.set_recording(False)
+        
+        if self.teacher_recorder is not None:
+            self.teacher_recorder.set_recording(False)
 
         for rewriter in self.rewriters:
             rewriter.set_current_mode('eval')
@@ -245,15 +252,18 @@ class SingleTeacherDistillerV2(BaseModule):
         After this function, the student's featuremaps will be saved in
         ``student_outputs``.
         """
-        # Convert the context manager's mode to teacher.
-        self.student_recorder.set_recording(True)
-        # Clear the saved data of the last forward。
-        # self.reset_outputs(self.student_outputs)
-        self.student_recorder.reset_record_items()
+        if self.student_recorder is not None:
+            self.student_recorder.set_recording(True)
+            # Clear the saved data of the last forward。
+            self.student_recorder.reset_record_items()
+       
         for rewriter in self.rewriters:
             rewriter.set_current_mode('student')
         output = student(**data)
-        self.student_recorder.set_recording(False)
+
+        if self.student_recorder is not None:
+            self.student_recorder.set_recording(False)
+            
         for rewriter in self.rewriters:
             rewriter.set_current_mode('eval')
         return output
