@@ -147,6 +147,8 @@ algorithm = dict(
         type='SingleTeacherDistillerV2',
         teacher=teacher,
         teacher_trainable=False,
+        student_recorder_cfg=None,
+        teacher_recorder_cfg=None,
         rewriters=[
             dict(
                 function='PAAHead.get_targets',
