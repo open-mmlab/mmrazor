@@ -152,6 +152,7 @@ algorithm = dict(
         rewriters=[
             dict(
                 function='PAAHead.paa_reassign',
+                max_data_queue_length=1000,
                 dependent_module='mmdet.models')
         ]),
 )
