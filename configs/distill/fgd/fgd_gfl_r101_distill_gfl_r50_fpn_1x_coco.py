@@ -5,7 +5,9 @@ _base_ = [
 ]
 
 # model settings
-t_weight = 'https://download.openmmlab.com/mmdetection/v2.0/gfl/gfl_r101_fpn_mstrain_2x_coco/gfl_r101_fpn_mstrain_2x_coco_20200629_200126-dd12f847.pth'
+t_weight = 'https://download.openmmlab.com/mmdetection/v2.0/' + \
+           'gfl/gfl_r101_fpn_mstrain_2x_coco/' + \
+           'gfl_r101_fpn_mstrain_2x_coco_20200629_200126-dd12f847.pth'
 student = dict(
     type='mmdet.GFL',
     backbone=dict(
@@ -46,7 +48,8 @@ student = dict(
         loss_dfl=dict(type='DistributionFocalLoss', loss_weight=0.25),
         reg_max=16,
         loss_bbox=dict(type='GIoULoss', loss_weight=2.0),
-        init_cfg=dict(type='Pretrained', prefix='bbox_head', checkpoint=t_weight)),
+        init_cfg=dict(
+            type='Pretrained', prefix='bbox_head', checkpoint=t_weight)),
     # training and testing settings
     train_cfg=dict(
         assigner=dict(type='ATSSAssigner', topk=9),
@@ -62,9 +65,7 @@ student = dict(
 
 teacher = dict(
     type='mmdet.GFL',
-    init_cfg=dict(
-        type='Pretrained',
-        checkpoint=t_weight),
+    init_cfg=dict(type='Pretrained', checkpoint=t_weight),
     backbone=dict(
         type='ResNet',
         depth=101,
@@ -116,11 +117,11 @@ teacher = dict(
         max_per_img=100))
 
 # algorithm setting
-temp=0.5
-alpha_fgd=0.001
-beta_fgd=0.0005
-gamma_fgd=0.0005
-lambda_fgd=0.000005
+temp = 0.5
+alpha_fgd = 0.001
+beta_fgd = 0.0005
+gamma_fgd = 0.0005
+lambda_fgd = 0.000005
 algorithm = dict(
     type='GeneralDistill',
     architecture=dict(
@@ -200,8 +201,9 @@ algorithm = dict(
         ]),
 )
 
-find_unused_parameters=True
+find_unused_parameters = True
 
 # optimizer
 optimizer = dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001)
-optimizer_config = dict(_delete_=True, grad_clip=dict(max_norm=35, norm_type=2))
+optimizer_config = dict(
+    _delete_=True, grad_clip=dict(max_norm=35, norm_type=2))
