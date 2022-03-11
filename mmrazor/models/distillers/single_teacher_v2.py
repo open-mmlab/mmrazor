@@ -14,12 +14,14 @@ class DistillRewriter():
     def __init__(self,
                  function,
                  dependent_module,
+                 max_data_queue_length=1,
                  source='teacher',
                  target='student'):
         assert source in ['student', 'teacher']
         assert target in ['student', 'teacher']
         self.current_mode = 'eval'
-        self.source_data = None
+        self.data_queue = list()
+        self.max_data_queue_length = max_data_queue_length
         self.source = source
         self.target = target
         imported_module = import_modules_from_strings(  # noqa: F841
@@ -36,11 +38,12 @@ class DistillRewriter():
 
         def wrap_func(*args, **kwargs):
             if self.current_mode == self.target:
-                assert self.source_data is not None
-                outputs = self.source_data
+                assert len(self.data_queue) > 0
+                outputs = self.data_queue.pop(0)
             elif self.current_mode == self.source:
                 outputs = raw_func(*args, **kwargs)
-                self.source_data = outputs
+                assert len(self.data_queue) < self.max_data_queue_length
+                self.data_queue.append(outputs)
             elif self.current_mode == 'eval':
                 outputs = raw_func(*args, **kwargs)
             else:

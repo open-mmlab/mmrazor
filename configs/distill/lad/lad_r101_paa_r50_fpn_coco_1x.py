@@ -151,7 +151,7 @@ algorithm = dict(
         teacher_recorder_cfg=None,
         rewriters=[
             dict(
-                function='PAAHead.get_targets',
+                function='PAAHead.paa_reassign',
                 dependent_module='mmdet.models')
         ]),
 )
