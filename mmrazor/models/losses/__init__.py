@@ -3,8 +3,9 @@ from .cwd import ChannelWiseDivergence
 from .kl_divergence import KLDivergence
 from .relational_kd import AngleWiseRKD, DistanceWiseRKD
 from .weighted_soft_label_distillation import WSLD
+from .fgd import FGDLoss
 
 __all__ = [
     'ChannelWiseDivergence', 'KLDivergence', 'AngleWiseRKD', 'DistanceWiseRKD',
-    'WSLD'
+    'WSLD', 'FGDLoss'
 ]
