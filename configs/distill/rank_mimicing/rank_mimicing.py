@@ -137,13 +137,56 @@ algorithm = dict(
         type='SingleTeacherDistillerV2',
         teacher=teacher,
         teacher_trainable=False,
-        student_recorder_cfg=None,
-        teacher_recorder_cfg=None,
-        rewriters=[
+        student_recorder_cfg=dict(
+            functions=dict(
+                sources=['anchor_inside_flags'],
+                mapping_modules=['mmdet.models.dense_heads.anchor_head']),
+            methods=dict(
+                sources=['MaxIoUAssigner.assign'],
+                mapping_modules=['mmdet.core']),
+            outputs=dict(
+                sources=['bbox_head.retina_cls', 'neck']
+            )),
+        teacher_recorder_cfg=dict(
+            functions=dict(
+                sources=['anchor_inside_flags'],
+                mapping_modules=['mmdet.models.dense_heads.anchor_head']),
+            methods=dict(
+                sources=['MaxIoUAssigner.assign'],
+                mapping_modules=['mmdet.core']),
+            outputs=dict(
+                sources=['bbox_head.retina_cls', 'neck']
+            )),
+        components=[
             dict(
-                function='RetinaHead.get_targets',
-                dependent_module='mmdet.models')
-        ]),
+                student_items=[
+                    dict(source_type='methods', source='mmdet.core.MaxIoUAssigner.assign'),
+                    dict(source_type='functions', source='mmdet.models.dense_heads.anchor_head.anchor_inside_flags'),
+                    dict(source_type='outputs', source='bbox_head.retina_cls'),
+                ],
+                teacher_items=[
+                    dict(source_type='methods', source='mmdet.core.MaxIoUAssigner.assign'),
+                    dict(source_type='functions', source='mmdet.models.dense_heads.anchor_head.anchor_inside_flags'),
+                    dict(source_type='outputs', source='bbox_head.retina_cls'),
+                ],
+                loss=dict(
+                    type='RankMimicLoss',
+                    loss_weight=4,
+                )),
+            dict(
+                student_items=[
+                    dict(source_type='outputs', source='neck'),
+                    dict(source_type='outputs', source='bbox_head.retina_cls'),
+                ],
+                teacher_items=[
+                    dict(source_type='outputs', source='neck'),
+                    dict(source_type='outputs', source='bbox_head.retina_cls'),
+                ],
+                loss=dict(
+                    type='PredictionGuidedFeatureImitation',
+                    loss_weight=1.5,
+                )
+            )]),
 )
 
 find_unused_parameters = True
