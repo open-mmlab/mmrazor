@@ -1,12 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 
+import functools
+
 import torch
 import torch.nn as nn
 from mmcv.runner import BaseModule
 from mmcv.utils import import_modules_from_strings
 from torch.nn.modules.batchnorm import _BatchNorm
 
-import functools
 from ..builder import DISTILLERS, MODELS, build_loss
 
 
@@ -56,11 +57,11 @@ class DistillRewriter():
 
 class Recorder():
 
-    def __init__(self, 
-                 model, 
-                 inputs=None, 
-                 outputs=None, 
-                 weights=None, 
+    def __init__(self,
+                 model,
+                 inputs=None,
+                 outputs=None,
+                 weights=None,
                  methods=None,
                  functions=None,
                  **kwargs) -> None:
@@ -98,7 +99,7 @@ class Recorder():
 
         if methods is not None:
             for method_name, mapping_module in zip(methods.sources,
-                                                methods.mapping_modules):
+                                                   methods.mapping_modules):
                 imported_module = import_modules_from_strings(  # noqa: F841
                     mapping_module)
                 raw_method = eval(f'imported_module.{method_name}')
@@ -111,16 +112,16 @@ class Recorder():
 
         if functions is not None:
             for func_name, mapping_module in zip(functions.sources,
-                                                functions.mapping_modules):
+                                                 functions.mapping_modules):
                 imported_module = import_modules_from_strings(  # noqa: F841
                     mapping_module)
                 raw_func = eval(f'imported_module.{func_name}')
-                 
-                full_func_name = f'{mapping_module}.{func_name}' 
+
+                full_func_name = f'{mapping_module}.{func_name}'
                 self.functions[full_func_name] = list()
                 wrap_func = self.func_hook_wrapper(  # noqa: F841
                     self, raw_func, full_func_name)
-                                
+
                 exec(f'imported_module.{func_name} = wrap_func')
 
     def reset_record_items(self):
@@ -145,6 +146,7 @@ class Recorder():
             return item
 
     def method_hook_wrapper(self, raw_method, method_name):
+
         @functools.wraps(raw_method)
         def wrap_method(*args, **kwargs):
             outputs = raw_method(*args, **kwargs)
@@ -156,6 +158,7 @@ class Recorder():
 
     @staticmethod
     def func_hook_wrapper(ctx, raw_func, func_name):
+
         @functools.wraps(raw_func)
         def wrap_func(*args, **kwargs):
             outputs = raw_func(*args, **kwargs)
@@ -196,7 +199,6 @@ class Recorder():
     def __exit__(self, exc_type, exc_value, traceback):
         """Restore the function."""
         self.recording = False
-
 
 
 @DISTILLERS.register_module()
@@ -259,18 +261,17 @@ class SingleTeacherDistillerV2(BaseModule):
                 in the distillation.
         """
 
-        
         if self.student_recorder_cfg is None:
             self.student_recorder = None
         else:
             self.student_recorder = Recorder(student.model,
-                                         **self.student_recorder_cfg)
+                                             **self.student_recorder_cfg)
 
         if self.teacher_recorder_cfg is None:
             self.teacher_recorder = None
         else:
             self.teacher_recorder = Recorder(self.teacher,
-                                         **self.teacher_recorder_cfg)
+                                             **self.teacher_recorder_cfg)
 
     def exec_teacher_forward(self, data):
         """Execute the teacher's forward function.
@@ -282,7 +283,7 @@ class SingleTeacherDistillerV2(BaseModule):
             rewriter.set_current_mode('teacher')
 
         if self.teacher_recorder is None:
-            
+
             if self.teacher_trainable:
                 output = self.teacher(**data)
             else:
