@@ -180,19 +180,19 @@ algorithm = dict(
                     type='RankMimicLoss',
                     loss_weight=4,
                 )),
-            dict(
-                student_items=[
-                    dict(source_type='outputs', source='neck'),
-                    dict(source_type='outputs', source='bbox_head.retina_cls'),
-                ],
-                teacher_items=[
-                    dict(source_type='outputs', source='neck'),
-                    dict(source_type='outputs', source='bbox_head.retina_cls'),
-                ],
-                loss=dict(
-                    type='PredictionGuidedFeatureImitation',
-                    loss_weight=1.5,
-                ))
+            # dict(
+            #     student_items=[
+            #         dict(source_type='outputs', source='neck'),
+            #         dict(source_type='outputs', source='bbox_head.retina_cls'),
+            #     ],
+            #     teacher_items=[
+            #         dict(source_type='outputs', source='neck'),
+            #         dict(source_type='outputs', source='bbox_head.retina_cls'),
+            #     ],
+            #     loss=dict(
+            #         type='PredictionGuidedFeatureImitation',
+            #         loss_weight=1.5,
+            #     ))
         ]),
 )
 
