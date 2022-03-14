@@ -66,18 +66,19 @@ student = dict(
         max_per_img=100))
 
 teacher_ckpt = 'https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_r101_fpn_2x_coco/retinanet_r101_fpn_2x_coco_20200131-5560aee8.pth'  # noqa
+
 teacher = dict(
     type='mmdet.RetinaNet',
+    init_cfg=dict(type='Pretrained', checkpoint=teacher_ckpt),
     backbone=dict(
         type='ResNet',
-        depth=50,
+        depth=101,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
         norm_cfg=dict(type='BN', requires_grad=True),
         norm_eval=True,
-        style='pytorch',
-        init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet50')),
+        style='pytorch'),
     neck=dict(
         type='FPN',
         in_channels=[256, 512, 1024, 2048],
@@ -144,9 +145,7 @@ algorithm = dict(
             methods=dict(
                 sources=['MaxIoUAssigner.assign'],
                 mapping_modules=['mmdet.core']),
-            outputs=dict(
-                sources=['bbox_head.retina_cls', 'neck']
-            )),
+            outputs=dict(sources=['bbox_head.retina_cls', 'neck'])),
         teacher_recorder_cfg=dict(
             functions=dict(
                 sources=['anchor_inside_flags'],
@@ -154,19 +153,27 @@ algorithm = dict(
             methods=dict(
                 sources=['MaxIoUAssigner.assign'],
                 mapping_modules=['mmdet.core']),
-            outputs=dict(
-                sources=['bbox_head.retina_cls', 'neck']
-            )),
+            outputs=dict(sources=['bbox_head.retina_cls', 'neck'])),
         components=[
             dict(
                 student_items=[
-                    dict(source_type='methods', source='mmdet.core.MaxIoUAssigner.assign'),
-                    dict(source_type='functions', source='mmdet.models.dense_heads.anchor_head.anchor_inside_flags'),
+                    dict(
+                        source_type='methods',
+                        source='mmdet.core.MaxIoUAssigner.assign'),
+                    dict(
+                        source_type='functions',
+                        source='mmdet.models.dense_heads.anchor_head.anchor_inside_flags'  
+                    ),
                     dict(source_type='outputs', source='bbox_head.retina_cls'),
                 ],
                 teacher_items=[
-                    dict(source_type='methods', source='mmdet.core.MaxIoUAssigner.assign'),
-                    dict(source_type='functions', source='mmdet.models.dense_heads.anchor_head.anchor_inside_flags'),
+                    dict(
+                        source_type='methods',
+                        source='mmdet.core.MaxIoUAssigner.assign'),
+                    dict(
+                        source_type='functions',
+                        source='mmdet.models.dense_heads.anchor_head.anchor_inside_flags'  
+                    ),
                     dict(source_type='outputs', source='bbox_head.retina_cls'),
                 ],
                 loss=dict(
@@ -185,8 +192,8 @@ algorithm = dict(
                 loss=dict(
                     type='PredictionGuidedFeatureImitation',
                     loss_weight=1.5,
-                )
-            )]),
+                ))
+        ]),
 )
 
 find_unused_parameters = True
