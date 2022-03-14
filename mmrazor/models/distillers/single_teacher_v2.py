@@ -6,6 +6,7 @@ from mmcv.runner import BaseModule
 from mmcv.utils import import_modules_from_strings
 from torch.nn.modules.batchnorm import _BatchNorm
 
+import functools
 from ..builder import DISTILLERS, MODELS, build_loss
 
 
@@ -55,42 +56,72 @@ class DistillRewriter():
 
 class Recorder():
 
-    def __init__(self, model, inputs, outputs, weights, functions,
+    def __init__(self, 
+                 model, 
+                 inputs=None, 
+                 outputs=None, 
+                 weights=None, 
+                 methods=None,
+                 functions=None,
                  **kwargs) -> None:
         self.outputs = dict()
         self.inputs = dict()
         self.weights = dict()
+        self.methods = dict()
         self.functions = dict()
+        self.functions_cfg = functions
+        self.origin_functions = dict()
+        self.rewrite_functions = dict()
         self.recording = False
 
-        for param_name, param in model.named_parameters():
-            if param_name in weights.sources:
-                self.weights[param_name] = param
+        if weights is not None:
+            for param_name, param in model.named_parameters():
+                if param_name in weights.sources:
+                    self.weights[param_name] = param
 
         self.module2name = {}
         for module_name, module in model.named_modules():
             self.module2name[module] = module_name
         self.name2module = dict(model.named_modules())
 
-        for module_name in outputs.sources:
-            self.outputs[module_name] = list()
-            module = self.name2module[module_name]
-            module.register_forward_hook(self.forward_output_hook)
+        if outputs is not None:
+            for module_name in outputs.sources:
+                self.outputs[module_name] = list()
+                module = self.name2module[module_name]
+                module.register_forward_hook(self.forward_output_hook)
 
-        for module_name in inputs.sources:
-            self.inputs[module_name] = list()
-            module = self.name2module[module_name]
-            module.register_forward_hook(self.forward_input_hook)
+        if inputs is not None:
+            for module_name in inputs.sources:
+                self.inputs[module_name] = list()
+                module = self.name2module[module_name]
+                module.register_forward_hook(self.forward_input_hook)
 
-        for func_name, mapping_module in zip(functions.sources,
-                                             functions.mapping_modules):
-            imported_module = import_modules_from_strings(  # noqa: F841
-                mapping_module)
-            raw_func = eval(f'imported_module.{func_name}')
-            full_func_name = f'{mapping_module}.{func_name}'
-            wrap_func = self.function_hook_wrapper(  # noqa: F841
-                raw_func, full_func_name)
-            exec(f'imported_module.{func_name} = wrap_func')
+        if methods is not None:
+            for method_name, mapping_module in zip(methods.sources,
+                                                methods.mapping_modules):
+                imported_module = import_modules_from_strings(  # noqa: F841
+                    mapping_module)
+                raw_method = eval(f'imported_module.{method_name}')
+                full_method_name = f'{mapping_module}.{method_name}'
+                # if full_func_name == 'mmdet.core.anchor_inside_flags':
+                self.methods[full_method_name] = list()
+                wrap_method = self.method_hook_wrapper(  # noqa: F841
+                    raw_method, full_method_name)
+                exec(f'imported_module.{method_name} = wrap_method')
+
+        if functions is not None:
+            for func_name, mapping_module in zip(functions.sources,
+                                                functions.mapping_modules):
+                imported_module = import_modules_from_strings(  # noqa: F841
+                    mapping_module)
+                raw_func = eval(f'imported_module.{func_name}')
+                 
+                full_func_name = f'{mapping_module}.{func_name}' 
+                self.functions[full_func_name] = list()
+                wrap_func = self.func_hook_wrapper(  # noqa: F841
+                    self, raw_func, full_func_name)
+                                
+                exec(f'imported_module.{func_name} = wrap_func')
 
     def reset_record_items(self):
         for key in self.outputs.keys():
@@ -108,18 +139,28 @@ class Recorder():
         item = source_items[source]
         if index:
             assert isinstance(index, int)
-            assert isinstance(index, (list, tuple))
             assert index < len(item)
             return item[index]
         else:
             return item
 
-    def function_hook_wrapper(self, raw_func, func_name):
+    def method_hook_wrapper(self, raw_method, method_name):
+        @functools.wraps(raw_method)
+        def wrap_method(*args, **kwargs):
+            outputs = raw_method(*args, **kwargs)
+            if self.recording:
+                self.methods[method_name].append(outputs)
+            return outputs
 
+        return wrap_method
+
+    @staticmethod
+    def func_hook_wrapper(ctx, raw_func, func_name):
+        @functools.wraps(raw_func)
         def wrap_func(*args, **kwargs):
             outputs = raw_func(*args, **kwargs)
-            if self.recording:
-                self.functions[func_name] = outputs
+            if ctx.recording:
+                ctx.functions[func_name].append(outputs)
             return outputs
 
         return wrap_func
@@ -147,6 +188,15 @@ class Recorder():
         if self.recording:
             module_name = self.module2name[module]
             self.outputs[module_name].append(outputs)
+
+    def __enter__(self):
+        self.recording = True
+        self.reset_record_items()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Restore the function."""
+        self.recording = False
+
 
 
 @DISTILLERS.register_module()
@@ -228,23 +278,23 @@ class SingleTeacherDistillerV2(BaseModule):
         After this function, the teacher's featuremaps will be saved in
         ``teacher_outputs``.
         """
-        if self.teacher_recorder is not None:
-            self.teacher_recorder.set_recording(True)
-            # Clear the saved data of the last forward。
-            self.teacher_recorder.reset_record_items()
-
         for rewriter in self.rewriters:
             rewriter.set_current_mode('teacher')
 
-        if self.teacher_trainable:
-            output = self.teacher(**data)
-        else:
-            with torch.no_grad():
+        if self.teacher_recorder is None:
+            
+            if self.teacher_trainable:
                 output = self.teacher(**data)
-        
-        if self.teacher_recorder is not None:
-            self.teacher_recorder.set_recording(False)
-
+            else:
+                with torch.no_grad():
+                    output = self.teacher(**data)
+        else:
+            with self.teacher_recorder:
+                if self.teacher_trainable:
+                    output = self.teacher(**data)
+                else:
+                    with torch.no_grad():
+                        output = self.teacher(**data)
         for rewriter in self.rewriters:
             rewriter.set_current_mode('eval')
         return output
@@ -255,20 +305,21 @@ class SingleTeacherDistillerV2(BaseModule):
         After this function, the student's featuremaps will be saved in
         ``student_outputs``.
         """
-        if self.student_recorder is not None:
-            self.student_recorder.set_recording(True)
-            # Clear the saved data of the last forward。
-            self.student_recorder.reset_record_items()
-       
-        for rewriter in self.rewriters:
-            rewriter.set_current_mode('student')
-        output = student(**data)
+        if self.student_recorder is None:
+            for rewriter in self.rewriters:
+                rewriter.set_current_mode('student')
+            output = student(**data)
 
-        if self.student_recorder is not None:
-            self.student_recorder.set_recording(False)
-            
-        for rewriter in self.rewriters:
-            rewriter.set_current_mode('eval')
+            for rewriter in self.rewriters:
+                rewriter.set_current_mode('eval')
+        else:
+            with self.student_recorder:
+                for rewriter in self.rewriters:
+                    rewriter.set_current_mode('student')
+                output = student(**data)
+
+                for rewriter in self.rewriters:
+                    rewriter.set_current_mode('eval')
         return output
 
     def train(self, mode=True):
