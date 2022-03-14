@@ -53,8 +53,7 @@ class FunctionContext():
 
         if self.method_impl:
             self._set_method(
-                function_wrapper(self.ctx, self.method_impl, self.method_str,
-                                 self.align_mode))
+                function_wrapper(self.ctx, self.method_impl, self.method_str))
 
     def __exit__(self, exc_type, exc_value, traceback):
         """Restore the function."""
@@ -124,12 +123,12 @@ class BaseDistiller(BaseModule, metaclass=ABCMeta):
         """Register forward hooks to students and teachers."""
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def teacher_forward_output_hook(self, module, inputs, outputs):
         """Save the teacher output."""
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def student_forward_output_hook(self, module, inputs, outputs):
         """Save the student output."""
         pass
