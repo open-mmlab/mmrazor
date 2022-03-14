@@ -131,6 +131,8 @@ class Recorder():
             self.inputs[key] = list()
         for key in self.functions.keys():
             self.functions[key] = list()
+        for key in self.methods.keys():
+            self.methods[key] = list()
 
     def set_recording(self, recording):
         self.recording = recording
