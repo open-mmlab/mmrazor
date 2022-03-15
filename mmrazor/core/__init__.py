@@ -6,6 +6,7 @@ from .optimizer import *  # noqa: F401,F403
 from .recorders import *  # noqa: F401,F403
 from .runners import *  # noqa: F401,F403
 from .searcher import *  # noqa: F401,F403
+from .delivers import *  # noqa: F401,F403
 from .utils import *  # noqa: F401,F403
 
 __all__ = ['DistributedDataParallelWrapper', 'build_searcher']
