@@ -5,41 +5,34 @@ import torch.nn as nn
 from mmcv.runner import BaseModule
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.core import RecorderManager
+from mmrazor.core import RecorderManager, DistillDeliverManager
 from ..builder import DISTILLERS, MODELS, build_loss
 
 
 @DISTILLERS.register_module()
 class SingleTeacherDistillerV2(BaseModule):
-    """Distiller with single teacher.
-
-    Args:
-        teacher (dict): The config dict for teacher.
-        teacher_trainable (bool): Whether the teacher is trainable.
-            Default: False.
-        teacher_norm_eval (bool): Whether to set teacher's norm layers to eval
-            mode, namely, freeze running stats (mean and var). Note: Effect on
-            Batch Norm and its variants only. Default: True.
-        components (dict): The details of the distillation. It usually includes
-            the module names of the teacher and the student, and the losses
-            used in the distillation.
-    """
 
     def __init__(self,
                  teacher,
                  student_recorders=tuple(),
                  teacher_recorders=tuple(),
+                 distill_deliveries=tuple(),
                  teacher_trainable=False,
                  teacher_norm_eval=True,
                  components=tuple(),
                  **kwargs):
         super().__init__(**kwargs)
+
+        self.student_recorder_manager = RecorderManager(student_recorders)
+        self.teacher_recorder_manager = RecorderManager(teacher_recorders)
+        self.distill_deliver_manager = DistillDeliverManager(distill_deliveries)
         self.teacher_trainable = teacher_trainable
         self.teacher_norm_eval = teacher_norm_eval
         self.teacher = self.build_teacher(teacher)
 
-        self.student_recorder_manager = RecorderManager(student_recorders)
-        self.teacher_recorder_manager = RecorderManager(teacher_recorders)
+        self.teacher_recorder_manager.initialize(self.teacher)
+
+        
 
         self.components = components
         self.losses = nn.ModuleDict()
@@ -56,7 +49,8 @@ class SingleTeacherDistillerV2(BaseModule):
         return teacher
 
     def prepare_from_student(self, student):
-        pass
+        self.student_recorder_manager.initialize(student.model)
+
 
     def exec_teacher_forward(self, data):
         """Execute the teacher's forward function.
@@ -64,13 +58,14 @@ class SingleTeacherDistillerV2(BaseModule):
         After this function, the teacher's featuremaps will be saved in
         ``teacher_outputs``.
         """
-
-        with self.teacher_recorder_manager(self.teacher):
-            if self.teacher_trainable:
-                output = self.teacher(**data)
-            else:
-                with torch.no_grad():
+        self.distill_deliver_manager.convert_mode('teacher')
+        with self.teacher_recorder_manager:
+            with self.distill_deliver_manager:
+                if self.teacher_trainable:
                     output = self.teacher(**data)
+                else:
+                    with torch.no_grad():
+                        output = self.teacher(**data)
 
         return output
 
@@ -80,9 +75,10 @@ class SingleTeacherDistillerV2(BaseModule):
         After this function, the student's featuremaps will be saved in
         ``student_outputs``.
         """
-
-        with self.student_recorder_manager(student.architecture.model):
-            output = student(**data)
+        self.distill_deliver_manager.convert_mode('student')
+        with self.student_recorder_manager:
+            with self.distill_deliver_manager:
+                output = student(**data)
         return output
 
     def train(self, mode=True):

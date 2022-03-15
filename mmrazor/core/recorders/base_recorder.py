@@ -17,7 +17,7 @@ class BaseRecorder(metaclass=ABCMeta):
     def prepare_from_model(self, model):
         pass
 
-    def init_recorder(self, model):
+    def initialize(self, model):
         self.prepare_from_model(model)
         self.initialized = True
 
@@ -30,11 +30,8 @@ class BaseRecorder(metaclass=ABCMeta):
         else:
             return data
 
-    def __enter__(self, model):
-
-        if not self.initialized:
-            self.init_recorder(model)
-
+    def __enter__(self):
+        assert self.initialized
         self.recording = True
         self.reset_data_buffer()
 
