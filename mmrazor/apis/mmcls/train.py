@@ -16,6 +16,7 @@ from mmrazor.core.distributed_wrapper import DistributedDataParallelWrapper
 from mmrazor.core.hooks import DistSamplerSeedHook
 from mmrazor.core.optimizer import build_optimizers
 from mmrazor.datasets.utils import split_dataset
+from mmrazor.utils import find_latest_checkpoint
 
 
 def set_random_seed(seed, deterministic=False):
@@ -195,6 +196,12 @@ def train_mmcls_model(model,
         # Refers to https://github.com/open-mmlab/mmcv/issues/1261
         runner.register_hook(
             eval_hook(val_dataloader, **eval_cfg), priority='LOW')
+
+    resume_from = None
+    if cfg.resume_from is None and cfg.get('auto_resume'):
+        resume_from = find_latest_checkpoint(cfg.work_dir)
+    if resume_from is not None:
+        cfg.resume_from = resume_from
 
     if cfg.resume_from:
         runner.resume(cfg.resume_from)
