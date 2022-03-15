@@ -1,9 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .base_recorder import BaseRecorder
 from ..builder import RECORDERS
+from .base_recorder import BaseRecorder
+
 
 @RECORDERS.register_module()
 class ParameterRecorder(BaseRecorder):
+
     def __init__(self, sources):
         super().__init__()
         self.sources = sources

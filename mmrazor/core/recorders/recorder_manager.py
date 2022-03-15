@@ -1,10 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
+
 from ..builder import build_recorder
 
+
 class RecorderManager():
+
     def __init__(self, recorders) -> None:
-        
+
         self.recorders = dict()
         for cfg in recorders:
             recorder_cfg = copy.deepcopy(cfg)
@@ -27,4 +30,3 @@ class RecorderManager():
 
         for recorder in self.recorders.values():
             recorder.__exit__()
-        

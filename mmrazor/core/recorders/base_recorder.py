@@ -1,7 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import ABCMeta, abstractmethod
 
+
 class BaseRecorder(metaclass=ABCMeta):
+
     def __init__(self):
         self.recording = False
         self.data_buffer = dict()
@@ -14,7 +16,7 @@ class BaseRecorder(metaclass=ABCMeta):
     @abstractmethod
     def prepare_from_model(self, model):
         pass
-    
+
     def init_recorder(self, model):
         self.prepare_from_model(model)
         self.initialized = True
@@ -32,7 +34,7 @@ class BaseRecorder(metaclass=ABCMeta):
 
         if not self.initialized:
             self.init_recorder(model)
-    
+
         self.recording = True
         self.reset_data_buffer()
 

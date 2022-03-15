@@ -6,6 +6,6 @@ from .param_recorder import ParameterRecorder
 from .recorder_manager import RecorderManager
 
 __all__ = [
-    'FunctionOutputsRecorder', 'MethodOutputsRecorder', 'ModuleOutputsRecorder',
-    'ParameterRecorder', 'RecorderManager'
+    'FunctionOutputsRecorder', 'MethodOutputsRecorder',
+    'ModuleOutputsRecorder', 'ParameterRecorder', 'RecorderManager'
 ]

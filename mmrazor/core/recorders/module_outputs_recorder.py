@@ -1,9 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .base_recorder import BaseRecorder
 from ..builder import RECORDERS
+from .base_recorder import BaseRecorder
+
 
 @RECORDERS.register_module()
 class ModuleOutputsRecorder(BaseRecorder):
+
     def __init__(self, sources):
         super().__init__()
         self.sources = sources
@@ -23,7 +25,6 @@ class ModuleOutputsRecorder(BaseRecorder):
     def reset_data_buffer(self):
         for key in self.data_buffer.keys():
             self.data_buffer[key] = list()
-
 
     def forward_output_hook(self, module, inputs, outputs):
         """Save the module's forward output.
