@@ -1,6 +1,6 @@
 _base_ = [
     '../../_base_/datasets/mmdet/coco_detection.py',
-    '../../_base_/schedules/mmdet/schedule_1x.py',
+    '../../_base_/schedules/mmdet/schedule_2x.py',
     '../../_base_/mmdet_runtime.py'
 ]
 
@@ -138,61 +138,75 @@ algorithm = dict(
         type='SingleTeacherDistillerV2',
         teacher=teacher,
         teacher_trainable=False,
-        student_recorder_cfg=dict(
-            functions=dict(
+        student_recorders=[
+            dict(
+                type='FunctionOutputs',
                 sources=['anchor_inside_flags'],
-                mapping_modules=['mmdet.models.dense_heads.anchor_head']),
-            methods=dict(
+                import_modules=['mmdet.models.dense_heads.anchor_head']),
+            dict(
+                type='MethodOutputs',
                 sources=['MaxIoUAssigner.assign'],
-                mapping_modules=['mmdet.core']),
-            outputs=dict(sources=['bbox_head.retina_cls', 'neck'])),
-        teacher_recorder_cfg=dict(
-            functions=dict(
+                import_modules=['mmdet.core']),
+            dict(
+                type='ModuleOutputs', sources=['bbox_head.retina_cls', 'neck'])
+        ],
+        teacher_recorders=[
+            dict(
+                type='FunctionOutputs',
                 sources=['anchor_inside_flags'],
-                mapping_modules=['mmdet.models.dense_heads.anchor_head']),
-            methods=dict(
+                import_modules=['mmdet.models.dense_heads.anchor_head']),
+            dict(
+                type='MethodOutputs',
                 sources=['MaxIoUAssigner.assign'],
-                mapping_modules=['mmdet.core']),
-            outputs=dict(sources=['bbox_head.retina_cls', 'neck'])),
+                import_modules=['mmdet.core']),
+            dict(
+                type='ModuleOutputs', sources=['bbox_head.retina_cls', 'neck'])
+        ],
         components=[
             dict(
                 student_items=[
                     dict(
-                        source_type='methods',
+                        record_type='MethodOutputs',
                         source='mmdet.core.MaxIoUAssigner.assign'),
                     dict(
-                        source_type='functions',
-                        source='mmdet.models.dense_heads.anchor_head.anchor_inside_flags'  
+                        record_type='FunctionOutputs',
+                        source=  # noqa: E251
+                        'mmdet.models.dense_heads.anchor_head.anchor_inside_flags'  # noqa: E501
                     ),
-                    dict(source_type='outputs', source='bbox_head.retina_cls'),
+                    dict(
+                        record_type='ModuleOutputs',
+                        source='bbox_head.retina_cls'),
                 ],
                 teacher_items=[
                     dict(
-                        source_type='methods',
+                        record_type='MethodOutputs',
                         source='mmdet.core.MaxIoUAssigner.assign'),
                     dict(
-                        source_type='functions',
-                        source='mmdet.models.dense_heads.anchor_head.anchor_inside_flags'  
+                        record_type='FunctionOutputs',
+                        source=  # noqa: E251
+                        'mmdet.models.dense_heads.anchor_head.anchor_inside_flags'  # noqa: E501
                     ),
-                    dict(source_type='outputs', source='bbox_head.retina_cls'),
+                    dict(
+                        record_type='ModuleOutputs',
+                        source='bbox_head.retina_cls'),
                 ],
                 loss=dict(
                     type='RankMimicLoss',
                     loss_weight=4,
                 )),
-            # dict(
-            #     student_items=[
-            #         dict(source_type='outputs', source='neck'),
-            #         dict(source_type='outputs', source='bbox_head.retina_cls'),
-            #     ],
-            #     teacher_items=[
-            #         dict(source_type='outputs', source='neck'),
-            #         dict(source_type='outputs', source='bbox_head.retina_cls'),
-            #     ],
-            #     loss=dict(
-            #         type='PredictionGuidedFeatureImitation',
-            #         loss_weight=1.5,
-            #     ))
+            dict(
+                student_items=[
+                    dict(record_type='ModuleOutputs', source='neck'),
+                    dict(record_type='ModuleOutputs', source='bbox_head.retina_cls'),
+                ],
+                teacher_items=[
+                    dict(record_type='ModuleOutputs', source='neck'),
+                    dict(record_type='ModuleOutputs', source='bbox_head.retina_cls'),
+                ],
+                loss=dict(
+                    type='PredictionGuidedFeatureImitation',
+                    loss_weight=1.5,
+                ))
         ]),
 )
 
