@@ -147,17 +147,21 @@ algorithm = dict(
         type='SingleTeacherDistillerV2',
         teacher=teacher,
         teacher_trainable=False,
-        student_recorder_cfg=None,
-        teacher_recorder_cfg=None,
-        rewriters=[
+        distill_deliveries=[
             dict(
-                function='PAAHead.paa_reassign',
-                max_data_queue_length=1000,
-                dependent_module='mmdet.models'),
+                type='MethodOutputs',
+                method='PAAHead.paa_reassign',
+                max_keep_data=1000,
+                import_module='mmdet.models',
+                source='teacher',
+                target='student'),
             dict(
-                function='PAAHead.get_targets',
-                max_data_queue_length=1,
-                dependent_module='mmdet.models')
+                type='MethodOutputs',
+                method='PAAHead.get_targets',
+                max_keep_data=1000,
+                import_module='mmdet.models',
+                source='teacher',
+                target='student')
         ]),
 )
 
