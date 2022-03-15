@@ -4,7 +4,7 @@ from abc import ABCMeta, abstractmethod
 
 class DistillDeliver(metaclass=ABCMeta):
 
-    def __init__(self,max_keep_data, source='teacher', target='student'):
+    def __init__(self, max_keep_data, source='teacher', target='student'):
         assert source in ['student', 'teacher']
         assert target in ['student', 'teacher']
         self.current_mode = 'eval'

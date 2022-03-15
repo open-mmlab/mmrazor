@@ -5,7 +5,7 @@ import torch.nn as nn
 from mmcv.runner import BaseModule
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.core import RecorderManager, DistillDeliverManager
+from mmrazor.core import DistillDeliverManager, RecorderManager
 from ..builder import DISTILLERS, MODELS, build_loss
 
 
@@ -25,14 +25,13 @@ class SingleTeacherDistillerV2(BaseModule):
 
         self.student_recorder_manager = RecorderManager(student_recorders)
         self.teacher_recorder_manager = RecorderManager(teacher_recorders)
-        self.distill_deliver_manager = DistillDeliverManager(distill_deliveries)
+        self.distill_deliver_manager = DistillDeliverManager(
+            distill_deliveries)
         self.teacher_trainable = teacher_trainable
         self.teacher_norm_eval = teacher_norm_eval
         self.teacher = self.build_teacher(teacher)
 
         self.teacher_recorder_manager.initialize(self.teacher)
-
-        
 
         self.components = components
         self.losses = nn.ModuleDict()
@@ -50,7 +49,6 @@ class SingleTeacherDistillerV2(BaseModule):
 
     def prepare_from_student(self, student):
         self.student_recorder_manager.initialize(student.model)
-
 
     def exec_teacher_forward(self, data):
         """Execute the teacher's forward function.

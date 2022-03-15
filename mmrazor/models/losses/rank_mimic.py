@@ -91,14 +91,14 @@ class RankMimicLoss(nn.Module):
             student_label_inds = student_unmap_labels[student_anchor_inds]
             teacher_label_inds = teacher_unmap_labels[teacher_anchor_inds]
 
-            student_anchor_scores = student_cls_score[teacher_anchor_inds,
-                                                      student_label_inds].sigmoid()
-            teacher_anchor_scores = teacher_cls_score[teacher_anchor_inds,
-                                                      teacher_label_inds].sigmoid()
+            student_anchor_scores = student_cls_score[
+                teacher_anchor_inds, student_label_inds].sigmoid()
+            teacher_anchor_scores = teacher_cls_score[
+                teacher_anchor_inds, teacher_label_inds].sigmoid()
 
             student_rank_scores, _ = torch.sort(student_anchor_scores)
             teacher_rank_scores, _ = torch.sort(teacher_anchor_scores)
-            
+
             q = F.softmax(student_rank_scores)
             p = F.softmax(teacher_rank_scores)
 

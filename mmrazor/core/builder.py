@@ -15,6 +15,7 @@ def build_recorder(cfg, default_args=None):
     """Build recorder."""
     return build_from_cfg(cfg, RECORDERS, default_args=default_args)
 
+
 def build_deliver(cfg, default_args=None):
     """Build deliver."""
     return build_from_cfg(cfg, DELIVERS, default_args=default_args)

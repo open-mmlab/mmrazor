@@ -166,11 +166,15 @@ algorithm = dict(
             dict(
                 student_items=[
                     dict(record_type='ModuleOutputs', source='neck'),
-                    dict(record_type='ModuleOutputs', source='bbox_head.retina_cls'),
+                    dict(
+                        record_type='ModuleOutputs',
+                        source='bbox_head.retina_cls'),
                 ],
                 teacher_items=[
                     dict(record_type='ModuleOutputs', source='neck'),
-                    dict(record_type='ModuleOutputs', source='bbox_head.retina_cls'),
+                    dict(
+                        record_type='ModuleOutputs',
+                        source='bbox_head.retina_cls'),
                 ],
                 loss=dict(
                     type='PredictionGuidedFeatureImitation',
