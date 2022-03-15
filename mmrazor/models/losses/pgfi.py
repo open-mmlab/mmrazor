@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmdet.core import multi_apply
@@ -29,6 +30,8 @@ class PredictionGuidedFeatureImitation(nn.Module):
         f_diff = F.mse_loss(
             student_neck_output, teacher_neck_output,
             reduction='none').mean(dim=1)
-        loss_pfi = (p_diff * f_diff).mean()
+        n, h, w = p_diff.shape
+        imitation = (p_diff * f_diff).reshape(n, -1)
+        loss_pfi = torch.norm(imitation, p=2, dim=-1) / (n * h * w)
 
         return loss_pfi,

@@ -82,21 +82,22 @@ class RankMimicLoss(nn.Module):
             student_labels, student_num_anchors, student_inside_flag, fill=-1)
         teacher_unmap_labels = unmap(
             teacher_labels, teacher_num_anchors, teacher_inside_flag, fill=-1)
+
         loss = 0
         for i in range(1, student_num_gts + 1):
-            student_score_inds = student_unmap_gt_inds == i
-            teacher_score_inds = teacher_unmap_gt_inds == i
+            student_anchor_inds = student_unmap_gt_inds == i
+            teacher_anchor_inds = teacher_unmap_gt_inds == i
 
-            student_label_inds = student_unmap_labels[student_score_inds]
-            teacher_label_inds = teacher_unmap_labels[teacher_score_inds]
+            student_label_inds = student_unmap_labels[student_anchor_inds]
+            teacher_label_inds = teacher_unmap_labels[teacher_anchor_inds]
 
-            student_anchor_scores = student_cls_score[student_score_inds,
+            student_anchor_scores = student_cls_score[teacher_anchor_inds,
                                                       student_label_inds]
-            teacher_anchor_scores = teacher_cls_score[teacher_score_inds,
+            teacher_anchor_scores = teacher_cls_score[teacher_anchor_inds,
                                                       teacher_label_inds]
 
-            q = F.softmax(student_anchor_scores)
-            p = F.softmax(teacher_anchor_scores)
+            q = F.softmax(torch.sort(student_anchor_scores.sigmoid()))
+            p = F.softmax(torch.sort(teacher_anchor_scores.sigmoid()))
 
             kl_loss = (p * p.log() - p * q.log()).sum()
             loss += kl_loss
