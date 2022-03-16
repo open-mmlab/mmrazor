@@ -24,7 +24,7 @@ from mmseg.datasets import build_dataset
 from mmseg.utils import collect_env, get_root_logger
 
 # Differences from mmdetection
-from mmrazor.apis.mmseg import set_random_seed, train_segmentor
+from mmrazor.apis import set_random_seed, train_mmseg_model
 from mmrazor.models.builder import build_algorithm
 from mmrazor.utils import setup_multi_processes
 
@@ -210,7 +210,7 @@ def main():
     algorithm.CLASSES = datasets[0].CLASSES
     # passing checkpoint meta for saving best checkpoint
     meta.update(cfg.checkpoint_config.meta)
-    train_segmentor(
+    train_mmseg_model(
         # Difference from mmsegmentation
         # replace `model` to `algorithm`
         algorithm,

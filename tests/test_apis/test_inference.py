@@ -9,11 +9,26 @@ from mmseg.apis import inference_segmentor
 from mmrazor.apis import init_mmcls_model, init_mmdet_model, init_mmseg_model
 
 
-def test_init_mmcls_model():
+def _sync_bn2bn(config: mmcv.Config) -> None:
+
+    def dfs(cfg_dict) -> None:
+        if isinstance(cfg_dict, dict):
+            for k, v in cfg_dict.items():
+                if k == 'norm_cfg':
+                    if v['type'] == 'SyncBN':
+                        v['type'] = 'BN'
+                dfs(v)
+
+    dfs(config._cfg_dict)
+
+
+def test_init_mmcls_model() -> None:
     from mmcls.datasets import ImageNet
 
     config_file = 'configs/nas/spos/spos_subnet_shufflenetv2_8xb128_in1k.py'
     config = mmcv.Config.fromfile(config_file)
+    # Replace SyncBN with BN to inference on CPU
+    _sync_bn2bn(config)
 
     mutable_file = 'configs/nas/spos/SPOS_SHUFFLENETV2_330M_IN1k_PAPER.yaml'
     model = init_mmcls_model(
@@ -34,10 +49,12 @@ def test_init_mmcls_model():
     assert result.get('pred_class') is not None
 
 
-def test_init_mmdet_model():
+def test_init_mmdet_model() -> None:
     config_file = \
         'configs/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco.py'
     config = mmcv.Config.fromfile(config_file)
+    # Replace SyncBN with BN to inference on CPU
+    _sync_bn2bn(config)
 
     mutable_file = \
         'configs/nas/detnas/DETNAS_FRCNN_SHUFFLENETV2_340M_COCO_MMRAZOR.yaml'
@@ -52,17 +69,12 @@ def test_init_mmdet_model():
     assert isinstance(result, list)
 
 
-def test_init_mmseg_model():
+def test_init_mmseg_model() -> None:
     config_file = 'configs/distill/cwd/' \
         'cwd_cls_head_pspnet_r101_d8_pspnet_r18_d8_512x1024_cityscapes_80k.py'
     config = mmcv.Config.fromfile(config_file)
-
     # Replace SyncBN with BN to inference on CPU
-    norm_cfg = dict(type='BN', requires_grad=True)
-    model_config = config.algorithm.architecture
-    model_config.model.backbone.norm_cfg = norm_cfg
-    model_config.model.decode_head.norm_cfg = norm_cfg
-    model_config.model.auxiliary_head.norm_cfg = norm_cfg
+    _sync_bn2bn(config)
 
     # Enable test time augmentation
     config.data.test.pipeline[1].flip = True
