@@ -16,5 +16,4 @@ python -m torch.distributed.launch \
     --master_port=$PORT \
     $(dirname "$0")/mmseg/train_mmseg.py \
     $CONFIG \
-    --seed 0 \
     --launcher pytorch ${@:3}
