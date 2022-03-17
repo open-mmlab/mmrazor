@@ -23,7 +23,7 @@ class BaseRecorder(metaclass=ABCMeta):
 
     def get_record_data(self, source, data_index=None):
         data = self.data_buffer[source]
-        if data_index:
+        if data_index is not None:
             assert isinstance(data_index, int)
             assert data_index < len(data)
             return data[data_index]
