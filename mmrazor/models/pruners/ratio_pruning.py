@@ -72,6 +72,39 @@ class RatioPruner(StructurePruner):
 
         self.set_subnet(subnet_dict)
 
+    def get_max_channel_bins(self, max_channel_bins):
+        """Get the max number of channel bins of all the groups which can be
+        pruned during searching.
+
+        Args:
+            max_channel_bins (int): The max number of bins in each layer.
+        """
+        channel_bins_dict = dict()
+        for space_id in self.channel_spaces.keys():
+            channel_bins_dict[space_id] = torch.ones((max_channel_bins, ))
+        return channel_bins_dict
+
+    def set_channel_bins(self, channel_bins_dict):
+        """Set subnet according to the number of channel bins in a layer.
+
+        Args:
+            channel_bins_dict (dict): The number of bins in each layer. Key is
+                the space_id of each layer and value is the corresponding
+                mask of channel bin.
+        """
+        subnet_dict = dict()
+        for space_id, bin_mask in channel_bins_dict.items():
+            out_mask = self.channel_spaces[space_id]
+            out_channels = out_mask.size(1)
+
+            new_channels = round(
+                (bin_mask.sum() / bin_mask.numel()).item() * out_channels)
+            new_out_mask = torch.zeros_like(out_mask)
+            new_out_mask[:, :new_channels] = 1
+
+            subnet_dict[space_id] = new_out_mask
+        self.set_subnet(subnet_dict)
+
     def switch_subnet(self, channel_cfg, subnet_ind=None):
         """Switch the channel config of the supernet according to channel_cfg.
 

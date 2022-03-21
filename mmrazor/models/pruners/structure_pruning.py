@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
+import warnings
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 from types import MethodType
@@ -518,6 +519,9 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         Args:
             max_channel_bins (int): The max number of bins in each layer.
         """
+        warnings.warn('get_max_channel_bins should be a method in '
+                      'RatioPruner but not in StructurePruner, and it '
+                      'will be deprecated in the future.')
         channel_bins_dict = dict()
         for space_id in self.channel_spaces.keys():
             channel_bins_dict[space_id] = torch.ones((max_channel_bins, ))
@@ -532,6 +536,9 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
                 mask of channel bin.
             max_channel_bins (int): The max number of bins in each layer.
         """
+        warnings.warn('set_channel_bins should be a method in '
+                      'RatioPruner but not in StructurePruner, '
+                      'and it will be deprecated in the future.')
         subnet_dict = dict()
         for space_id, bin_mask in channel_bins_dict.items():
             mask = self.channel_spaces[space_id]
