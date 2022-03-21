@@ -71,13 +71,6 @@ class BCNet(AutoSlim):
             subnet_dict_r = self.pruner.reverse_subnet(subnet_dict_l)
             self._complementary_switch = not self._complementary_switch
 
-        for subnet_l, subnet_r in zip(subnet_dict_l.values(),
-                                      subnet_dict_r.values()):
-            for _, __ in zip(subnet_l[0], subnet_r[0]):
-                print(_[0, 0], __[0, 0])
-            assert subnet_l.sum() == subnet_r.sum()
-            break
-
         self.pruner.set_subnet(subnet_dict_l)
         losses_l = self(**data)
         losses.update(add_prefix(losses_l, 'losses_l'))

@@ -1,17 +1,18 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
+import os.path as osp
 import random
 import time
+
 import mmcv.fileio
-from mmcv.runner import get_dist_info
 import numpy as np
-import os.path as osp
 import torch
 import torch.nn.functional as F
+from mmcv.runner import get_dist_info
 
 from ..builder import SEARCHERS
-from .evolution_search import EvolutionSearcher
 from ..utils import broadcast_object_list
+from .evolution_search import EvolutionSearcher
 
 
 @SEARCHERS.register_module()
@@ -49,7 +50,8 @@ class BCNetSearcher(EvolutionSearcher):
             for i, space_id in enumerate(sorted(subnet_l.keys())):
                 out_mask = subnet_l[space_id]
                 # channels to channel_bins
-                width = round(out_mask.sum().item() * self.max_channel_bins / out_mask.numel())
+                width = round(out_mask.sum().item() * self.max_channel_bins /
+                              out_mask.numel())
                 loss_matrix[i, width - self.min_channel_bins] += loss
                 layer_width_cnt[i, width - self.min_channel_bins] += 1
 
@@ -59,7 +61,8 @@ class BCNetSearcher(EvolutionSearcher):
 
         # FLOPs calculation, layer flops is proportional to i/o channel width
         # FLOPs in different layers are different.
-        Flops = torch.zeros((num_space_id, num_width, num_width), device=device)
+        Flops = torch.zeros((num_space_id, num_width, num_width),
+                            device=device)
         temp = torch.zeros((num_width, num_width), device=device)
         for row in range(num_width):
             for col in range(num_width):
@@ -70,21 +73,26 @@ class BCNetSearcher(EvolutionSearcher):
             Flops[i, :, :] = space_flops[space_id] * temp
 
         # output sample possibility is softmax of P
-        P = torch.autograd.Variable(torch.randn_like(loss_matrix), requires_grad=True)
+        P = torch.autograd.Variable(
+            torch.randn_like(loss_matrix), requires_grad=True)
         optim = torch.optim.SGD([P], lr=0.01)
 
         for _ in range(10000):
             optim.zero_grad()
             prob = F.softmax(P, 1)
-            prob_shift = F.pad(prob, (0, 0, 0, 1), value=1.0 / num_width)[1:, :]
+            prob_shift = F.pad(
+                prob, (0, 0, 0, 1), value=1.0 / num_width)[1:, :]
             z = (prob * loss_matrix).sum(dim=1)
 
-            F_e = (Flops * prob.view(num_space_id, num_width, 1) * prob_shift.view(num_space_id, 1, num_width)).sum()
-            loss = z.mean() + (1.0 - F_e / self.constraints['flops']) ** 2
+            F_e = (Flops * prob.view(num_space_id, num_width, 1) *
+                   prob_shift.view(num_space_id, 1, num_width)).sum()
+            loss = z.mean() + (1.0 - F_e / self.constraints['flops'])**2
             loss.backward()
             optim.step()
             if _ % 1000 == 0:
-                self.logger.info(f'Initialize Prior Population: Epoch {_} Loss {loss.item()}')
+                self.logger.info(
+                    f'Initialize Prior Population: Epoch {_} Loss {loss.item()}'
+                )
 
         P.detach_()
         prob = F.softmax(P, dim=1).cpu().numpy()
@@ -93,12 +101,16 @@ class BCNetSearcher(EvolutionSearcher):
         for _ in range(self.candidate_pool_size):
             while 1:
                 subnet_dict = dict()
-                for i, space_id in enumerate(sorted(self.algorithm.pruner.channel_spaces.keys())):
+                for i, space_id in enumerate(
+                        sorted(self.algorithm.pruner.channel_spaces.keys())):
                     out_mask = self.algorithm.pruner.channel_spaces[space_id]
                     out_channels = out_mask.size(1)
-                    width = np.random.choice(a=np.arange(self.min_channel_bins, self.max_channel_bins + 1),
-                                             p=prob[i])
-                    new_channels = round(width / self.max_channel_bins * out_channels)
+                    width = np.random.choice(
+                        a=np.arange(self.min_channel_bins,
+                                    self.max_channel_bins + 1),
+                        p=prob[i])
+                    new_channels = round(width / self.max_channel_bins *
+                                         out_channels)
                     new_out_mask = torch.zeros_like(out_mask).bool()
                     new_out_mask[:, :new_channels] = True
                     subnet_dict[space_id] = new_out_mask
@@ -111,7 +123,9 @@ class BCNetSearcher(EvolutionSearcher):
         mutation_subnet_dict = copy.deepcopy(candidate)
         for name, mask in candidate.items():
             if np.random.random_sample() < prob:
-                mutation_subnet_dict[name] = self.algorithm.pruner.get_channel_mask(mask, searching=True)
+                mutation_subnet_dict[
+                    name] = self.algorithm.pruner.get_channel_mask(
+                        mask, searching=True)
         return mutation_subnet_dict
 
     def crossover(self, candidate1, candidate2):
@@ -211,7 +225,7 @@ class BCNetSearcher(EvolutionSearcher):
                                  f'{scores_before}')
                 self.update_top_k()
                 scores_after = list(self.top_k_candidates_with_score.keys())
-                self.logger.info(f'top k scores before update: '
+                self.logger.info(f'top k scores after update: '
                                  f'{scores_after}')
 
                 mutation_candidates = list()
@@ -223,7 +237,8 @@ class BCNetSearcher(EvolutionSearcher):
                         break
                     candidate = random.choice(
                         list(self.top_k_candidates_with_score.values()))
-                    mutation_candidate = self.mutation(candidate, self.mutate_prob)
+                    mutation_candidate = self.mutation(candidate,
+                                                       self.mutate_prob)
                     self.algorithm.pruner.set_subnet(mutation_candidate)
                     if self.check_constraints():
                         mutation_candidates.append(mutation_candidate)
@@ -241,7 +256,8 @@ class BCNetSearcher(EvolutionSearcher):
                     random_candidate2 = random.choice(
                         list(self.top_k_candidates_with_score.values()))
 
-                    crossover_candidate = self.crossover(random_candidate1, random_candidate2)
+                    crossover_candidate = self.crossover(
+                        random_candidate1, random_candidate2)
                     self.algorithm.pruner.set_subnet(crossover_candidate)
                     if self.check_constraints():
                         crossover_candidates.append(crossover_candidate)
@@ -262,7 +278,9 @@ class BCNetSearcher(EvolutionSearcher):
             self.candidate_pool = broadcast_object_list(self.candidate_pool)
 
         if rank == 0:
-            for i, (score, subnet) in enumerate(self.top_k_candidates_with_score.items()):
+            for i, (score, subnet) in enumerate(
+                    self.top_k_candidates_with_score.items()):
                 mmcv.fileio.dump(
                     subnet,
-                    osp.join(self.work_dir, f'subnet_top{i}_score_{score}.yaml'))
+                    osp.join(self.work_dir,
+                             f'subnet_top{i}_score_{score}.yaml'))
