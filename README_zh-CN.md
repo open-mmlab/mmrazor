@@ -103,7 +103,33 @@ v0.1.0 版本已经在 2021.12.23 发布
 
 ## 安装
 
-请参考 [get_started.md](/docs/en/get_started.md) 进行安装。
+MMRazor 依赖 [PyTorch](https://pytorch.org/) 和 [MMCV](https://github.com/open-mmlab/mmcv)，以下是安装的简要步骤。
+
+**步骤 1.**
+依照[官方教程](https://pytorch.org/get-started/locally/)安装PyTorch，例如
+
+```
+pip3 install torch torchvision
+```
+
+**步骤 2.**
+使用 [MIM](https://github.com/open-mmlab/mim) 安装 MMCV
+
+```
+pip3 install openmim
+mim install mmcv-full
+```
+
+**步骤 3.**
+从源码安装 MMRazor
+
+```
+git clone https://github.com/open-mmlab/mmrazor.git
+cd mmrazor
+pip install -v -e .  # or "python setup.py develop"
+```
+
+更详细的安装指南请参考 [get_started.md](/docs/en/get_started.md) 。
 
 ## 快速入门
 请参考 [get_started.md](/docs/en/get_started.md) 学习 MMRazor 的基本使用。 我们也提供了一些进阶教程:

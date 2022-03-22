@@ -77,7 +77,34 @@ Results and models are available in the [model zoo](/docs/en/model_zoo.md).
 
 ## Installation
 
-Please refer to [get_started.md](/docs/en/get_started.md) for installation.
+MMRazor depends on [PyTorch](https://pytorch.org/) and [MMCV](https://github.com/open-mmlab/mmcv).
+Below are quick steps for installation.
+
+**Step 1.**
+Install PyTorch following [official instructions](https://pytorch.org/get-started/locally/), e.g.
+
+```
+pip3 install torch torchvision
+```
+
+**Step 2.**
+Install MMCV with [MIM](https://github.com/open-mmlab/mim).
+
+```
+pip3 install openmim
+mim install mmcv-full
+```
+
+**Step 3.**
+Install MMRazor from source.
+
+```
+git clone https://github.com/open-mmlab/mmrazor.git
+cd mmrazor
+pip install -v -e .  # or "python setup.py develop"
+```
+
+Please refer to [get_started.md](/docs/en/get_started.md) for more detailed instruction.
 
 ## Getting Started
 Please refer to [train.md](/docs/en/train.md) and [test.md](/docs/en/test.md) for the basic usage of MMRazor. There are also tutorials:
