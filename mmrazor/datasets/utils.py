@@ -5,7 +5,7 @@ import random
 from torch.utils.data import random_split
 
 
-def split_dataset_txt(txt_path, save_dir):
+def split_dataset_txt(txt_path, save_dir, nums=1024):
     index_pool = dict()
     with open(txt_path, 'r') as f:
         for line in f:
@@ -16,11 +16,12 @@ def split_dataset_txt(txt_path, save_dir):
             index_pool[index].append(filename)
 
     assert len(index_pool) == 1000
-
+    nums_per_class = nums // 1000
+    remainder = nums % 1000
     train_txt = list()
     val_txt = list()
     for index, filenames in index_pool.items():
-        filenames_val = random.sample(filenames, 50)
+        filenames_val = random.sample(filenames, nums_per_class)
         for name in filenames_val:
             filenames.remove(name)
         filenames_train = filenames
@@ -28,16 +29,21 @@ def split_dataset_txt(txt_path, save_dir):
             train_txt.append(f'{name} {index}')
         for name in filenames_val:
             val_txt.append(f'{name} {index}')
+    sample_remainder = random.sample(train_txt, remainder)
+    train_txt_final = [s for s in train_txt if s not in sample_remainder]
+    val_txt.extend(sample_remainder)
 
-    assert len(val_txt) == 50000
+    assert len(val_txt) == nums
 
     with open(os.path.join(save_dir, 'greedynas_train.txt'), 'w') as f:
-        for line in train_txt:
+        for line in train_txt_final:
             f.writelines(f'{line}\n')
     with open(os.path.join(save_dir, 'greedynas_val.txt'), 'w') as f:
         for line in val_txt:
             f.writelines(f'{line}\n')
 
+    print(f'nums of train_txt: {len(train_txt_final)}; '
+          f'nums of val_txt: {len(val_txt)}')
     print(f'Split txt finished, greedynas_train.txt and '
           f'greedynas_val.txt were saved in {save_dir}')
 
