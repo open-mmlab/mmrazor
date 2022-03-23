@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from mmrazor.models.builder import ALGORITHMS
 from .spos import SPOS
 
