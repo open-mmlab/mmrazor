@@ -84,12 +84,6 @@ def train_mmcls_model(model,
                     round_up=True,
                     seed=cfg.seed) for item_ds in dset
             ]
-            if cfg.data.get('train_val', None):
-                data_loaders.append(data_loader[0])
-                sampler_data_loader = data_loader[1]
-                assert hasattr(sampler_data_loader.dataset, 'evaluate')
-            else:
-                data_loaders.append(data_loader)
         else:
             data_loader = build_dataloader(
                 dset,
@@ -100,8 +94,8 @@ def train_mmcls_model(model,
                 dist=distributed,
                 round_up=True,
                 seed=cfg.seed)
-            assert hasattr(data_loader.dataset, 'evaluate')
-            data_loaders.append(data_loader)
+
+        data_loaders.append(data_loader)
 
     # put model on gpus
     if distributed:
@@ -208,8 +202,17 @@ def train_mmcls_model(model,
             eval_hook(val_dataloader, **eval_cfg), priority='LOW')
 
     if sampler_cfg:
+        train_val_dataset = build_dataset(cfg.data.train_val,
+                                          dict(test_mode=True))
+        train_val_dataloader = build_dataloader(
+            train_val_dataset,
+            samples_per_gpu=cfg.data.samples_per_gpu,
+            workers_per_gpu=cfg.data.workers_per_gpu,
+            dist=distributed,
+            shuffle=False,
+            round_up=True)
         runner.register_hook(
-            GreedySamplerHook(sampler_data_loader, **sampler_cfg),
+            GreedySamplerHook(train_val_dataloader, **sampler_cfg),
             priority='LOW')
 
     resume_from = None

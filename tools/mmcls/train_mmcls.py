@@ -28,10 +28,6 @@ def parse_args():
     parser.add_argument(
         '--resume-from', help='the checkpoint file to resume from')
     parser.add_argument(
-        '--auto-resume',
-        action='store_true',
-        help='resume from the latest checkpoint automatically')
-    parser.add_argument(
         '--no-validate',
         action='store_true',
         help='whether not to evaluate the checkpoint during training')
@@ -110,7 +106,6 @@ def main():
                                 osp.splitext(osp.basename(args.config))[0])
     if args.resume_from is not None:
         cfg.resume_from = args.resume_from
-    cfg.auto_resume = args.auto_resume
     if args.gpus is not None:
         cfg.gpu_ids = range(1)
         warnings.warn('`--gpus` is deprecated because we only support '
@@ -173,12 +168,7 @@ def main():
     algorithm = build_algorithm(cfg.algorithm)
     algorithm.init_weights()
 
-    datasets = []
-    train_dataset = build_dataset(cfg.data.train)
-    if cfg.data.get('train_val', None):
-        train_dataset = [train_dataset]
-        train_dataset.append(build_dataset(cfg.data.train_val))
-    datasets.append(train_dataset)
+    datasets = [build_dataset(cfg.data.train)]
     if len(cfg.workflow) == 2:
         val_dataset = copy.deepcopy(cfg.data.val)
         val_dataset.pipeline = cfg.data.train.pipeline
@@ -186,12 +176,10 @@ def main():
     if cfg.checkpoint_config is not None:
         # save mmcls version, config file content and class names in
         # checkpoints as meta data
-        if isinstance(datasets[0], list):
-            classes = datasets[0][0].CLASSES
-        else:
-            classes = datasets[0].CLASSES
         cfg.checkpoint_config.meta = dict(
-            mmcls_version=__version__, config=cfg.pretty_text, CLASSES=classes)
+            mmcls_version=__version__,
+            config=cfg.pretty_text,
+            CLASSES=datasets[0].CLASSES)
     # add an attribute for visualization convenience
     train_mmcls_model(
         # Difference from mmclassification
