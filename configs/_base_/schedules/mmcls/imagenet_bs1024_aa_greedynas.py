@@ -1,10 +1,6 @@
 # optimizer
 optimizer = dict(
-    type='RMSpropTF',
-    lr=0.064,
-    eps=0.001,
-    weight_decay=1e-5,
-    momentum=0.9)
+    type='RMSpropTF', lr=0.064, eps=0.001, weight_decay=1e-5, momentum=0.9)
 optimizer_config = dict(grad_clip=None)
 # learning policy
 lr_config = dict(

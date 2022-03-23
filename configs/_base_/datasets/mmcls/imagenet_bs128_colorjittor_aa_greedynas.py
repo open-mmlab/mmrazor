@@ -106,7 +106,7 @@ train_pipeline = [
     dict(type='RandomFlip', flip_prob=0.5, direction='horizontal'),
     dict(type='AutoAugment', policies=policy_imagenet),
     dict(type='ColorJitter', brightness=0.0, contrast=0.0, saturation=0.0),
-    dict(type='RandomErasing', erase_prob=0.2, max_area_ratio=1/3),
+    dict(type='RandomErasing', erase_prob=0.2, max_area_ratio=1 / 3),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='ImageToTensor', keys=['img']),
     dict(type='ToTensor', keys=['gt_label']),
@@ -154,4 +154,3 @@ data = dict(
         ann_file='data/imagenet/meta/val.txt',
         pipeline=test_pipeline))
 evaluation = dict(interval=1, metric='accuracy')
-

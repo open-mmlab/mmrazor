@@ -7,9 +7,7 @@ _base_ = [
 data = dict(samples_per_gpu=96)
 optimizer = dict(lr=0.048)
 lr_config = dict(
-    step=int(1666 * 2.4),
-    warmup_iters=1666 * 3,
-    warmup_ratio=1e-6 / 0.048)
+    step=int(1666 * 2.4), warmup_iters=1666 * 3, warmup_ratio=1e-6 / 0.048)
 runner = dict(max_iters=450 * 1666)
 
 norm_cfg = dict(type='BN')
@@ -17,8 +15,8 @@ model = dict(
     type='mmcls.ImageClassifier',
     backbone=dict(
         type='SearchableMobileNet',
-        arch_setting_type='greedynas', 
-        widen_factor=1.0, 
+        arch_setting_type='greedynas',
+        widen_factor=1.0,
         norm_cfg=norm_cfg,
         act_cfg=dict(type='ReLU')),
     neck=dict(type='GlobalAveragePooling'),
@@ -40,11 +38,8 @@ se_cfg = dict(
     ratio=4,
     act_cfg=(dict(type='HSwish'),
              dict(
-                type='HSigmoid',
-                bias=3,
-                divisor=6,
-                min_value=0,
-                max_value=1)))
+                 type='HSigmoid', bias=3, divisor=6, min_value=0,
+                 max_value=1)))
 mutator = dict(
     type='OneShotMutator',
     placeholder_mapping=dict(
@@ -141,9 +136,7 @@ mutator = dict(
                     norm_cfg=norm_cfg,
                     drop_path_rate=0.2,
                     act_cfg=dict(type='HSwish')),
-                identity=dict(type='Identity')
-            )
-        ),
+                identity=dict(type='Identity'))),
         first_blocks=dict(
             type='OneShotOP',
             choices=dict(
@@ -153,12 +146,7 @@ mutator = dict(
                     expand_ratio=1,
                     norm_cfg=norm_cfg,
                     drop_path_rate=0.2,
-                    act_cfg=dict(type='HSwish')
-                )
-            )
-        )
-    )
-)
+                    act_cfg=dict(type='HSwish'))))))
 
 algorithm = dict(
     type='GreedyNAS',
@@ -170,7 +158,7 @@ algorithm = dict(
     distiller=None,
     retraining=True,
 )
-    
+
 workflow = [('train', 1)]
 evaluation = dict(interval=5000, metric='accuracy')
 
