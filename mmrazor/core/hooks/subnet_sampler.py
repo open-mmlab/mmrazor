@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import math
 import os
 import random
@@ -5,11 +6,10 @@ from abc import abstractmethod
 
 import mmcv
 import numpy as np
+import torch.distributed as dist
 from mmcls.models.losses import accuracy
 from mmcv.runner import HOOKS, Hook
 from torch.utils.data import DataLoader
-
-from ..utils import broadcast_object_list
 
 
 class IterLoader:
@@ -93,7 +93,7 @@ class GreedySamplerHook(BaseSamplerHook):
         self.max_p = max_p
         self.cur_p = 0.
 
-        self.dataloader = IterLoader(dataloader)
+        self.eval_batch_data = next(IterLoader(dataloader))
         self.eval_kwargs = eval_kwargs
 
     def _update_candidate_pool(self):
@@ -119,11 +119,10 @@ class GreedySamplerHook(BaseSamplerHook):
 
     def before_train_iter(self, runner):
         if runner.iter >= self.start_iter:
-            subnet_for_train = dict()
             if runner.rank == 0:
-                subnet_for_train = self._do_sample(runner)
-            runner.model.module.subnet = broadcast_object_list(
-                [subnet_for_train])[0]
+                runner.model.module.subnet = self._do_sample(runner)
+            for k in runner.model.module.subnet.keys():
+                dist.broadcast(runner.model.module.subnet[k], src=0)
 
     def after_train_iter(self, runner):
         if runner.iter >= runner.max_iters - 1:
@@ -172,13 +171,12 @@ class GreedySamplerHook(BaseSamplerHook):
                     eval_subnets.append(self._gen_subnet_from_pool())
 
             eval_results = []
-            eval_batch_data = next(self.dataloader)
             for subnet in eval_subnets:
                 runner.model.module.mutator.set_subnet(subnet)
                 results = runner.model(
-                    eval_batch_data['img'], return_loss=False)
-                eval_res = self._evaluate_batch(results,
-                                                eval_batch_data['gt_label'])
+                    self.eval_batch_data['img'], return_loss=False)
+                eval_res = self._evaluate_batch(
+                    results, self.eval_batch_data['gt_label'])
                 score = eval_res[self.score_key]
                 eval_results.append([subnet, score])
                 if len(self.constraints) == 0:
