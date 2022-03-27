@@ -89,6 +89,20 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         else:
             self.except_start_keys = except_start_keys
 
+    def trace_shared_module_hook(self, module, inputs, outputs):
+        """Trace shared modules. Modules such as the detection head in
+        RetinaNet which are visited more than once during :func:`forward` are
+        shared modules.
+
+        Args:
+            module (:obj:`torch.nn.Module`): The module to register hook.
+            inputs (tuple): The input of the module.
+            outputs (tuple): The output of the module.
+        """
+        module.cnt += 1
+        if module.cnt == 2:
+            self.shared_module.append(self.module2name[module])
+
     def prepare_from_supernet(self, supernet):
         """Prepare for pruning."""
 
@@ -98,9 +112,17 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
 
         # record the visited module name during trace path
         visited = dict()
+        # shared modules such as shared detection head in RetinaNet
+        self.shared_module = []
 
         for name, module in supernet.model.named_modules():
             if hasattr(module, 'weight'):
+                # trace shared modules
+                module.cnt = 0
+                handle = module.register_forward_hook(
+                    self.trace_shared_module_hook)
+                module.handle = handle
+
                 module2name[module] = name
                 name2module[name] = module
                 var2module[id(module.weight)] = module
@@ -109,11 +131,18 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
             if isinstance(module, SwitchableBatchNorm2d):
                 name2module[name] = module
         self.name2module = name2module
+        self.module2name = module2name
 
         pseudo_img = torch.randn(1, 3, 224, 224)
         # todo: support two stage detector and mmseg
         pseudo_img = supernet.forward_dummy(pseudo_img)
         pseudo_loss = supernet.cal_pseudo_loss(pseudo_img)
+
+        for name, module in supernet.model.named_modules():
+            if hasattr(module, 'weight'):
+                del module.cnt
+                handle = module.handle
+                handle.remove()
 
         non_pass_paths = list()
         cur_non_pass_path = list()
@@ -656,7 +685,7 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         name = module2name[module]
         parent = grad_fn.next_functions[0][0]
         cur_path.append(name)
-        if visited[name]:
+        if visited[name] and name not in self.shared_module:
             result_paths.append(copy.deepcopy(cur_path))
         else:
             visited[name] = True
@@ -693,7 +722,7 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         parent = grad_fn.next_functions[1][0]
 
         cur_path.append(name)
-        if visited[name]:
+        if visited[name] and name not in self.shared_module:
             result_paths.append(copy.deepcopy(cur_path))
         else:
             visited[name] = True
@@ -722,7 +751,8 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         concat_id = '_'.join([str(id(p)) for p in parents])
         name = f'concat_{concat_id}'
         cur_path.append(name)
-        if name in visited and visited[name]:
+        if (name in visited and visited[name]
+                and name not in self.shared_module):
             result_paths.append(copy.deepcopy(cur_path))
         else:
             visited[name] = True
