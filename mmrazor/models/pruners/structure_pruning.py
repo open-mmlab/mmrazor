@@ -133,6 +133,12 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         self.name2module = name2module
         self.module2name = module2name
 
+        # set requires_grad to True to trace paths
+        param_require_grad = dict()
+        for param in supernet.model.parameters():
+            param_require_grad[id(param)] = param.requires_grad
+            param.requires_grad = True
+
         pseudo_img = torch.randn(1, 3, 224, 224)
         # todo: support two stage detector and mmseg
         pseudo_img = supernet.forward_dummy(pseudo_img)
@@ -143,6 +149,10 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
                 del module.cnt
                 handle = module.handle
                 handle.remove()
+
+        # reset requires_grad
+        for param in supernet.model.parameters():
+            param.requires_grad = param_require_grad[id(param)]
 
         non_pass_paths = list()
         cur_non_pass_path = list()
@@ -661,6 +671,7 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
     @register_parser(BACKWARD_PARSER_DICT, 'ThnnConv2DBackward')
     @register_parser(BACKWARD_PARSER_DICT, 'CudnnConvolutionBackward')
     @register_parser(BACKWARD_PARSER_DICT, 'MkldnnConvolutionBackward')
+    @register_parser(BACKWARD_PARSER_DICT, 'SlowConvDilated2DBackward')
     def conv_backward_parser(self, grad_fn, module2name, var2module, cur_path,
                              result_paths, visited):
         """Parse the backward of a conv layer.
