@@ -87,14 +87,14 @@ data = dict(
 evaluation = dict(interval=1, metric='accuracy')
 
 # optimizer
-# paramwise_cfg = dict(
-#     bias_decay_mult=0.0, norm_decay_mult=0.0, dwconv_decay_mult=0.0)
+paramwise_cfg = dict(bias_decay_mult=0.0, norm_decay_mult=0.0)
 optimizer = dict(
     type='SGD',
     lr=0.1,
     momentum=0.9,
     nesterov=True,
     weight_decay=5e-5,
+    paramwise_cfg=paramwise_cfg
 )
 optimizer_config = None
 # learning policy
