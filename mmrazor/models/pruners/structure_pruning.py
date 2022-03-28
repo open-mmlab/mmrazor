@@ -428,7 +428,7 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
 
     def add_pruning_attrs(self, module):
         """Add masks to a ``nn.Module``."""
-        if type(module).__name__ == 'Conv2d':
+        if isinstance(module, nn.Conv2d):
             module.register_buffer(
                 'in_mask',
                 module.weight.new_ones((1, module.in_channels, 1, 1), ))
@@ -436,7 +436,7 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
                 'out_mask',
                 module.weight.new_ones((1, module.out_channels, 1, 1), ))
             module.forward = self.modify_conv_forward(module)
-        if type(module).__name__ == 'Linear':
+        if isinstance(module, nn.Linear):
             module.register_buffer(
                 'in_mask', module.weight.new_ones((1, module.in_features), ))
             module.register_buffer(
