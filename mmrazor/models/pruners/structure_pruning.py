@@ -519,14 +519,16 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
                 module.out_channels = out_channels
             if hasattr(module, 'out_features'):
                 module.out_features = out_channels
+            if hasattr(module, 'num_features'):
+                module.num_features = out_channels
             if hasattr(module, 'out_mask'):
                 module.out_mask = module.out_mask[:, :out_channels]
 
             if 'in_channels' in channels_per_layer:
                 in_channels = channels_per_layer['in_channels']
 
-                if in_channels > 1:
-                    temp_weight = temp_weight[:, :in_channels].data
+                # can also handle depthwise conv
+                temp_weight = temp_weight[:, :in_channels].data
                 if hasattr(module, 'in_channels'):
                     module.in_channels = in_channels
                 if hasattr(module, 'in_features'):
