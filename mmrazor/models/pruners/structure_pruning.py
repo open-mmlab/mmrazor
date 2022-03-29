@@ -405,24 +405,25 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
     @staticmethod
     def modify_conv_forward(module):
         """Modify the forward method of a conv layer."""
+        original_forward = module.forward
 
         def modified_forward(self, feature):
             feature = feature * self.in_mask
-            return F.conv2d(feature, self.weight, self.bias, self.stride,
-                            self.padding, self.dilation, self.groups)
+            return original_forward(feature)
 
         return MethodType(modified_forward, module)
 
     @staticmethod
     def modify_fc_forward(module):
         """Modify the forward method of a linear layer."""
+        original_forward = module.forward
 
         def modified_forward(self, feature):
             if not len(self.in_mask.shape) == len(self.out_mask.shape):
                 self.in_mask = self.in_mask.reshape(self.in_mask.shape[:2])
 
             feature = feature * self.in_mask
-            return F.linear(feature, self.weight, self.bias)
+            return original_forward(feature)
 
         return MethodType(modified_forward, module)
 
