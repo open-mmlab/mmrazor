@@ -10,6 +10,7 @@ from mmseg.core import DistEvalHook, EvalHook
 from mmseg.datasets import build_dataloader, build_dataset
 from mmseg.utils import get_root_logger
 
+from mmrazor.apis.utils import auto_scale_lr
 from mmrazor.core.distributed_wrapper import DistributedDataParallelWrapper
 from mmrazor.core.optimizer import build_optimizers
 from mmrazor.utils import find_latest_checkpoint
@@ -96,6 +97,7 @@ def train_mmseg_model(model,
     # build optimizers
     # Difference from mmdetection.
     # In some algorithms, there will be multi optimizers.
+    auto_scale_lr(cfg, distributed, logger)
     optimizer = build_optimizers(model, cfg.optimizer)
 
     # build runner

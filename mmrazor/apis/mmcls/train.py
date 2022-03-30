@@ -11,6 +11,7 @@ from mmcv.parallel import MMDataParallel, MMDistributedDataParallel
 from mmcv.runner import EpochBasedRunner, Fp16OptimizerHook, build_runner
 from mmcv.runner.hooks import DistEvalHook, EvalHook
 
+from mmrazor.apis.utils import auto_scale_lr
 # Differences from mmclassification.
 from mmrazor.core.distributed_wrapper import DistributedDataParallelWrapper
 from mmrazor.core.hooks import DistSamplerSeedHook
@@ -127,6 +128,7 @@ def train_mmcls_model(model,
     # build optimizers
     # Difference from mmclassification.
     # In some algorithms, there will be multi optimizers.
+    auto_scale_lr(cfg, distributed, logger)
     optimizer = build_optimizers(model, cfg.optimizer)
 
     if cfg.get('runner') is None:
