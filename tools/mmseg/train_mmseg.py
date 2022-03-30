@@ -89,6 +89,10 @@ def parse_args():
         default='none',
         help='job launcher')
     parser.add_argument('--local_rank', type=int, default=0)
+    parser.add_argument(
+        '--auto-scale-lr',
+        action='store_true',
+        help='enable automatically scaling LR.')
     args = parser.parse_args()
     if 'LOCAL_RANK' not in os.environ:
         os.environ['LOCAL_RANK'] = str(args.local_rank)
@@ -106,6 +110,17 @@ def main():
 
     # set multi-process settings
     setup_multi_processes(cfg)
+
+    if args.auto_scale_lr:
+        if 'auto_scale_lr_config' in cfg and \
+                'auto_scale_lr' in cfg.auto_scale_lr_config:
+            cfg.auto_scale_lr_config.auto_scale_lr = True
+        else:
+            warnings.warn('Can not find "auto_scale_lr_config" or '
+                          '"auto_scale_lr" in your configuration file. '
+                          'Please update all the configuration files '
+                          'to mmrazor >= 0.3.0. '
+                          'Disable automatic scaling of learning rate.')
 
     # set cudnn_benchmark
     if cfg.get('cudnn_benchmark', False):
