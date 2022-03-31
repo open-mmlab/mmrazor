@@ -1,4 +1,4 @@
-# WSLD
+# RKD
 
 
 
@@ -33,10 +33,11 @@ teachers' performance, achieving the state of the arts on standard benchmark dat
 
 ## Citation
 ```latex
-@inproceedings{zhou2021wsl,
-  title={Rethinking soft labels for knowledge distillation: a bias-variance tradeoff perspective},
-  author={Helong, Zhou and Liangchen, Song and Jiajie, Chen and Ye, Zhou and Guoli, Wang and Junsong, Yuan and Qian Zhang},
-  booktitle = {International Conference on Learning Representations (ICLR)},
-  year={2021}
+@inproceedings{park2019relational,
+  title={Relational knowledge distillation},
+  author={Park, Wonpyo and Kim, Dongju and Lu, Yan and Cho, Minsu},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={3967--3976},
+  year={2019}
 }
 ```
