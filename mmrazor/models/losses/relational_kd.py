@@ -47,7 +47,7 @@ def angle(pred):
 
 
 @LOSSES.register_module()
-class Distance_wise_RKD(nn.Module):
+class DistanceWiseRKD(nn.Module):
     """PyTorch version of distance-wise loss of `Relational Knowledge
     Distillation.
 
@@ -61,7 +61,7 @@ class Distance_wise_RKD(nn.Module):
     """
 
     def __init__(self, loss_weight=25.0, with_l2_norm=True):
-        super(Distance_wise_RKD, self).__init__()
+        super(DistanceWiseRKD, self).__init__()
 
         self.loss_weight = loss_weight
         self.with_l2_norm = with_l2_norm
@@ -102,7 +102,7 @@ class Distance_wise_RKD(nn.Module):
 
 
 @LOSSES.register_module()
-class Angle_wise_RKD(nn.Module):
+class AngleWiseRKD(nn.Module):
     """PyTorch version of angle-wise loss of `Relational Knowledge
     Distillation.
 
@@ -116,7 +116,7 @@ class Angle_wise_RKD(nn.Module):
     """
 
     def __init__(self, loss_weight=50.0, with_l2_norm=True):
-        super(Angle_wise_RKD, self).__init__()
+        super(AngleWiseRKD, self).__init__()
 
         self.loss_weight = loss_weight
         self.with_l2_norm = with_l2_norm

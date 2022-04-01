@@ -57,12 +57,12 @@ algorithm = dict(
                 teacher_module='neck.gap',
                 losses=[
                     dict(
-                        type='Distance_wise_RKD',
+                        type='DistanceWiseRKD',
                         name='distance_wise_loss',
                         loss_weight=25.0,
                         with_l2_norm=True),
                     dict(
-                        type='Angle_wise_RKD',
+                        type='AngleWiseRKD',
                         name='angle_wise_loss',
                         loss_weight=50.0,
                         with_l2_norm=True),
