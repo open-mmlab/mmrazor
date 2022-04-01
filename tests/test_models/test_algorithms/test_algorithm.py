@@ -497,7 +497,7 @@ def test_rkd():
                             name='loss_rkd',
                             loss_weight_d=25.0,
                             loss_weight_a=50.0,
-                            l2_norm=True)
+                            with_l2_norm=True)
                     ])
             ]),
     )
@@ -527,7 +527,7 @@ def test_rkd():
                     name='loss_rkd',
                     loss_weight_d=25.0,
                     loss_weight_a=50.0,
-                    l2_norm=False)
+                    with_l2_norm=False)
             ])
     ]
 

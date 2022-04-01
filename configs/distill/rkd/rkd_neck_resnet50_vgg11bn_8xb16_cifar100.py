@@ -18,8 +18,13 @@ student = dict(
     ))
 
 # teacher settings
+
+# FIXME: replace it with your own path
+teacher_ckpt = 'path/to/your/checkpoint.pth'
+
 teacher = dict(
     type='mmcls.ImageClassifier',
+    init_cfg=dict(type='Pretrained', checkpoint=teacher_ckpt),
     backbone=dict(
         type='ResNet_CIFAR',
         depth=50,
@@ -58,7 +63,7 @@ algorithm = dict(
                         name='loss_rkd',
                         loss_weight_d=25.0,
                         loss_weight_a=50.0,
-                        l2_norm=True)
+                        with_l2_norm=True)
                 ])
         ]),
 )
