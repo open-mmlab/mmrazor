@@ -6,7 +6,6 @@ from types import MethodType
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from mmcv.runner import BaseModule
 from ordered_set import OrderedSet
 from torch.nn.modules.batchnorm import _BatchNorm
@@ -153,6 +152,7 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         # reset requires_grad
         for param in supernet.model.parameters():
             param.requires_grad = param_require_grad[id(param)]
+        del param_require_grad
 
         non_pass_paths = list()
         cur_non_pass_path = list()
