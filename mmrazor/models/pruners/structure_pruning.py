@@ -111,16 +111,24 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
 
         # record the visited module name during trace path
         visited = dict()
-        # shared modules such as shared detection head in RetinaNet
+        # Record shared modules which will be visited more than once during
+        # forward such as shared detection head in RetinaNet.
+        # If a module is not a shared module and it has been visited during
+        # forward, its parent modules must have been traced already.
+        # However, a shared module will be visited more than once during
+        # forward, so it is still need to be traced even if it has been
+        # visited.
         self.shared_module = []
+        tmp_shared_module_hook_handles = list()
 
         for name, module in supernet.model.named_modules():
             if hasattr(module, 'weight'):
                 # trace shared modules
                 module.cnt = 0
+                # the handle is only to remove the corresponding hook later
                 handle = module.register_forward_hook(
                     self.trace_shared_module_hook)
-                module.handle = handle
+                tmp_shared_module_hook_handles.append(handle)
 
                 module2name[module] = name
                 name2module[name] = module
@@ -132,7 +140,8 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         self.name2module = name2module
         self.module2name = module2name
 
-        # set requires_grad to True to trace paths
+        # Set requires_grad to True. If the `requires_grad` of a module's
+        # weight is False, we can not trace this module by parsing backward.
         param_require_grad = dict()
         for param in supernet.model.parameters():
             param_require_grad[id(param)] = param.requires_grad
@@ -143,13 +152,17 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         pseudo_img = supernet.forward_dummy(pseudo_img)
         pseudo_loss = supernet.cal_pseudo_loss(pseudo_img)
 
+        # `trace_shared_module_hook` and `cnt` are only used to trace the
+        # shared modules in a model and need to be remove later
         for name, module in supernet.model.named_modules():
             if hasattr(module, 'weight'):
                 del module.cnt
-                handle = module.handle
-                handle.remove()
 
-        # reset requires_grad
+        for handle in tmp_shared_module_hook_handles:
+            handle.remove()
+
+        # We set requires_grad to True to trace the whole architecture
+        # topology. So it should be reset after that.
         for param in supernet.model.parameters():
             param.requires_grad = param_require_grad[id(param)]
         del param_require_grad
@@ -699,6 +712,11 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         name = module2name[module]
         parent = grad_fn.next_functions[0][0]
         cur_path.append(name)
+        # If a module is not a shared module and it has been visited during
+        # forward, its parent modules must have been traced already.
+        # However, a shared module will be visited more than once during
+        # forward, so it is still need to be traced even if it has been
+        # visited.
         if visited[name] and name not in self.shared_module:
             result_paths.append(copy.deepcopy(cur_path))
         else:
@@ -734,8 +752,12 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         module = var2module[var_id]
         name = module2name[module]
         parent = grad_fn.next_functions[1][0]
-
         cur_path.append(name)
+        # If a module is not a shared module and it has been visited during
+        # forward, its parent modules must have been traced already.
+        # However, a shared module will be visited more than once during
+        # forward, so it is still need to be traced even if it has been
+        # visited.
         if visited[name] and name not in self.shared_module:
             result_paths.append(copy.deepcopy(cur_path))
         else:
@@ -765,6 +787,11 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         concat_id = '_'.join([str(id(p)) for p in parents])
         name = f'concat_{concat_id}'
         cur_path.append(name)
+        # If a module is not a shared module and it has been visited during
+        # forward, its parent modules must have been traced already.
+        # However, a shared module will be visited more than once during
+        # forward, so it is still need to be traced even if it has been
+        # visited.
         if (name in visited and visited[name]
                 and name not in self.shared_module):
             result_paths.append(copy.deepcopy(cur_path))
