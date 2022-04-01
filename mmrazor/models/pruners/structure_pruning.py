@@ -6,7 +6,6 @@ from types import MethodType
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from mmcv.runner import BaseModule
 from ordered_set import OrderedSet
 from torch.nn.modules.batchnorm import _BatchNorm
@@ -89,6 +88,20 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         else:
             self.except_start_keys = except_start_keys
 
+    def trace_shared_module_hook(self, module, inputs, outputs):
+        """Trace shared modules. Modules such as the detection head in
+        RetinaNet which are visited more than once during :func:`forward` are
+        shared modules.
+
+        Args:
+            module (:obj:`torch.nn.Module`): The module to register hook.
+            inputs (tuple): The input of the module.
+            outputs (tuple): The output of the module.
+        """
+        module.cnt += 1
+        if module.cnt == 2:
+            self.shared_module.append(self.module2name[module])
+
     def prepare_from_supernet(self, supernet):
         """Prepare for pruning."""
 
@@ -98,9 +111,25 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
 
         # record the visited module name during trace path
         visited = dict()
+        # Record shared modules which will be visited more than once during
+        # forward such as shared detection head in RetinaNet.
+        # If a module is not a shared module and it has been visited during
+        # forward, its parent modules must have been traced already.
+        # However, a shared module will be visited more than once during
+        # forward, so it is still need to be traced even if it has been
+        # visited.
+        self.shared_module = []
+        tmp_shared_module_hook_handles = list()
 
         for name, module in supernet.model.named_modules():
             if hasattr(module, 'weight'):
+                # trace shared modules
+                module.cnt = 0
+                # the handle is only to remove the corresponding hook later
+                handle = module.register_forward_hook(
+                    self.trace_shared_module_hook)
+                tmp_shared_module_hook_handles.append(handle)
+
                 module2name[module] = name
                 name2module[name] = module
                 var2module[id(module.weight)] = module
@@ -109,11 +138,34 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
             if isinstance(module, SwitchableBatchNorm2d):
                 name2module[name] = module
         self.name2module = name2module
+        self.module2name = module2name
+
+        # Set requires_grad to True. If the `requires_grad` of a module's
+        # weight is False, we can not trace this module by parsing backward.
+        param_require_grad = dict()
+        for param in supernet.model.parameters():
+            param_require_grad[id(param)] = param.requires_grad
+            param.requires_grad = True
 
         pseudo_img = torch.randn(1, 3, 224, 224)
         # todo: support two stage detector and mmseg
         pseudo_img = supernet.forward_dummy(pseudo_img)
         pseudo_loss = supernet.cal_pseudo_loss(pseudo_img)
+
+        # `trace_shared_module_hook` and `cnt` are only used to trace the
+        # shared modules in a model and need to be remove later
+        for name, module in supernet.model.named_modules():
+            if hasattr(module, 'weight'):
+                del module.cnt
+
+        for handle in tmp_shared_module_hook_handles:
+            handle.remove()
+
+        # We set requires_grad to True to trace the whole architecture
+        # topology. So it should be reset after that.
+        for param in supernet.model.parameters():
+            param.requires_grad = param_require_grad[id(param)]
+        del param_require_grad
 
         non_pass_paths = list()
         cur_non_pass_path = list()
@@ -366,30 +418,31 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
     @staticmethod
     def modify_conv_forward(module):
         """Modify the forward method of a conv layer."""
+        original_forward = module.forward
 
         def modified_forward(self, feature):
             feature = feature * self.in_mask
-            return F.conv2d(feature, self.weight, self.bias, self.stride,
-                            self.padding, self.dilation, self.groups)
+            return original_forward(feature)
 
         return MethodType(modified_forward, module)
 
     @staticmethod
     def modify_fc_forward(module):
         """Modify the forward method of a linear layer."""
+        original_forward = module.forward
 
         def modified_forward(self, feature):
             if not len(self.in_mask.shape) == len(self.out_mask.shape):
                 self.in_mask = self.in_mask.reshape(self.in_mask.shape[:2])
 
             feature = feature * self.in_mask
-            return F.linear(feature, self.weight, self.bias)
+            return original_forward(feature)
 
         return MethodType(modified_forward, module)
 
     def add_pruning_attrs(self, module):
         """Add masks to a ``nn.Module``."""
-        if type(module).__name__ == 'Conv2d':
+        if isinstance(module, nn.Conv2d):
             module.register_buffer(
                 'in_mask',
                 module.weight.new_ones((1, module.in_channels, 1, 1), ))
@@ -397,7 +450,7 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
                 'out_mask',
                 module.weight.new_ones((1, module.out_channels, 1, 1), ))
             module.forward = self.modify_conv_forward(module)
-        if type(module).__name__ == 'Linear':
+        if isinstance(module, nn.Linear):
             module.register_buffer(
                 'in_mask', module.weight.new_ones((1, module.in_features), ))
             module.register_buffer(
@@ -480,14 +533,16 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
                 module.out_channels = out_channels
             if hasattr(module, 'out_features'):
                 module.out_features = out_channels
+            if hasattr(module, 'num_features'):
+                module.num_features = out_channels
             if hasattr(module, 'out_mask'):
                 module.out_mask = module.out_mask[:, :out_channels]
 
             if 'in_channels' in channels_per_layer:
                 in_channels = channels_per_layer['in_channels']
 
-                if in_channels > 1:
-                    temp_weight = temp_weight[:, :in_channels].data
+                # can also handle depthwise conv
+                temp_weight = temp_weight[:, :in_channels].data
                 if hasattr(module, 'in_channels'):
                     module.in_channels = in_channels
                 if hasattr(module, 'in_features'):
@@ -632,6 +687,7 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
     @register_parser(BACKWARD_PARSER_DICT, 'ThnnConv2DBackward')
     @register_parser(BACKWARD_PARSER_DICT, 'CudnnConvolutionBackward')
     @register_parser(BACKWARD_PARSER_DICT, 'MkldnnConvolutionBackward')
+    @register_parser(BACKWARD_PARSER_DICT, 'SlowConvDilated2DBackward')
     def conv_backward_parser(self, grad_fn, module2name, var2module, cur_path,
                              result_paths, visited):
         """Parse the backward of a conv layer.
@@ -656,7 +712,12 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         name = module2name[module]
         parent = grad_fn.next_functions[0][0]
         cur_path.append(name)
-        if visited[name]:
+        # If a module is not a shared module and it has been visited during
+        # forward, its parent modules must have been traced already.
+        # However, a shared module will be visited more than once during
+        # forward, so it is still need to be traced even if it has been
+        # visited.
+        if visited[name] and name not in self.shared_module:
             result_paths.append(copy.deepcopy(cur_path))
         else:
             visited[name] = True
@@ -691,9 +752,13 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         module = var2module[var_id]
         name = module2name[module]
         parent = grad_fn.next_functions[1][0]
-
         cur_path.append(name)
-        if visited[name]:
+        # If a module is not a shared module and it has been visited during
+        # forward, its parent modules must have been traced already.
+        # However, a shared module will be visited more than once during
+        # forward, so it is still need to be traced even if it has been
+        # visited.
+        if visited[name] and name not in self.shared_module:
             result_paths.append(copy.deepcopy(cur_path))
         else:
             visited[name] = True
@@ -722,7 +787,13 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         concat_id = '_'.join([str(id(p)) for p in parents])
         name = f'concat_{concat_id}'
         cur_path.append(name)
-        if name in visited and visited[name]:
+        # If a module is not a shared module and it has been visited during
+        # forward, its parent modules must have been traced already.
+        # However, a shared module will be visited more than once during
+        # forward, so it is still need to be traced even if it has been
+        # visited.
+        if (name in visited and visited[name]
+                and name not in self.shared_module):
             result_paths.append(copy.deepcopy(cur_path))
         else:
             visited[name] = True
