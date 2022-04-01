@@ -18,7 +18,7 @@ For example,
 <pre>
 python tools/mmcls/test_mmcls.py \
   configs/nas/spos/spos_subnet_shufflenetv2_8xb128_in1k.py \
-  <em>your_retraining_checkpoint_path</em> \
+  <em>your_subnet_checkpoint_path</em> \
   --cfg-options algorithm.mutable_cfg=configs/nas/spos/SPOS_SHUFFLENETV2_330M_IN1k_PAPER.yaml
 </pre>
 
