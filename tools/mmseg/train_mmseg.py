@@ -16,6 +16,7 @@ import warnings
 
 import mmcv
 import torch
+import torch.distributed as dist
 from mmcv.cnn.utils import revert_sync_batchnorm
 from mmcv.runner import get_dist_info, init_dist
 from mmcv.utils import Config, DictAction, get_git_hash
@@ -24,7 +25,7 @@ from mmseg.datasets import build_dataset
 from mmseg.utils import collect_env, get_root_logger
 
 # Differences from mmdetection
-from mmrazor.apis.mmseg import set_random_seed, train_segmentor
+from mmrazor.apis import init_random_seed, set_random_seed, train_mmseg_model
 from mmrazor.models.builder import build_algorithm
 from mmrazor.utils import setup_multi_processes
 
@@ -37,6 +38,10 @@ def parse_args():
         '--load-from', help='the checkpoint file to load weights from')
     parser.add_argument(
         '--resume-from', help='the checkpoint file to resume from')
+    parser.add_argument(
+        '--auto-resume',
+        action='store_true',
+        help='resume from the latest checkpoint automatically')
     parser.add_argument(
         '--no-validate',
         action='store_true',
@@ -60,6 +65,10 @@ def parse_args():
         help='id of gpu to use '
         '(only applicable to non-distributed training)')
     parser.add_argument('--seed', type=int, default=None, help='random seed')
+    parser.add_argument(
+        '--diff_seed',
+        action='store_true',
+        help='Whether or not set different seeds for different ranks')
     parser.add_argument(
         '--deterministic',
         action='store_true',
@@ -114,6 +123,7 @@ def main():
         cfg.load_from = args.load_from
     if args.resume_from is not None:
         cfg.resume_from = args.resume_from
+    cfg.auto_resume = args.auto_resume
     if args.gpus is not None:
         cfg.gpu_ids = range(1)
         warnings.warn('`--gpus` is deprecated because we only support '
@@ -163,11 +173,12 @@ def main():
     logger.info(f'Config:\n{cfg.pretty_text}')
 
     # set random seeds
-    if args.seed is not None:
-        logger.info(f'Set random seed to {args.seed}, deterministic: '
-                    f'{args.deterministic}')
-        set_random_seed(args.seed, deterministic=args.deterministic)
-    cfg.seed = args.seed
+    seed = init_random_seed(args.seed)
+    seed = seed + dist.get_rank() if args.diff_seed else seed
+    logger.info(f'Set random seed to {args.seed}, deterministic: '
+                f'{args.deterministic}')
+    set_random_seed(args.seed, deterministic=args.deterministic)
+    cfg.seed = seed
     meta['seed'] = args.seed
     meta['exp_name'] = osp.basename(args.config)
 
@@ -205,7 +216,7 @@ def main():
     algorithm.CLASSES = datasets[0].CLASSES
     # passing checkpoint meta for saving best checkpoint
     meta.update(cfg.checkpoint_config.meta)
-    train_segmentor(
+    train_mmseg_model(
         # Difference from mmsegmentation
         # replace `model` to `algorithm`
         algorithm,

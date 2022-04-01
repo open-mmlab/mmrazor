@@ -5,6 +5,7 @@ except (ImportError, ModuleNotFoundError):
     mmseg = None
 
 if mmseg:
-    from .train import set_random_seed, train_segmentor
+    from .inference import init_mmseg_model
+    from .train import set_random_seed, train_mmseg_model
 
-    __all__ = ['set_random_seed', 'train_segmentor']
+    __all__ = ['train_mmseg_model', 'init_mmseg_model', 'set_random_seed']

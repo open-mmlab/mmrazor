@@ -3,6 +3,7 @@ from copy import deepcopy
 
 import pytest
 import torch
+from mmcv import ConfigDict
 
 from mmrazor.models.builder import ARCHITECTURES, PRUNERS
 
@@ -84,6 +85,86 @@ def test_ratio_pruner():
     pruner.deploy_subnet(architecture, subnet_dict)
     losses = architecture(imgs, return_loss=True, gt_label=label)
     assert losses['loss'].item() > 0
+
+    # test making groups logic when there are shared modules in the model
+    model_cfg = ConfigDict(
+        type='mmdet.RetinaNet',
+        backbone=dict(
+            type='ResNet',
+            depth=50,
+            num_stages=4,
+            out_indices=(0, 1, 2, 3),
+            frozen_stages=1,
+            norm_cfg=dict(type='BN', requires_grad=True),
+            norm_eval=True,
+            style='pytorch'),
+        neck=dict(
+            type='FPN',
+            in_channels=[256, 512, 1024, 2048],
+            out_channels=256,
+            start_level=1,
+            add_extra_convs='on_input',
+            num_outs=5),
+        bbox_head=dict(
+            type='RetinaHead',
+            num_classes=80,
+            in_channels=256,
+            stacked_convs=4,
+            feat_channels=256,
+            anchor_generator=dict(
+                type='AnchorGenerator',
+                octave_base_scale=4,
+                scales_per_octave=3,
+                ratios=[0.5, 1.0, 2.0],
+                strides=[8, 16, 32, 64, 128]),
+            bbox_coder=dict(
+                type='DeltaXYWHBBoxCoder',
+                target_means=[.0, .0, .0, .0],
+                target_stds=[1.0, 1.0, 1.0, 1.0]),
+            loss_cls=dict(
+                type='FocalLoss',
+                use_sigmoid=True,
+                gamma=2.0,
+                alpha=0.25,
+                loss_weight=1.0),
+            loss_bbox=dict(type='L1Loss', loss_weight=1.0)),
+        # model training and testing settings
+        train_cfg=dict(
+            assigner=dict(
+                type='MaxIoUAssigner',
+                pos_iou_thr=0.5,
+                neg_iou_thr=0.4,
+                min_pos_iou=0,
+                ignore_iof_thr=-1),
+            allowed_border=-1,
+            pos_weight=-1,
+            debug=False),
+        test_cfg=dict(
+            nms_pre=1000,
+            min_bbox_size=0,
+            score_thr=0.05,
+            nms=dict(type='nms', iou_threshold=0.5),
+            max_per_img=100))
+
+    architecture_cfg = dict(
+        type='MMDetArchitecture',
+        model=model_cfg,
+    )
+
+    pruner_cfg = dict(
+        type='RatioPruner',
+        ratios=[1 / 8, 2 / 8, 3 / 8, 4 / 8, 5 / 8, 6 / 8, 7 / 8, 1.0])
+
+    architecture = ARCHITECTURES.build(architecture_cfg)
+    pruner = PRUNERS.build(pruner_cfg)
+    pruner.prepare_from_supernet(architecture)
+    subnet_dict = pruner.sample_subnet()
+    assert isinstance(subnet_dict, dict)
+    pruner.set_subnet(subnet_dict)
+    subnet_dict = pruner.export_subnet()
+    assert isinstance(subnet_dict, dict)
+    pruner.deploy_subnet(architecture, subnet_dict)
+    architecture.forward_dummy(imgs)
 
 
 def _test_reset_bn_running_stats(architecture_cfg, pruner_cfg, should_fail):

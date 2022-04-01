@@ -16,10 +16,12 @@ from mmrazor.core.distributed_wrapper import DistributedDataParallelWrapper
 from mmrazor.core.hooks import DistSamplerSeedHook
 from mmrazor.core.optimizer import build_optimizers
 from mmrazor.datasets.utils import split_dataset
+from mmrazor.utils import find_latest_checkpoint
 
 
 def set_random_seed(seed, deterministic=False):
-    """Set random seed.
+    """Import `set_random_seed` function here was deprecated in v0.3 and will
+    be removed in v0.5.
 
     Args:
         seed (int): Seed to be used.
@@ -28,6 +30,11 @@ def set_random_seed(seed, deterministic=False):
             to True and ``torch.backends.cudnn.benchmark`` to False.
             Default: False.
     """
+    warnings.warn(
+        'Deprecated in v0.3 and will be removed in v0.5, '
+        'please import `set_random_seed` directly from `mmrazor.apis`',
+        category=DeprecationWarning)
+
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -37,14 +44,14 @@ def set_random_seed(seed, deterministic=False):
         torch.backends.cudnn.benchmark = False
 
 
-def train_model(model,
-                dataset,
-                cfg,
-                distributed=False,
-                validate=False,
-                timestamp=None,
-                device='cuda',
-                meta=None):
+def train_mmcls_model(model,
+                      dataset,
+                      cfg,
+                      distributed=False,
+                      validate=False,
+                      timestamp=None,
+                      device='cuda',
+                      meta=None):
     """Copy from mmclassification and modify some codes.
 
     This is an ugly implementation, and will be deprecated in the future. In
@@ -189,6 +196,12 @@ def train_model(model,
         # Refers to https://github.com/open-mmlab/mmcv/issues/1261
         runner.register_hook(
             eval_hook(val_dataloader, **eval_cfg), priority='LOW')
+
+    resume_from = None
+    if cfg.resume_from is None and cfg.get('auto_resume'):
+        resume_from = find_latest_checkpoint(cfg.work_dir)
+    if resume_from is not None:
+        cfg.resume_from = resume_from
 
     if cfg.resume_from:
         runner.resume(cfg.resume_from)
