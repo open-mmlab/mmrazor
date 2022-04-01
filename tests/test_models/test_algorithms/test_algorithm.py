@@ -493,11 +493,15 @@ def test_rkd():
                     teacher_module='neck.gap',
                     losses=[
                         dict(
-                            type='RelationalKD',
-                            name='loss_rkd',
-                            loss_weight_d=25.0,
-                            loss_weight_a=50.0,
-                            with_l2_norm=True)
+                            type='Distance_wise_RKD',
+                            name='distance_wise_loss',
+                            loss_weight=25.0,
+                            with_l2_norm=True),
+                        dict(
+                            type='Angle_wise_RKD',
+                            name='angle_wise_loss',
+                            loss_weight=50.0,
+                            with_l2_norm=True),
                     ])
             ]),
     )
@@ -523,11 +527,15 @@ def test_rkd():
             teacher_module='neck.gap',
             losses=[
                 dict(
-                    type='RelationalKD',
-                    name='loss_rkd',
-                    loss_weight_d=25.0,
-                    loss_weight_a=50.0,
-                    with_l2_norm=False)
+                    type='Distance_wise_RKD',
+                    name='distance_wise_loss',
+                    loss_weight=25.0,
+                    with_l2_norm=False),
+                dict(
+                    type='Angle_wise_RKD',
+                    name='angle_wise_loss',
+                    loss_weight=50.0,
+                    with_l2_norm=False),
             ])
     ]
 

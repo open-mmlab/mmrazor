@@ -18,9 +18,7 @@ student = dict(
     ))
 
 # teacher settings
-
-# FIXME: replace it with your own path
-teacher_ckpt = 'path/to/your/checkpoint.pth'
+teacher_ckpt = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet34_8xb32_in1k_20210831-f257d4e6.pth'  # noqa: E501
 
 teacher = dict(
     type='mmcls.ImageClassifier',
@@ -59,11 +57,15 @@ algorithm = dict(
                 teacher_module='neck.gap',
                 losses=[
                     dict(
-                        type='RelationalKD',
-                        name='loss_rkd',
-                        loss_weight_d=25.0,
-                        loss_weight_a=50.0,
-                        with_l2_norm=True)
+                        type='Distance_wise_RKD',
+                        name='distance_wise_loss',
+                        loss_weight=25.0,
+                        with_l2_norm=True),
+                    dict(
+                        type='Angle_wise_RKD',
+                        name='angle_wise_loss',
+                        loss_weight=50.0,
+                        with_l2_norm=True),
                 ])
         ]),
 )

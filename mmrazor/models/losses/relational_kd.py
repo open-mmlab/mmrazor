@@ -47,26 +47,23 @@ def angle(pred):
 
 
 @LOSSES.register_module()
-class RelationalKD(nn.Module):
-    """PyTorch version of `Relational Knowledge Distillation.
+class Distance_wise_RKD(nn.Module):
+    """PyTorch version of distance-wise loss of `Relational Knowledge
+    Distillation.
 
     <https://arxiv.org/abs/1904.05068>`_.
+
     Args:
-        loss_weight_d (float): Weight of distance-wise distillation loss.
+        loss_weight (float): Weight of distance-wise distillation loss.
             Defaults to 25.0.
-        loss_weight_a (float): Weight of angle-wise distillation loss.
-            Defaults to 50.0.
         with_l2_norm (bool): Whether to normalize the model predictions before
             calculating the loss. Defaults to True.
     """
 
-    def __init__(self,
-                 loss_weight_d=25.0,
-                 loss_weight_a=50.0,
-                 with_l2_norm=True):
-        super(RelationalKD, self).__init__()
-        self.loss_weight_d = loss_weight_d
-        self.loss_weight_a = loss_weight_a
+    def __init__(self, loss_weight=25.0, with_l2_norm=True):
+        super(Distance_wise_RKD, self).__init__()
+
+        self.loss_weight = loss_weight
         self.with_l2_norm = with_l2_norm
 
     def distance_loss(self, preds_S, preds_T):
@@ -81,6 +78,48 @@ class RelationalKD(nn.Module):
         d_S = d_S / mean_d_S
 
         return F.smooth_l1_loss(d_S, d_T)
+
+    def forward(self, preds_S, preds_T):
+        """Forward computation.
+
+        Args:
+            preds_S (torch.Tensor): The student model prediction with
+                shape (N, C, H, W) or shape (N, C).
+            preds_T (torch.Tensor): The teacher model prediction with
+                shape (N, C, H, W) or shape (N, C).
+        Return:
+            torch.Tensor: The calculated loss value.
+        """
+        preds_S = preds_S.view(preds_S.shape[0], -1)
+        preds_T = preds_T.view(preds_T.shape[0], -1)
+        if self.with_l2_norm:
+            preds_S = F.normalize(preds_S, p=2, dim=1)
+            preds_T = F.normalize(preds_T, p=2, dim=1)
+
+        loss = self.distance_loss(preds_S, preds_T) * self.loss_weight
+
+        return loss
+
+
+@LOSSES.register_module()
+class Angle_wise_RKD(nn.Module):
+    """PyTorch version of angle-wise loss of `Relational Knowledge
+    Distillation.
+
+    <https://arxiv.org/abs/1904.05068>`_.
+
+    Args:
+        loss_weight (float): Weight of angle-wise distillation loss.
+            Defaults to 50.0.
+        with_l2_norm (bool): Whether to normalize the model predictions before
+            calculating the loss. Defaults to True.
+    """
+
+    def __init__(self, loss_weight=50.0, with_l2_norm=True):
+        super(Angle_wise_RKD, self).__init__()
+
+        self.loss_weight = loss_weight
+        self.with_l2_norm = with_l2_norm
 
     def angle_loss(self, preds_S, preds_T):
         """Calculate the angle-wise distillation loss."""
@@ -105,10 +144,6 @@ class RelationalKD(nn.Module):
             preds_S = F.normalize(preds_S, p=2, dim=-1)
             preds_T = F.normalize(preds_T, p=2, dim=-1)
 
-        loss = 0.
-        if self.loss_weight_d > 0:
-            loss += self.distance_loss(preds_S, preds_T) * self.loss_weight_d
-        if self.loss_weight_a > 0:
-            loss += self.angle_loss(preds_S, preds_T) * self.loss_weight_a
+        loss = self.angle_loss(preds_S, preds_T) * self.loss_weight
 
         return loss
