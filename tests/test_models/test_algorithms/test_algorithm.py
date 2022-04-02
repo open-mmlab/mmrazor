@@ -436,3 +436,113 @@ def test_cwd():
     # test algorithm train_step
     losses = algorithm.train_step(mm_inputs, None)
     assert losses['loss'].item() > 0
+
+
+def test_rkd():
+    student = dict(
+        type='mmcls.ImageClassifier',
+        backbone=dict(
+            type='ResNet',
+            depth=18,
+            num_stages=4,
+            out_indices=(3, ),
+            style='pytorch'),
+        neck=dict(type='GlobalAveragePooling'),
+        head=dict(
+            type='LinearClsHead',
+            num_classes=1000,
+            in_channels=512,
+            loss=dict(type='CrossEntropyLoss', loss_weight=1.0),
+            topk=(1, 5),
+        ))
+
+    teacher = dict(
+        type='mmcls.ImageClassifier',
+        backbone=dict(
+            type='ResNet',
+            depth=34,
+            num_stages=4,
+            out_indices=(3, ),
+            style='pytorch'),
+        neck=dict(type='GlobalAveragePooling'),
+        head=dict(
+            type='LinearClsHead',
+            num_classes=1000,
+            in_channels=512,
+            loss=dict(type='CrossEntropyLoss', loss_weight=1.0),
+            topk=(1, 5),
+        ))
+
+    # test RelationalKD w/ l2 norm
+    algorithm_cfg = ConfigDict(
+        type='GeneralDistill',
+        architecture=dict(
+            type='MMClsArchitecture',
+            model=student,
+        ),
+        with_student_loss=True,
+        with_teacher_loss=False,
+        distiller=dict(
+            type='SingleTeacherDistiller',
+            teacher=teacher,
+            teacher_trainable=False,
+            teacher_norm_eval=True,
+            components=[
+                dict(
+                    student_module='neck.gap',
+                    teacher_module='neck.gap',
+                    losses=[
+                        dict(
+                            type='DistanceWiseRKD',
+                            name='distance_wise_loss',
+                            loss_weight=25.0,
+                            with_l2_norm=True),
+                        dict(
+                            type='AngleWiseRKD',
+                            name='angle_wise_loss',
+                            loss_weight=50.0,
+                            with_l2_norm=True),
+                    ])
+            ]),
+    )
+
+    imgs = torch.randn(16, 3, 32, 32)
+    label = torch.randint(0, 10, (16, ))
+
+    algorithm = ALGORITHMS.build(algorithm_cfg)
+
+    optimizer = torch.optim.SGD(algorithm.parameters(), lr=0.01)
+    outputs = algorithm.train_step({'img': imgs, 'gt_label': label}, optimizer)
+    assert outputs['loss'].item() > 0
+    assert outputs['num_samples'] == 16
+
+    # test forward
+    losses = algorithm(imgs, return_loss=True, gt_label=label)
+    assert losses['loss'].item() > 0
+
+    # test RelationalKD w/o l2 norm
+    algorithm_cfg.distiller.components = [
+        dict(
+            student_module='neck.gap',
+            teacher_module='neck.gap',
+            losses=[
+                dict(
+                    type='DistanceWiseRKD',
+                    name='distance_wise_loss',
+                    loss_weight=25.0,
+                    with_l2_norm=False),
+                dict(
+                    type='AngleWiseRKD',
+                    name='angle_wise_loss',
+                    loss_weight=50.0,
+                    with_l2_norm=False),
+            ])
+    ]
+
+    optimizer = torch.optim.SGD(algorithm.parameters(), lr=0.01)
+    outputs = algorithm.train_step({'img': imgs, 'gt_label': label}, optimizer)
+    assert outputs['loss'].item() > 0
+    assert outputs['num_samples'] == 16
+
+    losses = algorithm(imgs, return_loss=True, gt_label=label)
+    assert losses['loss'].item() > 0
