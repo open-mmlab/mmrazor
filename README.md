@@ -79,7 +79,7 @@ Results and models are available in the [model zoo](/docs/en/model_zoo.md).
 
 MMRazor depends on [PyTorch](https://pytorch.org/) and [MMCV](https://github.com/open-mmlab/mmcv).
 Below are quick steps for installation.
-Please refer to [get_started.md](/docs/en/get_started.md) for more detailed instruction.
+Please refer to [get_started.md](/docs/en/get_started.md) for more detailed instruction and [dataset_prepare.md](docs/en/dataset_prepare.md) for dataset preparation.
 
 ```shell
 conda create -n open-mmlab python=3.8 pytorch=1.10 cudatoolkit=11.3 torchvision -c pytorch -y
