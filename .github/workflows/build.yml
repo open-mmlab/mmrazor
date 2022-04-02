@@ -84,9 +84,9 @@ jobs:
           pip install -e . -U
       - name: Run unittests and generate coverage report
         run: |
-          coverage run --branch --source mmrazor -m pytest tests/
+          coverage run --branch --source mmrazor --omit="mmrazor/apis/*" -m pytest tests/
           coverage xml
-          coverage report -m --omit="mmrazor/apis/*"
+          coverage report -m
       # Only upload coverage report for python3.7 && pytorch1.5
       - name: Upload coverage to Codecov
         if: ${{matrix.torch == '1.5.1+cpu' && matrix.python-version == '3.7'}}
@@ -133,9 +133,9 @@ jobs:
           pip install -e . -U
       - name: Run unittests and generate coverage report
         run: |
-          coverage run --branch --source mmrazor -m pytest tests/
+          coverage run --branch --source mmrazor --omit="mmrazor/apis/*" -m pytest tests/
           coverage xml
-          coverage report -m --omit="mmrazor/apis/*"
+          coverage report -m
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
