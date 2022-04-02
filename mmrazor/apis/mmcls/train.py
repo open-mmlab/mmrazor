@@ -20,7 +20,8 @@ from mmrazor.utils import find_latest_checkpoint
 
 
 def set_random_seed(seed, deterministic=False):
-    """Set random seed.
+    """Import `set_random_seed` function here was deprecated in v0.3 and will
+    be removed in v0.5.
 
     Args:
         seed (int): Seed to be used.
@@ -29,6 +30,11 @@ def set_random_seed(seed, deterministic=False):
             to True and ``torch.backends.cudnn.benchmark`` to False.
             Default: False.
     """
+    warnings.warn(
+        'Deprecated in v0.3 and will be removed in v0.5, '
+        'please import `set_random_seed` directly from `mmrazor.apis`',
+        category=DeprecationWarning)
+
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -38,14 +44,14 @@ def set_random_seed(seed, deterministic=False):
         torch.backends.cudnn.benchmark = False
 
 
-def train_model(model,
-                dataset,
-                cfg,
-                distributed=False,
-                validate=False,
-                timestamp=None,
-                device='cuda',
-                meta=None):
+def train_mmcls_model(model,
+                      dataset,
+                      cfg,
+                      distributed=False,
+                      validate=False,
+                      timestamp=None,
+                      device='cuda',
+                      meta=None):
     """Copy from mmclassification and modify some codes.
 
     This is an ugly implementation, and will be deprecated in the future. In
@@ -58,6 +64,8 @@ def train_model(model,
     if cfg.data.get('split', False):
         train_dataset = dataset[0]
         dataset[0] = split_dataset(train_dataset)
+
+    sampler_cfg = cfg.data.get('sampler', None)
 
     # Difference from mmclassification.
     # Build multi dataloaders according the splited datasets.
@@ -73,7 +81,8 @@ def train_model(model,
                     num_gpus=len(cfg.gpu_ids),
                     dist=distributed,
                     round_up=True,
-                    seed=cfg.seed) for item_ds in dset
+                    seed=cfg.seed,
+                    sampler_cfg=sampler_cfg) for item_ds in dset
             ]
         else:
             data_loader = build_dataloader(
@@ -84,7 +93,8 @@ def train_model(model,
                 num_gpus=len(cfg.gpu_ids),
                 dist=distributed,
                 round_up=True,
-                seed=cfg.seed)
+                seed=cfg.seed,
+                sampler_cfg=sampler_cfg)
 
         data_loaders.append(data_loader)
 
@@ -114,6 +124,10 @@ def train_model(model,
             model = MMDataParallel(
                 model.cuda(cfg.gpu_ids[0]), device_ids=cfg.gpu_ids)
         elif device == 'cpu':
+            warnings.warn(
+                'The argument `device` is deprecated. To use cpu to train, '
+                'please refers to https://mmclassification.readthedocs.io/en'
+                '/latest/getting_started.html#train-a-model')
             model = model.cpu()
         else:
             raise ValueError(F'unsupported device name {device}.')

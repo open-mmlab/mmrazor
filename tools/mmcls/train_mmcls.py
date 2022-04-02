@@ -8,6 +8,7 @@ import warnings
 
 import mmcv
 import torch
+import torch.distributed as dist
 from mmcls import __version__
 from mmcls.datasets import build_dataset
 from mmcls.utils import collect_env, get_root_logger
@@ -15,7 +16,7 @@ from mmcv import Config, DictAction
 from mmcv.runner import get_dist_info, init_dist
 
 # Differences from mmclassification
-from mmrazor.apis.mmcls.train import set_random_seed, train_model
+from mmrazor.apis import init_random_seed, set_random_seed, train_mmcls_model
 from mmrazor.models import build_algorithm
 from mmrazor.utils import setup_multi_processes
 
@@ -54,6 +55,10 @@ def parse_args():
         help='id of gpu to use '
         '(only applicable to non-distributed training)')
     parser.add_argument('--seed', type=int, default=None, help='random seed')
+    parser.add_argument(
+        '--diff_seed',
+        action='store_true',
+        help='Whether or not set different seeds for different ranks')
     parser.add_argument(
         '--deterministic',
         action='store_true',
@@ -154,12 +159,14 @@ def main():
     logger.info(f'Config:\n{cfg.pretty_text}')
 
     # set random seeds
-    if args.seed is not None:
-        logger.info(f'Set random seed to {args.seed}, '
-                    f'deterministic: {args.deterministic}')
-        set_random_seed(args.seed, deterministic=args.deterministic)
-    cfg.seed = args.seed
-    meta['seed'] = args.seed
+    seed = init_random_seed(args.seed)
+    seed = seed + dist.get_rank() if args.diff_seed else seed
+    logger.info(f'Set random seed to {seed}, '
+                f'deterministic: {args.deterministic}')
+    set_random_seed(seed, deterministic=args.deterministic)
+    cfg.seed = seed
+    meta['seed'] = seed
+    meta['exp_name'] = osp.basename(args.config)
 
     # Difference from mmclassification
     # replace `model` to `algorithm`
@@ -179,7 +186,7 @@ def main():
             config=cfg.pretty_text,
             CLASSES=datasets[0].CLASSES)
     # add an attribute for visualization convenience
-    train_model(
+    train_mmcls_model(
         # Difference from mmclassification
         # replace `model` to `algorithm`
         algorithm,
