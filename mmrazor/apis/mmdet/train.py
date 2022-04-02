@@ -76,6 +76,8 @@ def train_mmdet_model(model,
                 f'{cfg.data.imgs_per_gpu} in this experiments')
         cfg.data.samples_per_gpu = cfg.data.imgs_per_gpu
 
+    runner_type = 'EpochBasedRunner' if 'runner' not in cfg else cfg.runner[
+        'type']
     data_loader = [
         build_dataloader(
             ds,
@@ -84,7 +86,10 @@ def train_mmdet_model(model,
             # cfg.gpus will be ignored if distributed
             num_gpus=len(cfg.gpu_ids),
             dist=distributed,
-            seed=cfg.seed) for ds in dataset
+            seed=cfg.seed,
+            runner_type=runner_type,
+            persistent_workers=cfg.data.get('persistent_workers', False))
+        for ds in dataset
     ]
 
     # put model on gpus
