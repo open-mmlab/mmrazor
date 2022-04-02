@@ -12,6 +12,7 @@ from mmdet.datasets import (build_dataloader, build_dataset,
                             replace_ImageToTensor)
 from mmdet.utils import get_root_logger
 
+from mmrazor.apis.utils import auto_scale_lr
 from mmrazor.core.distributed_wrapper import DistributedDataParallelWrapper
 from mmrazor.core.hooks import DistSamplerSeedHook
 from mmrazor.core.optimizer import build_optimizers
@@ -119,6 +120,7 @@ def train_mmdet_model(model,
     # build optimizers
     # Difference from mmdetection.
     # In some algorithms, there will be multi optimizers.
+    auto_scale_lr(cfg, distributed, logger)
     optimizer = build_optimizers(model, cfg.optimizer)
 
     # build runner

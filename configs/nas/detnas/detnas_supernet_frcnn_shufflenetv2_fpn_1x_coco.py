@@ -142,3 +142,8 @@ algorithm = dict(
 )
 
 find_unused_parameters = True
+
+# NOTE: `auto_scale_lr_config` is for automatically scaling LR,
+# USER SHOULD NOT CHANGE ITS VALUES.
+# default_batch_size = (8 GPUs) x (2 samples per GPU)
+auto_scale_lr_config = dict(default_batch_size=16, default_initial_lr=0.02)
