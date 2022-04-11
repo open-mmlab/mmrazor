@@ -16,7 +16,8 @@ from mmrazor.utils import find_latest_checkpoint
 
 
 def set_random_seed(seed, deterministic=False):
-    """Set random seed.
+    """Import `set_random_seed` function here was deprecated in v0.3 and will
+    be removed in v0.5.
 
     Args:
         seed (int): Seed to be used.
@@ -25,6 +26,11 @@ def set_random_seed(seed, deterministic=False):
             to True and ``torch.backends.cudnn.benchmark`` to False.
             Default: False.
     """
+    warnings.warn(
+        'Deprecated in v0.3 and will be removed in v0.5, '
+        'please import `set_random_seed` directly from `mmrazor.apis`',
+        category=DeprecationWarning)
+
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -34,13 +40,13 @@ def set_random_seed(seed, deterministic=False):
         torch.backends.cudnn.benchmark = False
 
 
-def train_segmentor(model,
-                    dataset,
-                    cfg,
-                    distributed=False,
-                    validate=False,
-                    timestamp=None,
-                    meta=None):
+def train_mmseg_model(model,
+                      dataset,
+                      cfg,
+                      distributed=False,
+                      validate=False,
+                      timestamp=None,
+                      meta=None):
     """Copy from mmsegmentation and modify some codes.
 
     This is an ugly implementation, and will be deprecated in the future. In
