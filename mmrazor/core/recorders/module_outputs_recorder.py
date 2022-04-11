@@ -8,14 +8,14 @@ from .base_recorder import BaseRecorder
 
 
 @RECORDERS.register_module()
-class ModuleInputsRecorder(BaseRecorder):
-    """Recorder for intermediate results which are Pytorch moudle's inputs.
+class ModuleOutputsRecorder(BaseRecorder):
+    """Recorder for intermediate results which are Pytorch moudle's outputs.
 
     Args:
-        sources List(str): The names of the Pytorch modules whose input needs
+        sources List(str): The names of the Pytorch modules whose output needs
         to be recorded.
 
-        Examples:
+    Examples:
             >>> import copy
             >>> from torch.nn import Module, ModuleList, Conv2d
             >>> from mmrazor.core import build_recorder
@@ -43,8 +43,9 @@ class ModuleInputsRecorder(BaseRecorder):
 
             >>> # example recorder config
             >>> recorder_cfg = dict(
-            >>>     type='ModuleInputs',
+            >>>     type='ModuleOutputs',
             >>>     sources=['repeat_module1', 'repeat_module2'])
+
             >>> recorder_cfg_ = copy.deepcopy(recorder_cfg)
             >>> recorder_cfg_.type = recorder_cfg.type + 'Recorder'
 
@@ -56,12 +57,12 @@ class ModuleInputsRecorder(BaseRecorder):
             >>>     res = model(torch.ones(2))
 
             >>> ctx.data_buffer
-            >>> {'repeat_module1': [(tensor([1., 1.]),)],
-                 'repeat_module2': [(tensor([1., 1.]),)]}
+            >>> {'repeat_module1': [[tensor([0., 0.]), tensor([1., 1.])]],
+                 'repeat_module2': [[tensor([0., 0.]), tensor([1., 1.])]]}
             >>> ctx.get_record_data('repeat_module1')
-            >>> [(tensor([1., 1.]),)]
+            >>> [[tensor([0., 0.]), tensor([1., 1.])]]
             >>> ctx.get_record_data('repeat_module1', data_index=1)
-            >>> (tensor([1., 1.]),)
+            >>> [tensor([0., 0.]), tensor([1., 1.])]
     """
 
     def __init__(self, sources: List):
@@ -78,12 +79,15 @@ class ModuleInputsRecorder(BaseRecorder):
         self.name2module: Dict(str, nn.Module) = dict(model.named_modules())
 
         for module_name in self.sources:
+            # init data_buffer, data_buffer must be Dict(str, list)
+            # assume a module execute N times, there will be N outputs need to
+            # save.
             self.data_buffer[module_name] = list()
             module = self.name2module[module_name]
-            module.register_forward_hook(self.forward_input_hook)
+            module.register_forward_hook(self.forward_output_hook)
 
-    def forward_input_hook(self, module, inputs, outputs) -> None:
-        """Save the module's forward input.
+    def forward_output_hook(self, module, inputs, outputs) -> None:
+        """Save the module's forward output.
 
         Args:
             module (:obj:`torch.nn.Module`): The module to register hook.
@@ -93,4 +97,4 @@ class ModuleInputsRecorder(BaseRecorder):
         if self.recording:
             module_name = self.module2name[module]
             # self.data_buffer: Dict(str, list)
-            self.data_buffer[module_name].append(inputs)
+            self.data_buffer[module_name].append(outputs)
