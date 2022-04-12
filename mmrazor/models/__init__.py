@@ -5,6 +5,11 @@ except (ImportError, ModuleNotFoundError):
     mmdet = None
 
 try:
+    import mmdet3d
+except (ImportError, ModuleNotFoundError):
+    mmdet3d = None
+
+try:
     import mmseg
 except (ImportError, ModuleNotFoundError):
     mmseg = None
@@ -26,6 +31,8 @@ from .pruners import *  # noqa: F401,F403
 
 if mmdet is not None:
     from mmdet.models import *  # noqa: F401,F403
+if mmdet3d is not None:
+    from mmdet3d.models import *  # noqa: F401,F403
 if mmseg is not None:
     from mmseg.models import *  # noqa: F401,F403
 
