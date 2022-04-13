@@ -65,7 +65,24 @@ def train_mmcls_model(model,
         train_dataset = dataset[0]
         dataset[0] = split_dataset(train_dataset)
 
-    sampler_cfg = cfg.data.get('sampler', None)
+    loader_cfg = dict(
+        # cfg.gpus will be ignored if distributed
+        num_gpus=len(cfg.gpu_ids),
+        dist=distributed,
+        round_up=True,
+        seed=cfg.get('seed'),
+        sampler_cfg=cfg.get('sampler', None),
+    )
+    # The overall dataloader settings
+    loader_cfg.update({
+        k: v
+        for k, v in cfg.data.items() if k not in [
+            'train', 'val', 'test', 'train_dataloader', 'val_dataloader',
+            'test_dataloader'
+        ]
+    })
+    # The specific dataloader settings
+    train_loader_cfg = {**loader_cfg, **cfg.data.get('train_dataloader', {})}
 
     # Difference from mmclassification.
     # Build multi dataloaders according the splited datasets.
@@ -73,28 +90,11 @@ def train_mmcls_model(model,
     for dset in dataset:
         if isinstance(dset, list):
             data_loader = [
-                build_dataloader(
-                    item_ds,
-                    cfg.data.samples_per_gpu,
-                    cfg.data.workers_per_gpu,
-                    # cfg.gpus will be ignored if distributed
-                    num_gpus=len(cfg.gpu_ids),
-                    dist=distributed,
-                    round_up=True,
-                    seed=cfg.seed,
-                    sampler_cfg=sampler_cfg) for item_ds in dset
+                build_dataloader(item_ds, **train_loader_cfg)
+                for item_ds in dset
             ]
         else:
-            data_loader = build_dataloader(
-                dset,
-                cfg.data.samples_per_gpu,
-                cfg.data.workers_per_gpu,
-                # cfg.gpus will be ignored if distributed
-                num_gpus=len(cfg.gpu_ids),
-                dist=distributed,
-                round_up=True,
-                seed=cfg.seed,
-                sampler_cfg=sampler_cfg)
+            data_loader = build_dataloader(dset, **train_loader_cfg)
 
         data_loaders.append(data_loader)
 
@@ -188,13 +188,13 @@ def train_mmcls_model(model,
     # register eval hooks
     if validate:
         val_dataset = build_dataset(cfg.data.val, dict(test_mode=True))
-        val_dataloader = build_dataloader(
-            val_dataset,
-            samples_per_gpu=cfg.data.samples_per_gpu,
-            workers_per_gpu=cfg.data.workers_per_gpu,
-            dist=distributed,
-            shuffle=False,
-            round_up=True)
+        val_loader_cfg = {
+            **loader_cfg,
+            'shuffle': False,  # Not shuffle by default
+            'sampler_cfg': None,  # Not use sampler by default
+            **cfg.data.get('val_dataloader', {}),
+        }
+        val_dataloader = build_dataloader(val_dataset, **val_loader_cfg)
         eval_cfg = cfg.get('evaluation', {})
 
         eval_cfg['by_epoch'] = cfg.runner['type'] != 'IterBasedRunner'
