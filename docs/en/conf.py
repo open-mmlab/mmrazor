@@ -44,9 +44,9 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
-    'recommonmark',
     'sphinx_markdown_tables',
     'sphinx_copybutton',
+    'myst_parser'
 ]
 
 autodoc_mock_imports = [
