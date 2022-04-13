@@ -47,6 +47,7 @@ extensions = [
     'recommonmark',
     'sphinx_markdown_tables',
     'sphinx_copybutton',
+    'myst_parser'
 ]
 
 autodoc_mock_imports = [
