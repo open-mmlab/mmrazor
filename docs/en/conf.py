@@ -44,7 +44,6 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
-    'recommonmark',
     'sphinx_markdown_tables',
     'sphinx_copybutton',
     'myst_parser'
