@@ -278,6 +278,11 @@ class BCNetSearcher(EvolutionSearcher):
             self.candidate_pool = broadcast_object_list(self.candidate_pool)
 
         if rank == 0:
+            for score, subnet in self.top_k_candidates_with_score.items():
+                self.algorithm.pruner.set_subnet(subnet)
+                channel_cfg = self.algorithm.pruner.export_subnet()
+                self.top_k_candidates_with_score[score] = channel_cfg
+
             for i, (score, subnet) in enumerate(
                     self.top_k_candidates_with_score.items()):
                 mmcv.fileio.dump(
