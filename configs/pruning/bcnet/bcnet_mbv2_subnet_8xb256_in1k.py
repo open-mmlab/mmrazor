@@ -89,7 +89,7 @@ runner = dict(type='EpochBasedRunner', max_epochs=300)
 
 # checkpoint saving
 checkpoint_config = dict(
-    interval=1, max_keep_ckpts=10, out_dir='s3://caoweihan/mmrazor_bcnet')
+    interval=1, max_keep_ckpts=10, out_dir='s3://caoweihan/bcnet_refactor')
 # yapf:disable
 log_config = dict(
     interval=100,

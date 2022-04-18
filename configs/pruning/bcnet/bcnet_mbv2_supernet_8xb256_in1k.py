@@ -104,7 +104,7 @@ custom_hooks = [dict(type='LossRecHook', interval=1, max_keep_ckpts=3)]
 
 # checkpoint saving
 checkpoint_config = dict(
-    interval=1, max_keep_ckpts=3, out_dir='s3://caoweihan/mmrazor_bcnet')
+    interval=1, max_keep_ckpts=3, out_dir='s3://caoweihan/bcnet_refactor')
 # yapf:disable
 log_config = dict(
     interval=100,
