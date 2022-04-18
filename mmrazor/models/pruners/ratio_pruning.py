@@ -30,6 +30,7 @@ class RatioPruner(StructurePruner):
         ratios.sort()
         self.ratios = ratios
         self.min_ratio = ratios[0]
+        self.max_ratio = ratios[-1]
 
     def get_channel_mask(self, out_mask):
         """Randomly choose a width ratio of a layer from ``ratios``"""

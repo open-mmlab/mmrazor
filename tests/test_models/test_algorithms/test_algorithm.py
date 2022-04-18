@@ -546,3 +546,113 @@ def test_rkd():
 
     losses = algorithm(imgs, return_loss=True, gt_label=label)
     assert losses['loss'].item() > 0
+
+
+def test_bcnet_pretrain():
+    model_cfg = dict(
+        type='mmcls.ImageClassifier',
+        backbone=dict(type='MobileNetV2', widen_factor=1.5),
+        neck=dict(type='GlobalAveragePooling'),
+        head=dict(
+            type='LinearClsHead',
+            num_classes=1000,
+            in_channels=1920,
+            loss=dict(
+                type='LabelSmoothLoss',
+                mode='original',
+                label_smooth_val=0.1,
+                loss_weight=1.0),
+            topk=(1, 5),
+        ))
+
+    algorithm_cfg = dict(
+        type='BCNet',
+        architecture=dict(type='MMClsArchitecture', model=model_cfg),
+        pruner=dict(
+            type='BCNetPruner',
+            ratios=(1 / 20, 2 / 20, 3 / 20, 4 / 20, 5 / 20, 6 / 20, 7 / 20,
+                    8 / 20, 9 / 20, 10 / 20, 11 / 20, 12 / 20, 13 / 20,
+                    14 / 20, 15 / 20, 16 / 20, 17 / 20, 18 / 20, 19 / 20,
+                    1.0)),
+        retraining=False,
+        bn_training_mode=True,
+        input_shape=None,
+        loss_rec_num=100,
+        use_complementary=True)
+
+    imgs = torch.randn(16, 3, 224, 224)
+    label = torch.randint(0, 1000, (16, ))
+
+    model = ALGORITHMS.build(algorithm_cfg)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+
+    outputs = model.train_step({'img': imgs, 'gt_label': label}, optimizer)
+
+    assert outputs['loss'].item() > 0
+    assert outputs['num_samples'] == 16
+
+    # test forward
+    losses = model(imgs, return_loss=True, gt_label=label)
+    assert losses['loss'].item() > 0
+
+
+def test_bcnet_retrain():
+    model_cfg = dict(
+        type='mmcls.ImageClassifier',
+        backbone=dict(type='MobileNetV2', widen_factor=1.5),
+        neck=dict(type='GlobalAveragePooling'),
+        head=dict(
+            type='LinearClsHead',
+            num_classes=1000,
+            in_channels=1920,
+            loss=dict(
+                type='LabelSmoothLoss',
+                mode='original',
+                label_smooth_val=0.1,
+                loss_weight=1.0),
+            topk=(1, 5),
+        ))
+
+    root_path = dirname(dirname(dirname(__file__)))
+    channel_cfg = [
+        os.path.join(root_path, 'data/BCNET_MBV2_217M_OFFICIAL.yaml')
+    ]
+
+    algorithm_cfg = ConfigDict(
+        type='BCNet',
+        architecture=dict(type='MMClsArchitecture', model=model_cfg),
+        pruner=dict(
+            type='BCNetPruner',
+            ratios=(1 / 20, 2 / 20, 3 / 20, 4 / 20, 5 / 20, 6 / 20, 7 / 20,
+                    8 / 20, 9 / 20, 10 / 20, 11 / 20, 12 / 20, 13 / 20,
+                    14 / 20, 15 / 20, 16 / 20, 17 / 20, 18 / 20, 19 / 20,
+                    1.0)),
+        retraining=True,
+        bn_training_mode=False,
+        input_shape=None,
+        loss_rec_num=100,
+        use_complementary=True,
+        channel_cfg=channel_cfg)
+
+    imgs = torch.randn(16, 3, 224, 224)
+    label = torch.randint(0, 1000, (16, ))
+
+    # test multi subnet retraining
+    model = ALGORITHMS.build(algorithm_cfg)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+
+    outputs = model.train_step({'img': imgs, 'gt_label': label}, optimizer)
+
+    assert outputs['loss'].item() > 0
+    assert outputs['num_samples'] == 16
+
+    # test single subnet retraining
+    algorithm_cfg.channel_cfg = algorithm_cfg.channel_cfg[0]
+    model = ALGORITHMS.build(algorithm_cfg)
+    assert model.deployed
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+
+    outputs = model.train_step({'img': imgs, 'gt_label': label}, optimizer)
+
+    assert outputs['loss'].item() > 0
+    assert outputs['num_samples'] == 16

@@ -167,6 +167,57 @@ def test_ratio_pruner():
     architecture.forward_dummy(imgs)
 
 
+def test_bcnet_pruner():
+    model_cfg = dict(
+        type='mmcls.ImageClassifier',
+        backbone=dict(type='MobileNetV2', widen_factor=1.5),
+        neck=dict(type='GlobalAveragePooling'),
+        head=dict(
+            type='LinearClsHead',
+            num_classes=1000,
+            in_channels=1920,
+            loss=dict(
+                type='LabelSmoothLoss',
+                mode='original',
+                label_smooth_val=0.1,
+                loss_weight=1.0),
+            topk=(1, 5),
+        ))
+
+    architecture_cfg = dict(
+        type='MMClsArchitecture',
+        model=model_cfg,
+    )
+
+    pruner_cfg = dict(
+        type='BCNetPruner',
+        ratios=(1 / 20, 2 / 20, 3 / 20, 4 / 20, 5 / 20, 6 / 20, 7 / 20, 8 / 20,
+                9 / 20, 10 / 20, 11 / 20, 12 / 20, 13 / 20, 14 / 20, 15 / 20,
+                16 / 20, 17 / 20, 18 / 20, 19 / 20, 1.0))
+
+    architecture = ARCHITECTURES.build(architecture_cfg)
+    pruner = PRUNERS.build(pruner_cfg)
+
+    pruner.prepare_from_supernet(architecture)
+    assert hasattr(pruner, 'channel_spaces')
+
+    # test reverse_subnet
+    subnet_dict = pruner.sample_subnet()
+    reverse_once = pruner.reverse_subnet(subnet_dict)
+    reverse_twice = pruner.reverse_subnet(reverse_once)
+    for space_id in subnet_dict.keys():
+        assert torch.equal(subnet_dict[space_id], reverse_twice[space_id])
+
+    # test get_complementary_subnet
+    min_subnet = pruner.sample_subnet()
+    complementary_subnet = pruner.get_complementary_subnet(min_subnet)
+    for space_id, mask in min_subnet.items():
+        min_channels = round(mask.numel() * pruner.min_ratio)
+        max_channels = round(mask.numel() * pruner.max_ratio)
+        assert mask.sum() > 0
+        assert mask.sum() + complementary_subnet[space_id].sum() == min_channels + max_channels
+
+
 def _test_reset_bn_running_stats(architecture_cfg, pruner_cfg, should_fail):
     import os
     import random
