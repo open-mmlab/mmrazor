@@ -215,7 +215,8 @@ def test_bcnet_pruner():
         min_channels = round(mask.numel() * pruner.min_ratio)
         max_channels = round(mask.numel() * pruner.max_ratio)
         assert mask.sum() > 0
-        assert mask.sum() + complementary_subnet[space_id].sum() == min_channels + max_channels
+        assert mask.sum() + complementary_subnet[space_id].sum(
+        ) == min_channels + max_channels
 
 
 def _test_reset_bn_running_stats(architecture_cfg, pruner_cfg, should_fail):

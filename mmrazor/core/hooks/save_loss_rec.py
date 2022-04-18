@@ -76,7 +76,8 @@ class LossRecHook(Hook):
     @master_only
     def _save_loss_rec(self, runner):
         filename = 'loss_rec_epoch_{}.pth'.format(runner.epoch + 1) \
-            if self.by_epoch else 'loss_rec_iter_{}.pth'.format(runner.iter + 1)
+            if self.by_epoch \
+            else 'loss_rec_iter_{}.pth'.format(runner.iter + 1)
         filepath = osp.join(self.out_dir, filename)
 
         model = runner.model

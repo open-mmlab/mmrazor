@@ -94,8 +94,7 @@ optimizer = dict(
     momentum=0.9,
     nesterov=True,
     weight_decay=5e-5,
-    paramwise_cfg=paramwise_cfg
-)
+    paramwise_cfg=paramwise_cfg)
 optimizer_config = None
 # learning policy
 lr_config = dict(policy='CosineAnnealing', min_lr=1e-5, by_epoch=False)

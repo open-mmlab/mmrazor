@@ -15,7 +15,6 @@ searcher = dict(
     max_epoch=50,
     num_mutation=20,
     num_crossover=20,
-    mutate_prob=0.1
-)
+    mutate_prob=0.1)
 
 data = dict(samples_per_gpu=1024, workers_per_gpu=4)

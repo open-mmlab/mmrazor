@@ -81,15 +81,15 @@ optimizer = dict(
     momentum=0.9,
     nesterov=True,
     weight_decay=5e-5,
-    paramwise_cfg=paramwise_cfg
-)
+    paramwise_cfg=paramwise_cfg)
 optimizer_config = None
 # learning policy
 lr_config = dict(policy='CosineAnnealing', min_lr=1e-5, by_epoch=False)
 runner = dict(type='EpochBasedRunner', max_epochs=300)
 
 # checkpoint saving
-checkpoint_config = dict(interval=1, max_keep_ckpts=10, out_dir='s3://caoweihan/mmrazor_bcnet')
+checkpoint_config = dict(
+    interval=1, max_keep_ckpts=10, out_dir='s3://caoweihan/mmrazor_bcnet')
 # yapf:disable
 log_config = dict(
     interval=100,
