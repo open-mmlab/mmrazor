@@ -8,7 +8,9 @@ import torch
 import torch.nn as nn
 from mmcv.runner import BaseModule
 from ordered_set import OrderedSet
+from torch.nn.modules import GroupNorm
 from torch.nn.modules.batchnorm import _BatchNorm
+from torch.nn.modules.instancenorm import _InstanceNorm
 
 from mmrazor.models.builder import PRUNERS
 from .utils import SwitchableBatchNorm2d
@@ -19,14 +21,13 @@ CONV = ('ThnnConv2DBackward', 'CudnnConvolutionBackward',
 FC = ('ThAddmmBackward', 'AddmmBackward', 'MmBackward')
 BN = ('ThnnBatchNormBackward', 'CudnnBatchNormBackward',
       'NativeBatchNormBackward')
+GN = ('NativeGroupNormBackward', )
 CONCAT = ('CatBackward', )
 # the modules which contains NON_PASS grad_fn need to change the parameter size
 # according to channels after pruning
 NON_PASS = CONV + FC
-NON_PASS_MODULE = (nn.Conv2d, nn.Linear)
-
-PASS = BN
-PASS_MODULE = (_BatchNorm)
+PASS = BN + GN
+NORM = BN + GN
 
 BACKWARD_PARSER_DICT = dict()
 MAKE_GROUP_PARSER_DICT = dict()
@@ -172,10 +173,10 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         self.trace_non_pass_path(pseudo_loss.grad_fn, module2name, var2module,
                                  cur_non_pass_path, non_pass_paths, visited)
 
-        bn_conv_links = dict()
-        self.trace_bn_conv_links(pseudo_loss.grad_fn, module2name, var2module,
-                                 bn_conv_links, visited)
-        self.bn_conv_links = bn_conv_links
+        norm_conv_links = dict()
+        self.trace_norm_conv_links(pseudo_loss.grad_fn, module2name,
+                                   var2module, norm_conv_links, visited)
+        self.norm_conv_links = norm_conv_links
 
         # a node can be the name of a conv module or a str like 'concat_{id}'
         node2parents = self.find_node_parents(non_pass_paths)
@@ -268,12 +269,12 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
             module = self.name2module[module_name]
             module.out_mask = subnet_dict[space_id].to(module.out_mask.device)
 
-        for bn, conv in self.bn_conv_links.items():
-            module = self.name2module[bn]
+        for norm, conv in self.norm_conv_links.items():
+            module = self.name2module[norm]
             conv_space_id = self.get_space_id(conv)
             # conv_space_id is None means the conv layer in front of
-            # this bn module can not be pruned. So we should not set
-            # the out_mask of this bn layer
+            # this normalization module can not be pruned. So we should not set
+            # the out_mask of this normalization layer
             if conv_space_id is not None:
                 module.out_mask = subnet_dict[conv_space_id].to(
                     module.out_mask.device)
@@ -458,7 +459,9 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
             module.register_buffer(
                 'out_mask', module.weight.new_ones((1, module.out_features), ))
             module.forward = self.modify_fc_forward(module)
-        if isinstance(module, nn.modules.batchnorm._BatchNorm):
+        if (isinstance(module, _BatchNorm)
+                or isinstance(module, _InstanceNorm)
+                or isinstance(module, GroupNorm)):
             module.register_buffer(
                 'out_mask',
                 module.weight.new_ones((1, len(module.weight), 1, 1), ))
@@ -625,15 +628,18 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         else:
             result_paths.append(copy.deepcopy(cur_path))
 
-    def trace_bn_conv_links(self, grad_fn, module2name, var2module,
-                            bn_conv_links, visited):
-        """Get the convolutional layer placed before a bn layer in the model.
+    def trace_norm_conv_links(self, grad_fn, module2name, var2module,
+                              norm_conv_links, visited):
+        """Get the convolutional layer placed before a normalization layer in
+        the model.
 
         Example:
             >>> conv = nn.Conv2d(3, 3, 3)
-            >>> bn = nn.BatchNorm2d(3)
+            >>> norm = nn.BatchNorm2d(3)
             >>> pseudo_img = torch.rand(1, 3, 224, 224)
-            >>> out = bn(conv(pseudo_img))
+            >>> out = norm(conv(pseudo_img))
+            >>> print(out.grad_fn)
+            <NativeBatchNormBackward object at 0x0000022BC709DB08>
             >>> print(out.grad_fn.next_functions)
             ((<ThnnConv2DBackward object at 0x0000020E40639688>, 0),
             (<AccumulateGrad object at 0x0000020E40639208>, 0),
@@ -641,23 +647,60 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
             >>> # op.next_functions[0][0] is ThnnConv2DBackward means
             >>> # the parent of this NativeBatchNormBackward op is
             >>> # ThnnConv2DBackward
-            >>> # op.next_functions[1][0].variable is the weight of this bn
-            >>> # module
-            >>> # op.next_functions[2][0].variable is the bias of this bn
-            >>> # module
+            >>> # op.next_functions[1][0].variable is the weight of this
+            >>> # normalization module
+            >>> # op.next_functions[2][0].variable is the bias of this
+            >>> # normalization module
+
+            >>> # Things are different in InstanceNorm
+            >>> conv = nn.Conv2d(3, 3, 3)
+            >>> norm = nn.InstanceNorm2d(3, affine=True)
+            >>> out = norm(conv(pseudo_img))
+            >>> print(out.grad_fn)
+            <ViewBackward object at 0x0000022BC709DD48>
+            >>> print(out.grad_fn.next_functions)
+            ((<NativeBatchNormBackward object at 0x0000022BC81E8A08>, 0),)
+            >>> print(out.grad_fn.next_functions[0][0].next_functions)
+            ((<ViewBackward object at 0x0000022BC81E8DC8>, 0),
+            (<RepeatBackward object at 0x0000022BC81E8D08>, 0),
+            (<RepeatBackward object at 0x0000022BC81E81C8>, 0))
+            >>> # Hence, a dfs is necessary.
         """
+
+        def is_norm_grad_fn(grad_fn):
+            for fn_name in NORM:
+                if type(grad_fn).__name__.startswith(fn_name):
+                    return True
+            return False
+
+        def is_conv_grad_fn(grad_fn):
+            for fn_name in CONV:
+                if type(grad_fn).__name__.startswith(fn_name):
+                    return True
+            return False
+
+        def is_leaf_grad_fn(grad_fn):
+            if type(grad_fn).__name__ == 'AccumulateGrad':
+                return True
+            return False
+
         grad_fn = grad_fn[0] if isinstance(grad_fn, (list, tuple)) else grad_fn
         if grad_fn is not None:
-            is_bn_grad_fn = False
-            for fn_name in BN:
-                if type(grad_fn).__name__.startswith(fn_name):
-                    is_bn_grad_fn = True
-                    break
-
-            if is_bn_grad_fn:
+            if is_norm_grad_fn(grad_fn):
                 conv_grad_fn = grad_fn.next_functions[0][0]
-                conv_var = conv_grad_fn.next_functions[1][0].variable
-                bn_var = grad_fn.next_functions[1][0].variable
+                while not is_conv_grad_fn(conv_grad_fn):
+                    conv_grad_fn = conv_grad_fn.next_functions[0][0]
+
+                leaf_grad_fn = conv_grad_fn.next_functions[1][0]
+                while not is_leaf_grad_fn(leaf_grad_fn):
+                    leaf_grad_fn = leaf_grad_fn.next_functions[0][0]
+                conv_var = leaf_grad_fn.variable
+
+                leaf_grad_fn = grad_fn.next_functions[1][0]
+                while not is_leaf_grad_fn(leaf_grad_fn):
+                    leaf_grad_fn = leaf_grad_fn.next_functions[0][0]
+                bn_var = leaf_grad_fn.variable
+
                 conv_module = var2module[id(conv_var)]
                 bn_module = var2module[id(bn_var)]
                 conv_name = module2name[conv_module]
@@ -666,20 +709,20 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
                     pass
                 else:
                     visited[bn_name] = True
-                    bn_conv_links[bn_name] = conv_name
+                    norm_conv_links[bn_name] = conv_name
 
-                    self.trace_bn_conv_links(conv_grad_fn, module2name,
-                                             var2module, bn_conv_links,
-                                             visited)
+                    self.trace_norm_conv_links(conv_grad_fn, module2name,
+                                               var2module, norm_conv_links,
+                                               visited)
 
             else:
                 # If the op is AccumulateGrad, parents is (),
                 parents = grad_fn.next_functions
                 if parents is not None:
                     for parent in parents:
-                        self.trace_bn_conv_links(parent, module2name,
-                                                 var2module, bn_conv_links,
-                                                 visited)
+                        self.trace_norm_conv_links(parent, module2name,
+                                                   var2module, norm_conv_links,
+                                                   visited)
 
     def find_backward_parser(self, grad_fn):
         for name, parser in BACKWARD_PARSER_DICT.items():

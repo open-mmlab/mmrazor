@@ -2,6 +2,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.nn.modules import GroupNorm
 
 from mmrazor.models.builder import PRUNERS
 from .structure_pruning import StructurePruner
@@ -30,6 +31,22 @@ class RatioPruner(StructurePruner):
         ratios.sort()
         self.ratios = ratios
         self.min_ratio = ratios[0]
+
+    def _check_pruner(self, supernet):
+        for module in supernet.model.modules():
+            if isinstance(module, GroupNorm):
+                num_channels = module.num_channels
+                num_groups = module.num_groups
+                for ratio in self.ratios:
+                    new_channels = int(round(num_channels * ratio))
+                    assert (num_channels * ratio) % num_groups == 0, \
+                        f'Expected number of channels in input of GroupNorm ' \
+                        f'to be divisible by num_groups, but number of ' \
+                        f'channels may be {new_channels} according to ' \
+                        f'ratio {ratio} and num_groups={num_groups}'
+
+    def prepare_from_supernet(self, supernet):
+        super(RatioPruner, self).prepare_from_supernet(supernet)
 
     def get_channel_mask(self, out_mask):
         """Randomly choose a width ratio of a layer from ``ratios``"""
