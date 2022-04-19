@@ -86,7 +86,7 @@ def test_ratio_pruner():
     losses = architecture(imgs, return_loss=True, gt_label=label)
     assert losses['loss'].item() > 0
 
-    # test making groups logic when there are shared modules in the model
+    # test models with shared module
     model_cfg = ConfigDict(
         type='mmdet.RetinaNet',
         backbone=dict(
@@ -159,10 +159,117 @@ def test_ratio_pruner():
     pruner = PRUNERS.build(pruner_cfg)
     pruner.prepare_from_supernet(architecture)
     subnet_dict = pruner.sample_subnet()
-    assert isinstance(subnet_dict, dict)
     pruner.set_subnet(subnet_dict)
     subnet_dict = pruner.export_subnet()
-    assert isinstance(subnet_dict, dict)
+    pruner.deploy_subnet(architecture, subnet_dict)
+    architecture.forward_dummy(imgs)
+
+    # test models with concat operations
+    model_cfg = ConfigDict(
+        type='mmdet.YOLOX',
+        input_size=(640, 640),
+        random_size_range=(15, 25),
+        random_size_interval=10,
+        backbone=dict(type='CSPDarknet', deepen_factor=0.33, widen_factor=0.5),
+        neck=dict(
+            type='YOLOXPAFPN',
+            in_channels=[128, 256, 512],
+            out_channels=128,
+            num_csp_blocks=1),
+        bbox_head=dict(
+            type='YOLOXHead',
+            num_classes=80,
+            in_channels=128,
+            feat_channels=128),
+        train_cfg=dict(
+            assigner=dict(type='SimOTAAssigner', center_radius=2.5)),
+        # In order to align the source code, the threshold of the val phase is
+        # 0.01, and the threshold of the test phase is 0.001.
+        test_cfg=dict(
+            score_thr=0.01, nms=dict(type='nms', iou_threshold=0.65)))
+
+    architecture_cfg = dict(
+        type='MMDetArchitecture',
+        model=model_cfg,
+    )
+
+    architecture = ARCHITECTURES.build(architecture_cfg)
+    pruner.prepare_from_supernet(architecture)
+    subnet_dict = pruner.sample_subnet()
+    pruner.set_subnet(subnet_dict)
+    subnet_dict = pruner.export_subnet()
+    pruner.deploy_subnet(architecture, subnet_dict)
+    architecture.forward_dummy(imgs)
+
+    # test models with groupnorm
+    model_cfg = ConfigDict(
+        type='mmdet.ATSS',
+        backbone=dict(
+            type='ResNet',
+            depth=50,
+            num_stages=4,
+            out_indices=(0, 1, 2, 3),
+            frozen_stages=1,
+            norm_cfg=dict(type='BN', requires_grad=True),
+            norm_eval=True,
+            style='pytorch',
+            init_cfg=dict(
+                type='Pretrained', checkpoint='torchvision://resnet50')),
+        neck=dict(
+            type='FPN',
+            in_channels=[256, 512, 1024, 2048],
+            out_channels=256,
+            start_level=1,
+            add_extra_convs='on_output',
+            num_outs=5),
+        bbox_head=dict(
+            type='ATSSHead',
+            num_classes=80,
+            in_channels=256,
+            stacked_convs=4,
+            feat_channels=256,
+            anchor_generator=dict(
+                type='AnchorGenerator',
+                ratios=[1.0],
+                octave_base_scale=8,
+                scales_per_octave=1,
+                strides=[8, 16, 32, 64, 128]),
+            bbox_coder=dict(
+                type='DeltaXYWHBBoxCoder',
+                target_means=[.0, .0, .0, .0],
+                target_stds=[0.1, 0.1, 0.2, 0.2]),
+            loss_cls=dict(
+                type='FocalLoss',
+                use_sigmoid=True,
+                gamma=2.0,
+                alpha=0.25,
+                loss_weight=1.0),
+            loss_bbox=dict(type='GIoULoss', loss_weight=2.0),
+            loss_centerness=dict(
+                type='CrossEntropyLoss', use_sigmoid=True, loss_weight=1.0)),
+        # training and testing settings
+        train_cfg=dict(
+            assigner=dict(type='ATSSAssigner', topk=9),
+            allowed_border=-1,
+            pos_weight=-1,
+            debug=False),
+        test_cfg=dict(
+            nms_pre=1000,
+            min_bbox_size=0,
+            score_thr=0.05,
+            nms=dict(type='nms', iou_threshold=0.6),
+            max_per_img=100))
+
+    architecture_cfg = dict(
+        type='MMDetArchitecture',
+        model=model_cfg,
+    )
+
+    architecture = ARCHITECTURES.build(architecture_cfg)
+    pruner.prepare_from_supernet(architecture)
+    subnet_dict = pruner.sample_subnet()
+    pruner.set_subnet(subnet_dict)
+    subnet_dict = pruner.export_subnet()
     pruner.deploy_subnet(architecture, subnet_dict)
     architecture.forward_dummy(imgs)
 
