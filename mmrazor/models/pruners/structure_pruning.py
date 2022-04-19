@@ -206,8 +206,13 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         self._reset_norm_running_stats(supernet)
 
     @abstractmethod
-    def sample_subnet(self):
+    def sample_subnet(self, searching=False):
         """Sample a subnet from the supernet.
+
+        Args:
+            searching(bool): Whether is in search stage. During search stage,
+                we do not need to broadcast every ``out_mask``. It is enough to
+                broadcast the whole ``subnet_dict`` after ``sample_subnet``.
 
         Returns:
             dict: Record the information to build the subnet from the supernet,
@@ -591,17 +596,27 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         """
         subnet_dict = dict()
         for space_id, bin_mask in channel_bins_dict.items():
-            mask = self.channel_spaces[space_id]
-            shape = mask.shape
-            channel_num = shape[1]
-            channels_per_bin = channel_num // max_channel_bins
-            new_mask = []
-            for mask in bin_mask:
-                new_mask.extend([1] * channels_per_bin if mask else [0] *
-                                channels_per_bin)
-            new_mask.extend([0] * (channel_num % max_channel_bins))
-            new_mask = torch.tensor(new_mask).reshape(*shape)
-            subnet_dict[space_id] = new_mask
+            out_mask = self.channel_spaces[space_id]
+            out_channels = out_mask.size(1)
+
+            new_channels = round(
+                (bin_mask.sum() / bin_mask.numel()).item() * out_channels)
+            new_out_mask = torch.zeros_like(out_mask).bool()
+            new_out_mask[:, :new_channels] = True
+
+            subnet_dict[space_id] = new_out_mask
+            # TODO: delete the following commented codes
+            # mask = self.channel_spaces[space_id]
+            # shape = mask.shape
+            # channel_num = shape[1]
+            # channels_per_bin = channel_num // max_channel_bins
+            # new_mask = []
+            # for mask in bin_mask:
+            #     new_mask.extend([1] * channels_per_bin if mask else [0] *
+            #                     channels_per_bin)
+            # new_mask.extend([0] * (channel_num % max_channel_bins))
+            # new_mask = torch.tensor(new_mask).reshape(*shape)
+            # subnet_dict[space_id] = new_mask
         self.set_subnet(subnet_dict)
 
     def trace_non_pass_path(self, grad_fn, module2name, var2module, cur_path,

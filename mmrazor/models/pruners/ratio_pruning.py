@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
 import torch
+import torch.distributed as dist
 import torch.nn as nn
 
 from mmrazor.models.builder import PRUNERS
@@ -32,20 +33,37 @@ class RatioPruner(StructurePruner):
         self.min_ratio = ratios[0]
         self.max_ratio = ratios[-1]
 
-    def get_channel_mask(self, out_mask):
+    def get_channel_mask(self, out_mask, searching=False):
         """Randomly choose a width ratio of a layer from ``ratios``"""
         out_channels = out_mask.size(1)
         random_ratio = np.random.choice(self.ratios)
         new_channels = int(round(out_channels * random_ratio))
         assert new_channels > 0, \
             'Output channels should be a positive integer.'
-        new_out_mask = torch.zeros_like(out_mask)
+        # new_out_mask = torch.zeros_like(out_mask)
+        # new_out_mask[:, :new_channels] = 1
+
+        if torch.cuda.is_available():
+            # Put it to cuda to broadcast. During distributed training,
+            # dist.is_available() and dist.is_initialized() are all True,
+            # put it to cuda to avoid errors.
+            new_out_mask = torch.zeros_like(out_mask).cuda()
+        else:
+            new_out_mask = torch.zeros_like(out_mask)
         new_out_mask[:, :new_channels] = 1
+
+        if dist.is_available() and dist.is_initialized() and not searching:
+            dist.broadcast(new_out_mask, src=0)
 
         return new_out_mask
 
-    def sample_subnet(self):
+    def sample_subnet(self, searching=False):
         """Random sample subnet by random mask.
+
+        Args:
+            searching(bool): Whether is in search stage. During search stage,
+                we do not need to broadcast every ``out_mask``. It is enough to
+                broadcast the whole ``subnet_dict`` after ``sample_subnet``.
 
         Returns:
             dict: Record the information to build the subnet from the supernet,
@@ -54,7 +72,7 @@ class RatioPruner(StructurePruner):
         """
         subnet_dict = dict()
         for space_id, out_mask in self.channel_spaces.items():
-            subnet_dict[space_id] = self.get_channel_mask(out_mask)
+            subnet_dict[space_id] = self.get_channel_mask(out_mask, searching)
         return subnet_dict
 
     def set_min_channel(self):
