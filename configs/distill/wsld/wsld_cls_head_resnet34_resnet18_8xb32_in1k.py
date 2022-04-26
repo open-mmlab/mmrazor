@@ -22,9 +22,12 @@ student = dict(
         topk=(1, 5),
     ))
 
+checkpoint = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth'  # noqa: E501
+
 # teacher settings
 teacher = dict(
     type='mmcls.ImageClassifier',
+    init_cfg=dict(type='Pretrained', checkpoint=checkpoint),
     backbone=dict(
         type='ResNet',
         depth=34,

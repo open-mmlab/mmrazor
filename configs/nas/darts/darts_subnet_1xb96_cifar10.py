@@ -28,6 +28,9 @@ model = dict(
         cal_acc=True),
 )
 
+# FIXME: you may replace this with the mutable_cfg searched by yourself
+mutable_cfg = 'https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v0.1/nas/darts/darts_subnetnet_1xb96_cifar10/darts_subnetnet_1xb96_cifar10_acc-97.32_20211222-e5727921_mutable_cfg.yaml'  # noqa: E501
+
 algorithm = dict(
     type='Darts',
     architecture=dict(type='MMClsArchitecture', model=model),
@@ -69,7 +72,8 @@ algorithm = dict(
             )),
     ),
     retraining=True,
-    unroll=False)
+    unroll=False,
+    mutable_cfg=mutable_cfg)
 
 data = dict(workers_per_gpu=8)
 

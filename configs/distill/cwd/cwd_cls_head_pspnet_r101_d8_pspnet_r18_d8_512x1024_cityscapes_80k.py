@@ -50,9 +50,12 @@ student = dict(
     train_cfg=dict(),
     test_cfg=dict(mode='whole'))
 
+checkpoint = 'https://download.openmmlab.com/mmsegmentation/v0.5/pspnet/pspnet_r101-d8_512x1024_80k_cityscapes/pspnet_r101-d8_512x1024_80k_cityscapes_20200606_112211-e1e1100f.pth'  # noqa: E501
+
 # pspnet r101
 teacher = dict(
     type='mmseg.EncoderDecoder',
+    init_cfg=dict(type='Pretrained', checkpoint=checkpoint),
     backbone=dict(
         type='ResNetV1c',
         depth=101,
