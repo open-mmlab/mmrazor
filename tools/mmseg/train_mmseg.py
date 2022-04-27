@@ -177,7 +177,7 @@ def main():
     seed = seed + dist.get_rank() if args.diff_seed else seed
     logger.info(f'Set random seed to {args.seed}, deterministic: '
                 f'{args.deterministic}')
-    set_random_seed(args.seed, deterministic=args.deterministic)
+    set_random_seed(seed, deterministic=args.deterministic)
     cfg.seed = seed
     meta['seed'] = args.seed
     meta['exp_name'] = osp.basename(args.config)
