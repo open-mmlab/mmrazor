@@ -48,7 +48,7 @@ python ./tools/model_converters/split_checkpoint.py \
 python ./tools/mmcls/test_mmcls.py \
   configs/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k.py \
   <em>your_splitted_checkpoint_path</em> --metrics accuracy \
-  --cfg-options algorithm.channel_cfg=configs/pruning/autoslim/AUTOSLIM_MBV2_530M_OFFICIAL.yaml
+  --cfg-options algorithm.channel_cfg=configs/pruning/autoslim/AUTOSLIM_MBV2_530M_OFFICIAL.yaml  # or modify the config directly
 </pre>
 ## Results and models
 ### Subnet retrain

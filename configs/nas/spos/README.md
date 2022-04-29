@@ -36,7 +36,7 @@ python ./tools/mmcls/search_mmcls.py \
 python ./tools/mmcls/train_mmcls.py \
   configs/nas/spos/spos_subnet_shufflenetv2_8xb128_in1k.py \
   --work-dir $WORK_DIR \
-  --cfg-options algorithm.mutable_cfg=$STEP2_SUBNET_YAML
+  --cfg-options algorithm.mutable_cfg=$STEP2_SUBNET_YAML  # or modify the config directly
 ```
 
 ## Results and models

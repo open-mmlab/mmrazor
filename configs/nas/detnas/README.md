@@ -38,7 +38,7 @@ python ./tools/mmdet/search_mmdet.py \
 python ./tools/mmcls/train_mmcls.py \
   configs/nas/detnas/detnas_subnet_shufflenetv2_8xb128_in1k.py \
   --work-dir $WORK_DIR \
-  --cfg-options algorithm.mutable_cfg=$STEP3_SUBNET_YAML
+  --cfg-options algorithm.mutable_cfg=$STEP3_SUBNET_YAML  # or modify the config directly
 ```
 
 ### Step 5: Subnet fine-tuning on COCO
@@ -46,7 +46,7 @@ python ./tools/mmcls/train_mmcls.py \
 python ./tools/mmdet/train_mmdet.py \
   configs/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco.py \
   --work-dir $WORK_DIR \
-  --cfg-options algorithm.mutable_cfg=$STEP3_SUBNET_YAML load_from=$STEP4_CKPT
+  --cfg-options algorithm.mutable_cfg=$STEP3_SUBNET_YAML load_from=$STEP4_CKPT  # or modify the config directly
 ```
 
 ## Results and models
