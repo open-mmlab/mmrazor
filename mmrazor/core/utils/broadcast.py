@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import pickle
+import warnings
 from typing import Any, List, Optional, Tuple
 
 import torch
@@ -138,6 +139,10 @@ def broadcast_object_list(data: List[Any],
         ["foo", 12, {1: 2}]  # Rank 0
         ["foo", 12, {1: 2}]  # Rank 1
     """
+    warnings.warn(
+        '`broadcast_object_list` is now without return value, '
+        'and it\'s input parameters are: `data`,`src` and '
+        '`group`, but its function is similar to the old\'s', UserWarning)
     assert isinstance(data, list)
 
     if get_world_size(group) > 1:
