@@ -3,7 +3,7 @@ from copy import deepcopy
 
 import pytest
 import torch
-from mmcv import ConfigDict
+from mmcv import ConfigDict, digit_version
 
 from mmrazor.models.builder import ARCHITECTURES, PRUNERS
 
@@ -34,6 +34,14 @@ def test_ratio_pruner():
     pruner_cfg = dict(
         type='RatioPruner',
         ratios=[1 / 8, 2 / 8, 3 / 8, 4 / 8, 5 / 8, 6 / 8, 7 / 8, 1.0])
+
+    # ``StructurePruner`` requires pytorch>=1.6.0 to
+    # auto-trace correctly
+    min_required_version = '1.6.0'
+    if digit_version(torch.__version__) < digit_version(min_required_version):
+        with pytest.raises(AssertionError):
+            pruner = PRUNERS.build(pruner_cfg)
+        return
 
     _test_reset_bn_running_stats(architecture_cfg, pruner_cfg, False)
     with pytest.raises(AssertionError):

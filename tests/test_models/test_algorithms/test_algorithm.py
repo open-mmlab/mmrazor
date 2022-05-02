@@ -5,8 +5,9 @@ from os.path import dirname
 
 import mmcv
 import numpy as np
+import pytest
 import torch
-from mmcv import Config, ConfigDict
+from mmcv import Config, ConfigDict, digit_version
 
 from mmrazor.models.builder import ALGORITHMS
 
@@ -95,6 +96,14 @@ def test_autoslim_pretrain():
         pruner=pruner_cfg,
         distiller=distiller_cfg)
 
+    # ``StructurePruner`` requires pytorch>=1.6.0 to
+    # auto-trace correctly
+    min_required_version = '1.6.0'
+    if digit_version(torch.__version__) < digit_version(min_required_version):
+        with pytest.raises(AssertionError):
+            model = ALGORITHMS.build(algorithm_cfg)
+        return
+
     imgs = torch.randn(16, 3, 224, 224)
     label = torch.randint(0, 1000, (16, ))
 
@@ -146,6 +155,14 @@ def test_autoslim_retrain():
         pruner=pruner_cfg,
         retraining=True,
         channel_cfg=channel_cfg)
+
+    # ``StructurePruner`` requires pytorch>=1.6.0 to
+    # auto-trace correctly
+    min_required_version = '1.6.0'
+    if digit_version(torch.__version__) < digit_version(min_required_version):
+        with pytest.raises(AssertionError):
+            model = ALGORITHMS.build(algorithm_cfg)
+        return
 
     imgs = torch.randn(16, 3, 224, 224)
     label = torch.randint(0, 1000, (16, ))
