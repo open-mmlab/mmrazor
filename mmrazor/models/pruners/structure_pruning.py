@@ -83,6 +83,14 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
     """
 
     def __init__(self, except_start_keys=['head.fc']):
+
+        from mmcv import digit_version
+
+        min_required_version = '1.6.0'
+        assert digit_version(torch.__version__) >= digit_version(
+            min_required_version
+        ), f'Requires to install pytorch>={min_required_version}'
+
         super(StructurePruner, self).__init__()
         if except_start_keys is None:
             self.except_start_keys = list()
