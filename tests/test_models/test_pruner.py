@@ -35,14 +35,6 @@ def test_ratio_pruner():
         type='RatioPruner',
         ratios=[1 / 8, 2 / 8, 3 / 8, 4 / 8, 5 / 8, 6 / 8, 7 / 8, 1.0])
 
-    # ``StructurePruner`` requires pytorch>=1.6.0 to
-    # auto-trace correctly
-    min_required_version = '1.6.0'
-    if digit_version(torch.__version__) < digit_version(min_required_version):
-        with pytest.raises(AssertionError):
-            pruner = PRUNERS.build(pruner_cfg)
-        return
-
     _test_reset_bn_running_stats(architecture_cfg, pruner_cfg, False)
     with pytest.raises(AssertionError):
         _test_reset_bn_running_stats(architecture_cfg, pruner_cfg, True)
@@ -274,12 +266,19 @@ def test_ratio_pruner():
     )
 
     architecture = ARCHITECTURES.build(architecture_cfg)
-    pruner.prepare_from_supernet(architecture)
-    subnet_dict = pruner.sample_subnet()
-    pruner.set_subnet(subnet_dict)
-    subnet_dict = pruner.export_subnet()
-    pruner.deploy_subnet(architecture, subnet_dict)
-    architecture.forward_dummy(imgs)
+    # ``StructurePruner`` requires pytorch>=1.6.0 to auto-trace GroupNorm
+    # correctly
+    min_required_version = '1.6.0'
+    if digit_version(torch.__version__) < digit_version(min_required_version):
+        with pytest.raises(AssertionError):
+            pruner.prepare_from_supernet(architecture)
+    else:
+        pruner.prepare_from_supernet(architecture)
+        subnet_dict = pruner.sample_subnet()
+        pruner.set_subnet(subnet_dict)
+        subnet_dict = pruner.export_subnet()
+        pruner.deploy_subnet(architecture, subnet_dict)
+        architecture.forward_dummy(imgs)
 
 
 def _test_reset_bn_running_stats(architecture_cfg, pruner_cfg, should_fail):
