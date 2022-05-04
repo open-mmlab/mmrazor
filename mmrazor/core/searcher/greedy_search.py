@@ -146,7 +146,7 @@ class GreedySearcher():
 
                     # Broadcasts scores in broadcast_scores to the whole
                     # group.
-                    broadcast_scores = broadcast_object_list(broadcast_scores)
+                    broadcast_object_list(broadcast_scores)
                     score = broadcast_scores[0]
                     self.logger.info(
                         f'Slimming group {name}, {self.score_key}: {score}')
