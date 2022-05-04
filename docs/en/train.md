@@ -59,6 +59,13 @@ python ./tools/mmcls/train_mmcls.py \
   --cfg-options algorithm.mutable_cfg=configs/nas/spos/SPOS_SHUFFLENETV2_330M_IN1k_PAPER.yaml
 </pre>
 
+We note that instead of using ``--cfg-options``, you can also directly modify ``configs/nas/spos/spos_subnet_shufflenetv2_8xb128_in1k.py`` like this:
+
+<pre>
+mutable_cfg = 'configs/nas/spos/SPOS_SHUFFLENETV2_330M_IN1k_PAPER.yaml'
+algorithm = dict(..., mutable_cfg=mutable_cfg)
+</pre>
+
 ## Pruning
 
 Pruning has three steps, including **supernet pre-training**, **search for subnet on the trained supernet** and **subnet retraining**. The commands of the first two steps are similar to NAS, except that we need to use `CONFIG_FILE` of Pruning here. The commands of the **subnet retraining** are as follows.
@@ -95,7 +102,7 @@ python tools/${task}/train_${task}.py ${CONFIG_FILE} --cfg-options algorithm.dis
 For example,
 
 <pre>
-python ./tools/mmdet/train_mmdet.py \
+python ./tools/mmseg/train_mmseg.py \
   configs/distill/cwd/cwd_cls_head_pspnet_r101_d8_pspnet_r18_d8_512x1024_cityscapes_80k.py \
   --work-dir <em>your_work_dir</em> \
   --cfg-options algorithm.distiller.teacher.init_cfg.type=Pretrained algorithm.distiller.teacher.init_cfg.checkpoint=https://download.openmmlab.com/mmsegmentation/v0.5/pspnet/pspnet_r101-d8_512x1024_80k_cityscapes/pspnet_r101-d8_512x1024_80k_cityscapes_20200606_112211-e1e1100f.pth
