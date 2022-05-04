@@ -12,9 +12,9 @@ model = dict(
 
 # FIXME: you may replace this with the channel_cfg searched by yourself
 channel_cfg = [
-    'configs/pruning/autoslim/AUTOSLIM_MBV2_530M_OFFICIAL.yaml',
-    'configs/pruning/autoslim/AUTOSLIM_MBV2_320M_OFFICIAL.yaml',
-    'configs/pruning/autoslim/AUTOSLIM_MBV2_220M_OFFICIAL.yaml'
+    'https://download.openmmlab.com/mmrazor/v0.1/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k/autoslim_mbv2_subnet_8xb256_in1k_flops-0.53M_acc-74.23_20211222-e5208bbd_channel_cfg.yaml',  # noqa: E501
+    'https://download.openmmlab.com/mmrazor/v0.1/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k/autoslim_mbv2_subnet_8xb256_in1k_flops-0.32M_acc-72.73_20211222-b5b0b33c_channel_cfg.yaml',  # noqa: E501
+    'https://download.openmmlab.com/mmrazor/v0.1/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k/autoslim_mbv2_subnet_8xb256_in1k_flops-0.22M_acc-71.39_20211222-43117c7b_channel_cfg.yaml'  # noqa: E501
 ]
 
 algorithm = dict(
