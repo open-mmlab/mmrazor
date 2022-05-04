@@ -57,8 +57,11 @@ student = dict(
         nms=dict(type='nms', iou_threshold=0.6),
         max_per_img=100))
 
+checkpoint = 'https://download.openmmlab.com/mmdetection/v2.0/gfl/gfl_r101_fpn_mstrain_2x_coco/gfl_r101_fpn_mstrain_2x_coco_20200629_200126-dd12f847.pth'  # noqa: E501
+
 teacher = dict(
     type='mmdet.GFL',
+    init_cfg=dict(type='Pretrained', checkpoint=checkpoint),
     backbone=dict(
         type='ResNet',
         depth=101,

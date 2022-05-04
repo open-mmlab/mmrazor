@@ -59,6 +59,13 @@ python ./tools/mmcls/train_mmcls.py \
   --cfg-options algorithm.mutable_cfg=configs/nas/spos/SPOS_SHUFFLENETV2_330M_IN1k_PAPER.yaml
 </pre>
 
+We note that instead of using ``--cfg-options``, you can also directly modify ``configs/nas/spos/spos_subnet_shufflenetv2_8xb128_in1k.py`` like this:
+
+<pre>
+mutable_cfg = 'configs/nas/spos/SPOS_SHUFFLENETV2_330M_IN1k_PAPER.yaml'
+algorithm = dict(..., mutable_cfg=mutable_cfg)
+</pre>
+
 ## Pruning
 
 Pruning has three steps, including **supernet pre-training**, **search for subnet on the trained supernet** and **subnet retraining**. The commands of the first two steps are similar to NAS, except that we need to use `CONFIG_FILE` of Pruning here. The commands of the **subnet retraining** are as follows.
