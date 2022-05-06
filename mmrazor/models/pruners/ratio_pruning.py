@@ -32,20 +32,23 @@ class RatioPruner(StructurePruner):
         self.ratios = ratios
         self.min_ratio = ratios[0]
 
-    def _check_pruner(self, supernet):
+    def _check_pruner_ratios(self, supernet):
+        """Check whether the ``ratios`` is correct."""
         for module in supernet.model.modules():
             if isinstance(module, GroupNorm):
                 num_channels = module.num_channels
                 num_groups = module.num_groups
                 for ratio in self.ratios:
                     new_channels = int(round(num_channels * ratio))
-                    assert (num_channels * ratio) % num_groups == 0, \
+                    assert new_channels % num_groups == 0, \
                         f'Expected number of channels in input of GroupNorm ' \
                         f'to be divisible by num_groups, but number of ' \
                         f'channels may be {new_channels} according to ' \
                         f'ratio {ratio} and num_groups={num_groups}'
 
     def prepare_from_supernet(self, supernet):
+        """Prepare for pruning."""
+        self._check_pruner_ratios(supernet)
         super(RatioPruner, self).prepare_from_supernet(supernet)
 
     def get_channel_mask(self, out_mask):

@@ -212,9 +212,7 @@ def test_ratio_pruner():
             frozen_stages=1,
             norm_cfg=dict(type='BN', requires_grad=True),
             norm_eval=True,
-            style='pytorch',
-            init_cfg=dict(
-                type='Pretrained', checkpoint='torchvision://resnet50')),
+            style='pytorch'),
         neck=dict(
             type='FPN',
             in_channels=[256, 512, 1024, 2048],
@@ -279,6 +277,15 @@ def test_ratio_pruner():
         subnet_dict = pruner.export_subnet()
         pruner.deploy_subnet(architecture, subnet_dict)
         architecture.forward_dummy(imgs)
+
+    # test invalid ``ratios``
+    # Expected number of channels in input of GroupNorm to be divisible
+    # by ``num_groups``
+    pruner_cfg = dict(type='RatioPruner', ratios=[1 / 10])
+    architecture = ARCHITECTURES.build(architecture_cfg)
+    pruner = PRUNERS.build(pruner_cfg)
+    with pytest.raises(AssertionError):
+        pruner.prepare_from_supernet(architecture)
 
 
 def _test_reset_bn_running_stats(architecture_cfg, pruner_cfg, should_fail):
