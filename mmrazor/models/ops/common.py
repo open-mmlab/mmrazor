@@ -1,11 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from mmcv.cnn import ConvModule
 
-from ..builder import OPS
+from mmrazor.registry import MODELS
 from .base import BaseOP
 
 
-@OPS.register_module()
+@MODELS.register_module()
 class Identity(BaseOP):
     """Base class for searchable operations.
 

@@ -1,10 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from mmrazor.models.builder import ALGORITHMS
 from mmrazor.models.utils import add_prefix
+from mmrazor.registry import MODELS
 from .base import BaseAlgorithm
 
 
-@ALGORITHMS.register_module()
+@MODELS.register_module()
 class GeneralDistill(BaseAlgorithm):
     """General Distillation Algorithm.
 

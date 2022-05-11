@@ -7,12 +7,12 @@ import torch.nn as nn
 from mmcv.cnn import get_model_complexity_info
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.builder import ALGORITHMS, build_pruner
 from mmrazor.models.utils import add_prefix
+from mmrazor.registry import MODELS
 from .base import BaseAlgorithm
 
 
-@ALGORITHMS.register_module()
+@MODELS.register_module()
 class AutoSlim(BaseAlgorithm):
     """AutoSlim: A one-shot architecture search for channel numbers.
 
@@ -64,7 +64,7 @@ class AutoSlim(BaseAlgorithm):
 
         # judge whether our StructurePruner can prune the architecture
         try:
-            pseudo_pruner = build_pruner(pruner)
+            pseudo_pruner = MODELS.build(pruner)
             pseudo_architecture = copy.deepcopy(self.architecture)
             pseudo_pruner.prepare_from_supernet(pseudo_architecture)
             subnet_dict = pseudo_pruner.sample_subnet()
@@ -81,7 +81,7 @@ class AutoSlim(BaseAlgorithm):
                                       'to handle all the corner cases. We will'
                                       ' appreciate it if you create a issue.')
 
-        self.pruner = build_pruner(pruner)
+        self.pruner = MODELS.build(pruner)
 
         if self.retraining:
             if isinstance(self.channel_cfg, dict):

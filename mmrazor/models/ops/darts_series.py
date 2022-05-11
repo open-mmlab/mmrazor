@@ -4,11 +4,11 @@ import torch.nn as nn
 from mmcv.cnn import build_norm_layer
 from mmcv.cnn.bricks import DropPath
 
-from ..builder import OPS
+from mmrazor.registry import MODELS
 from .base import BaseOP
 
 
-@OPS.register_module()
+@MODELS.register_module()
 class DartsPoolBN(BaseOP):
 
     def __init__(self,
@@ -41,7 +41,7 @@ class DartsPoolBN(BaseOP):
         return out
 
 
-@OPS.register_module()
+@MODELS.register_module()
 class DartsDilConv(BaseOP):
 
     def __init__(self,
@@ -81,7 +81,7 @@ class DartsDilConv(BaseOP):
         return out
 
 
-@OPS.register_module()
+@MODELS.register_module()
 class DartsSepConv(BaseOP):
 
     def __init__(self,
@@ -135,7 +135,7 @@ class DartsSepConv(BaseOP):
         return out
 
 
-@OPS.register_module()
+@MODELS.register_module()
 class DartsSkipConnect(BaseOP):
     """Reduce feature map size by factorized pointwise (stride=2)."""
 
@@ -181,7 +181,7 @@ class DartsSkipConnect(BaseOP):
         return out
 
 
-@OPS.register_module()
+@MODELS.register_module()
 class DartsZero(BaseOP):
 
     def __init__(self, **kwargs):

@@ -3,9 +3,9 @@ import copy
 
 import torch
 import torch.nn as nn
-from mmcls.models.builder import BACKBONES
 from mmcv.cnn import build_activation_layer, build_norm_layer
 
+from mmrazor.registry import MODELS
 from ...utils import Placeholder
 
 
@@ -193,7 +193,7 @@ class AuxiliaryModule(nn.Module):
         return self.net(x)
 
 
-@BACKBONES.register_module()
+@MODELS.register_module()
 class DartsBackbone(nn.Module):
 
     def __init__(self,

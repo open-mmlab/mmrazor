@@ -1,11 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch.nn as nn
 
-from ..builder import DISTILLERS, build_loss
+from mmrazor.registry import MODELS
 from .base import BaseDistiller
 
 
-@DISTILLERS.register_module()
+@MODELS.register_module()
 class SelfDistiller(BaseDistiller):
     """Transfer knowledge inside a single model.
 
@@ -32,7 +32,7 @@ class SelfDistiller(BaseDistiller):
             for loss in component.losses:
                 loss_cfg = loss.copy()
                 loss_name = loss_cfg.pop('name')
-                self.losses[loss_name] = build_loss(loss_cfg)
+                self.losses[loss_name] = MODELS.build(loss_cfg)
 
     def prepare_from_student(self, student):
         """Registers a global forward hook for each teacher module and student

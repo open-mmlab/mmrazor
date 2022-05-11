@@ -4,11 +4,11 @@ import copy
 from mmcv.cnn import get_model_complexity_info
 from mmcv.cnn.utils import revert_sync_batchnorm
 
-from mmrazor.models.builder import ALGORITHMS
+from mmrazor.registry import MODELS
 from .spos import SPOS
 
 
-@ALGORITHMS.register_module()
+@MODELS.register_module()
 class DetNAS(SPOS):
     """Implementation of `DetNAS <https://arxiv.org/abs/1903.10979>`_"""
 

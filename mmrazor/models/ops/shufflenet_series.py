@@ -5,11 +5,11 @@ import torch.utils.checkpoint as cp
 from mmcls.models.utils import channel_shuffle
 from mmcv.cnn import ConvModule, DepthwiseSeparableConvModule
 
-from ..builder import OPS
+from mmrazor.registry import MODELS
 from .base import BaseOP
 
 
-@OPS.register_module()
+@MODELS.register_module()
 class ShuffleBlock(BaseOP):
     """InvertedResidual block for Searchable ShuffleNetV2 backbone.
 
@@ -132,7 +132,7 @@ class ShuffleBlock(BaseOP):
         return out
 
 
-@OPS.register_module()
+@MODELS.register_module()
 class ShuffleXception(BaseOP):
     """Xception block for ShuffleNetV2 backbone.
 

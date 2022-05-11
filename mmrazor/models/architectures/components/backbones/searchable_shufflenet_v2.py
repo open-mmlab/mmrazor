@@ -1,14 +1,14 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch.nn as nn
 from mmcls.models.backbones.base_backbone import BaseBackbone
-from mmcls.models.builder import BACKBONES
 from mmcv.cnn import ConvModule, constant_init, normal_init
 from torch.nn.modules.batchnorm import _BatchNorm
 
+from mmrazor.registry import MODELS
 from ...utils import Placeholder
 
 
-@BACKBONES.register_module()
+@MODELS.register_module()
 class SearchableShuffleNetV2(BaseBackbone):
     """Based on ShuffleNetV2 backbone.
     Args:

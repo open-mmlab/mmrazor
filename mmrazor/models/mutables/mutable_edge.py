@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..builder import MUTABLES
+from mmrazor.registry import MODELS
 from .mutable_module import MutableModule
 
 
@@ -35,7 +35,7 @@ class MutableEdge(MutableModule):
         pass
 
 
-@MUTABLES.register_module()
+@MODELS.register_module()
 class DifferentiableEdge(MutableEdge):
     """Differentiable Edge.
 
@@ -104,7 +104,7 @@ class DifferentiableEdge(MutableEdge):
         return sum(outputs)
 
 
-@MUTABLES.register_module()
+@MODELS.register_module()
 class GumbelEdge(DifferentiableEdge):
     """Gumbel Edge.
 

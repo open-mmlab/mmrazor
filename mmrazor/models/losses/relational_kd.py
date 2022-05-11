@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..builder import LOSSES
+from mmrazor.registry import MODELS
 
 
 def euclidean_distance(pred, squared=False, eps=1e-12):
@@ -46,7 +46,7 @@ def angle(pred):
     return angle
 
 
-@LOSSES.register_module()
+@MODELS.register_module()
 class DistanceWiseRKD(nn.Module):
     """PyTorch version of distance-wise loss of `Relational Knowledge
     Distillation.
@@ -101,7 +101,7 @@ class DistanceWiseRKD(nn.Module):
         return loss
 
 
-@LOSSES.register_module()
+@MODELS.register_module()
 class AngleWiseRKD(nn.Module):
     """PyTorch version of angle-wise loss of `Relational Knowledge
     Distillation.

@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..builder import MUTABLES, build_op
+from mmrazor.registry import MODELS
 from .mutable_module import MutableModule
 
 
@@ -38,12 +38,12 @@ class MutableOP(MutableModule):
         choices = nn.ModuleDict()
         for name, cfg in cfgs.items():
             cfg.update(choice_args)
-            op_module = build_op(cfg)
+            op_module = MODELS.build(cfg)
             choices.add_module(name, op_module)
         return choices
 
 
-@MUTABLES.register_module()
+@MODELS.register_module()
 class OneShotOP(MutableOP):
     """A type of ``MUTABLES`` for the one-shot NAS."""
 
@@ -76,7 +76,7 @@ class OneShotOP(MutableOP):
         return sum(outputs)
 
 
-@MUTABLES.register_module()
+@MODELS.register_module()
 class DifferentiableOP(MutableOP):
     """Differentiable OP.
 
@@ -141,7 +141,7 @@ class DifferentiableOP(MutableOP):
         return sum(outputs)
 
 
-@MUTABLES.register_module()
+@MODELS.register_module()
 class GumbelOP(DifferentiableOP):
     """Gumbel OP.
 

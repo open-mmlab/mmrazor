@@ -5,11 +5,11 @@ from functools import partial
 from mmcv.cnn import get_model_complexity_info
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.builder import ALGORITHMS
+from mmrazor.registry import MODELS
 from .base import BaseAlgorithm
 
 
-@ALGORITHMS.register_module()
+@MODELS.register_module()
 class SPOS(BaseAlgorithm):
     """Implementation of `SPOS <https://arxiv.org/abs/1904.00420>`_"""
 

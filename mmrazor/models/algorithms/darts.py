@@ -5,11 +5,11 @@ import copy
 import torch
 from torch import nn
 
-from mmrazor.models.builder import ALGORITHMS
+from mmrazor.registry import MODELS
 from .base import BaseAlgorithm
 
 
-@ALGORITHMS.register_module()
+@MODELS.register_module()
 class Darts(BaseAlgorithm):
 
     def __init__(self, unroll, **kwargs):

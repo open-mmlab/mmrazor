@@ -2,10 +2,10 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..builder import LOSSES
+from mmrazor.registry import MODELS
 
 
-@LOSSES.register_module()
+@MODELS.register_module()
 class KLDivergence(nn.Module):
     """A measure of how one probability distribution Q is different from a
     second, reference probability distribution P.

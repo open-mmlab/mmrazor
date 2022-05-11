@@ -5,11 +5,11 @@ from mmcls.models.utils import SELayer
 from mmcv.cnn import ConvModule
 from mmcv.cnn.bricks import DropPath
 
-from ..builder import OPS
+from mmrazor.registry import MODELS
 from .base import BaseOP
 
 
-@OPS.register_module()
+@MODELS.register_module()
 class MBBlock(BaseOP):
     """Mobilenet block for Searchable backbone.
 

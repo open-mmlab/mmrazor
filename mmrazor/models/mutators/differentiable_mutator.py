@@ -4,12 +4,12 @@ from functools import partial
 
 from torch import nn
 
-from mmrazor.models.builder import MUTATORS
 from mmrazor.models.mutables import MutableModule
+from mmrazor.registry import MODELS
 from .base import BaseMutator
 
 
-@MUTATORS.register_module()
+@MODELS.register_module()
 class DifferentiableMutator(BaseMutator):
     """A mutator for the differentiable NAS, which mainly provide some core
     functions of changing the structure of ``ARCHITECTURES``."""

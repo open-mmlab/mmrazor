@@ -4,12 +4,12 @@ import torch
 import torch.nn as nn
 from torch.nn.modules import GroupNorm
 
-from mmrazor.models.builder import PRUNERS
+from mmrazor.registry import MODELS
 from .structure_pruning import StructurePruner
 from .utils import SwitchableBatchNorm2d
 
 
-@PRUNERS.register_module()
+@MODELS.register_module()
 class RatioPruner(StructurePruner):
     """A random ratio pruner.
 

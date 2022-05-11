@@ -13,7 +13,7 @@ from torch.nn.modules import GroupNorm
 from torch.nn.modules.batchnorm import _BatchNorm
 from torch.nn.modules.instancenorm import _InstanceNorm
 
-from mmrazor.models.builder import PRUNERS
+from mmrazor.registry import MODELS
 from .utils import SwitchableBatchNorm2d
 
 # These grad_fn pattern are flags of specific a nn.Module
@@ -68,7 +68,7 @@ def register_parser(parser_dict, name=None, force=False):
     return _register
 
 
-@PRUNERS.register_module()
+@MODELS.register_module()
 class StructurePruner(BaseModule, metaclass=ABCMeta):
     """Base class for structure pruning. This class defines the basic functions
     of a structure pruner. Any pruner that inherits this class should at least

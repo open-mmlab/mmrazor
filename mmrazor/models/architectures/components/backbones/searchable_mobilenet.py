@@ -1,15 +1,15 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch.nn as nn
 from mmcls.models.backbones.base_backbone import BaseBackbone
-from mmcls.models.builder import BACKBONES
 from mmcls.models.utils import make_divisible
 from mmcv.cnn import ConvModule
 from torch.nn.modules.batchnorm import _BatchNorm
 
+from mmrazor.registry import MODELS
 from ...utils import Placeholder
 
 
-@BACKBONES.register_module()
+@MODELS.register_module()
 class SearchableMobileNet(BaseBackbone):
     """Searchable MobileNet backbone.
 

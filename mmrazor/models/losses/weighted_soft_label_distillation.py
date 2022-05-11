@@ -3,10 +3,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..builder import LOSSES
+from mmrazor.registry import MODELS
 
 
-@LOSSES.register_module()
+@MODELS.register_module()
 class WSLD(nn.Module):
     """PyTorch version of `Rethinking Soft Labels for Knowledge
     Distillation: A Bias-Variance Tradeoff Perspective

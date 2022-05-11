@@ -3,11 +3,11 @@ import torch
 import torch.nn as nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from ..builder import DISTILLERS, MODELS, build_loss
+from mmrazor.registry import MODELS
 from .base import BaseDistiller
 
 
-@DISTILLERS.register_module()
+@MODELS.register_module()
 class SingleTeacherDistiller(BaseDistiller):
     """Distiller with single teacher.
 
@@ -63,7 +63,7 @@ class SingleTeacherDistiller(BaseDistiller):
             for loss in component.losses:
                 loss_cfg = loss.copy()
                 loss_name = loss_cfg.pop('name')
-                self.losses[loss_name] = build_loss(loss_cfg)
+                self.losses[loss_name] = MODELS.build(loss_cfg)
 
     def build_teacher(self, cfg):
         """Build a model from the `cfg`."""

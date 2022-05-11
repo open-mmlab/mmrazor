@@ -4,11 +4,11 @@ from abc import ABCMeta
 from mmcv.runner import BaseModule
 
 from mmrazor.models.architectures import Placeholder
-from mmrazor.models.builder import MUTABLES, MUTATORS
 from mmrazor.models.mutables import MutableModule
+from mmrazor.registry import MODELS
 
 
-@MUTATORS.register_module()
+@MODELS.register_module()
 class BaseMutator(BaseModule, metaclass=ABCMeta):
     """Base class for mutators."""
 
@@ -81,9 +81,9 @@ class BaseMutator(BaseModule, metaclass=ABCMeta):
                         child.placeholder_group].copy()
                     assert 'type' in mutable_cfg, f'{mutable_cfg}'
                     mutable_type = mutable_cfg.pop('type')
-                    assert mutable_type in MUTABLES, \
+                    assert mutable_type in MODELS, \
                         f'{mutable_type} not in MUTABLES.'
-                    mutable_constructor = MUTABLES.get(mutable_type)
+                    mutable_constructor = MODELS.get(mutable_type)
                     mutable_kwargs = child.placeholder_kwargs
                     mutable_kwargs.update(mutable_cfg)
                     mutable_module = mutable_constructor(**mutable_kwargs)

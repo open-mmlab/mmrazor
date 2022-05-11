@@ -6,12 +6,10 @@ import torch
 import torch.distributed as dist
 from mmcv.runner import BaseModule
 
-from mmrazor.models.builder import (ALGORITHMS, build_architecture,
-                                    build_distiller, build_mutator,
-                                    build_pruner)
+from mmrazor.registry import MODELS
 
 
-@ALGORITHMS.register_module()
+@MODELS.register_module()
 class BaseAlgorithm(BaseModule):
     """Base class for algorithms, it consists of two main parts: architecture
     and algorithm components.
@@ -49,7 +47,7 @@ class BaseAlgorithm(BaseModule):
         if self.retraining:
             self.mutable_cfg = self.load_subnet(mutable_cfg)
             self.channel_cfg = self.load_subnet(channel_cfg)
-        self.architecture = build_architecture(architecture)
+        self.architecture = MODELS.build(architecture)
 
         self.deployed = False
         self._init_mutator(mutator)
@@ -91,7 +89,7 @@ class BaseAlgorithm(BaseModule):
         if mutator is None:
             self.mutator = None
             return
-        self.mutator = build_mutator(mutator)
+        self.mutator = MODELS.build(mutator)
         self.mutator.prepare_from_supernet(self.architecture)
         if self.retraining:
             if isinstance(self.mutable_cfg, dict):
@@ -110,7 +108,7 @@ class BaseAlgorithm(BaseModule):
         if pruner is None:
             self.pruner = None
             return
-        self.pruner = build_pruner(pruner)
+        self.pruner = MODELS.build(pruner)
 
         if self.retraining:
             if isinstance(self.channel_cfg, dict):
@@ -131,7 +129,7 @@ class BaseAlgorithm(BaseModule):
         if distiller is None:
             self.distiller = None
             return
-        self.distiller = build_distiller(distiller)
+        self.distiller = MODELS.build(distiller)
         self.distiller.prepare_from_student(self.architecture)
 
     @property

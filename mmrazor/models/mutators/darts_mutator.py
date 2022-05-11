@@ -3,11 +3,11 @@
 import torch
 from torch.nn import functional as F
 
-from mmrazor.models.builder import MUTATORS
+from mmrazor.registry import MODELS
 from .differentiable_mutator import DifferentiableMutator
 
 
-@MUTATORS.register_module()
+@MODELS.register_module()
 class DartsMutator(DifferentiableMutator):
 
     def __init__(self, ignore_choices=('zero', ), **kwargs):
