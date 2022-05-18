@@ -19,6 +19,7 @@
   <div>&nbsp;</div>
 </div>
 <br />
+
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mmrazor)](https://pypi.org/project/mmrazor/)
 [![PyPI](https://img.shields.io/pypi/v/mmrazor)](https://pypi.org/project/mmrazor)
 [![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmrazor.readthedocs.io/en/latest/)
@@ -94,7 +95,9 @@ Knowledge Distillation
 
 - [x] [CWD(ICCV'2021)](/configs/distill/cwd)
 
-- [x] [WSLD(ICLR'2021)](/configs/distill/wsld)## 安装
+- [x] [WSLD(ICLR'2021)](/configs/distill/wsld)
+
+## 安装
 
 MMRazor 依赖 [PyTorch](https://pytorch.org/) 和 [MMCV](https://github.com/open-mmlab/mmcv)，以下是安装的简要步骤。
 更详细的安装指南请参考 [get_started.md](/docs/en/get_started.md)，并参考[dataset_prepare.md](docs/en/dataset_prepare.md)准备数据。
