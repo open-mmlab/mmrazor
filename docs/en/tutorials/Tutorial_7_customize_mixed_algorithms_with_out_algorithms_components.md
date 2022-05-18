@@ -8,38 +8,38 @@ The sandwich rule and inplace distillation were introduced to enhance the traini
 
 2. As the slimmable training is the first step of `Autoslim`, we do not need to register a new algorithm, but rewrite the `train_step`function in AutoSlim as follows:
 
-    ```python
-    from mmrazor.models.builder import ALGORITHMS
-    from .base import BaseAlgorithm
+   ```python
+   from mmrazor.models.builder import ALGORITHMS
+   from .base import BaseAlgorithm
 
-    @ALGORITHMS.register_module()
-    class AutoSlim(BaseAlgorithm):
-        def train_step(self, data, optimizer):
-            optimizer.zero_grad()
-            losses = dict()
-            if not self.retraining:
-                #
-            else:
-                ...
-            optimizer.step()
-            loss, log_vars = self._parse_losses(losses)
-            outputs = dict(
-                loss=loss, log_vars=log_vars, num_samples=len(data['img'].data))
-            return outputs
-    ```
+   @ALGORITHMS.register_module()
+   class AutoSlim(BaseAlgorithm):
+       def train_step(self, data, optimizer):
+           optimizer.zero_grad()
+           losses = dict()
+           if not self.retraining:
+               #
+           else:
+               ...
+           optimizer.step()
+           loss, log_vars = self._parse_losses(losses)
+           outputs = dict(
+               loss=loss, log_vars=log_vars, num_samples=len(data['img'].data))
+           return outputs
+   ```
 
 3. Use the algorithm in your config file
 
-    ```python
-    algorithm = dict(
-        type='AutoSlim',
-        architecture=...,
-        pruner=dict(
-            type='RatioPruner',
-            ratios=(2 / 12, 3 / 12, 4 / 12, 5 / 12, 6 / 12, 7 / 12, 8 / 12, 9 / 12,
-                    10 / 12, 11 / 12, 1.0)),
-        distiller=dict(
-            type='SelfDistiller',
-            components=...),
-        retraining=False)
-    ```
+   ```python
+   algorithm = dict(
+       type='AutoSlim',
+       architecture=...,
+       pruner=dict(
+           type='RatioPruner',
+           ratios=(2 / 12, 3 / 12, 4 / 12, 5 / 12, 6 / 12, 7 / 12, 8 / 12, 9 / 12,
+                   10 / 12, 11 / 12, 1.0)),
+       distiller=dict(
+           type='SelfDistiller',
+           components=...),
+       retraining=False)
+   ```

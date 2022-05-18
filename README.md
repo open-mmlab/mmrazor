@@ -45,6 +45,7 @@ MMRazor is a model compression toolkit for model slimming and AutoML, which incl
 It is a part of the [OpenMMLab](https://openmmlab.com/) project.
 
 Major features:
+
 - **Compatibility**
 
   MMRazor can be easily applied to various projects in OpenMMLab, due to the similar architecture design of OpenMMLab as well as the decoupling of slimming algorithms and vision tasks.
@@ -58,6 +59,7 @@ Major features:
   With better modular design, developers can implement new model compression algorithms with only a few codes, or even by simply modifying config files.
 
 Below is an overview of MMRazor's design and implementation, please refer to [tutorials](/docs/en/tutorials/Tutorial_1_overview.md) for more details.
+
 <div align="center">
   <img src="resources/design_and_implement.png" style="zoom:100%"/>
 </div>
@@ -92,6 +94,7 @@ pip install -v -e .  # or "python setup.py develop"
 ```
 
 ## Getting Started
+
 Please refer to [train.md](/docs/en/train.md) and [test.md](/docs/en/test.md) for the basic usage of MMRazor. There are also tutorials:
 
 - [overview](/docs/en/tutorials/Tutorial_1_overview.md)
