@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from mmcv.cnn import MODELS
 from mmcv.runner import BaseModule
+
+from mmrazor.registry import MODELS
 
 
 class BaseArchitecture(BaseModule):
@@ -15,12 +16,13 @@ class BaseArchitecture(BaseModule):
         super(BaseArchitecture, self).__init__(**kwargs)
         self.model = MODELS.build(model)
 
-    def forward_dummy(self, img):
+    # TODO maybe depercated.
+    def forward_dummy(self, *args, **kwargs):
         """Used for calculating network flops."""
         assert hasattr(self.model, 'forward_dummy')
-        return self.model.forward_dummy(img)
+        return self.model.forward_dummy(*args, **kwargs)
 
-    def forward(self, img, return_loss=True, **kwargs):
+    def forward(self, *args, **kwargs):
         """Calls either forward_train or forward_test depending on whether
         return_loss=True.
 
@@ -30,12 +32,8 @@ class BaseArchitecture(BaseModule):
         should be double nested (i.e.  List[Tensor], List[List[dict]]), with
         the outer list indicating test time augmentations.
         """
-        return self.model(img, return_loss=return_loss, **kwargs)
+        return self.model(*args, **kwargs)
 
-    def simple_test(self, img, img_metas):
-        """Test without augmentation."""
-        return self.model.simple_test(img, img_metas)
-
-    def show_result(self, img, result, **kwargs):
+    def show_result(self, *args, **kwargs):
         """Draw `result` over `img`"""
-        return self.model.show_result(img, result, **kwargs)
+        return self.model.show_result(*args, **kwargs)

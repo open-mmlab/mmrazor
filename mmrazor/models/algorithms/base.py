@@ -147,7 +147,7 @@ class BaseAlgorithm(BaseModule):
         """Whether or not this property exists."""
         return hasattr(self, 'distiller') and self.distiller is not None
 
-    def forward(self, img, return_loss=True, **kwargs):
+    def forward(self, *args, return_loss=True, **kwargs):
         """Calls either forward_train or forward_test depending on whether
         return_loss=True.
 
@@ -157,16 +157,22 @@ class BaseAlgorithm(BaseModule):
         should be double nested (i.e.  List[Tensor], List[List[dict]]), with
         the outer list indicating test time augmentations.
         """
-        return self.architecture(img, return_loss=return_loss, **kwargs)
+        if return_loss:
+            return self.forward_train(*args, **kwargs)
+        else:
+            return self.forward_test(*args, return_loss=False, **kwargs)
 
-    def simple_test(self, img, img_metas):
-        """Test without augmentation."""
-        return self.architecture.simple_test(img, img_metas)
+    def forward_train(self, *args, **kwargs):
+        return self.architecture(*args, return_loss=True, **kwargs)
 
-    def show_result(self, img, result, **kwargs):
+    def forward_test(self, *args, **kwargs):
+        return self.architecture(*args, return_loss=False, **kwargs)
+
+    def show_result(self, *args, **kwargs):
         """Draw `result` over `img`"""
-        return self.architecture.show_result(img, result, **kwargs)
+        return self.architecture.show_result(*args, **kwargs)
 
+    # TODO maybe remove
     def _parse_losses(self, losses):
         """Parse the raw outputs (losses) of the network.
 
@@ -203,50 +209,3 @@ class BaseAlgorithm(BaseModule):
             log_vars[loss_name] = loss_value.item()
 
         return loss, log_vars
-
-    def train_step(self, data, optimizer):
-        """The iteration step during training.
-
-        This method defines an iteration step during training, except for the
-        back propagation and optimizer updating, which are done in an optimizer
-        hook. Note that in some complicated cases or models, the whole process
-        including back propagation and optimizer updating are also defined in
-        this method, such as GAN.
-        Args:
-            data (dict): The output of dataloader.
-            optimizer (:obj:`torch.optim.Optimizer` | dict): The optimizer of
-                runner is passed to ``train_step()``. This argument is unused
-                and reserved.
-        Returns:
-            dict: It should contain at least 3 keys: ``loss``, ``log_vars``,
-                ``num_samples``.
-                ``loss`` is a tensor for back propagation, which can be a
-                weighted sum of multiple losses.
-                ``log_vars`` contains all the variables to be sent to the
-                logger.
-                ``num_samples`` indicates the batch size (when the model is
-                DDP, it means the batch size on each GPU), which is used for
-                averaging the logs.
-        """
-        losses = self(**data)
-        loss, log_vars = self._parse_losses(losses)
-
-        outputs = dict(
-            loss=loss, log_vars=log_vars, num_samples=len(data['img'].data))
-
-        return outputs
-
-    def val_step(self, data, optimizer=None):
-        """The iteration step during validation.
-
-        This method shares the same signature as :func:`train_step`, but used
-        during val epochs. Note that the evaluation after training epochs is
-        not implemented with this method, but an evaluation hook.
-        """
-        losses = self(**data)
-        loss, log_vars = self._parse_losses(losses)
-
-        outputs = dict(
-            loss=loss, log_vars=log_vars, num_samples=len(data['img'].data))
-
-        return outputs

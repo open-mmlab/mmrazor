@@ -57,7 +57,7 @@ class SPOS(BaseAlgorithm):
                 flops += getattr(module, '__flops__', 0)
         return flops
 
-    def train_step(self, data, optimizer):
+    def forward_train(self, *args, **kwargs):
         """The iteration step during training.
 
         In retraining stage, to train subnet like common model. In pre-training
@@ -65,11 +65,11 @@ class SPOS(BaseAlgorithm):
         subnet.
         """
         if self.retraining:
-            outputs = super(SPOS, self).train_step(data, optimizer)
+            outputs = super(SPOS, self).forward_train(*args, **kwargs)
         else:
             subnet_dict = self.mutator.sample_subnet()
             self.mutator.set_subnet(subnet_dict)
-            outputs = super(SPOS, self).train_step(data, optimizer)
+            outputs = super(SPOS, self).forward_train(*args, **kwargs)
         return outputs
 
     def train(self, mode=True):
