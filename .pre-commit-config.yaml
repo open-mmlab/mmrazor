@@ -1,7 +1,4 @@
 
-default_language_version:
-  ruby: 2.7.1
-
 exclude: ^tests/data/
 repos:
   - repo: https://github.com/PyCQA/flake8
@@ -33,6 +30,15 @@ repos:
     rev: v2.1.0
     hooks:
       - id: codespell
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.14
+    hooks:
+      - id: mdformat
+        args: ["--number"]
+        additional_dependencies:
+          - mdformat-gfm
+          - mdformat_frontmatter
+          - linkify-it-py
   - repo: https://github.com/myint/docformatter
     rev: v1.3.1
     hooks:
@@ -53,3 +59,12 @@ repos:
     -   id: check-algo-readme
     -   id: check-copyright
         args: [ "mmrazor", "tests", "tools"]
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.812
+    hooks:
+      - id: mypy
+        exclude: |-
+          (?x)(
+              ^test
+              | ^docs
+          )

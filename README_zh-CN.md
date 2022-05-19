@@ -85,12 +85,11 @@ MMRazor v0.3.1 版本已经在 2022.5.4 发布。
 
 ## 基准测试和模型库
 
-测试结果可以在 [模型库](docs/en/model_zoo.md) 中找到。
+测试结果可以在 [模型库](docs/en/model_zoo.md) 中找到.
 
 已经支持的算法：
 
-<details open>
-<summary>Neural Architecture Search</summary>
+Neural Architecture Search
 
 - [x] [DARTS(ICLR'2019)](configs/nas/darts)
 
@@ -98,23 +97,15 @@ MMRazor v0.3.1 版本已经在 2022.5.4 发布。
 
 - [x] [SPOS(ECCV'2020)](configs/nas/spos)
 
-</details>
-
-<details open>
-<summary>Pruning</summary>
+Pruning
 
 - [x] [AutoSlim(NeurIPS'2019)](/configs/pruning/autoslim)
 
-</details>
-
-<details open>
-<summary>Knowledge Distillation</summary>
+Knowledge Distillation
 
 - [x] [CWD(ICCV'2021)](/configs/distill/cwd)
 
 - [x] [WSLD(ICLR'2021)](/configs/distill/wsld)
-
-</details>
 
 ## 安装
 
@@ -124,7 +115,7 @@ MMRazor 依赖 [PyTorch](https://pytorch.org/) 和 [MMCV](https://github.com/ope
 
 ## 快速入门
 
-请参考 [train.md](/docs/en/train.md) 和 [test.md](/docs/en/test.md) 学习 MMRazor 的基本使用。 我们也提供了一些进阶教程:
+请参考 [get_started.md](/docs/en/get_started.md) 学习 MMRazor 的基本使用。 我们也提供了一些进阶教程:
 
 - [overview](/docs/en/tutorials/Tutorial_1_overview.md)
 - [learn about configs](/docs/en/tutorials/Tutorial_2_learn_about_configs.md)

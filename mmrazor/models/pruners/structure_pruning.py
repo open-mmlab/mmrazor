@@ -30,8 +30,8 @@ NON_PASS = CONV + FC
 PASS = BN + GN
 NORM = BN + GN
 
-BACKWARD_PARSER_DICT = dict()
-MAKE_GROUP_PARSER_DICT = dict()
+BACKWARD_PARSER_DICT = dict()  # type: ignore
+MAKE_GROUP_PARSER_DICT = dict()  # type: ignore
 
 
 def register_parser(parser_dict, name=None, force=False):

@@ -62,7 +62,7 @@ test_evaluator = val_evaluator
 # training schedule for 1x
 train_cfg = dict(by_epoch=True, max_epochs=12)
 val_cfg = dict(interval=1)
-test_cfg = dict()
+test_cfg = dict()  # type: ignore
 
 # learning rate
 param_scheduler = [
