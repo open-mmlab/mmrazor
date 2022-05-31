@@ -41,16 +41,13 @@ release = get_version()
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode',
-    'recommonmark',
-    'sphinx_markdown_tables',
-    'sphinx_copybutton',
+    'sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'sphinx.ext.viewcode',
+    'sphinx_markdown_tables', 'sphinx_copybutton', 'myst_parser'
 ]
 
 autodoc_mock_imports = [
-    'matplotlib', 'pycocotools', 'terminaltables', 'mmdet.version', 'mmcv.ops'
+    'matplotlib', 'pycocotools', 'terminaltables', 'mmrazor.version',
+    'mmcv.ops'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -127,3 +124,7 @@ language = 'zh_CN'
 # Ignore >>> when copying code
 copybutton_prompt_text = r'>>> |\.\.\. '
 copybutton_prompt_is_regexp = True
+
+# Enable ::: for my_st
+myst_enable_extensions = ['colon_fence']
+myst_heading_anchors = 4
