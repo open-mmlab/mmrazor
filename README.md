@@ -87,6 +87,35 @@ MMRazor v0.3.1 was released in 5/4/2022.
 
 Results and models are available in the [model zoo](/docs/en/model_zoo.md).
 
+Supported algorithms:
+
+<details open>
+<summary>Neural Architecture Search</summary>
+
+- [x] [DARTS(ICLR'2019)](configs/nas/darts)
+
+- [x] [DetNAS(NeurIPS'2019)](configs/nas/detnas)
+
+- [x] [SPOS(ECCV'2020)](configs/nas/spos)
+
+</details>
+
+<details open>
+<summary>Pruning</summary>
+
+- [x] [AutoSlim(NeurIPS'2019)](/configs/pruning/autoslim)
+
+</details>
+
+<details open>
+<summary>Knowledge Distillation</summary>
+
+- [x] [CWD(ICCV'2021)](/configs/distill/cwd)
+
+- [x] [WSLD(ICLR'2021)](/configs/distill/wsld)
+
+</details>
+
 ## Installation
 
 MMRazor depends on [PyTorch](https://pytorch.org/) and [MMCV](https://github.com/open-mmlab/mmcv).
