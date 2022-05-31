@@ -17,21 +17,35 @@
     </sup>
   </div>
   <div>&nbsp;</div>
-</div>
-<br />
 
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mmrazor)](https://pypi.org/project/mmrazor/)
+<!--算法库 Badges-->
+
 [![PyPI](https://img.shields.io/pypi/v/mmrazor)](https://pypi.org/project/mmrazor)
 [![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmrazor.readthedocs.io/en/latest/)
 [![badge](https://github.com/open-mmlab/mmrazor/workflows/build/badge.svg)](https://github.com/open-mmlab/mmrazor/actions)
 [![codecov](https://codecov.io/gh/open-mmlab/mmrazor/branch/master/graph/badge.svg)](https://codecov.io/gh/open-mmlab/mmrazor)
 [![license](https://img.shields.io/github/license/open-mmlab/mmrazor.svg)](https://github.com/open-mmlab/mmrazor/blob/master/LICENSE)
-[![issue resolution](https://isitmaintained.com/badge/resolution/open-mmlab/mmrazor.svg)](https://github.com/open-mmlab/mmrazor/issues)
 [![open issues](https://isitmaintained.com/badge/open/open-mmlab/mmrazor.svg)](https://github.com/open-mmlab/mmrazor/issues)
+[![issue resolution](https://isitmaintained.com/badge/resolution/open-mmlab/mmrazor.svg)](https://github.com/open-mmlab/mmrazor/issues)
 
-Documentation: https://mmrazor.readthedocs.io/
+<!--快速链接-->
 
-English | [简体中文](/README_zh-CN.md)
+<!--Note:请根据各算法库自身情况设置项目和链接-->
+
+[📘Documentation](https://mmrazor.readthedocs.io/) |
+[🛠️Installation](https://mmrazor.readthedocs.io/en/latest/get_started.html) |
+[👀Model Zoo](https://mmrazor.readthedocs.io/en/latest/model_zoo.html) |
+[🤔Reporting Issues](https://github.com/open-mmlab/mmrazor/issues/new/choose)
+
+</div>
+
+<!--中/英 文档切换-->
+
+<div align="center">
+
+English | [简体中文](README_zh-CN.md)
+
+</div>
 
 ## Introduction
 
@@ -65,13 +79,9 @@ Below is an overview of MMRazor's design and implementation, please refer to [tu
 </div>
 <br />
 
-## License
+## What's new
 
-This project is released under the [Apache 2.0 license](LICENSE).
-
-## Changelog
-
-v0.1.0 was released in 12/23/2021.
+MMRazor v0.3.1 was released in 5/4/2022.
 
 ## Benchmark and model zoo
 
@@ -80,18 +90,8 @@ Results and models are available in the [model zoo](/docs/en/model_zoo.md).
 ## Installation
 
 MMRazor depends on [PyTorch](https://pytorch.org/) and [MMCV](https://github.com/open-mmlab/mmcv).
-Below are quick steps for installation.
-Please refer to [get_started.md](/docs/en/get_started.md) for more detailed instruction and [dataset_prepare.md](docs/en/dataset_prepare.md) for dataset preparation.
 
-```shell
-conda create -n open-mmlab python=3.8 pytorch=1.10 cudatoolkit=11.3 torchvision -c pytorch -y
-conda activate open-mmlab
-pip3 install openmim
-mim install mmcv-full
-git clone https://github.com/open-mmlab/mmrazor.git
-cd mmrazor
-pip install -v -e .  # or "python setup.py develop"
-```
+Please refer to [get_started.md](/docs/en/get_started.md) for more detailed instruction.
 
 ## Getting Started
 
@@ -106,6 +106,16 @@ Please refer to [train.md](/docs/en/train.md) and [test.md](/docs/en/test.md) fo
 - [customize mixed algorithms with our algorithm_components](/docs/en/tutorials/Tutorial_7_customize_mixed_algorithms_with_out_algorithms_components.md)
 - [apply existing algorithms to other existing tasks](/docs/en/tutorials/Tutorial_8_apply_existing_algorithms_to_new_tasks.md)
 
+## Contributing
+
+We appreciate all contributions to improve MMRazor.
+Please refer to [CONTRUBUTING.md](/.github/CONTRIBUTING.md) for the contributing guideline.
+
+## Acknowledgement
+
+MMRazor is an open source project that is contributed by researchers and engineers from various colleges and companies. We appreciate all the contributors who implement their methods or add new features, as well as users who give valuable feedbacks.
+We wish that the toolbox and benchmark could serve the growing research community by providing a flexible toolkit to reimplement existing methods and develop their own new model compression methods.
+
 ## Citation
 
 If you find this project useful in your research, please consider cite:
@@ -119,15 +129,9 @@ If you find this project useful in your research, please consider cite:
 }
 ```
 
-## Contributing
+## License
 
-We appreciate all contributions to improve MMRazor.
-Please refer to [CONTRUBUTING.md](/.github/CONTRIBUTING.md) for the contributing guideline.
-
-## Acknowledgement
-
-MMRazor is an open source project that is contributed by researchers and engineers from various colleges and companies. We appreciate all the contributors who implement their methods or add new features, as well as users who give valuable feedbacks.
-We wish that the toolbox and benchmark could serve the growing research community by providing a flexible toolkit to reimplement existing methods and develop their own new model compression methods.
+This project is released under the [Apache 2.0 license](LICENSE).
 
 ## Projects in OpenMMLab
 
