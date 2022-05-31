@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="resources/mmrazor-logo.png" width="600"/>
+  <img src="./resources/mmrazor-logo.png" width="600"/>
   <div>&nbsp;</div>
   <div align="center">
     <b><font size="5">OpenMMLab 官网</font></b>
@@ -44,7 +44,6 @@ MMRazor是一个可用于模型瘦身和AutoML的模型压缩工具箱，包含�
 
 MMRazor是[OpenMMLab](https://openmmlab.com/)项目的一部分。
 
-
 主要特性
 
 - **兼容性**
@@ -59,8 +58,8 @@ MMRazor是[OpenMMLab](https://openmmlab.com/)项目的一部分。
 
   得益于更好的模块化设计，开发者仅用修改少量代码，甚至只用修改配置文件即可实现新的轻量化算法。
 
-
 下面是MMRazor设计和实现的概括图, 如果想了解更多的细节，请参考 [tutorials](/docs/en/tutorials/Tutorial_1_overview.md)。
+
 <div align="center">
   <img src="resources/design_and_implement.png" style="zoom:100%"/>
 </div>
@@ -76,30 +75,27 @@ v0.1.0 版本已经在 2021.12.23 发布
 
 ## 基准测试和模型库
 
-测试结果可以在 [模型库](/docs/en/model_zoo.md) 中找到.
+测试结果可以在 [模型库](docs/en/model_zoo.md) 中找到.
 
 已经支持的算法:
 
-- <details open><summary>Neural Architecture Search</summary>
+Neural Architecture Search
 
-  - [x] [DARTS(ICLR'2019)](/configs/nas/darts)
+- [x] [DARTS(ICLR'2019)](configs/nas/darts)
 
-  - [x] [DetNAS(NeurIPS'2019)](/configs/nas/detnas)
+- [x] [DetNAS(NeurIPS'2019)](configs/nas/detnas)
 
-  - [x] [SPOS(ECCV'2020)](/configs/nas/spos)
-</details>
+- [x] [SPOS(ECCV'2020)](configs/nas/spos)
 
-- <details open><summary>Pruning</summary>
+Pruning
 
-  - [x] [AutoSlim(NeurIPS'2019)](/configs/pruning/autoslim)
-</details>
+- [x] [AutoSlim(NeurIPS'2019)](/configs/pruning/autoslim)
 
-- <details open><summary>Knowledge Distillation</summary>
+Knowledge Distillation
 
-  - [x] [CWD(ICCV'2021)](/configs/distill/cwd)
+- [x] [CWD(ICCV'2021)](/configs/distill/cwd)
 
-  - [x] [WSLD(ICLR'2021)](/configs/distill/wsld)
-</details>
+- [x] [WSLD(ICLR'2021)](/configs/distill/wsld)
 
 ## 安装
 
@@ -117,6 +113,7 @@ pip install -v -e .  # or "python setup.py develop"
 ```
 
 ## 快速入门
+
 请参考 [get_started.md](/docs/en/get_started.md) 学习 MMRazor 的基本使用。 我们也提供了一些进阶教程:
 
 - [overview](/docs/en/tutorials/Tutorial_1_overview.md)
@@ -171,6 +168,7 @@ MMRazor 是一款由来自不同高校和企业的研发人员共同参与贡献
 - [MMEditing](https://github.com/open-mmlab/mmediting): OpenMMLab 图像视频编辑工具箱
 - [MMGeneration](https://github.com/open-mmlab/mmgeneration): OpenMMLab 图片视频生成模型工具箱
 - [MMDeploy](https://github.com/open-mmlab/mmdeploy): OpenMMLab 模型部署框架
+
 ## 欢迎加入 OpenMMLab 社区
 
 扫描下方的二维码可关注 OpenMMLab 团队的 [知乎官方账号](https://www.zhihu.com/people/openmmlab)，加入 OpenMMLab 团队的 [官方交流 QQ 群](https://jq.qq.com/?_wv=1027&k=aCvMxdr3)

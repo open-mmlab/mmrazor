@@ -10,6 +10,7 @@ MMRazor is a model compression toolkit for model slimming and AutoML, which incl
 It is a part of the [OpenMMLab](https://openmmlab.com/) project.
 
 ## Major features:
+
 - **Compatibility**
 
   MMRazor can be easily applied to various projects in OpenMMLab, due to the similar architecture design of OpenMMLab as well as the decoupling of slimming algorithms and vision tasks.
@@ -67,6 +68,7 @@ MMRazor consists of 4 main parts: 1) apis, 2) core, 3) models, 4) datasets. mode
   - **Quantizer**: Core functions provider of different types of quantization. It will come soon.
 
 - **Base components**: Core components of architecture and some algorithm components
-  - **Op**: Specific operation for building search space in NAS, eg: ShuffleBlock 3*3
+
+  - **Op**: Specific operation for building search space in NAS, eg: ShuffleBlock 3\*3
   - **Mutable**: Searchable op for building searchable architecture in NAS. It mainly consists of op and mask,  and achieving searchable function by handling mask.
   - **Loss**: kd-loss for distiller.

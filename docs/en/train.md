@@ -59,7 +59,7 @@ python ./tools/mmcls/train_mmcls.py \
   --cfg-options algorithm.mutable_cfg=configs/nas/spos/SPOS_SHUFFLENETV2_330M_IN1k_PAPER.yaml
 </pre>
 
-We note that instead of using ``--cfg-options``, you can also directly modify ``configs/nas/spos/spos_subnet_shufflenetv2_8xb128_in1k.py`` like this:
+We note that instead of using `--cfg-options`, you can also directly modify `configs/nas/spos/spos_subnet_shufflenetv2_8xb128_in1k.py` like this:
 
 <pre>
 mutable_cfg = 'configs/nas/spos/SPOS_SHUFFLENETV2_330M_IN1k_PAPER.yaml'
@@ -126,7 +126,6 @@ python tools/train.py ${CONFIG_FILE}
 ```shell
 sh tools/dist_train.sh ${CONFIG_FILE} ${GPUS} --work_dir ${YOUR_WORK_DIR} [optional arguments]
 ```
-
 
 **Note**: During training, checkpoints and logs are saved in the same folder structure as the config file under `work_dirs/`. Custom work directory is not recommended since evaluation scripts infer work directories from the config file name. If you want to save your weights somewhere else, please use symlink, for example:
 

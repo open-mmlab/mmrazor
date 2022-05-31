@@ -3,6 +3,7 @@
 > [DetNAS: Backbone Search for Object Detection](https://arxiv.org/abs/1903.10979)
 
 <!-- [ALGORITHM] -->
+
 ## Abstract
 
 Object detectors are usually equipped with backbone networks designed for image classification. It might be sub-optimal because of the gap between the tasks of image classification and object detection. In this work, we present DetNAS to use Neural Architecture Search (NAS) for the design of better backbones for object detection. It is non-trivial because detection training typically needs ImageNet pre-training while NAS systems require accuracies on the target detection task as supervisory signals. Based on the technique of one-shot supernet, which contains all possible networks in the search space, we propose a framework for backbone search on object detection. We train the supernet under the typical detector training schedule: ImageNet pre-training and detection fine-tuning. Then, the architecture search is performed on the trained supernet, using the detection task as the guidance. This framework makes NAS on backbones very efficient. In experiments, we show the effectiveness of DetNAS on various detectors, for instance, one-stage RetinaNet and the two-stage FPN. We empirically find that networks searched on object detection shows consistent superiority compared to those searched on ImageNet classification. The resulting architecture achieves superior performance than hand-crafted networks on COCO with much less FLOPs complexity.
@@ -10,7 +11,9 @@ Object detectors are usually equipped with backbone networks designed for image 
 ![pipeline](/docs/en/imgs/model_zoo/detnas/pipeline.jpg)
 
 ## Introduction
+
 ### Step 1: Supernet pre-training on ImageNet
+
 ```bash
 python ./tools/mmcls/train_mmcls.py \
   configs/nas/detnas/detnas_supernet_shufflenetv2_8xb128_in1k.py \
@@ -18,6 +21,7 @@ python ./tools/mmcls/train_mmcls.py \
 ```
 
 ### Step 2: Supernet fine-tuning on COCO
+
 ```bash
 python ./tools/mmdet/train_mmdet.py \
   configs/nas/detnas/detnas_supernet_frcnn_shufflenetv2_fpn_1x_coco.py \
@@ -26,6 +30,7 @@ python ./tools/mmdet/train_mmdet.py \
 ```
 
 ### Step 3: Search for subnet on the trained supernet
+
 ```
 python ./tools/mmdet/search_mmdet.py \
   configs/nas/detnas/detnas_evolution_search_frcnn_shufflenetv2_fpn_coco.py \
@@ -34,6 +39,7 @@ python ./tools/mmdet/search_mmdet.py \
 ```
 
 ### Step 4: Subnet retraining on ImageNet
+
 ```
 python ./tools/mmcls/train_mmcls.py \
   configs/nas/detnas/detnas_subnet_shufflenetv2_8xb128_in1k.py \
@@ -42,6 +48,7 @@ python ./tools/mmcls/train_mmcls.py \
 ```
 
 ### Step 5: Subnet fine-tuning on COCO
+
 ```
 python ./tools/mmdet/train_mmdet.py \
   configs/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco.py \
@@ -50,15 +57,15 @@ python ./tools/mmdet/train_mmdet.py \
 ```
 
 ## Results and models
-|Dataset|  Supernet       | Subnet      |Params(M)| Flops(G) | mAP | Config | Download | Remarks|
-|:---------------:|:---------------:|:-----------:|:-----------:|:-----------:|:--------------:|:------:|:--------:|:--------:|
-|COCO| FRCNN-ShuffleNetV2| [mutable](https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco_bbox_backbone_flops-0.34M_mAP-37.5_20211222-67fea61f_mutable_cfg.yaml) | 3.35(backbone)|0.34(backbone) |  37.5      |[config](./detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco.py)|[pretrain](https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_shufflenetv2_8xb128_in1k_acc-74.08_20211223-92e9b66a.pth) &#124;[model](https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco_bbox_backbone_flops-0.34M_mAP-37.5_20211222-67fea61f.pth) &#124; [log](https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco_bbox_backbone_flops-0.34M_mAP-37.5_20211222-67fea61f.log.json)|MMRazor searched
 
+| Dataset |      Supernet      |                                                                                                              Subnet                                                                                                               |   Params(M)    |    Flops(G)    | mAP  |                           Config                            |                                                                                                                                                                                                                                                                                                               Download                                                                                                                                                                                                                                                                                                               |     Remarks      |
+| :-----: | :----------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :------------: | :------------: | :--: | :---------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------: |
+|  COCO   | FRCNN-ShuffleNetV2 | [mutable](https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco_bbox_backbone_flops-0.34M_mAP-37.5_20211222-67fea61f_mutable_cfg.yaml) | 3.35(backbone) | 0.34(backbone) | 37.5 | [config](./detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco.py) | [pretrain](https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_shufflenetv2_8xb128_in1k_acc-74.08_20211223-92e9b66a.pth) \|[model](https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco_bbox_backbone_flops-0.34M_mAP-37.5_20211222-67fea61f.pth) \| [log](https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco_bbox_backbone_flops-0.34M_mAP-37.5_20211222-67fea61f.log.json) | MMRazor searched |
 
 **Note**:
+
 1. The experiment settings of DetNAS are similar with SPOS's, and our training dataset is COCO2017 rather than COCO2014.
 2. We also retrained official subnet with same experiment settings, the final result is 36.9
-
 
 ## Citation
 
