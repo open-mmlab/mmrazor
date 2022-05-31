@@ -85,9 +85,9 @@ MMRazor v0.3.1 版本已经在 2022.5.4 发布。
 
 ## 基准测试和模型库
 
-测试结果可以在 [模型库](docs/en/model_zoo.md) 中找到.
+测试结果可以在 [模型库](docs/en/model_zoo.md) 中找到。
 
-已经支持的算法:
+已经支持的算法：
 
 <details open>
 <summary>Neural Architecture Search</summary>
@@ -137,12 +137,12 @@ MMRazor 依赖 [PyTorch](https://pytorch.org/) 和 [MMCV](https://github.com/ope
 
 ## 贡献指南
 
-我们感谢所有的贡献者为改进和提升 MMRazor 所作出的努力.
+我们感谢所有的贡献者为改进和提升 MMRazor 所作出的努力。
 请参考[贡献指南](/.github/CONTRIBUTING.md)来了解参与项目贡献的相关指引。
 
 ## 致谢
 
-MMRazor 是一款由来自不同高校和企业的研发人员共同参与贡献的开源项目。我们感谢所有为项目提供算法复现和新功能支持的贡献者，以及提供宝贵反馈的用户。 我们希望这个工具箱和基准测试可以为社区提供灵活的代码工具，供用户复现已有算法并开发自己的新模型压缩算法，从而不断为开源社区提供贡献.
+MMRazor 是一款由来自不同高校和企业的研发人员共同参与贡献的开源项目。我们感谢所有为项目提供算法复现和新功能支持的贡献者，以及提供宝贵反馈的用户。 我们希望这个工具箱和基准测试可以为社区提供灵活的代码工具，供用户复现已有算法并开发自己的新模型压缩算法，从而不断为开源社区提供贡献。
 
 ## 引用
 
@@ -188,7 +188,7 @@ MMRazor 是一款由来自不同高校和企业的研发人员共同参与贡献
 扫描下方的二维码可关注 OpenMMLab 团队的 [知乎官方账号](https://www.zhihu.com/people/openmmlab)，加入 OpenMMLab 团队的 [官方交流 QQ 群](https://jq.qq.com/?_wv=1027&k=aCvMxdr3)，添加OpenMMLab 官方小助手微信，加入 MMSelfSup 微信社区。
 
 <div align="center">
-<img src="resources/zhihu_qrcode.jpg" height="400" />  <img src="resources/qq_group_qrcode.jpg" height="400" />
+<img src="resources/zhihu_qrcode.jpg" height="400" />  <img src="resources/qq_group_qrcode.jpg" height="400" /> <img src="resources/xiaozhushou_weixin_qrcode.jpeg" height="400">
 </div>
 
 我们会在 OpenMMLab 社区为大家
