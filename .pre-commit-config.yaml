@@ -67,4 +67,5 @@ repos:
           (?x)(
               ^test
               | ^docs
+              | ^configs
           )
