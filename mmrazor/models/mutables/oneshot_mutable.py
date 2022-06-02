@@ -2,17 +2,17 @@
 import random
 from abc import abstractmethod
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import numpy as np
-from mmcv.runner import ModuleDict
+import torch.nn as nn
 from torch import Tensor
 
 from mmrazor.registry import MODELS
-from .base_mutable import CHOICE_TYPE, BaseMutable
+from .base_mutable import CHOICE_TYPE, CHOSEN_TYPE, BaseMutable
 
 
-class OneShotMutable(BaseMutable[CHOICE_TYPE]):
+class OneShotMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
     """Base class for one shot mutables.
 
     Args:
@@ -88,7 +88,7 @@ class OneShotMutable(BaseMutable[CHOICE_TYPE]):
 
 
 @MODELS.register_module()
-class OneShotOP(OneShotMutable[str]):
+class OneShotOP(OneShotMutable[str, str]):
     """A type of ``MUTABLES`` for single path supernet, such as Single Path One
     Shot. In single path supernet, each choice block only has one choice
     invoked at the same time. A path is obtained by sampling all the choice
@@ -137,7 +137,7 @@ class OneShotOP(OneShotMutable[str]):
         >>> op.num_choices
         4
 
-        >>> op.fix_choice('shuffle_3x3')
+        >>> op.fix_chosen('shuffle_3x3')
         >>> fix_output = op.forward(input)
         >>> torch.all(fix_output == unfix_output)
         True
@@ -151,7 +151,7 @@ class OneShotOP(OneShotMutable[str]):
 
     def __init__(
         self,
-        candidate_ops: Dict[str, Dict],
+        candidate_ops: Union[Dict[str, Dict], nn.ModuleDict],
         module_kwargs: Optional[Dict[str, Dict]] = None,
         init_cfg: Optional[Dict] = None,
     ) -> None:
@@ -166,13 +166,14 @@ class OneShotOP(OneShotMutable[str]):
                                               self.module_kwargs)
 
     @staticmethod
-    def _build_ops(candidate_ops: Dict[str, Dict],
-                   module_kwargs: Optional[Dict[str, Dict]]) -> ModuleDict:
+    def _build_ops(
+            candidate_ops: Union[Dict[str, Dict], nn.ModuleDict],
+            module_kwargs: Optional[Dict[str, Dict]] = None) -> nn.ModuleDict:
         """Build candidate operations based on choice configures.
 
         Args:
-            candidate_ops (dict[str, dict]): the configs for the candidate
-                operations.
+            candidate_ops (dict[str, dict] | :obj:`nn.ModuleDict`): the configs
+                for the candidate operations or nn.ModuleDict.
             module_kwargs (dict[str, dict], optional): Module initialization
                 named arguments.
 
@@ -181,7 +182,10 @@ class OneShotOP(OneShotMutable[str]):
                 the name of each choice in configs and the value of ``ops``
                 is the corresponding candidate operation.
         """
-        ops = ModuleDict()
+        if isinstance(candidate_ops, nn.ModuleDict):
+            return candidate_ops
+
+        ops = nn.ModuleDict()
         for name, op_cfg in candidate_ops.items():
             assert name not in ops
             if module_kwargs is not None:
@@ -232,24 +236,24 @@ class OneShotOP(OneShotMutable[str]):
             outputs.append(op(x))
         return sum(outputs)
 
-    def fix_choice(self, choice: str) -> None:
+    def fix_chosen(self, chosen: str) -> None:
         """Fix mutable with subnet config. This operation would convert
         `unfixed` mode to `fixed` mode. The :attr:`is_fixed` will be set to
         True and only the selected operations can be retained.
 
         Args:
-            choice (_type_): the chosen key in ``MUTABLE``. Defaults to None.
+            chosen (str): the chosen key in ``MUTABLE``. Defaults to None.
         """
         if self.is_fixed:
             raise AttributeError(
                 'The mode of current MUTABLE is `fixed`. '
-                'Please do not call `fix_choice` function again.')
+                'Please do not call `fix_chosen` function again.')
 
         for c in self.choices:
-            if c != choice:
+            if c != chosen:
                 self._candidate_ops.pop(c)
 
-        self._chosen = choice
+        self._chosen = chosen
         self.is_fixed = True
 
     @property
@@ -291,7 +295,7 @@ class OneShotProbOP(OneShotOP):
             module_kwargs=module_kwargs,
             init_cfg=init_cfg)
         assert choice_probs is not None
-        assert sum(choice_probs) - 1 < np.finfo(np.float).eps, \
+        assert sum(choice_probs) - 1 < np.finfo(np.float64).eps, \
             f'Please make sure the sum of the {choice_probs} is 1.'
         self.choice_probs = choice_probs
 

@@ -3,6 +3,7 @@ from unittest import TestCase
 
 import pytest
 import torch
+import torch.nn as nn
 
 import mmrazor.models  # noqa:F401
 from mmrazor.registry import MODELS
@@ -60,7 +61,7 @@ class TestMutables(TestCase):
         assert output1.equal(output2)
 
         # test fixed mode
-        op.fix_choice('shuffle_3x3')
+        op.fix_chosen('shuffle_3x3')
         assert op.is_fixed is True
         assert len(op.choices) == 1
         assert op.num_choices == 1
@@ -72,7 +73,7 @@ class TestMutables(TestCase):
             op.is_fixed = True
 
         with pytest.raises(AttributeError):
-            op.fix_choice('shuffle_3x3')
+            op.fix_chosen('shuffle_3x3')
 
     def test_oneshotprobop(self):
         norm_cfg = dict(type='BN', requires_grad=True)
@@ -126,7 +127,7 @@ class TestMutables(TestCase):
         assert op.num_choices == 4
 
         # test fixed mode
-        op.fix_choice('shuffle_3x3')
+        op.fix_chosen('shuffle_3x3')
         assert op.is_fixed is True
         assert len(op.choices) == 1
         assert op.num_choices == 1
@@ -160,7 +161,7 @@ class TestMutables(TestCase):
 
         assert op.forward_choice(input, choice=None) is not None
 
-    def test_fix_choice(self):
+    def test_fix_chosen(self):
         norm_cfg = dict(type='BN', requires_grad=True)
         op_cfg = dict(
             type='OneShotOP',
@@ -181,8 +182,8 @@ class TestMutables(TestCase):
         op = MODELS.build(op_cfg)
 
         with pytest.raises(AttributeError):
-            op.fix_choice('shuffle_xception')
-            op.fix_choice('ShuffleBlock')
+            op.fix_chosen('shuffle_xception')
+            op.fix_chosen('ShuffleBlock')
 
     def test_build_ops(self):
         norm_cfg = dict(type='BN', requires_grad=True)
@@ -215,6 +216,27 @@ class TestMutables(TestCase):
             ),
         )
         op = MODELS.build(op_cfg)
+        input = torch.randn(4, 32, 64, 64)
+
+        output = op.forward_all(input)
+        assert output is not None
+
+    def test_candidate_ops(self):
+        MODELS.register_module(
+            name='torchConv2d', module=nn.Conv2d, force=True)
+
+        candidate_ops = nn.ModuleDict({
+            'conv3x3': nn.Conv2d(32, 32, 3, 1, 1),
+            'conv5x5': nn.Conv2d(32, 32, 5, 1, 2),
+            'conv7x7': nn.Conv2d(32, 32, 7, 1, 3),
+            'maxpool3x3': nn.MaxPool2d(3, 1, 1),
+            'avgpool3x3': nn.AvgPool2d(3, 1, 1),
+        })
+
+        op_cfg = dict(type='OneShotOP', candidate_ops=candidate_ops)
+
+        op = MODELS.build(op_cfg)
+
         input = torch.randn(4, 32, 64, 64)
 
         output = op.forward_all(input)

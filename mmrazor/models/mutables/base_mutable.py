@@ -4,10 +4,12 @@ from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 from mmcv.runner import BaseModule
 
-CHOICE_TYPE = TypeVar('CHOICE_TYPE', str, int)
+CHOICE_TYPE = TypeVar('CHOICE_TYPE')
+
+CHOSEN_TYPE = TypeVar('CHOSEN_TYPE')
 
 
-class BaseMutable(BaseModule, ABC, Generic[CHOICE_TYPE]):
+class BaseMutable(BaseModule, ABC, Generic[CHOICE_TYPE, CHOSEN_TYPE]):
     """Base Class for mutables. Mutable means a searchable module widely used
     in Neural Architecture Search(NAS).
 
@@ -17,7 +19,7 @@ class BaseMutable(BaseModule, ABC, Generic[CHOICE_TYPE]):
     All subclass should implement the following APIs:
 
     - ``forward()``
-    - ``fix_choice()``
+    - ``fix_chosen()``
     - ``choices()``
 
     Args:
@@ -70,7 +72,7 @@ class BaseMutable(BaseModule, ABC, Generic[CHOICE_TYPE]):
         """Forward computation."""
 
     @abstractmethod
-    def fix_choice(self, choice: CHOICE_TYPE) -> None:
+    def fix_chosen(self, chosen: CHOSEN_TYPE) -> None:
         """Fix mutable with choice. This function would fix the choice of
         Mutable. The :attr:`is_fixed` will be set to True and only the selected
         operations can be retained. All subclasses must implement this method.
