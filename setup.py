@@ -114,7 +114,7 @@ def add_mim_extension():
     else:
         return
 
-    filenames = ['tools', 'configs', 'model-index.yml']
+    filenames = ['tools', 'configs', 'demo', 'model-index.yml']
     repo_path = osp.dirname(__file__)
     mim_path = osp.join(repo_path, 'mmrazor', '.mim')
     os.makedirs(mim_path, exist_ok=True)

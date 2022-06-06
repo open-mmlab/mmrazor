@@ -1,0 +1,6 @@
+include requirements/*.txt
+include mmrazor/VERSION
+include mmrazor/.mim/model-index.yml
+include mmrazor/.mim/demo/*/*
+recursive-include mmrazor/.mim/configs *.py *.yml
+recursive-include mmrazor/.mim/tools *.sh *.py
