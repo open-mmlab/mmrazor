@@ -98,7 +98,7 @@ class ArchitectureMutator(BaseMutator, Generic[MUTABLE_TYPE]):
             supernet (:obj:`torch.nn.Module`): The supernet to be searched
                 in your algorithm.
         """
-        self._build_search_group(supernet)
+        return self._build_search_group(supernet)
 
     @property
     def search_group(self) -> Dict[int, List[MUTABLE_TYPE]]:
@@ -135,20 +135,20 @@ class ArchitectureMutator(BaseMutator, Generic[MUTABLE_TYPE]):
             module_name2module[name] = module
 
         # Map module to group id for user-defined group
-        module_name2group_id: Dict[str, int] = dict()
+        self.module_name2group_id: Dict[str, int] = dict()
         for idx, group in enumerate(self._custom_group):
             for module_name in group:
                 assert module_name in module_name2module, \
                     f'`{module_name}` is not a module name of supernet, ' \
                     f'expected module names: {module_name2module.keys()}'
-                module_name2group_id[module_name] = idx
+                self.module_name2group_id[module_name] = idx
 
         search_group: Dict[int, List[MUTABLE_TYPE]] = dict()
         current_group_nums = len(self._custom_group)
 
         for name, module in module_name2module.items():
             if isinstance(module, self.mutable_class_type):
-                group_id = module_name2group_id.get(name)
+                group_id = self.module_name2group_id.get(name)
                 if group_id is None:
                     group_id = current_group_nums
                     current_group_nums += 1
@@ -156,6 +156,6 @@ class ArchitectureMutator(BaseMutator, Generic[MUTABLE_TYPE]):
                     search_group[group_id].append(module)
                 except KeyError:
                     search_group[group_id] = [module]
-                module_name2group_id[name] = group_id
+                self.module_name2group_id[name] = group_id
 
         self._search_group = search_group

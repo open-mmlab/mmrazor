@@ -35,7 +35,6 @@ class TestGumbelChoiceRoute(TestCase):
 
         arch_param = GumbelChoiceRoute.build_arch_param()
         assert len(arch_param) == 5
-
         GumbelChoiceRoute.set_temperature(1.0)
 
         x = [torch.randn(4, 32, 64, 64) for _ in range(5)]
