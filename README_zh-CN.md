@@ -17,21 +17,35 @@
     </sup>
   </div>
   <div>&nbsp;</div>
-</div>
-<br />
 
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mmrazor)](https://pypi.org/project/mmrazor/)
+<!--算法库 Badges-->
+
 [![PyPI](https://img.shields.io/pypi/v/mmrazor)](https://pypi.org/project/mmrazor)
 [![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmrazor.readthedocs.io/en/latest/)
 [![badge](https://github.com/open-mmlab/mmrazor/workflows/build/badge.svg)](https://github.com/open-mmlab/mmrazor/actions)
 [![codecov](https://codecov.io/gh/open-mmlab/mmrazor/branch/master/graph/badge.svg)](https://codecov.io/gh/open-mmlab/mmrazor)
 [![license](https://img.shields.io/github/license/open-mmlab/mmrazor.svg)](https://github.com/open-mmlab/mmrazor/blob/master/LICENSE)
-[![issue resolution](https://isitmaintained.com/badge/resolution/open-mmlab/mmrazor.svg)](https://github.com/open-mmlab/mmrazor/issues)
 [![open issues](https://isitmaintained.com/badge/open/open-mmlab/mmrazor.svg)](https://github.com/open-mmlab/mmrazor/issues)
+[![issue resolution](https://isitmaintained.com/badge/resolution/open-mmlab/mmrazor.svg)](https://github.com/open-mmlab/mmrazor/issues)
 
-文档: https://mmrazor.readthedocs.io/
+<!--快速链接-->
+
+<!--Note:请根据各算法库自身情况设置项目和链接-->
+
+[📘使用文档](https://mmrazor.readthedocs.io/) |
+[🛠️安装教程](https://mmrazor.readthedocs.io/en/latest/get_started.html) |
+[👀模型库](https://mmrazor.readthedocs.io/en/latest/model_zoo.html) |
+[🤔报告问题](https://github.com/open-mmlab/mmrazor/issues/new/choose)
+
+</div>
+
+<!--中/英 文档切换-->
+
+<div align="center">
 
 [English](/README.md) | 简体中文
+
+</div>
 
 ## 说明
 
@@ -65,21 +79,18 @@ MMRazor是[OpenMMLab](https://openmmlab.com/)项目的一部分。
 </div>
 <br />
 
-## 开源许可证
-
-该项目采用 [Apache 2.0 开源许可证](LICENSE)。
-
 ## 更新日志
 
-v0.1.0 版本已经在 2021.12.23 发布
+MMRazor v0.3.1 版本已经在 2022.5.4 发布。
 
 ## 基准测试和模型库
 
-测试结果可以在 [模型库](docs/en/model_zoo.md) 中找到.
+测试结果可以在 [模型库](docs/en/model_zoo.md) 中找到。
 
-已经支持的算法:
+已经支持的算法：
 
-Neural Architecture Search
+<details open>
+<summary>Neural Architecture Search</summary>
 
 - [x] [DARTS(ICLR'2019)](configs/nas/darts)
 
@@ -87,34 +98,33 @@ Neural Architecture Search
 
 - [x] [SPOS(ECCV'2020)](configs/nas/spos)
 
-Pruning
+</details>
+
+<details open>
+<summary>Pruning</summary>
 
 - [x] [AutoSlim(NeurIPS'2019)](/configs/pruning/autoslim)
 
-Knowledge Distillation
+</details>
+
+<details open>
+<summary>Knowledge Distillation</summary>
 
 - [x] [CWD(ICCV'2021)](/configs/distill/cwd)
 
 - [x] [WSLD(ICLR'2021)](/configs/distill/wsld)
 
+</details>
+
 ## 安装
 
-MMRazor 依赖 [PyTorch](https://pytorch.org/) 和 [MMCV](https://github.com/open-mmlab/mmcv)，以下是安装的简要步骤。
-更详细的安装指南请参考 [get_started.md](/docs/en/get_started.md)，并参考[dataset_prepare.md](docs/en/dataset_prepare.md)准备数据。
+MMRazor 依赖 [PyTorch](https://pytorch.org/) 和 [MMCV](https://github.com/open-mmlab/mmcv)。
 
-```shell
-conda create -n open-mmlab python=3.8 pytorch=1.10 cudatoolkit=11.3 torchvision -c pytorch -y
-conda activate open-mmlab
-pip3 install openmim
-mim install mmcv-full
-git clone https://github.com/open-mmlab/mmrazor.git
-cd mmrazor
-pip install -v -e .  # or "python setup.py develop"
-```
+请参考[get_started.md](/docs/en/get_started.md)获取更详细的安装指南。
 
 ## 快速入门
 
-请参考 [get_started.md](/docs/en/get_started.md) 学习 MMRazor 的基本使用。 我们也提供了一些进阶教程:
+请参考 [train.md](/docs/en/train.md) 和 [test.md](/docs/en/test.md) 学习 MMRazor 的基本使用。 我们也提供了一些进阶教程:
 
 - [overview](/docs/en/tutorials/Tutorial_1_overview.md)
 - [learn about configs](/docs/en/tutorials/Tutorial_2_learn_about_configs.md)
@@ -125,9 +135,18 @@ pip install -v -e .  # or "python setup.py develop"
 - [customize mixed algorithms with our algorithm_components](/docs/en/tutorials/Tutorial_7_customize_mixed_algorithms_with_out_algorithms_components.md)
 - [apply existing algorithms to other existing tasks](/docs/en/tutorials/Tutorial_8_apply_existing_algorithms_to_new_tasks.md)
 
+## 贡献指南
+
+我们感谢所有的贡献者为改进和提升 MMRazor 所作出的努力。
+请参考[贡献指南](/.github/CONTRIBUTING.md)来了解参与项目贡献的相关指引。
+
+## 致谢
+
+MMRazor 是一款由来自不同高校和企业的研发人员共同参与贡献的开源项目。我们感谢所有为项目提供算法复现和新功能支持的贡献者，以及提供宝贵反馈的用户。 我们希望这个工具箱和基准测试可以为社区提供灵活的代码工具，供用户复现已有算法并开发自己的新模型压缩算法，从而不断为开源社区提供贡献。
+
 ## 引用
 
-如果你在研究中使用了本项目的代码或者性能基准，请参考如下 bibtex 引用 MMRazor。
+如果您发现此项目对您的研究有用，请考虑引用：
 
 ```BibTeX
 @misc{2021mmrazor,
@@ -138,14 +157,9 @@ pip install -v -e .  # or "python setup.py develop"
 }
 ```
 
-## 贡献指南
+## 开源许可证
 
-我们感谢所有的贡献者为改进和提升 MMRazor 所作出的努力.
-请参考[贡献指南](/.github/CONTRIBUTING.md)来了解参与项目贡献的相关指引。
-
-## 致谢
-
-MMRazor 是一款由来自不同高校和企业的研发人员共同参与贡献的开源项目。我们感谢所有为项目提供算法复现和新功能支持的贡献者，以及提供宝贵反馈的用户。 我们希望这个工具箱和基准测试可以为社区提供灵活的代码工具，供用户复现已有算法并开发自己的新模型压缩算法，从而不断为开源社区提供贡献.
+该项目采用 [Apache 2.0 开源许可证](LICENSE)。
 
 ## OpenMMLab 的其他项目
 
@@ -171,10 +185,10 @@ MMRazor 是一款由来自不同高校和企业的研发人员共同参与贡献
 
 ## 欢迎加入 OpenMMLab 社区
 
-扫描下方的二维码可关注 OpenMMLab 团队的 [知乎官方账号](https://www.zhihu.com/people/openmmlab)，加入 OpenMMLab 团队的 [官方交流 QQ 群](https://jq.qq.com/?_wv=1027&k=aCvMxdr3)
+扫描下方的二维码可关注 OpenMMLab 团队的 [知乎官方账号](https://www.zhihu.com/people/openmmlab)，加入 OpenMMLab 团队的 [官方交流 QQ 群](https://jq.qq.com/?_wv=1027&k=aCvMxdr3)，添加OpenMMLab 官方小助手微信，加入 MMSelfSup 微信社区。
 
 <div align="center">
-<img src="resources/zhihu_qrcode.jpg" height="400" />  <img src="resources/qq_group_qrcode.jpg" height="400" />
+<img src="./resources/zhihu_qrcode.jpg" height="400"/>  <img src="./resources/qq_group_qrcode.jpg" height="400"/> <img src="./resources/xiaozhushou_weixin_qrcode.jpeg" height="300"/>
 </div>
 
 我们会在 OpenMMLab 社区为大家
