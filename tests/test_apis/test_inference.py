@@ -27,6 +27,7 @@ def test_init_mmcls_model() -> None:
 
     config_file = 'configs/nas/spos/spos_subnet_shufflenetv2_8xb128_in1k.py'
     config = mmcv.Config.fromfile(config_file)
+    config.model = None
     # Replace SyncBN with BN to inference on CPU
     _sync_bn2bn(config)
 
@@ -53,6 +54,7 @@ def test_init_mmdet_model() -> None:
     config_file = \
         'configs/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco.py'
     config = mmcv.Config.fromfile(config_file)
+    config.model = None
     # Replace SyncBN with BN to inference on CPU
     _sync_bn2bn(config)
 
@@ -73,6 +75,7 @@ def test_init_mmseg_model() -> None:
     config_file = 'configs/distill/cwd/' \
         'cwd_cls_head_pspnet_r101_d8_pspnet_r18_d8_512x1024_cityscapes_80k.py'
     config = mmcv.Config.fromfile(config_file)
+    config.model = None
     # Replace SyncBN with BN to inference on CPU
     _sync_bn2bn(config)
 

@@ -41,7 +41,7 @@ def init_mmdet_model(config: Union[str, mmcv.Config],
     elif 'init_cfg' in model_cfg.backbone:
         model_cfg.backbone.init_cfg = None
 
-    config.model.train_cfg = None
+    model_cfg.train_cfg = None
     algorithm = build_algorithm(config.algorithm)
     model = algorithm.architecture.model
 
