@@ -11,64 +11,74 @@ class OneShotMutator(ArchitectureMutator[OneShotMutable]):
     """One-shot mutable based mutator.
 
     Examples:
-        >>> class SearchableModel(nn.Module):
-        >>>     def __init__(self, one_shot_op_cfg):
-        >>>         # assume `OneShotOP` contains 4 choices:
-        >>>         # choice1, choice2, choice3 and choice4
-        >>>         self.op1 = OneShotOP(**one_shot_op_cfg)
-        >>>         self.op2 = OneShotOP(**one_shot_op_cfg)
-        >>>         self.op3 = OneShotOP(**one_shot_op_cfg)
-
-        >>> supernet = SearchableModel(one_shot_op_cfg)
-        >>> [name for name, _ in supernet.named_children()]
-        ['op1', 'op2', 'op3']
-        >>> mutator1 = OneShotMutator()
-        >>> mutator1.mutable_class_type
+        >>> mutator = OneShotMutator()
+        >>> mutator.mutable_class_type
         <class 'mmrazor.models.mutables.oneshot_mutable.OneShotMutable'>
-        >>> mutator1.prepare_from_supernet(supernet)
-        >>> mutator1.search_group.keys()
-        dict_keys([0, 1, 2])
-        >>> mutator1.random_subnet
-        {0: 'choice4', 1: 'choice3', 2: 'choice2'}
-        >>> mutator1.set_subnet(mutator1.random_subnet)
 
-        >>> custom_group = [
-        >>>     ['op1', 'op2'],
-        >>>     ['op3']
-        >>> ]
-        >>> mutator2 = OneShotMutator(custom_group)
-        >>> mutator2.prepare_from_supernet(supernet)
-        >>> mutator2.search_group.keys()
-        dict_keys([0, 1])
-        >>> mutator2.random_subnet
-        {0: 'choice1', 1: 'choice1'}
-        >>> mutator2.set_subnet(mutator2.random_subnet)
+        >>> # Assume that a toy model consists of three mutabels
+        >>> # whose name are op1,op2,op3.
+        >>> # Each mutable contains 4 choices: choice1, choice2,
+        >>> # choice3 and choice4.
+        >>> supernet = ToyModel()
+        >>> name2module = dict(supernet.named_modules())
+        >>> [name for name, module in name2module.items() if isinstance(module, mutator.mutable_class_type)]  # noqa E501
+        ['op1', 'op2', 'op3']
+
+        >>> mutator.prepare_from_supernet(supernet)
+        >>> mutator.search_group
+        {0: [op1], 1: [op2], 2: [op3]}
+
+        >>> random_choices = mutator.sample_choices()
+        {0: 'choice1', 1: 'choice2', 2: 'choice3'}
+        >>> mutator.set_subnet(random_choices)
+
+        >>> supernet.op1.current_choice
+        'choice1'
+        >>> supernet.op2.current_choice
+        'choice2'
+        >>> supernet.op3.current_choice
+        'choice3'
+
+        >>> random_choices_ = mutator.sample_choices()
+        {0: 'choice3', 1: 'choice2', 2: 'choice1'}
+        >>> mutator.set_subnet(random_choices_)
+
+        >>> supernet.op1.current_choice
+        'choice3'
+        >>> supernet.op2.current_choice
+        'choice2'
+        >>> supernet.op3.current_choice
+        'choice1'
     """
 
-    @property
-    def random_subnet(self) -> Dict[int, Any]:
-        """A subnet dict that records an arbitrary selection from the search
-        space.
+    def sample_choices(self) -> Dict[int, Any]:
+        """Sampling by search groups.
+
+        The sampling result of the first mutable of each group is the sampling
+        result of this group.
 
         Returns:
-            Dict[int, Any]: Random subnet dict.
+            Dict[int, Any]: Random choices dict.
         """
-        random_subnet = dict()
+        random_choices = dict()
         for group_id, modules in self.search_group.items():
-            random_subnet[group_id] = modules[0].random_choice
+            random_choices[group_id] = modules[0].sample_choice()
 
-        return random_subnet
+        return random_choices
 
-    def set_subnet(self, subnet_dict: Dict[int, Any]) -> None:
-        """Set current subnet according to ``subnet_dict``.
+    def set_choices(self, choices: Dict[int, Any]) -> None:
+        """Set mutables' current choice according to choices sample by
+        :func:`sample_choices`.
 
         Args:
-            subnet_dict (Dict[int, Any]): Subnet dict.
+            choices (Dict[int, Any]): Choices dict. The key is group_id in
+                search groups, and the value is the sampling results
+                corresponding to this group.
         """
         for group_id, modules in self.search_group.items():
-            choice = subnet_dict[group_id]
+            choice = choices[group_id]
             for module in modules:
-                module.set_forward_args(choice)
+                module.current_choice = choice
 
     @property
     def mutable_class_type(self) -> Type[OneShotMutable]:

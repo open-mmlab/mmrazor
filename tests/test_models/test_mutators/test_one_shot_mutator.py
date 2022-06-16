@@ -63,7 +63,7 @@ def test_one_shot_mutator_normal_model() -> None:
 
     mutator.prepare_from_supernet(model)
     assert len(mutator.search_group) == 0
-    assert len(mutator.random_subnet) == 0
+    assert len(mutator.sample_choices()) == 0
 
 
 class _SearchableModel(Module):
@@ -90,9 +90,9 @@ def test_one_shot_mutator_mutable_model() -> None:
     mutator.prepare_from_supernet(model)
     assert list(mutator.search_group.keys()) == [0, 1, 2]
 
-    random_subnet = mutator.random_subnet
-    assert list(random_subnet.keys()) == [0, 1, 2]
-    for choice in random_subnet.values():
+    random_choices = mutator.sample_choices()
+    assert list(random_choices.keys()) == [0, 1, 2]
+    for choice in random_choices.values():
         assert choice in ['choice1', 'choice2', 'choice3']
 
     custom_group = [['op1', 'op2'], ['op3']]
@@ -103,12 +103,12 @@ def test_one_shot_mutator_mutable_model() -> None:
     mutator.prepare_from_supernet(model)
     assert list(mutator.search_group.keys()) == [0, 1]
 
-    random_subnet = mutator.random_subnet
-    assert list(random_subnet.keys()) == [0, 1]
-    for choice in random_subnet.values():
+    random_choices = mutator.sample_choices()
+    assert list(random_choices.keys()) == [0, 1]
+    for choice in random_choices.values():
         assert choice in ['choice1', 'choice2', 'choice3']
 
-    mutator.set_subnet(random_subnet)
+    mutator.set_choices(random_choices)
 
     custom_group.append(['op4'])
     mutator_cfg = copy.deepcopy(MUTATOR_CFG)

@@ -37,15 +37,15 @@ class TestMutables(TestCase):
         assert output is not None
 
         # test random choice
-        assert op.random_choice in [
+        assert op.sample_choice() in [
             'shuffle_3x3', 'shuffle_5x5', 'shuffle_7x7', 'shuffle_xception'
         ]
 
         # test unfixed mode
-        op.set_forward_args('shuffle_3x3')
+        op.current_choice = 'shuffle_3x3'
         output1 = op.forward(input)
 
-        op.set_forward_args('shuffle_7x7')
+        op.current_choice = 'shuffle_7x7'
         output2 = op.forward(input)
 
         assert not output1.equal(output2)
@@ -55,9 +55,9 @@ class TestMutables(TestCase):
         assert op.num_choices == 4
 
         # compare set_forward_args with forward with choice
-        op.set_forward_args('shuffle_5x5')
+        op.current_choice = 'shuffle_5x5'
         output1 = op.forward(input)
-        output2 = op.forward(input, choice='shuffle_5x5')
+        output2 = op.forward_choice(input, choice='shuffle_5x5')
         assert output1.equal(output2)
 
         # test fixed mode
@@ -98,27 +98,27 @@ class TestMutables(TestCase):
 
         input = torch.randn(4, 32, 64, 64)
 
-        # test forward choice with choice
-        output = op.forward_choice(input, choice=None)
-        assert output is not None
+        # test forward choice with None
+        with pytest.raises(AssertionError):
+            output = op.forward_choice(input, choice=None)
 
         # test forward all
         output = op.forward_all(input)
         assert output.shape[1] == 32
 
         # test random choice
-        assert op.random_choice in [
+        assert op.sample_choice() in [
             'shuffle_3x3', 'shuffle_5x5', 'shuffle_7x7', 'shuffle_xception'
         ]
         assert 1 - sum(op.choice_probs) < 0.00001
 
         # test unfixed mode
-        op.set_forward_args('shuffle_3x3')
+        op.current_choice = 'shuffle_3x3'
         output = op.forward(input)
 
         assert output.shape[1] == 32
 
-        op.set_forward_args('shuffle_7x7')
+        op.current_choice = 'shuffle_7x7'
         output = op.forward(input)
         assert output.shape[1] == 32
 
@@ -159,7 +159,7 @@ class TestMutables(TestCase):
         op = MODELS.build(op_cfg)
         input = torch.randn(4, 32, 64, 64)
 
-        assert op.forward_choice(input, choice=None) is not None
+        assert op.forward_choice(input, choice='shuffle_3x3') is not None
 
     def test_fix_chosen(self):
         norm_cfg = dict(type='BN', requires_grad=True)
@@ -222,8 +222,6 @@ class TestMutables(TestCase):
         assert output is not None
 
     def test_candidate_ops(self):
-        MODELS.register_module(
-            name='torchConv2d', module=nn.Conv2d, force=True)
 
         candidate_ops = nn.ModuleDict({
             'conv3x3': nn.Conv2d(32, 32, 3, 1, 1),

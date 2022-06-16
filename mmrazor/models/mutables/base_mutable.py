@@ -38,6 +38,19 @@ class BaseMutable(BaseModule, ABC, Generic[CHOICE_TYPE, CHOSEN_TYPE]):
 
         self.module_kwargs = module_kwargs
         self._is_fixed = False
+        self._current_choice: Optional[CHOICE_TYPE] = None
+
+    @property
+    def current_choice(self) -> Optional[CHOICE_TYPE]:
+        """Current choice will affect :meth:`forward` and will be used in
+        :func:`mmrazor.core.subnet.utils.export_fix_subnet` or mutator.
+        """
+        return self._current_choice
+
+    @current_choice.setter
+    def current_choice(self, choice: Optional[CHOICE_TYPE]) -> None:
+        """Current choice setter will be executed in mutator."""
+        self._current_choice = choice
 
     @property
     def is_fixed(self) -> bool:

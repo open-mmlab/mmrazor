@@ -1,8 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import random
 from abc import abstractmethod
-from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import torch.nn as nn
@@ -14,6 +13,13 @@ from .base_mutable import CHOICE_TYPE, CHOSEN_TYPE, BaseMutable
 
 class OneShotMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
     """Base class for one shot mutables.
+
+    All subclass should implement the following APIs:
+
+    - ``sample_choice()``
+    - ``forward_fixed()``
+    - ``forward_all()``
+    - ``forward_choice()``
 
     Args:
         module_kwargs (dict[str, dict], optional): Module initialization named
@@ -32,13 +38,17 @@ class OneShotMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(module_kwargs=module_kwargs, init_cfg=init_cfg)
 
-    def forward(self, x: Any, choice: Optional[CHOICE_TYPE] = None) -> Any:
+    def forward(self, x: Any) -> Any:
         """Calls either :func:`forward_fixed` or :func:`forward_choice`
-        depending on whether :func:`is_fixed` is ``True``.
+        depending on whether :func:`is_fixed` is ``True`` and whether
+        :func:`current_choice` is None.
 
         Note:
-            :meth:`forward_fixed` is called when in `fixed` mode.
-            :meth:`forward_choice` is called when in `unfixed` mode.
+            :meth:`forward_fixed` is called in `fixed` mode.
+            :meth:`forward_all` is called in `unfixed` mode with
+                :func:`current_choice` is None.
+            :meth:`forward_choice` is called in `unfixed` mode with
+                :func:`current_choice` is not None.
 
         Args:
             x (Any): input data for forward computation.
@@ -50,11 +60,14 @@ class OneShotMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
         if self.is_fixed:
             return self.forward_fixed(x)
         else:
-            return self.forward_choice(x, choice=choice)
+            if self.current_choice is None:
+                return self.forward_all(x)
+            else:
+                return self.forward_choice(x, choice=self.current_choice)
 
-    @property
-    def random_choice(self) -> CHOICE_TYPE:
-        """Sample random choice during searching.
+    @abstractmethod
+    def sample_choice(self) -> CHOICE_TYPE:
+        """Sample random choice.
 
         Returns:
             CHOICE_TYPE: the chosen key in ``MUTABLE``.
@@ -62,29 +75,24 @@ class OneShotMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
 
     @abstractmethod
     def forward_fixed(self, x: Any) -> Any:
-        """Forward when the mutable is fixed.
+        """Forward with the fixed mutable.
 
         All subclasses must implement this method.
         """
 
     @abstractmethod
     def forward_all(self, x: Any) -> Any:
-        """Forward all choices."""
-
-    @abstractmethod
-    def forward_choice(self,
-                       x: Any,
-                       choice: Optional[CHOICE_TYPE] = None) -> Any:
-        """Forward when the mutable is not fixed.
+        """Forward all choices.
 
         All subclasses must implement this method.
         """
 
-    def set_forward_args(self, choice: CHOICE_TYPE) -> None:
-        """Interface for modifying the choice using partial."""
-        forward_with_default_args: Callable[[Any, Optional[CHOICE_TYPE]], Any] = \
-            partial(self.forward, choice=choice)  # noqa:E501
-        setattr(self, 'forward', forward_with_default_args)
+    @abstractmethod
+    def forward_choice(self, x: Any, choice: CHOICE_TYPE) -> Any:
+        """Forward with the unfixed mutable and current_choice is not None.
+
+        All subclasses must implement this method.
+        """
 
 
 @MODELS.register_module()
@@ -105,48 +113,40 @@ class OneShotOP(OneShotMutable[str, str]):
             and `Pretrained`.
 
     Examples:
-        >>> import mmrazor.models
-        >>> from mmrazor.registry import MODELS
         >>> import torch
-        >>> norm_cfg = dict(type='BN', requires_grad=True)
-        >>> op_cfg = dict(
-        ...     type='OneShotOP',
-        ...     candidate_ops=dict(
-        ...         shuffle_3x3=dict(
-        ...             type='ShuffleBlock', norm_cfg=norm_cfg, kernel_size=3),
-        ...         shuffle_5x5=dict(
-        ...             type='ShuffleBlock', norm_cfg=norm_cfg, kernel_size=5),
-        ...         shuffle_7x7=dict(
-        ...             type='ShuffleBlock', norm_cfg=norm_cfg, kernel_size=7),
-        ...         shuffle_xception=dict(
-        ...             type='ShuffleXception',
-        ...             norm_cfg=norm_cfg,
-        ...         ),
-        ...     ),
-        ...     module_kwargs=dict(in_channels=32, out_channels=32, stride=1))
-        >>> op = MODELS.build(op_cfg)
+        >>> from mmrazor.models.mutables import OneShotOP
 
-        >>> input = torch.randn(4, 32, 64, 64)
-        >>> op = MODELS.build(op_cfg)
+        >>> candidate_ops = nn.ModuleDict({
+        ...     'conv3x3': nn.Conv2d(32, 32, 3, 1, 1),
+        ...     'conv5x5': nn.Conv2d(32, 32, 5, 1, 2),
+        ...     'conv7x7': nn.Conv2d(32, 32, 7, 1, 3)})
 
-        >>> op.set_forward_args('shuffle_3x3')
-        >>> unfix_output = op.forward(input)
+        >>> input = torch.randn(1, 32, 64, 64)
+        >>> op = OneShotOP(candidate_ops)
 
         >>> op.choices
-        ['shuffle_3x3', 'shuffle_5x5', 'shuffle_7x7', 'shuffle_xception']
+        ['conv3x3', 'conv5x5', 'conv7x7']
         >>> op.num_choices
-        4
+        3
+        >>> op.is_fixed
+        False
 
-        >>> op.fix_chosen('shuffle_3x3')
+        >>> op.current_choice = 'conv3x3'
+        >>> unfix_output = op.forward(input)
+        >>> torch.all(unfixed_output == candidate_ops['conv3x3'](input))
+        True
+
+        >>> op.fix_chosen('conv3x3')
         >>> fix_output = op.forward(input)
         >>> torch.all(fix_output == unfix_output)
         True
 
+        >>> op.choices
+        ['conv3x3']
+        >>> op.num_choices
+        1
         >>> op.is_fixed
         True
-        >>> op.choices
-        ['shuffle_3x3']
-        >>> op.num_choices
     """
 
     def __init__(
@@ -156,14 +156,22 @@ class OneShotOP(OneShotMutable[str, str]):
         init_cfg: Optional[Dict] = None,
     ) -> None:
         super().__init__(module_kwargs=module_kwargs, init_cfg=init_cfg)
-        assert len(candidate_ops) >= 1, \
-            f'Number of candidate op must greater than 1, ' \
-            f'but got: {len(candidate_ops)}'
 
         self._is_fixed = False
         self._chosen: Optional[str] = None
-        self._candidate_ops = self._build_ops(candidate_ops,
-                                              self.module_kwargs)
+        if isinstance(candidate_ops, dict):
+            self._candidate_ops = self._build_ops(candidate_ops,
+                                                  self.module_kwargs)
+        elif isinstance(candidate_ops, nn.ModuleDict):
+            self._candidate_ops = candidate_ops
+        else:
+            raise TypeError('candidata_ops should be a `dict` or '
+                            f'`nn.ModuleDict` instance, but got '
+                            f'{type(candidate_ops)}')
+
+        assert len(self._candidate_ops) >= 1, \
+            f'Number of candidate op must greater than or equal to 1, ' \
+            f'but got {len(self._candidate_ops)}'
 
     @staticmethod
     def _build_ops(
@@ -194,7 +202,7 @@ class OneShotOP(OneShotMutable[str, str]):
         return ops
 
     def forward_fixed(self, x: Any) -> Tensor:
-        """Forward when the mutable is in `fixed` mode.
+        """Forward with the `fixed` mutable.
 
         Args:
             x (Any): x could be a Torch.tensor or a tuple of
@@ -205,21 +213,19 @@ class OneShotOP(OneShotMutable[str, str]):
         """
         return self._candidate_ops[self._chosen](x)
 
-    def forward_choice(self, x: Any, choice: Optional[str] = None) -> Tensor:
-        """Forward when the mutable is in `unfixed` mode.
+    def forward_choice(self, x: Any, choice: str) -> Tensor:
+        """Forward with the `unfixed` mutable and current choice is not None.
 
         Args:
             x (Any): x could be a Torch.tensor or a tuple of
                 Torch.tensor, containing input data for forward computation.
-            choice (str, optional): the chosen key in ``MUTABLE``.
+            choice (str): the chosen key in ``OneShotOP``.
 
         Returns:
             Tensor: the result of forward the ``choice`` operation.
         """
-        if choice is None:
-            return self.forward_all(x)
-        else:
-            return self._candidate_ops[choice](x)
+        assert isinstance(choice, str) and choice in self.choices
+        return self._candidate_ops[choice](x)
 
     def forward_all(self, x: Any) -> Tensor:
         """Forward all choices. Used to calculate FLOPs.
@@ -256,8 +262,7 @@ class OneShotOP(OneShotMutable[str, str]):
         self._chosen = chosen
         self.is_fixed = True
 
-    @property
-    def random_choice(self) -> str:
+    def sample_choice(self) -> str:
         """uniform sampling."""
         choice = np.random.choice(self.choices, 1)[0]
         return choice
@@ -299,8 +304,7 @@ class OneShotProbOP(OneShotOP):
             f'Please make sure the sum of the {choice_probs} is 1.'
         self.choice_probs = choice_probs
 
-    @property
-    def random_choice(self) -> str:
+    def sample_choice(self) -> str:
         """Sampling with probabilities."""
         assert len(self.choice_probs) == len(self._candidate_ops.keys())
         choice = random.choices(

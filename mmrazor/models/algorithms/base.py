@@ -1,211 +1,163 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from collections import OrderedDict
+from typing import Dict, List, Optional, Tuple, Union
 
-import mmcv.fileio
 import torch
-import torch.distributed as dist
-from mmcv.runner import BaseModule
+import torch.nn as nn
+from mmengine import BaseDataElement
+from mmengine.model import BaseModel
 
 from mmrazor.registry import MODELS
 
+LossResults = Dict[str, torch.Tensor]
+TensorResults = Union[Tuple[torch.Tensor], torch.Tensor]
+PredictResults = List[BaseDataElement]
+ForwardResults = Union[LossResults, TensorResults, PredictResults]
+
 
 @MODELS.register_module()
-class BaseAlgorithm(BaseModule):
-    """Base class for algorithms, it consists of two main parts: architecture
-    and algorithm components.
+class BaseAlgorithm(BaseModel):
+    """Base class for algorithms.
+
+    BaseAlgorithm inherit from BaseModel. BaseModel implements the basic
+    functions of the algorithmic model, such as weights initialize,
+    batch inputs preprocess(see more information in
+    :class:`BaseDataPreprocessor`), parse losses, and update model parameters.
+    More details of BaseModel could see docs for :class:`BaseModel`.
+
+    :obj:`BaseAlgorithm` forward just is a wrapper of :obj:`BaseModel` forward.
+    Various compression algorithms can be implemented by inheriting
+    BaseAlgorithm.
+
+    Subclasses inherit from BaseAlgorithm only need to override the
+    :meth:`loss`, which implements the logic to calculate loss, then
+    can be trained in the runner.
 
     Args:
-        architecture (dict): Config for architecture to be slimmed.
-        mutator (dict): Config for mutator, which is an algorithm component
-            for NAS.
-        pruner (dict): Config for pruner, which is an algorithm component
-            for pruning.
-        distiller (dict): Config for pruner, which is an algorithm component
-            for knowledge distillation.
-        retraining (bool): Whether is in retraining stage, if False,
-            it is in pre-training stage.
-        init_cfg (dict): Init config for ``BaseModule``.
-        mutable_cfg (dict): Config for mutable of the subnet searched out,
-            it will be needed in retraining stage.
-        channel_cfg (dict): Config for channel of the subnet searched out,
-            it will be needed in retraining stage.
+        architecture (dict | :obj:`BaseModel`): The config of
+            :class:`BaseModel` or built model.
+        data_preprocessor (dict | torch.nn.Module | None): The pre-process
+            config of :class:`BaseDataPreprocessor`. Defaults to None.
+        init_cfg (dict): The weight initialized config for
+            :class:`BaseModule`.
+
+    Note:
+        If `data_preprocessor` is None, :obj:`BaseAlgorithm` will set
+        `data_preprocessor` to model's `data_preprocessor`.
+
+
+    Attributes:
+        architecture (:obj:`BaseModel`): Model that needs to be compressed.
+        data_preprocessor (:obj:`BaseDataPreprocessor`): Used for
+            pre-processing data sampled by dataloader to the format accepted by
+            :meth:`forward`.
+        init_cfg (dict, optional): Initialization config dict.
     """
 
-    def __init__(
+    def __init__(self,
+                 architecture: Union[BaseModel, Dict],
+                 data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
+                 init_cfg: Optional[Dict] = None):
+
+        # super().__init__() needs built data_preprocessor, so
+        # build model first.
+        if isinstance(architecture, Dict):
+            architecture = MODELS.build(architecture)
+        if not isinstance(architecture, BaseModel):
+            raise TypeError('architecture should be a `dict` or '
+                            f'`BaseModel` instance, but got '
+                            f'{type(architecture)}')
+
+        # If `data_preprocessor` is None, there will set
+        # `data_preprocessor` to model's `data_preprocessor`.
+        if data_preprocessor is None:
+            # use model's data_preprocessor
+            data_preprocessor = getattr(architecture, 'data_preprocessor',
+                                        None)
+        super().__init__(data_preprocessor, init_cfg)
+
+        # Cannot assign module before Module.__init__() call
+        self.architecture = architecture
+
+    def forward(self,
+                batch_inputs: torch.Tensor,
+                data_samples: Optional[List[BaseDataElement]] = None,
+                mode: str = 'tensor') -> ForwardResults:
+        """Returns losses or predictions of training, validation, testing, and
+        simple inference process.
+
+        ``forward`` method of BaseModel is an abstract method, its subclasses
+        must implement this method.
+
+        Accepts ``batch_inputs`` and ``data_samples`` processed by
+        :attr:`data_preprocessor`, and returns results according to mode
+        arguments.
+
+        During non-distributed training, validation, and testing process,
+        ``forward`` will be called by ``BaseModel.train_step``,
+        ``BaseModel.val_step`` and ``BaseModel.val_step`` directly.
+
+        During distributed data parallel training process,
+        ``MMSeparateDistributedDataParallel.train_step`` will first call
+        ``DistributedDataParallel.forward`` to enable automatic
+        gradient synchronization, and then call ``forward`` to get training
+        loss.
+
+        Args:
+            batch_inputs (torch.Tensor): batch input tensor collated by
+                :attr:`data_preprocessor`.
+            data_samples (List[BaseDataElement], optional):
+                data samples collated by :attr:`data_preprocessor`.
+            mode (str): mode should be one of ``loss``, ``predict`` and
+                ``tensor``
+                - ``loss``: Called by ``train_step`` and return loss ``dict``
+                  used for logging
+                - ``predict``: Called by ``val_step`` and ``test_step``
+                  and return list of ``BaseDataElement`` results used for
+                  computing metric.
+                - ``tensor``: Called by custom use to get ``Tensor`` type
+                  results.
+
+        Returns:
+            ForwardResults:
+                - If ``mode == loss``, return a ``dict`` of loss tensor used
+                  for backward and logging.
+                - If ``mode == predict``, return a ``list`` of
+                  :obj:`BaseDataElement` for computing metric
+                  and getting inference result.
+                - If ``mode == tensor``, return a tensor or ``tuple`` of tensor
+                  or ``dict of tensor for custom use.
+        """
+        if mode == 'loss':
+            return self.loss(batch_inputs, data_samples)
+        elif mode == 'tensor':
+            return self._forward(batch_inputs, data_samples)
+        elif mode == 'predict':
+            return self._predict(batch_inputs, data_samples)
+        else:
+            raise RuntimeError(f'Invalid mode "{mode}". '
+                               'Only supports loss, predict and tensor mode')
+
+    def loss(
         self,
-        architecture,
-        mutator=None,
-        pruner=None,
-        distiller=None,
-        retraining=False,
-        init_cfg=None,
-        mutable_cfg=None,
-        channel_cfg=None,
-    ):
-        super(BaseAlgorithm, self).__init__(init_cfg)
-        self.retraining = retraining
-        if self.retraining:
-            self.mutable_cfg = self.load_subnet(mutable_cfg)
-            self.channel_cfg = self.load_subnet(channel_cfg)
-        self.architecture = MODELS.build(architecture)
+        batch_inputs: torch.Tensor,
+        data_samples: Optional[List[BaseDataElement]] = None,
+    ) -> LossResults:
+        """Calculate losses from a batch of inputs and data samples."""
+        return self.architecture(batch_inputs, data_samples, mode='loss')
 
-        self.deployed = False
-        self._init_mutator(mutator)
-        self._init_pruner(pruner)
-        self._init_distiller(distiller)
+    def _forward(
+        self,
+        batch_inputs: torch.Tensor,
+        data_samples: Optional[List[BaseDataElement]] = None,
+    ) -> TensorResults:
+        """Network forward process."""
+        return self.architecture(batch_inputs, data_samples, mode='tensor')
 
-    def load_subnet(self, subnet_path):
-        """Load subnet searched out in search stage.
-
-        Args:
-            subnet_path (str | list[str] | tuple(str)): The path of saved
-                subnet file, its suffix should be .yaml.
-            There may be several subnet searched out in some algorithms.
-
-        Returns:
-            dict | list[dict]: Config(s) for subnet(s) searched out.
-        """
-        if subnet_path is None:
-            return
-
-        if isinstance(subnet_path, str):
-            cfg = mmcv.fileio.load(subnet_path)
-        elif isinstance(subnet_path, (list, tuple)):
-            cfg = list()
-            for path in subnet_path:
-                cfg.append(mmcv.fileio.load(path))
-        else:
-            raise NotImplementedError
-
-        return cfg
-
-    def _init_mutator(self, mutator):
-        """Build registered mutators and make preparations.
-
-        Args:
-            mutator (dict): Config for mutator, which is an algorithm component
-                for NAS.
-        """
-        if mutator is None:
-            self.mutator = None
-            return
-        self.mutator = MODELS.build(mutator)
-        self.mutator.prepare_from_supernet(self.architecture)
-        if self.retraining:
-            if isinstance(self.mutable_cfg, dict):
-                self.mutator.deploy_subnet(self.architecture, self.mutable_cfg)
-                self.deployed = True
-            else:
-                raise NotImplementedError
-
-    def _init_pruner(self, pruner):
-        """Build registered pruners and make preparations.
-
-        Args:
-            pruner (dict): Config for pruner, which is an algorithm component
-                for pruning.
-        """
-        if pruner is None:
-            self.pruner = None
-            return
-        self.pruner = MODELS.build(pruner)
-
-        if self.retraining:
-            if isinstance(self.channel_cfg, dict):
-                self.pruner.deploy_subnet(self.architecture, self.channel_cfg)
-                self.deployed = True
-            else:
-                raise NotImplementedError
-        else:
-            self.pruner.prepare_from_supernet(self.architecture)
-
-    def _init_distiller(self, distiller):
-        """Build registered distillers and make preparations.
-
-        Args:
-            distiller (dict): Config for pruner, which is an algorithm
-                component for knowledge distillation.
-        """
-        if distiller is None:
-            self.distiller = None
-            return
-        self.distiller = MODELS.build(distiller)
-        self.distiller.prepare_from_student(self.architecture)
-
-    @property
-    def with_mutator(self):
-        """Whether or not this property exists."""
-        return hasattr(self, 'mutator') and self.mutator is not None
-
-    @property
-    def with_pruner(self):
-        """Whether or not this property exists."""
-        return hasattr(self, 'pruner') and self.pruner is not None
-
-    @property
-    def with_distiller(self):
-        """Whether or not this property exists."""
-        return hasattr(self, 'distiller') and self.distiller is not None
-
-    def forward(self, *args, return_loss=True, **kwargs):
-        """Calls either forward_train or forward_test depending on whether
-        return_loss=True.
-
-        Note this setting will change the expected inputs. When
-        ``return_loss=True``, img and img_meta are single-nested (i.e. Tensor
-        and List[dict]), and when ``resturn_loss=False``, img and img_meta
-        should be double nested (i.e.  List[Tensor], List[List[dict]]), with
-        the outer list indicating test time augmentations.
-        """
-        if return_loss:
-            return self.forward_train(*args, **kwargs)
-        else:
-            return self.forward_test(*args, return_loss=False, **kwargs)
-
-    def forward_train(self, *args, **kwargs):
-        return self.architecture(*args, return_loss=True, **kwargs)
-
-    def forward_test(self, *args, **kwargs):
-        return self.architecture(*args, return_loss=False, **kwargs)
-
-    def show_result(self, *args, **kwargs):
-        """Draw `result` over `img`"""
-        return self.architecture.show_result(*args, **kwargs)
-
-    # TODO maybe remove
-    def _parse_losses(self, losses):
-        """Parse the raw outputs (losses) of the network.
-
-        Args:
-            losses (dict): Raw output of the network, which usually contain
-                losses and other necessary information.
-        Returns:
-            tuple[Tensor, dict]: (loss, log_vars), loss is the loss tensor
-                which may be a weighted sum of all losses, log_vars contains
-                all the variables to be sent to the logger.
-        """
-        log_vars = OrderedDict()
-        for loss_name, loss_value in losses.items():
-            if isinstance(loss_value, torch.Tensor):
-                log_vars[loss_name] = loss_value.mean()
-            elif isinstance(loss_value, list):
-                log_vars[loss_name] = sum(_loss.mean() for _loss in loss_value)
-            elif isinstance(loss_value, dict):
-                for name, value in loss_value.items():
-                    log_vars[name] = value
-            else:
-                raise TypeError(
-                    f'{loss_name} is not a tensor or list of tensors')
-
-        loss = sum(_value for _key, _value in log_vars.items()
-                   if 'loss' in _key)
-
-        log_vars['loss'] = loss
-        for loss_name, loss_value in log_vars.items():
-            # reduce loss when distributed training
-            if dist.is_available() and dist.is_initialized():
-                loss_value = loss_value.data.clone()
-                dist.all_reduce(loss_value.div_(dist.get_world_size()))
-            log_vars[loss_name] = loss_value.item()
-
-        return loss, log_vars
+    def _predict(
+        self,
+        batch_inputs: torch.Tensor,
+        data_samples: Optional[List[BaseDataElement]] = None,
+    ) -> PredictResults:
+        """Predict results from a batch of inputs and data samples with post-
+        processing."""
+        return self.architecture(batch_inputs, data_samples, mode='predict')
