@@ -124,12 +124,14 @@ def test_searchable_shufflenet_v2_init_weights() -> None:
                 bias_tensor *= 0.0001
                 assert torch.equal(bias_tensor, m.bias)
 
-    checkpoint_path = os.path.join(tempfile.gettempdir(), 'checkpoint.pth')
+    temp_dir = tempfile.mkdtemp()
+    checkpoint_path = os.path.join(temp_dir, 'checkpoint.pth')
     backbone_cfg = copy.deepcopy(BACKBONE_CFG)
+    backbone = MODELS.build(backbone_cfg)
+    torch.save(backbone.state_dict(), checkpoint_path)
     backbone_cfg['init_cfg'] = dict(
         type='Pretrained', checkpoint=checkpoint_path)
     backbone = MODELS.build(backbone_cfg)
-    torch.save(backbone.state_dict(), checkpoint_path)
 
     name2weight = dict()
     for name, m in backbone.named_modules():

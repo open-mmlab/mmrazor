@@ -25,6 +25,7 @@ class BaseMutable(BaseModule, ABC, Generic[CHOICE_TYPE, CHOSEN_TYPE]):
     Args:
         module_kwargs (dict[str, dict], optional): Module initialization named
             arguments. Defaults to None.
+        alias (str, optional): alias of the `MUTABLE`.
         init_cfg (dict, optional): initialization configuration dict for
             ``BaseModule``. OpenMMLab has implement 5 initializer including
             `Constant`, `Xavier`, `Normal`, `Uniform`, `Kaiming`,
@@ -33,10 +34,12 @@ class BaseMutable(BaseModule, ABC, Generic[CHOICE_TYPE, CHOSEN_TYPE]):
 
     def __init__(self,
                  module_kwargs: Optional[Dict[str, Dict]] = None,
+                 alias: Optional[str] = None,
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(init_cfg=init_cfg)
 
         self.module_kwargs = module_kwargs
+        self.alias = alias
         self._is_fixed = False
         self._current_choice: Optional[CHOICE_TYPE] = None
 

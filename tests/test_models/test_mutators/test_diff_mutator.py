@@ -3,7 +3,6 @@ from unittest import TestCase
 
 import pytest
 import torch.nn as nn
-from mmcls.models import *  # noqa: F401,F403
 
 from mmrazor.models import *  # noqa: F401,F403
 from mmrazor.models.mutables import DiffMutable, DiffOP
@@ -35,6 +34,37 @@ class SearchableModel(nn.Module):
         self.slayer1 = SearchableLayer(mutable_cfg)
         self.slayer2 = SearchableLayer(mutable_cfg)
         self.slayer3 = SearchableLayer(mutable_cfg)
+
+    def forward(self, x):
+        x = self.slayer1(x)
+        x = self.slayer2(x)
+        return self.slayer3(x)
+
+
+class SearchableLayerAlias(nn.Module):
+
+    def __init__(self, mutable_cfg: dict) -> None:
+        super().__init__()
+        mutable_cfg.update(alias='op1')
+        self.op1 = MODELS.build(mutable_cfg)
+        mutable_cfg.update(alias='op2')
+        self.op2 = MODELS.build(mutable_cfg)
+        mutable_cfg.update(alias='op3')
+        self.op3 = MODELS.build(mutable_cfg)
+
+    def forward(self, x):
+        x = self.op1(x)
+        x = self.op2(x)
+        return self.op3(x)
+
+
+class SearchableModelAlias(nn.Module):
+
+    def __init__(self, mutable_cfg: dict) -> None:
+        super().__init__()
+        self.slayer1 = SearchableLayerAlias(mutable_cfg)
+        self.slayer2 = SearchableLayerAlias(mutable_cfg)
+        self.slayer3 = SearchableLayerAlias(mutable_cfg)
 
     def forward(self, x):
         x = self.slayer1(x)
@@ -101,6 +131,81 @@ class TestDiffMutator(TestCase):
             ['slayer1.op1', 'slayer2.op1', 'slayer3.op1'],
             ['slayer1.op2', 'slayer2.op2', 'slayer3.op2'],
             ['slayer1.op3', 'slayer2.op3', 'slayer3.op3_error_key'],
+        ]
+        mutator: DiffOP = MODELS.build(mutator_cfg)
+
+        with pytest.raises(AssertionError):
+            mutator.prepare_from_supernet(model)
+
+    def test_diff_mutator_diffop_alias(self) -> None:
+        model = SearchableModelAlias(self.MUTABLE_CFG)
+
+        mutator_cfg = self.MUTATOR_CFG.copy()
+        mutator_cfg['custom_group'] = [['op1'], ['op2'], ['op3']]
+        mutator: DiffOP = MODELS.build(mutator_cfg)
+
+        mutator.prepare_from_supernet(model)
+
+        assert list(mutator.search_group.keys()) == [0, 1, 2]
+
+        mutator.modify_supernet_forward()
+        assert mutator.mutable_class_type == DiffMutable
+
+    def test_diff_mutator_alias_module_name(self) -> None:
+        """Using both alias and module name for grouping."""
+        model = SearchableModelAlias(self.MUTABLE_CFG)
+
+        mutator_cfg = self.MUTATOR_CFG.copy()
+        mutator_cfg['custom_group'] = [['op1'],
+                                       [
+                                           'slayer1.op2', 'slayer2.op2',
+                                           'slayer3.op2'
+                                       ], ['slayer1.op3', 'slayer2.op3']]
+        mutator: DiffOP = MODELS.build(mutator_cfg)
+
+        mutator.prepare_from_supernet(model)
+
+        assert list(mutator.search_group.keys()) == [0, 1, 2, 3]
+
+        mutator.modify_supernet_forward()
+        assert mutator.mutable_class_type == DiffMutable
+
+    def test_diff_mutator_duplicate_keys(self) -> None:
+        model = SearchableModel(self.MUTABLE_CFG)
+
+        mutator_cfg = self.MUTATOR_CFG.copy()
+        mutator_cfg['custom_group'] = [
+            ['slayer1.op1', 'slayer2.op1', 'slayer3.op1'],
+            ['slayer1.op2', 'slayer2.op2', 'slayer3.op2'],
+            ['slayer1.op3', 'slayer2.op3', 'slayer2.op3'],
+        ]
+        mutator: DiffOP = MODELS.build(mutator_cfg)
+
+        with pytest.raises(AssertionError):
+            mutator.prepare_from_supernet(model)
+
+    def test_diff_mutator_duplicate_key_alias(self) -> None:
+        model = SearchableModelAlias(self.MUTABLE_CFG)
+
+        mutator_cfg = self.MUTATOR_CFG.copy()
+        mutator_cfg['custom_group'] = [
+            ['op1', 'slayer1.op1', 'slayer2.op1', 'slayer3.op1'],
+            ['slayer1.op2', 'slayer2.op2', 'slayer3.op2'],
+            ['slayer1.op3', 'slayer2.op3', 'slayer3.op3'],
+        ]
+        mutator: DiffOP = MODELS.build(mutator_cfg)
+
+        with pytest.raises(AssertionError):
+            mutator.prepare_from_supernet(model)
+
+    def test_diff_mutator_illegal_key(self) -> None:
+        model = SearchableModel(self.MUTABLE_CFG)
+
+        mutator_cfg = self.MUTATOR_CFG.copy()
+        mutator_cfg['custom_group'] = [
+            ['illegal_key', 'slayer1.op1', 'slayer2.op1', 'slayer3.op1'],
+            ['slayer1.op2', 'slayer2.op2', 'slayer3.op2'],
+            ['slayer1.op3', 'slayer2.op3', 'slayer3.op3'],
         ]
         mutator: DiffOP = MODELS.build(mutator_cfg)
 

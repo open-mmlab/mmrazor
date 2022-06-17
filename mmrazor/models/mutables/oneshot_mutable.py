@@ -24,6 +24,7 @@ class OneShotMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
     Args:
         module_kwargs (dict[str, dict], optional): Module initialization named
             arguments. Defaults to None.
+        alias (str, optional): alias of the `MUTABLE`.
         init_cfg (dict, optional): initialization configuration dict for
             ``BaseModule``. OpenMMLab has implement 5 initializer including
             `Constant`, `Xavier`, `Normal`, `Uniform`, `Kaiming`,
@@ -35,8 +36,10 @@ class OneShotMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
 
     def __init__(self,
                  module_kwargs: Optional[Dict[str, Dict]] = None,
+                 alias: Optional[str] = None,
                  init_cfg: Optional[Dict] = None) -> None:
-        super().__init__(module_kwargs=module_kwargs, init_cfg=init_cfg)
+        super().__init__(
+            module_kwargs=module_kwargs, alias=alias, init_cfg=init_cfg)
 
     def forward(self, x: Any) -> Any:
         """Calls either :func:`forward_fixed` or :func:`forward_choice`
@@ -107,6 +110,7 @@ class OneShotOP(OneShotMutable[str, str]):
             operations.
         module_kwargs (dict[str, dict], optional): Module initialization named
             arguments. Defaults to None.
+        alias (str, optional): alias of the `MUTABLE`.
         init_cfg (dict, optional): initialization configuration dict for
             ``BaseModule``. OpenMMLab has implement 5 initializer including
             `Constant`, `Xavier`, `Normal`, `Uniform`, `Kaiming`,
@@ -153,9 +157,14 @@ class OneShotOP(OneShotMutable[str, str]):
         self,
         candidate_ops: Union[Dict[str, Dict], nn.ModuleDict],
         module_kwargs: Optional[Dict[str, Dict]] = None,
+        alias: Optional[str] = None,
         init_cfg: Optional[Dict] = None,
     ) -> None:
-        super().__init__(module_kwargs=module_kwargs, init_cfg=init_cfg)
+        super().__init__(
+            module_kwargs=module_kwargs, alias=alias, init_cfg=init_cfg)
+        assert len(candidate_ops) >= 1, \
+            f'Number of candidate op must greater than 1, ' \
+            f'but got: {len(candidate_ops)}'
 
         self._is_fixed = False
         self._chosen: Optional[str] = None
@@ -284,6 +293,7 @@ class OneShotProbOP(OneShotOP):
             candidate operation.
         module_kwargs (dict[str, dict], optional): Module initialization named
             arguments. Defaults to None.
+        alias (str, optional): alias of the `MUTABLE`.
         init_cfg (dict, optional): initialization configuration dict for
             ``BaseModule``. OpenMMLab has implement 5 initializer including
             `Constant`, `Xavier`, `Normal`, `Uniform`, `Kaiming`,
@@ -294,10 +304,12 @@ class OneShotProbOP(OneShotOP):
                  candidate_ops: Dict[str, Dict],
                  choice_probs: list = None,
                  module_kwargs: Optional[Dict[str, Dict]] = None,
+                 alias: Optional[str] = None,
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(
             candidate_ops=candidate_ops,
             module_kwargs=module_kwargs,
+            alias=alias,
             init_cfg=init_cfg)
         assert choice_probs is not None
         assert sum(choice_probs) - 1 < np.finfo(np.float64).eps, \

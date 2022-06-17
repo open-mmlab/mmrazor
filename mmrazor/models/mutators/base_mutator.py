@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import ABC, abstractmethod
+from collections import Counter
 from typing import Dict, Generic, List, Optional, Type, TypeVar
 
 from mmcv.runner import BaseModule
@@ -98,7 +99,7 @@ class ArchitectureMutator(BaseMutator, Generic[MUTABLE_TYPE]):
             supernet (:obj:`torch.nn.Module`): The supernet to be searched
                 in your algorithm.
         """
-        return self._build_search_group(supernet)
+        self._build_search_group(supernet)
 
     @property
     def search_group(self) -> Dict[int, List[MUTABLE_TYPE]]:
@@ -119,43 +120,193 @@ class ArchitectureMutator(BaseMutator, Generic[MUTABLE_TYPE]):
                 'Call `prepare_from_supernet` before access search group!')
         return self._search_group
 
+    def _build_name_mutable_mapping(
+            self, supernet: Module) -> Dict[str, MUTABLE_TYPE]:
+        """Mapping module name to mutable."""
+        name2mutable: Dict[str, MUTABLE_TYPE] = dict()
+        for name, module in supernet.named_modules():
+            if isinstance(module, self.mutable_class_type):
+                name2mutable[name] = module
+        return name2mutable
+
+    def _build_alias_names_mapping(self,
+                                   supernet: Module) -> Dict[str, List[str]]:
+        """Mapping alias to module names."""
+        alias2mutable_names: Dict[str, List[str]] = dict()
+        for name, module in supernet.named_modules():
+            if isinstance(module, self.mutable_class_type):
+                if module.alias is not None:
+                    if module.alias not in alias2mutable_names:
+                        alias2mutable_names[module.alias] = [name]
+                    else:
+                        alias2mutable_names[module.alias].append(name)
+
+        return alias2mutable_names
+
     def _build_search_group(self, supernet: Module) -> None:
-        """Build search group with ``supernet`` and ``custom_group``.
+        """Build search group with ``custom_group`` and ``alias``(see more
+        information in :class:`BaseMutable`). Grouping by alias and module name
+        are both supported.
 
         Note:
             Apart from user-defined search group, all other searchable
             modules(mutable) will be grouped separately.
 
+            The main difference between using alias and module name for
+            grouping is that the alias is One-to-Many while the module
+            name is One-to-One.
+
+            When using both alias and module name in `custom_group`, the
+            priority of alias is higher than that of module name.
+
+            If alias is set in `custom_group`, then its corresponding module
+            name should not be in the `custom_group`.
+
+            Moreover, there should be no duplicate keys in the `custom_group`.
+
+        Example:
+            >>> import torch
+            >>> from mmrazor.models.mutables.diff_mutable import DiffOP
+
+            >>> # Assume that a toy model consists of three mutabels
+            >>> # whose name are op1,op2,op3. The corresponding
+            >>> # alias names of the three mutables are a1, a1, a2.
+            >>> model = ToyModel()
+
+            >>> # Using alias for grouping
+            >>> mutator = DiffOP(custom_group=[['a1'], ['a2']])
+            >>> mutator.prepare_from_supernet(model)
+            >>> mutator.search_group
+            {0: [op1, op2], 1: [op3]}
+
+            >>> # Using module name for grouping
+            >>> mutator = DiffOP(custom_group=[['op1', 'op2'], ['op3']])
+            >>> mutator.prepare_from_supernet(model)
+            >>> mutator.search_group
+            {0: [op1, op2], 1: [op3]}
+
+            >>> # Using both alias and module name for grouping
+            >>> mutator = DiffOP(custom_group=[['a2'], ['op2']])
+            >>> mutator.prepare_from_supernet(model)
+            >>> # The last operation would be grouped
+            >>> mutator.search_group
+            {0: [op3], 1: [op2], 2: [op1]}
+
+
         Args:
             supernet (:obj:`torch.nn.Module`): The supernet to be searched
                 in your algorithm.
         """
-        module_name2module: Dict[str, Module] = dict()
-        for name, module in supernet.named_modules():
-            module_name2module[name] = module
+        name2mutable = self._build_name_mutable_mapping(supernet)
+        alias2mutable_names = self._build_alias_names_mapping(supernet)
 
-        # Map module to group id for user-defined group
-        self.module_name2group_id: Dict[str, int] = dict()
-        for idx, group in enumerate(self._custom_group):
-            for module_name in group:
-                assert module_name in module_name2module, \
-                    f'`{module_name}` is not a module name of supernet, ' \
-                    f'expected module names: {module_name2module.keys()}'
-                self.module_name2group_id[module_name] = idx
+        # Check whether the custom group is valid
+        if len(self._custom_group) > 0:
+            self._check_valid_groups(alias2mutable_names, name2mutable,
+                                     self._custom_group)
 
-        search_group: Dict[int, List[MUTABLE_TYPE]] = dict()
-        current_group_nums = len(self._custom_group)
+        # Construct search_groups based on user-defined group
+        search_groups: Dict[int, List[MUTABLE_TYPE]] = dict()
 
-        for name, module in module_name2module.items():
-            if isinstance(module, self.mutable_class_type):
-                group_id = self.module_name2group_id.get(name)
-                if group_id is None:
-                    group_id = current_group_nums
+        current_group_nums = 0
+        grouped_mutable_names: List[str] = list()
+        grouped_alias: List[str] = list()
+        for group in self._custom_group:
+            group_mutables = list()
+            for item in group:
+                if item in alias2mutable_names:
+                    # if the item is from alias name
+                    mutable_names: List[str] = alias2mutable_names[item]
+                    grouped_alias.append(item)
+                    group_mutables.extend(
+                        [name2mutable[n] for n in mutable_names])
+                    grouped_mutable_names.extend(mutable_names)
+                else:
+                    # if the item is in name2mutable
+                    group_mutables.append(name2mutable[item])
+                    grouped_mutable_names.append(item)
+
+            search_groups[current_group_nums] = group_mutables
+            current_group_nums += 1
+
+        # Construct search_groups based on alias
+        for alias, mutable_names in alias2mutable_names.items():
+            if alias not in grouped_alias:
+                # Check whether all current names are already grouped
+                flag_all_grouped = True
+                for mutable_name in mutable_names:
+                    if mutable_name not in grouped_mutable_names:
+                        flag_all_grouped = False
+
+                # If not all mutables are already grouped
+                if not flag_all_grouped:
+                    search_groups[current_group_nums] = []
+                    for mutable_name in mutable_names:
+                        if mutable_name not in grouped_mutable_names:
+                            search_groups[current_group_nums].append(
+                                name2mutable[mutable_name])
+                            grouped_mutable_names.append(mutable_name)
                     current_group_nums += 1
-                try:
-                    search_group[group_id].append(module)
-                except KeyError:
-                    search_group[group_id] = [module]
-                self.module_name2group_id[name] = group_id
 
-        self._search_group = search_group
+        # check whether all the mutable objects are in the search_groups
+        for name, module in supernet.named_modules():
+            if isinstance(module, self.mutable_class_type):
+                if name in grouped_mutable_names:
+                    continue
+                else:
+                    search_groups[current_group_nums] = [module]
+                    current_group_nums += 1
+
+        grouped_counter = Counter(grouped_mutable_names)
+
+        # find duplicate keys
+        duplicate_keys = list()
+        for key, count in grouped_counter.items():
+            if count > 1:
+                duplicate_keys.append(key)
+
+        assert len(grouped_mutable_names) == len(
+            list(set(grouped_mutable_names))), \
+            'There are duplicate keys in grouped mutable names. ' \
+            f'The duplicate keys are {duplicate_keys}. ' \
+            'Please check if there are duplicate keys in the `custom_group`.'
+
+        self._search_group = search_groups
+
+    def _check_valid_groups(self, alias2mutable_names: Dict[str, List[str]],
+                            name2mutable: Dict[str, MUTABLE_TYPE],
+                            custom_group: List[List[str]]) -> None:
+
+        aliases = [*alias2mutable_names.keys()]
+        module_names = [*name2mutable.keys()]
+
+        # check if all keys are legal
+        expanded_custom_group: List[str] = [
+            _ for group in custom_group for _ in group
+        ]
+        legal_keys: List[str] = [*aliases, *module_names]
+
+        for key in expanded_custom_group:
+            if key not in legal_keys:
+                raise AssertionError(
+                    f'The key: {key} in `custom_group` is not legal. '
+                    f'Legal keys are: {legal_keys}. '
+                    'Make sure that the keys are either alias or mutable name')
+
+        # when the mutable has alias attribute, the corresponding module
+        # name should not be used in `custom_group`.
+        used_aliases = list()
+        for group in custom_group:
+            for key in group:
+                if key in aliases:
+                    used_aliases.append(key)
+
+        for alias_key in used_aliases:
+            mutable_names: List = alias2mutable_names[alias_key]
+            # check whether module name is in custom group
+            for mutable_name in mutable_names:
+                if mutable_name in expanded_custom_group:
+                    raise AssertionError(
+                        f'When a mutable is set alias attribute :{alias_key},'
+                        f'the corresponding module name {mutable_name} should '
+                        f'not be used in `custom_group` {custom_group}.')

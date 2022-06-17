@@ -13,17 +13,17 @@ from mmrazor.registry import MODELS
 MODEL_CFG = dict(
     type='mmcls.ImageClassifier',
     backbone=dict(
-        type='ResNet',
+        type='mmcls.ResNet',
         depth=50,
         num_stages=4,
         out_indices=(3, ),
         style='pytorch'),
-    neck=dict(type='GlobalAveragePooling'),
+    neck=dict(type='mmcls.GlobalAveragePooling'),
     head=dict(
-        type='LinearClsHead',
+        type='mmcls.LinearClsHead',
         num_classes=1000,
         in_channels=2048,
-        loss=dict(type='CrossEntropyLoss', loss_weight=1.0),
+        loss=dict(type='mmcls.CrossEntropyLoss', loss_weight=1.0),
         topk=(1, 5),
     ))
 
@@ -87,6 +87,7 @@ def test_one_shot_mutator_mutable_model() -> None:
     model = _SearchableModel()
     mutator: OneShotMutator = MODELS.build(MUTATOR_CFG)
 
+    # import pdb; pdb.set_trace()
     mutator.prepare_from_supernet(model)
     assert list(mutator.search_group.keys()) == [0, 1, 2]
 
@@ -116,3 +117,7 @@ def test_one_shot_mutator_mutable_model() -> None:
     mutator = MODELS.build(mutator_cfg)
     with pytest.raises(AssertionError):
         mutator.prepare_from_supernet(model)
+
+
+if __name__ == '__main__':
+    pytest.main()

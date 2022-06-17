@@ -1,22 +1,32 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 from mmcv.cnn import build_activation_layer, build_norm_layer
+from torch import Tensor
 
 from mmrazor.registry import MODELS
-from ...utils import Placeholder
 
 
 class FactorizedReduce(nn.Module):
-    """Reduce feature map size by factorized pointwise (stride=2)."""
+    """Reduce feature map size by factorized pointwise (stride=2).
 
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 act_cfg=dict(type='ReLU'),
-                 norm_cfg=dict(type='BN')):
+    Args:
+        in_channels (int): number of channels of input tensor.
+        out_channels (int): number of channels of output tensor.
+        act_cfg (Dict): config to build activation layer.
+        norm_cfg (Dict): config to build normalization layer.
+    """
+
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        act_cfg: Dict = dict(type='ReLU'),
+        norm_cfg: Dict = dict(type='BN')
+    ) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -39,7 +49,8 @@ class FactorizedReduce(nn.Module):
             bias=False)
         self.bn = build_norm_layer(self.norm_cfg, self.out_channels)[1]
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
+        """Forward with factorized reduce."""
         x = self.relu(x)
         out = torch.cat([self.conv1(x), self.conv2(x[:, :, 1:, 1:])], dim=1)
         out = self.bn(out)
@@ -47,18 +58,31 @@ class FactorizedReduce(nn.Module):
 
 
 class StandardConv(nn.Module):
-    """
-    Standard conv: ReLU - Conv - BN
+    """Standard Convolution in Darts. Basic structure is ReLU-Conv-BN.
+
+    Args:
+        in_channels (int): number of channels of input tensor.
+        out_channels (int): number of channels of output tensor.
+        kernel_size (Union[int, Tuple]): size of the convolving kernel.
+        stride (Union[int, Tuple]): controls the stride for the
+            cross-correlation, a single number or a one-element tuple.
+            Default to 1.
+        padding (Union[str, int, Tuple]): Padding added to both sides
+            of the input. Default to 0.
+        act_cfg (Dict): config to build activation layer.
+        norm_cfg (Dict): config to build normalization layer.
     """
 
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 kernel_size,
-                 stride,
-                 padding,
-                 act_cfg=dict(type='ReLU'),
-                 norm_cfg=dict(type='BN')):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Union[int, Tuple],
+        stride: Union[int, Tuple] = 1,
+        padding: Union[str, int, Tuple] = 0,
+        act_cfg: Dict = dict(type='ReLU'),
+        norm_cfg: Dict = dict(type='BN')
+    ) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -78,14 +102,26 @@ class StandardConv(nn.Module):
                 bias=False),
             build_norm_layer(self.norm_cfg, self.out_channels)[1])
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
+        """Forward the standard convolution."""
         return self.net(x)
 
 
 class Node(nn.Module):
+    """Node structure of DARTS.
 
-    def __init__(self, node_id, num_prev_nodes, channels,
-                 num_downsample_nodes):
+    Args:
+        node_id (str): key of the node.
+        num_prev_nodes (int): number of previous nodes.
+        channels (int): number of channels of current node.
+        num_downsample_nodes (int): index of downsample node.
+        mutable_cfg (Dict): config of `DiffMutable`.
+        route_cfg (Dict): config of `DiffChoiceRoute`.
+    """
+
+    def __init__(self, node_id: str, num_prev_nodes: int, channels: int,
+                 num_downsample_nodes: int, mutable_cfg: Dict,
+                 route_cfg: Dict) -> None:
         super().__init__()
         edges = nn.ModuleDict()
         for i in range(num_prev_nodes):
@@ -95,35 +131,58 @@ class Node(nn.Module):
                 stride = 1
 
             edge_id = '{}_p{}'.format(node_id, i)
-            edges.add_module(
-                edge_id,
-                nn.Sequential(
-                    Placeholder(
-                        group='node',
-                        space_id=edge_id,
-                        choice_args=dict(
-                            stride=stride,
-                            in_channels=channels,
-                            out_channels=channels)), ))
 
-        self.edges = Placeholder(
-            group='node_edge', space_id=node_id, choices=edges)
+            module_kwargs = dict(
+                in_channels=channels,
+                out_channels=channels,
+                stride=stride,
+            )
 
-    def forward(self, prev_nodes):
+            mutable_cfg.update(module_kwargs=module_kwargs)
+            mutable_cfg.update(alias=edge_id)
+            edges.add_module(edge_id, MODELS.build(mutable_cfg))
+
+        route_cfg.update(edges=edges)
+        self.edges = MODELS.build(route_cfg)
+
+    def forward(self, prev_nodes: Union[List[Tensor],
+                                        Tuple[Tensor]]) -> Tensor:
+        """Forward with the previous nodes list."""
         return self.edges(prev_nodes)
 
 
 class Cell(nn.Module):
+    """Darts cell structure.
 
-    def __init__(self,
-                 num_nodes,
-                 channels,
-                 prev_channels,
-                 prev_prev_channels,
-                 reduction,
-                 prev_reduction,
-                 act_cfg=dict(type='ReLU'),
-                 norm_cfg=dict(type='BN')):
+    Args:
+        num_nodes (int): number of nodes.
+        channels (int): number of channels of current cell.
+        prev_channels (int): number of channel of previous input.
+        prev_prev_channels (int): number of channel of previous previous input.
+        reduction (bool): whether to reduce the feature map size.
+        prev_reduction (bool): whether to reduce the previous feature map size.
+        mutable_cfg (Optional[Dict]): config of `DiffMutable`.
+        route_cfg (Optional[Dict]): config of `DiffChoiceRoute`.
+        act_cfg (Dict): config to build activation layer.
+            Defaults to dict(type='ReLU').
+        norm_cfg (Dict): config to build normalization layer.
+            Defaults to dict(type='BN').
+    """
+
+    def __init__(
+            self,
+            num_nodes: int,
+            channels: int,
+            prev_channels: int,
+            prev_prev_channels: int,
+            reduction: bool,
+            prev_reduction: bool,
+            mutable_cfg: Dict,
+            route_cfg: Dict,
+            act_cfg: Dict = dict(type='ReLU'),
+            norm_cfg: Dict = dict(type='BN'),
+    ) -> None:
+
         super().__init__()
         self.act_cfg = act_cfg
         self.norm_cfg = norm_cfg
@@ -152,11 +211,12 @@ class Cell(nn.Module):
                 node_id = f'normal_n{depth}'
                 num_downsample_nodes = 0
             self.nodes.append(
-                Node(node_id, depth, channels, num_downsample_nodes))
+                Node(node_id, depth, channels, num_downsample_nodes,
+                     mutable_cfg, route_cfg))
 
-    def forward(self, s0, s1):
-        # s0, s1 are the outputs of previous previous cell and previous cell,
-        # respectively.
+    def forward(self, s0: Tensor, s1: Tensor) -> Tensor:
+        """Forward with the outputs of previous previous cell and previous
+        cell."""
         tensors = [self.preproc0(s0), self.preproc1(s1)]
         for node in self.nodes:
             cur_tensor = node(tensors)
@@ -167,14 +227,21 @@ class Cell(nn.Module):
 
 
 class AuxiliaryModule(nn.Module):
-    """Auxiliary head in 2/3 place of network to let the gradient flow well."""
+    """Auxiliary head in 2/3 place of network to let the gradient flow well.
+
+    Args:
+        in_channels (int): number of channels of inputs.
+        base_channels (int): number of middle channels of the auxiliary module.
+        out_channels (int): number of channels of outputs.
+        norm_cfg (Dict): config to build normalization layer.
+            Defaults to dict(type='BN').
+    """
 
     def __init__(self,
-                 in_channels,
-                 base_channels,
-                 out_channels,
-                 norm_cfg=dict(type='BN')):
-
+                 in_channels: int,
+                 base_channels: int,
+                 out_channels: int,
+                 norm_cfg: Dict = dict(type='BN')) -> None:
         super().__init__()
         self.norm_cfg = norm_cfg
         self.net = nn.Sequential(
@@ -189,25 +256,56 @@ class AuxiliaryModule(nn.Module):
             build_norm_layer(self.norm_cfg, out_channels)[1],
             nn.ReLU(inplace=True))
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
+        """Forward the auxiliary module."""
         return self.net(x)
 
 
 @MODELS.register_module()
 class DartsBackbone(nn.Module):
+    """Backbone of Differentiable Architecture Search (DARTS).
 
-    def __init__(self,
-                 in_channels,
-                 base_channels,
-                 num_layers=8,
-                 num_nodes=4,
-                 stem_multiplier=3,
-                 out_indices=(7, ),
-                 auxliary=False,
-                 aux_channels=None,
-                 aux_out_channels=None,
-                 act_cfg=dict(type='ReLU'),
-                 norm_cfg=dict(type='BN')):
+    Args:
+        in_channels (int): number of channels of input tensor.
+        base_channels (int): number of middle channels.
+        mutable_cfg (Optional[Dict]): config of `DiffMutable`.
+        route_cfg (Optional[Dict]): config of `DiffChoiceRoute`.
+        num_layers (Optional[int]): number of layers.
+            Defaults to 8.
+        num_nodes (Optional[int]): number of nodes.
+            Defaults to 4.
+        stem_multiplier (Optional[int]): multiplier for stem.
+            Defaults to 3.
+        out_indices (tuple, optional): output indices for auxliary module.
+            Defaults to (7, ).
+        auxliary (bool, optional): whether use auxliary module.
+            Defaults to False.
+        aux_channels (Optional[int]): number of middle channels of
+            auxliary module. Defaults to None.
+        aux_out_channels (Optional[int]): number of output channels of
+            auxliary module. Defaults to None.
+        act_cfg (Dict): config to build activation layer.
+            Defaults to dict(type='ReLU').
+        norm_cfg (Dict): config to build normalization layer.
+            Defaults to dict(type='BN').
+    """
+
+    def __init__(
+            self,
+            in_channels: int,
+            base_channels: int,
+            mutable_cfg: Dict,
+            route_cfg: Dict,
+            num_layers: int = 8,
+            num_nodes: int = 4,
+            stem_multiplier: int = 3,
+            out_indices: Union[Tuple, List] = (7, ),
+            auxliary: bool = False,
+            aux_channels: Optional[int] = None,
+            aux_out_channels: Optional[int] = None,
+            act_cfg: Dict = dict(type='ReLU'),
+            norm_cfg: Dict = dict(type='BN'),
+    ) -> None:
         super().__init__()
 
         self.in_channels = in_channels
@@ -237,7 +335,7 @@ class DartsBackbone(nn.Module):
             build_norm_layer(self.norm_cfg, self.out_channels)[1])
 
         # for the first cell, stem is used for both s0 and s1
-        # [!] prev_prev_channels and prev_channels is output channel size,
+        # prev_prev_channels and prev_channels is output channel size,
         # but c_cur is input channel size.
         prev_prev_channels = self.out_channels
         prev_channels = self.out_channels
@@ -255,7 +353,7 @@ class DartsBackbone(nn.Module):
 
             cell = Cell(self.num_nodes, self.out_channels, prev_channels,
                         prev_prev_channels, reduction, prev_reduction,
-                        self.act_cfg, self.norm_cfg)
+                        mutable_cfg, route_cfg, self.act_cfg, self.norm_cfg)
             self.cells.append(cell)
 
             prev_prev_channels = prev_channels
@@ -267,7 +365,8 @@ class DartsBackbone(nn.Module):
                                                        self.aux_out_channels,
                                                        self.norm_cfg)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
+        """Forward the darts backbone."""
         outs = []
         s0 = s1 = self.stem(x)
         for i, cell in enumerate(self.cells):
@@ -276,7 +375,6 @@ class DartsBackbone(nn.Module):
                 outs.append(s1)
             if i == self.auxliary_indice and self.training:
                 aux_feature = self.auxliary_module(s1)
-
                 outs.insert(0, aux_feature)
 
         return tuple(outs)

@@ -20,6 +20,7 @@ class DiffMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
     Args:
         module_kwargs (dict[str, dict], optional): Module initialization named
             arguments. Defaults to None.
+        alias (str, optional): alias of the `MUTABLE`.
         init_cfg (dict, optional): initialization configuration dict for
             ``BaseModule``. OpenMMLab has implement 5 initializer including
             `Constant`, `Xavier`, `Normal`, `Uniform`, `Kaiming`,
@@ -31,8 +32,10 @@ class DiffMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
 
     def __init__(self,
                  module_kwargs: Optional[Dict[str, Dict]] = None,
+                 alias: Optional[str] = None,
                  init_cfg: Optional[Dict] = None) -> None:
-        super().__init__(module_kwargs=module_kwargs, init_cfg=init_cfg)
+        super().__init__(
+            module_kwargs=module_kwargs, alias=alias, init_cfg=init_cfg)
 
     def forward(self,
                 x: Any,
@@ -103,6 +106,7 @@ class DiffOP(DiffMutable[str, str]):
             operations.
         module_kwargs (dict[str, dict], optional): Module initialization named
             arguments. Defaults to None.
+        alias (str, optional): alias of the `MUTABLE`.
         init_cfg (dict, optional): initialization configuration dict for
             ``BaseModule``. OpenMMLab has implement 5 initializer including
             `Constant`, `Xavier`, `Normal`, `Uniform`, `Kaiming`,
@@ -113,9 +117,11 @@ class DiffOP(DiffMutable[str, str]):
         self,
         candidate_ops: Dict[str, Dict],
         module_kwargs: Optional[Dict[str, Dict]] = None,
+        alias: Optional[str] = None,
         init_cfg: Optional[Dict] = None,
     ) -> None:
-        super().__init__(module_kwargs=module_kwargs, init_cfg=init_cfg)
+        super().__init__(
+            module_kwargs=module_kwargs, alias=alias, init_cfg=init_cfg)
         assert len(candidate_ops) >= 1, \
             f'Number of candidate op must greater than or equal to 1, ' \
             f'but got: {len(candidate_ops)}'
