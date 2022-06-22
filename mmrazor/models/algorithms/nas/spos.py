@@ -7,9 +7,9 @@ from mmengine.model import BaseModel
 from torch import nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.core.subnet import (SINGLE_MUTATOR_RANDOM_SUBNET, FixSubnet,
-                                 load_fix_subnet)
 from mmrazor.models.mutators import OneShotMutator
+from mmrazor.models.subnet import (SINGLE_MUTATOR_RANDOM_SUBNET, FixSubnet,
+                                   load_fix_subnet)
 from mmrazor.registry import MODELS
 from ..base import BaseAlgorithm, LossResults
 
