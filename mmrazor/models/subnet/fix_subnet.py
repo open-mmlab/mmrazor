@@ -110,4 +110,4 @@ def export_fix_subnet(model: nn.Module) -> FixSubnet:
     for name, module in model.named_modules():
         if isinstance(module, BaseMutable):
             fix_subnet[name] = module.current_choice
-    return FixSubnet(**fix_subnet)
+    return FixSubnet(modules=fix_subnet)
