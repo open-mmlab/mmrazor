@@ -853,7 +853,8 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         # However, a shared module will be visited more than once during
         # forward, so it is still need to be traced even if it has been
         # visited.
-        if name in visited and visited[name] and name not in self.shared_module:
+        if (name in visited and visited[name]
+                and name not in self.shared_module):
             result_paths.append(copy.deepcopy(cur_path))
         else:
             visited[name] = True
