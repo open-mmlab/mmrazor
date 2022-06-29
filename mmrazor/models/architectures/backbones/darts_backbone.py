@@ -7,6 +7,7 @@ import torch.nn as nn
 from mmcv.cnn import build_activation_layer, build_norm_layer
 from torch import Tensor
 
+from mmrazor.models.subnet import FixSubnetMixin
 from mmrazor.registry import MODELS
 
 
@@ -262,7 +263,7 @@ class AuxiliaryModule(nn.Module):
 
 
 @MODELS.register_module()
-class DartsBackbone(nn.Module):
+class DartsBackbone(nn.Module, FixSubnetMixin):
     """Backbone of Differentiable Architecture Search (DARTS).
 
     Args:

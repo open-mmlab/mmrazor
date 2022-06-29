@@ -8,7 +8,7 @@ from mmcv.cnn.utils import flops_counter as mmcv_flops_counter
 from mmcv.cnn.utils import get_model_complexity_info
 from torch.nn import Module
 
-from ..fix_subnet import FixSubnet, load_fix_subnet
+from ..fix_subnet import FixSubnet
 
 FIX_SUBNET_TYPE = Union[str, FixSubnet, Dict[str, Dict]]
 
@@ -132,7 +132,7 @@ class FlopsEstimator:
         """
         copied_model = copy.deepcopy(model)
         if fix_subnet is not None:
-            load_fix_subnet(copied_model, fix_subnet)
+            copied_model.load_fix_subnet(fix_subnet)
 
         return get_model_complexity_info(
             model=copied_model,

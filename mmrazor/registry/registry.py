@@ -5,7 +5,9 @@ Each node is a child of the root registry in MMEngine.
 More details can be found at
 https://mmengine.readthedocs.io/en/latest/tutorials/registry.html.
 """
+from typing import Any, Optional, Union
 
+from mmengine.config import Config, ConfigDict
 from mmengine.registry import DATA_SAMPLERS as MMENGINE_DATA_SAMPLERS
 from mmengine.registry import DATASETS as MMENGINE_DATASETS
 from mmengine.registry import HOOKS as MMENGINE_HOOKS
@@ -27,7 +29,35 @@ from mmengine.registry import VISBACKENDS as MMENGINE_VISBACKENDS
 from mmengine.registry import VISUALIZERS as MMENGINE_VISUALIZERS
 from mmengine.registry import \
     WEIGHT_INITIALIZERS as MMENGINE_WEIGHT_INITIALIZERS
-from mmengine.registry import Registry
+from mmengine.registry import Registry, build_from_cfg
+
+
+def build_razor_model_from_cfg(
+        cfg: Union[dict, ConfigDict, Config],
+        registry: 'Registry',
+        default_args: Optional[Union[dict, ConfigDict, Config]] = None) -> Any:
+
+    # TODO relay on mmengine:HAOCHENYE/config_new_feature
+    # if cfg.get('cfg_path', None) and not cfg.get('type', None):
+    #     from mmengine.config import get_model
+    #     teacher = get_model(**cfg)
+    #     return teacher
+
+    if cfg.get('_fix_subnet_', None):
+        fix_subnet = cfg.pop('_fix_subnet_')
+        mutable_model = build_from_cfg(cfg, registry, default_args)
+        mutable_model.load_fix_subnet(fix_subnet)
+        return mutable_model
+    else:
+        return_architecture = False
+        if cfg.get('_return_architecture_', None):
+            return_architecture = cfg.pop('_return_architecture_')
+        razor_model = build_from_cfg(cfg, registry, default_args)
+        if return_architecture:
+            return razor_model.architecture
+        else:
+            return razor_model
+
 
 # Registries For Runner and the related
 # manage all kinds of runners like `EpochBasedRunner` and `IterBasedRunner`
@@ -47,7 +77,8 @@ DATA_SAMPLERS = Registry('data sampler', parent=MMENGINE_DATA_SAMPLERS)
 TRANSFORMS = Registry('transform', parent=MMENGINE_TRANSFORMS)
 
 # manage all kinds of modules inheriting `nn.Module`
-MODELS = Registry('model', parent=MMENGINE_MODELS)
+MODELS = Registry(
+    'model', parent=MMENGINE_MODELS, build_func=build_razor_model_from_cfg)
 # manage all kinds of model wrappers like 'MMDistributedDataParallel'
 MODEL_WRAPPERS = Registry('model_wrapper', parent=MMENGINE_MODEL_WRAPPERS)
 # manage all kinds of weight initialization modules like `Uniform`

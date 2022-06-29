@@ -8,7 +8,7 @@ from torch import Tensor
 from torch.nn import Conv2d, Module, Parameter
 
 from mmrazor.models import OneShotMutable
-from mmrazor.models.subnet import FlopsEstimator, export_fix_subnet
+from mmrazor.models.subnet import FlopsEstimator
 from mmrazor.registry import MODELS
 
 _FIRST_STAGE_MUTABLE = dict(
@@ -213,7 +213,7 @@ class TestFlopsEstimator(TestCase):
         flops_count, params_count = FlopsEstimator.get_model_complexity_info(
             copied_model, as_strings=False)
 
-        fix_subnet = export_fix_subnet(model)
+        fix_subnet = model.export_fix_subnet()
         subnet_flops_count, subnet_params_count = \
             FlopsEstimator.get_model_complexity_info(
                 model, fix_subnet, as_strings=False)

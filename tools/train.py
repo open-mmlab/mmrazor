@@ -3,16 +3,10 @@ import argparse
 import os
 import os.path as osp
 
-# TODO import mmcls and mmseg
-from mmdet.core import *  # noqa: F401,F403
-from mmdet.datasets import *  # noqa: F401,F403
-from mmdet.metrics import *  # noqa: F401,F403
-from mmdet.models import *  # noqa: F401,F403
 from mmengine.config import Config, DictAction
 from mmengine.runner import Runner
 
-from mmrazor.core import *  # noqa: F401,F403
-from mmrazor.models import *  # noqa: F401,F403
+from mmrazor.utils import register_all_modules
 
 
 def parse_args():
@@ -43,6 +37,8 @@ def parse_args():
 
 
 def main():
+    register_all_modules(False)
+
     args = parse_args()
 
     # load config

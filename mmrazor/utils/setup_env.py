@@ -1,10 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import datetime
 import os
 import platform
 import warnings
 
 import cv2
 import torch.multiprocessing as mp
+from mmengine import DefaultScope
 
 
 def setup_multi_processes(cfg):
@@ -45,3 +47,37 @@ def setup_multi_processes(cfg):
             f'overloaded, please further tune the variable for optimal '
             f'performance in your application as needed.')
         os.environ['MKL_NUM_THREADS'] = str(mkl_num_threads)
+
+
+def register_all_modules(init_default_scope: bool = True) -> None:
+    """Register all modules in mmrazor into the registries.
+
+    Args:
+        init_default_scope (bool): Whether initialize the mmrazor default scope.
+            When `init_default_scope=True`, the global default scope will be
+            set to `mmrazor`, and all registries will build modules from mmrazor's
+            registry node. To understand more about the registry, please refer
+            to https://github.com/open-mmlab/mmengine/blob/main/docs/en/tutorials/registry.md
+            Defaults to True.
+    """  # noqa
+    import mmrazor.core  # noqa: F401,F403
+    import mmrazor.models  # noqa: F401,F403
+
+    # TODO add mmrazor.runners
+
+    if init_default_scope:
+        never_created = DefaultScope.get_current_instance() is None \
+                        or not DefaultScope.check_instance_created('mmrazor')
+        if never_created:
+            DefaultScope.get_instance('mmrazor', scope_name='mmrazor')
+            return
+        current_scope = DefaultScope.get_current_instance()
+        if current_scope.scope_name != 'mmrazor':
+            warnings.warn('The current default scope '
+                          f'"{current_scope.scope_name}" is not "mmrazor", '
+                          '`register_all_modules` will force the current'
+                          'default scope to be "mmrazor". If this is not '
+                          'expected, please set `init_default_scope=False`.')
+            # avoid name conflict
+            new_instance_name = f'mmrazor-{datetime.datetime.now()}'
+            DefaultScope.get_instance(new_instance_name, scope_name='mmrazor')

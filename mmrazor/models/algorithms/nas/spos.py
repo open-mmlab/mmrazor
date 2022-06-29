@@ -9,7 +9,7 @@ from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.mutators import OneShotMutator
 from mmrazor.models.subnet import (SINGLE_MUTATOR_RANDOM_SUBNET, FixSubnet,
-                                   load_fix_subnet)
+                                   FixSubnetMixin)
 from mmrazor.registry import MODELS
 from ..base import BaseAlgorithm, LossResults
 
@@ -17,7 +17,7 @@ VALID_FIX_SUBNET = Union[str, FixSubnet, Dict[str, Dict[str, Any]]]
 
 
 @MODELS.register_module()
-class SPOS(BaseAlgorithm):
+class SPOS(BaseAlgorithm, FixSubnetMixin):
     """Implementation of `SPOS <https://arxiv.org/abs/1904.00420>`_
 
     SPOS means Single Path One-Shot, a classic NAS algorithm.
@@ -80,7 +80,7 @@ class SPOS(BaseAlgorithm):
         # fix_subnet is not None, means subnet retraining.
         if fix_subnet:
             # According to fix_subnet, delete the unchosen part of supernet
-            load_fix_subnet(self.architecture, fix_subnet)
+            self.load_fix_subnet(fix_subnet, prefix='architecture.')
             self.is_supernet = False
         else:
             assert mutator is not None, \
