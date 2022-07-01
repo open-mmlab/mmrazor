@@ -38,7 +38,7 @@ class BaseMutator(ABC, BaseModule):
 
     @property
     @abstractmethod
-    def search_group(self) -> Dict:
+    def search_groups(self) -> Dict:
         """Search group of the supernet.
 
         Note:
@@ -76,7 +76,7 @@ class ArchitectureMutator(BaseMutator, Generic[MUTABLE_TYPE]):
         if custom_group is None:
             custom_group = []
         self._custom_group = custom_group
-        self._search_group: Optional[Dict[int, List[MUTABLE_TYPE]]] = None
+        self._search_groups: Optional[Dict[int, List[MUTABLE_TYPE]]] = None
 
     # TODO
     # should be a class property
@@ -99,10 +99,10 @@ class ArchitectureMutator(BaseMutator, Generic[MUTABLE_TYPE]):
             supernet (:obj:`torch.nn.Module`): The supernet to be searched
                 in your algorithm.
         """
-        self._build_search_group(supernet)
+        self._build_search_groups(supernet)
 
     @property
-    def search_group(self) -> Dict[int, List[MUTABLE_TYPE]]:
+    def search_groups(self) -> Dict[int, List[MUTABLE_TYPE]]:
         """Search group of supernet.
 
         Note:
@@ -115,10 +115,10 @@ class ArchitectureMutator(BaseMutator, Generic[MUTABLE_TYPE]):
         Returns:
             Dict[int, List[MUTABLE_TYPE]]: Search group.
         """
-        if self._search_group is None:
+        if self._search_groups is None:
             raise RuntimeError(
                 'Call `prepare_from_supernet` before access search group!')
-        return self._search_group
+        return self._search_groups
 
     def _build_name_mutable_mapping(
             self, supernet: Module) -> Dict[str, MUTABLE_TYPE]:
@@ -143,7 +143,7 @@ class ArchitectureMutator(BaseMutator, Generic[MUTABLE_TYPE]):
 
         return alias2mutable_names
 
-    def _build_search_group(self, supernet: Module) -> None:
+    def _build_search_groups(self, supernet: Module) -> None:
         """Build search group with ``custom_group`` and ``alias``(see more
         information in :class:`BaseMutable`). Grouping by alias and module name
         are both supported.
@@ -176,20 +176,20 @@ class ArchitectureMutator(BaseMutator, Generic[MUTABLE_TYPE]):
             >>> # Using alias for grouping
             >>> mutator = DiffOP(custom_group=[['a1'], ['a2']])
             >>> mutator.prepare_from_supernet(model)
-            >>> mutator.search_group
+            >>> mutator.search_groups
             {0: [op1, op2], 1: [op3]}
 
             >>> # Using module name for grouping
             >>> mutator = DiffOP(custom_group=[['op1', 'op2'], ['op3']])
             >>> mutator.prepare_from_supernet(model)
-            >>> mutator.search_group
+            >>> mutator.search_groups
             {0: [op1, op2], 1: [op3]}
 
             >>> # Using both alias and module name for grouping
             >>> mutator = DiffOP(custom_group=[['a2'], ['op2']])
             >>> mutator.prepare_from_supernet(model)
             >>> # The last operation would be grouped
-            >>> mutator.search_group
+            >>> mutator.search_groups
             {0: [op3], 1: [op2], 2: [op1]}
 
 
@@ -271,7 +271,7 @@ class ArchitectureMutator(BaseMutator, Generic[MUTABLE_TYPE]):
             f'The duplicate keys are {duplicate_keys}. ' \
             'Please check if there are duplicate keys in the `custom_group`.'
 
-        self._search_group = search_groups
+        self._search_groups = search_groups
 
     def _check_valid_groups(self, alias2mutable_names: Dict[str, List[str]],
                             name2mutable: Dict[str, MUTABLE_TYPE],

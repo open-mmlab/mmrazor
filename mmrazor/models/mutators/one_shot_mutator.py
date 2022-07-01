@@ -25,7 +25,7 @@ class OneShotMutator(ArchitectureMutator[OneShotMutable]):
         ['op1', 'op2', 'op3']
 
         >>> mutator.prepare_from_supernet(supernet)
-        >>> mutator.search_group
+        >>> mutator.search_groups
         {0: [op1], 1: [op2], 2: [op3]}
 
         >>> random_choices = mutator.sample_choices()
@@ -61,7 +61,7 @@ class OneShotMutator(ArchitectureMutator[OneShotMutable]):
             Dict[int, Any]: Random choices dict.
         """
         random_choices = dict()
-        for group_id, modules in self.search_group.items():
+        for group_id, modules in self.search_groups.items():
             random_choices[group_id] = modules[0].sample_choice()
 
         return random_choices
@@ -75,7 +75,7 @@ class OneShotMutator(ArchitectureMutator[OneShotMutable]):
                 search groups, and the value is the sampling results
                 corresponding to this group.
         """
-        for group_id, modules in self.search_group.items():
+        for group_id, modules in self.search_groups.items():
             choice = choices[group_id]
             for module in modules:
                 module.current_choice = choice

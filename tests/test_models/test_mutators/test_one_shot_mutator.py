@@ -59,10 +59,10 @@ def test_one_shot_mutator_normal_model() -> None:
     assert mutator.mutable_class_type == OneShotMutable
 
     with pytest.raises(RuntimeError):
-        _ = mutator.search_group
+        _ = mutator.search_groups
 
     mutator.prepare_from_supernet(model)
-    assert len(mutator.search_group) == 0
+    assert len(mutator.search_groups) == 0
     assert len(mutator.sample_choices()) == 0
 
 
@@ -89,7 +89,7 @@ def test_one_shot_mutator_mutable_model() -> None:
 
     # import pdb; pdb.set_trace()
     mutator.prepare_from_supernet(model)
-    assert list(mutator.search_group.keys()) == [0, 1, 2]
+    assert list(mutator.search_groups.keys()) == [0, 1, 2]
 
     random_choices = mutator.sample_choices()
     assert list(random_choices.keys()) == [0, 1, 2]
@@ -102,7 +102,7 @@ def test_one_shot_mutator_mutable_model() -> None:
     mutator = MODELS.build(mutator_cfg)
 
     mutator.prepare_from_supernet(model)
-    assert list(mutator.search_group.keys()) == [0, 1]
+    assert list(mutator.search_groups.keys()) == [0, 1]
 
     random_choices = mutator.sample_choices()
     assert list(random_choices.keys()) == [0, 1]

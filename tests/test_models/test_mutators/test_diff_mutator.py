@@ -104,7 +104,7 @@ class TestDiffMutator(TestCase):
         mutator: DiffOP = MODELS.build(self.MUTATOR_CFG)
 
         mutator.prepare_from_supernet(model)
-        assert list(mutator.search_group.keys()) == [0, 1, 2]
+        assert list(mutator.search_groups.keys()) == [0, 1, 2]
 
     def test_diff_mutator_diffop_model(self) -> None:
         model = SearchableModel(self.MUTABLE_CFG)
@@ -118,7 +118,7 @@ class TestDiffMutator(TestCase):
         mutator: DiffOP = MODELS.build(mutator_cfg)
 
         mutator.prepare_from_supernet(model)
-        assert list(mutator.search_group.keys()) == [0, 1, 2]
+        assert list(mutator.search_groups.keys()) == [0, 1, 2]
 
         mutator.modify_supernet_forward()
         assert mutator.mutable_class_type == DiffMutable
@@ -146,7 +146,7 @@ class TestDiffMutator(TestCase):
 
         mutator.prepare_from_supernet(model)
 
-        assert list(mutator.search_group.keys()) == [0, 1, 2]
+        assert list(mutator.search_groups.keys()) == [0, 1, 2]
 
         mutator.modify_supernet_forward()
         assert mutator.mutable_class_type == DiffMutable
@@ -165,7 +165,7 @@ class TestDiffMutator(TestCase):
 
         mutator.prepare_from_supernet(model)
 
-        assert list(mutator.search_group.keys()) == [0, 1, 2, 3]
+        assert list(mutator.search_groups.keys()) == [0, 1, 2, 3]
 
         mutator.modify_supernet_forward()
         assert mutator.mutable_class_type == DiffMutable

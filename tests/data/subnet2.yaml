@@ -1,0 +1,24 @@
+op1.mutable_in_channels:
+  current_choice: 3
+  origin_channels: 3
+op1.mutable_out_channels:
+  current_choice: 8
+  origin_channels: 8
+bn1.mutable_num_features:
+  current_choice: 8
+  origin_channels: 8
+op2.mutable_in_channels:
+  current_choice: 8
+  origin_channels: 8
+op2.mutable_out_channels:
+  current_choice: 8
+  origin_channels: 8
+bn2.mutable_num_features:
+  current_choice: 8
+  origin_channels: 8
+op3.mutable_in_channels:
+  current_choice: 8
+  origin_channels: 8
+op3.mutable_out_channels:
+  current_choice: 8
+  origin_channels: 8

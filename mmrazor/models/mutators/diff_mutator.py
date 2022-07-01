@@ -45,12 +45,12 @@ class DiffMutator(ArchitectureMutator[DiffMutable]):
         group_id share the same arch param.
 
         Returns:
-            torch.nn.ParameterDict: the arch params are got by `search_group`.
+            torch.nn.ParameterDict: the arch params are got by `search_groups`.
         """
 
         arch_params: Dict[int, nn.Parameter] = dict()
 
-        for group_id, modules in self.search_group.items():
+        for group_id, modules in self.search_groups.items():
             group_arch_param = modules[0].build_arch_param()
             arch_params[group_id] = group_arch_param
 
@@ -65,7 +65,7 @@ class DiffMutator(ArchitectureMutator[DiffMutable]):
         `DiffMutable`.
         """
 
-        for group_id, modules in self.search_group.items():
+        for group_id, modules in self.search_groups.items():
             for module in modules:
                 module.set_forward_args(arch_param=self.arch_params[group_id])
 
