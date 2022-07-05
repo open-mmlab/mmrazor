@@ -62,6 +62,7 @@ class BaseAlgorithm(BaseModel):
         # build model first.
         if isinstance(architecture, Dict):
             architecture = MODELS.build(architecture)
+
         if not isinstance(architecture, BaseModel):
             raise TypeError('architecture should be a `dict` or '
                             f'`BaseModel` instance, but got '
@@ -75,7 +76,7 @@ class BaseAlgorithm(BaseModel):
                                         None)
         super().__init__(data_preprocessor, init_cfg)
 
-        # Cannot assign module before Module.__init__() call
+        # Cannot assign module before Module.__init__()
         self.architecture = architecture
 
     def forward(self,

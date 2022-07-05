@@ -8,11 +8,13 @@ import torch.nn as nn
 from torch import Tensor
 
 from mmrazor.registry import MODELS
-from .base_mutable import CHOICE_TYPE, CHOSEN_TYPE, BaseMutable
+from ..base_mutable import CHOICE_TYPE, CHOSEN_TYPE
+from .mutable_module import MutableModule
 
 
-class OneShotMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
-    """Base class for one shot mutables.
+class OneShotMutableModule(MutableModule[CHOICE_TYPE, CHOSEN_TYPE]):
+    """Base class for one shot mutable module. A base type of ``MUTABLES`` for
+    single path supernet such as Single Path One Shot.
 
     All subclass should implement the following APIs:
 
@@ -33,13 +35,6 @@ class OneShotMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
     Note:
         :meth:`forward_all` is called when calculating FLOPs.
     """
-
-    def __init__(self,
-                 module_kwargs: Optional[Dict[str, Dict]] = None,
-                 alias: Optional[str] = None,
-                 init_cfg: Optional[Dict] = None) -> None:
-        super().__init__(
-            module_kwargs=module_kwargs, alias=alias, init_cfg=init_cfg)
 
     def forward(self, x: Any) -> Any:
         """Calls either :func:`forward_fixed` or :func:`forward_choice`
@@ -62,11 +57,10 @@ class OneShotMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
         """
         if self.is_fixed:
             return self.forward_fixed(x)
+        if self.current_choice is None:
+            return self.forward_all(x)
         else:
-            if self.current_choice is None:
-                return self.forward_all(x)
-            else:
-                return self.forward_choice(x, choice=self.current_choice)
+            return self.forward_choice(x, choice=self.current_choice)
 
     @abstractmethod
     def sample_choice(self) -> CHOICE_TYPE:
@@ -99,7 +93,7 @@ class OneShotMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
 
 
 @MODELS.register_module()
-class OneShotOP(OneShotMutable[str, str]):
+class OneShotMutableOP(OneShotMutableModule[str, str]):
     """A type of ``MUTABLES`` for single path supernet, such as Single Path One
     Shot. In single path supernet, each choice block only has one choice
     invoked at the same time. A path is obtained by sampling all the choice
@@ -118,7 +112,7 @@ class OneShotOP(OneShotMutable[str, str]):
 
     Examples:
         >>> import torch
-        >>> from mmrazor.models.mutables import OneShotOP
+        >>> from mmrazor.models.mutables import OneShotMutableOP
 
         >>> candidate_ops = nn.ModuleDict({
         ...     'conv3x3': nn.Conv2d(32, 32, 3, 1, 1),
@@ -126,7 +120,7 @@ class OneShotOP(OneShotMutable[str, str]):
         ...     'conv7x7': nn.Conv2d(32, 32, 7, 1, 3)})
 
         >>> input = torch.randn(1, 32, 64, 64)
-        >>> op = OneShotOP(candidate_ops)
+        >>> op = OneShotMutableOP(candidate_ops)
 
         >>> op.choices
         ['conv3x3', 'conv5x5', 'conv7x7']
@@ -153,20 +147,13 @@ class OneShotOP(OneShotMutable[str, str]):
         True
     """
 
-    def __init__(
-        self,
-        candidate_ops: Union[Dict[str, Dict], nn.ModuleDict],
-        module_kwargs: Optional[Dict[str, Dict]] = None,
-        alias: Optional[str] = None,
-        init_cfg: Optional[Dict] = None,
-    ) -> None:
-        super().__init__(
-            module_kwargs=module_kwargs, alias=alias, init_cfg=init_cfg)
+    def __init__(self, candidate_ops: Union[Dict[str, Dict], nn.ModuleDict],
+                 **kwargs) -> None:
+        super().__init__(**kwargs)
         assert len(candidate_ops) >= 1, \
             f'Number of candidate op must greater than 1, ' \
             f'but got: {len(candidate_ops)}'
 
-        self._is_fixed = False
         self._chosen: Optional[str] = None
         if isinstance(candidate_ops, dict):
             self._candidate_ops = self._build_ops(candidate_ops,
@@ -228,7 +215,7 @@ class OneShotOP(OneShotMutable[str, str]):
         Args:
             x (Any): x could be a Torch.tensor or a tuple of
                 Torch.tensor, containing input data for forward computation.
-            choice (str): the chosen key in ``OneShotOP``.
+            choice (str): the chosen key in ``OneShotMutableOP``.
 
         Returns:
             Tensor: the result of forward the ``choice`` operation.
@@ -246,9 +233,7 @@ class OneShotOP(OneShotMutable[str, str]):
         Returns:
             Tensor: the result of forward all of the ``choice`` operation.
         """
-        outputs = list()
-        for op in self._candidate_ops.values():
-            outputs.append(op(x))
+        outputs = [op(x) for op in self._candidate_ops.values()]
         return sum(outputs)
 
     def fix_chosen(self, chosen: str) -> None:
@@ -273,17 +258,20 @@ class OneShotOP(OneShotMutable[str, str]):
 
     def sample_choice(self) -> str:
         """uniform sampling."""
-        choice = np.random.choice(self.choices, 1)[0]
-        return choice
+        return np.random.choice(self.choices, 1)[0]
 
     @property
     def choices(self) -> List[str]:
         """list: all choices. """
         return list(self._candidate_ops.keys())
 
+    @property
+    def num_choices(self):
+        return len(self.choices)
+
 
 @MODELS.register_module()
-class OneShotProbOP(OneShotOP):
+class OneShotProbMutableOP(OneShotMutableOP):
     """Sampling candidate operation according to probability.
 
     Args:
@@ -319,6 +307,4 @@ class OneShotProbOP(OneShotOP):
     def sample_choice(self) -> str:
         """Sampling with probabilities."""
         assert len(self.choice_probs) == len(self._candidate_ops.keys())
-        choice = random.choices(
-            self.choices, weights=self.choice_probs, k=1)[0]
-        return choice
+        return random.choices(self.choices, weights=self.choice_probs, k=1)[0]

@@ -116,7 +116,7 @@ class Node(nn.Module):
         num_prev_nodes (int): number of previous nodes.
         channels (int): number of channels of current node.
         num_downsample_nodes (int): index of downsample node.
-        mutable_cfg (Dict): config of `DiffMutable`.
+        mutable_cfg (Dict): config of `DiffMutableModule`.
         route_cfg (Dict): config of `DiffChoiceRoute`.
     """
 
@@ -162,7 +162,7 @@ class Cell(nn.Module):
         prev_prev_channels (int): number of channel of previous previous input.
         reduction (bool): whether to reduce the feature map size.
         prev_reduction (bool): whether to reduce the previous feature map size.
-        mutable_cfg (Optional[Dict]): config of `DiffMutable`.
+        mutable_cfg (Optional[Dict]): config of `DiffMutableModule`.
         route_cfg (Optional[Dict]): config of `DiffChoiceRoute`.
         act_cfg (Dict): config to build activation layer.
             Defaults to dict(type='ReLU').
@@ -269,7 +269,7 @@ class DartsBackbone(nn.Module, FixSubnetMixin):
     Args:
         in_channels (int): number of channels of input tensor.
         base_channels (int): number of middle channels.
-        mutable_cfg (Optional[Dict]): config of `DiffMutable`.
+        mutable_cfg (Optional[Dict]): config of `DiffMutableModule`.
         route_cfg (Optional[Dict]): config of `DiffChoiceRoute`.
         num_layers (Optional[int]): number of layers.
             Defaults to 8.

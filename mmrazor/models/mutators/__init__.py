@@ -1,10 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .channel_mutator.one_shot_channel_mutator import OneShotChannelMutator
-from .channel_mutator.slimmable_channel_mutator import SlimmableChannelMutator
-from .diff_mutator import DiffMutator
-from .one_shot_mutator import OneShotMutator
+from .channel_mutator import (ChannelMutator, OneShotChannelMutator,
+                              SlimmableChannelMutator)
+from .module_mutator import (DiffModuleMutator, ModuleMutator,
+                             OneShotModuleMutator)
 
 __all__ = [
-    'OneShotMutator', 'OneShotChannelMutator', 'SlimmableChannelMutator',
-    'DiffMutator'
+    'OneShotModuleMutator', 'DiffModuleMutator', 'ModuleMutator',
+    'ChannelMutator', 'OneShotChannelMutator', 'SlimmableChannelMutator'
 ]

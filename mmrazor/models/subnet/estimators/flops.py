@@ -68,7 +68,7 @@ class FlopsEstimator:
         ...         candidate_ops = nn.ModuleDict({
         ...             'conv3x3': nn.Conv2d(3, 32, 3),
         ...             'conv5x5': nn.Conv2d(3, 32, 5)})
-        ...         self.op = OneShotOP(candidate_ops)
+        ...         self.op = OneShotMutableOP(candidate_ops)
         ...         self.op.current_choice = 'conv3x3'
         ...
         ...     def forward(self, x: Tensor) -> Tensor:

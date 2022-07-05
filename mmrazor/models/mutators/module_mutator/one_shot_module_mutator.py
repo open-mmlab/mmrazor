@@ -1,17 +1,17 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Any, Dict, Type
+from typing import Any, Dict
 
-from mmrazor.models.mutables import OneShotMutable
 from mmrazor.registry import MODELS
-from .base_mutator import ArchitectureMutator
+from ...mutables import OneShotMutableModule
+from .module_mutator import ModuleMutator
 
 
 @MODELS.register_module()
-class OneShotMutator(ArchitectureMutator[OneShotMutable]):
+class OneShotModuleMutator(ModuleMutator):
     """One-shot mutable based mutator.
 
     Examples:
-        >>> mutator = OneShotMutator()
+        >>> mutator = OneShotModuleMutator()
         >>> mutator.mutable_class_type
         <class 'mmrazor.models.mutables.oneshot_mutable.OneShotMutable'>
 
@@ -81,10 +81,10 @@ class OneShotMutator(ArchitectureMutator[OneShotMutable]):
                 module.current_choice = choice
 
     @property
-    def mutable_class_type(self) -> Type[OneShotMutable]:
+    def mutable_class_type(self):
         """One-shot mutable class type.
 
         Returns:
-            Type[OneShotMutable]: Class type of one-shot mutable.
+            Type[OneShotMutableModule]: Class type of one-shot mutable.
         """
-        return OneShotMutable
+        return OneShotMutableModule

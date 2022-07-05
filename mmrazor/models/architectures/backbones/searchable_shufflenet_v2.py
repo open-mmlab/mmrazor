@@ -47,7 +47,7 @@ class SearchableShuffleNetV2(BaseBackbone, FixSubnetMixin):
 
     Excamples:
         >>> mutable_cfg = dict(
-        ...     type='OneShotOP',
+        ...     type='OneShotMutableOP',
         ...     candidate_ops=dict(
         ...         shuffle_3x3=dict(
         ...             type='ShuffleBlock',

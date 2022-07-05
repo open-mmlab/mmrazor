@@ -17,7 +17,7 @@ class TestDiffOP(TestCase):
 
     def test_forward_arch_param(self):
         op_cfg = dict(
-            type='DiffOP',
+            type='DiffMutableOP',
             candidate_ops=dict(
                 torch_conv2d_3x3=dict(
                     type='torchConv2d',
@@ -55,7 +55,7 @@ class TestDiffOP(TestCase):
 
     def test_forward_fixed(self):
         op_cfg = dict(
-            type='DiffOP',
+            type='DiffMutableOP',
             candidate_ops=dict(
                 torch_conv2d_3x3=dict(
                     type='torchConv2d',
@@ -83,7 +83,7 @@ class TestDiffOP(TestCase):
 
     def test_forward(self):
         op_cfg = dict(
-            type='DiffOP',
+            type='DiffMutableOP',
             candidate_ops=dict(
                 torch_conv2d_3x3=dict(
                     type='torchConv2d',
@@ -118,7 +118,7 @@ class TestDiffOP(TestCase):
 
     def test_property(self):
         op_cfg = dict(
-            type='DiffOP',
+            type='DiffMutableOP',
             candidate_ops=dict(
                 torch_conv2d_3x3=dict(
                     type='torchConv2d',
@@ -157,7 +157,7 @@ class TestDiffOP(TestCase):
 
     def test_module_kwargs(self):
         op_cfg = dict(
-            type='DiffOP',
+            type='DiffMutableOP',
             candidate_ops=dict(
                 torch_conv2d_3x3=dict(
                     type='torchConv2d',

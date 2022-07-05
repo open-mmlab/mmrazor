@@ -5,12 +5,12 @@ from typing import Callable, Dict
 import torch.nn as nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.mutables import MutableManagerMixIn
+from mmrazor.models.mutables import MutableManageMixIn
 from mmrazor.registry import MODELS
 from .default_dynamic_ops import build_dynamic_conv2d, build_dynamic_linear
 
 
-class SwitchableBatchNorm2d(nn.Module, MutableManagerMixIn):
+class SwitchableBatchNorm2d(nn.Module, MutableManageMixIn):
     """Employs independent batch normalization for different switches in a
     slimmable network.
 

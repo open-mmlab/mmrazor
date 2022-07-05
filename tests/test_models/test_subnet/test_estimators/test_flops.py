@@ -7,12 +7,12 @@ import torch
 from torch import Tensor
 from torch.nn import Conv2d, Module, Parameter
 
-from mmrazor.models import OneShotMutable
+from mmrazor.models import OneShotMutableModule
 from mmrazor.models.subnet import FlopsEstimator
 from mmrazor.registry import MODELS
 
 _FIRST_STAGE_MUTABLE = dict(
-    type='OneShotOP',
+    type='OneShotMutableOP',
     candidate_ops=dict(
         mb_k3e1=dict(
             type='MBBlock',
@@ -22,7 +22,7 @@ _FIRST_STAGE_MUTABLE = dict(
             act_cfg=dict(type='ReLU6'))))
 
 _OTHER_STAGE_MUTABLE = dict(
-    type='OneShotOP',
+    type='OneShotMutableOP',
     candidate_ops=dict(
         mb_k3e3=dict(
             type='MBBlock',
@@ -101,7 +101,7 @@ class TestFlopsEstimator(TestCase):
 
     def sample_choice(self, model: Module) -> None:
         for module in model.modules():
-            if isinstance(module, OneShotMutable):
+            if isinstance(module, OneShotMutableModule):
                 module.current_choice = module.sample_choice()
 
     def test_get_model_complexity_info(self) -> None:

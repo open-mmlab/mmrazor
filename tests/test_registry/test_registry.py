@@ -10,7 +10,7 @@ from mmengine.model import BaseModel
 from mmrazor.core import *  # noqa: F403, F401
 from mmrazor.models import *  # noqa: F403, F401
 from mmrazor.models.algorithms.base import BaseAlgorithm
-from mmrazor.models.mutables import OneShotOP
+from mmrazor.models.mutables import OneShotMutableOP
 from mmrazor.models.subnet import FixSubnet, FixSubnetMixin
 from mmrazor.registry import MODELS
 
@@ -33,8 +33,8 @@ class MockModel(BaseModel, FixSubnetMixin):
             'conv3': nn.Conv2d(8, 16, 1),
         })
 
-        self.mutable1 = OneShotOP(convs1)
-        self.mutable2 = OneShotOP(convs2)
+        self.mutable1 = OneShotMutableOP(convs1)
+        self.mutable2 = OneShotMutableOP(convs2)
 
     def forward(self, x):
         x = self.mutable1(x)

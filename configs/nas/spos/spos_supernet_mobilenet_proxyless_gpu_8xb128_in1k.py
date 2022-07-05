@@ -29,10 +29,10 @@ model = dict(
 )
 
 mutator = dict(
-    type='OneShotMutator',
+    type='OneShotModuleMutator',
     placeholder_mapping=dict(
         searchable_blocks=dict(
-            type='OneShotOP',
+            type='OneShotMutableOP',
             choices=dict(
                 mb_k3e3=dict(
                     type='MBBlock',
@@ -72,7 +72,7 @@ mutator = dict(
                     act_cfg=dict(type='ReLU6')),
                 identity=dict(type='Identity'))),
         first_blocks=dict(
-            type='OneShotOP',
+            type='OneShotMutableOP',
             choices=dict(
                 mb_k3e1=dict(
                     type='MBBlock',

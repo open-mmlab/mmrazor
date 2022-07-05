@@ -7,7 +7,7 @@ from mmengine.model import BaseModel
 from torch import nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.mutators import OneShotMutator
+from mmrazor.models.mutators import OneShotModuleMutator
 from mmrazor.models.subnet import (SINGLE_MUTATOR_RANDOM_SUBNET, FixSubnet,
                                    FixSubnetMixin)
 from mmrazor.registry import MODELS
@@ -31,8 +31,8 @@ class SPOS(BaseAlgorithm, FixSubnetMixin):
     Args:
         architecture (dict|:obj:`BaseModel`): The config of :class:`BaseModel`
             or built model. Corresponding to supernet in NAS algorithm.
-        mutator (dict|:obj:`OneShotMutator`): The config of
-            :class:`OneShotMutator` or built mutator.
+        mutator (dict|:obj:`OneShotModuleMutator`): The config of
+            :class:`OneShotModuleMutator` or built mutator.
         fix_subnet (str | dict | :obj:`FixSubnet`): The path of yaml file or
             loaded dict or built :obj:`FixSubnet`.
         norm_training (bool): Whether to set norm layers to training mode,
@@ -61,15 +61,15 @@ class SPOS(BaseAlgorithm, FixSubnetMixin):
     Note:
         SPOS only uses one mutator. If you want to inherit SPOS to develop
         more complex algorithms, it is also feasible to use multiple mutators.
-        For example, one part of the supernet uses SPOS(OneShotMutator) to
-        search, and the other part uses Darts(DiffMutator) to search.
+        For example, one part of the supernet uses SPOS(OneShotModuleMutator)
+        to search, and the other part uses Darts(DiffModuleMutator) to search.
     """
 
     # TODO fix ea's name in doc-string.
 
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
-                 mutator: Optional[Union[OneShotMutator, Dict]] = None,
+                 mutator: Optional[Union[OneShotModuleMutator, Dict]] = None,
                  fix_subnet: Optional[VALID_FIX_SUBNET] = None,
                  norm_training: bool = False,
                  data_preprocessor: Optional[Union[dict, nn.Module]] = None,
@@ -85,13 +85,13 @@ class SPOS(BaseAlgorithm, FixSubnetMixin):
         else:
             assert mutator is not None, \
                 'mutator cannot be None when fix_subnet is None.'
-            if isinstance(mutator, OneShotMutator):
+            if isinstance(mutator, OneShotModuleMutator):
                 self.mutator = mutator
             elif isinstance(mutator, dict):
                 self.mutator = MODELS.build(mutator)
             else:
                 raise TypeError('mutator should be a `dict` or '
-                                f'`OneShotMutator` instance, but got '
+                                f'`OneShotModuleMutator` instance, but got '
                                 f'{type(mutator)}')
 
             # Mutator is an essential component of the NAS algorithm. It

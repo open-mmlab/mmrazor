@@ -11,10 +11,10 @@ from mmrazor.registry import MODELS
 
 class TestMutables(TestCase):
 
-    def test_oneshotop(self):
+    def test_oneshotmutableop(self):
         norm_cfg = dict(type='BN', requires_grad=True)
         op_cfg = dict(
-            type='OneShotOP',
+            type='OneShotMutableOP',
             candidate_ops=dict(
                 shuffle_3x3=dict(
                     type='ShuffleBlock', norm_cfg=norm_cfg, kernel_size=3),
@@ -78,7 +78,7 @@ class TestMutables(TestCase):
     def test_oneshotprobop(self):
         norm_cfg = dict(type='BN', requires_grad=True)
         op_cfg = dict(
-            type='OneShotProbOP',
+            type='OneShotProbMutableOP',
             choice_probs=[0.1, 0.2, 0.3, 0.4],
             candidate_ops=dict(
                 shuffle_3x3=dict(
@@ -141,7 +141,7 @@ class TestMutables(TestCase):
     def test_forward_choice(self):
         norm_cfg = dict(type='BN', requires_grad=True)
         op_cfg = dict(
-            type='OneShotOP',
+            type='OneShotMutableOP',
             candidate_ops=dict(
                 shuffle_3x3=dict(
                     type='ShuffleBlock', norm_cfg=norm_cfg, kernel_size=3),
@@ -164,7 +164,7 @@ class TestMutables(TestCase):
     def test_fix_chosen(self):
         norm_cfg = dict(type='BN', requires_grad=True)
         op_cfg = dict(
-            type='OneShotOP',
+            type='OneShotMutableOP',
             candidate_ops=dict(
                 shuffle_3x3=dict(
                     type='ShuffleBlock', norm_cfg=norm_cfg, kernel_size=3),
@@ -188,7 +188,7 @@ class TestMutables(TestCase):
     def test_build_ops(self):
         norm_cfg = dict(type='BN', requires_grad=True)
         op_cfg = dict(
-            type='OneShotOP',
+            type='OneShotMutableOP',
             candidate_ops=dict(
                 shuffle_3x3=dict(
                     type='ShuffleBlock',
@@ -231,7 +231,7 @@ class TestMutables(TestCase):
             'avgpool3x3': nn.AvgPool2d(3, 1, 1),
         })
 
-        op_cfg = dict(type='OneShotOP', candidate_ops=candidate_ops)
+        op_cfg = dict(type='OneShotMutableOP', candidate_ops=candidate_ops)
 
         op = MODELS.build(op_cfg)
 

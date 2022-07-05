@@ -6,6 +6,7 @@ from torch.nn import Module
 
 from mmrazor.core.tracer import (ConcatNode, ConvNode, DepthWiseConvNode,
                                  LinearNode, NormNode)
+from mmrazor.models.mutables import base_mutable
 from mmrazor.registry import MODELS
 from .channel_mutator import ChannelMutator
 
@@ -133,3 +134,11 @@ class OneShotChannelMutator(ChannelMutator):
                 group_idx += 1
 
         return search_groups
+
+    def mutable_class_type(self):
+        """One-shot channel mutable class type.
+
+        Returns:
+            Type[OneShotMutableModule]: Class type of one-shot mutable.
+        """
+        return base_mutable

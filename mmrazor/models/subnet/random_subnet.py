@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 # search group.
 
 # One search group may contains N mutables. More details of search groups see
-# docs for :class:`mmrazor.models.mutators.OneShotMutator`.
+# docs for :class:`mmrazor.models.mutators.OneShotModuleMutator`.
 SINGLE_MUTATOR_RANDOM_SUBNET = Dict[int, Any]
 
 # For some more complex algorithms, multiple mutators may be used, and the

@@ -1,11 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Dict, Generic, Optional, TypeVar
 
 from mmcv.runner import BaseModule
 
 CHOICE_TYPE = TypeVar('CHOICE_TYPE')
-
 CHOSEN_TYPE = TypeVar('CHOSEN_TYPE')
 
 
@@ -33,12 +32,10 @@ class BaseMutable(BaseModule, ABC, Generic[CHOICE_TYPE, CHOSEN_TYPE]):
     """
 
     def __init__(self,
-                 module_kwargs: Optional[Dict[str, Dict]] = None,
                  alias: Optional[str] = None,
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(init_cfg=init_cfg)
 
-        self.module_kwargs = module_kwargs
         self.alias = alias
         self._is_fixed = False
         self._current_choice: Optional[CHOICE_TYPE] = None
@@ -78,15 +75,6 @@ class BaseMutable(BaseModule, ABC, Generic[CHOICE_TYPE, CHOSEN_TYPE]):
                 'Please do not set `is_fixed` function repeatedly.')
         self._is_fixed = is_fixed
 
-    @property
-    @abstractmethod
-    def choices(self) -> List[CHOICE_TYPE]:
-        """list: all choices.  All subclasses must implement this method."""
-
-    @abstractmethod
-    def forward(self, x: Any) -> Any:
-        """Forward computation."""
-
     @abstractmethod
     def fix_chosen(self, chosen: CHOSEN_TYPE) -> None:
         """Fix mutable with choice. This function would fix the choice of
@@ -98,7 +86,6 @@ class BaseMutable(BaseModule, ABC, Generic[CHOICE_TYPE, CHOSEN_TYPE]):
         """
 
     @property
+    @abstractmethod
     def num_choices(self) -> int:
-        """int: length of choices.
-        """
-        return len(self.choices)
+        pass

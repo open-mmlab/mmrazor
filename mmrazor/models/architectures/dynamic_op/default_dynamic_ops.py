@@ -9,11 +9,11 @@ from torch.nn.modules import GroupNorm
 from torch.nn.modules.batchnorm import _BatchNorm
 from torch.nn.modules.instancenorm import _InstanceNorm
 
-from mmrazor.models.mutables import MutableManagerMixIn
+from mmrazor.models.mutables import MutableManageMixIn
 from mmrazor.registry import MODELS
 
 
-class DynamicConv2d(nn.Conv2d, MutableManagerMixIn):
+class DynamicConv2d(nn.Conv2d, MutableManageMixIn):
     """Applies a 2D convolution over an input signal composed of several input
     planes according to the `mutable_in_channels` and `mutable_out_channels`
     dynamically.
@@ -79,7 +79,7 @@ class DynamicConv2d(nn.Conv2d, MutableManagerMixIn):
                         self.dilation, groups)
 
 
-class DynamicLinear(nn.Linear, MutableManagerMixIn):
+class DynamicLinear(nn.Linear, MutableManageMixIn):
     """Applies a linear transformation to the incoming data according to the
     `mutable_in_features` and `mutable_out_features` dynamically.
 
@@ -131,7 +131,7 @@ class DynamicLinear(nn.Linear, MutableManagerMixIn):
         return F.linear(input, weight, bias)
 
 
-class DynamicBatchNorm(_BatchNorm, MutableManagerMixIn):
+class DynamicBatchNorm(_BatchNorm, MutableManageMixIn):
     """Applies Batch Normalization over an input according to the
     `mutable_num_features` dynamically.
 
@@ -205,7 +205,7 @@ class DynamicBatchNorm(_BatchNorm, MutableManagerMixIn):
                             bn_training, exponential_average_factor, self.eps)
 
 
-class DynamicInstanceNorm(_InstanceNorm, MutableManagerMixIn):
+class DynamicInstanceNorm(_InstanceNorm, MutableManageMixIn):
     """Applies Instance Normalization over an input according to the
     `mutable_num_features` dynamically.
 
@@ -257,7 +257,7 @@ class DynamicInstanceNorm(_InstanceNorm, MutableManagerMixIn):
                                self.momentum, self.eps)
 
 
-class DynamicGroupNorm(GroupNorm, MutableManagerMixIn):
+class DynamicGroupNorm(GroupNorm, MutableManageMixIn):
     """Applies Group Normalization over a mini-batch of inputs according to the
     `mutable_num_channels` dynamically.
 

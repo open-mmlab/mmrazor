@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from mmengine.model import BaseModel
 
-from mmrazor.models import SPOS, OneShotMutator, OneShotOP
+from mmrazor.models import SPOS, OneShotModuleMutator, OneShotMutableOP
 from mmrazor.registry import MODELS
 
 
@@ -19,7 +19,7 @@ class ToySearchableModel(BaseModel):
             'conv2': nn.Conv2d(3, 8, 1),
             'conv3': nn.Conv2d(3, 8, 1),
         })
-        self.mutable = OneShotOP(convs)
+        self.mutable = OneShotMutableOP(convs)
         self.bn = nn.BatchNorm2d(8)
 
     def forward(self, batch_inputs, data_samples=None, mode='tensor'):
@@ -39,21 +39,21 @@ class TestSPOS(TestCase):
     def test_init(self):
         # initiate spos when `norm_training` is True.
         model = ToySearchableModel()
-        mutator = OneShotMutator()
+        mutator = OneShotModuleMutator()
         alg = SPOS(model, mutator, norm_training=True)
         alg.eval()
         self.assertTrue(model.bn.training)
 
         # initiate spos with built `mutator`.
         model = ToySearchableModel()
-        mutator = OneShotMutator()
+        mutator = OneShotModuleMutator()
         alg = SPOS(model, mutator)
         self.assertIs(alg.mutator, mutator)
 
         # initiate spos with unbuilt `mutator`.
-        mutator = dict(type='OneShotMutator')
+        mutator = dict(type='OneShotModuleMutator')
         alg = SPOS(model, mutator)
-        self.assertIsInstance(alg.mutator, OneShotMutator)
+        self.assertIsInstance(alg.mutator, OneShotModuleMutator)
 
         # initiate spos when `fix_subnet` is not None.
         fix_subnet = dict(modules={'mutable': 'conv1'})
@@ -69,7 +69,7 @@ class TestSPOS(TestCase):
         model = ToySearchableModel()
 
         # supernet
-        mutator = OneShotMutator()
+        mutator = OneShotModuleMutator()
         alg = SPOS(model, mutator)
         loss = alg(inputs, mode='loss')
         self.assertIsInstance(loss, dict)

@@ -45,7 +45,7 @@ class SearchableMobileNet(BaseBackbone, FixSubnetMixin):
 
     Excamples:
         >>> mutable_cfg = dict(
-        ...     type='OneShotOP',
+        ...     type='OneShotMutableOP',
         ...     candidate_ops=dict(
         ...         mb_k3e1=dict(
         ...             type='MBBlock',

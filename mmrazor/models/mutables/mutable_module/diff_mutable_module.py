@@ -9,12 +9,13 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from mmrazor.registry import MODELS
-from .base_mutable import CHOICE_TYPE, CHOSEN_TYPE, BaseMutable
+from ..base_mutable import CHOICE_TYPE, CHOSEN_TYPE
+from .mutable_module import MutableModule
 
 PartialType = Callable[[Any, Optional[nn.Parameter]], Any]
 
 
-class DiffMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
+class DiffMutableModule(MutableModule[CHOICE_TYPE, CHOSEN_TYPE]):
     """Base class for differentiable mutables.
 
     Args:
@@ -30,12 +31,8 @@ class DiffMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
         :meth:`forward_all` is called when calculating FLOPs.
     """
 
-    def __init__(self,
-                 module_kwargs: Optional[Dict[str, Dict]] = None,
-                 alias: Optional[str] = None,
-                 init_cfg: Optional[Dict] = None) -> None:
-        super().__init__(
-            module_kwargs=module_kwargs, alias=alias, init_cfg=init_cfg)
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
 
     def forward(self,
                 x: Any,
@@ -54,7 +51,7 @@ class DiffMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
         Args:
             x (Any): input data for forward computation.
             arch_param (nn.Parameter, optional): the architecture parameters
-                for ``DiffMutable``.
+                for ``DiffMutableModule``.
         """
         if self.is_fixed:
             return self.forward_fixed(x)
@@ -97,7 +94,7 @@ class DiffMutable(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
 
 
 @MODELS.register_module()
-class DiffOP(DiffMutable[str, str]):
+class DiffMutableOP(DiffMutableModule[str, str]):
     """A type of ``MUTABLES`` for differentiable architecture search, such as
     DARTS. Search the best module by learnable parameters `arch_param`.
 
@@ -113,15 +110,8 @@ class DiffOP(DiffMutable[str, str]):
             and `Pretrained`.
     """
 
-    def __init__(
-        self,
-        candidate_ops: Dict[str, Dict],
-        module_kwargs: Optional[Dict[str, Dict]] = None,
-        alias: Optional[str] = None,
-        init_cfg: Optional[Dict] = None,
-    ) -> None:
-        super().__init__(
-            module_kwargs=module_kwargs, alias=alias, init_cfg=init_cfg)
+    def __init__(self, candidate_ops: Dict[str, Dict], **kwargs) -> None:
+        super().__init__(**kwargs)
         assert len(candidate_ops) >= 1, \
             f'Number of candidate op must greater than or equal to 1, ' \
             f'but got: {len(candidate_ops)}'
@@ -176,7 +166,7 @@ class DiffOP(DiffMutable[str, str]):
             x (Any): x could be a Torch.tensor or a tuple of
                 Torch.tensor, containing input data for forward computation.
             arch_param (str, optional): architecture parameters for
-                `DiffMutable`
+                `DiffMutableModule`
 
 
         Returns:
@@ -239,7 +229,7 @@ class DiffOP(DiffMutable[str, str]):
 
 
 @MODELS.register_module()
-class DiffChoiceRoute(DiffMutable[str, List[str]]):
+class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
     """A type of ``MUTABLES`` for Neural Architecture Search, which can select
     inputs from different edges in a differentiable or non-differentiable way.
     It is commonly used in DARTS.
@@ -247,7 +237,7 @@ class DiffChoiceRoute(DiffMutable[str, List[str]]):
     Args:
         edges (nn.ModuleDict): the key of `edges` is the name of different
             edges. The value of `edges` can be :class:`nn.Module` or
-            :class:`DiffMutable`.
+            :class:`DiffMutableModule`.
         with_arch_param (bool): whether forward with arch_param. When set to
             `True`, a differentiable way is adopted. When set to `False`,
             a non-differentiable way is adopted.
@@ -324,7 +314,7 @@ class DiffChoiceRoute(DiffMutable[str, List[str]]):
             x (list[Any] | tuple[Any]]): x could be a list or a tuple
                 of Torch.tensor, containing input data for forward selection.
             arch_param (nn.Parameter): architecture parameters for
-                for ``DiffMutable``.
+                for ``DiffMutableModule``.
 
         Returns:
             Tensor: the result of forward with ``arch_param``.
@@ -403,7 +393,7 @@ class GumbelChoiceRoute(DiffChoiceRoute):
     Args:
         edges (nn.ModuleDict): the key of `edges` is the name of different
             edges. The value of `edges` can be :class:`nn.Module` or
-            :class:`DiffMutable`.
+            :class:`DiffMutableModule`.
         tau (float): non-negative scalar temperature in gumbel softmax.
         hard (bool): if `True`, the returned samples will be discretized as
             one-hot vectors, but will be differentiated as if it is the soft

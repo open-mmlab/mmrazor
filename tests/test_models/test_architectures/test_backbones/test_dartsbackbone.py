@@ -7,7 +7,6 @@ import torch.nn as nn
 from mmcls.models import *  # noqa:F403,F401
 
 from mmrazor.models import *  # noqa:F403,F401
-from mmrazor.models.architectures.components import *  # noqa:F403,F401
 from mmrazor.registry import MODELS
 
 MODELS.register_module(name='torchConv2d', module=nn.Conv2d, force=True)
@@ -19,7 +18,7 @@ class TestDartsBackbone(TestCase):
 
     def setUp(self) -> None:
         self.mutable_cfg = dict(
-            type='DiffOP',
+            type='DiffMutableOP',
             candidate_ops=dict(
                 torch_conv2d_3x3=dict(
                     type='torchConv2d',
@@ -55,7 +54,7 @@ class TestDartsBackbone(TestCase):
             route_cfg=self.route_cfg)
 
         self.mutator_cfg = dict(
-            type='DiffMutator',
+            type='DiffModuleMutator',
             custom_group=None,
         )
 

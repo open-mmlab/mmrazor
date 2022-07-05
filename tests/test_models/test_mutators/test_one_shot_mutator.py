@@ -6,8 +6,7 @@ from mmcls.models import *  # noqa: F401,F403
 from torch import Tensor
 from torch.nn import Module
 
-from mmrazor.models.mutables import OneShotMutable
-from mmrazor.models.mutators import OneShotMutator
+from mmrazor.models import OneShotModuleMutator, OneShotMutableModule
 from mmrazor.registry import MODELS
 
 MODEL_CFG = dict(
@@ -27,10 +26,10 @@ MODEL_CFG = dict(
         topk=(1, 5),
     ))
 
-MUTATOR_CFG = dict(type='OneShotMutator')
+MUTATOR_CFG = dict(type='OneShotModuleMutator')
 
 MUTABLE_CFG = dict(
-    type='OneShotOP',
+    type='OneShotMutableOP',
     candidate_ops=dict(
         choice1=dict(
             type='MBBlock',
@@ -54,9 +53,9 @@ MUTABLE_CFG = dict(
 
 def test_one_shot_mutator_normal_model() -> None:
     model = MODELS.build(MODEL_CFG)
-    mutator: OneShotMutator = MODELS.build(MUTATOR_CFG)
+    mutator: OneShotModuleMutator = MODELS.build(MUTATOR_CFG)
 
-    assert mutator.mutable_class_type == OneShotMutable
+    assert mutator.mutable_class_type == OneShotMutableModule
 
     with pytest.raises(RuntimeError):
         _ = mutator.search_groups
@@ -85,9 +84,8 @@ class _SearchableModel(Module):
 
 def test_one_shot_mutator_mutable_model() -> None:
     model = _SearchableModel()
-    mutator: OneShotMutator = MODELS.build(MUTATOR_CFG)
+    mutator: OneShotModuleMutator = MODELS.build(MUTATOR_CFG)
 
-    # import pdb; pdb.set_trace()
     mutator.prepare_from_supernet(model)
     assert list(mutator.search_groups.keys()) == [0, 1, 2]
 

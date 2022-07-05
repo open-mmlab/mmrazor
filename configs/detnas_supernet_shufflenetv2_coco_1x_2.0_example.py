@@ -174,10 +174,10 @@ supernet = dict(
         max_per_img=100))
 
 mutator = dict(
-    type='mmrazor.OneShotMutator',
+    type='mmrazor.OneShotModuleMutator',
     placeholder_mapping=dict(
         all_blocks=dict(
-            type='mmrazor.OneShotOP',
+            type='mmrazor.OneShotMutableOP',
             choices=dict(
                 shuffle_3x3=dict(
                     type='mmrazor.ShuffleBlock',

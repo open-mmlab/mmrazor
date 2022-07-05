@@ -24,10 +24,10 @@ model = dict(
 )
 
 mutator = dict(
-    type='OneShotMutator',
+    type='OneShotModuleMutator',
     placeholder_mapping=dict(
         all_blocks=dict(
-            type='OneShotOP',
+            type='OneShotMutableOP',
             choices=dict(
                 shuffle_3x3=dict(
                     type='ShuffleBlock', kernel_size=3, norm_cfg=norm_cfg),

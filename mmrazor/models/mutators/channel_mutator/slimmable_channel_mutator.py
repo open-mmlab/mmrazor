@@ -8,7 +8,7 @@ from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.architectures.dynamic_op import (DynamicBatchNorm,
                                                      build_switchable_bn)
-from mmrazor.models.mutables import SlimmableChannelMutable
+from mmrazor.models.mutables import SlimmableChannelMutable, base_mutable
 from mmrazor.registry import MODELS
 from .channel_mutator import ChannelMutator
 
@@ -146,3 +146,11 @@ class SlimmableChannelMutator(ChannelMutator):
         The mutables in the same group should be pruned together.
         """
         pass
+
+    def mutable_class_type(self):
+        """One-shot channel mutable class type.
+
+        Returns:
+            Type[OneShotMutableModule]: Class type of one-shot mutable.
+        """
+        return base_mutable
