@@ -4,15 +4,9 @@ from typing import Any, Dict, List, Optional
 
 from torch.nn import Module
 
-from mmrazor.core.tracer import (ConcatNode, ConvNode, DepthWiseConvNode,
-                                 LinearNode, NormNode)
-from mmrazor.models.mutables import base_mutable
 from mmrazor.registry import MODELS
+from ...mutables import OneShotMutableChannel
 from .channel_mutator import ChannelMutator
-
-NONPASS_NODES = (ConvNode, LinearNode, ConcatNode)
-PASS_NODES = (NormNode, DepthWiseConvNode)
-PRUNING_NODES = (ConvNode, LinearNode)
 
 
 @MODELS.register_module()
@@ -104,18 +98,19 @@ class OneShotChannelMutator(ChannelMutator):
             >>> mutator = OneShotChannelMutator(
             ...     tracer_cfg=dict(type='BackwardTracer',
             ...         loss_calculator=ToyPseudoLoss()),
-            ...     mutable_cfg=dict(type='RatioChannelMutable',
-            ...         candidate_choices=[4 / 8, 1.0])
+            ...     mutable_cfg=dict(type='OneShotMutableChannel',
+            ...         candidate_choices=[4 / 8, 1.0], candidate_mode='ratio')
 
             >>> model = ResBlock()
             >>> mutator.prepare_from_supernet(model)
             >>> mutator.search_groups
-            {0: [RatioChannelMutable(name=op2, mask_type=out_mask, ...),
-                 RatioChannelMutable(name=op1, mask_type=out_mask, ...),
-                 RatioChannelMutable(name=op3, mask_type=in_mask, ...),
-                 RatioChannelMutable(name=op2, mask_type=in_mask, ...),
-                 RatioChannelMutable(name=bn2, mask_type=out_mask, ...),
-                 RatioChannelMutable(name=bn1, mask_type=out_mask, ...)]}
+            {0: [RatioChannelMutable(name=op2, ...), # mutable out
+                 RatioChannelMutable(name=op1, ...), # mutable out
+                 RatioChannelMutable(name=op3, ...), # mutable in
+                 RatioChannelMutable(name=op2, ...), # mutable in
+                 RatioChannelMutable(name=bn2, ...), # mutable out
+                 RatioChannelMutable(name=bn1, ...)] # mutable out
+            }
         """
         groups = self.find_same_mutables(supernet)
 
@@ -141,4 +136,4 @@ class OneShotChannelMutator(ChannelMutator):
         Returns:
             Type[OneShotMutableModule]: Class type of one-shot mutable.
         """
-        return base_mutable
+        return OneShotMutableChannel

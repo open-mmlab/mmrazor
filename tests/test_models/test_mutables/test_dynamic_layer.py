@@ -4,11 +4,11 @@ from unittest import TestCase
 import torch
 from torch import nn
 
-from mmrazor.models.architectures.dynamic_op import (build_dynamic_bn,
-                                                     build_dynamic_conv2d,
-                                                     build_dynamic_gn,
-                                                     build_dynamic_in,
-                                                     build_dynamic_linear)
+from mmrazor.models.mutators.utils import (dynamic_bn_converter,
+                                           dynamic_conv2d_converter,
+                                           dynamic_gn_converter,
+                                           dynamic_in_converter,
+                                           dynamic_linear_converter)
 
 
 class TestDynamicLayer(TestCase):
@@ -17,28 +17,30 @@ class TestDynamicLayer(TestCase):
         imgs = torch.rand(2, 8, 16, 16)
 
         in_channels_cfg = dict(
-            type='RatioChannelMutable',
-            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0])
+            type='OneShotMutableChannel',
+            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
+            candidate_mode='ratio')
 
         out_channels_cfg = dict(
-            type='RatioChannelMutable',
-            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0])
+            type='OneShotMutableChannel',
+            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
+            candidate_mode='ratio')
 
         conv = nn.Conv2d(8, 8, 1)
-        dynamic_conv = build_dynamic_conv2d(conv, 'op', in_channels_cfg,
-                                            out_channels_cfg)
+        dynamic_conv = dynamic_conv2d_converter(conv, in_channels_cfg,
+                                                out_channels_cfg)
         # test forward
         dynamic_conv(imgs)
 
         conv = nn.Conv2d(8, 8, 1, groups=8)
-        dynamic_conv = build_dynamic_conv2d(conv, 'op', in_channels_cfg,
-                                            out_channels_cfg)
+        dynamic_conv = dynamic_conv2d_converter(conv, in_channels_cfg,
+                                                out_channels_cfg)
         # test forward
         dynamic_conv(imgs)
 
         conv = nn.Conv2d(8, 8, 1, groups=4)
-        dynamic_conv = build_dynamic_conv2d(conv, 'op', in_channels_cfg,
-                                            out_channels_cfg)
+        dynamic_conv = dynamic_conv2d_converter(conv, in_channels_cfg,
+                                                out_channels_cfg)
         # test forward
         with self.assertRaisesRegex(NotImplementedError,
                                     'only support pruning the depth-wise'):
@@ -48,16 +50,18 @@ class TestDynamicLayer(TestCase):
         imgs = torch.rand(2, 8)
 
         in_features_cfg = dict(
-            type='RatioChannelMutable',
-            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0])
+            type='OneShotMutableChannel',
+            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
+            candidate_mode='ratio')
 
         out_features_cfg = dict(
-            type='RatioChannelMutable',
-            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0])
+            type='OneShotMutableChannel',
+            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
+            candidate_mode='ratio')
 
         linear = nn.Linear(8, 8)
-        dynamic_linear = build_dynamic_linear(linear, 'op', in_features_cfg,
-                                              out_features_cfg)
+        dynamic_linear = dynamic_linear_converter(linear, in_features_cfg,
+                                                  out_features_cfg)
         # test forward
         dynamic_linear(imgs)
 
@@ -65,34 +69,35 @@ class TestDynamicLayer(TestCase):
         imgs = torch.rand(2, 8, 16, 16)
 
         num_features_cfg = dict(
-            type='RatioChannelMutable',
-            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0])
+            type='OneShotMutableChannel',
+            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
+            candidate_mode='ratio')
 
         bn = nn.BatchNorm2d(8)
-        dynamic_bn = build_dynamic_bn(bn, 'bn', num_features_cfg)
+        dynamic_bn = dynamic_bn_converter(bn, num_features_cfg)
         # test forward
         dynamic_bn(imgs)
 
         bn = nn.BatchNorm2d(8, momentum=0)
-        dynamic_bn = build_dynamic_bn(bn, 'bn', num_features_cfg)
+        dynamic_bn = dynamic_bn_converter(bn, num_features_cfg)
         # test forward
         dynamic_bn(imgs)
 
         bn = nn.BatchNorm2d(8)
         bn.train()
-        dynamic_bn = build_dynamic_bn(bn, 'bn', num_features_cfg)
+        dynamic_bn = dynamic_bn_converter(bn, num_features_cfg)
         # test forward
         dynamic_bn(imgs)
         # test num_batches_tracked is not None
         dynamic_bn(imgs)
 
         bn = nn.BatchNorm2d(8, affine=False)
-        dynamic_bn = build_dynamic_bn(bn, 'bn', num_features_cfg)
+        dynamic_bn = dynamic_bn_converter(bn, num_features_cfg)
         # test forward
         dynamic_bn(imgs)
 
         bn = nn.BatchNorm2d(8, track_running_stats=False)
-        dynamic_bn = build_dynamic_bn(bn, 'bn', num_features_cfg)
+        dynamic_bn = dynamic_bn_converter(bn, num_features_cfg)
         # test forward
         dynamic_bn(imgs)
 
@@ -100,21 +105,22 @@ class TestDynamicLayer(TestCase):
         imgs = torch.rand(2, 8, 16, 16)
 
         num_features_cfg = dict(
-            type='RatioChannelMutable',
-            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0])
+            type='OneShotMutableChannel',
+            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
+            candidate_mode='ratio')
 
         instance_norm = nn.InstanceNorm2d(8)
-        dynamic_in = build_dynamic_in(instance_norm, 'in', num_features_cfg)
+        dynamic_in = dynamic_in_converter(instance_norm, num_features_cfg)
         # test forward
         dynamic_in(imgs)
 
         instance_norm = nn.InstanceNorm2d(8, affine=False)
-        dynamic_in = build_dynamic_in(instance_norm, 'in', num_features_cfg)
+        dynamic_in = dynamic_in_converter(instance_norm, num_features_cfg)
         # test forward
         dynamic_in(imgs)
 
         instance_norm = nn.InstanceNorm2d(8, track_running_stats=False)
-        dynamic_in = build_dynamic_in(instance_norm, 'in', num_features_cfg)
+        dynamic_in = dynamic_in_converter(instance_norm, num_features_cfg)
         # test forward
         dynamic_in(imgs)
 
@@ -122,15 +128,16 @@ class TestDynamicLayer(TestCase):
         imgs = torch.rand(2, 8, 16, 16)
 
         num_channels_cfg = dict(
-            type='RatioChannelMutable',
-            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0])
+            type='OneShotMutableChannel',
+            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
+            candidate_mode='ratio')
 
         gn = nn.GroupNorm(num_groups=4, num_channels=8)
-        dynamic_gn = build_dynamic_gn(gn, 'gn', num_channels_cfg)
+        dynamic_gn = dynamic_gn_converter(gn, num_channels_cfg)
         # test forward
         dynamic_gn(imgs)
 
         gn = nn.GroupNorm(num_groups=4, num_channels=8, affine=False)
-        dynamic_gn = build_dynamic_gn(gn, 'gn', num_channels_cfg)
+        dynamic_gn = dynamic_gn_converter(gn, num_channels_cfg)
         # test forward
         dynamic_gn(imgs)

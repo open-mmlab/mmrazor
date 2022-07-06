@@ -2,23 +2,21 @@
 from typing import Dict, List, Optional
 
 import torch
-from mmcv.runner import BaseModule
 
 from mmrazor.registry import MODELS
+from .mutable_channel import MutableChannel
 
 
 @MODELS.register_module()
-class SlimmableChannelMutable(BaseModule):
+class SlimmableMutableChannel(MutableChannel[int, int]):
     """A type of ``MUTABLES`` to train several subnet together, such as the
     retraining stage in AutoSlim.
 
     Notes:
         We need to set `candidate_choices` after the instantiation of a
-        `SlimmableChannelMutable` by ourselves.
+        `SlimmableMutableChannel` by ourselves.
 
     Args:
-        name (str): Mutable name.
-        mask_type (str): One of 'in_mask' or 'out_mask'.
         num_channels (int): The raw number of channels.
         init_cfg (dict, optional): initialization configuration dict for
             ``BaseModule``. OpenMMLab has implement 5 initializer including
@@ -26,19 +24,11 @@ class SlimmableChannelMutable(BaseModule):
             and `Pretrained`.
     """
 
-    def __init__(self,
-                 name: str,
-                 mask_type: str,
-                 num_channels: int,
-                 init_cfg: Optional[Dict] = None):
-        super(SlimmableChannelMutable, self).__init__(init_cfg=init_cfg)
+    def __init__(self, num_channels: int, init_cfg: Optional[Dict] = None):
+        super(SlimmableMutableChannel, self).__init__(
+            num_channels=num_channels, init_cfg=init_cfg)
 
-        self.name = name
-        assert mask_type in ('in_mask', 'out_mask')
-        self.mask_type = mask_type
         self.num_channels = num_channels
-        self.register_buffer('_mask', torch.ones((num_channels, )).bool())
-        self._current_choice = 0
 
     @property
     def candidate_choices(self) -> List:
@@ -62,31 +52,23 @@ class SlimmableChannelMutable(BaseModule):
         self._candidate_choices = list(choices)
 
     @property
-    def choices(self) -> List:
+    def choices(self) -> List[int]:
         """Return all subnet indexes."""
         assert self._candidate_choices is not None
         return list(range(len(self.candidate_choices)))
 
     @property
-    def current_choice(self) -> int:
-        """The current choice of the mutable."""
-        return self._current_choice
+    def num_choices(self) -> int:
+        return len(self.choices)
 
-    @current_choice.setter
-    def current_choice(self, choice: int):
-        """Set the current choice of the mutable."""
-        assert choice in self.choices
-        self._current_choice = choice
-
-    @property
-    def mask(self):
-        """The current mask.
-
-        We slice the registered parameters and buffers of a ``nn.Module``
-        according to the mask of the corresponding channel mutable.
-        """
-        idx = self.current_choice
-        num_channels = self.candidate_choices[idx]
-        mask = torch.zeros_like(self._mask).bool()
+    def convert_choice_to_mask(self, choice: int) -> torch.Tensor:
+        """Get the mask according to the input choice."""
+        if not hasattr(self, '_candidate_choices'):
+            # todo: we trace the supernet before set_candidate_choices.
+            #  It's hacky
+            num_channels = self.num_channels
+        else:
+            num_channels = self.candidate_choices[choice]
+        mask = torch.zeros(self.num_channels).bool()
         mask[:num_channels] = True
         return mask

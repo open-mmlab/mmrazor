@@ -205,11 +205,15 @@ class PathList:
                 self._paths.append(path)
 
     def get_root_names(self) -> List[str]:
-        """Get the root node of all the paths in `PathList`.
-
-        Notes:
-            Different paths in a PathList share the same root node.
-        """
+        """Get the root node of all the paths in `PathList`."""
+        root_name_list = [path.get_root_names() for path in self._paths]
+        for root_names in root_name_list[1:]:
+            assert root_names == root_name_list[0], \
+                f'If the input of a module is a concatenation of several ' \
+                f'modules\' outputs, we can use `get_root_names` to get the' \
+                f' names of these modules. As `get_root_names` is only used' \
+                f' in this case, each element in `root_name_list` should be' \
+                f' the same. Got root_name_list = {root_name_list}'
         return self._paths[0].get_root_names()
 
     def find_nodes_parents(self,

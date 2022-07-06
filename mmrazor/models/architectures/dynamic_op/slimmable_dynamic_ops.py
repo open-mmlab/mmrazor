@@ -1,13 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import Callable, Dict
+from typing import Dict
 
 import torch.nn as nn
-from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.mutables import MutableManageMixIn
 from mmrazor.registry import MODELS
-from .default_dynamic_ops import build_dynamic_conv2d, build_dynamic_linear
+from ...mutables import MutableManageMixIn
 
 
 class SwitchableBatchNorm2d(nn.Module, MutableManageMixIn):
@@ -42,7 +40,6 @@ class SwitchableBatchNorm2d(nn.Module, MutableManageMixIn):
     """
 
     def __init__(self,
-                 module_name: str,
                  num_features_cfg: Dict,
                  eps: float = 1e-5,
                  momentum: float = 0.1,
@@ -52,11 +49,7 @@ class SwitchableBatchNorm2d(nn.Module, MutableManageMixIn):
 
         num_features_cfg = copy.deepcopy(num_features_cfg)
         candidate_choices = num_features_cfg.pop('candidate_choices')
-        num_features_cfg.update(
-            dict(
-                name=module_name,
-                num_channels=max(candidate_choices),
-                mask_type='out_mask'))
+        num_features_cfg.update(dict(num_channels=max(candidate_choices)))
 
         bns = [
             nn.BatchNorm2d(num_features, eps, momentum, affine,
@@ -68,6 +61,11 @@ class SwitchableBatchNorm2d(nn.Module, MutableManageMixIn):
         self.mutable_num_features = MODELS.build(num_features_cfg)
 
     @property
+    def mutable_in(self):
+        """Mutable `num_features`."""
+        return self.mutable_num_features
+
+    @property
     def mutable_out(self):
         """Mutable `num_features`."""
         return self.mutable_num_features
@@ -77,29 +75,3 @@ class SwitchableBatchNorm2d(nn.Module, MutableManageMixIn):
         networks."""
         idx = self.mutable_num_features.current_choice
         return self.bns[idx](input)
-
-
-def build_switchable_bn(module: _BatchNorm, module_name: str,
-                        num_features_cfg: Dict) -> SwitchableBatchNorm2d:
-    """Build SwitchableBatchNorm2d.
-
-    Args:
-        module (:obj:`torch.nn.GroupNorm`): The original BatchNorm module.
-        module_name (str): Name of this `SwitchableBatchNorm2d`.
-        num_channels_cfg (Dict): Config related to `num_features`.
-    """
-    switchable_bn = SwitchableBatchNorm2d(
-        module_name=module_name,
-        num_features_cfg=num_features_cfg,
-        eps=module.eps,
-        momentum=module.momentum,
-        affine=module.affine,
-        track_running_stats=module.track_running_stats)
-    return switchable_bn
-
-
-SLIMMABLE_DYNAMIC_LAYER: Dict[Callable, Callable] = {
-    nn.Conv2d: build_dynamic_conv2d,
-    nn.Linear: build_dynamic_linear,
-    nn.BatchNorm2d: build_switchable_bn
-}

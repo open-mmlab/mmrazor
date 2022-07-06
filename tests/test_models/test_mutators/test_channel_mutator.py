@@ -11,11 +11,11 @@ from torch import Tensor, nn
 from torch.nn import Module
 
 from mmrazor import digit_version
-from mmrazor.models.architectures.dynamic_op import (build_dynamic_bn,
-                                                     build_dynamic_conv2d)
-from mmrazor.models.mutables import SlimmableChannelMutable
+from mmrazor.models.mutables import SlimmableMutableChannel
 from mmrazor.models.mutators import (OneShotChannelMutator,
                                      SlimmableChannelMutator)
+from mmrazor.models.mutators.utils import (dynamic_bn_converter,
+                                           dynamic_conv2d_converter)
 from mmrazor.registry import MODELS
 
 ONESHOT_MUTATOR_CFG = dict(
@@ -24,18 +24,20 @@ ONESHOT_MUTATOR_CFG = dict(
         type='BackwardTracer',
         loss_calculator=dict(type='ImageClassifierPseudoLoss')),
     mutable_cfg=dict(
-        type='RatioChannelMutable',
+        type='OneShotMutableChannel',
         candidate_choices=[
             1 / 8, 2 / 8, 3 / 8, 4 / 8, 5 / 8, 6 / 8, 7 / 8, 1.0
-        ]))
+        ],
+        candidate_mode='ratio'))
 
 ONESHOT_MUTATOR_CFG_WITHOUT_TRACER = dict(
     type='OneShotChannelMutator',
     mutable_cfg=dict(
-        type='RatioChannelMutable',
+        type='OneShotMutableChannel',
         candidate_choices=[
             1 / 8, 2 / 8, 3 / 8, 4 / 8, 5 / 8, 6 / 8, 7 / 8, 1.0
-        ]))
+        ],
+        candidate_mode='ratio'))
 
 
 class MultiConcatModel(Module):
@@ -80,6 +82,26 @@ class MultiConcatModel2(Module):
         return output
 
 
+class ConcatModel(Module):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.op1 = nn.Conv2d(3, 8, 1)
+        self.bn1 = nn.BatchNorm2d(8)
+        self.op2 = nn.Conv2d(3, 8, 1)
+        self.bn2 = nn.BatchNorm2d(8)
+        self.op3 = nn.Conv2d(16, 8, 1)
+
+    def forward(self, x: Tensor) -> Tensor:
+        x1 = self.bn1(self.op1(x))
+        x2 = self.bn2(self.op2(x))
+        cat1 = torch.cat([x1, x2], dim=1)
+        x3 = self.op3(cat1)
+
+        return x3
+
+
 class ResBlock(Module):
 
     def __init__(self) -> None:
@@ -103,16 +125,16 @@ class DynamicResBlock(Module):
     def __init__(self, mutable_cfg) -> None:
         super().__init__()
 
-        self.dynamic_op1 = build_dynamic_conv2d(
-            nn.Conv2d(3, 8, 1), 'dynamic_op1', mutable_cfg, mutable_cfg)
-        self.dynamic_bn1 = build_dynamic_bn(
-            nn.BatchNorm2d(8), 'dynamic_bn1', mutable_cfg)
-        self.dynamic_op2 = build_dynamic_conv2d(
-            nn.Conv2d(8, 8, 1), 'dynamic_op2', mutable_cfg, mutable_cfg)
-        self.dynamic_bn2 = build_dynamic_bn(
-            nn.BatchNorm2d(8), 'dynamic_bn2', mutable_cfg)
-        self.dynamic_op3 = build_dynamic_conv2d(
-            nn.Conv2d(8, 8, 1), 'dynamic_op3', mutable_cfg, mutable_cfg)
+        self.dynamic_op1 = dynamic_conv2d_converter(
+            nn.Conv2d(3, 8, 1), mutable_cfg, mutable_cfg)
+        self.dynamic_bn1 = dynamic_bn_converter(
+            nn.BatchNorm2d(8), mutable_cfg, mutable_cfg)
+        self.dynamic_op2 = dynamic_conv2d_converter(
+            nn.Conv2d(8, 8, 1), mutable_cfg, mutable_cfg)
+        self.dynamic_bn2 = dynamic_bn_converter(
+            nn.BatchNorm2d(8), mutable_cfg, mutable_cfg)
+        self.dynamic_op3 = dynamic_conv2d_converter(
+            nn.Conv2d(8, 8, 1), mutable_cfg, mutable_cfg)
         self._add_link()
 
     def _add_link(self):
@@ -155,9 +177,6 @@ def test_oneshot_channel_mutator() -> None:
 
     def _test(model):
         mutator.prepare_from_supernet(model)
-        for key, val in mutator.search_groups.items():
-            print(key, val)
-        # print(mutator.search_groups)
         assert hasattr(mutator, 'name2module')
 
         # test set_min_choices
@@ -211,19 +230,55 @@ def test_slimmable_channel_mutator() -> None:
     channel_cfgs = [mmcv.fileio.load(path) for path in channel_cfgs]
 
     mutator = SlimmableChannelMutator(
-        mutable_cfg=dict(type='SlimmableChannelMutable'),
-        channel_cfgs=channel_cfgs)
+        mutable_cfg=dict(type='SlimmableMutableChannel'),
+        channel_cfgs=channel_cfgs,
+        tracer_cfg=dict(
+            type='BackwardTracer',
+            loss_calculator=dict(type='ImageClassifierPseudoLoss')))
 
     model = ResBlock()
     mutator.prepare_from_supernet(model)
     mutator.switch_choices(0)
     for name, module in model.named_modules():
-        if isinstance(module, SlimmableChannelMutable):
+        if isinstance(module, SlimmableMutableChannel):
             assert module.current_choice == 0
     _ = model(imgs)
 
     mutator.switch_choices(1)
     for name, module in model.named_modules():
-        if isinstance(module, SlimmableChannelMutable):
+        if isinstance(module, SlimmableMutableChannel):
+            assert module.current_choice == 1
+    _ = model(imgs)
+
+    channel_cfgs = [
+        os.path.join(root_path, 'data/concat_subnet1.yaml'),
+        os.path.join(root_path, 'data/concat_subnet2.yaml')
+    ]
+    channel_cfgs = [mmcv.fileio.load(path) for path in channel_cfgs]
+
+    mutator = SlimmableChannelMutator(
+        mutable_cfg=dict(type='SlimmableMutableChannel'),
+        channel_cfgs=channel_cfgs,
+        tracer_cfg=dict(
+            type='BackwardTracer',
+            loss_calculator=dict(type='ImageClassifierPseudoLoss')))
+
+    model = ConcatModel()
+
+    mutator.prepare_from_supernet(model)
+
+    for name, module in model.named_modules():
+        if isinstance(module, SlimmableMutableChannel):
+            assert module.choices == [0, 1]
+
+    mutator.switch_choices(0)
+    for name, module in model.named_modules():
+        if isinstance(module, SlimmableMutableChannel):
+            assert module.current_choice == 0
+    _ = model(imgs)
+
+    mutator.switch_choices(1)
+    for name, module in model.named_modules():
+        if isinstance(module, SlimmableMutableChannel):
             assert module.current_choice == 1
     _ = model(imgs)

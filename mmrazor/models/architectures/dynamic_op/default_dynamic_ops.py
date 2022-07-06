@@ -1,6 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import Dict
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,8 +8,8 @@ from torch.nn.modules import GroupNorm
 from torch.nn.modules.batchnorm import _BatchNorm
 from torch.nn.modules.instancenorm import _InstanceNorm
 
-from mmrazor.models.mutables import MutableManageMixIn
 from mmrazor.registry import MODELS
+from ...mutables import MutableManageMixIn
 
 
 class DynamicConv2d(nn.Conv2d, MutableManageMixIn):
@@ -19,30 +18,20 @@ class DynamicConv2d(nn.Conv2d, MutableManageMixIn):
     dynamically.
 
     Args:
-        module_name (str): Name of this `DynamicConv2d`.
         in_channels_cfg (Dict): Config related to `in_channels`.
         out_channels_cfg (Dict): Config related to `out_channels`.
     """
 
-    def __init__(self, module_name, in_channels_cfg, out_channels_cfg, *args,
-                 **kwargs):
+    def __init__(self, in_channels_cfg, out_channels_cfg, *args, **kwargs):
         super(DynamicConv2d, self).__init__(*args, **kwargs)
 
-        in_channels_cfg = copy.deepcopy(in_channels_cfg)
-        in_channels_cfg.update(
-            dict(
-                name=module_name,
-                num_channels=self.in_channels,
-                mask_type='in_mask'))
-        self.mutable_in_channels = MODELS.build(in_channels_cfg)
+        in_channels_cfg_ = copy.deepcopy(in_channels_cfg)
+        in_channels_cfg_.update(dict(num_channels=self.in_channels))
+        self.mutable_in_channels = MODELS.build(in_channels_cfg_)
 
-        out_channels_cfg = copy.deepcopy(out_channels_cfg)
-        out_channels_cfg.update(
-            dict(
-                name=module_name,
-                num_channels=self.out_channels,
-                mask_type='out_mask'))
-        self.mutable_out_channels = MODELS.build(out_channels_cfg)
+        out_channels_cfg_ = copy.deepcopy(out_channels_cfg)
+        out_channels_cfg_.update(dict(num_channels=self.out_channels))
+        self.mutable_out_channels = MODELS.build(out_channels_cfg_)
 
     @property
     def mutable_in(self):
@@ -57,8 +46,9 @@ class DynamicConv2d(nn.Conv2d, MutableManageMixIn):
     def forward(self, input: Tensor) -> Tensor:
         """Slice the parameters according to `mutable_in_channels` and
         `mutable_out_channels`, and forward."""
-        in_mask = self.mutable_in_channels.mask
-        out_mask = self.mutable_out_channels.mask
+        in_mask = self.mutable_in_channels.current_mask.to(self.weight.device)
+        out_mask = self.mutable_out_channels.current_mask.to(
+            self.weight.device)
 
         if self.groups == 1:
             weight = self.weight[out_mask][:, in_mask]
@@ -84,30 +74,20 @@ class DynamicLinear(nn.Linear, MutableManageMixIn):
     `mutable_in_features` and `mutable_out_features` dynamically.
 
     Args:
-        module_name (str): Name of this `DynamicLinear`.
         in_features_cfg (Dict): Config related to `in_features`.
         out_features_cfg (Dict): Config related to `out_features`.
     """
 
-    def __init__(self, module_name, in_features_cfg, out_features_cfg, *args,
-                 **kwargs):
+    def __init__(self, in_features_cfg, out_features_cfg, *args, **kwargs):
         super(DynamicLinear, self).__init__(*args, **kwargs)
 
-        in_features_cfg = copy.deepcopy(in_features_cfg)
-        in_features_cfg.update(
-            dict(
-                name=module_name,
-                num_channels=self.in_features,
-                mask_type='in_mask'))
-        self.mutable_in_features = MODELS.build(in_features_cfg)
+        in_features_cfg_ = copy.deepcopy(in_features_cfg)
+        in_features_cfg_.update(dict(num_channels=self.in_features))
+        self.mutable_in_features = MODELS.build(in_features_cfg_)
 
-        out_features_cfg = copy.deepcopy(out_features_cfg)
-        out_features_cfg.update(
-            dict(
-                name=module_name,
-                num_channels=self.out_features,
-                mask_type='out_mask'))
-        self.mutable_out_features = MODELS.build(out_features_cfg)
+        out_features_cfg_ = copy.deepcopy(out_features_cfg)
+        out_features_cfg_.update(dict(num_channels=self.out_features))
+        self.mutable_out_features = MODELS.build(out_features_cfg_)
 
     @property
     def mutable_in(self):
@@ -122,8 +102,9 @@ class DynamicLinear(nn.Linear, MutableManageMixIn):
     def forward(self, input: Tensor) -> Tensor:
         """Slice the parameters according to `mutable_in_features` and
         `mutable_out_features`, and forward."""
-        in_mask = self.mutable_in_features.mask
-        out_mask = self.mutable_out_features.mask
+        in_mask = self.mutable_in_features.current_mask.to(self.weight.device)
+        out_mask = self.mutable_out_features.current_mask.to(
+            self.weight.device)
 
         weight = self.weight[out_mask][:, in_mask]
         bias = self.bias[out_mask] if self.bias is not None else None
@@ -136,20 +117,15 @@ class DynamicBatchNorm(_BatchNorm, MutableManageMixIn):
     `mutable_num_features` dynamically.
 
     Args:
-        module_name (str): Name of this `DynamicBatchNorm`.
         num_features_cfg (Dict): Config related to `num_features`.
     """
 
-    def __init__(self, module_name, num_features_cfg, *args, **kwargs):
+    def __init__(self, num_features_cfg, *args, **kwargs):
         super(DynamicBatchNorm, self).__init__(*args, **kwargs)
 
-        num_features_cfg = copy.deepcopy(num_features_cfg)
-        num_features_cfg.update(
-            dict(
-                name=module_name,
-                num_channels=self.num_features,
-                mask_type='out_mask'))
-        self.mutable_num_features = MODELS.build(num_features_cfg)
+        num_features_cfg_ = copy.deepcopy(num_features_cfg)
+        num_features_cfg_.update(dict(num_channels=self.num_features))
+        self.mutable_num_features = MODELS.build(num_features_cfg_)
 
     @property
     def mutable_in(self):
@@ -186,14 +162,16 @@ class DynamicBatchNorm(_BatchNorm, MutableManageMixIn):
                                                            None)
 
         if self.affine:
-            out_mask = self.mutable_num_features.mask
+            out_mask = self.mutable_num_features.current_mask.to(
+                self.weight.device)
             weight = self.weight[out_mask]
             bias = self.bias[out_mask]
         else:
             weight, bias = self.weight, self.bias
 
         if self.track_running_stats:
-            out_mask = self.mutable_num_features.mask
+            out_mask = self.mutable_num_features.current_mask.to(
+                self.running_mean.device)
             running_mean = self.running_mean[out_mask] \
                 if not self.training or self.track_running_stats else None
             running_var = self.running_var[out_mask] \
@@ -210,20 +188,15 @@ class DynamicInstanceNorm(_InstanceNorm, MutableManageMixIn):
     `mutable_num_features` dynamically.
 
     Args:
-        module_name (str): Name of this `DynamicInstanceNorm`.
         num_features_cfg (Dict): Config related to `num_features`.
     """
 
-    def __init__(self, module_name, num_features_cfg, *args, **kwargs):
+    def __init__(self, num_features_cfg, *args, **kwargs):
         super(DynamicInstanceNorm, self).__init__(*args, **kwargs)
 
-        num_features_cfg = copy.deepcopy(num_features_cfg)
-        num_features_cfg.update(
-            dict(
-                name=module_name,
-                num_channels=self.num_features,
-                mask_type='out_mask'))
-        self.mutable_num_features = MODELS.build(num_features_cfg)
+        num_features_cfg_ = copy.deepcopy(num_features_cfg)
+        num_features_cfg_.update(dict(num_channels=self.num_features))
+        self.mutable_num_features = MODELS.build(num_features_cfg_)
 
     @property
     def mutable_in(self):
@@ -239,14 +212,16 @@ class DynamicInstanceNorm(_InstanceNorm, MutableManageMixIn):
         """Slice the parameters according to `mutable_num_features`, and
         forward."""
         if self.affine:
-            out_mask = self.mutable_num_features.mask
+            out_mask = self.mutable_num_features.current_mask.to(
+                self.weight.device)
             weight = self.weight[out_mask]
             bias = self.bias[out_mask]
         else:
             weight, bias = self.weight, self.bias
 
         if self.track_running_stats:
-            out_mask = self.mutable_num_features.mask
+            out_mask = self.mutable_num_features.current_mask.to(
+                self.running_mean.device)
             running_mean = self.running_mean[out_mask]
             running_var = self.running_var[out_mask]
         else:
@@ -262,20 +237,15 @@ class DynamicGroupNorm(GroupNorm, MutableManageMixIn):
     `mutable_num_channels` dynamically.
 
     Args:
-        module_name (str): Name of this `DynamicGroupNorm`.
         num_channels_cfg (Dict): Config related to `num_channels`.
     """
 
-    def __init__(self, module_name, num_channels_cfg, *args, **kwargs):
+    def __init__(self, num_channels_cfg, *args, **kwargs):
         super(DynamicGroupNorm, self).__init__(*args, **kwargs)
 
-        num_channels_cfg = copy.deepcopy(num_channels_cfg)
-        num_channels_cfg.update(
-            dict(
-                name=module_name,
-                num_channels=self.num_channels,
-                mask_type='out_mask'))
-        self.mutable_num_channels = MODELS.build(num_channels_cfg)
+        num_channels_cfg_ = copy.deepcopy(num_channels_cfg)
+        num_channels_cfg_.update(dict(num_channels=self.num_channels))
+        self.mutable_num_channels = MODELS.build(num_channels_cfg_)
 
     @property
     def mutable_in(self):
@@ -291,118 +261,11 @@ class DynamicGroupNorm(GroupNorm, MutableManageMixIn):
         """Slice the parameters according to `mutable_num_channels`, and
         forward."""
         if self.affine:
-            out_mask = self.mutable_num_channels.mask
+            out_mask = self.mutable_num_channels.current_mask.to(
+                self.weight.device)
             weight = self.weight[out_mask]
             bias = self.bias[out_mask]
         else:
             weight, bias = self.weight, self.bias
 
         return F.group_norm(input, self.num_groups, weight, bias, self.eps)
-
-
-def build_dynamic_conv2d(module: nn.Conv2d, module_name: str,
-                         in_channels_cfg: Dict,
-                         out_channels_cfg: Dict) -> DynamicConv2d:
-    """Build DynamicConv2d.
-
-    Args:
-        module (:obj:`torch.nn.Conv2d`): The original Conv2d module.
-        module_name (str): Name of this `DynamicConv2d`.
-        in_channels_cfg (Dict): Config related to `in_channels`.
-        out_channels_cfg (Dict): Config related to `out_channels`.
-    """
-    dynamic_conv = DynamicConv2d(
-        module_name=module_name,
-        in_channels_cfg=in_channels_cfg,
-        out_channels_cfg=out_channels_cfg,
-        in_channels=module.in_channels,
-        out_channels=module.out_channels,
-        kernel_size=module.kernel_size,
-        stride=module.stride,
-        padding=module.padding,
-        dilation=module.dilation,
-        groups=module.groups,
-        bias=True if module.bias is not None else False,
-        padding_mode=module.padding_mode)
-    return dynamic_conv
-
-
-def build_dynamic_linear(module: nn.Linear, module_name: str,
-                         in_features_cfg: Dict,
-                         out_features_cfg: Dict) -> DynamicLinear:
-    """Build DynamicLinear.
-
-    Args:
-        module (:obj:`torch.nn.Linear`): The original Linear module.
-        module_name (str): Name of this `DynamicLinear`.
-        in_features_cfg (Dict): Config related to `in_features`.
-        out_features_cfg (Dict): Config related to `out_features`.
-    """
-    dynamic_linear = DynamicLinear(
-        module_name=module_name,
-        in_features_cfg=in_features_cfg,
-        out_features_cfg=out_features_cfg,
-        in_features=module.in_features,
-        out_features=module.out_features,
-        bias=True if module.bias is not None else False)
-    return dynamic_linear
-
-
-def build_dynamic_bn(module: _BatchNorm, module_name: str,
-                     num_features_cfg: Dict) -> DynamicBatchNorm:
-    """Build DynamicBatchNorm.
-
-    Args:
-        module (:obj:`torch.nn._BatchNorm`): The original BatchNorm module.
-        module_name (str): Name of this `DynamicBatchNorm`.
-        num_features_cfg (Dict): Config related to `num_features`.
-    """
-    dynamic_bn = DynamicBatchNorm(
-        module_name=module_name,
-        num_features_cfg=num_features_cfg,
-        num_features=module.num_features,
-        eps=module.eps,
-        momentum=module.momentum,
-        affine=module.affine,
-        track_running_stats=module.track_running_stats)
-    return dynamic_bn
-
-
-def build_dynamic_in(module: _InstanceNorm, module_name: str,
-                     num_features_cfg: Dict) -> DynamicInstanceNorm:
-    """Build DynamicInstanceNorm.
-
-    Args:
-        module (:obj:`torch.nn._InstanceNorm`): The original InstanceNorm
-            module.
-        module_name (str): Name of this `DynamicInstanceNorm`.
-        num_features_cfg (Dict): Config related to `num_features`.
-    """
-    dynamic_in = DynamicInstanceNorm(
-        module_name=module_name,
-        num_features_cfg=num_features_cfg,
-        num_features=module.num_features,
-        eps=module.eps,
-        momentum=module.momentum,
-        affine=module.affine,
-        track_running_stats=module.track_running_stats)
-    return dynamic_in
-
-
-def build_dynamic_gn(module: GroupNorm, module_name: str,
-                     num_channels_cfg: Dict) -> DynamicGroupNorm:
-    """Build DynamicGroupNorm.
-
-    Args:
-        module (:obj:`torch.nn.GroupNorm`): The original GroupNorm module.
-        module_name (str): Name of this `DynamicGroupNorm`.
-        num_channels_cfg (Dict): Config related to `num_channels`.
-    """
-    dynamic_gn = DynamicGroupNorm(
-        module_name=module_name,
-        num_channels_cfg=num_channels_cfg,
-        num_channels=module.num_channels,
-        num_groups=module.num_groups,
-        eps=module.eps,
-        affine=module.affine)
-    return dynamic_gn

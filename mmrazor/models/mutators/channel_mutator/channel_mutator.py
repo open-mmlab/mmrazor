@@ -1,32 +1,15 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
 from abc import abstractmethod
-from typing import Callable, Dict, List, Optional
+from typing import Dict, List, Optional
 
-import torch.nn as nn
 from torch.nn import Module
-from torch.nn.modules import GroupNorm
-from torch.nn.modules.batchnorm import (BatchNorm1d, BatchNorm2d, BatchNorm3d,
-                                        _BatchNorm)
-from torch.nn.modules.instancenorm import (InstanceNorm1d, InstanceNorm2d,
-                                           InstanceNorm3d, _InstanceNorm)
 
-from mmrazor.core.tracer import (ConcatNode, ConvNode, DepthWiseConvNode,
-                                 LinearNode, NormNode, PathList)
-from mmrazor.models.architectures.dynamic_op import (build_dynamic_bn,
-                                                     build_dynamic_conv2d,
-                                                     build_dynamic_gn,
-                                                     build_dynamic_in,
-                                                     build_dynamic_linear)
-from mmrazor.models.mutables import OneShotChannelMutable
+from mmrazor.core.tracer import ConcatNode, DepthWiseConvNode, PathList
 from mmrazor.registry import MODELS, TASK_UTILS
+from ...mutables import MutableChannel
 from ..base_mutator import BaseMutator
-
-NONPASS_NODES = (ConvNode, LinearNode, ConcatNode)
-PASS_NODES = (NormNode, DepthWiseConvNode)
-
-NONPASS_MODULES = (nn.Conv2d, nn.Linear)
-PASS_MODULES = (_BatchNorm, _InstanceNorm, GroupNorm)
+from ..utils import DEFAULT_MODULE_CONVERTERS
 
 
 @MODELS.register_module()
@@ -98,8 +81,8 @@ class ChannelMutator(BaseMutator):
                         pre_module.mutable_in.register_same_mutable(
                             concat_mutables)
 
-                    for cur_path_list in node:
-                        self.add_link(cur_path_list)
+                    for sub_path_list in node:
+                        self.add_link(sub_path_list)
 
                     # ConcatNode is the last node in a path
                     break
@@ -137,7 +120,7 @@ class ChannelMutator(BaseMutator):
                 in your algorithm.
         """
         if self.tracer is not None:
-            self.convert_dynamic_module(supernet, self.dynamic_layer)
+            self.convert_dynamic_module(supernet, self.module_converters)
             # The mapping from a module name to the module
             self._name2module = dict(supernet.named_modules())
 
@@ -148,6 +131,7 @@ class ChannelMutator(BaseMutator):
         else:
             self._name2module = dict(supernet.named_modules())
 
+        self.bind_mutable_name(supernet)
         self._search_groups = self.build_search_groups(supernet)
 
     @staticmethod
@@ -157,7 +141,7 @@ class ChannelMutator(BaseMutator):
         groups = {}
         group_idx = 0
         for name, module in supernet.named_modules():
-            if isinstance(module, OneShotChannelMutable):
+            if isinstance(module, MutableChannel):
                 same_mutables = module.same_mutables
                 if module not in visited and len(same_mutables) > 0:
                     groups[group_idx] = [module] + same_mutables
@@ -165,7 +149,26 @@ class ChannelMutator(BaseMutator):
                     group_idx += 1
         return groups
 
-    def convert_dynamic_module(self, supernet: Module, dynamic_layer: Dict):
+    def bind_mutable_name(self, supernet: Module):
+        """Bind a MutableChannel to its name.
+
+        Args:
+            supernet (:obj:`torch.nn.Module`): The supernet to be searched
+                in your algorithm.
+        """
+
+        def traverse(module, prefix):
+            for name, child in module.named_children():
+                module_name = f'{prefix}.{name}' if prefix else name
+
+                if isinstance(child, MutableChannel):
+                    child.bind_mutable_name(prefix)
+                else:
+                    traverse(child, module_name)
+
+        traverse(supernet, '')
+
+    def convert_dynamic_module(self, supernet: Module, converters: Dict):
         """Replace the conv/linear/norm modules in the input supernet with
         dynamic ops.
 
@@ -179,18 +182,11 @@ class ChannelMutator(BaseMutator):
         def traverse(module, prefix):
             for name, child in module.named_children():
                 module_name = prefix + name
-                if isinstance(child, NONPASS_MODULES):
-                    mutable_cfg = copy.deepcopy(self.mutable_cfg)
-                    # mutable_cfg.update(dict(name=module_name))
-                    layer = dynamic_layer[type(child)](child, module_name,
-                                                       mutable_cfg,
-                                                       mutable_cfg)
-                    setattr(module, name, layer)
-                elif isinstance(child, PASS_MODULES):
-                    mutable_cfg = copy.deepcopy(self.mutable_cfg)
-                    # mutable_cfg.update(dict(name=module_name))
-                    layer = dynamic_layer[type(child)](child, module_name,
-                                                       mutable_cfg)
+
+                if type(child) in converters:
+                    mutable_cfg_ = copy.deepcopy(self.mutable_cfg)
+                    converter = converters[type(child)]
+                    layer = converter(child, mutable_cfg_, mutable_cfg_)
                     setattr(module, name, layer)
                 else:
                     traverse(child, module_name + '.')
@@ -236,27 +232,14 @@ class ChannelMutator(BaseMutator):
             raise RuntimeError('Called before access `prepare_from_supernet`!')
 
     @property
-    def dynamic_layer(self) -> Dict:
+    def module_converters(self) -> Dict:
         """The mapping from a type to the corresponding dynamic layer. It is
         called in `prepare_from_supernet`.
 
         Returns:
             dict: The mapping dict.
         """
-
-        dynamic_layer: Dict[Callable, Callable] = {
-            nn.Conv2d: build_dynamic_conv2d,
-            nn.Linear: build_dynamic_linear,
-            BatchNorm1d: build_dynamic_bn,
-            BatchNorm2d: build_dynamic_bn,
-            BatchNorm3d: build_dynamic_bn,
-            InstanceNorm1d: build_dynamic_in,
-            InstanceNorm2d: build_dynamic_in,
-            InstanceNorm3d: build_dynamic_in,
-            GroupNorm: build_dynamic_gn
-        }
-
-        return dynamic_layer
+        return DEFAULT_MODULE_CONVERTERS
 
     def is_skip_pruning(self, module_name: str,
                         skip_prefixes: Optional[List[str]]) -> bool:

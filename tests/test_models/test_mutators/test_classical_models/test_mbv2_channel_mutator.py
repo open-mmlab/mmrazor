@@ -9,7 +9,7 @@ from mmcls.core import ClsDataSample
 from mmcls.models import *  # noqa: F401,F403
 
 from mmrazor import digit_version
-from mmrazor.models.mutables import SlimmableChannelMutable
+from mmrazor.models.mutables import SlimmableMutableChannel
 from mmrazor.models.mutators import (OneShotChannelMutator,
                                      SlimmableChannelMutator)
 from mmrazor.registry import MODELS
@@ -32,10 +32,11 @@ ONESHOT_MUTATOR_CFG = dict(
         type='BackwardTracer',
         loss_calculator=dict(type='ImageClassifierPseudoLoss')),
     mutable_cfg=dict(
-        type='RatioChannelMutable',
+        type='OneShotMutableChannel',
         candidate_choices=[
             1 / 8, 2 / 8, 3 / 8, 4 / 8, 5 / 8, 6 / 8, 7 / 8, 1.0
-        ]))
+        ],
+        candidate_mode='ratio'))
 
 
 @unittest.skipIf(
@@ -89,19 +90,22 @@ def test_slimmable_channel_mutator() -> None:
     channel_cfgs = [mmcv.fileio.load(path) for path in channel_cfgs]
 
     mutator = SlimmableChannelMutator(
-        mutable_cfg=dict(type='SlimmableChannelMutable'),
-        channel_cfgs=channel_cfgs)
+        mutable_cfg=dict(type='SlimmableMutableChannel'),
+        channel_cfgs=channel_cfgs,
+        tracer_cfg=dict(
+            type='BackwardTracer',
+            loss_calculator=dict(type='ImageClassifierPseudoLoss')))
 
     model = MODELS.build(MODEL_CFG)
     mutator.prepare_from_supernet(model)
     mutator.switch_choices(0)
     for name, module in model.named_modules():
-        if isinstance(module, SlimmableChannelMutable):
+        if isinstance(module, SlimmableMutableChannel):
             assert module.current_choice == 0
     model(imgs, data_samples=data_samples, mode='loss')
 
     mutator.switch_choices(1)
     for name, module in model.named_modules():
-        if isinstance(module, SlimmableChannelMutable):
+        if isinstance(module, SlimmableMutableChannel):
             assert module.current_choice == 1
     model(imgs, data_samples=data_samples, mode='loss')

@@ -6,10 +6,11 @@ import torch.nn as nn
 from torch.nn import Module
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.architectures.dynamic_op import (DynamicBatchNorm,
-                                                     build_switchable_bn)
-from mmrazor.models.mutables import SlimmableChannelMutable, base_mutable
+from mmrazor.core.tracer import PathList
+from mmrazor.models.architectures.dynamic_op import DynamicBatchNorm
+from mmrazor.models.mutables import SlimmableMutableChannel
 from mmrazor.registry import MODELS
+from ..utils import switchable_bn_converter
 from .channel_mutator import ChannelMutator
 
 NONPASS_MODULES = (nn.Conv2d, nn.Linear)
@@ -31,10 +32,12 @@ class SlimmableChannelMutator(ChannelMutator):
     def __init__(self,
                  channel_cfgs: List[Dict],
                  mutable_cfg: Dict,
+                 tracer_cfg: Dict,
                  skip_prefixes: Optional[List[str]] = None,
                  init_cfg: Optional[Dict] = None):
         super(SlimmableChannelMutator, self).__init__(
             mutable_cfg=mutable_cfg,
+            tracer_cfg=tracer_cfg,
             skip_prefixes=skip_prefixes,
             init_cfg=init_cfg)
 
@@ -70,21 +73,30 @@ class SlimmableChannelMutator(ChannelMutator):
             Different from `ChannelMutator`, we only support Case 1 in
             `ChannelMutator`. The input supernet should be made up of original
             nn.Module. And we replace the conv/linear/bn modules in the input
-            supernet with dynamic ops first. Then we convert the
-            ``DynamicBatchNorm`` in supernet with ``SwitchableBatchNorm2d``.
-            Finally, we set the candidate channel numbers to the corresponding
-            `SlimmableChannelMutable`.
+            supernet with dynamic ops first. Then we trace the topology of
+            the supernet to get the `concat_parent_mutables` of a certain
+            mutable, if the input of a module is a concatenation of several
+            modules' outputs. Then we convert the ``DynamicBatchNorm`` in
+            supernet with ``SwitchableBatchNorm2d``, and set the candidate
+            channel numbers to the corresponding `SlimmableChannelMutable`.
+            Finally, we establish the relationship between the current nodes
+            and their parents.
 
         Args:
             supernet (:obj:`torch.nn.Module`): The supernet to be searched
                 in your algorithm.
         """
-        self.convert_dynamic_module(supernet, self.dynamic_layer)
-        print(supernet)
+        self.convert_dynamic_module(supernet, self.module_converters)
+
+        module_path_list: PathList = self.tracer.trace(supernet)
+
         self.convert_switchable_bn(supernet)
         self.set_candidate_choices(supernet)
+
         # The mapping from a module name to the module
         self._name2module = dict(supernet.named_modules())
+        self.add_link(module_path_list)
+        self.bind_mutable_name(supernet)
 
     def set_candidate_choices(self, supernet):
         """Set the ``candidate_choices`` of each ``SlimmableChannelMutable``.
@@ -95,7 +107,7 @@ class SlimmableChannelMutator(ChannelMutator):
             ``SlimmableChannelMutable``
         """
         for name, module in supernet.named_modules():
-            if isinstance(module, SlimmableChannelMutable):
+            if isinstance(module, SlimmableMutableChannel):
                 candidate_choices = self.channel_cfgs[name]['current_choice']
                 module.candidate_choices = candidate_choices
 
@@ -118,7 +130,9 @@ class SlimmableChannelMutator(ChannelMutator):
                         'current_choice']
                     mutable_cfg.update(
                         dict(candidate_choices=candidate_choices))
-                    sbn = build_switchable_bn(child, module_name, mutable_cfg)
+                    sbn = switchable_bn_converter(child, mutable_cfg,
+                                                  mutable_cfg)
+                    sbn.mutable_out.bind_mutable_name(module_name)
                     setattr(module, name, sbn)
                 else:
                     traverse(child, module_name + '.')
@@ -135,10 +149,8 @@ class SlimmableChannelMutator(ChannelMutator):
             idx (int): The index of the current subnet.
         """
         for name, module in self.name2module.items():
-            if hasattr(module, 'mutable_out'):
-                module.mutable_out.current_choice = idx
-            if hasattr(module, 'mutable_in'):
-                module.mutable_in.current_choice = idx
+            if isinstance(module, SlimmableMutableChannel):
+                module.current_choice = idx
 
     def build_search_groups(self, supernet: Module):
         """Build `search_groups`.
@@ -153,4 +165,4 @@ class SlimmableChannelMutator(ChannelMutator):
         Returns:
             Type[OneShotMutableModule]: Class type of one-shot mutable.
         """
-        return base_mutable
+        return SlimmableMutableChannel
