@@ -24,12 +24,20 @@ class WSLD(nn.Module):
         self.tau = tau
         self.loss_weight = loss_weight
         self.num_classes = num_classes
-        self.softmax = nn.Softmax(dim=1).cuda()
-        self.logsoftmax = nn.LogSoftmax(dim=1).cuda()
+        self.softmax = nn.Softmax(dim=1)
+        self.logsoftmax = nn.LogSoftmax(dim=1)
 
-    def forward(self, student, teacher):
+    def forward(self, student, teacher, data_samples):
 
-        gt_labels = self.current_data['gt_label']
+        # Unpack data samples and pack targets
+        if 'score' in data_samples[0].gt_label:
+            # Batch augmentation may convert labels to one-hot format scores.
+            gt_labels = torch.stack([i.gt_label.score for i in data_samples])
+            one_hot_labels = gt_labels.float()
+        else:
+            gt_labels = torch.hstack([i.gt_label.label for i in data_samples])
+            one_hot_labels = F.one_hot(
+                gt_labels, num_classes=self.num_classes).float()
 
         student_logits = student / self.tau
         teacher_logits = teacher / self.tau
@@ -49,7 +57,7 @@ class WSLD(nn.Module):
         ce_loss_t = -torch.sum(one_hot_labels * log_softmax_t, 1, keepdim=True)
 
         focal_weight = ce_loss_s / (ce_loss_t + 1e-7)
-        ratio_lower = torch.zeros(1).cuda()
+        ratio_lower = torch.zeros_like(focal_weight)
         focal_weight = torch.max(focal_weight, ratio_lower)
         focal_weight = 1 - torch.exp(-focal_weight)
         ce_loss = focal_weight * ce_loss

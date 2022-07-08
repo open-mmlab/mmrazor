@@ -3,7 +3,7 @@ from typing import Dict, List, Sequence, Union
 
 import torch
 from mmengine.evaluator import Evaluator
-from mmengine.runner import ValLoop
+from mmengine.runner import ValLoop, autocast
 from torch.utils.data import DataLoader
 
 from mmrazor.registry import LOOPS
@@ -19,16 +19,29 @@ class SingleTeacherDistillValLoop(ValLoop):
         dataloader (Dataloader or dict): A dataloader object or a dict to
             build a dataloader.
         evaluator (Evaluator or dict or list): Used for computing metrics.
+        fp16 (bool): Whether to enable fp16 validation. Defaults to
+            False.
     """
 
-    def __init__(self, runner, dataloader: Union[DataLoader, Dict],
-                 evaluator: Union[Evaluator, Dict, List]) -> None:
-        super().__init__(runner, dataloader, evaluator)
+    def __init__(self,
+                 runner,
+                 dataloader: Union[DataLoader, Dict],
+                 evaluator: Union[Evaluator, Dict, List],
+                 fp16: bool = False) -> None:
+        super().__init__(runner, dataloader, evaluator, fp16)
         if self.runner.distributed:
-            self.model = runner.model.module
+            assert hasattr(self.runner.model.module, 'teacher')
+            # TODO: remove hard code after mmcls add data_preprocessor
+            data_preprocessor = self.runner.model.module.data_preprocessor
+            self.teacher = self.runner.model.module.teacher
+            self.teacher.data_preprocessor = data_preprocessor
+
         else:
-            self.model = runner.model
-        assert hasattr(self.model, 'teacher')
+            assert hasattr(self.runner.model, 'teacher')
+            # TODO: remove hard code after mmcls add data_preprocessor
+            data_preprocessor = self.runner.model.data_preprocessor
+            self.teacher = self.runner.model.teacher
+            self.teacher.data_preprocessor = data_preprocessor
 
     def run(self):
         """Launch validation."""
@@ -38,19 +51,32 @@ class SingleTeacherDistillValLoop(ValLoop):
 
         for idx, data_batch in enumerate(self.dataloader):
             self.run_iter(idx, data_batch)
-        # compute metrics
-        metrics_s = self.evaluator.evaluate(len(self.dataloader.dataset))
-        for key, value in metrics_s.items():
-            self.runner.message_hub.update_scalar(f'val_student/{key}', value)
+        # compute student metrics
+        metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+        student_metrics = dict()
+        for key, value in metrics.items():
+            student_key = 'student.' + key
+            teacher_key = 'teacher.' + key
 
+            student_metrics[student_key] = value
+            self.runner.message_hub.log_scalars.pop(f'val/{teacher_key}', None)
+
+        self.runner.call_hook('after_val_epoch', metrics=student_metrics)
+
+        self.runner.call_hook('before_val_epoch')
         for idx, data_batch in enumerate(self.dataloader):
             self.run_iter_teacher(idx, data_batch)
-        # compute metrics
-        metrics_t = self.evaluator.evaluate(len(self.dataloader.dataset))
-        for key, value in metrics_t.items():
-            self.runner.message_hub.update_scalar(f'val_teacher/{key}', value)
+        # compute teacher metrics
+        metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+        teacher_metrics = dict()
+        for key, value in metrics.items():
+            student_key = 'student.' + key
+            teacher_key = 'teacher.' + key
 
-        self.runner.call_hook('after_val_epoch', metrics=None)
+            teacher_metrics[teacher_key] = value
+            self.runner.message_hub.log_scalars.pop(f'val/{student_key}', None)
+
+        self.runner.call_hook('after_val_epoch', metrics=teacher_metrics)
         self.runner.call_hook('after_val')
 
     @torch.no_grad()
@@ -63,8 +89,11 @@ class SingleTeacherDistillValLoop(ValLoop):
         """
         self.runner.call_hook(
             'before_val_iter', batch_idx=idx, data_batch=data_batch)
-        # outputs should be sequence of BaseDataElement
-        outputs = self.model.teacher(data_batch)
+
+        with autocast(enabled=self.fp16):
+            # outputs should be sequence of BaseDataElement
+            outputs = self.teacher.val_step(data_batch)
+
         self.evaluator.process(data_batch, outputs)
         self.runner.call_hook(
             'after_val_iter',

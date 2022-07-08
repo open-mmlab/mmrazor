@@ -26,9 +26,9 @@ class KLDivergence(nn.Module):
 
     def __init__(
         self,
-        tau=1.0,
-        reduction='batchmean',
-        loss_weight=1.0,
+        tau: float = 1.0,
+        reduction: str = 'batchmean',
+        loss_weight: float = 1.0,
     ):
         super(KLDivergence, self).__init__()
         self.tau = tau

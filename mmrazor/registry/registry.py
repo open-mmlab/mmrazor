@@ -38,10 +38,9 @@ def build_razor_model_from_cfg(
         default_args: Optional[Union[dict, ConfigDict, Config]] = None) -> Any:
 
     # TODO relay on mmengine:HAOCHENYE/config_new_feature
-    # if cfg.get('cfg_path', None) and not cfg.get('type', None):
-    #     from mmengine.config import get_model
-    #     teacher = get_model(**cfg)
-    #     return teacher
+    if cfg.get('cfg_path', None) and not cfg.get('type', None):
+        from mmengine.config import get_model
+        return get_model(**cfg)
 
     if cfg.get('_fix_subnet_', None):
         fix_subnet = cfg.pop('_fix_subnet_')

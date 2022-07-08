@@ -6,11 +6,11 @@ from typing import Callable
 from mmcv.utils import import_modules_from_strings
 
 from mmrazor.registry import TASK_UTILS
-from .distill_deliver import DistillDeliver
+from .distill_deliver import DistillDelivery
 
 
 @TASK_UTILS.register_module()
-class FunctionOutputsDeliver(DistillDeliver):
+class FunctionOutputsDelivery(DistillDelivery):
     """Delivery for intermediate results which are ``FunctionType``'s outputs.
 
     Args:
@@ -29,23 +29,28 @@ class FunctionOutputsDeliver(DistillDeliver):
         `mmdet.core.anchor.utils.anchor_inside_flags`.
 
     Examples:
-        >>> # Suppose there is a toy function named ``toy_func`` in test.py.
-        >>> # It return random integers from 0 to 999.
-        >>> import toy_module
-        >>> # Suppose we want to deliver outputs from the teacher to
+        >>> # Below code in toy_module.py
+        >>> import random
+        >>> def toy_func():
+        >>>     return random.randint(0, 1000)
+
+        >>> # Below code in main.py
+        >>> # Teacher and student both will execute toy_func.
+        >>> # Now, we want to deliver outputs from the teacher to
         >>> # the student
+        >>> import toy_module
         >>> delivery = FunctionOutputsDeliver(
         ...     max_keep_data=1, func_path='toy_module.toy_func')
 
         >>> delivery.override_data = False
         >>> with delivery:
-        ...     output_tea = toy_module.toy_func()
+        ...     output_teacher = toy_module.toy_func()
 
         >>> delivery.override_data = True
         >>> with delivery:
-        ...     output_stu = toy_module.toy_func()
+        ...     output_student = toy_module.toy_func()
 
-        >>> output_tea == output_stu
+        >>> output_teacher == output_student
         True
 
         >>> # If a function (method) is executed more than once during the

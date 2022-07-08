@@ -1,8 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .deliver_manager import DistillDeliverManager
-from .function_outputs_deliver import FunctionOutputsDeliver
-from .method_outputs_deliver import MethodOutputsDeliver
+from .deliver_manager import DistillDeliveryManager
+from .function_outputs_deliver import FunctionOutputsDelivery
+from .method_outputs_deliver import MethodOutputsDelivery
 
 __all__ = [
-    'FunctionOutputsDeliver', 'MethodOutputsDeliver', 'DistillDeliverManager'
+    'FunctionOutputsDelivery', 'MethodOutputsDelivery',
+    'DistillDeliveryManager'
 ]

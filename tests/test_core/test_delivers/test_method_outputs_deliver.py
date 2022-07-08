@@ -1,45 +1,45 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from unittest import TestCase
 
-from mmrazor.core import MethodOutputsDeliver
+from mmrazor.core import MethodOutputsDelivery
 
 
 class TestMethodOutputsDeliver(TestCase):
 
     def test_init(self):
         with self.assertRaisesRegex(TypeError, 'method_path should be'):
-            _ = MethodOutputsDeliver(max_keep_data=1, method_path=1)
+            _ = MethodOutputsDelivery(max_keep_data=1, method_path=1)
 
         with self.assertRaisesRegex(AssertionError,
                                     'method_path must have at '):
-            _ = MethodOutputsDeliver(max_keep_data=1, method_path='toy_func')
+            _ = MethodOutputsDelivery(max_keep_data=1, method_path='toy_func')
 
         with self.assertRaisesRegex(ImportError, 'aaa is not imported'):
-            _ = MethodOutputsDeliver(max_keep_data=1, method_path='aaa.bb.b')
+            _ = MethodOutputsDelivery(max_keep_data=1, method_path='aaa.bb.b')
 
         with self.assertRaisesRegex(AssertionError, 'bb is not in toy_module'):
-            _ = MethodOutputsDeliver(
+            _ = MethodOutputsDelivery(
                 max_keep_data=1, method_path='toy_module.bb.bbb')
 
         with self.assertRaisesRegex(TypeError, 'toy_func should be a type'):
-            _ = MethodOutputsDeliver(
+            _ = MethodOutputsDelivery(
                 max_keep_data=1, method_path='toy_module.toy_func.bbb')
 
         with self.assertRaisesRegex(AssertionError, 'bbb is not in'):
-            _ = MethodOutputsDeliver(
+            _ = MethodOutputsDelivery(
                 max_keep_data=1, method_path='toy_module.ToyClass.bbb')
 
         with self.assertRaisesRegex(TypeError, 'count should be'):
-            _ = MethodOutputsDeliver(
+            _ = MethodOutputsDelivery(
                 max_keep_data=1, method_path='toy_module.ToyClass.count')
 
     def test_context_manager(self):
         from toy_module import ToyClass
 
-        delivery = MethodOutputsDeliver(
+        delivery = MethodOutputsDelivery(
             max_keep_data=2, method_path='toy_module.ToyClass.random_int')
 
-        # Without ``MethodOutputsDeliver``, outputs of the teacher and the
+        # Without ``MethodOutputsDelivery``, outputs of the teacher and the
         # student are very likely to be different.
         # from toy_module import ToyClass
         # toy_class = ToyClass()

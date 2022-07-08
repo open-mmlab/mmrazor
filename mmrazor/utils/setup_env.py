@@ -62,9 +62,7 @@ def register_all_modules(init_default_scope: bool = True) -> None:
     """  # noqa
     import mmrazor.core  # noqa: F401,F403
     import mmrazor.models  # noqa: F401,F403
-
-    # TODO add mmrazor.runners
-
+    import mmrazor.runners  # noqa: F401,F403
     if init_default_scope:
         never_created = DefaultScope.get_current_instance() is None \
                         or not DefaultScope.check_instance_created('mmrazor')

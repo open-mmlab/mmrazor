@@ -124,5 +124,4 @@ class TestSingleTeacherDistillValLoop(TestCase):
         runner = Runner.from_cfg(cfg)
         runner.val()
 
-        self.assertIn('val_student/acc', runner.message_hub.log_scalars.keys())
-        self.assertIn('val_teacher/acc', runner.message_hub.log_scalars.keys())
+        self.assertIn('val/teacher.acc', runner.message_hub.log_scalars.keys())

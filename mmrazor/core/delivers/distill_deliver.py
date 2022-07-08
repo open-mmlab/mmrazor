@@ -4,32 +4,33 @@ from queue import Queue
 from typing import Callable
 
 
-class DistillDeliver(metaclass=ABCMeta):
-    """Base class for delivers for distillation.
+# TODO: Support overriding part of the outputs of a function or method
+class DistillDelivery(metaclass=ABCMeta):
+    """Base class for deliveries for distillation.
 
-    DistillDeliver is a context manager used to override function (method)
-    outputs from the target model with function (method) outputs from the
-    source model.
-    In MMRazor, there will be different types of delivers to deliver different
-    types of data. They can be used in combination with the
+    DistillDelivery is a context manager used to override function(method)
+    outputs during teacher(student) forward.
+
+    A delivery can only handle one function or method. Some algorithms may use
+    multiple deliveries, which can be managed uniformly using
     ``DistillDeliverManager``.
+
+    Args:
+        max_keep_data (int): The length limitation of the queue, should be
+            larger than the execute times of the function or method. Defaults
+            to 1.
 
     Notes:
         If a function (method) is executed more than once during the forward
         of the source model, all the outputs of this function (method) will be
         used to override function (method) outputs from the target model.
 
-    TODO:
-        Support overriding some of the outputs of a function (method)
-
-    Args:
-        max_keep_data (int): The length limitation of the queue. If a function
-            (method) is executed more than once during the forward of the
-            target model, function (method) outputs from the source model are
-            pushed into the queue in order. Default to 1.
+        If a function or method is executed more than once during the forward
+        of the target model, its' outputs from the source model are pushed
+        into the queue in order.
     """
 
-    def __init__(self, max_keep_data: int = 1):
+    def __init__(self, max_keep_data: int = 1) -> None:
 
         self._override_data = False
         self.data_queue: Queue = Queue(maxsize=max_keep_data)
@@ -55,3 +56,11 @@ class DistillDeliver(metaclass=ABCMeta):
     def deliver_wrapper(self, origin: Callable) -> Callable:
         """Wrap the specific object to make the intermediate results of the
         model can be delivered."""
+
+    @abstractmethod
+    def __enter__(self) -> None:
+        """Enter the context manager."""
+
+    @abstractmethod
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """Exit the context manager."""

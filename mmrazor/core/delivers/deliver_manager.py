@@ -1,22 +1,26 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import List
+from typing import Dict, Optional
 
 from mmrazor.registry import TASK_UTILS
+from .distill_deliver import DistillDelivery
+
+SUPPORT_DELIVERIES = ['FunctionOutputs', 'MethodOutputs']
 
 
-class DistillDeliverManager:
-    """Various types delivers' manager. The ``DistillDeliverManager`` is also a
-    context manager, managing various types of delivers. When entering the
-    ``DistillDeliverManager``, all delivers managed by it will be started.
+class DistillDeliveryManager:
+    """Various types deliveries' manager. The ``DistillDeliveryManager`` is
+    also a context manager, managing various types of deliveries.
+
+    When entering the ``DistillDeliveryManager``, all deliveries managed by it
+    will be started.
 
     Notes:
-        DistillDeliver is a context manager used to override function (method)
-        outputs from the target model with function (method) outputs from the
-        source model.
+        DistillDelivery is a context manager used to override function(method)
+        outputs during teacher(student) forward.
 
     Args:
-        deliveries (list(dict)): Configs of all deliveries.
+        deliveries (dict): Configs of all deliveries.
 
     Examples:
         >>> from mmcls.models.utils import Augments
@@ -27,8 +31,8 @@ class DistillDeliverManager:
         >>> imgs = torch.randn(2, 3, 32, 32)
         >>> label = torch.randint(0, 10, (2,))
 
-        >>> # Without ``MethodOutputsDeliver``, outputs of the teacher and the
-        >>> # student are very likely to be different.
+        >>> # Without ``MethodOutputsDelivery``, outputs of the teacher and
+        >>> # the student are different.
         >>> imgs_tea, label_tea = augments(imgs, label)
         >>> imgs_stu, label_stu = augments(imgs, label)
         >>> torch.equal(label_tea, label_stu)
@@ -36,10 +40,10 @@ class DistillDeliverManager:
         >>> torch.equal(imgs_tea, imgs_stu)
         False
 
-        >>> distill_deliveries = [
-        ...     ConfigDict(type='MethodOutputs', max_keep_data=1,
-        ...         method_path='mmcls.models.utils.Augments.__call__')]
-        >>> manager = DistillDeliverManager(distill_deliveries)
+        >>> distill_deliveries = ConfigDict(
+        ...     aug=dict(type='MethodOutputs', max_keep_data=1,
+        ...             method_path='mmcls.models.utils.Augments.__call__'))
+        >>> manager = DistillDeliveryManager(distill_deliveries)
 
         >>> manager.override_data = False
         >>> with manager:
@@ -55,44 +59,55 @@ class DistillDeliverManager:
         True
     """
 
-    def __init__(self, deliveries: List) -> None:
+    def __init__(self, deliveries: Optional[Dict[str, Dict]] = None) -> None:
 
-        # As there may be several delivers belong to a same deliver type,
-        # we use a list to save delivers rather than a dict.
-        self.deliveries = list()
-        for cfg in deliveries:
-            deliver_cfg = copy.deepcopy(cfg)
-            deliver_type = cfg.type
-            deliver_type = deliver_type + 'Deliver'
-            deliver_cfg.type = deliver_type
-            self.deliveries.append(TASK_UTILS.build(deliver_cfg))
+        self._deliveries: Dict[str, DistillDelivery] = dict()
+        if deliveries:
+            for delivery_name, delivery_cfg in deliveries.items():
+                delivery_cfg_ = copy.deepcopy(delivery_cfg)
+                delivery_type_ = delivery_cfg_.get('type', '')
+                assert isinstance(delivery_type_, str)
+                assert delivery_type_ in SUPPORT_DELIVERIES
+
+                delivery_type_ = delivery_type_ + 'Delivery'
+                delivery_cfg_.update(dict(type=delivery_type_))
+
+                delivery = TASK_UTILS.build(delivery_cfg_)
+                self.deliveries[delivery_name] = delivery
 
         self._override_data = False
 
     @property
-    def override_data(self):
+    def deliveries(self) -> Dict[str, DistillDelivery]:
+        """dict: all deliveries."""
+        return self._deliveries
+
+    @property
+    def override_data(self) -> bool:
         """bool: indicate whether to override the data with the recorded data.
         """
         return self._override_data
 
     @override_data.setter
-    def override_data(self, override):
-        """Set the override_data property to all the delivers.
+    def override_data(self, override: bool) -> None:
+        """Set the override_data property to all the deliveries.
 
-        If the `override_data` of a deliver is False, the deliver will record
-        and keep the origin data. If the current_mode of a deliver is True, the
-        deliver will override the origin data with the recorded data.
+        If the `override_data` of a delivery is False, the delivery will
+        record the origin data.
+
+        If the `override_data` of a delivery is True, the delivery will
+        override the origin data with the recorded data.
         """
         self._override_data = override
-        for deliver in self.deliveries:
-            deliver.override_data = override
+        for delivery in self.deliveries.values():
+            delivery.override_data = override
 
     def __enter__(self) -> None:
         """Enter the context manager."""
-        for deliver in self.deliveries:
-            deliver.__enter__()
+        for delivery in self.deliveries.values():
+            delivery.__enter__()
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         """Exit the context manager."""
-        for deliver in self.deliveries:
-            deliver.__exit__(exc_type, exc_value, traceback)
+        for delivery in self.deliveries.values():
+            delivery.__exit__(exc_type, exc_value, traceback)

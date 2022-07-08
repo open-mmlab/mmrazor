@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from unittest import TestCase
 
-from mmrazor.core import FunctionOutputsDeliver
+from mmrazor.core import FunctionOutputsDelivery
 
 
 class TestFuncOutputsDeliver(TestCase):
@@ -9,26 +9,26 @@ class TestFuncOutputsDeliver(TestCase):
     def test_init(self):
 
         with self.assertRaisesRegex(TypeError, 'func_path should be'):
-            _ = FunctionOutputsDeliver(max_keep_data=1, func_path=1)
+            _ = FunctionOutputsDelivery(max_keep_data=1, func_path=1)
 
         with self.assertRaisesRegex(AssertionError, 'func_path must have at '):
-            _ = FunctionOutputsDeliver(max_keep_data=1, func_path='toy_func')
+            _ = FunctionOutputsDelivery(max_keep_data=1, func_path='toy_func')
 
         with self.assertRaisesRegex(ImportError, 'aaa is not imported'):
-            _ = FunctionOutputsDeliver(max_keep_data=1, func_path='aaa.bb')
+            _ = FunctionOutputsDelivery(max_keep_data=1, func_path='aaa.bb')
 
         with self.assertRaisesRegex(AssertionError, 'bb is not in toy_mod'):
-            _ = FunctionOutputsDeliver(
+            _ = FunctionOutputsDelivery(
                 max_keep_data=1, func_path='toy_module.bb')
 
         with self.assertRaisesRegex(TypeError, 'TOY_VAR should be'):
-            _ = FunctionOutputsDeliver(
+            _ = FunctionOutputsDelivery(
                 max_keep_data=1, func_path='toy_module.TOY_VAR')
 
     def test_context_manager(self):
         import toy_module
 
-        delivery = FunctionOutputsDeliver(
+        delivery = FunctionOutputsDelivery(
             max_keep_data=2, func_path='toy_module.toy_func')
 
         delivery.override_data = False

@@ -6,11 +6,11 @@ from typing import Callable
 from mmcv.utils import import_modules_from_strings
 
 from mmrazor.registry import TASK_UTILS
-from .distill_deliver import DistillDeliver
+from .distill_deliver import DistillDelivery
 
 
 @TASK_UTILS.register_module()
-class MethodOutputsDeliver(DistillDeliver):
+class MethodOutputsDelivery(DistillDelivery):
     """Delivery for intermediate results which are ``MethodType``'s outputs.
 
     Note:
