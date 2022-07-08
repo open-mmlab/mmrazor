@@ -354,6 +354,8 @@ class StructurePruner(BaseModule, metaclass=ABCMeta):
         elif (node_name in name2module
               and isinstance(name2module[node_name], nn.Conv2d)
               and name2module[node_name].in_channels
+              == name2module[node_name].out_channels
+              and name2module[node_name].in_channels
               == name2module[node_name].groups):
             return MAKE_GROUP_PARSER_DICT['depthwise']
         else:
