@@ -91,15 +91,14 @@ class FlopsEstimator:
     _custom_modules_mapping: Dict[Module, Callable] = {}
 
     @staticmethod
-    def get_model_complexity_info(
-            model: Module,
-            fix_subnet: Optional[FIX_SUBNET_TYPE] = None,
-            input_shape: Iterable[int] = (3, 224, 224),
-            input_constructor: Optional[Callable] = None,
-            print_per_layer_stat: bool = True,
-            as_strings: bool = True,
-            flush: bool = False,
-            ost: IO = sys.stdout) -> Tuple[Union[float, str]]:
+    def get_model_complexity_info(model: Module,
+                                  fix_subnet: Optional[FIX_SUBNET_TYPE] = None,
+                                  input_shape: Iterable[int] = (3, 224, 224),
+                                  input_constructor: Optional[Callable] = None,
+                                  print_per_layer_stat: bool = True,
+                                  as_strings: bool = True,
+                                  flush: bool = False,
+                                  ost: IO = sys.stdout) -> Tuple:
         """Get complexity information of model.
 
         This method is based on ``get_model_complexity_info`` of mmcv. It can
@@ -126,7 +125,7 @@ class FlopsEstimator:
                 Default: sys.stdout.
 
         Returns:
-            tuple[float, str]: If ``as_strings`` is set to True, it will
+            tuple[float | str]: If ``as_strings`` is set to True, it will
                 return FLOPs and parameter counts in a string format.
                 otherwise, it will return those in a float number format.
         """
