@@ -68,7 +68,7 @@ class SelfDistiller(BaseDistiller):
             outputs (tuple): out of module
         """
         if self.training and getattr(self, 'is_teacher', None):
-            self.teacher_outputs[self.module2name[module]].append(outputs)
+            self.teacher_outputs[self.module2name[module]].append(outputs.detach())
 
     def student_forward_output_hook(self, module, inputs, outputs):
         """Save the output.
