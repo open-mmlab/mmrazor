@@ -22,6 +22,8 @@ def crossover(random_subnet1: SINGLE_MUTATOR_RANDOM_SUBNET,
     Returns:
         SINGLE_MUTATOR_RANDOM_SUBNET: The result of crossover.
     """
+    assert prob >= 0. and prob <= 1.,  \
+        'The probability of crossover has to be between 0 and 1'
     crossover_subnet = copy.deepcopy(random_subnet1)
     for group_id, choice in random_subnet2.items():
         if np.random.random_sample() < prob:

@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
+import sys
 
 import pytest
 import torch
@@ -9,7 +10,9 @@ from torch.nn.modules.batchnorm import _BatchNorm
 from mmrazor.models import *  # noqa: F401,F403
 from mmrazor.models.mutables import *  # noqa: F401,F403
 from mmrazor.registry import MODELS
-from .utils import MockMutable
+
+sys.path.append('tests/test_models/test_architectures/test_backbones')
+from utils import MockMutable  # noqa: E402
 
 _FIRST_STAGE_MUTABLE = dict(type='MockMutable', choices=['c1'])
 _OTHER_STAGE_MUTABLE = dict(
