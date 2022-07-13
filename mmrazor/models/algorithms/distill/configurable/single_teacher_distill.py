@@ -9,12 +9,11 @@ from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import MODELS
-from ...base import LossResults
-from .configurable_distill import ConfigurableDistill
+from ...base import BaseAlgorithm, LossResults
 
 
 @MODELS.register_module()
-class SingleTeacherDistill(ConfigurableDistill):
+class SingleTeacherDistill(BaseAlgorithm):
     """``SingleTeacherDistill`` can be used to develop distill algorithms which
     only use one teacher.
 
@@ -30,12 +29,15 @@ class SingleTeacherDistill(ConfigurableDistill):
     """
 
     def __init__(self,
+                 distiller: dict,
                  teacher: Union[BaseModel, Dict],
                  teacher_ckpt: Optional[str] = None,
                  teacher_trainable: bool = False,
                  teacher_norm_eval: bool = True,
                  **kwargs):
         super().__init__(**kwargs)
+
+        self.distiller = MODELS.build(distiller)
 
         if isinstance(teacher, Dict):
             teacher = MODELS.build(teacher)
@@ -53,10 +55,15 @@ class SingleTeacherDistill(ConfigurableDistill):
         self.teacher_trainable = teacher_trainable
         self.teacher_norm_eval = teacher_norm_eval
 
-        # In ``ConfigurableDistll``, the recorder manager is just constructed,
-        # but not really initialized yet.
-        self.student_recorders.initialize(self.student)
-        self.teacher_recorders.initialize(self.teacher)
+        # In ``ConfigurableDistller``, the recorder manager is just
+        # constructed, but not really initialized yet.
+        self.distiller.prepare_from_student(self.student)
+        self.distiller.prepare_from_teacher(self.teacher)
+
+    @property
+    def student(self):
+        """Alias for ``architecture``."""
+        return self.architecture
 
     def loss(
         self,
@@ -69,31 +76,30 @@ class SingleTeacherDistill(ConfigurableDistill):
 
         # If the `override_data` of a delivery is False, the delivery will
         # record the origin data.
-        self.distill_deliveries.override_data = False
+        self.distiller.set_deliveries_override(False)
         if self.teacher_trainable:
-            with self.teacher_recorders, self.distill_deliveries:
+            with self.distiller.teacher_recorders, self.distiller.deliveries:
                 teacher_losses = self.teacher(
                     batch_inputs, data_samples, mode='loss')
 
             losses.update(add_prefix(teacher_losses, 'teacher'))
         else:
-            with self.teacher_recorders, self.distill_deliveries:
+            with self.distiller.teacher_recorders, self.distiller.deliveries:
                 with torch.no_grad():
 
                     _ = self.teacher(batch_inputs, data_samples, mode='loss')
 
         # If the `override_data` of a delivery is True, the delivery will
         # override the origin data with the recorded data.
-        self.distill_deliveries.override_data = True
-        with self.student_recorders, self.distill_deliveries:
+        self.distiller.set_deliveries_override(True)
+        with self.distiller.student_recorders, self.distiller.deliveries:
             student_losses = self.student(
                 batch_inputs, data_samples, mode='loss')
         losses.update(add_prefix(student_losses, 'student'))
 
         # Automatically compute distill losses based on `loss_forward_mappings`
-        distill_losses = self.compute_distill_losses(
-            self.distill_losses, self.loss_forward_mappings,
-            self.student_recorders, self.teacher_recorders)
+        # The required data already exists in the recorders.
+        distill_losses = self.distiller.compute_distill_losses()
         losses.update(add_prefix(distill_losses, 'distill'))
 
         return losses

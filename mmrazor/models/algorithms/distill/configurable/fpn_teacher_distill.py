@@ -29,29 +29,28 @@ class FpnTeacherDistill(SingleTeacherDistill):
         losses = dict()
         # If the `override_data` of a delivery is False, the delivery will
         # record the origin data.
-        self.delivery_manager.override_data = False
+        self.distiller.set_deliveries_override(False)
         if self.teacher_trainable:
             # Unlike ``SingleTeacherDistill``, teacher will only execute
             # back + neck, not head, so there will be no loss.
-            with self.teacher_recorders, self.delivery_manager:
+            with self.distiller.teacher_recorders, self.distiller.deliveries:
                 _ = self.teacher.extract_feat(batch_inputs)
         else:
-            with self.teacher_recorders, self.distill_deliveries:
+            with self.distiller.teacher_recorders, self.distiller.deliveries:
                 with torch.no_grad():
                     _ = self.teacher(batch_inputs, data_samples, mode='loss')
 
         # If the `override_data` of a delivery is True, the delivery will
         # override the origin data with the recorded data.
-        self.delivery_manager.override_data = True
-        with self.student_recorders, self.delivery_manager:
+        self.distiller.set_deliveries_override(True)
+        with self.distiller.student_recorders, self.distiller.deliveries:
             student_losses = self.student(
                 batch_inputs, data_samples, mode='loss')
         losses.update(add_prefix(student_losses, 'student'))
 
         # Automatically compute distill losses based on `loss_forward_mappings`
-        distill_losses = self.compute_distill_losses(
-            self.distill_losses, self.loss_forward_mappings,
-            self.student_recorders, self.teacher_recorders)
+        # The required data already exists in the recorders.
+        distill_losses = self.distiller.compute_distill_losses()
         losses.update(add_prefix(distill_losses, 'distill'))
 
         return losses

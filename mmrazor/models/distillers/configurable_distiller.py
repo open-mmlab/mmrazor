@@ -1,32 +1,32 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import warnings
 from inspect import signature
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 from mmengine.model import BaseModel
 from torch import nn
 
 from mmrazor.core import DistillDeliveryManager, RecorderManager
 from mmrazor.registry import MODELS
-from ...base import BaseAlgorithm, LossResults
+from ..algorithms.base import LossResults
+from .base_distiller import BaseDistiller
 
 
 @MODELS.register_module()
-class ConfigurableDistill(BaseAlgorithm):
-    """``ConfigurableDistill`` is a powerful tool that can reproduce most
+class ConfigurableDistiller(BaseDistiller):
+    """``ConfigurableDistiller`` is a powerful tool that can reproduce most
     distillation algorithms without modifying the code of teacher or student
     models.
 
-    ``ConfigurableDistill`` can get various intermediate results of the model
-    in a hacky way by ``Recorder``. More details see user-docs for ``Recorder``
+    ``ConfigurableDistiller`` can get various intermediate results of the
+    model in a hacky way by ``Recorder``. More details see user-docs for
+    ``Recorder``.
 
-    ``ConfigurableDistill`` can use the teacher's intermediate results to
+    ``ConfigurableDistiller`` can use the teacher's intermediate results to
     override the student's intermediate results in a hacky way by ``Delivery``.
     More details see user-docs for ``Delivery``.
 
     Args:
-        architecture (dict | :obj:`BaseModel`): The config of
-            :class:`BaseModel` or built model.
         student_recorders (dict, optional): Config for multiple recorders. A
             student model may have more than one recorder. These recorders
             only record the student model's intermediate results. Defaults to
@@ -43,10 +43,6 @@ class ConfigurableDistill(BaseAlgorithm):
             loss. Defaults to None.
         loss_forward_mappings: (Dict[str, Dict], optional): Mapping between
             distill loss forward arguments and records.
-        data_preprocessor (:obj:`BaseDataPreprocessor`): Used for
-            pre-processing data sampled by dataloader to the format accepted by
-            :meth:`forward`.
-        init_cfg (dict, optional): Initialization config dict.
 
     Note:
         If a distill loss needs to backward, the name of the loss must contain
@@ -85,30 +81,20 @@ class ConfigurableDistill(BaseAlgorithm):
     """
 
     def __init__(self,
-                 architecture: Union[BaseModel, Dict],
                  student_recorders: Optional[Dict[str, Dict]] = None,
                  teacher_recorders: Optional[Dict[str, Dict]] = None,
                  distill_deliveries: Optional[Dict[str, Dict]] = None,
                  distill_losses: Optional[Dict[str, Dict]] = None,
                  loss_forward_mappings: Optional[Dict[str, Dict]] = None,
-                 data_preprocessor: Optional[Union[dict, nn.Module]] = None,
-                 init_cfg: Optional[dict] = None):
-        super().__init__(architecture, data_preprocessor, init_cfg)
-
+                 **kwargs):
+        super().__init__(**kwargs)
         # The recorder manager is just constructed, but not really initialized
         # yet. Recorder manager initialization needs to input the corresponding
         #  model.
-        # Different subclasses may have different teacher models, and it is
-        # inconvenient to initialize the recorder manager in
-        # ``ConfigurableDistll``.
-        # During the initialization of the subclass, need to execute
-        # `self.student_recorder_manager.initialize(student)` and
-        # `self.teacher_recorder_manager.initialize(teacher)` according to the
-        # corresponding student and teacher.
         self.student_recorders = RecorderManager(student_recorders)
         self.teacher_recorders = RecorderManager(teacher_recorders)
 
-        self.distill_deliveries = DistillDeliveryManager(distill_deliveries)
+        self.deliveries = DistillDeliveryManager(distill_deliveries)
 
         self.distill_losses = self.build_distill_losses(distill_losses)
 
@@ -122,10 +108,17 @@ class ConfigurableDistill(BaseAlgorithm):
         else:
             self.loss_forward_mappings = dict()
 
-    @property
-    def student(self) -> BaseModel:
-        """Alias for ``architecture``."""
-        return self.architecture
+    def set_deliveries_override(self, override: bool):
+        """Set the `override_data` of all deliveries."""
+        self.deliveries.override_data = override
+
+    def prepare_from_student(self, model: BaseModel) -> None:
+        """Initialize student recorders."""
+        self.student_recorders.initialize(model)
+
+    def prepare_from_teacher(self, model: nn.Module) -> None:
+        """Initialize teacher recorders."""
+        self.teacher_recorders.initialize(model)
 
     def build_distill_losses(
         self,
@@ -166,23 +159,17 @@ class ConfigurableDistill(BaseAlgorithm):
 
         return recorder_.get_record_data(record_idx, data_idx)
 
-    def compute_distill_losses(
-        self,
-        distill_losses: nn.ModuleDict,
-        loss_forward_mappings: Dict[str, Dict],
-        student_recorders: RecorderManager,
-        teacher_recorders: RecorderManager,
-    ) -> LossResults:
+    def compute_distill_losses(self) -> LossResults:
         """Compute distill losses automatically."""
         # Record all computed losses' results.
         losses = dict()
-        for loss_name, forward_mappings in loss_forward_mappings.items():
+        for loss_name, forward_mappings in self.loss_forward_mappings.items():
             forward_kwargs = dict()
             for forward_key, record_info in forward_mappings.items():
                 forward_var = self.get_record(**record_info)
                 forward_kwargs[forward_key] = forward_var
 
-            loss_module = distill_losses[loss_name]
+            loss_module = self.distill_losses[loss_name]
             loss = loss_module(**forward_kwargs)  # type: ignore
             # add computed loss result.
             losses[loss_name] = loss
@@ -238,11 +225,11 @@ class ConfigurableDistill(BaseAlgorithm):
                                     f'but got {type(from_student)}')
 
                 if from_student:
-                    assert recorder in self.student_recorders.recorders, \
+                    assert recorder in student_recorders.recorders, \
                         f'For {forward_key}, "{recorder}" must be in \
                         `student_recorders`.'
 
                 else:
-                    assert recorder in self.teacher_recorders.recorders, \
+                    assert recorder in teacher_recorders.recorders, \
                         f'For {forward_key}, "{recorder}" must be in \
                         `teacher_recorders`.'

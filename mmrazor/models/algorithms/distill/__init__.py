@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .configurable import (ConfigurableDistill, FpnTeacherDistill,
-                           SingleTeacherDistill)
+from .configurable import FpnTeacherDistill, SingleTeacherDistill
 
-__all__ = ['SingleTeacherDistill', 'ConfigurableDistill', 'FpnTeacherDistill']
+__all__ = ['SingleTeacherDistill', 'FpnTeacherDistill']

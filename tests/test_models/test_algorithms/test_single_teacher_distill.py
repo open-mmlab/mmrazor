@@ -19,15 +19,15 @@ class TestSingleTeacherDistill(TestCase):
         alg_kwargs = ConfigDict(
             architecture=dict(type='ToyStudent'),
             teacher=dict(type='ToyTeacher'),
-            student_recorders=recorders_cfg,
-            teacher_recorders=recorders_cfg,
-            distill_losses=dict(loss_toy=dict(type='ToyDistillLoss')),
-            loss_forward_mappings=dict(
-                loss_toy=dict(
-                    arg1=dict(from_student=True, recorder='conv'),
-                    arg2=dict(from_student=False, recorder='conv'),
-                )),
-        )
+            distiller=dict(
+                type='ConfigurableDistiller',
+                student_recorders=recorders_cfg,
+                teacher_recorders=recorders_cfg,
+                distill_losses=dict(loss_toy=dict(type='ToyDistillLoss')),
+                loss_forward_mappings=dict(
+                    loss_toy=dict(
+                        arg1=dict(from_student=True, recorder='conv'),
+                        arg2=dict(from_student=False, recorder='conv')))))
 
         alg = SingleTeacherDistill(**alg_kwargs)
 
@@ -51,15 +51,15 @@ class TestSingleTeacherDistill(TestCase):
         alg_kwargs = ConfigDict(
             architecture=dict(type='ToyStudent'),
             teacher=dict(type='ToyTeacher'),
-            student_recorders=recorders_cfg,
-            teacher_recorders=recorders_cfg,
-            distill_losses=dict(loss_toy=dict(type='ToyDistillLoss')),
-            loss_forward_mappings=dict(
-                loss_toy=dict(
-                    arg1=dict(from_student=True, recorder='conv'),
-                    arg2=dict(from_student=False, recorder='conv'),
-                )),
-        )
+            distiller=dict(
+                type='ConfigurableDistiller',
+                student_recorders=recorders_cfg,
+                teacher_recorders=recorders_cfg,
+                distill_losses=dict(loss_toy=dict(type='ToyDistillLoss')),
+                loss_forward_mappings=dict(
+                    loss_toy=dict(
+                        arg1=dict(from_student=True, recorder='conv'),
+                        arg2=dict(from_student=False, recorder='conv')))))
 
         img = torch.randn(1, 3, 1, 1)
 
