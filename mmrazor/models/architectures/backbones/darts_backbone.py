@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
+from mmcls.models.backbones.base_backbone import BaseBackbone
 from mmcv.cnn import build_activation_layer, build_norm_layer
 from torch import Tensor
 
@@ -126,12 +127,8 @@ class Node(nn.Module):
         super().__init__()
         edges = nn.ModuleDict()
         for i in range(num_prev_nodes):
-            if i < num_downsample_nodes:
-                stride = 2
-            else:
-                stride = 1
-
-            edge_id = '{}_p{}'.format(node_id, i)
+            stride = 2 if i < num_downsample_nodes else 1
+            edge_id = f'{node_id}_p{i}'
 
             module_kwargs = dict(
                 in_channels=channels,
@@ -143,13 +140,14 @@ class Node(nn.Module):
             mutable_cfg.update(alias=edge_id)
             edges.add_module(edge_id, MODELS.build(mutable_cfg))
 
+        route_cfg.update(alias=node_id)
         route_cfg.update(edges=edges)
-        self.edges = MODELS.build(route_cfg)
+        self.route = MODELS.build(route_cfg)
 
     def forward(self, prev_nodes: Union[List[Tensor],
                                         Tuple[Tensor]]) -> Tensor:
         """Forward with the previous nodes list."""
-        return self.edges(prev_nodes)
+        return self.route(prev_nodes)
 
 
 class Cell(nn.Module):
@@ -223,8 +221,7 @@ class Cell(nn.Module):
             cur_tensor = node(tensors)
             tensors.append(cur_tensor)
 
-        output = torch.cat(tensors[2:], dim=1)
-        return output
+        return torch.cat(tensors[2:], dim=1)
 
 
 class AuxiliaryModule(nn.Module):
@@ -263,7 +260,7 @@ class AuxiliaryModule(nn.Module):
 
 
 @MODELS.register_module()
-class DartsBackbone(nn.Module, FixSubnetMixin):
+class DartsBackbone(BaseBackbone, FixSubnetMixin):
     """Backbone of Differentiable Architecture Search (DARTS).
 
     Args:
@@ -348,7 +345,7 @@ class DartsBackbone(nn.Module, FixSubnetMixin):
             prev_reduction, reduction = reduction, False
             # Reduce featuremap size and double channels in 1/3
             # and 2/3 layer.
-            if i == self.num_layers // 3 or i == 2 * self.num_layers // 3:
+            if i in [self.num_layers // 3, 2 * self.num_layers // 3]:
                 self.out_channels *= 2
                 reduction = True
 

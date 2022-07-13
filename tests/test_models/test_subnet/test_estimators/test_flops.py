@@ -13,7 +13,7 @@ from mmrazor.registry import MODELS
 
 _FIRST_STAGE_MUTABLE = dict(
     type='OneShotMutableOP',
-    candidate_ops=dict(
+    candidates=dict(
         mb_k3e1=dict(
             type='MBBlock',
             kernel_size=3,
@@ -23,7 +23,7 @@ _FIRST_STAGE_MUTABLE = dict(
 
 _OTHER_STAGE_MUTABLE = dict(
     type='OneShotMutableOP',
-    candidate_ops=dict(
+    candidates=dict(
         mb_k3e3=dict(
             type='MBBlock',
             kernel_size=3,

@@ -19,7 +19,7 @@ class TestDartsBackbone(TestCase):
     def setUp(self) -> None:
         self.mutable_cfg = dict(
             type='DiffMutableOP',
-            candidate_ops=dict(
+            candidates=dict(
                 torch_conv2d_3x3=dict(
                     type='torchConv2d',
                     kernel_size=3,
@@ -96,17 +96,17 @@ class TestDartsBackbone(TestCase):
         tmp_dict = dict()
 
         for key, _ in model.named_modules():
-            node_type = key.split('._candidate_ops')[0].split('.')[-1].split(
+            node_type = key.split('._candidates')[0].split('.')[-1].split(
                 '_')[0]
             if node_type not in ['normal', 'reduce']:
                 # not supported type
                 continue
 
-            node_name = key.split('._candidate_ops')[0].split('.')[-1]
+            node_name = key.split('._candidates')[0].split('.')[-1]
             if node_name not in tmp_dict.keys():
-                tmp_dict[node_name] = [key.split('._candidate_ops')[0]]
+                tmp_dict[node_name] = [key.split('._candidates')[0]]
             else:
-                current_key = key.split('._candidate_ops')[0]
+                current_key = key.split('._candidates')[0]
                 if current_key not in tmp_dict[node_name]:
                     tmp_dict[node_name].append(current_key)
 

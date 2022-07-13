@@ -38,7 +38,6 @@ def parse_args():
 
 def main():
     register_all_modules(False)
-
     args = parse_args()
 
     # load config

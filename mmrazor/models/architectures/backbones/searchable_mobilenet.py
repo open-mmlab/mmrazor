@@ -46,7 +46,7 @@ class SearchableMobileNet(BaseBackbone, FixSubnetMixin):
     Excamples:
         >>> mutable_cfg = dict(
         ...     type='OneShotMutableOP',
-        ...     candidate_ops=dict(
+        ...     candidates=dict(
         ...         mb_k3e1=dict(
         ...             type='MBBlock',
         ...             kernel_size=3,
@@ -87,7 +87,7 @@ class SearchableMobileNet(BaseBackbone, FixSubnetMixin):
         ]
     ) -> None:
         for index in out_indices:
-            if index not in range(0, 8):
+            if index not in range(8):
                 raise ValueError('the item in out_indices must in '
                                  f'range(0, 8). But received {index}')
 
@@ -147,6 +147,7 @@ class SearchableMobileNet(BaseBackbone, FixSubnetMixin):
             conv_cfg=self.conv_cfg,
             norm_cfg=self.norm_cfg,
             act_cfg=self.act_cfg)
+
         self.add_module('conv2', layer)
         self.layers.append('conv2')
 

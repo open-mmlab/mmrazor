@@ -15,7 +15,7 @@ class TestMutables(TestCase):
         norm_cfg = dict(type='BN', requires_grad=True)
         op_cfg = dict(
             type='OneShotMutableOP',
-            candidate_ops=dict(
+            candidates=dict(
                 shuffle_3x3=dict(
                     type='ShuffleBlock', norm_cfg=norm_cfg, kernel_size=3),
                 shuffle_5x5=dict(
@@ -80,7 +80,7 @@ class TestMutables(TestCase):
         op_cfg = dict(
             type='OneShotProbMutableOP',
             choice_probs=[0.1, 0.2, 0.3, 0.4],
-            candidate_ops=dict(
+            candidates=dict(
                 shuffle_3x3=dict(
                     type='ShuffleBlock', norm_cfg=norm_cfg, kernel_size=3),
                 shuffle_5x5=dict(
@@ -142,7 +142,7 @@ class TestMutables(TestCase):
         norm_cfg = dict(type='BN', requires_grad=True)
         op_cfg = dict(
             type='OneShotMutableOP',
-            candidate_ops=dict(
+            candidates=dict(
                 shuffle_3x3=dict(
                     type='ShuffleBlock', norm_cfg=norm_cfg, kernel_size=3),
                 shuffle_5x5=dict(
@@ -165,7 +165,7 @@ class TestMutables(TestCase):
         norm_cfg = dict(type='BN', requires_grad=True)
         op_cfg = dict(
             type='OneShotMutableOP',
-            candidate_ops=dict(
+            candidates=dict(
                 shuffle_3x3=dict(
                     type='ShuffleBlock', norm_cfg=norm_cfg, kernel_size=3),
                 shuffle_5x5=dict(
@@ -189,7 +189,7 @@ class TestMutables(TestCase):
         norm_cfg = dict(type='BN', requires_grad=True)
         op_cfg = dict(
             type='OneShotMutableOP',
-            candidate_ops=dict(
+            candidates=dict(
                 shuffle_3x3=dict(
                     type='ShuffleBlock',
                     norm_cfg=norm_cfg,
@@ -221,9 +221,9 @@ class TestMutables(TestCase):
         output = op.forward_all(input)
         assert output is not None
 
-    def test_candidate_ops(self):
+    def test_candidates(self):
 
-        candidate_ops = nn.ModuleDict({
+        candidates = nn.ModuleDict({
             'conv3x3': nn.Conv2d(32, 32, 3, 1, 1),
             'conv5x5': nn.Conv2d(32, 32, 5, 1, 2),
             'conv7x7': nn.Conv2d(32, 32, 7, 1, 3),
@@ -231,7 +231,7 @@ class TestMutables(TestCase):
             'avgpool3x3': nn.AvgPool2d(3, 1, 1),
         })
 
-        op_cfg = dict(type='OneShotMutableOP', candidate_ops=candidate_ops)
+        op_cfg = dict(type='OneShotMutableOP', candidates=candidates)
 
         op = MODELS.build(op_cfg)
 

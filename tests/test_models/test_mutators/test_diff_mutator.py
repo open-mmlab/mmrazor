@@ -72,12 +72,12 @@ class SearchableModelAlias(nn.Module):
         return self.slayer3(x)
 
 
-class TestDiffMutator(TestCase):
+class TestDiffModuleMutator(TestCase):
 
     def setUp(self):
         self.MUTABLE_CFG = dict(
             type='DiffMutableOP',
-            candidate_ops=dict(
+            candidates=dict(
                 torch_conv2d_3x3=dict(
                     type='torchConv2d',
                     kernel_size=3,

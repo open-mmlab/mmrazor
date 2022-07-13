@@ -99,7 +99,7 @@ class DiffMutableOP(DiffMutableModule[str, str]):
     DARTS. Search the best module by learnable parameters `arch_param`.
 
     Args:
-        candidate_ops (dict[str, dict]): the configs for the candidate
+        candidates (dict[str, dict]): the configs for the candidate
             operations.
         module_kwargs (dict[str, dict], optional): Module initialization named
             arguments. Defaults to None.
@@ -110,23 +110,29 @@ class DiffMutableOP(DiffMutableModule[str, str]):
             and `Pretrained`.
     """
 
-    def __init__(self, candidate_ops: Dict[str, Dict], **kwargs) -> None:
-        super().__init__(**kwargs)
-        assert len(candidate_ops) >= 1, \
+    def __init__(
+        self,
+        candidates: Dict[str, Dict],
+        module_kwargs: Optional[Dict[str, Dict]] = None,
+        alias: Optional[str] = None,
+        init_cfg: Optional[Dict] = None,
+    ) -> None:
+        super().__init__(
+            module_kwargs=module_kwargs, alias=alias, init_cfg=init_cfg)
+        assert len(candidates) >= 1, \
             f'Number of candidate op must greater than or equal to 1, ' \
-            f'but got: {len(candidate_ops)}'
+            f'but got: {len(candidates)}'
 
         self._is_fixed = False
-        self._candidate_ops = self._build_ops(candidate_ops,
-                                              self.module_kwargs)
+        self._candidates = self._build_ops(candidates, self.module_kwargs)
 
     @staticmethod
-    def _build_ops(candidate_ops: Dict[str, Dict],
+    def _build_ops(candidates: Dict[str, Dict],
                    module_kwargs: Optional[Dict[str, Dict]]) -> nn.ModuleDict:
-        """Build candidate operations based on candidate_ops configures.
+        """Build candidate operations based on candidates configures.
 
         Args:
-            candidate_ops (dict[str, dict]): the configs for the candidate
+            candidates (dict[str, dict]): the configs for the candidate
                 operations.
             module_kwargs (dict[str, dict], optional): Module initialization
                 named arguments.
@@ -137,7 +143,7 @@ class DiffMutableOP(DiffMutableModule[str, str]):
                 is the corresponding candidate operation.
         """
         ops = nn.ModuleDict()
-        for name, op_cfg in candidate_ops.items():
+        for name, op_cfg in candidates.items():
             assert name not in ops
             if module_kwargs is not None:
                 op_cfg.update(module_kwargs)
@@ -154,7 +160,7 @@ class DiffMutableOP(DiffMutableModule[str, str]):
         Returns:
             Tensor: the result of forward the fixed operation.
         """
-        return self._candidate_ops[self._chosen](x)
+        return sum(self._candidates[choice](x) for choice in self._chosen)
 
     def forward_arch_param(self,
                            x: Any,
@@ -180,7 +186,7 @@ class DiffMutableOP(DiffMutableModule[str, str]):
 
             # forward based on probs
             outputs = list()
-            for prob, module in zip(probs, self._candidate_ops.values()):
+            for prob, module in zip(probs, self._candidates.values()):
                 if prob > 0.:
                     outputs.append(prob * module(x))
 
@@ -197,11 +203,11 @@ class DiffMutableOP(DiffMutableModule[str, str]):
             Tensor: the result of forward all of the ``choice`` operation.
         """
         outputs = list()
-        for op in self._candidate_ops.values():
+        for op in self._candidates.values():
             outputs.append(op(x))
         return sum(outputs)
 
-    def fix_chosen(self, chosen: str) -> None:
+    def fix_chosen(self, chosen: Union[str, List[str]]) -> None:
         """Fix mutable with `choice`. This operation would convert `unfixed`
         mode to `fixed` mode. The :attr:`is_fixed` will be set to True and only
         the selected operations can be retained.
@@ -215,9 +221,12 @@ class DiffMutableOP(DiffMutableModule[str, str]):
                 'The mode of current MUTABLE is `fixed`. '
                 'Please do not call `fix_chosen` function again.')
 
+        if isinstance(chosen, str):
+            chosen = [chosen]
+
         for c in self.choices:
-            if c != chosen:
-                self._candidate_ops.pop(c)
+            if c not in chosen:
+                self._candidates.pop(c)
 
         self._chosen = chosen
         self.is_fixed = True
@@ -225,7 +234,7 @@ class DiffMutableOP(DiffMutableModule[str, str]):
     @property
     def choices(self) -> List[str]:
         """list: all choices. """
-        return list(self._candidate_ops.keys())
+        return list(self._candidates.keys())
 
 
 @MODELS.register_module()
@@ -241,6 +250,7 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
         with_arch_param (bool): whether forward with arch_param. When set to
             `True`, a differentiable way is adopted. When set to `False`,
             a non-differentiable way is adopted.
+        alias (str, optional): alias of the `DiffChoiceRoute`.
         init_cfg (dict, optional): initialization configuration dict for
             ``BaseModule``. OpenMMLab has implement 6 initializers including
             `Constant`, `Xavier`, `Normal`, `Uniform`, `Kaiming`,
@@ -274,16 +284,17 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
         self,
         edges: nn.ModuleDict,
         with_arch_param: bool = False,
+        alias: Optional[str] = None,
         init_cfg: Optional[Dict] = None,
     ) -> None:
-        super().__init__(init_cfg=init_cfg)
+        super().__init__(alias=alias, init_cfg=init_cfg)
         assert len(edges) >= 1, \
             f'Number of edges must greater than or equal to 1, ' \
             f'but got: {len(edges)}'
 
         self._with_arch_param = with_arch_param
         self._is_fixed = False
-        self._edges: nn.ModuleDict = edges
+        self._candidates: nn.ModuleDict = edges
 
     def forward_fixed(self, inputs: Union[List, Tuple]) -> Tensor:
         """Forward when the mutable is in `fixed` mode.
@@ -302,7 +313,7 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
         outputs = list()
         for choice, x in zip(self._unfixed_choices, inputs):
             if choice in self._chosen:
-                outputs.append(self._edges[choice](x))
+                outputs.append(self._candidates[choice](x))
         return sum(outputs)
 
     def forward_arch_param(self,
@@ -319,15 +330,16 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
         Returns:
             Tensor: the result of forward with ``arch_param``.
         """
-        assert len(x) == len(self._edges), \
-            f'Length of `edges` {len(self._edges)} should be same as ' \
-            f'the length of inputs {len(x)}.'
+        assert len(x) == len(self._candidates), \
+            f'Length of `edges` {len(self._candidates)} should be ' \
+            f'same as the length of inputs {len(x)}.'
 
         if self._with_arch_param:
             probs = self.compute_arch_probs(arch_param=arch_param)
 
             outputs = list()
-            for prob, module, input in zip(probs, self._edges.values(), x):
+            for prob, module, input in zip(probs, self._candidates.values(),
+                                           x):
                 if prob > 0:
                     # prob may equal to 0 in gumbel softmax.
                     outputs.append(prob * module(input))
@@ -346,12 +358,12 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
         Returns:
             Tensor: the result of forward all of the ``choice`` operation.
         """
-        assert len(x) == len(self._edges), \
-            f'Lenght of edges {len(self._edges)} should be same as ' \
+        assert len(x) == len(self._candidates), \
+            f'Lenght of edges {len(self._candidates)} should be same as ' \
             f'the length of inputs {len(x)}.'
 
         outputs = list()
-        for op, input in zip(self._edges.values(), x):
+        for op, input in zip(self._candidates.values(), x):
             outputs.append(op(input))
 
         return sum(outputs)
@@ -373,7 +385,7 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
 
         for c in self.choices:
             if c not in chosen:
-                self._edges.pop(c)
+                self._candidates.pop(c)
 
         self._chosen = chosen
         self.is_fixed = True
@@ -381,7 +393,7 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
     @property
     def choices(self) -> List[CHOSEN_TYPE]:
         """list: all choices. """
-        return list(self._edges.keys())
+        return list(self._candidates.keys())
 
 
 @MODELS.register_module()
@@ -413,10 +425,14 @@ class GumbelChoiceRoute(DiffChoiceRoute):
         tau: float = 1.0,
         hard: bool = True,
         with_arch_param: bool = False,
+        alias: Optional[str] = None,
         init_cfg: Optional[Dict] = None,
     ) -> None:
         super().__init__(
-            edges=edges, with_arch_param=with_arch_param, init_cfg=init_cfg)
+            edges=edges,
+            with_arch_param=with_arch_param,
+            alias=alias,
+            init_cfg=init_cfg)
         self.tau = tau
         self.hard = hard
 

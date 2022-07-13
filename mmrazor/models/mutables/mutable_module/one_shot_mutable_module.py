@@ -100,7 +100,7 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
     blocks.
 
     Args:
-        candidate_ops (dict[str, dict]): the configs for the candidate
+        candidates (dict[str, dict]): the configs for the candidate
             operations.
         module_kwargs (dict[str, dict], optional): Module initialization named
             arguments. Defaults to None.
@@ -114,13 +114,13 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
         >>> import torch
         >>> from mmrazor.models.mutables import OneShotMutableOP
 
-        >>> candidate_ops = nn.ModuleDict({
+        >>> candidates = nn.ModuleDict({
         ...     'conv3x3': nn.Conv2d(32, 32, 3, 1, 1),
         ...     'conv5x5': nn.Conv2d(32, 32, 5, 1, 2),
         ...     'conv7x7': nn.Conv2d(32, 32, 7, 1, 3)})
 
         >>> input = torch.randn(1, 32, 64, 64)
-        >>> op = OneShotMutableOP(candidate_ops)
+        >>> op = OneShotMutableOP(candidates)
 
         >>> op.choices
         ['conv3x3', 'conv5x5', 'conv7x7']
@@ -131,7 +131,7 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
 
         >>> op.current_choice = 'conv3x3'
         >>> unfix_output = op.forward(input)
-        >>> torch.all(unfixed_output == candidate_ops['conv3x3'](input))
+        >>> torch.all(unfixed_output == candidates['conv3x3'](input))
         True
 
         >>> op.fix_chosen('conv3x3')
@@ -147,36 +147,41 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
         True
     """
 
-    def __init__(self, candidate_ops: Union[Dict[str, Dict], nn.ModuleDict],
-                 **kwargs) -> None:
-        super().__init__(**kwargs)
-        assert len(candidate_ops) >= 1, \
+    def __init__(
+        self,
+        candidates: Union[Dict[str, Dict], nn.ModuleDict],
+        module_kwargs: Optional[Dict[str, Dict]] = None,
+        alias: Optional[str] = None,
+        init_cfg: Optional[Dict] = None,
+    ) -> None:
+        super().__init__(
+            module_kwargs=module_kwargs, alias=alias, init_cfg=init_cfg)
+        assert len(candidates) >= 1, \
             f'Number of candidate op must greater than 1, ' \
-            f'but got: {len(candidate_ops)}'
+            f'but got: {len(candidates)}'
 
         self._chosen: Optional[str] = None
-        if isinstance(candidate_ops, dict):
-            self._candidate_ops = self._build_ops(candidate_ops,
-                                                  self.module_kwargs)
-        elif isinstance(candidate_ops, nn.ModuleDict):
-            self._candidate_ops = candidate_ops
+        if isinstance(candidates, dict):
+            self._candidates = self._build_ops(candidates, self.module_kwargs)
+        elif isinstance(candidates, nn.ModuleDict):
+            self._candidates = candidates
         else:
             raise TypeError('candidata_ops should be a `dict` or '
                             f'`nn.ModuleDict` instance, but got '
-                            f'{type(candidate_ops)}')
+                            f'{type(candidates)}')
 
-        assert len(self._candidate_ops) >= 1, \
+        assert len(self._candidates) >= 1, \
             f'Number of candidate op must greater than or equal to 1, ' \
-            f'but got {len(self._candidate_ops)}'
+            f'but got {len(self._candidates)}'
 
     @staticmethod
     def _build_ops(
-            candidate_ops: Union[Dict[str, Dict], nn.ModuleDict],
+            candidates: Union[Dict[str, Dict], nn.ModuleDict],
             module_kwargs: Optional[Dict[str, Dict]] = None) -> nn.ModuleDict:
         """Build candidate operations based on choice configures.
 
         Args:
-            candidate_ops (dict[str, dict] | :obj:`nn.ModuleDict`): the configs
+            candidates (dict[str, dict] | :obj:`nn.ModuleDict`): the configs
                 for the candidate operations or nn.ModuleDict.
             module_kwargs (dict[str, dict], optional): Module initialization
                 named arguments.
@@ -186,11 +191,11 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
                 the name of each choice in configs and the value of ``ops``
                 is the corresponding candidate operation.
         """
-        if isinstance(candidate_ops, nn.ModuleDict):
-            return candidate_ops
+        if isinstance(candidates, nn.ModuleDict):
+            return candidates
 
         ops = nn.ModuleDict()
-        for name, op_cfg in candidate_ops.items():
+        for name, op_cfg in candidates.items():
             assert name not in ops
             if module_kwargs is not None:
                 op_cfg.update(module_kwargs)
@@ -207,7 +212,7 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
         Returns:
             Tensor: the result of forward the fixed operation.
         """
-        return self._candidate_ops[self._chosen](x)
+        return self._candidates[self._chosen](x)
 
     def forward_choice(self, x: Any, choice: str) -> Tensor:
         """Forward with the `unfixed` mutable and current choice is not None.
@@ -221,7 +226,7 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
             Tensor: the result of forward the ``choice`` operation.
         """
         assert isinstance(choice, str) and choice in self.choices
-        return self._candidate_ops[choice](x)
+        return self._candidates[choice](x)
 
     def forward_all(self, x: Any) -> Tensor:
         """Forward all choices. Used to calculate FLOPs.
@@ -233,7 +238,9 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
         Returns:
             Tensor: the result of forward all of the ``choice`` operation.
         """
-        outputs = [op(x) for op in self._candidate_ops.values()]
+        outputs = list()
+        for op in self._candidates.values():
+            outputs.append(op(x))
         return sum(outputs)
 
     def fix_chosen(self, chosen: str) -> None:
@@ -251,7 +258,7 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
 
         for c in self.choices:
             if c != chosen:
-                self._candidate_ops.pop(c)
+                self._candidates.pop(c)
 
         self._chosen = chosen
         self.is_fixed = True
@@ -263,7 +270,7 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
     @property
     def choices(self) -> List[str]:
         """list: all choices. """
-        return list(self._candidate_ops.keys())
+        return list(self._candidates.keys())
 
     @property
     def num_choices(self):
@@ -275,7 +282,7 @@ class OneShotProbMutableOP(OneShotMutableOP):
     """Sampling candidate operation according to probability.
 
     Args:
-        candidate_ops (dict[str, dict]): the configs for the candidate
+        candidates (dict[str, dict]): the configs for the candidate
             operations.
         choice_probs (list): the probability of sampling each
             candidate operation.
@@ -289,13 +296,13 @@ class OneShotProbMutableOP(OneShotMutableOP):
     """
 
     def __init__(self,
-                 candidate_ops: Dict[str, Dict],
+                 candidates: Dict[str, Dict],
                  choice_probs: list = None,
                  module_kwargs: Optional[Dict[str, Dict]] = None,
                  alias: Optional[str] = None,
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(
-            candidate_ops=candidate_ops,
+            candidates=candidates,
             module_kwargs=module_kwargs,
             alias=alias,
             init_cfg=init_cfg)
@@ -306,5 +313,7 @@ class OneShotProbMutableOP(OneShotMutableOP):
 
     def sample_choice(self) -> str:
         """Sampling with probabilities."""
-        assert len(self.choice_probs) == len(self._candidate_ops.keys())
-        return random.choices(self.choices, weights=self.choice_probs, k=1)[0]
+        assert len(self.choice_probs) == len(self._candidates.keys())
+        choice = random.choices(
+            self.choices, weights=self.choice_probs, k=1)[0]
+        return choice

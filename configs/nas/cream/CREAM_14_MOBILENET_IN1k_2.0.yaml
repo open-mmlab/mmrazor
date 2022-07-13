@@ -1,0 +1,11 @@
+modules:
+  backbone.layer1.0: depthsepconv
+  backbone.layer2.0: mb_k3e4_se
+  backbone.layer3.0: mb_k5e6_se
+  backbone.layer3.1: mb_k5e6_se
+  backbone.layer4.0: mb_k5e6_se
+  backbone.layer4.1: mb_k5e6_se
+  backbone.layer5.0: mb_k3e6_se
+  backbone.layer6.0: mb_k5e6_se
+  backbone.layer7.0: convbnact
+channels:

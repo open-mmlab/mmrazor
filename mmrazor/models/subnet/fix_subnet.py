@@ -90,12 +90,19 @@ class FixSubnetMixin:
             # In the corresponding mutable, it will check whether the `chosen`
             # format is correct.
             if isinstance(module, BaseMutable):
-                mutable_name = name.lstrip(prefix)
-                assert mutable_name in fix_modules, \
-                    f'{mutable_name} is not in fix_modules {fix_modules}, '\
-                    'please check your `fix_subnet`.'
-
-                chosen = fix_modules.get(mutable_name, None)
+                if getattr(module, 'alias', None):
+                    alias = module.alias
+                    assert alias in fix_modules, \
+                        f'The alias {alias} is not in fix_modules ' \
+                        f'{fix_modules}, please check your `fix_subnet`.'
+                    chosen = fix_modules.get(alias, None)
+                else:
+                    mutable_name = name.lstrip(prefix)
+                    assert mutable_name in fix_modules, \
+                        f'The module name {mutable_name} is not in ' \
+                        f'fix_modules  {fix_modules} ' \
+                        'please check your `fix_subnet`.'
+                    chosen = fix_modules.get(mutable_name, None)
                 module.fix_chosen(chosen)
 
     # TODO support load fix channels after mr #29 merged

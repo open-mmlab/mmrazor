@@ -3,6 +3,10 @@ import argparse
 import os
 import os.path as osp
 
+from mmcls.core import *  # noqa: F401,F403
+from mmcls.datasets import *  # noqa: F401,F403
+from mmcls.metrics import *  # noqa: F401,F403
+from mmcls.models import *  # noqa: F401,F403
 # TODO import mmcls and mmseg
 from mmdet.core import *  # noqa: F401,F403
 from mmdet.datasets import *  # noqa: F401,F403

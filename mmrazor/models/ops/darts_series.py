@@ -27,10 +27,7 @@ class DartsPoolBN(BaseOP):
                 self.kernel_size, self.stride, 1, count_include_pad=False)
         self.bn = build_norm_layer(self.norm_cfg, self.out_channels)[1]
 
-        if use_drop_path:
-            self.drop_path = DropPath()
-        else:
-            self.drop_path = None
+        self.drop_path = DropPath() if use_drop_path else None
 
     def forward(self, x):
         out = self.pool(x)
@@ -69,10 +66,7 @@ class DartsDilConv(BaseOP):
                 self.in_channels, self.out_channels, 1, stride=1, bias=False),
             build_norm_layer(self.norm_cfg, self.in_channels)[1])
 
-        if use_drop_path:
-            self.drop_path = DropPath()
-        else:
-            self.drop_path = None
+        self.drop_path = DropPath() if use_drop_path else None
 
     def forward(self, x):
         out = self.conv1(x)
@@ -122,10 +116,7 @@ class DartsSepConv(BaseOP):
                 self.out_channels, self.out_channels, 1, stride=1, bias=False),
             build_norm_layer(self.norm_cfg, self.out_channels)[1])
 
-        if use_drop_path:
-            self.drop_path = DropPath()
-        else:
-            self.drop_path = None
+        self.drop_path = DropPath() if use_drop_path else None
 
     def forward(self, x):
         out = self.conv1(x)
@@ -163,10 +154,7 @@ class DartsSkipConnect(BaseOP):
                 bias=False)
             self.bn = build_norm_layer(self.norm_cfg, self.out_channels)[1]
 
-        if use_drop_path:
-            self.drop_path = DropPath()
-        else:
-            self.drop_path = None
+        self.drop_path = DropPath() if use_drop_path else None
 
     def forward(self, x):
         if self.stride > 1:

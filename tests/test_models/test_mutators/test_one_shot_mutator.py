@@ -30,7 +30,7 @@ MUTATOR_CFG = dict(type='OneShotModuleMutator')
 
 MUTABLE_CFG = dict(
     type='OneShotMutableOP',
-    candidate_ops=dict(
+    candidates=dict(
         choice1=dict(
             type='MBBlock',
             in_channels=3,
