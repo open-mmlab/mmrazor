@@ -2,15 +2,13 @@
 import copy
 import sys
 from functools import wraps
-from typing import IO, Callable, Dict, Iterable, Optional, Tuple, Type, Union
+from typing import IO, Callable, Dict, Iterable, Optional, Tuple, Type
 
 from mmcv.cnn.utils import flops_counter as mmcv_flops_counter
 from mmcv.cnn.utils import get_model_complexity_info
 from torch.nn import Module
 
-from ..fix_subnet import FixSubnet
-
-FIX_SUBNET_TYPE = Union[str, FixSubnet, Dict[str, Dict]]
+from ..fix_subnet import VALID_FIX_MUTABLE_TYPE, load_fix_subnet
 
 
 class FlopsEstimator:
@@ -91,14 +89,15 @@ class FlopsEstimator:
     _custom_modules_mapping: Dict[Module, Callable] = {}
 
     @staticmethod
-    def get_model_complexity_info(model: Module,
-                                  fix_subnet: Optional[FIX_SUBNET_TYPE] = None,
-                                  input_shape: Iterable[int] = (3, 224, 224),
-                                  input_constructor: Optional[Callable] = None,
-                                  print_per_layer_stat: bool = True,
-                                  as_strings: bool = True,
-                                  flush: bool = False,
-                                  ost: IO = sys.stdout) -> Tuple:
+    def get_model_complexity_info(
+            model: Module,
+            fix_mutable: Optional[VALID_FIX_MUTABLE_TYPE] = None,
+            input_shape: Iterable[int] = (3, 224, 224),
+            input_constructor: Optional[Callable] = None,
+            print_per_layer_stat: bool = True,
+            as_strings: bool = True,
+            flush: bool = False,
+            ost: IO = sys.stdout) -> Tuple:
         """Get complexity information of model.
 
         This method is based on ``get_model_complexity_info`` of mmcv. It can
@@ -108,9 +107,9 @@ class FlopsEstimator:
 
         Args:
             model (torch.nn.Module): The model for complexity calculation.
-            fix_subnet (FIX_SUBNET_TYPE, optional): The config of fixed subnet.
-                When this argument is specified, the function will return
-                complexity information of the subnet. Default: None.
+            fix_mutable (VALID_FIX_MUTABLE_TYPE, optional): The config of fixed
+                subnet. When this argument is specified, the function will
+                return complexity information of the subnet. Default: None.
             input_shape (Iterable[int]): Input shape used for calculation.
             print_per_layer_stat (bool): Whether to print complexity
                 information for each layer in a model. Default: True.
@@ -130,8 +129,8 @@ class FlopsEstimator:
                 otherwise, it will return those in a float number format.
         """
         copied_model = copy.deepcopy(model)
-        if fix_subnet is not None:
-            copied_model.load_fix_subnet(fix_subnet)
+        if fix_mutable is not None:
+            load_fix_subnet(copied_model, fix_mutable)
 
         return get_model_complexity_info(
             model=copied_model,

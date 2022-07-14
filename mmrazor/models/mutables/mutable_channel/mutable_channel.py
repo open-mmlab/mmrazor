@@ -75,7 +75,11 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
                 mutable.current_mask for mutable in self.concat_parent_mutables
             ])
         else:
-            return self.convert_choice_to_mask(self.current_choice)
+            # TODO
+            if self.is_fixed:
+                return self.convert_choice_to_mask(0)
+            else:
+                return self.convert_choice_to_mask(self.current_choice)
 
     def bind_mutable_name(self, name: str) -> None:
         """Bind a MutableChannel to its name.
@@ -98,6 +102,8 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
                 'The mode of current MUTABLE is `fixed`. '
                 'Please do not call `fix_chosen` function again.')
 
+        # TODO
+        # should fixed op still have candidate_choices?
         self._candidate_choices = [chosen]
         self._chosen = chosen
         self.is_fixed = True

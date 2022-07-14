@@ -8,7 +8,7 @@ from .mutable_channel import MutableChannel
 
 
 @MODELS.register_module()
-class SlimmableMutableChannel(MutableChannel[int, int]):
+class SlimmableMutableChannel(MutableChannel[int, Dict[str, int]]):
     """A type of ``MUTABLES`` to train several subnet together, such as the
     retraining stage in AutoSlim.
 
@@ -56,6 +56,25 @@ class SlimmableMutableChannel(MutableChannel[int, int]):
         """Return all subnet indexes."""
         assert self._candidate_choices is not None
         return list(range(len(self.candidate_choices)))
+
+    def dump_chosen(self) -> Dict:
+        assert self.current_choice is not None
+
+        return dict(
+            current_choice=self._candidate_choices[self.current_choice],
+            origin_channels=self.num_channels)
+
+    def fix_chosen(self, dumped_chosen: Dict) -> None:
+        chosen = dumped_chosen['current_choice']
+        origin_channels = dumped_chosen['origin_channels']
+
+        assert chosen <= origin_channels
+
+        # TODO
+        # remove after remove `current_choice`
+        self.current_choice = self._candidate_choices.index(chosen)
+
+        super().fix_chosen(chosen)
 
     @property
     def num_choices(self) -> int:

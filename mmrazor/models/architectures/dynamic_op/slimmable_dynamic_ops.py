@@ -4,11 +4,12 @@ from typing import Dict
 
 import torch.nn as nn
 
+from mmrazor.models.mutables.mutable_channel import MutableChannel
 from mmrazor.registry import MODELS
-from ...mutables import MutableManageMixIn
+from .base import DynamicOP
 
 
-class SwitchableBatchNorm2d(nn.Module, MutableManageMixIn):
+class SwitchableBatchNorm2d(nn.Module, DynamicOP):
     """Employs independent batch normalization for different switches in a
     slimmable network.
 
@@ -61,12 +62,12 @@ class SwitchableBatchNorm2d(nn.Module, MutableManageMixIn):
         self.mutable_num_features = MODELS.build(num_features_cfg)
 
     @property
-    def mutable_in(self):
+    def mutable_in(self) -> MutableChannel:
         """Mutable `num_features`."""
         return self.mutable_num_features
 
     @property
-    def mutable_out(self):
+    def mutable_out(self) -> MutableChannel:
         """Mutable `num_features`."""
         return self.mutable_num_features
 
@@ -75,3 +76,8 @@ class SwitchableBatchNorm2d(nn.Module, MutableManageMixIn):
         networks."""
         idx = self.mutable_num_features.current_choice
         return self.bns[idx](input)
+
+    def to_static_op(self) -> nn.Module:
+        bn_idx = self.mutable_num_features.current_choice
+
+        return self.bns[bn_idx]

@@ -37,7 +37,7 @@ class OneShotMutableChannel(MutableChannel[int, int]):
     def __init__(self,
                  num_channels: int,
                  candidate_choices: List,
-                 candidate_mode: str,
+                 candidate_mode: str = 'ratio',
                  init_cfg: Optional[Dict] = None):
         super(OneShotMutableChannel, self).__init__(
             num_channels=num_channels, init_cfg=init_cfg)
@@ -128,3 +128,6 @@ class OneShotMutableChannel(MutableChannel[int, int]):
         mask = torch.zeros(self.num_channels).bool()
         mask[:num_channels] = True
         return mask
+
+    def dump_chosen(self) -> int:
+        return self.current_choice

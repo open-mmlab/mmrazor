@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import Dict, List, Optional
+from pathlib import Path
+from typing import Dict, List, Optional, Union
 
 import torch.nn as nn
 from torch.nn import Module
@@ -16,6 +17,8 @@ from .channel_mutator import ChannelMutator
 NONPASS_MODULES = (nn.Conv2d, nn.Linear)
 PASS_MODULES = (_BatchNorm, )
 
+VALID_PATH_TYPE = Union[str, Path]
+
 
 @MODELS.register_module()
 class SlimmableChannelMutator(ChannelMutator):
@@ -30,7 +33,7 @@ class SlimmableChannelMutator(ChannelMutator):
     """
 
     def __init__(self,
-                 channel_cfgs: List[Dict],
+                 channel_cfgs: Dict,
                  mutable_cfg: Dict,
                  tracer_cfg: Dict,
                  skip_prefixes: Optional[List[str]] = None,
@@ -41,30 +44,7 @@ class SlimmableChannelMutator(ChannelMutator):
             skip_prefixes=skip_prefixes,
             init_cfg=init_cfg)
 
-        self.channel_cfgs = self._merge_channel_cfgs(channel_cfgs)
-
-    def _merge_channel_cfgs(self, channel_cfgs: List[Dict]):
-        """Merge several channel configs.
-
-        Args:
-            channel_cfgs (List[Dict])
-        """
-        merged_channel_cfg = dict()
-        num_subnet = len(channel_cfgs)
-
-        for module_name in channel_cfgs[0].keys():
-            channels_per_layer = [
-                channel_cfgs[idx][module_name] for idx in range(num_subnet)
-            ]
-            merged_channels_per_layer = dict()
-            for key in channels_per_layer[0].keys():
-                merged_channels = [
-                    channels_per_layer[idx][key] for idx in range(num_subnet)
-                ]
-                merged_channels_per_layer[key] = merged_channels
-            merged_channel_cfg[module_name] = merged_channels_per_layer
-
-        return merged_channel_cfg
+        self.channel_cfgs = channel_cfgs
 
     def prepare_from_supernet(self, supernet: Module) -> None:
         """Do some necessary preparations with supernet.
@@ -132,6 +112,8 @@ class SlimmableChannelMutator(ChannelMutator):
                         dict(candidate_choices=candidate_choices))
                     sbn = switchable_bn_converter(child, mutable_cfg,
                                                   mutable_cfg)
+                    # TODO
+                    # bind twice?
                     sbn.mutable_out.bind_mutable_name(module_name)
                     setattr(module, name, sbn)
                 else:
@@ -139,7 +121,7 @@ class SlimmableChannelMutator(ChannelMutator):
 
         traverse(supernet, '')
 
-    def switch_choices(self, idx):
+    def switch_choices(self, idx: int) -> None:
         """Switch the channel config of the supernet according to input `idx`.
 
         If we train more than one subnet together, we need to switch the

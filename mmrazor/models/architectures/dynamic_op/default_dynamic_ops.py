@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
+from typing import Optional, Tuple
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,11 +9,13 @@ from torch.nn.modules import GroupNorm
 from torch.nn.modules.batchnorm import _BatchNorm
 from torch.nn.modules.instancenorm import _InstanceNorm
 
+from mmrazor.models.mutables.mutable_channel import MutableChannel
 from mmrazor.registry import MODELS
 from ...mutables import MutableManageMixIn
+from .base import ChannelDynamicOP
 
 
-class DynamicConv2d(nn.Conv2d, MutableManageMixIn):
+class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
     """Applies a 2D convolution over an input signal composed of several input
     planes according to the `mutable_in_channels` and `mutable_out_channels`
     dynamically.
@@ -33,40 +36,79 @@ class DynamicConv2d(nn.Conv2d, MutableManageMixIn):
         out_channels_cfg_.update(dict(num_channels=self.out_channels))
         self.mutable_out_channels = MODELS.build(out_channels_cfg_)
 
+        assert isinstance(self.mutable_in_channels, MutableChannel)
+        assert isinstance(self.mutable_out_channels, MutableChannel)
+        # TODO
+        # https://pytorch.org/docs/stable/_modules/torch/nn/modules/conv.html#Conv2d
+        assert self.padding_mode == 'zeros'
+
     @property
-    def mutable_in(self):
+    def mutable_in(self) -> MutableChannel:
         """Mutable `in_channels`."""
         return self.mutable_in_channels
 
     @property
-    def mutable_out(self):
+    def mutable_out(self) -> MutableChannel:
         """Mutable `out_channels`."""
         return self.mutable_out_channels
 
     def forward(self, input: Tensor) -> Tensor:
         """Slice the parameters according to `mutable_in_channels` and
         `mutable_out_channels`, and forward."""
+        groups = self.groups
+        if self.groups == self.in_channels == self.out_channels:
+            groups = input.size(1)
+        weight, bias = self._get_dynamic_params()
+
+        return F.conv2d(input, weight, bias, self.stride, self.padding,
+                        self.dilation, groups)
+
+    def _get_dynamic_params(self) -> Tuple[Tensor, Optional[Tensor]]:
         in_mask = self.mutable_in_channels.current_mask.to(self.weight.device)
         out_mask = self.mutable_out_channels.current_mask.to(
             self.weight.device)
 
         if self.groups == 1:
             weight = self.weight[out_mask][:, in_mask]
-            groups = 1
         elif self.groups == self.in_channels == self.out_channels:
             # depth-wise conv
             weight = self.weight[out_mask]
-            groups = input.size(1)
         else:
             raise NotImplementedError(
                 'Current `ChannelMutator` only support pruning the depth-wise '
                 '`nn.Conv2d` or `nn.Conv2d` module whose group number equals '
-                'to one, but got {self.groups}.')
+                f'to one, but got {self.groups}.')
 
         bias = self.bias[out_mask] if self.bias is not None else None
 
-        return F.conv2d(input, weight, bias, self.stride, self.padding,
-                        self.dilation, groups)
+        return weight, bias
+
+    def to_static_op(self) -> nn.Conv2d:
+        assert self.mutable_in.is_fixed and self.mutable_out.is_fixed
+
+        weight, bias, = self._get_dynamic_params()
+        groups = self.groups
+        if groups == self.in_channels == self.out_channels:
+            groups = self.mutable_in.current_mask.sum().item()
+        out_channels = weight.size(0)
+        in_channels = weight.size(1) * groups
+
+        static_conv2d = nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=self.kernel_size,
+            stride=self.stride,
+            padding=self.padding,
+            padding_mode=self.padding_mode,
+            dilation=self.dilation,
+            groups=groups,
+            bias=True if bias is not None else False)
+
+        static_conv2d.weight = nn.Parameter(weight)
+        if bias is not None:
+            static_conv2d.bias = nn.Parameter(bias)
+
+        return static_conv2d
 
 
 class DynamicLinear(nn.Linear, MutableManageMixIn):

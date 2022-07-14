@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import unittest
-from typing import Any, Dict, Optional, Union
+from typing import Dict, Optional, Union
 from unittest import TestCase
 
 import torch.nn as nn
@@ -11,14 +11,12 @@ from mmrazor.core import *  # noqa: F403, F401
 from mmrazor.models import *  # noqa: F403, F401
 from mmrazor.models.algorithms.base import BaseAlgorithm
 from mmrazor.models.mutables import OneShotMutableOP
-from mmrazor.models.subnet import FixSubnet, FixSubnetMixin
+from mmrazor.models.subnet import VALID_FIX_MUTABLE_TYPE, load_fix_subnet
 from mmrazor.registry import MODELS
-
-VALID_FIX_SUBNET = Union[str, FixSubnet, Dict[str, Dict[str, Any]]]
 
 
 @MODELS.register_module()
-class MockModel(BaseModel, FixSubnetMixin):
+class MockModel(BaseModel):
 
     def __init__(self):
         super().__init__()
@@ -43,16 +41,16 @@ class MockModel(BaseModel, FixSubnetMixin):
 
 
 @MODELS.register_module()
-class MockAlgorithm(BaseAlgorithm, FixSubnetMixin):
+class MockAlgorithm(BaseAlgorithm):
 
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
-                 fix_subnet: Optional[VALID_FIX_SUBNET] = None):
+                 fix_subnet: Optional[VALID_FIX_MUTABLE_TYPE] = None):
         super().__init__(architecture)
 
-        if fix_subnet:
+        if fix_subnet is not None:
             # According to fix_subnet, delete the unchosen part of supernet
-            self.load_fix_subnet(fix_subnet, prefix='architecture.')
+            load_fix_subnet(self, fix_subnet, prefix='architecture.')
             self.is_supernet = False
         else:
             self.is_supernet = True

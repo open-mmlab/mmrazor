@@ -9,12 +9,11 @@ from mmcv.runner import ModuleList, Sequential
 from torch import Tensor
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.subnet import FixSubnetMixin
 from mmrazor.registry import MODELS
 
 
 @MODELS.register_module()
-class SearchableShuffleNetV2(BaseBackbone, FixSubnetMixin):
+class SearchableShuffleNetV2(BaseBackbone):
     """Based on ShuffleNetV2 backbone.
 
     Args:

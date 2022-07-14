@@ -4,11 +4,9 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
-from mmcls.models.backbones.base_backbone import BaseBackbone
 from mmcv.cnn import build_activation_layer, build_norm_layer
 from torch import Tensor
 
-from mmrazor.models.subnet import FixSubnetMixin
 from mmrazor.registry import MODELS
 
 
@@ -260,7 +258,7 @@ class AuxiliaryModule(nn.Module):
 
 
 @MODELS.register_module()
-class DartsBackbone(BaseBackbone, FixSubnetMixin):
+class DartsBackbone(nn.Module):
     """Backbone of Differentiable Architecture Search (DARTS).
 
     Args:

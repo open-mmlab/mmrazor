@@ -263,6 +263,11 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
         self._chosen = chosen
         self.is_fixed = True
 
+    def dump_chosen(self) -> str:
+        assert self.current_choice is not None
+
+        return self.current_choice
+
     def sample_choice(self) -> str:
         """uniform sampling."""
         return np.random.choice(self.choices, 1)[0]

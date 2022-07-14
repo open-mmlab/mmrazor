@@ -3,7 +3,6 @@ import os
 import unittest
 from os.path import dirname
 
-import mmcv.fileio
 import torch
 from mmcls.core import ClsDataSample
 from mmcls.models import *  # noqa: F401,F403
@@ -13,6 +12,7 @@ from mmrazor.models.mutables import SlimmableMutableChannel
 from mmrazor.models.mutators import (OneShotChannelMutator,
                                      SlimmableChannelMutator)
 from mmrazor.registry import MODELS
+from ..utils import load_and_merge_channel_cfgs
 
 MODEL_CFG = dict(
     type='mmcls.ImageClassifier',
@@ -83,15 +83,14 @@ def test_slimmable_channel_mutator() -> None:
     ]
 
     root_path = dirname(dirname(dirname(dirname(__file__))))
-    channel_cfgs = [
+    channel_cfg_paths = [
         os.path.join(root_path, 'data/MBV2_320M.yaml'),
         os.path.join(root_path, 'data/MBV2_220M.yaml')
     ]
-    channel_cfgs = [mmcv.fileio.load(path) for path in channel_cfgs]
 
     mutator = SlimmableChannelMutator(
         mutable_cfg=dict(type='SlimmableMutableChannel'),
-        channel_cfgs=channel_cfgs,
+        channel_cfgs=load_and_merge_channel_cfgs(channel_cfg_paths),
         tracer_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss')))

@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import unittest
 from unittest import TestCase
 
 import pytest
@@ -7,13 +6,14 @@ import torch.nn as nn
 
 from mmrazor.models import *  # noqa:F403,F401
 from mmrazor.models.mutables import OneShotMutableOP
-from mmrazor.models.subnet import FixSubnet, FixSubnetMixin
+from mmrazor.models.subnet import (FIX_MUTABLE, export_fix_mutable,
+                                   load_fix_subnet)
 from mmrazor.registry import MODELS
 
 MODELS.register_module()
 
 
-class MockModel(nn.Module, FixSubnetMixin):
+class MockModel(nn.Module):
 
     def __init__(self):
         super().__init__()
@@ -37,49 +37,48 @@ class MockModel(nn.Module, FixSubnetMixin):
         return x
 
 
-class TestFixSubnetMixin(TestCase):
+class TestFixSubnet(TestCase):
 
     def test_load_fix_subnet(self):
         # fix subnet is str
         fix_subnet = 'tests/data/test_models/test_subnet/mockmodel_subnet.yaml'  # noqa: E501
         model = MockModel()
 
-        model.load_fix_subnet(fix_subnet)
+        load_fix_subnet(model, fix_subnet)
 
         # fix subnet is dict
-        fix_subnet = dict(modules={
+        fix_subnet = {
             'mutable1': 'conv1',
             'mutable2': 'conv2',
-        })
+        }
 
         model = MockModel()
-        model.load_fix_subnet(fix_subnet)
-
-        # fix subnet is Fixsubnet
-        fix_subnet = FixSubnet(**fix_subnet)
+        load_fix_subnet(model, fix_subnet)
 
         model = MockModel()
-        model.load_fix_subnet(fix_subnet)
+        load_fix_subnet(model, fix_subnet)
 
         with pytest.raises(TypeError):
             # type int is not supported.
             model = MockModel()
-            model.load_fix_subnet(fix_subnet=10)
+            load_fix_subnet(model, fix_subnet=10)
 
     def test_export_fix_subnet(self):
         # get FixSubnet
-        fix_subnet = dict(modules={
+        fix_subnet = {
             'mutable1': 'conv1',
             'mutable2': 'conv2',
-        })
+        }
 
         model = MockModel()
-        model.load_fix_subnet(fix_subnet)
+        load_fix_subnet(model, fix_subnet)
 
-        exported_fix_subnet: FixSubnet = model.export_fix_subnet()
+        with pytest.raises(AssertionError):
+            exported_fix_subnet: FIX_MUTABLE = export_fix_mutable(model)
 
-        self.assertTrue(isinstance(exported_fix_subnet, FixSubnet))
+        model = MockModel()
+        model.mutable1.current_choice = 'conv1'
+        model.mutable2.current_choice = 'conv2'
+        exported_fix_subnet = export_fix_mutable(model)
 
-
-if __name__ == '__main__':
-    unittest.main()
+        self.assertDictEqual(fix_subnet, exported_fix_subnet)

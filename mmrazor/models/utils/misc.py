@@ -1,5 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-def add_prefix(inputs, prefix):
+from typing import Dict
+
+
+def add_prefix(inputs: Dict, prefix: str) -> Dict:
     """Add prefix for dict.
 
     Args:

@@ -12,7 +12,6 @@ from mmengine.config import Config
 from torch.utils.data import DataLoader, Dataset
 
 from mmrazor.models.subnet import Candidates
-from mmrazor.models.subnet.fix_subnet import FixSubnet
 from mmrazor.registry import LOOPS
 from mmrazor.runners import EvolutionSearchLoop
 
@@ -111,8 +110,9 @@ class TestEvolutionSearchLoop(TestCase):
         self.assertIsInstance(loop, EvolutionSearchLoop)
         self.assertEqual(loop.candidates, fake_candidates)
 
+    @patch('mmrazor.runners.evolution_search_loop.export_fix_mutable')
     @patch('mmrazor.models.subnet.FlopsEstimator.get_model_complexity_info')
-    def test_run_epoch(self, mock_flops):
+    def test_run_epoch(self, mock_flops, mock_export_fix_mutable):
         # test_run_epoch: distributed == False
         loop_cfg = copy.deepcopy(self.train_cfg)
         loop_cfg.runner = self.runner
@@ -153,14 +153,14 @@ class TestEvolutionSearchLoop(TestCase):
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
         loop.model.sample_subnet = MagicMock(return_value=fake_subnet)
         mock_flops.return_value = (50., 1)
-        fix_subnet = FixSubnet(modules=fake_subnet)
-        loop.model.export_fix_subnet = MagicMock(return_value=fix_subnet)
+        mock_export_fix_mutable.return_value = fake_subnet
         loop.run_epoch()
         self.assertEqual(len(loop.candidates), 4)
         self.assertEqual(len(loop.top_k_candidates), 2)
         self.assertEqual(self.runner.epoch, 2)
 
-    def test_run(self):
+    @patch('mmrazor.runners.evolution_search_loop.export_fix_mutable')
+    def test_run(self, mock_export_fix_mutable):
         # test a new search: resume == None
         loop_cfg = copy.deepcopy(self.train_cfg)
         loop_cfg.runner = self.runner
@@ -180,8 +180,7 @@ class TestEvolutionSearchLoop(TestCase):
             MagicMock(return_value=[fake_subnet]*loop.num_crossover)
         loop.top_k_candidates = Candidates([(fake_subnet, 1.0),
                                             (fake_subnet, 0.9)])
-        fix_subnet = FixSubnet(modules=fake_subnet)
-        loop.model.export_fix_subnet = MagicMock(return_value=fix_subnet)
+        mock_export_fix_mutable.return_value = fake_subnet
         loop.run()
         assert os.path.exists(
             os.path.join(self.temp_dir, 'best_fix_subnet.yaml'))

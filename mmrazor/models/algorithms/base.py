@@ -56,7 +56,7 @@ class BaseAlgorithm(BaseModel):
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
-                 init_cfg: Optional[Dict] = None):
+                 init_cfg: Optional[Dict] = None) -> None:
 
         # super().__init__() needs built data_preprocessor, so
         # build model first.

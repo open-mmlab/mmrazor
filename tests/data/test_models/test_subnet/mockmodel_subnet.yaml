@@ -1,4 +1,2 @@
-modules:
-  mutable1: conv1
-  mutable2: conv2
-channels:
+mutable1: conv1
+mutable2: conv2

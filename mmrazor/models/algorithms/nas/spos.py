@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import torch
 from mmengine import BaseDataElement
@@ -8,16 +8,14 @@ from torch import nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.mutators import OneShotModuleMutator
-from mmrazor.models.subnet import (SINGLE_MUTATOR_RANDOM_SUBNET, FixSubnet,
-                                   FixSubnetMixin)
+from mmrazor.models.subnet import (SINGLE_MUTATOR_RANDOM_SUBNET,
+                                   VALID_FIX_MUTABLE_TYPE, load_fix_subnet)
 from mmrazor.registry import MODELS
 from ..base import BaseAlgorithm, LossResults
 
-VALID_FIX_SUBNET = Union[str, FixSubnet, Dict[str, Dict[str, Any]]]
-
 
 @MODELS.register_module()
-class SPOS(BaseAlgorithm, FixSubnetMixin):
+class SPOS(BaseAlgorithm):
     """Implementation of `SPOS <https://arxiv.org/abs/1904.00420>`_
 
     SPOS means Single Path One-Shot, a classic NAS algorithm.
@@ -70,7 +68,7 @@ class SPOS(BaseAlgorithm, FixSubnetMixin):
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
                  mutator: Optional[Union[OneShotModuleMutator, Dict]] = None,
-                 fix_subnet: Optional[VALID_FIX_SUBNET] = None,
+                 fix_subnet: Optional[VALID_FIX_MUTABLE_TYPE] = None,
                  norm_training: bool = False,
                  data_preprocessor: Optional[Union[dict, nn.Module]] = None,
                  init_cfg: Optional[dict] = None):
@@ -80,7 +78,7 @@ class SPOS(BaseAlgorithm, FixSubnetMixin):
         # fix_subnet is not None, means subnet retraining.
         if fix_subnet:
             # According to fix_subnet, delete the unchosen part of supernet
-            self.load_fix_subnet(fix_subnet, prefix='architecture.')
+            load_fix_subnet(self, fix_subnet, prefix='architecture.')
             self.is_supernet = False
         else:
             assert mutator is not None, \

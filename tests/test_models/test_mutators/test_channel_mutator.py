@@ -3,7 +3,6 @@ import os
 import unittest
 from os.path import dirname
 
-import mmcv.fileio
 import pytest
 import torch
 from mmcls.models import *  # noqa: F401,F403
@@ -17,6 +16,7 @@ from mmrazor.models.mutators import (OneShotChannelMutator,
 from mmrazor.models.mutators.utils import (dynamic_bn_converter,
                                            dynamic_conv2d_converter)
 from mmrazor.registry import MODELS
+from .utils import load_and_merge_channel_cfgs
 
 ONESHOT_MUTATOR_CFG = dict(
     type='OneShotChannelMutator',
@@ -223,15 +223,14 @@ def test_slimmable_channel_mutator() -> None:
     imgs = torch.randn(16, 3, 224, 224)
 
     root_path = dirname(dirname(dirname(__file__)))
-    channel_cfgs = [
+    channel_cfg_paths = [
         os.path.join(root_path, 'data/subnet1.yaml'),
         os.path.join(root_path, 'data/subnet2.yaml')
     ]
-    channel_cfgs = [mmcv.fileio.load(path) for path in channel_cfgs]
 
     mutator = SlimmableChannelMutator(
         mutable_cfg=dict(type='SlimmableMutableChannel'),
-        channel_cfgs=channel_cfgs,
+        channel_cfgs=load_and_merge_channel_cfgs(channel_cfg_paths),
         tracer_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss')))
@@ -250,15 +249,14 @@ def test_slimmable_channel_mutator() -> None:
             assert module.current_choice == 1
     _ = model(imgs)
 
-    channel_cfgs = [
+    channel_cfg_paths = [
         os.path.join(root_path, 'data/concat_subnet1.yaml'),
         os.path.join(root_path, 'data/concat_subnet2.yaml')
     ]
-    channel_cfgs = [mmcv.fileio.load(path) for path in channel_cfgs]
 
     mutator = SlimmableChannelMutator(
         mutable_cfg=dict(type='SlimmableMutableChannel'),
-        channel_cfgs=channel_cfgs,
+        channel_cfgs=load_and_merge_channel_cfgs(channel_cfg_paths),
         tracer_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss')))

@@ -2,7 +2,6 @@
 import copy
 from typing import Dict, Optional
 
-from mmcv import ConfigDict
 from torch import nn
 
 from mmrazor.registry import TASK_UTILS
@@ -73,16 +72,16 @@ class RecorderManager:
         True
     """
 
-    def __init__(self, recorders: Optional[ConfigDict] = None) -> None:
+    def __init__(self, recorders: Optional[Dict] = None) -> None:
 
         self._recorders: Dict[str, BaseRecorder] = dict()
         if recorders:
             for name, cfg in recorders.items():
                 recorder_cfg = copy.deepcopy(cfg)
-                recorder_type = cfg.type
+                recorder_type = cfg['type']
                 recorder_type_ = recorder_type + 'Recorder'
 
-                recorder_cfg.type = recorder_type_
+                recorder_cfg['type'] = recorder_type_
                 recorder = TASK_UTILS.build(recorder_cfg)
 
                 self._recorders[name] = recorder

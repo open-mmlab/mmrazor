@@ -1,0 +1,474 @@
+backbone.conv1.bn.mutable_num_features:
+  current_choice: 32
+  origin_channels: 48
+backbone.conv1.conv.mutable_in_channels:
+  current_choice: 3
+  origin_channels: 3
+backbone.conv1.conv.mutable_out_channels:
+  current_choice: 32
+  origin_channels: 48
+backbone.conv2.bn.mutable_num_features:
+  current_choice: 1920
+  origin_channels: 1920
+backbone.conv2.conv.mutable_in_channels:
+  current_choice: 480
+  origin_channels: 480
+backbone.conv2.conv.mutable_out_channels:
+  current_choice: 1920
+  origin_channels: 1920
+backbone.layer1.0.conv.0.bn.mutable_num_features:
+  current_choice: 32
+  origin_channels: 48
+backbone.layer1.0.conv.0.conv.mutable_in_channels:
+  current_choice: 32
+  origin_channels: 48
+backbone.layer1.0.conv.0.conv.mutable_out_channels:
+  current_choice: 32
+  origin_channels: 48
+backbone.layer1.0.conv.1.bn.mutable_num_features:
+  current_choice: 16
+  origin_channels: 24
+backbone.layer1.0.conv.1.conv.mutable_in_channels:
+  current_choice: 32
+  origin_channels: 48
+backbone.layer1.0.conv.1.conv.mutable_out_channels:
+  current_choice: 16
+  origin_channels: 24
+backbone.layer2.0.conv.0.bn.mutable_num_features:
+  current_choice: 144
+  origin_channels: 144
+backbone.layer2.0.conv.0.conv.mutable_in_channels:
+  current_choice: 16
+  origin_channels: 24
+backbone.layer2.0.conv.0.conv.mutable_out_channels:
+  current_choice: 144
+  origin_channels: 144
+backbone.layer2.0.conv.1.bn.mutable_num_features:
+  current_choice: 144
+  origin_channels: 144
+backbone.layer2.0.conv.1.conv.mutable_in_channels:
+  current_choice: 144
+  origin_channels: 144
+backbone.layer2.0.conv.1.conv.mutable_out_channels:
+  current_choice: 144
+  origin_channels: 144
+backbone.layer2.0.conv.2.bn.mutable_num_features:
+  current_choice: 24
+  origin_channels: 40
+backbone.layer2.0.conv.2.conv.mutable_in_channels:
+  current_choice: 144
+  origin_channels: 144
+backbone.layer2.0.conv.2.conv.mutable_out_channels:
+  current_choice: 24
+  origin_channels: 40
+backbone.layer2.1.conv.0.bn.mutable_num_features:
+  current_choice: 176
+  origin_channels: 240
+backbone.layer2.1.conv.0.conv.mutable_in_channels:
+  current_choice: 24
+  origin_channels: 40
+backbone.layer2.1.conv.0.conv.mutable_out_channels:
+  current_choice: 176
+  origin_channels: 240
+backbone.layer2.1.conv.1.bn.mutable_num_features:
+  current_choice: 176
+  origin_channels: 240
+backbone.layer2.1.conv.1.conv.mutable_in_channels:
+  current_choice: 176
+  origin_channels: 240
+backbone.layer2.1.conv.1.conv.mutable_out_channels:
+  current_choice: 176
+  origin_channels: 240
+backbone.layer2.1.conv.2.bn.mutable_num_features:
+  current_choice: 24
+  origin_channels: 40
+backbone.layer2.1.conv.2.conv.mutable_in_channels:
+  current_choice: 176
+  origin_channels: 240
+backbone.layer2.1.conv.2.conv.mutable_out_channels:
+  current_choice: 24
+  origin_channels: 40
+backbone.layer3.0.conv.0.bn.mutable_num_features:
+  current_choice: 192
+  origin_channels: 240
+backbone.layer3.0.conv.0.conv.mutable_in_channels:
+  current_choice: 24
+  origin_channels: 40
+backbone.layer3.0.conv.0.conv.mutable_out_channels:
+  current_choice: 192
+  origin_channels: 240
+backbone.layer3.0.conv.1.bn.mutable_num_features:
+  current_choice: 192
+  origin_channels: 240
+backbone.layer3.0.conv.1.conv.mutable_in_channels:
+  current_choice: 192
+  origin_channels: 240
+backbone.layer3.0.conv.1.conv.mutable_out_channels:
+  current_choice: 192
+  origin_channels: 240
+backbone.layer3.0.conv.2.bn.mutable_num_features:
+  current_choice: 48
+  origin_channels: 48
+backbone.layer3.0.conv.2.conv.mutable_in_channels:
+  current_choice: 192
+  origin_channels: 240
+backbone.layer3.0.conv.2.conv.mutable_out_channels:
+  current_choice: 48
+  origin_channels: 48
+backbone.layer3.1.conv.0.bn.mutable_num_features:
+  current_choice: 240
+  origin_channels: 288
+backbone.layer3.1.conv.0.conv.mutable_in_channels:
+  current_choice: 48
+  origin_channels: 48
+backbone.layer3.1.conv.0.conv.mutable_out_channels:
+  current_choice: 240
+  origin_channels: 288
+backbone.layer3.1.conv.1.bn.mutable_num_features:
+  current_choice: 240
+  origin_channels: 288
+backbone.layer3.1.conv.1.conv.mutable_in_channels:
+  current_choice: 240
+  origin_channels: 288
+backbone.layer3.1.conv.1.conv.mutable_out_channels:
+  current_choice: 240
+  origin_channels: 288
+backbone.layer3.1.conv.2.bn.mutable_num_features:
+  current_choice: 48
+  origin_channels: 48
+backbone.layer3.1.conv.2.conv.mutable_in_channels:
+  current_choice: 240
+  origin_channels: 288
+backbone.layer3.1.conv.2.conv.mutable_out_channels:
+  current_choice: 48
+  origin_channels: 48
+backbone.layer3.2.conv.0.bn.mutable_num_features:
+  current_choice: 144
+  origin_channels: 288
+backbone.layer3.2.conv.0.conv.mutable_in_channels:
+  current_choice: 48
+  origin_channels: 48
+backbone.layer3.2.conv.0.conv.mutable_out_channels:
+  current_choice: 144
+  origin_channels: 288
+backbone.layer3.2.conv.1.bn.mutable_num_features:
+  current_choice: 144
+  origin_channels: 288
+backbone.layer3.2.conv.1.conv.mutable_in_channels:
+  current_choice: 144
+  origin_channels: 288
+backbone.layer3.2.conv.1.conv.mutable_out_channels:
+  current_choice: 144
+  origin_channels: 288
+backbone.layer3.2.conv.2.bn.mutable_num_features:
+  current_choice: 48
+  origin_channels: 48
+backbone.layer3.2.conv.2.conv.mutable_in_channels:
+  current_choice: 144
+  origin_channels: 288
+backbone.layer3.2.conv.2.conv.mutable_out_channels:
+  current_choice: 48
+  origin_channels: 48
+backbone.layer4.0.conv.0.bn.mutable_num_features:
+  current_choice: 264
+  origin_channels: 288
+backbone.layer4.0.conv.0.conv.mutable_in_channels:
+  current_choice: 48
+  origin_channels: 48
+backbone.layer4.0.conv.0.conv.mutable_out_channels:
+  current_choice: 264
+  origin_channels: 288
+backbone.layer4.0.conv.1.bn.mutable_num_features:
+  current_choice: 264
+  origin_channels: 288
+backbone.layer4.0.conv.1.conv.mutable_in_channels:
+  current_choice: 264
+  origin_channels: 288
+backbone.layer4.0.conv.1.conv.mutable_out_channels:
+  current_choice: 264
+  origin_channels: 288
+backbone.layer4.0.conv.2.bn.mutable_num_features:
+  current_choice: 88
+  origin_channels: 96
+backbone.layer4.0.conv.2.conv.mutable_in_channels:
+  current_choice: 264
+  origin_channels: 288
+backbone.layer4.0.conv.2.conv.mutable_out_channels:
+  current_choice: 88
+  origin_channels: 96
+backbone.layer4.1.conv.0.bn.mutable_num_features:
+  current_choice: 288
+  origin_channels: 576
+backbone.layer4.1.conv.0.conv.mutable_in_channels:
+  current_choice: 88
+  origin_channels: 96
+backbone.layer4.1.conv.0.conv.mutable_out_channels:
+  current_choice: 288
+  origin_channels: 576
+backbone.layer4.1.conv.1.bn.mutable_num_features:
+  current_choice: 288
+  origin_channels: 576
+backbone.layer4.1.conv.1.conv.mutable_in_channels:
+  current_choice: 288
+  origin_channels: 576
+backbone.layer4.1.conv.1.conv.mutable_out_channels:
+  current_choice: 288
+  origin_channels: 576
+backbone.layer4.1.conv.2.bn.mutable_num_features:
+  current_choice: 88
+  origin_channels: 96
+backbone.layer4.1.conv.2.conv.mutable_in_channels:
+  current_choice: 288
+  origin_channels: 576
+backbone.layer4.1.conv.2.conv.mutable_out_channels:
+  current_choice: 88
+  origin_channels: 96
+backbone.layer4.2.conv.0.bn.mutable_num_features:
+  current_choice: 336
+  origin_channels: 576
+backbone.layer4.2.conv.0.conv.mutable_in_channels:
+  current_choice: 88
+  origin_channels: 96
+backbone.layer4.2.conv.0.conv.mutable_out_channels:
+  current_choice: 336
+  origin_channels: 576
+backbone.layer4.2.conv.1.bn.mutable_num_features:
+  current_choice: 336
+  origin_channels: 576
+backbone.layer4.2.conv.1.conv.mutable_in_channels:
+  current_choice: 336
+  origin_channels: 576
+backbone.layer4.2.conv.1.conv.mutable_out_channels:
+  current_choice: 336
+  origin_channels: 576
+backbone.layer4.2.conv.2.bn.mutable_num_features:
+  current_choice: 88
+  origin_channels: 96
+backbone.layer4.2.conv.2.conv.mutable_in_channels:
+  current_choice: 336
+  origin_channels: 576
+backbone.layer4.2.conv.2.conv.mutable_out_channels:
+  current_choice: 88
+  origin_channels: 96
+backbone.layer4.3.conv.0.bn.mutable_num_features:
+  current_choice: 432
+  origin_channels: 576
+backbone.layer4.3.conv.0.conv.mutable_in_channels:
+  current_choice: 88
+  origin_channels: 96
+backbone.layer4.3.conv.0.conv.mutable_out_channels:
+  current_choice: 432
+  origin_channels: 576
+backbone.layer4.3.conv.1.bn.mutable_num_features:
+  current_choice: 432
+  origin_channels: 576
+backbone.layer4.3.conv.1.conv.mutable_in_channels:
+  current_choice: 432
+  origin_channels: 576
+backbone.layer4.3.conv.1.conv.mutable_out_channels:
+  current_choice: 432
+  origin_channels: 576
+backbone.layer4.3.conv.2.bn.mutable_num_features:
+  current_choice: 88
+  origin_channels: 96
+backbone.layer4.3.conv.2.conv.mutable_in_channels:
+  current_choice: 432
+  origin_channels: 576
+backbone.layer4.3.conv.2.conv.mutable_out_channels:
+  current_choice: 88
+  origin_channels: 96
+backbone.layer5.0.conv.0.bn.mutable_num_features:
+  current_choice: 576
+  origin_channels: 576
+backbone.layer5.0.conv.0.conv.mutable_in_channels:
+  current_choice: 88
+  origin_channels: 96
+backbone.layer5.0.conv.0.conv.mutable_out_channels:
+  current_choice: 576
+  origin_channels: 576
+backbone.layer5.0.conv.1.bn.mutable_num_features:
+  current_choice: 576
+  origin_channels: 576
+backbone.layer5.0.conv.1.conv.mutable_in_channels:
+  current_choice: 576
+  origin_channels: 576
+backbone.layer5.0.conv.1.conv.mutable_out_channels:
+  current_choice: 576
+  origin_channels: 576
+backbone.layer5.0.conv.2.bn.mutable_num_features:
+  current_choice: 144
+  origin_channels: 144
+backbone.layer5.0.conv.2.conv.mutable_in_channels:
+  current_choice: 576
+  origin_channels: 576
+backbone.layer5.0.conv.2.conv.mutable_out_channels:
+  current_choice: 144
+  origin_channels: 144
+backbone.layer5.1.conv.0.bn.mutable_num_features:
+  current_choice: 576
+  origin_channels: 864
+backbone.layer5.1.conv.0.conv.mutable_in_channels:
+  current_choice: 144
+  origin_channels: 144
+backbone.layer5.1.conv.0.conv.mutable_out_channels:
+  current_choice: 576
+  origin_channels: 864
+backbone.layer5.1.conv.1.bn.mutable_num_features:
+  current_choice: 576
+  origin_channels: 864
+backbone.layer5.1.conv.1.conv.mutable_in_channels:
+  current_choice: 576
+  origin_channels: 864
+backbone.layer5.1.conv.1.conv.mutable_out_channels:
+  current_choice: 576
+  origin_channels: 864
+backbone.layer5.1.conv.2.bn.mutable_num_features:
+  current_choice: 144
+  origin_channels: 144
+backbone.layer5.1.conv.2.conv.mutable_in_channels:
+  current_choice: 576
+  origin_channels: 864
+backbone.layer5.1.conv.2.conv.mutable_out_channels:
+  current_choice: 144
+  origin_channels: 144
+backbone.layer5.2.conv.0.bn.mutable_num_features:
+  current_choice: 648
+  origin_channels: 864
+backbone.layer5.2.conv.0.conv.mutable_in_channels:
+  current_choice: 144
+  origin_channels: 144
+backbone.layer5.2.conv.0.conv.mutable_out_channels:
+  current_choice: 648
+  origin_channels: 864
+backbone.layer5.2.conv.1.bn.mutable_num_features:
+  current_choice: 648
+  origin_channels: 864
+backbone.layer5.2.conv.1.conv.mutable_in_channels:
+  current_choice: 648
+  origin_channels: 864
+backbone.layer5.2.conv.1.conv.mutable_out_channels:
+  current_choice: 648
+  origin_channels: 864
+backbone.layer5.2.conv.2.bn.mutable_num_features:
+  current_choice: 144
+  origin_channels: 144
+backbone.layer5.2.conv.2.conv.mutable_in_channels:
+  current_choice: 648
+  origin_channels: 864
+backbone.layer5.2.conv.2.conv.mutable_out_channels:
+  current_choice: 144
+  origin_channels: 144
+backbone.layer6.0.conv.0.bn.mutable_num_features:
+  current_choice: 864
+  origin_channels: 864
+backbone.layer6.0.conv.0.conv.mutable_in_channels:
+  current_choice: 144
+  origin_channels: 144
+backbone.layer6.0.conv.0.conv.mutable_out_channels:
+  current_choice: 864
+  origin_channels: 864
+backbone.layer6.0.conv.1.bn.mutable_num_features:
+  current_choice: 864
+  origin_channels: 864
+backbone.layer6.0.conv.1.conv.mutable_in_channels:
+  current_choice: 864
+  origin_channels: 864
+backbone.layer6.0.conv.1.conv.mutable_out_channels:
+  current_choice: 864
+  origin_channels: 864
+backbone.layer6.0.conv.2.bn.mutable_num_features:
+  current_choice: 240
+  origin_channels: 240
+backbone.layer6.0.conv.2.conv.mutable_in_channels:
+  current_choice: 864
+  origin_channels: 864
+backbone.layer6.0.conv.2.conv.mutable_out_channels:
+  current_choice: 240
+  origin_channels: 240
+backbone.layer6.1.conv.0.bn.mutable_num_features:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer6.1.conv.0.conv.mutable_in_channels:
+  current_choice: 240
+  origin_channels: 240
+backbone.layer6.1.conv.0.conv.mutable_out_channels:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer6.1.conv.1.bn.mutable_num_features:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer6.1.conv.1.conv.mutable_in_channels:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer6.1.conv.1.conv.mutable_out_channels:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer6.1.conv.2.bn.mutable_num_features:
+  current_choice: 240
+  origin_channels: 240
+backbone.layer6.1.conv.2.conv.mutable_in_channels:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer6.1.conv.2.conv.mutable_out_channels:
+  current_choice: 240
+  origin_channels: 240
+backbone.layer6.2.conv.0.bn.mutable_num_features:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer6.2.conv.0.conv.mutable_in_channels:
+  current_choice: 240
+  origin_channels: 240
+backbone.layer6.2.conv.0.conv.mutable_out_channels:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer6.2.conv.1.bn.mutable_num_features:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer6.2.conv.1.conv.mutable_in_channels:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer6.2.conv.1.conv.mutable_out_channels:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer6.2.conv.2.bn.mutable_num_features:
+  current_choice: 240
+  origin_channels: 240
+backbone.layer6.2.conv.2.conv.mutable_in_channels:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer6.2.conv.2.conv.mutable_out_channels:
+  current_choice: 240
+  origin_channels: 240
+backbone.layer7.0.conv.0.bn.mutable_num_features:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer7.0.conv.0.conv.mutable_in_channels:
+  current_choice: 240
+  origin_channels: 240
+backbone.layer7.0.conv.0.conv.mutable_out_channels:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer7.0.conv.1.bn.mutable_num_features:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer7.0.conv.1.conv.mutable_in_channels:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer7.0.conv.1.conv.mutable_out_channels:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer7.0.conv.2.bn.mutable_num_features:
+  current_choice: 480
+  origin_channels: 480
+backbone.layer7.0.conv.2.conv.mutable_in_channels:
+  current_choice: 1440
+  origin_channels: 1440
+backbone.layer7.0.conv.2.conv.mutable_out_channels:
+  current_choice: 480
+  origin_channels: 480
+head.fc.mutable_in_features:
+  current_choice: 1920
+  origin_channels: 1920
+head.fc.mutable_out_features:
+  current_choice: 1000
+  origin_channels: 1000

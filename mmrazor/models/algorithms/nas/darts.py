@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import torch
 from mmengine import BaseDataElement
@@ -10,16 +10,14 @@ from torch import nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.mutators import DiffModuleMutator
-from mmrazor.models.subnet import (SINGLE_MUTATOR_RANDOM_SUBNET, FixSubnet,
-                                   FixSubnetMixin)
+from mmrazor.models.subnet import (FIX_MUTABLE, SINGLE_MUTATOR_RANDOM_SUBNET,
+                                   load_fix_subnet)
 from mmrazor.registry import MODELS
 from ..base import BaseAlgorithm, LossResults
 
-VALID_FIX_SUBNET = Union[str, FixSubnet, Dict[str, Dict[str, Any]]]
-
 
 @MODELS.register_module()
-class Darts(BaseAlgorithm, FixSubnetMixin):
+class Darts(BaseAlgorithm):
     """Implementation of `DARTS <https://arxiv.org/abs/1806.09055>`_
 
     DARTS means Differentiable Architecture Search, a classic NAS algorithm.
@@ -60,7 +58,7 @@ class Darts(BaseAlgorithm, FixSubnetMixin):
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
                  mutator: Optional[Union[DiffModuleMutator, Dict]] = None,
-                 fix_subnet: Optional[VALID_FIX_SUBNET] = None,
+                 fix_subnet: Optional[FIX_MUTABLE] = None,
                  unroll: bool = False,
                  norm_training: bool = False,
                  data_preprocessor: Optional[Union[dict, nn.Module]] = None,
@@ -71,7 +69,7 @@ class Darts(BaseAlgorithm, FixSubnetMixin):
         # fix_subnet is not None, means subnet retraining.
         if fix_subnet:
             # According to fix_subnet, delete the unchosen part of supernet
-            self.load_fix_subnet(fix_subnet, prefix='architecture.')
+            load_fix_subnet(self, fix_subnet, prefix='architecture.')
             self.is_supernet = False
         else:
             assert mutator is not None, \

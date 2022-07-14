@@ -6,8 +6,8 @@ supernet = dict(
 model = dict(
     type='MockAlgorithm',
     architecture=supernet,
-    _fix_subnet_ = dict(modules={
+    _fix_subnet_ = {
             'architecture.mutable1': 'conv1',
             'architecture.mutable2': 'conv2',
-        })
+        }
 )

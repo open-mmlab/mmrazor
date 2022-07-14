@@ -85,6 +85,12 @@ class BaseMutable(BaseModule, ABC, Generic[CHOICE_TYPE, CHOSEN_TYPE]):
             This operation is irreversible.
         """
 
+    # TODO
+    # type hint
+    @abstractmethod
+    def dump_chosen(self) -> CHOSEN_TYPE:
+        ...
+
     @property
     @abstractmethod
     def num_choices(self) -> int:

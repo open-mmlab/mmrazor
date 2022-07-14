@@ -231,6 +231,11 @@ class DiffMutableOP(DiffMutableModule[str, str]):
         self._chosen = chosen
         self.is_fixed = True
 
+    def dump_chosen(self) -> str:
+        assert self.current_choice is not None
+
+        return self.current_choice
+
     @property
     def choices(self) -> List[str]:
         """list: all choices. """
@@ -394,6 +399,9 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
     def choices(self) -> List[CHOSEN_TYPE]:
         """list: all choices. """
         return list(self._candidates.keys())
+
+    def dump_chosen(self) -> List[str]:
+        return []
 
 
 @MODELS.register_module()
