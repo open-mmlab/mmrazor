@@ -1,0 +1,41 @@
+Collections:
+  - Name: CWD
+    Metadata:
+      Training Data:
+        - Cityscapes
+        - COCO
+    Paper:
+      URL: https://arxiv.org/abs/2011.13256
+      Title: Channel-wise Knowledge Distillation for Dense Prediction
+    README: configs/distill/mmseg/cwd/README.md
+    Code:
+      URL: https://github.com/open-mmlab/mmrazor/blob/v0.1.0/mmrazor/models/losses/cwd.py#L10
+      Version: v0.1.0
+    Converted From:
+      Code:
+        - https://github.com/pppppM/mmsegmentation-distiller
+        - https://github.com/pppppM/mmdetection-distiller
+Models:
+  - Name: cwd_logits_pspnet_r101_d8_pspnet_r18_d8_512x1024_cityscapes_80k
+    In Collection: CWD
+    Metadata:
+      Location: logits
+      Student:
+        Metrics:
+          mIoU: 74.87
+          mIoU(ms+flip): 76.04
+        Config: mmseg::pspnet/pspnet_r18-d8_512x1024_80k_cityscapes.py
+        Weights: https://download.openmmlab.com/mmsegmentation/v0.5/pspnet/pspnet_r18-d8_512x1024_80k_cityscapes/pspnet_r18-d8_512x1024_80k_cityscapes_20201225_021458-09ffa746.pth
+      Teacher:
+        Metrics:
+          mIoU: 79.76
+          mIoU(ms+flip): 81.01
+        Config: mmseg::pspnet/pspnet_r101-d8_512x1024_80k_cityscapes.py
+        Weights: https://download.openmmlab.com/mmsegmentation/v0.5/pspnet/pspnet_r101-d8_512x1024_80k_cityscapes/pspnet_r101-d8_512x1024_80k_cityscapes_20200606_112211-e1e1100f.pth
+    Results:
+      - Task: Semantic Segmentation
+        Dataset: Cityscapes
+        Metrics:
+          mIoU: 75.54
+    Config: configs/distill/mmseg/cwd/cwd_logits_pspnet_r101_d8_pspnet_r18_d8_512x1024_cityscapes_80k.py
+    Weights: https://download.openmmlab.com/mmrazor/v0.1/distill/cwd/cwd_cls_head_pspnet_r101_d8_pspnet_r18_d8_512x1024_cityscapes_80k/cwd_cls_head_pspnet_r101_d8_pspnet_r18_d8_512x1024_cityscapes_80k_mIoU-75.54_20211222-3a26ee1c.pth

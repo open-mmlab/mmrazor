@@ -1,0 +1,23 @@
+
+Models:
+  - Name: cwd_cls_head_gfl_r101_fpn_gfl_r50_fpn_1x_coco
+    In Collection: CWD
+    Metadata:
+      Location: cls head
+      Student:
+        Metrics:
+          box AP: 40.2
+        Config: mmdet::gfl/gfl_r50_fpn_1x_coco.py
+        Weights: https://download.openmmlab.com/mmdetection/v2.0/gfl/gfl_r50_fpn_1x_coco/gfl_r50_fpn_1x_coco_20200629_121244-25944287.pth
+      Teacher:
+        Metrics:
+          box AP: 44.7
+        Config: mmdet::gfl/gfl_r50_fpn_mstrain_2x_coco.py
+        Weights: https://download.openmmlab.com/mmdetection/v2.0/gfl/gfl_r101_fpn_mstrain_2x_coco/gfl_r101_fpn_mstrain_2x_coco_20200629_200126-dd12f847.pth
+    Results:
+      - Task: Object Detection
+        Dataset: COCO
+        Metrics:
+          box AP: 41.9
+    Config: configs/distill/mmdet/cwd/cwd_cls_head_gfl_r101_fpn_gfl_r50_fpn_1x_coco.py
+    Weights: https://download.openmmlab.com/mmrazor/v0.1/distill/cwd/cwd_cls_head_gfl_r101_fpn_gfl_r50_fpn_1x_coco/cwd_cls_head_gfl_r101_fpn_gfl_r50_fpn_1x_coco_20211222-655dff39.pth

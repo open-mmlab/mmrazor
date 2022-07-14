@@ -1,0 +1,38 @@
+Collections:
+  - Name: RKD
+    Metadata:
+      Training Data:
+        - ImageNet-1k
+    Paper:
+      URL: https://arxiv.org/abs/1904.05068
+      Title: Relational Knowledge Distillation
+    README: configs/distill/mmcls/rkd/README.md
+    Code:
+      URL: https://github.com/open-mmlab/mmrazor/blob/v0.3.0/mmrazor/models/losses/relation_kd.py
+      Version: v0.3.0
+    Converted From:
+      Code: https://github.com/lenscloth/RKD
+Models:
+  - Name: rkd_neck_resnet34_resnet18_8xb32_in1k
+    In Collection: RKD
+    Metadata:
+      Location: neck
+      Student:
+        Config: mmcls::resnet/resnet18_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_8xb32_in1k_20210831-fbbb1da6.pth
+        Metrics:
+          Top 1 Accuracy: 69.90
+          Top 5 Accuracy: 89.43
+      Teacher:
+        Config: mmcls::resnet/resnet34_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet34_8xb32_in1k_20210831-f257d4e6.pth
+        Metrics:
+          Top 1 Accuracy: 73.62
+          Top 5 Accuracy: 91.59
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 70.23
+    Config: configs/distill/mmcls/rkd/rkd_neck_resnet34_resnet18_8xb32_in1k.py
+    Weights: https://download.openmmlab.com/mmrazor/v0.3/distill/rkd/rkd_neck_resnet34_resnet18_8xb32_in1k_acc-70.23_20220401-f25700ac.pth
