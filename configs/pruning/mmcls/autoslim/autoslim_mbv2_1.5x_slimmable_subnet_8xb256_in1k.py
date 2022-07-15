@@ -1,5 +1,5 @@
 _base_ = [
-    'mmrazor::_base_/settings/imagenet_bs2048_autoslim.py',
+    'mmrazor::_base_/settings/imagenet_bs2048_autoslim_pil.py',
     'mmcls::_base_/models/mobilenet_v2_1x.py',
     'mmcls::_base_/default_runtime.py',
 ]
@@ -22,8 +22,9 @@ data_preprocessor = dict(
 # !autoslim algorithm config
 # ==========================================================================
 channel_cfg_paths = [
-    'tests/data/MBV2_220M.yaml', 'tests/data/MBV2_320M.yaml',
-    'tests/data/MBV2_530M.yaml'
+    'https://download.openmmlab.com/mmrazor/v1/autoslim/autoslim_mbv2_subnet_8xb256_in1k_flops-220M_acc-71.4_20220715-9c288f3b_subnet_cfg.yaml',  # noqa: E501
+    'https://download.openmmlab.com/mmrazor/v1/autoslim/autoslim_mbv2_subnet_8xb256_in1k_flops-320M_acc-72.73_20220715-9aa8f8ae_subnet_cfg.yaml',  # noqa: E501
+    'https://download.openmmlab.com/mmrazor/v1/autoslim/autoslim_mbv2_subnet_8xb256_in1k_flops-530M_acc-74.23_20220715-aa8754fe_subnet_cfg.yaml'  # noqa: E501
 ]
 
 model = dict(
@@ -45,6 +46,6 @@ model_wrapper_cfg = dict(
     broadcast_buffers=False,
     find_unused_parameters=True)
 
-optim_wrapper = dict(accumulative_counts=3)
+optim_wrapper = dict(accumulative_counts=len(channel_cfg_paths))
 
 val_cfg = dict(type='mmrazor.SlimmableValLoop')
