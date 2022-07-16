@@ -186,6 +186,7 @@ def test_oneshot_channel_mutator() -> None:
                 # 1 / 8 is the minimum candidate ratio
                 assert mutable.current_choice == round(1 / 8 *
                                                        mutable.num_channels)
+        model(imgs)
 
         # test set_max_channel
         mutator.set_max_choices()

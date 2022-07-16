@@ -132,6 +132,7 @@ class ChannelMutator(BaseMutator):
             self._name2module = dict(supernet.named_modules())
 
         self.bind_mutable_name(supernet)
+        self.bind_mask_type(supernet)
         self._search_groups = self.build_search_groups(supernet)
 
     @staticmethod
@@ -144,7 +145,7 @@ class ChannelMutator(BaseMutator):
             if isinstance(module, MutableChannel):
                 same_mutables = module.same_mutables
                 if module not in visited and len(same_mutables) > 0:
-                    groups[group_idx] = [module] + same_mutables
+                    groups[group_idx] = same_mutables
                     visited.extend(groups[group_idx])
                     group_idx += 1
         return groups
@@ -167,6 +168,23 @@ class ChannelMutator(BaseMutator):
                     traverse(child, module_name)
 
         traverse(supernet, '')
+
+    def bind_mask_type(self, supernet: Module):
+        """Bind a MutableChannel to its type.
+
+        Args:
+            supernet (:obj:`torch.nn.Module`): The supernet to be searched
+                in your algorithm.
+        """
+
+        def traverse(module):
+            for name, child in module.named_children():
+                if isinstance(child, MutableChannel):
+                    child.bind_mutable_type(name)
+                else:
+                    traverse(child)
+
+        traverse(supernet)
 
     def convert_dynamic_module(self, supernet: Module, converters: Dict):
         """Replace the conv/linear/norm modules in the input supernet with

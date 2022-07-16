@@ -43,10 +43,10 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
         if isinstance(mutable, list):
             # Add a concatenation of mutables to `concat_parent_mutables`.
             self.concat_parent_mutables = mutable
+            for mutable_channel in mutable:
+                mutable_channel.register_same_mutable(mutable_channel)
             return
 
-        if self == mutable:
-            return
         if mutable in self._same_mutables:
             return
 
@@ -87,7 +87,27 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
         Args:
             name (str): Name of this `MutableChannel`.
         """
-        self.name = name
+        self._name = name
+
+    def bind_mutable_type(self, mutable_type: str) -> None:
+        """Bind a MutableChannel to its type.
+
+        Args:
+            mutable_type (str): Type of this `MutableChannel`.
+        """
+        self._mutable_type = mutable_type
+
+    @property
+    def name(self):
+        """Name of this MutableChannel."""
+        assert getattr(self, '_name', None) is not None
+        return self._name
+
+    @property
+    def mutable_type(self):
+        """Type of this MutableChannel."""
+        assert getattr(self, '_mutable_type', None) is not None
+        return self._mutable_type
 
     def fix_chosen(self, chosen: CHOSEN_TYPE) -> None:
         """Fix mutable with subnet config. This operation would convert
@@ -114,6 +134,7 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
         ]
         repr_str = self.__class__.__name__
         repr_str += f'(name={self.name}, '
+        repr_str += f'mutable_type={self.mutable_type}, '
         repr_str += f'num_channels={self.num_channels}, '
         repr_str += f'concat_mutable_name={concat_mutable_name})'
         return repr_str
