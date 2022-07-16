@@ -19,6 +19,7 @@ supernet.neck.norm_cfg = norm_cfg
 supernet.neck.in_channels = [64, 160, 320, 640]
 
 supernet.roi_head.bbox_head.norm_cfg = norm_cfg
+supernet.roi_head.bbox_head.type = 'Shared4Conv1FCBBoxHead'
 
 model = dict(
     _delete_=True,

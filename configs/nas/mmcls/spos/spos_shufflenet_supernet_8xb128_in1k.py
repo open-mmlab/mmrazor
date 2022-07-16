@@ -7,7 +7,7 @@ _base_ = [
 # model
 supernet = dict(
     type='ImageClassifier',
-    # data_preprocessor=_base_.preprocess_cfg,
+    data_preprocessor=_base_.preprocess_cfg,
     backbone=_base_.nas_backbone,
     neck=dict(type='GlobalAveragePooling'),
     head=dict(
