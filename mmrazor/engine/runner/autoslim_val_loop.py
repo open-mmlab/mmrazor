@@ -7,16 +7,18 @@ from torch.utils.data import DataLoader
 
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import LOOPS
+from .mixins import CalibrateBNMixin
 
 
 @LOOPS.register_module()
-class AutoSlimValLoop(ValLoop):
+class AutoSlimValLoop(ValLoop, CalibrateBNMixin):
 
     def __init__(self,
                  runner,
                  dataloader: Union[DataLoader, Dict],
                  evaluator: Union[Evaluator, Dict, List],
-                 fp16: bool = False) -> None:
+                 fp16: bool = False,
+                 calibrated_sample_nums: int = 2000) -> None:
         super().__init__(runner, dataloader, evaluator, fp16)
 
         if self.runner.distributed:
@@ -26,6 +28,7 @@ class AutoSlimValLoop(ValLoop):
 
         # just for convenience
         self._model = model
+        self.calibrated_sample_nums = calibrated_sample_nums
 
     def run(self) -> None:
         """Launch validation."""
@@ -34,15 +37,21 @@ class AutoSlimValLoop(ValLoop):
         all_metrics = dict()
 
         self._model.set_max_subnet()
+        self.calibrate_bn_statistics(self.runner.train_dataloader,
+                                     self.calibrate_bn_statistics)
         metrics = self._evaluate_once()
         all_metrics.update(add_prefix(metrics, 'max_subnet'))
 
         self._model.set_min_subnet()
+        self.calibrate_bn_statistics(self.runner.train_dataloader,
+                                     self.calibrate_bn_statistics)
         metrics = self._evaluate_once()
         all_metrics.update(add_prefix(metrics, 'min_subnet'))
 
         for subnet_idx in range(self._model.num_samples):
             self._model.set_subnet(self._model.sample_subnet())
+            self.calibrate_bn_statistics(self.runner.train_dataloader,
+                                         self.calibrate_bn_statistics)
             # compute student metrics
             metrics = self._evaluate_once()
             all_metrics.update(

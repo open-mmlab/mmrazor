@@ -48,7 +48,6 @@ class SingleTeacherDistillValLoop(ValLoop):
         self.runner.call_hook('before_val')
         self.runner.call_hook('before_val_epoch')
         self.runner.model.eval()
-
         for idx, data_batch in enumerate(self.dataloader):
             self.run_iter(idx, data_batch)
         # compute student metrics
