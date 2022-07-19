@@ -4,8 +4,7 @@ from typing import Any
 import torch
 from mmengine import autocast
 from mmengine.runner import Runner
-from torch import Tensor
-from torch import nn
+from torch import Tensor, nn
 from torch.nn.modules.batchnorm import _BatchNorm
 from torch.utils.data import DataLoader
 
@@ -100,7 +99,8 @@ class CalibrateBNMixin:
                     f'l2 norm of calibrated running mean: {calibrated_bn_mean.norm()}, '
                     f'l2 norm of calibrated running var: {calibrated_bn_var.norm()}, '
                     f'l2 norm of original running mean: {module.running_mean[:feature_dim].norm()}, '
-                    f'l2 norm of original running var: {module.running_var[:feature_dim].norm()}, ')
+                    f'l2 norm of original running var: {module.running_var[:feature_dim].norm()}, '
+                )
 
                 module.running_mean[:feature_dim].copy_(calibrated_bn_mean)
                 module.running_var[:feature_dim].copy_(calibrated_bn_var)
