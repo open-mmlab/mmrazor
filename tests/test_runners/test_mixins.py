@@ -43,7 +43,7 @@ class FakeDataset(Dataset):
     def __init__(self,
                  random_nums: int = 64,
                  x_shape: Sequence[int] = (3, 224, 224)) -> None:
-        self.random_x = torch.randn(random_nums, *x_shape)
+        self.random_x = torch.normal(1, 100, size=(random_nums, *x_shape))
         self.random_nums = random_nums
         self.x_shape = list(x_shape)
 
@@ -69,8 +69,9 @@ class TestCalibrateBNMixin(TestCase):
         calibrated_mean = calibrated_data.mean((0, 2, 3))
         calibrated_var = calibrated_data.var((0, 2, 3), unbiased=True)
 
-        torch.isclose(calibrated_mean, loop.runner.model.bn.running_mean)
-        torch.isclose(calibrated_var, loop.runner.model.bn.running_var)
+        assert torch.allclose(calibrated_mean,
+                              loop.runner.model.bn.running_mean)
+        assert torch.allclose(calibrated_var, loop.runner.model.bn.running_var)
 
     def prepare_dataloader(
         self,
