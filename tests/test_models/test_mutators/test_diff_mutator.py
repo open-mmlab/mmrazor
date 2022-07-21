@@ -120,7 +120,7 @@ class TestDiffModuleMutator(TestCase):
         mutator.prepare_from_supernet(model)
         assert list(mutator.search_groups.keys()) == [0, 1, 2]
 
-        mutator.modify_supernet_forward()
+        mutator.modify_supernet_forward(mutator.arch_params)
         assert mutator.mutable_class_type == DiffMutableModule
 
     def test_diff_mutator_diffop_model_error(self) -> None:
@@ -148,7 +148,7 @@ class TestDiffModuleMutator(TestCase):
 
         assert list(mutator.search_groups.keys()) == [0, 1, 2]
 
-        mutator.modify_supernet_forward()
+        mutator.modify_supernet_forward(mutator.arch_params)
         assert mutator.mutable_class_type == DiffMutableModule
 
     def test_diff_mutator_alias_module_name(self) -> None:
@@ -167,7 +167,7 @@ class TestDiffModuleMutator(TestCase):
 
         assert list(mutator.search_groups.keys()) == [0, 1, 2, 3]
 
-        mutator.modify_supernet_forward()
+        mutator.modify_supernet_forward(mutator.arch_params)
         assert mutator.mutable_class_type == DiffMutableModule
 
     def test_diff_mutator_duplicate_keys(self) -> None:
