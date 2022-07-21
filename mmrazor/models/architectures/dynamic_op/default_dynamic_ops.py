@@ -230,7 +230,7 @@ class DynamicLinear(nn.Linear, ChannelDynamicOP):
         return static_linear
 
 
-class DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
+class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
     """Applies Batch Normalization over an input according to the
     `mutable_num_features` dynamically.
 
@@ -238,6 +238,7 @@ class DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
         num_features_cfg (Dict): Config related to `num_features`.
     """
     accepted_mutable_keys = {'num_features'}
+    batch_norm_type: str
 
     def __init__(self, *, mutable_cfgs: MUTABLE_CFGS_TYPE,
                  **bn_kwargs) -> None:
@@ -269,9 +270,35 @@ class DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
         """Mutable `num_features`."""
         return self.num_features_mutable
 
+    def _get_dynamic_params(
+        self
+    ) -> Tuple[Optional[Tensor], Optional[Tensor], Optional[Tensor],
+               Optional[Tensor]]:
+        if self.affine:
+            out_mask = self.num_features_mutable.current_mask.to(
+                self.weight.device)
+            weight = self.weight[out_mask]
+            bias = self.bias[out_mask]
+        else:
+            weight, bias = self.weight, self.bias
+
+        if self.track_running_stats:
+            out_mask = self.num_features_mutable.current_mask.to(
+                self.running_mean.device)
+            running_mean = self.running_mean[out_mask] \
+                if not self.training or self.track_running_stats else None
+            running_var = self.running_var[out_mask] \
+                if not self.training or self.track_running_stats else None
+        else:
+            running_mean, running_var = self.running_mean, self.running_var
+
+        return running_mean, running_var, weight, bias
+
     def forward(self, input: Tensor) -> Tensor:
         """Slice the parameters according to `mutable_num_features`, and
         forward."""
+        self._check_input_dim(input)
+
         if self.momentum is None:
             exponential_average_factor = 0.0
         else:
@@ -293,30 +320,61 @@ class DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
             bn_training = (self.running_mean is None) and (self.running_var is
                                                            None)
 
-        if self.affine:
-            out_mask = self.num_features_mutable.current_mask.to(
-                self.weight.device)
-            weight = self.weight[out_mask]
-            bias = self.bias[out_mask]
-        else:
-            weight, bias = self.weight, self.bias
-
-        if self.track_running_stats:
-            out_mask = self.num_features_mutable.current_mask.to(
-                self.running_mean.device)
-            running_mean = self.running_mean[out_mask] \
-                if not self.training or self.track_running_stats else None
-            running_var = self.running_var[out_mask] \
-                if not self.training or self.track_running_stats else None
-        else:
-            running_mean, running_var = self.running_mean, self.running_var
+        running_mean, running_var, weight, bias = self._get_dynamic_params()
 
         return F.batch_norm(input, running_mean, running_var, weight, bias,
                             bn_training, exponential_average_factor, self.eps)
 
-    # TODO
     def to_static_op(self) -> nn.Module:
-        raise NotImplementedError
+        assert self.num_features_mutable.is_fixed
+
+        running_mean, running_var, weight, bias = self._get_dynamic_params()
+        num_features = self.num_features_mutable.current_mask.sum().item()
+
+        static_bn = getattr(nn, self.batch_norm_type)(
+            num_features=num_features,
+            eps=self.eps,
+            momentum=self.momentum,
+            affine=self.affine,
+            track_running_stats=self.track_running_stats)
+
+        if running_mean is not None:
+            static_bn.running_mean.copy_(running_mean)
+        if running_var is not None:
+            static_bn.running_var.copy_(running_var)
+        if weight is not None:
+            static_bn.weight = nn.Parameter(weight)
+        if bias is not None:
+            static_bn.bias = nn.Parameter(bias)
+
+        return static_bn
+
+
+class DynamicBatchNorm1d(_DynamicBatchNorm):
+    batch_norm_type: str = 'BatchNorm1d'
+
+    def _check_input_dim(self, input: Tensor) -> None:
+        if input.dim() != 2 and input.dim() != 3:
+            raise ValueError('expected 2D or 3D input (got {}D input)'.format(
+                input.dim()))
+
+
+class DynamicBatchNorm2d(_DynamicBatchNorm):
+    batch_norm_type: str = 'BatchNorm2d'
+
+    def _check_input_dim(self, input: Tensor) -> None:
+        if input.dim() != 4:
+            raise ValueError('expected 4D input (got {}D input)'.format(
+                input.dim()))
+
+
+class DynamicBatchNorm3d(_DynamicBatchNorm):
+    batch_norm_type: str = 'BatchNorm3d'
+
+    def _check_input_dim(self, input: Tensor) -> None:
+        if input.dim() != 5:
+            raise ValueError('expected 5D input (got {}D input)'.format(
+                input.dim()))
 
 
 class DynamicInstanceNorm(_InstanceNorm, MutableManageMixIn):

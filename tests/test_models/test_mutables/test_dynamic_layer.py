@@ -4,7 +4,7 @@ from unittest import TestCase
 import torch
 from torch import nn
 
-from mmrazor.models.mutators.utils import (dynamic_bn_converter,
+from mmrazor.models.mutators.utils import (dynamic_batch_norm_2d_converter,
                                            dynamic_conv2d_converter,
                                            dynamic_gn_converter,
                                            dynamic_in_converter,
@@ -75,30 +75,30 @@ class TestDynamicLayer(TestCase):
         mutable_cfgs = dict(num_features=num_features_cfg)
 
         bn = nn.BatchNorm2d(8)
-        dynamic_bn = dynamic_bn_converter(bn, mutable_cfgs)
+        dynamic_bn = dynamic_batch_norm_2d_converter(bn, mutable_cfgs)
         # test forward
         dynamic_bn(imgs)
 
         bn = nn.BatchNorm2d(8, momentum=0)
-        dynamic_bn = dynamic_bn_converter(bn, mutable_cfgs)
+        dynamic_bn = dynamic_batch_norm_2d_converter(bn, mutable_cfgs)
         # test forward
         dynamic_bn(imgs)
 
         bn = nn.BatchNorm2d(8)
         bn.train()
-        dynamic_bn = dynamic_bn_converter(bn, mutable_cfgs)
+        dynamic_bn = dynamic_batch_norm_2d_converter(bn, mutable_cfgs)
         # test forward
         dynamic_bn(imgs)
         # test num_batches_tracked is not None
         dynamic_bn(imgs)
 
         bn = nn.BatchNorm2d(8, affine=False)
-        dynamic_bn = dynamic_bn_converter(bn, mutable_cfgs)
+        dynamic_bn = dynamic_batch_norm_2d_converter(bn, mutable_cfgs)
         # test forward
         dynamic_bn(imgs)
 
         bn = nn.BatchNorm2d(8, track_running_stats=False)
-        dynamic_bn = dynamic_bn_converter(bn, mutable_cfgs)
+        dynamic_bn = dynamic_batch_norm_2d_converter(bn, mutable_cfgs)
         # test forward
         dynamic_bn(imgs)
 

@@ -13,7 +13,7 @@ from mmrazor import digit_version
 from mmrazor.models.mutables import OneShotMutableChannel
 from mmrazor.models.mutators import (OneShotChannelMutator,
                                      SlimmableChannelMutator)
-from mmrazor.models.mutators.utils import (dynamic_bn_converter,
+from mmrazor.models.mutators.utils import (dynamic_batch_norm_2d_converter,
                                            dynamic_conv2d_converter)
 from mmrazor.registry import MODELS
 from .utils import load_and_merge_channel_cfgs
@@ -125,11 +125,11 @@ class DynamicResBlock(Module):
 
         self.dynamic_op1 = dynamic_conv2d_converter(
             nn.Conv2d(3, 8, 1), mutable_cfgs)
-        self.dynamic_bn1 = dynamic_bn_converter(
+        self.dynamic_bn1 = dynamic_batch_norm_2d_converter(
             nn.BatchNorm2d(8), mutable_cfgs)
         self.dynamic_op2 = dynamic_conv2d_converter(
             nn.Conv2d(8, 8, 1), mutable_cfgs)
-        self.dynamic_bn2 = dynamic_bn_converter(
+        self.dynamic_bn2 = dynamic_batch_norm_2d_converter(
             nn.BatchNorm2d(8), mutable_cfgs)
         self.dynamic_op3 = dynamic_conv2d_converter(
             nn.Conv2d(8, 8, 1), mutable_cfgs)

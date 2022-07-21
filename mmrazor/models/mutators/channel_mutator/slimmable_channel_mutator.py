@@ -7,7 +7,8 @@ import torch.nn as nn
 from torch.nn import Module
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.architectures.dynamic_op import DynamicBatchNorm
+from mmrazor.core.tracer import PathList
+from mmrazor.models.architectures.dynamic_op import DynamicBatchNorm2d
 from mmrazor.models.mutables import OneShotMutableChannel
 from mmrazor.registry import MODELS
 from mmrazor.structures import PathList
@@ -108,7 +109,7 @@ class SlimmableChannelMutator(ChannelMutator):
         def traverse(module, prefix):
             for name, child in module.named_children():
                 module_name = prefix + name
-                if isinstance(child, DynamicBatchNorm):
+                if isinstance(child, DynamicBatchNorm2d):
                     mutable_cfgs = self.find_mutable_cfg_by_module_name(
                         module_name)
                     key = module_name + '.num_features_mutable'

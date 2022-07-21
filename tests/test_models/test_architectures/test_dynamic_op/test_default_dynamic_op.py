@@ -1,11 +1,15 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Tuple
 from unittest import TestCase
 
 import pytest
 import torch
 from torch import nn
 
-from mmrazor.models.architectures import DynamicConv2d, DynamicLinear
+from mmrazor.models.architectures import (DynamicBatchNorm1d,
+                                          DynamicBatchNorm2d,
+                                          DynamicBatchNorm3d, DynamicConv2d,
+                                          DynamicLinear)
 from mmrazor.models.architectures.dynamic_op import DynamicOP
 from mmrazor.models.subnet import export_fix_mutable, load_fix_subnet
 
@@ -13,8 +17,8 @@ from mmrazor.models.subnet import export_fix_mutable, load_fix_subnet
 class TestDefaultDynamicOP(TestCase):
 
     def test_dynamic_conv2d(self) -> None:
-        in_channels_cfg = dict(type='OneShotMutableChannel', num_channels=4)
-        out_channels_cfg = dict(type='OneShotMutableChannel', num_channels=10)
+        in_channels_cfg = dict(type='OneShotMutableChannel')
+        out_channels_cfg = dict(type='OneShotMutableChannel')
         mutable_cfgs = dict(
             in_channels=in_channels_cfg, out_channels=out_channels_cfg)
 
@@ -52,6 +56,9 @@ class TestDefaultDynamicOP(TestCase):
 >>>>>>> remove slimmable channel mutable and refactor dynamic op
 
         s_conv2d = d_conv2d.to_static_op()
+        assert s_conv2d.weight.size(0) == 4
+        assert s_conv2d.weight.size(1) == 3
+        assert s_conv2d.bias.size(0) == 4
         out2 = s_conv2d(x)
 
         self.assertTrue(torch.equal(out1, out2))
@@ -59,12 +66,10 @@ class TestDefaultDynamicOP(TestCase):
     def test_dynamic_conv2d_depthwise(self) -> None:
         in_channels_cfg = dict(
             type='OneShotMutableChannel',
-            num_channels=4,
             candidate_mode='number',
             candidate_choices=[4, 8, 10])
         out_channels_cfg = dict(
             type='OneShotMutableChannel',
-            num_channels=10,
             candidate_mode='number',
             candidate_choices=[4, 8, 10])
         mutable_cfgs = dict(
@@ -98,6 +103,9 @@ class TestDefaultDynamicOP(TestCase):
             load_fix_subnet(d_conv2d, fix_mutables)
 
         s_conv2d = d_conv2d.to_static_op()
+        assert s_conv2d.weight.size(0) == 8
+        assert s_conv2d.weight.size(1) == 1
+        assert s_conv2d.bias.size(0) == 8
         out2 = s_conv2d(x)
 >>>>>>> remove slimmable channel mutable and refactor dynamic op
 
@@ -106,12 +114,10 @@ class TestDefaultDynamicOP(TestCase):
     def test_dynamic_linear(self) -> None:
         in_features_cfg = dict(
             type='OneShotMutableChannel',
-            num_channels=4,
             candidate_mode='number',
             candidate_choices=[4, 8, 10])
         out_features_cfg = dict(
             type='OneShotMutableChannel',
-            num_channels=10,
             candidate_mode='number',
             candidate_choices=[4, 8, 10])
         mutable_cfgs = dict(
@@ -140,8 +146,53 @@ class TestDefaultDynamicOP(TestCase):
         assert isinstance(d_linear, DynamicOP)
 
         s_linear = d_linear.to_static_op()
+        assert s_linear.weight.size(0) == 4
+        assert s_linear.weight.size(1) == 8
+        assert s_linear.bias.size(0) == 4
         assert not isinstance(s_linear, DynamicOP)
         assert isinstance(s_linear, nn.Linear)
         out2 = s_linear(x)
 
         self.assertTrue(torch.equal(out1, out2))
+
+
+# TODO
+# unittest not support parametrize
+@pytest.mark.parametrize('dynamic_class,input_shape',
+                         [(DynamicBatchNorm1d, (10, 8, 224)),
+                          (DynamicBatchNorm2d, (10, 8, 224, 224)),
+                          (DynamicBatchNorm3d, (10, 8, 3, 224, 224))])
+def test_dynamic_bn(dynamic_class: nn.Module, input_shape: Tuple[int]) -> None:
+    num_features_cfg = dict(
+        type='OneShotMutableChannel',
+        candidate_mode='number',
+        candidate_choices=[4, 8, 10])
+    mutable_cfgs = dict(num_features=num_features_cfg)
+
+    d_bn = dynamic_class(mutable_cfgs=mutable_cfgs, num_features=10)
+
+    with pytest.raises(AssertionError):
+        d_bn.to_static_op()
+
+    d_bn.mutable_in.current_choice = 8
+
+    x = torch.rand(*input_shape)
+    out1 = d_bn(x)
+    assert out1.size(1) == 8
+
+    fix_mutables = export_fix_mutable(d_bn)
+    with pytest.raises(RuntimeError):
+        load_fix_subnet(d_bn, fix_mutables)
+    assert isinstance(d_bn, dynamic_class)
+    assert isinstance(d_bn, DynamicOP)
+
+    s_bn = d_bn.to_static_op()
+    assert s_bn.weight.size(0) == 8
+    assert s_bn.bias.size(0) == 8
+    assert s_bn.running_mean.size(0) == 8
+    assert s_bn.running_var.size(0) == 8
+    assert not isinstance(s_bn, DynamicOP)
+    assert isinstance(s_bn, getattr(nn, d_bn.batch_norm_type))
+    out2 = s_bn(x)
+
+    assert torch.equal(out1, out2)
