@@ -9,7 +9,7 @@ from torch import nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.mutators import DiffModuleMutator
-from mmrazor.models.subnet import (FIX_MUTABLE, SINGLE_MUTATOR_RANDOM_SUBNET,
+from mmrazor.models.subnet import (FIX_MUTABLE, export_fix_subnet,
                                    load_fix_subnet)
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
@@ -58,7 +58,7 @@ class Darts(BaseAlgorithm):
         # fix_subnet is not None, means subnet retraining.
         if fix_subnet:
             # According to fix_subnet, delete the unchosen part of supernet
-            load_fix_subnet(self, fix_subnet, prefix='architecture.')
+            load_fix_subnet(self.architecture, fix_subnet)
             self.is_supernet = False
         else:
             assert mutator is not None, \
@@ -83,13 +83,12 @@ class Darts(BaseAlgorithm):
         # TODO support unroll
         self.unroll = unroll
 
-    def sample_subnet(self) -> SINGLE_MUTATOR_RANDOM_SUBNET:
-        """Random sample subnet by mutator."""
-        return self.mutator.sample_choices()
+    def search_subnet(self):
+        """Search subnet by mutator."""
 
-    def set_subnet(self, subnet: SINGLE_MUTATOR_RANDOM_SUBNET):
-        """Set the subnet sampled by :meth:sample_subnet."""
+        subnet = self.mutator.sample_choices()
         self.mutator.set_choices(subnet)
+        return export_fix_subnet(self)
 
     def train(self, mode=True):
         """Convert the model into eval mode while keep normalization layer

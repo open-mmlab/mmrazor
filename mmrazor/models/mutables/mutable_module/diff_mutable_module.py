@@ -232,7 +232,7 @@ class DiffMutableOP(DiffMutableModule[str, str]):
         self.is_fixed = True
 
     def sample_choice(self, arch_param):
-        return list(self.choices.keys())[torch.argmax(arch_param).item()]
+        return self.choices[torch.argmax(arch_param).item()]
 
     def dump_chosen(self):
         assert self.current_choice is not None
@@ -412,7 +412,7 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
     def sample_choice(self, arch_param):
         sort_idx = torch.argsort(-arch_param).cpu().numpy().tolist()
         choice_idx = sort_idx[:self.num_chosen]
-        choice = self.choices.keys()[choice_idx]
+        choice = [self.choices[i] for i in choice_idx]
         return choice
 
 

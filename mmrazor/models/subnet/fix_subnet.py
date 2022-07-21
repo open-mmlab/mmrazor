@@ -58,12 +58,15 @@ def load_fix_subnet(model: nn.Module,
     _dynamic_to_static(model)
 
 
-def export_fix_mutable(model: nn.Module) -> FIX_MUTABLE:
+def export_fix_subnet(model: nn.Module) -> FIX_MUTABLE:
     """Export subnet that can be loaded by :func:`load_fix_subnet`."""
     fix_subnet = dict()
     for name, module in model.named_modules():
         if isinstance(module, BaseMutable):
             assert not module.is_fixed
-            fix_subnet[name] = module.dump_chosen()
+            if module.alias:
+                fix_subnet[module.alias] = module.dump_chosen()
+            else:
+                fix_subnet[name] = module.dump_chosen()
 
     return fix_subnet

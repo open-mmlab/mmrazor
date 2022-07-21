@@ -119,6 +119,7 @@ class ChannelMutator(BaseMutator):
             supernet (:obj:`torch.nn.Module`): The supernet to be searched
                 in your algorithm.
         """
+
         if self.tracer is not None:
             self.convert_dynamic_module(supernet, self.module_converters)
             # The mapping from a module name to the module
