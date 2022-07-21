@@ -1,7 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
 from abc import abstractmethod
-from typing import Dict, List, Optional
+from collections import OrderedDict
+from typing import Any, Dict, List, Optional
 
 from torch.nn import Module
 
@@ -11,13 +12,16 @@ from ...mutables import MutableChannel
 from ..base_mutator import BaseMutator
 from ..utils import DEFAULT_MODULE_CONVERTERS
 
+MUTABLE_CFG_TYPE = Dict[str, Any]
+MUTABLE_CFGS_TYPE = Dict[str, MUTABLE_CFG_TYPE]
+
 
 @MODELS.register_module()
 class ChannelMutator(BaseMutator):
     """Base class for channel-based mutators.
 
     Args:
-        mutable_cfg (dict): The config for the channel mutable.
+        mutable_cfgs (dict): The config for the channel mutable.
         tracer_cfg (dict | Optional): The config for the model tracer.
             We Trace the topology of a given model with the tracer.
         skip_prefixes (List[str] | Optional): The module whose name start with
@@ -40,14 +44,26 @@ class ChannelMutator(BaseMutator):
 
     def __init__(
         self,
-        mutable_cfg: Dict,
+        global_mutable_cfgs: Dict,
+        custom_mutable_cfgs: Optional[Dict] = None,
         tracer_cfg: Optional[Dict] = None,
         skip_prefixes: Optional[List[str]] = None,
         init_cfg: Optional[Dict] = None,
     ) -> None:
         super().__init__(init_cfg)
 
-        self.mutable_cfg = mutable_cfg
+        self._global_mutable_cfgs = copy.deepcopy(global_mutable_cfgs)
+        if custom_mutable_cfgs is not None:
+            sorted_custom_mutable_cfgs = sorted(
+                custom_mutable_cfgs.items(), key=lambda x: len(x[0]))
+            sorted_custom_mutable_cfgs = {
+                k: v
+                for k, v in sorted_custom_mutable_cfgs
+            }
+            self._custom_mutable_cfgs = OrderedDict(sorted_custom_mutable_cfgs)
+        else:
+            self._custom_mutable_cfgs = None
+
         if tracer_cfg:
             self.tracer = TASK_UTILS.build(tracer_cfg)
         else:
@@ -169,6 +185,20 @@ class ChannelMutator(BaseMutator):
 
         traverse(supernet, '')
 
+    # HACK
+    # use tree structure might be more clear
+    def find_mutable_cfg_by_module_name(self, module_name: str) -> Dict:
+        target_mutable_cfg = copy.deepcopy(self._global_mutable_cfgs)
+
+        if self._custom_mutable_cfgs is None:
+            return target_mutable_cfg
+
+        for prefix, mutable_cfg in self._custom_mutable_cfgs.items():
+            if module_name.startswith(prefix):
+                target_mutable_cfg.update(**mutable_cfg)
+
+        return target_mutable_cfg
+
     def convert_dynamic_module(self, supernet: Module, converters: Dict):
         """Replace the conv/linear/norm modules in the input supernet with
         dynamic ops.
@@ -185,9 +215,10 @@ class ChannelMutator(BaseMutator):
                 module_name = prefix + name
 
                 if type(child) in converters:
-                    mutable_cfg_ = copy.deepcopy(self.mutable_cfg)
+                    mutable_cfgs = self.find_mutable_cfg_by_module_name(
+                        module_name)
                     converter = converters[type(child)]
-                    layer = converter(child, mutable_cfg_, mutable_cfg_)
+                    layer = converter(child, mutable_cfgs)
                     setattr(module, name, layer)
                 else:
                     traverse(child, module_name + '.')

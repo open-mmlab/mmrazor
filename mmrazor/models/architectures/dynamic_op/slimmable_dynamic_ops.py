@@ -1,12 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
-from typing import Dict
+from typing import List
 
 import torch.nn as nn
 
 from mmrazor.models.mutables.mutable_channel import MutableChannel
 from mmrazor.registry import MODELS
-from .base import DynamicOP
+from .base import MUTABLE_CFGS_TYPE, DynamicOP
 
 
 class SwitchableBatchNorm2d(nn.Module, DynamicOP):
@@ -39,18 +38,20 @@ class SwitchableBatchNorm2d(nn.Module, DynamicOP):
             training and eval modes. Same as that in
             :obj:`torch.nn._BatchNorm`. Default: True
     """
+    accepted_mutable_keys = {'num_features'}
 
     def __init__(self,
-                 num_features_cfg: Dict,
+                 mutable_cfgs: MUTABLE_CFGS_TYPE,
+                 candidate_choices: List[int],
                  eps: float = 1e-5,
                  momentum: float = 0.1,
                  affine: bool = True,
                  track_running_stats: bool = True):
-        super(SwitchableBatchNorm2d, self).__init__()
+        super().__init__()
 
-        num_features_cfg = copy.deepcopy(num_features_cfg)
-        candidate_choices = num_features_cfg.pop('candidate_choices')
-        num_features_cfg.update(dict(num_channels=max(candidate_choices)))
+        mutable_cfgs = self.parse_mutable_cfgs(mutable_cfgs)
+        num_features_mutable = mutable_cfgs['num_features']
+        num_features_mutable.update(dict(num_channels=max(candidate_choices)))
 
         bns = [
             nn.BatchNorm2d(num_features, eps, momentum, affine,
@@ -59,25 +60,27 @@ class SwitchableBatchNorm2d(nn.Module, DynamicOP):
         ]
         self.bns = nn.ModuleList(bns)
 
-        self.mutable_num_features = MODELS.build(num_features_cfg)
+        self.num_features_mutable = MODELS.build(num_features_mutable)
 
     @property
     def mutable_in(self) -> MutableChannel:
         """Mutable `num_features`."""
-        return self.mutable_num_features
+        return self.num_features_mutable
 
     @property
     def mutable_out(self) -> MutableChannel:
         """Mutable `num_features`."""
-        return self.mutable_num_features
+        return self.num_features_mutable
 
     def forward(self, input):
         """Forward computation according to the current switch of the slimmable
         networks."""
-        idx = self.mutable_num_features.current_choice
+        current_choice = self.num_features_mutable.current_choice
+        idx = self.num_features_mutable.choices.index(current_choice)
         return self.bns[idx](input)
 
     def to_static_op(self) -> nn.Module:
-        bn_idx = self.mutable_num_features.current_choice
+        current_choice = self.num_features_mutable.current_choice
+        bn_idx = self.num_features_mutable.choices.index(current_choice)
 
         return self.bns[bn_idx]

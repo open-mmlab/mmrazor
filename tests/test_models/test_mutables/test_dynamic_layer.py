@@ -25,22 +25,21 @@ class TestDynamicLayer(TestCase):
             type='OneShotMutableChannel',
             candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
             candidate_mode='ratio')
+        mutable_cfgs = dict(
+            in_channels=in_channels_cfg, out_channels=out_channels_cfg)
 
         conv = nn.Conv2d(8, 8, 1)
-        dynamic_conv = dynamic_conv2d_converter(conv, in_channels_cfg,
-                                                out_channels_cfg)
+        dynamic_conv = dynamic_conv2d_converter(conv, mutable_cfgs)
         # test forward
         dynamic_conv(imgs)
 
         conv = nn.Conv2d(8, 8, 1, groups=8)
-        dynamic_conv = dynamic_conv2d_converter(conv, in_channels_cfg,
-                                                out_channels_cfg)
+        dynamic_conv = dynamic_conv2d_converter(conv, mutable_cfgs)
         # test forward
         dynamic_conv(imgs)
 
         conv = nn.Conv2d(8, 8, 1, groups=4)
-        dynamic_conv = dynamic_conv2d_converter(conv, in_channels_cfg,
-                                                out_channels_cfg)
+        dynamic_conv = dynamic_conv2d_converter(conv, mutable_cfgs)
         # test forward
         with self.assertRaisesRegex(NotImplementedError,
                                     'only support pruning the depth-wise'):
@@ -58,10 +57,11 @@ class TestDynamicLayer(TestCase):
             type='OneShotMutableChannel',
             candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
             candidate_mode='ratio')
+        mutable_cfgs = dict(
+            in_features=in_features_cfg, out_features=out_features_cfg)
 
         linear = nn.Linear(8, 8)
-        dynamic_linear = dynamic_linear_converter(linear, in_features_cfg,
-                                                  out_features_cfg)
+        dynamic_linear = dynamic_linear_converter(linear, mutable_cfgs)
         # test forward
         dynamic_linear(imgs)
 
@@ -72,32 +72,33 @@ class TestDynamicLayer(TestCase):
             type='OneShotMutableChannel',
             candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
             candidate_mode='ratio')
+        mutable_cfgs = dict(num_features=num_features_cfg)
 
         bn = nn.BatchNorm2d(8)
-        dynamic_bn = dynamic_bn_converter(bn, num_features_cfg)
+        dynamic_bn = dynamic_bn_converter(bn, mutable_cfgs)
         # test forward
         dynamic_bn(imgs)
 
         bn = nn.BatchNorm2d(8, momentum=0)
-        dynamic_bn = dynamic_bn_converter(bn, num_features_cfg)
+        dynamic_bn = dynamic_bn_converter(bn, mutable_cfgs)
         # test forward
         dynamic_bn(imgs)
 
         bn = nn.BatchNorm2d(8)
         bn.train()
-        dynamic_bn = dynamic_bn_converter(bn, num_features_cfg)
+        dynamic_bn = dynamic_bn_converter(bn, mutable_cfgs)
         # test forward
         dynamic_bn(imgs)
         # test num_batches_tracked is not None
         dynamic_bn(imgs)
 
         bn = nn.BatchNorm2d(8, affine=False)
-        dynamic_bn = dynamic_bn_converter(bn, num_features_cfg)
+        dynamic_bn = dynamic_bn_converter(bn, mutable_cfgs)
         # test forward
         dynamic_bn(imgs)
 
         bn = nn.BatchNorm2d(8, track_running_stats=False)
-        dynamic_bn = dynamic_bn_converter(bn, num_features_cfg)
+        dynamic_bn = dynamic_bn_converter(bn, mutable_cfgs)
         # test forward
         dynamic_bn(imgs)
 

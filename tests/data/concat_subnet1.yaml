@@ -1,24 +1,24 @@
-op1.mutable_in_channels:
+op1.in_channels_mutable:
   current_choice: 3
   origin_channels: 3
-op1.mutable_out_channels:
+op1.out_channels_mutable:
   current_choice: 4
   origin_channels: 8
-bn1.mutable_num_features:
+bn1.num_features_mutable:
   current_choice: 4
   origin_channels: 8
-op2.mutable_in_channels:
+op2.in_channels_mutable:
   current_choice: 3
   origin_channels: 3
-op2.mutable_out_channels:
+op2.out_channels_mutable:
   current_choice: 4
   origin_channels: 8
-bn2.mutable_num_features:
+bn2.num_features_mutable:
   current_choice: 4
   origin_channels: 8
-op3.mutable_in_channels:
+op3.in_channels_mutable:
   current_choice: 8
   origin_channels: 16
-op3.mutable_out_channels:
+op3.out_channels_mutable:
   current_choice: 8
   origin_channels: 8

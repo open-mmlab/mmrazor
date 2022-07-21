@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import torch
@@ -7,9 +7,11 @@ import torch
 from mmrazor.registry import MODELS
 from .mutable_channel import MutableChannel
 
+CANDIDATE_CHOICE_TYPE = List[Union[float, int]]
+
 
 @MODELS.register_module()
-class OneShotMutableChannel(MutableChannel[int, int]):
+class OneShotMutableChannel(MutableChannel[int, Dict]):
     """A type of ``MUTABLES`` for single path supernet such as AutoSlim. In
     single path supernet, each module only has one choice invoked at the same
     time. A path is obtained by sampling all the available choices. It is the
@@ -36,35 +38,40 @@ class OneShotMutableChannel(MutableChannel[int, int]):
 
     def __init__(self,
                  num_channels: int,
-                 candidate_choices: List,
-                 candidate_mode: str = 'ratio',
+                 candidate_mode: Optional[str] = None,
+                 candidate_choices: Optional[CANDIDATE_CHOICE_TYPE] = None,
                  init_cfg: Optional[Dict] = None):
         super(OneShotMutableChannel, self).__init__(
             num_channels=num_channels, init_cfg=init_cfg)
 
         self._current_choice = num_channels
-        assert len(candidate_choices) > 0, \
-            f'Number of candidate choices must be greater than 0, ' \
-            f'but got: {len(candidate_choices)}'
-        self._candidate_choices = candidate_choices
-        assert candidate_mode in ['ratio', 'number']
+
+        assert (candidate_mode is None and candidate_choices is None) or (
+            candidate_mode is not None and candidate_choices is not None)
+        if candidate_mode is not None:
+            self._check_candidate_mode(candidate_mode)
         self._candidate_mode = candidate_mode
+        if candidate_choices is not None:
+            self._check_candidate_choices(candidate_choices)
+        self._candidate_choices = candidate_choices
 
-        self._check_candidate_choices()
+    def _check_candidate_mode(self, candidate_mode: str) -> None:
+        assert candidate_mode in ['ratio', 'number']
 
-    def _check_candidate_choices(self):
+    def _check_candidate_choices(
+            self, candidate_choices: CANDIDATE_CHOICE_TYPE) -> None:
         """Check if the input `candidate_choices` is valid."""
         if self._candidate_mode == 'number':
             assert all([num > 0 and num <= self.num_channels
-                        for num in self._candidate_choices]), \
+                        for num in candidate_choices]), \
                 f'The candidate channel numbers should be in ' \
                 f'range(0, {self.num_channels}].'
             assert all([isinstance(num, int)
-                        for num in self._candidate_choices]), \
+                        for num in candidate_choices]), \
                 'Type of `candidate_choices` should be int.'
         else:
             assert all([
-                ratio > 0 and ratio <= 1 for ratio in self._candidate_choices
+                ratio > 0 and ratio <= 1 for ratio in candidate_choices
             ]), 'The candidate ratio should be in range(0, 1].'
 
     def sample_choice(self) -> int:
@@ -105,13 +112,30 @@ class OneShotMutableChannel(MutableChannel[int, int]):
     def current_choice(self, choice: int):
         """Set the current choice of the mutable."""
         assert choice in self.choices
+        assert len(self.concat_parent_mutables) == 0
+
         self._current_choice = choice
+
+    def set_candidate_choices(
+            self, candidate_mode: str,
+            candidate_choices: CANDIDATE_CHOICE_TYPE) -> None:
+        assert self._candidate_choices is None, \
+            '`candidate_choices` has already been set'
+        self._check_candidate_mode(candidate_mode)
+        self._candidate_mode = candidate_mode
+        self._check_candidate_choices(candidate_choices)
+        self._candidate_choices = candidate_choices
 
     @property
     def choices(self) -> List[int]:
         """list: all choices. """
+        assert self._candidate_choices is not None, \
+            '`candidate_choices` must be set before access'
         if self._candidate_mode == 'number':
+            self._candidate_choices: List[int]
             return self._candidate_choices
+
+        self._candidate_choices: List[float]
         candidate_choices = [
             round(ratio * self.num_channels)
             for ratio in self._candidate_choices
@@ -129,5 +153,19 @@ class OneShotMutableChannel(MutableChannel[int, int]):
         mask[:num_channels] = True
         return mask
 
-    def dump_chosen(self) -> int:
-        return self.current_choice
+    def dump_chosen(self) -> Dict:
+        assert self.current_choice is not None
+
+        return dict(
+            current_choice=self.current_choice,
+            origin_channels=self.num_channels)
+
+    def fix_chosen(self, dumped_chosen: Dict) -> None:
+        chosen = dumped_chosen['current_choice']
+        origin_channels = dumped_chosen['origin_channels']
+
+        assert chosen <= origin_channels
+
+        super().fix_chosen(chosen)
+
+        self._candidate_choices = [chosen]

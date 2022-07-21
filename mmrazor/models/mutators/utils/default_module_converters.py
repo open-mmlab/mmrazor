@@ -11,8 +11,8 @@ from ...architectures import (DynamicBatchNorm, DynamicConv2d,
                               DynamicLinear)
 
 
-def dynamic_conv2d_converter(module: nn.Conv2d, in_channels_cfg: Dict,
-                             out_channels_cfg: Dict) -> DynamicConv2d:
+def dynamic_conv2d_converter(module: nn.Conv2d,
+                             mutable_cfgs: Dict) -> DynamicConv2d:
     """Convert a nn.Conv2d module to a DynamicConv2d.
 
     Args:
@@ -21,8 +21,7 @@ def dynamic_conv2d_converter(module: nn.Conv2d, in_channels_cfg: Dict,
         out_channels_cfg (Dict): Config related to `out_channels`.
     """
     dynamic_conv = DynamicConv2d(
-        in_channels_cfg=in_channels_cfg,
-        out_channels_cfg=out_channels_cfg,
+        mutable_cfgs=mutable_cfgs,
         in_channels=module.in_channels,
         out_channels=module.out_channels,
         kernel_size=module.kernel_size,
@@ -35,8 +34,8 @@ def dynamic_conv2d_converter(module: nn.Conv2d, in_channels_cfg: Dict,
     return dynamic_conv
 
 
-def dynamic_linear_converter(module: nn.Linear, in_channels_cfg: Dict,
-                             out_channels_cfg: Dict) -> DynamicLinear:
+def dynamic_linear_converter(module: nn.Linear,
+                             mutable_cfgs: Dict) -> DynamicLinear:
     """Convert a nn.Linear module to a DynamicLinear.
 
     Args:
@@ -45,18 +44,15 @@ def dynamic_linear_converter(module: nn.Linear, in_channels_cfg: Dict,
         out_features_cfg (Dict): Config related to `out_features`.
     """
     dynamic_linear = DynamicLinear(
-        in_features_cfg=in_channels_cfg,
-        out_features_cfg=out_channels_cfg,
+        mutable_cfgs=mutable_cfgs,
         in_features=module.in_features,
         out_features=module.out_features,
         bias=True if module.bias is not None else False)
     return dynamic_linear
 
 
-def dynamic_bn_converter(
-        module: _BatchNorm,
-        in_channels_cfg: Dict,
-        out_channels_cfg: Optional[Dict] = None) -> DynamicBatchNorm:
+def dynamic_bn_converter(module: _BatchNorm,
+                         mutable_cfgs: Dict) -> DynamicBatchNorm:
     """Convert a _BatchNorm module to a DynamicBatchNorm.
 
     Args:
@@ -64,7 +60,7 @@ def dynamic_bn_converter(
         num_features_cfg (Dict): Config related to `num_features`.
     """
     dynamic_bn = DynamicBatchNorm(
-        num_features_cfg=in_channels_cfg,
+        mutable_cfgs=mutable_cfgs,
         num_features=module.num_features,
         eps=module.eps,
         momentum=module.momentum,

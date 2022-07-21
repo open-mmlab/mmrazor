@@ -8,7 +8,7 @@ from torch.nn import Module
 from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.architectures.dynamic_op import DynamicBatchNorm
-from mmrazor.models.mutables import SlimmableMutableChannel
+from mmrazor.models.mutables import OneShotMutableChannel
 from mmrazor.registry import MODELS
 from mmrazor.structures import PathList
 from ..utils import switchable_bn_converter
@@ -26,7 +26,7 @@ class SlimmableChannelMutator(ChannelMutator):
 
     Args:
         channel_cfgs (list[Dict]): A list of candidate channel configs.
-        mutable_cfg (dict): The config for the channel mutable.
+        mutable_cfgs (dict): The config for the channel mutable.
         skip_prefixes (List[str] | Optional): The module whose name start with
             a string in skip_prefixes will not be pruned.
         init_cfg (dict, optional): The config to control the initialization.
@@ -34,12 +34,14 @@ class SlimmableChannelMutator(ChannelMutator):
 
     def __init__(self,
                  channel_cfgs: Dict,
-                 mutable_cfg: Dict,
-                 tracer_cfg: Dict,
+                 global_mutable_cfgs: Dict,
+                 custom_mutable_cfgs: Optional[Dict] = None,
+                 tracer_cfg: Optional[Dict] = None,
                  skip_prefixes: Optional[List[str]] = None,
                  init_cfg: Optional[Dict] = None):
         super(SlimmableChannelMutator, self).__init__(
-            mutable_cfg=mutable_cfg,
+            global_mutable_cfgs=global_mutable_cfgs,
+            custom_mutable_cfgs=custom_mutable_cfgs,
             tracer_cfg=tracer_cfg,
             skip_prefixes=skip_prefixes,
             init_cfg=init_cfg)
@@ -87,9 +89,11 @@ class SlimmableChannelMutator(ChannelMutator):
             ``SlimmableChannelMutable``
         """
         for name, module in supernet.named_modules():
-            if isinstance(module, SlimmableMutableChannel):
+            if isinstance(module, OneShotMutableChannel):
                 candidate_choices = self.channel_cfgs[name]['current_choice']
-                module.candidate_choices = candidate_choices
+                module.set_candidate_choices(
+                    candidate_mode='number',
+                    candidate_choices=candidate_choices)
 
     def convert_switchable_bn(self, supernet):
         """Replace ``DynamicBatchNorm`` in supernet with
@@ -99,19 +103,19 @@ class SlimmableChannelMutator(ChannelMutator):
             supernet (:obj:`torch.nn.Module`): The architecture to be converted
                 in your algorithm.
         """
+        print(self.channel_cfgs)
 
         def traverse(module, prefix):
             for name, child in module.named_children():
                 module_name = prefix + name
                 if isinstance(child, DynamicBatchNorm):
-                    mutable_cfg = copy.deepcopy(self.mutable_cfg)
-                    key = module_name + '.mutable_num_features'
+                    mutable_cfgs = self.find_mutable_cfg_by_module_name(
+                        module_name)
+                    key = module_name + '.num_features_mutable'
                     candidate_choices = self.channel_cfgs[key][
                         'current_choice']
-                    mutable_cfg.update(
-                        dict(candidate_choices=candidate_choices))
-                    sbn = switchable_bn_converter(child, mutable_cfg,
-                                                  mutable_cfg)
+                    sbn = switchable_bn_converter(child, mutable_cfgs,
+                                                  candidate_choices)
                     # TODO
                     # bind twice?
                     sbn.mutable_out.bind_mutable_name(module_name)
@@ -131,8 +135,9 @@ class SlimmableChannelMutator(ChannelMutator):
             idx (int): The index of the current subnet.
         """
         for name, module in self.name2module.items():
-            if isinstance(module, SlimmableMutableChannel):
-                module.current_choice = idx
+            if isinstance(module, OneShotMutableChannel):
+                if len(module.concat_parent_mutables) == 0:
+                    module.current_choice = module.choices[idx]
 
     def build_search_groups(self, supernet: Module):
         """Build `search_groups`.
@@ -147,4 +152,4 @@ class SlimmableChannelMutator(ChannelMutator):
         Returns:
             Type[OneShotMutableModule]: Class type of one-shot mutable.
         """
-        return SlimmableMutableChannel
+        return OneShotMutableChannel
