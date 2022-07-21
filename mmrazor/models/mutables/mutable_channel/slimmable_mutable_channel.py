@@ -40,7 +40,8 @@ class SlimmableMutableChannel(MutableChannel[int, Dict[str, int]]):
                     for num in self._candidate_choices]), \
             f'The candidate channel numbers should be in ' \
             f'range(0, {self.num_channels}].'
-        assert all([isinstance(num, int) for num in self._candidate_choices]), \
+        assert all(
+            [isinstance(num, int) for num in self._candidate_choices]), \
             'Type of `candidate_choices` should be int.'
 
     @property

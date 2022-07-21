@@ -32,6 +32,26 @@ def _ntuple(n):
 _pair = _ntuple(2)
 
 
+def _get_current_kernel_pos(source_kernel_size: int,
+                            target_kernel_size: int) -> Tuple[int, int]:
+    assert source_kernel_size > target_kernel_size, \
+        '`source_kernel_size` must greater than `target_kernel_size`'
+
+    center = source_kernel_size >> 1
+    current_offset = target_kernel_size >> 1
+
+    start_offset = center - current_offset
+    end_offset = center + current_offset + 1
+
+    return start_offset, end_offset
+
+
+def _get_same_padding(kernel_size: int) -> Tuple[int]:
+    assert kernel_size & 1
+
+    return _pair(kernel_size >> 1)
+
+
 class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
     """Applies a 2D convolution over an input signal composed of several input
     planes according to the `mutable_in_channels` and `mutable_out_channels`
@@ -145,7 +165,7 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
         weight, padding = self.get_dynamic_params_by_kernel_size_mutable(
             self.weight)
 
-        # 2. slice in/out channel of weight according to in_channels/out_channels mutable
+        # 2. slice in/out channel of weight according to in_channels/out_channels mutable  # noqa: E501
         weight, bias = self.get_dynamic_params_by_channels_mutable(
             weight, self.bias)
         return weight, bias, padding
@@ -215,30 +235,10 @@ class ProgressiveDynamicConv2d(DynamicConv2d):
     def _get_transform_matrix_name(src: int, tar: int) -> str:
         return f'transform_matrix_{src}to{tar}'
 
-    @staticmethod
-    def _get_current_kernel_pos(source_kernel_size: int,
-                                target_kernel_size: int) -> Tuple[int, int]:
-        assert source_kernel_size > target_kernel_size, \
-            '`source_kernel_size` must greater than `target_kernel_size`'
-
-        center = source_kernel_size >> 1
-        current_offset = target_kernel_size >> 1
-
-        start_offset = center - current_offset
-        end_offset = center + current_offset + 1
-
-        return start_offset, end_offset
-
-    @staticmethod
-    def _get_same_padding(kernel_size: int) -> Tuple[int]:
-        assert kernel_size & 1
-
-        return _pair(kernel_size >> 1)
-
     def get_dynamic_params_by_kernel_size_mutable(
             self, weight: Tensor) -> Tuple[Tensor, Tuple[int]]:
         current_kernel_size = self.kernel_size_mutable.current_choice
-        current_padding = self._get_same_padding(current_kernel_size)
+        current_padding = _get_same_padding(current_kernel_size)
         if _pair(current_kernel_size) == self.kernel_size:
             return weight, current_padding
 
@@ -253,7 +253,7 @@ class ProgressiveDynamicConv2d(DynamicConv2d):
                 self._get_transform_matrix_name(
                     src=source_kernel_size, tar=target_kernel_size))
 
-            start_offset, end_offset = self._get_current_kernel_pos(
+            start_offset, end_offset = _get_current_kernel_pos(
                 source_kernel_size=source_kernel_size,
                 target_kernel_size=target_kernel_size)
             target_weight = current_weight[:, :, start_offset:end_offset,
@@ -265,6 +265,37 @@ class ProgressiveDynamicConv2d(DynamicConv2d):
                 target_kernel_size)
 
             current_weight = target_weight
+
+        return current_weight, current_padding
+
+
+class CenterCropDynamicConv2d(DynamicConv2d):
+
+    def __init__(self, *, mutable_cfgs: MUTABLE_CFGS_TYPE,
+                 **conv_kwargs) -> None:
+        super().__init__(mutable_cfgs=mutable_cfgs, **conv_kwargs)
+
+        max_choice = self.kernel_size_mutable.max_choice
+        if _pair(max_choice) != self.kernel_size:
+            raise ValueError('Max choice of kernel size mutable must be the '
+                             'same as Conv2d kernel size, but got max '
+                             f'choice: {max_choice}, expected max '
+                             f'kernel size: {self.kernel_size[0]}.')
+
+        assert self.kernel_size_mutable is not None
+
+    def get_dynamic_params_by_kernel_size_mutable(
+            self, weight: Tensor) -> Tuple[Tensor, Tuple[int]]:
+        current_kernel_size = self.kernel_size_mutable.current_choice
+        current_padding = _get_same_padding(current_kernel_size)
+        if _pair(current_kernel_size) == self.kernel_size:
+            return weight, current_padding
+
+        start_offset, end_offset = _get_current_kernel_pos(
+            source_kernel_size=self.kernel_size[0],
+            target_kernel_size=current_kernel_size)
+        current_weight = \
+            weight[:, :, start_offset:end_offset, start_offset:end_offset]
 
         return current_weight, current_padding
 
