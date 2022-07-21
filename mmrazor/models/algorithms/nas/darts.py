@@ -1,10 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
+import os
 from typing import Dict, List, Optional, Union
 
 import torch
-from mmengine import BaseDataElement
-from mmengine.model import BaseModel
+from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper, OptimWrapperDict
 from torch import nn
 from torch.nn.modules.batchnorm import _BatchNorm
@@ -12,8 +11,9 @@ from torch.nn.modules.batchnorm import _BatchNorm
 from mmrazor.models.mutators import DiffModuleMutator
 from mmrazor.models.subnet import (FIX_MUTABLE, SINGLE_MUTATOR_RANDOM_SUBNET,
                                    load_fix_subnet)
-from mmrazor.registry import MODELS
-from ..base import BaseAlgorithm, LossResults
+from mmrazor.models.utils import add_prefix
+from mmrazor.registry import MODEL_WRAPPERS, MODELS
+from ..base import BaseAlgorithm
 
 
 @MODELS.register_module()
@@ -42,17 +42,6 @@ class Darts(BaseAlgorithm):
         Darts has two training mode: supernet training and subnet retraining.
         If `fix_subnet` is None, it means supernet training.
         If `fix_subnet` is not None, it means subnet training.
-
-    Note:
-        During supernet training, since each op is not fully trained, the
-        statistics of :obj:_BatchNorm are inaccurate. This problem affects the
-        evaluation of the performance of each subnet in the search phase. There
-        are usually two ways to solve this problem, both need to set
-        `norm_training` to True:
-
-        1) Using a large batch size, BNs use the mean and variance of the
-           current batch during forward.
-        2) Recalibrate the statistics of BN before searching.
     """
 
     def __init__(self,
@@ -85,12 +74,13 @@ class Darts(BaseAlgorithm):
 
             # Mutator is an essential component of the NAS algorithm. It
             # provides some APIs commonly used by NAS.
-            # Before using it, you must do some preparations according to
+            # Before using it, you must do some preparation according to
             # the supernet.
             self.mutator.prepare_from_supernet(self.architecture)
             self.is_supernet = True
 
         self.norm_training = norm_training
+        # TODO support unroll
         self.unroll = unroll
 
     def sample_subnet(self) -> SINGLE_MUTATOR_RANDOM_SUBNET:
@@ -100,19 +90,6 @@ class Darts(BaseAlgorithm):
     def set_subnet(self, subnet: SINGLE_MUTATOR_RANDOM_SUBNET):
         """Set the subnet sampled by :meth:sample_subnet."""
         self.mutator.set_choices(subnet)
-
-    def loss(
-        self,
-        batch_inputs: torch.Tensor,
-        data_samples: Optional[List[BaseDataElement]] = None,
-    ) -> LossResults:
-        """Calculate losses from a batch of inputs and data samples."""
-        if self.is_supernet:
-            random_subnet = self.sample_subnet()
-            self.set_subnet(random_subnet)
-            return self.architecture(batch_inputs, data_samples, mode='loss')
-        else:
-            return self.architecture(batch_inputs, data_samples, mode='loss')
 
     def train(self, mode=True):
         """Convert the model into eval mode while keep normalization layer
@@ -133,6 +110,7 @@ class Darts(BaseAlgorithm):
         hook. Note that in some complicated cases or models, the whole process
         including back propagation and optimizer updating are also defined in
         this method, such as GAN.
+
         Args:
             data (dict): The output of dataloader.
             optimizer (:obj:`torch.optim.Optimizer` | dict): The optimizer of
@@ -152,127 +130,119 @@ class Darts(BaseAlgorithm):
         if isinstance(data, (tuple, list)) and isinstance(
                 optim_wrapper, OptimWrapperDict):
             assert len(data) == len(optim_wrapper), \
-                f'The length of data {len(data)} should be equal to that of optimizers {len(optim_wrapper)}.'  # noqa: E501
-
+                f'The length of data ({len(data)}) should be equal to that '\
+                f'of optimizers ({len(optim_wrapper)}).'
             # TODO check the order of data
-            train_supernet_data, train_arch_data = data
+            supernet_data, mutator_data = data
 
-            # TODO mutator optimizer zero_grad
-            optim_wrapper.zero_grad()
+            log_vars = dict()
+            # TODO support unroll
+            with optim_wrapper['mutator'].optim_context(self):
+                mutator_batch_inputs, mutator_data_samples = \
+                    self.data_preprocessor(mutator_data, True)
+                mutator_loss = self(
+                    mutator_batch_inputs, mutator_data_samples, mode='loss')
+            mutator_losses, mutator_log_vars = self.parse_losses(mutator_loss)
+            optim_wrapper['mutator'].update_params(mutator_losses)
+            log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
 
-            if self.unroll:
-                self._unrolled_backward(train_arch_data, train_supernet_data,
-                                        optim_wrapper)  # TODO optimizer
-            else:
-                # TODO process the input
-                arch_loss = self.loss(train_arch_data)  # noqa: F841
-                # arch_loss.backward()
+            with optim_wrapper['architecture'].optim_context(self):
+                supernet_batch_inputs, supernet_data_samples = \
+                    self.data_preprocessor(supernet_data, True)
+                supernet_loss = self(
+                    supernet_batch_inputs, supernet_data_samples, mode='loss')
+            supernet_losses, supernet_log_vars = self.parse_losses(
+                supernet_loss)
+            optim_wrapper['architecture'].update_params(supernet_losses)
+            log_vars.update(add_prefix(supernet_log_vars, 'supernet'))
 
-            # TODO mutator optimizer step
-            optim_wrapper.step()
-
-            model_loss = self.loss(train_supernet_data)
-
-            # TODO optimizer architecture zero_grad
-            optim_wrapper.zero_grad()
-            # model_loss.backward()
-
-            nn.utils.clip_grad_norm_(
-                self.architecture.parameters(), max_norm=5, norm_type=2)
-
-            # TODO optimizer architecture step
-            optim_wrapper.step()
-
-            outputs = dict(
-                loss=model_loss,
-                num_samples=len(train_supernet_data['img'].data))
         else:
-            outputs = super().train_step(data, optim_wrapper)
+            # Enable automatic mixed precision training context.
+            with optim_wrapper.optim_context(self):
+                batch_inputs, data_samples = self.data_preprocessor(data, True)
+                losses = self(batch_inputs, data_samples, mode='loss')
+            parsed_losses, log_vars = self.parse_losses(losses)
+            optim_wrapper.update_params(parsed_losses)
 
-        return outputs
+        return log_vars
 
-    def _unrolled_backward(self, train_arch_data, train_supernet_data,
-                           optimizer):
-        """Compute unrolled loss and backward its gradients."""
-        backup_params = copy.deepcopy(tuple(self.architecture.parameters()))
 
-        # do virtual step on training data
-        lr = optimizer['architecture'].param_groups[0]['lr']
-        momentum = optimizer['architecture'].param_groups[0]['momentum']
-        weight_decay = optimizer['architecture'].param_groups[0][
-            'weight_decay']
-        self._compute_virtual_model(train_supernet_data, lr, momentum,
-                                    weight_decay, optimizer)
+@MODEL_WRAPPERS.register_module()
+class DartsDDP(MMDistributedDataParallel):
 
-        # calculate unrolled loss on validation data
-        # keep gradients for model here for compute hessian
-        losses = self(**train_arch_data)
-        loss, _ = self._parse_losses(losses)
-        w_model, w_arch = tuple(self.architecture.parameters()), tuple(
-            self.mutator.parameters())
-        w_grads = torch.autograd.grad(loss, w_model + w_arch)
-        d_model, d_arch = w_grads[:len(w_model)], w_grads[len(w_model):]
+    def __init__(self,
+                 *,
+                 device_ids: Optional[Union[List, int, torch.device]] = None,
+                 **kwargs) -> None:
+        if device_ids is None:
+            if os.environ.get('LOCAL_RANK') is not None:
+                device_ids = [int(os.environ['LOCAL_RANK'])]
+        super().__init__(device_ids=device_ids, **kwargs)
 
-        # compute hessian and final gradients
-        hessian = self._compute_hessian(backup_params, d_model,
-                                        train_supernet_data)
-        with torch.no_grad():
-            for param, d, h in zip(w_arch, d_arch, hessian):
-                # gradient = dalpha - lr * hessian
-                param.grad = d - lr * h
+    def train_step(self, data: List[dict],
+                   optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
+        """The iteration step during training.
 
-        # restore weights
-        self._restore_weights(backup_params)
+        This method defines an iteration step during training, except for the
+        back propagation and optimizer updating, which are done in an optimizer
+        hook. Note that in some complicated cases or models, the whole process
+        including back propagation and optimizer updating are also defined in
+        this method, such as GAN.
 
-    def _compute_virtual_model(self, data, lr, momentum, weight_decay,
-                               optimizer):
-        """Compute unrolled weights w`"""
-        # don't need zero_grad, using autograd to calculate gradients
-        losses = self(**data)
-        loss, _ = self._parse_losses(losses)
-        gradients = torch.autograd.grad(loss, self.architecture.parameters())
-        with torch.no_grad():
-            for w, g in zip(self.architecture.parameters(), gradients):
-                m = optimizer['architecture'].state[w].get(
-                    'momentum_buffer', 0.)
-                w = w - lr * (momentum * m + g + weight_decay * w)
-
-    def _restore_weights(self, backup_params):
-        with torch.no_grad():
-            for param, backup in zip(self.architecture.parameters(),
-                                     backup_params):
-                param.copy_(backup)
-
-    def _compute_hessian(self, backup_params, dw, data):
+        Args:
+            data (dict): The output of dataloader.
+            optimizer (:obj:`torch.optim.Optimizer` | dict): The optimizer of
+                runner is passed to ``train_step()``. This argument is unused
+                and reserved.
+        Returns:
+            dict: It should contain at least 3 keys: ``loss``, ``log_vars``,
+                ``num_samples``.
+                ``loss`` is a tensor for back propagation, which can be a
+                weighted sum of multiple losses.
+                ``log_vars`` contains all the variables to be sent to the
+                logger.
+                ``num_samples`` indicates the batch size (when the model is
+                DDP, it means the batch size on each GPU), which is used for
+                averaging the logs.
         """
-            dw = dw` { L_val(w`, alpha) }
-            w+ = w + eps * dw
-            w- = w - eps * dw
-            hessian = (dalpha { L_trn(w+, alpha) }  \
-                - dalpha { L_trn(w-, alpha) }) / (2*eps)
-            eps = 0.01 / ||dw||
-        """
-        self._restore_weights(backup_params)
-        norm = torch.cat([w.view(-1) for w in dw]).norm()
-        eps = 0.01 / norm
-        if norm < 1E-8:
-            print(
-                'In computing hessian, norm is smaller than 1E-8, \
-                cause eps to be %.6f.', norm.item())
+        if isinstance(data, (tuple, list)) and isinstance(
+                optim_wrapper, OptimWrapperDict):
+            assert len(data) == len(optim_wrapper), \
+                f'The length of data ({len(data)}) should be equal to that '\
+                f'of optimizers ({len(optim_wrapper)}).'
+            # TODO check the order of data
+            supernet_data, mutator_data = data
 
-        dalphas = []
-        for e in [eps, -2. * eps]:
-            # w+ = w + eps*dw`, w- = w - eps*dw`
-            with torch.no_grad():
-                for p, d in zip(self.architecture.parameters(), dw):
-                    p += e * d
+            log_vars = dict()
+            # TODO process the input
 
-            losses = self(**data)
-            loss, _ = self._parse_losses(losses)
-            dalphas.append(
-                torch.autograd.grad(loss, tuple(self.mutator.parameters())))
-        # dalpha { L_trn(w+) }, # dalpha { L_trn(w-) }
-        dalpha_pos, dalpha_neg = dalphas
-        hessian = [(p - n) / (2. * eps)
-                   for p, n in zip(dalpha_pos, dalpha_neg)]
-        return hessian
+            with optim_wrapper['mutator'].optim_context(self):
+                mutator_batch_inputs, mutator_data_samples = \
+                    self.module.data_preprocessor(mutator_data, True)
+                mutator_loss = self(
+                    mutator_batch_inputs, mutator_data_samples, mode='loss')
+            mutator_losses, mutator_log_vars = self.module.parse_losses(
+                mutator_loss)
+            optim_wrapper['mutator'].update_params(mutator_losses)
+            log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
+
+            with optim_wrapper['architecture'].optim_context(self):
+                supernet_batch_inputs, supernet_data_samples = \
+                    self.module.data_preprocessor(supernet_data, True)
+                supernet_loss = self(
+                    supernet_batch_inputs, supernet_data_samples, mode='loss')
+            supernet_losses, supernet_log_vars = self.module.parse_losses(
+                supernet_loss)
+            optim_wrapper['architecture'].update_params(supernet_losses)
+            log_vars.update(add_prefix(supernet_log_vars, 'supernet'))
+
+        else:
+            # Enable automatic mixed precision training context.
+            with optim_wrapper.optim_context(self):
+                batch_inputs, data_samples = self.module.data_preprocessor(
+                    data, True)
+                losses = self(batch_inputs, data_samples, mode='loss')
+            parsed_losses, log_vars = self.module.parse_losses(losses)
+            optim_wrapper.update_params(parsed_losses)
+
+        return log_vars
