@@ -35,16 +35,23 @@ def load_fix_subnet(model: nn.Module,
     if not isinstance(fix_mutable, dict):
         raise TypeError('fix_mutable should be a `str` or `dict`'
                         f'but got {type(fix_mutable)}')
-
-    # fix mutable
     for name, module in model.named_modules():
+        # The format of `chosen`` is different for each type of mutable.
+        # In the corresponding mutable, it will check whether the `chosen`
+        # format is correct.
         if isinstance(module, BaseMutable):
-            mutable_name = name.lstrip(prefix)
-            assert mutable_name in fix_mutable, \
-                f'{mutable_name} is not in fix_mutable {fix_mutable}, ' \
-                'please check your `fix_mutable`.'
-
-            chosen = fix_mutable.get(mutable_name)
+            if getattr(module, 'alias', None):
+                alias = module.alias
+                assert alias in fix_mutable, \
+                    f'The alias {alias} is not in fix_modules, ' \
+                    'please check your `fix_mutable`.'
+                chosen = fix_mutable.get(alias, None)
+            else:
+                mutable_name = name.lstrip(prefix)
+                assert mutable_name in fix_mutable, \
+                    f'The module name {mutable_name} is not in ' \
+                    'fix_mutable, please check your `fix_mutable`.'
+                chosen = fix_mutable.get(mutable_name, None)
             module.fix_chosen(chosen)
 
     # convert dynamic op to static op

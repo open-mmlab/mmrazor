@@ -53,6 +53,7 @@ class DartsEpochBasedTrainLoop(EpochBasedTrainLoop):
         """Iterate one epoch."""
         self.runner.call_hook('before_train_epoch')
         self.runner.model.train()
+
         for idx, data_batch in enumerate(self.dataloader_multi):
             self.run_iter(idx, data_batch)
 

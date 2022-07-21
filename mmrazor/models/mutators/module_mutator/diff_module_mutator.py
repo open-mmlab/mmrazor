@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import torch.nn as nn
 
@@ -38,6 +38,7 @@ class DiffModuleMutator(ModuleMutator):
 
         super().prepare_from_supernet(supernet)
         self.arch_params = self.build_arch_params()
+        self.modify_supernet_forward(self.arch_params)
 
     def build_arch_params(self):
         """This function will build many arch params, which are generally used
@@ -49,15 +50,15 @@ class DiffModuleMutator(ModuleMutator):
             torch.nn.ParameterDict: the arch params are got by `search_groups`.
         """
 
-        arch_params: Dict[int, nn.Parameter] = dict()
+        arch_params = nn.ParameterDict()
 
         for group_id, modules in self.search_groups.items():
             group_arch_param = modules[0].build_arch_param()
-            arch_params[group_id] = group_arch_param
+            arch_params[str(group_id)] = group_arch_param
 
         return arch_params
 
-    def modify_supernet_forward(self):
+    def modify_supernet_forward(self, arch_params):
         """Modify the DiffMutableModule's default arch_param in forward.
 
         In MMRazor, the `arch_param` is along to `DiffModuleMutator`, while the
@@ -66,9 +67,40 @@ class DiffModuleMutator(ModuleMutator):
         `DiffMutableModule`.
         """
 
-        for group_id, modules in self.search_groups.items():
-            for module in modules:
-                module.set_forward_args(arch_param=self.arch_params[group_id])
+        for group_id, mutables in self.search_groups.items():
+            for m in mutables:
+                m.set_forward_args(arch_param=arch_params[str(group_id)])
+
+    def sample_choices(self):
+        """Sampling by search groups.
+
+        The sampling result of the first mutable of each group is the sampling
+        result of this group.
+
+        Returns:
+            Dict[int, Any]: Random choices dict.
+        """
+
+        choices = dict()
+        for group_id, mutables in self.search_groups.items():
+            arch_parm = self.arch_params[str(group_id)]
+            choice = mutables[0].sample_choice(arch_parm)
+            choices[group_id] = choice
+        return choices
+
+    def set_choices(self, choices: Dict[int, Any]) -> None:
+        """Set mutables' current choice according to choices sample by
+        :func:`sample_choices`.
+
+        Args:
+            choices (Dict[int, Any]): Choices dict. The key is group_id in
+                search groups, and the value is the sampling results
+                corresponding to this group.
+        """
+        for group_id, mutables in self.search_groups.items():
+            choice = choices[group_id]
+            for m in mutables:
+                m.current_choice = choice
 
     @property
     def mutable_class_type(self):
