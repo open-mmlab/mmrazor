@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 

@@ -4,9 +4,11 @@ from .mutable_channel import (MutableChannel, OneShotMutableChannel,
 from .mutable_manage_mixin import MutableManageMixIn
 from .mutable_module import (DiffChoiceRoute, DiffMutableModule, DiffMutableOP,
                              OneShotMutableModule, OneShotMutableOP)
+from .mutable_value import MutableValue, OneShotMutableValue
 
 __all__ = [
     'OneShotMutableOP', 'OneShotMutableModule', 'DiffMutableOP',
     'DiffChoiceRoute', 'DiffMutableModule', 'MutableManageMixIn',
-    'OneShotMutableChannel', 'SlimmableMutableChannel', 'MutableChannel'
+    'OneShotMutableChannel', 'SlimmableMutableChannel', 'MutableChannel',
+    'MutableValue', 'OneShotMutableValue'
 ]

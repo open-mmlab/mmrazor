@@ -1,10 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Set
+from typing import Any, Dict, Optional, Set
 
 from torch import nn
 
+from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.mutables.mutable_channel import MutableChannel
 
 MUTABLE_CFG_TYPE = Dict[str, Any]
@@ -33,6 +34,15 @@ class DynamicOP(ABC):
                 f'but got: {list(mutable_cfgs.keys())}')
 
         return parsed_mutable_cfgs
+
+    def check_if_mutables_fixed(self) -> None:
+
+        def check_fixed(mutable: Optional[BaseMutable]) -> None:
+            if mutable is not None and not mutable.is_fixed:
+                raise RuntimeError(f'Mutable {type(mutable)} is not fixed.')
+
+        for mutable_key in self.accepted_mutable_keys:
+            check_fixed(getattr(self, f'{mutable_key}_mutable'))
 
 
 class ChannelDynamicOP(DynamicOP):

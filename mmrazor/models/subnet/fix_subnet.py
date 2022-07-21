@@ -24,7 +24,7 @@ def _dynamic_to_static(model: nn.Module) -> None:
                 traverse_children(child)
 
     if isinstance(model, DynamicOP):
-        raise RuntimeError(f'Supernet can not be a dynamic model!')
+        raise RuntimeError('Supernet can not be a dynamic model!')
 
     traverse_children(model)
 
