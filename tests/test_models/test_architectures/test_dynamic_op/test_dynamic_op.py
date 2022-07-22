@@ -175,8 +175,8 @@ class TestDynamicOP(TestCase):
         self.assertTrue(torch.equal(out1, out2))
 
     def test_dynamic_sequential(self) -> None:
-        mutable_depth = OneShotMutableValue(
-            value_list=[2, 3, 4, 5], default_value=5)
+        depth_cfg = dict(type='OneShotMutableValue', value_list=[2, 3, 4, 5])
+        mutable_cfgs = dict(depth=depth_cfg)
 
         modules = [
             nn.Conv2d(3, 32, 3),
@@ -195,7 +195,7 @@ class TestDynamicOP(TestCase):
         d_seq = DynamicSequential(*modules)
         d_seq.mutate_depth(mutable_depth)
 
-        d_seq.mutable_depth.current_choice = 3
+        d_seq.depth_mutable.current_choice = 3
 
         x = torch.rand(10, 3, 224, 224)
         out1 = d_seq(x)
@@ -204,7 +204,7 @@ class TestDynamicOP(TestCase):
 
         with pytest.raises(RuntimeError):
             _ = d_seq.to_static_op()
-        d_seq.mutable_depth.fix_chosen(d_seq.mutable_depth.dump_chosen())
+        d_seq.depth_mutable.fix_chosen(d_seq.depth_mutable.dump_chosen())
         s_seq = d_seq.to_static_op()
         assert isinstance(s_seq, nn.Sequential)
         assert not isinstance(s_seq, DynamicSequential)
