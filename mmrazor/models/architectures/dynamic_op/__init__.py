@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .base import DynamicOP
+from .dynamic_container import DynamicSequential
 from .dynamic_conv import (CenterCropDynamicConv2d, DynamicConv2d,
                            ProgressiveDynamicConv2d)
 from .dynamic_linear import DynamicLinear
@@ -12,5 +13,5 @@ __all__ = [
     'DynamicConv2d', 'DynamicLinear', 'DynamicBatchNorm1d',
     'DynamicBatchNorm2d', 'DynamicBatchNorm3d', 'DynamicOP',
     'DynamicInstanceNorm', 'DynamicGroupNorm', 'SwitchableBatchNorm2d',
-    'ProgressiveDynamicConv2d', 'CenterCropDynamicConv2d'
+    'ProgressiveDynamicConv2d', 'CenterCropDynamicConv2d', 'DynamicSequential'
 ]

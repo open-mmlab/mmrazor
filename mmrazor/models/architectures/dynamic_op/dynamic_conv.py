@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from mmrazor.models.mutables.mutable_channel import MutableChannel
-from mmrazor.models.mutables.mutable_value import OneShotMutableValue
+from mmrazor.models.mutables.mutable_value import MutableValue
 from mmrazor.registry import MODELS
 from .base import MUTABLE_CFGS_TYPE, ChannelDynamicOP
 
@@ -90,6 +90,8 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
             assert isinstance(self.in_channels_mutable, MutableChannel)
             assert isinstance(self.out_channels_mutable, MutableChannel)
         else:
+            # FIXME
+            # mutable is not a parameter, so just equal to None?
             self.register_parameter('in_channels_mutable', None)
             self.register_parameter('out_channels_mutable', None)
 
@@ -98,10 +100,17 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
         if 'kernel_size' in mutable_cfgs:
             kernel_size_cfg = copy.deepcopy(mutable_cfgs['kernel_size'])
             self.kernel_size_mutable = MODELS.build(kernel_size_cfg)
-            # FIXME
-            # use correct type after MutableValue is implemented
-            assert isinstance(self.kernel_size_mutable, OneShotMutableValue)
+            assert isinstance(self.kernel_size_mutable, MutableValue)
+
+            max_choice = self.kernel_size_mutable.max_choice
+            if _pair(max_choice) != self.kernel_size:
+                raise ValueError(
+                    'Max choice of kernel size mutable must be the '
+                    'same as Conv2d kernel size, but got max '
+                    f'choice: {max_choice}, expected max '
+                    f'kernel size: {self.kernel_size[0]}.')
             self.kernel_size_mutable.current_choice = self.kernel_size[0]
+
         else:
             self.register_parameter('kernel_size_mutable', None)
 
@@ -203,12 +212,7 @@ class ProgressiveDynamicConv2d(DynamicConv2d):
         super().__init__(mutable_cfgs=mutable_cfgs, **conv_kwargs)
 
         self._kernel_size_list = self.kernel_size_mutable.choices.copy()
-        max_choice = self.kernel_size_mutable.max_choice
-        if _pair(max_choice) != self.kernel_size:
-            raise ValueError('Max choice of kernel size mutable must be the '
-                             'same as Conv2d kernel size, but got max '
-                             f'choice: {max_choice}, expected max '
-                             f'kernel size: {self.kernel_size[0]}.')
+
         # register transform matrix for progressive shrink
         self._register_transform_matrix()
 
@@ -270,13 +274,6 @@ class CenterCropDynamicConv2d(DynamicConv2d):
     def __init__(self, *, mutable_cfgs: MUTABLE_CFGS_TYPE,
                  **conv_kwargs) -> None:
         super().__init__(mutable_cfgs=mutable_cfgs, **conv_kwargs)
-
-        max_choice = self.kernel_size_mutable.max_choice
-        if _pair(max_choice) != self.kernel_size:
-            raise ValueError('Max choice of kernel size mutable must be the '
-                             'same as Conv2d kernel size, but got max '
-                             f'choice: {max_choice}, expected max '
-                             f'kernel size: {self.kernel_size[0]}.')
 
         assert self.kernel_size_mutable is not None
 
