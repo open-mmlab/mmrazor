@@ -1,4 +1,4 @@
-_base_ = ['./spos_supernet_frcnn_shufflenet_coco_1x.py']
+_base_ = ['./detnas_frcnn_shufflenet_supernet_coco_1x.py']
 
 # FIXME: you may replace this with the mutable_cfg searched by yourself
 # fix_subnet = 'configs/nas/spos/SPOS_SHUFFLENETV2_330M_IN1k_PAPER_2.0.yaml'  # noqa: E501
