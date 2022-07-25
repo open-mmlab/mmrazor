@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 
 from mmrazor.models.subnet import (MULTI_MUTATORS_RANDOM_SUBNET,
                                    SINGLE_MUTATOR_RANDOM_SUBNET, Candidates,
-                                   FlopsEstimator, export_fix_mutable)
+                                   FlopsEstimator, export_fix_subnet)
 from mmrazor.registry import LOOPS
 
 random_subnet_type = Union[SINGLE_MUTATOR_RANDOM_SUBNET,
@@ -319,7 +319,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
             return True
 
         self.model.set_subnet(random_subnet)
-        fix_mutable = export_fix_mutable(self.model)
+        fix_mutable = export_fix_subnet(self.model)
         flops = FlopsEstimator.get_model_complexity_info(
             self.model, fix_mutable=fix_mutable, as_strings=False)[0]
         if self.flops_range[0] < flops < self.flops_range[1]:

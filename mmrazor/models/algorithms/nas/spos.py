@@ -78,7 +78,7 @@ class SPOS(BaseAlgorithm):
         # fix_subnet is not None, means subnet retraining.
         if fix_subnet:
             # According to fix_subnet, delete the unchosen part of supernet
-            load_fix_subnet(self, fix_subnet, prefix='architecture.')
+            load_fix_subnet(self.architecture, fix_subnet)
             self.is_supernet = False
         else:
             assert mutator is not None, \

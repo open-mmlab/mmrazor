@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from mmrazor.models.architectures import DynamicConv2d
-from mmrazor.models.subnet import export_fix_mutable, load_fix_subnet
+from mmrazor.models.subnet import export_fix_subnet, load_fix_subnet
 
 
 class TestDefaultDynamicOP(TestCase):
@@ -37,7 +37,7 @@ class TestDefaultDynamicOP(TestCase):
         out1 = d_conv2d(x)
         self.assertEqual(out1.size(1), 4)
 
-        fix_mutables = export_fix_mutable(d_conv2d)
+        fix_mutables = export_fix_subnet(d_conv2d)
         load_fix_subnet(d_conv2d, fix_mutables)
 
         out2 = d_conv2d(x)
@@ -76,7 +76,7 @@ class TestDefaultDynamicOP(TestCase):
         out1 = d_conv2d(x)
         self.assertEqual(out1.size(1), 8)
 
-        fix_mutables = export_fix_mutable(d_conv2d)
+        fix_mutables = export_fix_subnet(d_conv2d)
         load_fix_subnet(d_conv2d, fix_mutables)
 
         out2 = d_conv2d(x)

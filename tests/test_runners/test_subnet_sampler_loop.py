@@ -191,9 +191,9 @@ class TestGreedySamplerTrainLoop(TestCase):
         self.assertEqual(subnet, fake_subnet)
         self.assertEqual(len(loop.top_k_candidates), loop.top_k - 1)
 
-    @patch('mmrazor.runners.subnet_sampler_loop.export_fix_mutable')
+    @patch('mmrazor.runners.subnet_sampler_loop.export_fix_subnet')
     @patch('mmrazor.models.subnet.FlopsEstimator.get_model_complexity_info')
-    def test_run(self, mock_flops, mock_export_fix_mutable):
+    def test_run(self, mock_flops, mock_export_fix_subnet):
         # test run with flops_range=None
         cfg = copy.deepcopy(self.iter_based_cfg)
         cfg.experiment_name = 'test_run1'
@@ -213,7 +213,7 @@ class TestGreedySamplerTrainLoop(TestCase):
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
         runner.model.sample_subnet = MagicMock(return_value=fake_subnet)
         mock_flops.return_value = (50., 1)
-        mock_export_fix_mutable.return_value = fake_subnet
+        mock_export_fix_subnet.return_value = fake_subnet
         runner.train()
 
         self.assertEqual(runner.iter, runner.max_iters)

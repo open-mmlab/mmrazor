@@ -62,7 +62,7 @@ class DiffMutableModule(MutableModule[CHOICE_TYPE, CHOSEN_TYPE]):
         """Build learnable architecture parameters."""
         return nn.Parameter(torch.randn(self.num_choices) * 1e-3)
 
-    def compute_arch_probs(self, arch_param: Any) -> Tensor:
+    def compute_arch_probs(self, arch_param: nn.Parameter) -> Tensor:
         """compute chosen probs according to architecture params."""
         return F.softmax(arch_param, -1)
 
@@ -231,9 +231,11 @@ class DiffMutableOP(DiffMutableModule[str, str]):
         self._chosen = chosen
         self.is_fixed = True
 
-    def dump_chosen(self) -> str:
-        assert self.current_choice is not None
+    def sample_choice(self, arch_param):
+        return self.choices[torch.argmax(arch_param).item()]
 
+    def dump_chosen(self):
+        assert self.current_choice is not None
         return self.current_choice
 
     @property
@@ -288,6 +290,7 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
     def __init__(
         self,
         edges: nn.ModuleDict,
+        num_chsoen: int = 2,
         with_arch_param: bool = False,
         alias: Optional[str] = None,
         init_cfg: Optional[Dict] = None,
@@ -300,6 +303,7 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
         self._with_arch_param = with_arch_param
         self._is_fixed = False
         self._candidates: nn.ModuleDict = edges
+        self.num_chosen = num_chsoen
 
     def forward_fixed(self, inputs: Union[List, Tuple]) -> Tensor:
         """Forward when the mutable is in `fixed` mode.
@@ -321,9 +325,10 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
                 outputs.append(self._candidates[choice](x))
         return sum(outputs)
 
-    def forward_arch_param(self,
-                           x: Union[List[Any], Tuple[Any]],
-                           arch_param: nn.Parameter = None) -> Tensor:
+    def forward_arch_param(
+            self,
+            x: Union[List[Any], Tuple[Any]],
+            arch_param: Optional[nn.Parameter] = None) -> Tensor:
         """Forward with architecture parameters.
 
         Args:
@@ -400,8 +405,15 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
         """list: all choices. """
         return list(self._candidates.keys())
 
-    def dump_chosen(self) -> List[str]:
-        return []
+    def dump_chosen(self):
+        assert self.current_choice is not None
+        return self.current_choice
+
+    def sample_choice(self, arch_param):
+        sort_idx = torch.argsort(-arch_param).cpu().numpy().tolist()
+        choice_idx = sort_idx[:self.num_chosen]
+        choice = [self.choices[i] for i in choice_idx]
+        return choice
 
 
 @MODELS.register_module()

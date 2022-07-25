@@ -6,7 +6,7 @@ import torch.nn as nn
 
 from mmrazor.models import *  # noqa:F403,F401
 from mmrazor.models.mutables import OneShotMutableOP
-from mmrazor.models.subnet import (FIX_MUTABLE, export_fix_mutable,
+from mmrazor.models.subnet import (FIX_MUTABLE, export_fix_subnet,
                                    load_fix_subnet)
 from mmrazor.registry import MODELS
 
@@ -74,11 +74,11 @@ class TestFixSubnet(TestCase):
         load_fix_subnet(model, fix_subnet)
 
         with pytest.raises(AssertionError):
-            exported_fix_subnet: FIX_MUTABLE = export_fix_mutable(model)
+            exported_fix_subnet: FIX_MUTABLE = export_fix_subnet(model)
 
         model = MockModel()
         model.mutable1.current_choice = 'conv1'
         model.mutable2.current_choice = 'conv2'
-        exported_fix_subnet = export_fix_mutable(model)
+        exported_fix_subnet = export_fix_subnet(model)
 
         self.assertDictEqual(fix_subnet, exported_fix_subnet)

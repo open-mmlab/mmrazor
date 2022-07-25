@@ -13,17 +13,18 @@ class DartsEpochBasedTrainLoop(EpochBasedTrainLoop):
 
     In Darts, Two dataloaders are needed in the training stage. One
     (`dataloader`) is used to train the supernet and update its weights,
-    another(`dataloader_arch`) is only used to train and update the parameters
-    of the supernet's architecture setting. In `DartsEpochBasedTrainLoop`,
-    these dataloaders will be combined as a special dataloader, whose
-    `data_batch` will contain both of the dataloaders' `data_batch`.
+    another(`mutator_dataloader`) is only used to train and update the
+    parameters of the supernet's architecture setting. In
+    `DartsEpochBasedTrainLoop`, these dataloaders will be combined as a
+    special dataloader, whose `data_batch` will contain both of the
+    dataloaders' `data_batch`.
 
     Args:
         runner (Runner): A reference of runner.
         dataloader (Dataloader or Dict):
             A dataloader object or a dict to build a dataloader for
             training the model.
-        dataloader_arch (Dataloader or Dict):
+        mutator_dataloader (Dataloader or Dict):
             A dataloader object or a dict to build a dataloader for
             training the parameters of model architecture.
         max_epochs (int): Total training epochs.
@@ -35,25 +36,26 @@ class DartsEpochBasedTrainLoop(EpochBasedTrainLoop):
     def __init__(self,
                  runner,
                  dataloader: Union[Dict, DataLoader],
-                 dataloader_arch: Union[Dict, DataLoader],
+                 mutator_dataloader: Union[Dict, DataLoader],
                  max_epochs: int,
                  val_begin: int = 1,
                  val_interval: int = 1) -> None:
         super().__init__(runner, dataloader, max_epochs, val_begin,
                          val_interval)
-        if isinstance(dataloader_arch, dict):
-            self.dataloader_arch = runner.build_dataloader(
-                dataloader_arch, seed=runner.seed)
+        if isinstance(mutator_dataloader, dict):
+            self.mutator_dataloader = runner.build_dataloader(
+                mutator_dataloader, seed=runner.seed)
         else:
-            self.dataloader_arch = dataloader_arch
-        multi_loaders = [self.dataloader, self.dataloader_arch]
-        self.dataloader_multi = EpochMultiLoader(multi_loaders)
+            self.mutator_dataloader = mutator_dataloader
+        multi_loaders = [self.dataloader, self.mutator_dataloader]
+        self.multi_loaders = EpochMultiLoader(multi_loaders)
 
     def run_epoch(self) -> None:
         """Iterate one epoch."""
         self.runner.call_hook('before_train_epoch')
         self.runner.model.train()
-        for idx, data_batch in enumerate(self.dataloader_multi):
+
+        for idx, data_batch in enumerate(self.multi_loaders):
             self.run_iter(idx, data_batch)
 
         self.runner.call_hook('after_train_epoch')
@@ -68,7 +70,7 @@ class DartsIterBasedTrainLoop(IterBasedTrainLoop):
         runner (Runner): A reference of runner.
         dataloader (Dataloader or Dict):
             A dataloader object or a dict to build a dataloader.
-        dataloader_arch (Dataloader or Dict):
+        mutator_dataloader (Dataloader or Dict):
             A dataloader object or a dict to build a dataloader for
             training the parameters of model architecture.
         max_iter (int): Total training iterations.
@@ -80,19 +82,19 @@ class DartsIterBasedTrainLoop(IterBasedTrainLoop):
     def __init__(self,
                  runner,
                  dataloader: Union[Dict, DataLoader],
-                 dataloader_arch: Union[Dict, DataLoader],
+                 mutator_dataloader: Union[Dict, DataLoader],
                  max_iters: int,
                  val_begin: int = 1,
                  val_interval: int = 1000) -> None:
         super().__init__(runner, dataloader, max_iters, val_begin,
                          val_interval)
-        if isinstance(dataloader_arch, dict):
-            self.dataloader_arch = runner.build_dataloader(
-                dataloader_arch, seed=runner.seed)
+        if isinstance(mutator_dataloader, dict):
+            self.mutator_dataloader = runner.build_dataloader(
+                mutator_dataloader, seed=runner.seed)
         else:
-            self.dataloader_arch = dataloader_arch
-        multi_loaders = [self.dataloader, self.dataloader_arch]
-        self.dataloader_iterator_multi = EpochMultiLoader(multi_loaders)
+            self.mutator_dataloader = mutator_dataloader
+        multi_loaders = [self.dataloader, self.mutator_dataloader]
+        self.multi_loaders = IterMultiLoader(multi_loaders)
 
     def run(self) -> None:
         """Launch training."""
@@ -103,7 +105,7 @@ class DartsIterBasedTrainLoop(IterBasedTrainLoop):
         while self._iter < self._max_iters:
             self.runner.model.train()
 
-            data_batch = next(self.dataloader_iterator_multi)
+            data_batch = next(self.multi_loaders)  # type: ignore
             self.run_iter(data_batch)
 
             if (self.runner.val_loop is not None

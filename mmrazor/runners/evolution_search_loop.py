@@ -13,8 +13,7 @@ from mmengine.runner import EpochBasedTrainLoop
 from mmengine.utils import is_list_of
 from torch.utils.data import DataLoader
 
-from mmrazor.models.subnet import (Candidates, FlopsEstimator,
-                                   export_fix_mutable)
+from mmrazor.models.subnet import Candidates, FlopsEstimator, export_fix_subnet
 from mmrazor.models.subnet.random_subnet import (MULTI_MUTATORS_RANDOM_SUBNET,
                                                  SINGLE_MUTATOR_RANDOM_SUBNET)
 from mmrazor.registry import LOOPS
@@ -247,7 +246,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         if self.runner.rank == 0:
             best_random_subnet = self.top_k_candidates.subnets[0]
             self.model.set_subnet(best_random_subnet)
-            best_fix_subnet = export_fix_mutable(self.model)
+            best_fix_subnet = export_fix_subnet(self.model)
             save_name = 'best_fix_subnet.yaml'
             mmcv.fileio.dump(best_fix_subnet,
                              osp.join(self.runner.work_dir, save_name))
@@ -303,7 +302,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             return True
 
         self.model.set_subnet(random_subnet)
-        fix_mutable = export_fix_mutable(self.model)
+        fix_mutable = export_fix_subnet(self.model)
         flops: float = FlopsEstimator.get_model_complexity_info(
             self.model, fix_mutable=fix_mutable, as_strings=False)[0]
         if self.flops_range[0] < flops < self.flops_range[1]:

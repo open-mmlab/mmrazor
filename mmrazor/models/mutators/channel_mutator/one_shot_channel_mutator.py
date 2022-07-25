@@ -104,12 +104,12 @@ class OneShotChannelMutator(ChannelMutator):
             >>> model = ResBlock()
             >>> mutator.prepare_from_supernet(model)
             >>> mutator.search_groups
-            {0: [RatioChannelMutable(name=op2, ...), # mutable out
-                 RatioChannelMutable(name=op1, ...), # mutable out
-                 RatioChannelMutable(name=op3, ...), # mutable in
-                 RatioChannelMutable(name=op2, ...), # mutable in
-                 RatioChannelMutable(name=bn2, ...), # mutable out
-                 RatioChannelMutable(name=bn1, ...)] # mutable out
+            {0: [OneShotMutableChannel(name=op2, ...), # mutable out
+                 OneShotMutableChannel(name=op1, ...), # mutable out
+                 OneShotMutableChannel(name=op3, ...), # mutable in
+                 OneShotMutableChannel(name=op2, ...), # mutable in
+                 OneShotMutableChannel(name=bn2, ...), # mutable out
+                 OneShotMutableChannel(name=bn1, ...)] # mutable out
             }
         """
         groups = self.find_same_mutables(supernet)
