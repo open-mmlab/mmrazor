@@ -14,8 +14,8 @@ from mmengine.model import BaseModel
 from mmengine.runner import Runner
 from torch.utils.data import Dataset
 
+from mmrazor.engine import GreedySamplerTrainLoop  # noqa: F401
 from mmrazor.registry import DATASETS, METRICS, MODELS
-from mmrazor.runners import GreedySamplerTrainLoop  # noqa: F401
 
 
 @MODELS.register_module()
@@ -191,8 +191,8 @@ class TestGreedySamplerTrainLoop(TestCase):
         self.assertEqual(subnet, fake_subnet)
         self.assertEqual(len(loop.top_k_candidates), loop.top_k - 1)
 
-    @patch('mmrazor.runners.subnet_sampler_loop.export_fix_subnet')
-    @patch('mmrazor.models.subnet.FlopsEstimator.get_model_complexity_info')
+    @patch('mmrazor.engine.runner.subnet_sampler_loop.export_fix_subnet')
+    @patch('mmrazor.structures.FlopsEstimator.get_model_complexity_info')
     def test_run(self, mock_flops, mock_export_fix_subnet):
         # test run with flops_range=None
         cfg = copy.deepcopy(self.iter_based_cfg)

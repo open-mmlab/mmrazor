@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from mmcv import ConfigDict
 
-from mmrazor.core import DistillDeliveryManager
+from mmrazor.structures import DistillDeliveryManager
 
 
 class TestDeliverManager(TestCase):

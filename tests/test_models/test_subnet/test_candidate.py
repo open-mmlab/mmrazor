@@ -3,7 +3,7 @@
 from collections import UserList
 from unittest import TestCase
 
-from mmrazor.models.subnet import Candidates
+from mmrazor.structures import Candidates
 
 
 class TestCandidates(TestCase):

@@ -6,7 +6,7 @@ from typing import Callable
 from mmcv.utils import import_modules_from_strings
 
 from mmrazor.registry import TASK_UTILS
-from .distill_deliver import DistillDelivery
+from .distill_delivery import DistillDelivery
 
 
 @TASK_UTILS.register_module()

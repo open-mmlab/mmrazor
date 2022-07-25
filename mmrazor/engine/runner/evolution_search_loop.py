@@ -13,14 +13,10 @@ from mmengine.runner import EpochBasedTrainLoop
 from mmengine.utils import is_list_of
 from torch.utils.data import DataLoader
 
-from mmrazor.models.subnet import Candidates, FlopsEstimator, export_fix_subnet
-from mmrazor.models.subnet.random_subnet import (MULTI_MUTATORS_RANDOM_SUBNET,
-                                                 SINGLE_MUTATOR_RANDOM_SUBNET)
 from mmrazor.registry import LOOPS
+from mmrazor.structures import Candidates, FlopsEstimator, export_fix_subnet
+from mmrazor.utils import SupportRandomSubnet
 from .utils import crossover
-
-random_subnet_type = Union[SINGLE_MUTATOR_RANDOM_SUBNET,
-                           MULTI_MUTATORS_RANDOM_SUBNET]
 
 
 @LOOPS.register_module()
@@ -215,14 +211,14 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                 crossover_candidates.append(crossover_candidate)
         return crossover_candidates
 
-    def _mutation(self) -> random_subnet_type:
+    def _mutation(self) -> SupportRandomSubnet:
         """Mutate with the specified mutate_prob."""
         candidate1 = random.choice(self.top_k_candidates.subnets)
         candidate2 = self.model.sample_subnet()
         candidate = crossover(candidate1, candidate2, prob=self.mutate_prob)
         return candidate
 
-    def _crossover(self) -> random_subnet_type:
+    def _crossover(self) -> SupportRandomSubnet:
         """Crossover."""
         candidate1 = random.choice(self.top_k_candidates.subnets)
         candidate2 = random.choice(self.top_k_candidates.subnets)
@@ -292,7 +288,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                     if osp.isfile(ckpt_path):
                         os.remove(ckpt_path)
 
-    def _check_constraints(self, random_subnet: random_subnet_type) -> bool:
+    def _check_constraints(self, random_subnet: SupportRandomSubnet) -> bool:
         """Check whether is beyond constraints.
 
         Returns:

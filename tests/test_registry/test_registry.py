@@ -7,12 +7,12 @@ import torch.nn as nn
 from mmengine.config import Config
 from mmengine.model import BaseModel
 
-from mmrazor.core import *  # noqa: F403, F401
 from mmrazor.models import *  # noqa: F403, F401
 from mmrazor.models.algorithms.base import BaseAlgorithm
 from mmrazor.models.mutables import OneShotMutableOP
-from mmrazor.models.subnet import VALID_FIX_MUTABLE_TYPE, load_fix_subnet
 from mmrazor.registry import MODELS
+from mmrazor.structures import load_fix_subnet
+from mmrazor.utils import ValidFixMutable
 
 
 @MODELS.register_module()
@@ -45,7 +45,7 @@ class MockAlgorithm(BaseAlgorithm):
 
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
-                 fix_subnet: Optional[VALID_FIX_MUTABLE_TYPE] = None):
+                 fix_subnet: Optional[ValidFixMutable] = None):
         super().__init__(architecture)
 
         if fix_subnet is not None:

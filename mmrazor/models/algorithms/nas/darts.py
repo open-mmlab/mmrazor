@@ -9,10 +9,9 @@ from torch import nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.mutators import DiffModuleMutator
-from mmrazor.models.subnet import (FIX_MUTABLE, export_fix_subnet,
-                                   load_fix_subnet)
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
+from mmrazor.utils import FixMutable
 from ..base import BaseAlgorithm
 
 
@@ -47,7 +46,7 @@ class Darts(BaseAlgorithm):
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
                  mutator: Optional[Union[DiffModuleMutator, Dict]] = None,
-                 fix_subnet: Optional[FIX_MUTABLE] = None,
+                 fix_subnet: Optional[FixMutable] = None,
                  unroll: bool = False,
                  norm_training: bool = False,
                  data_preprocessor: Optional[Union[dict, nn.Module]] = None,
@@ -57,6 +56,9 @@ class Darts(BaseAlgorithm):
         # Darts has two training mode: supernet training and subnet retraining.
         # fix_subnet is not None, means subnet retraining.
         if fix_subnet:
+            # Avoid circular import
+            from mmrazor.structures import load_fix_subnet
+
             # According to fix_subnet, delete the unchosen part of supernet
             load_fix_subnet(self.architecture, fix_subnet)
             self.is_supernet = False
@@ -85,6 +87,9 @@ class Darts(BaseAlgorithm):
 
     def search_subnet(self):
         """Search subnet by mutator."""
+
+        # Avoid circular import
+        from mmrazor.structures import export_fix_subnet
 
         subnet = self.mutator.sample_choices()
         self.mutator.set_choices(subnet)

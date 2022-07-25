@@ -13,8 +13,8 @@ from mmengine.model import BaseModel
 from mmengine.runner import Runner
 from torch.utils.data import Dataset
 
+from mmrazor.engine import SingleTeacherDistillValLoop  # noqa: F401
 from mmrazor.registry import DATASETS, METRICS, MODELS
-from mmrazor.runners import SingleTeacherDistillValLoop  # noqa: F401
 
 
 @MODELS.register_module()

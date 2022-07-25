@@ -8,9 +8,8 @@ from torch import nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.mutators import OneShotModuleMutator
-from mmrazor.models.subnet import (SINGLE_MUTATOR_RANDOM_SUBNET,
-                                   VALID_FIX_MUTABLE_TYPE, load_fix_subnet)
 from mmrazor.registry import MODELS
+from mmrazor.utils import SingleMutatorRandomSubnet, ValidFixMutable
 from ..base import BaseAlgorithm, LossResults
 
 
@@ -68,7 +67,7 @@ class SPOS(BaseAlgorithm):
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
                  mutator: Optional[Union[OneShotModuleMutator, Dict]] = None,
-                 fix_subnet: Optional[VALID_FIX_MUTABLE_TYPE] = None,
+                 fix_subnet: Optional[ValidFixMutable] = None,
                  norm_training: bool = False,
                  data_preprocessor: Optional[Union[dict, nn.Module]] = None,
                  init_cfg: Optional[dict] = None):
@@ -77,6 +76,9 @@ class SPOS(BaseAlgorithm):
         # SPOS has two training mode: supernet training and subnet retraining.
         # fix_subnet is not None, means subnet retraining.
         if fix_subnet:
+            # Avoid circular import
+            from mmrazor.structures import load_fix_subnet
+
             # According to fix_subnet, delete the unchosen part of supernet
             load_fix_subnet(self.architecture, fix_subnet)
             self.is_supernet = False
@@ -101,11 +103,11 @@ class SPOS(BaseAlgorithm):
 
         self.norm_training = norm_training
 
-    def sample_subnet(self) -> SINGLE_MUTATOR_RANDOM_SUBNET:
+    def sample_subnet(self) -> SingleMutatorRandomSubnet:
         """Random sample subnet by mutator."""
         return self.mutator.sample_choices()
 
-    def set_subnet(self, subnet: SINGLE_MUTATOR_RANDOM_SUBNET):
+    def set_subnet(self, subnet: SingleMutatorRandomSubnet):
         """Set the subnet sampled by :meth:sample_subnet."""
         self.mutator.set_choices(subnet)
 
