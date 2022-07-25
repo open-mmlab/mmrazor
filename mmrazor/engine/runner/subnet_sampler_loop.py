@@ -12,13 +12,9 @@ from mmengine.runner import IterBasedTrainLoop
 from mmengine.utils import is_list_of
 from torch.utils.data import DataLoader
 
-from mmrazor.models.subnet import (MULTI_MUTATORS_RANDOM_SUBNET,
-                                   SINGLE_MUTATOR_RANDOM_SUBNET, Candidates,
-                                   FlopsEstimator, export_fix_subnet)
 from mmrazor.registry import LOOPS
-
-random_subnet_type = Union[SINGLE_MUTATOR_RANDOM_SUBNET,
-                           MULTI_MUTATORS_RANDOM_SUBNET]
+from mmrazor.structures import Candidates, FlopsEstimator, export_fix_subnet
+from mmrazor.utils import SupportRandomSubnet
 
 
 class BaseSamplerTrainLoop(IterBasedTrainLoop):
@@ -48,7 +44,7 @@ class BaseSamplerTrainLoop(IterBasedTrainLoop):
             self.model = runner.model
 
     @abstractmethod
-    def sample_subnet(self) -> random_subnet_type:
+    def sample_subnet(self) -> SupportRandomSubnet:
         """Sample a subnet to train the supernet."""
 
     def run_iter(self, data_batch: Sequence[dict]) -> None:
@@ -197,7 +193,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         self.runner.call_hook('after_train_epoch')
         self.runner.call_hook('after_train')
 
-    def sample_subnet(self) -> random_subnet_type:
+    def sample_subnet(self) -> SupportRandomSubnet:
         """Sample a subnet from top_k candidates one by one, then to train the
         surpernet with the subnet.
 
@@ -298,18 +294,18 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         metrics = self.evaluator.evaluate(len(self.dataloader_val.dataset))
         return metrics
 
-    def _sample_from_supernet(self) -> random_subnet_type:
+    def _sample_from_supernet(self) -> SupportRandomSubnet:
         """Sample from the supernet."""
         subnet = self.model.sample_subnet()
         return subnet
 
-    def _sample_from_candidates(self) -> random_subnet_type:
+    def _sample_from_candidates(self) -> SupportRandomSubnet:
         """Sample from the candidates."""
         assert len(self.candidates) > 0
         subnet = random.choice(self.candidates)
         return subnet
 
-    def _check_constraints(self, random_subnet: random_subnet_type) -> bool:
+    def _check_constraints(self, random_subnet: SupportRandomSubnet) -> bool:
         """Check whether is beyond constraints.
 
         Returns:

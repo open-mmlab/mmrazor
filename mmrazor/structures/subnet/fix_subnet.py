@@ -1,15 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from pathlib import Path
-from typing import Any, Dict, Union
-
 import mmcv
 from torch import nn
 
 from mmrazor.models.architectures.dynamic_op.base import DynamicOP
 from mmrazor.models.mutables.base_mutable import BaseMutable
-
-FIX_MUTABLE = Dict[str, Any]
-VALID_FIX_MUTABLE_TYPE = Union[str, Path, FIX_MUTABLE]
+from mmrazor.utils import FixMutable, ValidFixMutable
 
 
 def _dynamic_to_static(model: nn.Module) -> None:
@@ -27,7 +22,7 @@ def _dynamic_to_static(model: nn.Module) -> None:
 
 
 def load_fix_subnet(model: nn.Module,
-                    fix_mutable: VALID_FIX_MUTABLE_TYPE,
+                    fix_mutable: ValidFixMutable,
                     prefix: str = '') -> None:
     """Load fix subnet."""
     if isinstance(fix_mutable, str):
@@ -58,7 +53,7 @@ def load_fix_subnet(model: nn.Module,
     _dynamic_to_static(model)
 
 
-def export_fix_subnet(model: nn.Module) -> FIX_MUTABLE:
+def export_fix_subnet(model: nn.Module) -> FixMutable:
     """Export subnet that can be loaded by :func:`load_fix_subnet`."""
     fix_subnet = dict()
     for name, module in model.named_modules():

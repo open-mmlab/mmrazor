@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from mmrazor.models.architectures import DynamicConv2d
-from mmrazor.models.subnet import export_fix_subnet, load_fix_subnet
+from mmrazor.structures import export_fix_subnet, load_fix_subnet
 
 
 class TestDefaultDynamicOP(TestCase):

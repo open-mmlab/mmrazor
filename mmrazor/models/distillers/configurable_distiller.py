@@ -6,8 +6,8 @@ from typing import Dict, List, Optional
 from mmengine.model import BaseModel
 from torch import nn
 
-from mmrazor.core import DistillDeliveryManager, RecorderManager
 from mmrazor.registry import MODELS
+from mmrazor.structures import DistillDeliveryManager, RecorderManager
 from ..algorithms.base import LossResults
 from .base_distiller import BaseDistiller
 

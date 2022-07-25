@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from unittest import TestCase
 
-from mmrazor.core.recorders import MethodOutputsRecorder
+from mmrazor.structures import MethodOutputsRecorder
 
 
 class TestFuncOutputsRecorder(TestCase):

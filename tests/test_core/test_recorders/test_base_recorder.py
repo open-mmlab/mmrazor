@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from toy_mod import Toy
 
-from mmrazor.core.recorders import MethodOutputsRecorder
+from mmrazor.structures import MethodOutputsRecorder
 
 
 class TestFuncOutputsRecorder(TestCase):

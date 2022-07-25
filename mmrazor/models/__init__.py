@@ -6,4 +6,3 @@ from .losses import *  # noqa: F401,F403
 from .mutables import *  # noqa: F401,F403
 from .mutators import *  # noqa: F401,F403
 from .ops import *  # noqa: F401,F403
-from .subnet import *  # noqa: F401,F403

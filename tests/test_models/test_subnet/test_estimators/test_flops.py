@@ -8,8 +8,8 @@ from torch import Tensor
 from torch.nn import Conv2d, Module, Parameter
 
 from mmrazor.models import OneShotMutableModule
-from mmrazor.models.subnet import FlopsEstimator, export_fix_subnet
 from mmrazor.registry import MODELS
+from mmrazor.structures import FlopsEstimator, export_fix_subnet
 
 _FIRST_STAGE_MUTABLE = dict(
     type='OneShotMutableOP',

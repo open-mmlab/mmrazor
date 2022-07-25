@@ -8,7 +8,8 @@ from mmcv.cnn.utils import flops_counter as mmcv_flops_counter
 from mmcv.cnn.utils import get_model_complexity_info
 from torch.nn import Module
 
-from ..fix_subnet import VALID_FIX_MUTABLE_TYPE, load_fix_subnet
+from mmrazor.utils import ValidFixMutable
+from ..fix_subnet import load_fix_subnet
 
 
 class FlopsEstimator:
@@ -91,7 +92,7 @@ class FlopsEstimator:
     @staticmethod
     def get_model_complexity_info(
             model: Module,
-            fix_mutable: Optional[VALID_FIX_MUTABLE_TYPE] = None,
+            fix_mutable: Optional[ValidFixMutable] = None,
             input_shape: Iterable[int] = (3, 224, 224),
             input_constructor: Optional[Callable] = None,
             print_per_layer_stat: bool = True,
@@ -107,7 +108,7 @@ class FlopsEstimator:
 
         Args:
             model (torch.nn.Module): The model for complexity calculation.
-            fix_mutable (VALID_FIX_MUTABLE_TYPE, optional): The config of fixed
+            fix_mutable (ValidFixMutable, optional): The config of fixed
                 subnet. When this argument is specified, the function will
                 return complexity information of the subnet. Default: None.
             input_shape (Iterable[int]): Input shape used for calculation.

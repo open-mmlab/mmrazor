@@ -3,12 +3,12 @@ import copy
 
 import numpy as np
 
-from mmrazor.models.subnet import SINGLE_MUTATOR_RANDOM_SUBNET
+from mmrazor.utils import SingleMutatorRandomSubnet
 
 
-def crossover(random_subnet1: SINGLE_MUTATOR_RANDOM_SUBNET,
-              random_subnet2: SINGLE_MUTATOR_RANDOM_SUBNET,
-              prob: float = 0.5) -> SINGLE_MUTATOR_RANDOM_SUBNET:
+def crossover(random_subnet1: SingleMutatorRandomSubnet,
+              random_subnet2: SingleMutatorRandomSubnet,
+              prob: float = 0.5) -> SingleMutatorRandomSubnet:
     """Crossover in genetic algorithm.
 
     Args:

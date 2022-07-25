@@ -12,7 +12,6 @@ from mmengine.optim import OptimWrapper
 from torch import nn
 
 from mmrazor.models.mutators import SlimmableChannelMutator
-from mmrazor.models.subnet import load_fix_subnet
 from mmrazor.models.utils import (add_prefix,
                                   reinitialize_optim_wrapper_count_status)
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
@@ -69,6 +68,8 @@ class SlimmableNetwork(BaseAlgorithm):
 
         # must after `prepare_from_supernet`
         if len(channel_cfg_paths) == 1:
+            # Avoid circular import
+            from mmrazor.structures import load_fix_subnet
             load_fix_subnet(self.architecture, channel_cfg_paths[0])
             self.is_deployed = True
         else:

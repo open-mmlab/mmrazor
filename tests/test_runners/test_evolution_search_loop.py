@@ -11,9 +11,9 @@ import torch
 from mmengine.config import Config
 from torch.utils.data import DataLoader, Dataset
 
-from mmrazor.models.subnet import Candidates
+from mmrazor.engine import EvolutionSearchLoop
 from mmrazor.registry import LOOPS
-from mmrazor.runners import EvolutionSearchLoop
+from mmrazor.structures import Candidates
 
 
 def collate_fn(data_batch):
@@ -110,8 +110,8 @@ class TestEvolutionSearchLoop(TestCase):
         self.assertIsInstance(loop, EvolutionSearchLoop)
         self.assertEqual(loop.candidates, fake_candidates)
 
-    @patch('mmrazor.runners.evolution_search_loop.export_fix_subnet')
-    @patch('mmrazor.models.subnet.FlopsEstimator.get_model_complexity_info')
+    @patch('mmrazor.engine.runner.evolution_search_loop.export_fix_subnet')
+    @patch('mmrazor.structures.FlopsEstimator.get_model_complexity_info')
     def test_run_epoch(self, mock_flops, mock_export_fix_subnet):
         # test_run_epoch: distributed == False
         loop_cfg = copy.deepcopy(self.train_cfg)
@@ -159,7 +159,7 @@ class TestEvolutionSearchLoop(TestCase):
         self.assertEqual(len(loop.top_k_candidates), 2)
         self.assertEqual(self.runner.epoch, 2)
 
-    @patch('mmrazor.runners.evolution_search_loop.export_fix_subnet')
+    @patch('mmrazor.engine.runner.evolution_search_loop.export_fix_subnet')
     def test_run(self, mock_export_fix_subnet):
         # test a new search: resume == None
         loop_cfg = copy.deepcopy(self.train_cfg)

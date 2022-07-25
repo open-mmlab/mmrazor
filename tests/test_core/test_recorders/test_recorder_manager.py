@@ -6,7 +6,7 @@ from mmcv import ConfigDict
 from torch import nn
 from toy_mod import Toy
 
-from mmrazor.core import RecorderManager
+from mmrazor.structures import RecorderManager
 
 
 class ToyModel(nn.Module):

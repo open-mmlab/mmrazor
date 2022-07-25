@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from mmrazor.runners.utils import crossover
+from mmrazor.engine.runner.utils import crossover
 
 
 def test_crossover():

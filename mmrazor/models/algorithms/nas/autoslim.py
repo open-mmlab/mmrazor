@@ -11,10 +11,10 @@ from torch import nn
 
 from mmrazor.models.distillers import ConfigurableDistiller
 from mmrazor.models.mutators import OneShotChannelMutator
-from mmrazor.models.subnet import SINGLE_MUTATOR_RANDOM_SUBNET
 from mmrazor.models.utils import (add_prefix,
                                   reinitialize_optim_wrapper_count_status)
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
+from mmrazor.utils import SingleMutatorRandomSubnet
 from ..base import BaseAlgorithm
 
 VALID_MUTATOR_TYPE = Union[OneShotChannelMutator, Dict]
@@ -70,10 +70,10 @@ class AutoSlim(BaseAlgorithm):
 
         return distiller
 
-    def sample_subnet(self) -> SINGLE_MUTATOR_RANDOM_SUBNET:
+    def sample_subnet(self) -> SingleMutatorRandomSubnet:
         return self.mutator.sample_choices()
 
-    def set_subnet(self, subnet: SINGLE_MUTATOR_RANDOM_SUBNET) -> None:
+    def set_subnet(self, subnet: SingleMutatorRandomSubnet) -> None:
         self.mutator.set_choices(subnet)
 
     def set_max_subnet(self) -> None:
