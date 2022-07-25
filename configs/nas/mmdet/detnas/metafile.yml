@@ -20,11 +20,11 @@ Models:
       FLOPs(Backbone): 340 MB
       Params(Backbone): 3.35 MB
       Supernet: FRCNN-ShuffleNetV2
-      Mutable: https://download.openmmlab.com/mmrazor/v0.1/nas/spos/spos_shufflenetv2_subnet_8xb128_in1k/spos_shufflenetv2_subnet_8xb128_in1k_flops_0.33M_acc_73.87_20211222-454627be_mutable_cfg.yaml
+      Mutable: https://download.openmmlab.com/mmrazor/v1/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco_bbox_backbone_flops-0.34M_mAP-37.5_20220715-61d2e900_subnet_cfg_v1.yaml
     Results:
       - Task: Object Detection
         Dataset: COCO
         Metrics:
           box AP: 37.5
     Config: configs/nas/mmdet/detnas/detnas_frcnn_shufflenet_subnet_coco_1x.py
-    Weights: https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco_bbox_backbone_flops-0.34M_mAP-37.5_20211222-67fea61f_mutable_cfg.yaml
+    Weights: https://download.openmmlab.com/mmrazor/v1/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco_bbox_backbone_flops-0.34M_mAP-37.5_20220715-61d2e900_v1.pth
