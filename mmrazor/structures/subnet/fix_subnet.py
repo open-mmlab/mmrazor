@@ -2,12 +2,13 @@
 import mmcv
 from torch import nn
 
-from mmrazor.models.architectures.dynamic_op.base import DynamicOP
-from mmrazor.models.mutables.base_mutable import BaseMutable
+
 from mmrazor.utils import FixMutable, ValidFixMutable
 
 
 def _dynamic_to_static(model: nn.Module) -> None:
+    # Avoid circular import
+    from mmrazor.models.architectures.dynamic_op.base import DynamicOP
 
     def traverse_children(module: nn.Module) -> None:
         # TODO
@@ -30,6 +31,9 @@ def load_fix_subnet(model: nn.Module,
     if not isinstance(fix_mutable, dict):
         raise TypeError('fix_mutable should be a `str` or `dict`'
                         f'but got {type(fix_mutable)}')
+    # Avoid circular import
+    from mmrazor.models.mutables.base_mutable import BaseMutable
+
     for name, module in model.named_modules():
         # The format of `chosen`` is different for each type of mutable.
         # In the corresponding mutable, it will check whether the `chosen`
@@ -55,6 +59,10 @@ def load_fix_subnet(model: nn.Module,
 
 def export_fix_subnet(model: nn.Module) -> FixMutable:
     """Export subnet that can be loaded by :func:`load_fix_subnet`."""
+
+    # Avoid circular import
+    from mmrazor.models.mutables.base_mutable import BaseMutable
+
     fix_subnet = dict()
     for name, module in model.named_modules():
         if isinstance(module, BaseMutable):

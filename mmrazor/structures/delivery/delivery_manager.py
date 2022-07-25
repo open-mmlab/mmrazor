@@ -3,7 +3,7 @@ import copy
 from typing import Dict, Optional
 
 from mmrazor.registry import TASK_UTILS
-from .distill_delivery import DistillDelivery
+from .distill_deliver import DistillDelivery
 
 SUPPORT_DELIVERIES = ['FunctionOutputs', 'MethodOutputs']
 
