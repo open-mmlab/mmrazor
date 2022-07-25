@@ -45,7 +45,7 @@ class ChannelMutator(BaseMutator):
     def __init__(
         self,
         global_mutable_cfgs: Dict,
-        custom_mutable_cfgs: Optional[Dict] = None,
+        custom_mutable_cfgs: Optional[Dict[str, Dict]] = None,
         tracer_cfg: Optional[Dict] = None,
         skip_prefixes: Optional[List[str]] = None,
         init_cfg: Optional[Dict] = None,
@@ -54,15 +54,16 @@ class ChannelMutator(BaseMutator):
 
         self._global_mutable_cfgs = copy.deepcopy(global_mutable_cfgs)
         if custom_mutable_cfgs is not None:
-            sorted_custom_mutable_cfgs = sorted(
+            sorted_custom_mutable_cfgs_list = sorted(
                 custom_mutable_cfgs.items(), key=lambda x: len(x[0]))
             sorted_custom_mutable_cfgs = {
                 k: v
-                for k, v in sorted_custom_mutable_cfgs
+                for k, v in sorted_custom_mutable_cfgs_list
             }
-            self._custom_mutable_cfgs = OrderedDict(sorted_custom_mutable_cfgs)
+            custom_mutable_cfgs = OrderedDict(sorted_custom_mutable_cfgs)
         else:
-            self._custom_mutable_cfgs = None
+            custom_mutable_cfgs = None
+        self._custom_mutable_cfgs = custom_mutable_cfgs
 
         if tracer_cfg:
             self.tracer = TASK_UTILS.build(tracer_cfg)

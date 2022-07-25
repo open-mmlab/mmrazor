@@ -1,13 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import abstractmethod
-from typing import List
+from typing import Dict, List
 
 import torch
 
-from ..base_mutable import CHOICE_TYPE, CHOSEN_TYPE, BaseMutable
+from ..base_mutable import CHOICE_TYPE, BaseMutable
 
 
-class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
+class MutableChannel(BaseMutable[CHOICE_TYPE, Dict]):
     """A type of ``MUTABLES`` for single path supernet such as AutoSlim. In
     single path supernet, each module only has one choice invoked at the same
     time. A path is obtained by sampling all the available choices. It is the
@@ -85,7 +85,7 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
         """
         self.name = name
 
-    def fix_chosen(self, chosen: CHOSEN_TYPE) -> None:
+    def fix_chosen(self, chosen: Dict) -> None:
         """Fix mutable with subnet config. This operation would convert
         `unfixed` mode to `fixed` mode. The :attr:`is_fixed` will be set to
         True and only the selected operations can be retained.
@@ -98,10 +98,12 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
                 'The mode of current MUTABLE is `fixed`. '
                 'Please do not call `fix_chosen` function again.')
 
-        # TODO
-        # should fixed op still have candidate_choices?
-        self.current_choice = chosen
+        current_choice = chosen['current_choice']
+        self.current_choice = current_choice
         self.is_fixed = True
+
+    def dump_chosen(self) -> Dict:
+        return dict(current_choice=self.current_choice)
 
     def __repr__(self):
         concat_mutable_name = [

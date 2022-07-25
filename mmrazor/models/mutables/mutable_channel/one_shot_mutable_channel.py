@@ -11,7 +11,7 @@ CANDIDATE_CHOICE_TYPE = List[Union[float, int]]
 
 
 @MODELS.register_module()
-class OneShotMutableChannel(MutableChannel[int, Dict]):
+class OneShotMutableChannel(MutableChannel[int]):
     """A type of ``MUTABLES`` for single path supernet such as AutoSlim. In
     single path supernet, each module only has one choice invoked at the same
     time. A path is obtained by sampling all the available choices. It is the
@@ -126,16 +126,16 @@ class OneShotMutableChannel(MutableChannel[int, Dict]):
         self._check_candidate_choices(candidate_choices)
         self._candidate_choices = candidate_choices
 
+    # TODO
+    # should return List[int], but this will make mypy complain
     @property
-    def choices(self) -> List[int]:
+    def choices(self) -> List:
         """list: all choices. """
         assert self._candidate_choices is not None, \
             '`candidate_choices` must be set before access'
         if self._candidate_mode == 'number':
-            self._candidate_choices: List[int]
             return self._candidate_choices
 
-        self._candidate_choices: List[float]
         candidate_choices = [
             round(ratio * self.num_channels)
             for ratio in self._candidate_choices
@@ -161,11 +161,12 @@ class OneShotMutableChannel(MutableChannel[int, Dict]):
             origin_channels=self.num_channels)
 
     def fix_chosen(self, dumped_chosen: Dict) -> None:
-        chosen = dumped_chosen['current_choice']
+        current_choice = dumped_chosen['current_choice']
         origin_channels = dumped_chosen['origin_channels']
 
-        assert chosen <= origin_channels
+        assert current_choice <= origin_channels
 
-        super().fix_chosen(chosen)
+        self.current_choice = current_choice
+        self.is_fixed = True
 
-        self._candidate_choices = [chosen]
+        self._candidate_choices = [current_choice]

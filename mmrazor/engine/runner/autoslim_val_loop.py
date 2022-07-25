@@ -37,21 +37,18 @@ class AutoSlimValLoop(ValLoop, CalibrateBNMixin):
         all_metrics = dict()
 
         self._model.set_max_subnet()
-        self.calibrate_bn_statistics(self.runner.train_dataloader,
-                                     self.calibrate_bn_statistics)
+        self.calibrate_bn_statistics(self.runner.train_dataloader, 2000)
         metrics = self._evaluate_once()
         all_metrics.update(add_prefix(metrics, 'max_subnet'))
 
         self._model.set_min_subnet()
-        self.calibrate_bn_statistics(self.runner.train_dataloader,
-                                     self.calibrate_bn_statistics)
+        self.calibrate_bn_statistics(self.runner.train_dataloader, 2000)
         metrics = self._evaluate_once()
         all_metrics.update(add_prefix(metrics, 'min_subnet'))
 
         for subnet_idx in range(self._model.num_samples):
             self._model.set_subnet(self._model.sample_subnet())
-            self.calibrate_bn_statistics(self.runner.train_dataloader,
-                                         self.calibrate_bn_statistics)
+            self.calibrate_bn_statistics(self.runner.train_dataloader, 2000)
             # compute student metrics
             metrics = self._evaluate_once()
             all_metrics.update(

@@ -2,15 +2,14 @@
 from typing import Any
 
 import torch
+import torch.distributed as dist
 from mmengine import autocast
 from mmengine.runner import Runner
-from torch import Tensor, nn
+from torch import Tensor
 from torch.nn.modules.batchnorm import _BatchNorm
 from torch.utils.data import DataLoader
 
 
-# TODO
-# reduce across all gpus
 class AverageMeter:
     """Computes and stores the average and current value."""
 
@@ -22,9 +21,19 @@ class AverageMeter:
         self.sum: Tensor = 0
         self.count: int = 0
 
-    def update(self, val: Any, n: int = 1) -> None:
-        self.sum += val * n
-        self.count += n
+    def update(self, val: Any, batch_size: int = 1) -> None:
+        if dist.is_initialized() and dist.is_available():
+            dist.all_reduce(val, dist.ReduceOp.SUM, async_op=False)
+            batch_size_tensor = torch.tensor([batch_size], device=val.device)
+            dist.all_reduce(
+                batch_size_tensor, dist.ReduceOp.SUM, async_op=False)
+            total_batch_size = batch_size_tensor.item()
+
+            val /= (total_batch_size / batch_size)
+            batch_size = total_batch_size
+
+        self.sum += val * batch_size
+        self.count += batch_size
         self.avg = self.sum / self.count
 
 
@@ -62,8 +71,7 @@ class CalibrateBNMixin:
                     record_input_statistics_hook)
                 hook_handles.append(handle)
 
-        self.runner.model.eval()
-
+        self.runner.model.train()
         self.runner.logger.debug('start calibrating batch norm statistics')
         self.runner.logger.debug(
             f'total sample numbers for calibration: {calibrated_sample_nums}')
@@ -71,7 +79,15 @@ class CalibrateBNMixin:
         for data_batch in dataloader:
             if len(data_batch) >= remaining:
                 data_batch = data_batch[:remaining]
-            remaining -= len(data_batch)
+            data_batch_nums = len(data_batch)
+            if dist.is_initialized() and dist.is_available():
+                data_batch_nums_tensor = torch.tensor(
+                    [data_batch_nums], device=self.runner.model.device)
+                dist.all_reduce(
+                    data_batch_nums, dist.ReduceOp.SUM, async_op=False)
+                data_batch_nums = data_batch_nums_tensor.item()
+            remaining -= data_batch_nums
+
             self.runner.logger.debug(
                 f'remaining samples for calibration: {remaining}')
             with autocast(enabled=self.fp16):
@@ -82,9 +98,6 @@ class CalibrateBNMixin:
 
         for name, module in self.runner.model.named_modules():
             if isinstance(module, _BatchNorm):
-                assert isinstance(module, nn.BatchNorm2d), \
-                    'only support BatchNorm2d'
-
                 mean_average_meter = module.__mean_average_meter__
                 var_average_meter = module.__var_average_meter__
                 calibrated_bn_mean = mean_average_meter.avg
@@ -93,14 +106,17 @@ class CalibrateBNMixin:
                 feature_dim = calibrated_bn_mean.size(0)
 
                 self.runner.logger.debug(
-                    f'layer: {name}, '
-                    f'current feature dimension: {feature_dim}, '
-                    f'number of samples for calibration: {mean_average_meter.count}, '
-                    f'l2 norm of calibrated running mean: {calibrated_bn_mean.norm()}, '
-                    f'l2 norm of calibrated running var: {calibrated_bn_var.norm()}, '
-                    f'l2 norm of original running mean: {module.running_mean[:feature_dim].norm()}, '
-                    f'l2 norm of original running var: {module.running_var[:feature_dim].norm()}, '
-                )
+                    f'layer: {name}, feature dimension: {feature_dim}, '
+                    'number of samples for calibration: '
+                    f'{mean_average_meter.count}, '
+                    'l2 norm of calibrated running mean: '
+                    f'{calibrated_bn_mean.norm()}, '
+                    'l2 norm of calibrated running var: '
+                    f'{calibrated_bn_var.norm()}, '
+                    'l2 norm of original running mean: '
+                    f'{module.running_mean[:feature_dim].norm()}, '
+                    'l2 norm of original running var: '
+                    f'{module.running_var[:feature_dim].norm()}, ')
 
                 module.running_mean[:feature_dim].copy_(calibrated_bn_mean)
                 module.running_var[:feature_dim].copy_(calibrated_bn_var)
