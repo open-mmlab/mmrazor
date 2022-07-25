@@ -174,6 +174,8 @@ def parse_norm(tracer, grad_fn, module2name, param2module, cur_path,
 
 
 DEFAULT_BACKWARD_TRACER: Dict[str, Callable] = {
+    'ConvolutionBackward': parse_conv,
+    'SlowConv2DBackward': parse_conv,
     'ThnnConv2DBackward': parse_conv,
     'CudnnConvolutionBackward': parse_conv,
     'MkldnnConvolutionBackward': parse_conv,
