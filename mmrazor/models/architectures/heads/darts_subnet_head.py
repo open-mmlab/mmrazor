@@ -2,8 +2,8 @@
 from typing import List, Tuple
 
 import torch
-from mmcls.core.data_structures.cls_data_sample import ClsDataSample
-from mmcls.metrics import Accuracy
+from mmcls.data import ClsDataSample
+from mmcls.evaluation import Accuracy
 from mmcls.models.heads import LinearClsHead
 from torch import nn
 
