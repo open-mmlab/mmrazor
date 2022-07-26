@@ -4,7 +4,7 @@ import unittest
 from os.path import dirname
 
 import torch
-from mmcls.core import ClsDataSample
+from mmcls.data import ClsDataSample
 from mmcls.models import *  # noqa: F401,F403
 
 from mmrazor import digit_version

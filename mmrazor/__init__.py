@@ -47,8 +47,8 @@ def digit_version(version_str: str, length: int = 4):
     return tuple(release)
 
 
-mmcv_minimum_version = '1.3.8'
-mmcv_maximum_version = '1.6.0'
+mmcv_minimum_version = '2.0.0rc0'
+mmcv_maximum_version = '2.0.0'
 mmcv_version = digit_version(mmcv.__version__)
 
 
@@ -57,4 +57,4 @@ assert (mmcv_version >= digit_version(mmcv_minimum_version)
     f'MMCV=={mmcv.__version__} is used but incompatible. ' \
     f'Please install mmcv>={mmcv_minimum_version}, <={mmcv_maximum_version}.'
 
-__all__ = ['__version__', 'digit_version']
+__all__ = ['__version__']
