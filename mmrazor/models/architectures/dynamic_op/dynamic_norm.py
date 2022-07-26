@@ -9,6 +9,7 @@ from torch.nn.modules import GroupNorm
 from torch.nn.modules.batchnorm import _BatchNorm
 from torch.nn.modules.instancenorm import _InstanceNorm
 
+from mmrazor.models.mutables.derived_mutable import DerivedMutable
 from mmrazor.models.mutables.mutable_channel import MutableChannel
 from mmrazor.registry import MODELS
 from ...mutables import MutableManageMixIn
@@ -35,11 +36,13 @@ class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
     def _register_num_features_mutable(
             self, mutable_cfgs: MUTABLE_CFGS_TYPE) -> None:
         if 'num_features' in mutable_cfgs:
-            num_features_mutable = copy.deepcopy(mutable_cfgs['num_features'])
-            num_features_mutable.update(dict(num_channels=self.num_features))
-            self.num_features_mutable = MODELS.build(num_features_mutable)
+            num_features = mutable_cfgs['num_features']
+            if isinstance(num_features, dict):
+                num_features.update(dict(num_channels=self.num_features))
+                num_features = MODELS.build(num_features)
+            assert isinstance(num_features, (MutableChannel, DerivedMutable))
+            self.num_features_mutable = num_features
 
-            assert isinstance(self.num_features_mutable, MutableChannel)
         else:
             self.register_parameter('num_features_mutable', None)
 

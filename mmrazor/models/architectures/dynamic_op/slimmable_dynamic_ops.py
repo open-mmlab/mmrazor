@@ -50,8 +50,12 @@ class SwitchableBatchNorm2d(nn.Module, DynamicOP):
         super().__init__()
 
         mutable_cfgs = self.parse_mutable_cfgs(mutable_cfgs)
-        num_features_mutable = mutable_cfgs['num_features']
-        num_features_mutable.update(dict(num_channels=max(candidate_choices)))
+        num_features = mutable_cfgs['num_features']
+        if isinstance(num_features, dict):
+            num_features.update(dict(num_channels=max(candidate_choices)))
+            num_features = MODELS.build(num_features)
+        assert isinstance(num_features, MutableChannel)
+        self.num_features_mutable = num_features
 
         bns = [
             nn.BatchNorm2d(num_features, eps, momentum, affine,
@@ -59,8 +63,6 @@ class SwitchableBatchNorm2d(nn.Module, DynamicOP):
             for num_features in candidate_choices
         ]
         self.bns = nn.ModuleList(bns)
-
-        self.num_features_mutable = MODELS.build(num_features_mutable)
 
     @property
     def mutable_in(self) -> MutableChannel:

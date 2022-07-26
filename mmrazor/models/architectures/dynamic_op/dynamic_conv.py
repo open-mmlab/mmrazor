@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
 from collections.abc import Iterable
 from itertools import repeat
 from typing import Callable, Optional, Tuple
@@ -9,6 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
+from mmrazor.models.mutables.derived_mutable import DerivedMutable
 from mmrazor.models.mutables.mutable_channel import MutableChannel
 from mmrazor.models.mutables.mutable_value import MutableValue
 from mmrazor.registry import MODELS
@@ -48,6 +48,7 @@ def _get_same_padding(kernel_size: int) -> Tuple[int]:
     return _pair(kernel_size >> 1)
 
 
+@MODELS.register_module()
 class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
     """Applies a 2D convolution over an input signal composed of several input
     planes according to the `mutable_in_channels` and `mutable_out_channels`
@@ -79,16 +80,20 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
                 'out_channels' in mutable_cfgs, \
                 'both `in_channels` and `out_channels` ' \
                 'should be contained in `mutable_cfgs`'
-            in_channels_cfg = copy.deepcopy(mutable_cfgs['in_channels'])
-            in_channels_cfg.update(num_channels=self.in_channels)
-            self.in_channels_mutable = MODELS.build(in_channels_cfg)
+            in_channels = mutable_cfgs['in_channels']
+            if isinstance(in_channels, dict):
+                in_channels.update(num_channels=self.in_channels)
+                in_channels = MODELS.build(in_channels)
+            assert isinstance(in_channels, (MutableChannel, DerivedMutable))
+            self.in_channels_mutable = in_channels
 
-            out_channels_cfg = copy.deepcopy(mutable_cfgs['out_channels'])
-            out_channels_cfg.update(dict(num_channels=self.out_channels))
-            self.out_channels_mutable = MODELS.build(out_channels_cfg)
+            out_channels = mutable_cfgs['out_channels']
+            if isinstance(out_channels, dict):
+                out_channels.update(dict(num_channels=self.out_channels))
+                out_channels = MODELS.build(out_channels)
+            assert isinstance(out_channels, (MutableChannel, DerivedMutable))
+            self.out_channels_mutable = out_channels
 
-            assert isinstance(self.in_channels_mutable, MutableChannel)
-            assert isinstance(self.out_channels_mutable, MutableChannel)
         else:
             # FIXME
             # mutable is not a parameter, so just equal to None?
@@ -98,9 +103,11 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
     def _register_kernel_size_mutable(self,
                                       mutable_cfgs: MUTABLE_CFGS_TYPE) -> None:
         if 'kernel_size' in mutable_cfgs:
-            kernel_size_cfg = copy.deepcopy(mutable_cfgs['kernel_size'])
-            self.kernel_size_mutable = MODELS.build(kernel_size_cfg)
-            assert isinstance(self.kernel_size_mutable, MutableValue)
+            kernel_size = mutable_cfgs['kernel_size']
+            if isinstance(kernel_size, dict):
+                kernel_size = MODELS.build(kernel_size)
+            assert isinstance(kernel_size, (MutableValue, DerivedMutable))
+            self.kernel_size_mutable = kernel_size
 
             max_choice = self.kernel_size_mutable.max_choice
             if _pair(max_choice) != self.kernel_size:
@@ -205,6 +212,7 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
         return static_conv2d
 
 
+@MODELS.register_module()
 class ProgressiveDynamicConv2d(DynamicConv2d):
 
     def __init__(self, *, mutable_cfgs: MUTABLE_CFGS_TYPE,
@@ -269,6 +277,7 @@ class ProgressiveDynamicConv2d(DynamicConv2d):
         return current_weight, current_padding
 
 
+@MODELS.register_module()
 class CenterCropDynamicConv2d(DynamicConv2d):
 
     def __init__(self, *, mutable_cfgs: MUTABLE_CFGS_TYPE,

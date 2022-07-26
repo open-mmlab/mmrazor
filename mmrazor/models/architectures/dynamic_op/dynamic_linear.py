@@ -1,11 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
 from typing import Optional, Tuple
 
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
+from mmrazor.models.mutables.derived_mutable import DerivedMutable
 from mmrazor.models.mutables.mutable_channel import MutableChannel
 from mmrazor.registry import MODELS
 from .base import MUTABLE_CFGS_TYPE, ChannelDynamicOP
@@ -36,16 +36,20 @@ class DynamicLinear(nn.Linear, ChannelDynamicOP):
                 'out_features' in mutable_cfgs, \
                 'both `in_features` and `out_features` ' \
                 'should be contained in `mutable_cfgs`'
-            in_features_cfg = copy.deepcopy(mutable_cfgs['in_features'])
-            in_features_cfg.update(num_channels=self.in_features)
-            self.in_features_mutable = MODELS.build(in_features_cfg)
+            in_features = mutable_cfgs['in_features']
+            if isinstance(in_features, dict):
+                in_features.update(num_channels=self.in_features)
+                in_features = MODELS.build(in_features)
+            assert isinstance(in_features, (MutableChannel, DerivedMutable))
+            self.in_features_mutable = in_features
 
-            out_features_cfg = copy.deepcopy(mutable_cfgs['out_features'])
-            out_features_cfg.update(dict(num_channels=self.out_features))
-            self.out_features_mutable = MODELS.build(out_features_cfg)
+            out_features = mutable_cfgs['out_features']
+            if isinstance(out_features, dict):
+                out_features.update(dict(num_channels=self.out_features))
+                out_features = MODELS.build(out_features)
+            assert isinstance(out_features, (MutableChannel, DerivedMutable))
+            self.out_features_mutable = out_features
 
-            assert isinstance(self.in_features_mutable, MutableChannel)
-            assert isinstance(self.out_features_mutable, MutableChannel)
         else:
             self.register_parameter('in_features_mutable', None)
             self.register_parameter('out_features_mutable', None)

@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
 from typing import Optional, Sequence
 
 from mmengine.model import Sequential
@@ -23,22 +22,21 @@ class DynamicSequential(Sequential, DynamicOP):
         self._register_depth_mutable(mutable_cfgs)
 
     def _register_depth_mutable(self, mutable_cfgs: MUTABLE_CFGS_TYPE) -> None:
-        if 'depth' in mutable_cfgs:
-            depth_cfg = copy.deepcopy(mutable_cfgs['depth'])
-            self.depth_mutable = MODELS.build(depth_cfg)
-            assert isinstance(self.depth_mutable, MutableValue)
+        depth = mutable_cfgs['depth']
+        if isinstance(depth, dict):
+            depth = MODELS.build(depth)
+        assert isinstance(depth, MutableValue)
+        self.depth_mutable = depth
 
-            max_choice = self.depth_mutable.max_choice
-            # HACK
-            # mutable will also be a submodule in sequential
-            if len(self) - 1 != max_choice:
-                raise ValueError('Max choice of depth mutable must be the '
-                                 'same as depth of Sequential, but got max '
-                                 f'choice: {max_choice}, expected max '
-                                 f'depth: {len(self)}.')
-            self.depth_mutable.current_choice = len(self) - 1
-        else:
-            self.register_parameter('depth_mutable', None)
+        max_choice = self.depth_mutable.max_choice
+        # HACK
+        # mutable will also be a submodule in sequential
+        if len(self) - 1 != max_choice:
+            raise ValueError('Max choice of depth mutable must be the '
+                             'same as depth of Sequential, but got max '
+                             f'choice: {max_choice}, expected max '
+                             f'depth: {len(self)}.')
+        self.depth_mutable.current_choice = len(self) - 1
 
     def forward(self, x: Tensor) -> Tensor:
         current_depth = self.depth_mutable.current_choice

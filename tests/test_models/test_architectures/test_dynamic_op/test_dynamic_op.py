@@ -13,7 +13,7 @@ from mmrazor.models.architectures import (CenterCropDynamicConv2d,
                                           DynamicLinear, DynamicSequential,
                                           ProgressiveDynamicConv2d)
 from mmrazor.models.architectures.dynamic_op import DynamicOP
-from mmrazor.models.mutables import OneShotMutableChannel, OneShotMutableValue
+from mmrazor.models.mutables import OneShotMutableChannel
 from mmrazor.models.subnet import export_fix_mutable, load_fix_subnet
 
 
@@ -255,15 +255,19 @@ def test_dynamic_bn(dynamic_class: nn.Module, input_shape: Tuple[int]) -> None:
 
 @pytest.mark.parametrize('dynamic_class',
                          [ProgressiveDynamicConv2d, CenterCropDynamicConv2d])
-@pytest.mark.parametrize('mutate_kernel_size', [True, False])
-def test_kernel_dynamic_conv2d(dynamic_class: nn.Module,
-                               mutate_kernel_size: bool) -> None:
-
-    mutable_in_channels = OneShotMutableChannel(
-        10, candidate_choices=[4, 8, 10], candidate_mode='number')
-    mutable_out_channels = OneShotMutableChannel(
-        10, candidate_choices=[4, 8, 10], candidate_mode='number')
-    mutable_kernel_size = OneShotMutableValue(value_list=[3, 5, 7])
+def test_kernel_dynamic_conv2d(dynamic_class: nn.Module) -> None:
+    in_channels_cfg = dict(
+        type='OneShotMutableChannel',
+        candidate_mode='number',
+        candidate_choices=[4, 8, 10])
+    out_channels_cfg = dict(
+        candidate_mode='number', candidate_choices=[4, 8, 10], num_channels=10)
+    out_channels_cfg = OneShotMutableChannel(**out_channels_cfg)
+    kernel_size_cfg = dict(type='OneShotMutableValue', value_list=[3, 5, 7])
+    mutable_cfgs = dict(
+        in_channels=in_channels_cfg,
+        out_channels=out_channels_cfg,
+        kernel_size=kernel_size_cfg)
 
     with pytest.raises(ValueError):
         d_conv2d = dynamic_class(

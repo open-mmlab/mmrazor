@@ -12,18 +12,45 @@ from torch.nn.modules.batchnorm import _BatchNorm
 from mmrazor.registry import MODELS
 
 
+def _make_mutable_channels_cfg(candidate_choices: List[int],
+                               num_channels: int) -> Dict:
+    return dict(
+        type='OneShotMutableChannel',
+        num_channels=num_channels,
+        candidate_choices=candidate_choices,
+        candidate_mode='number')
+
+
+def _make_dynamic_conv_cfg(in_channels: Optional[Dict] = None,
+                           out_channels: Optional[Dict] = None,
+                           kernel_size: Optional[Dict] = None) -> Dict:
+    mutable_cfgs = dict()
+
+    if in_channels is not None:
+        mutable_cfgs['in_channels'] = copy.deepcopy(in_channels)
+    if out_channels is not None:
+        mutable_cfgs['out_channels'] = copy.deepcopy(out_channels)
+    if kernel_size is not None:
+        mutable_cfgs['kernel_size'] = copy.deepcopy(kernel_size)
+
+    return mutable_cfgs
+
+
 @MODELS.register_module()
 class BigNASMobileNet(BaseBackbone):
 
-    arch_setting = [[
-        24,
-    ]]
+    # channel range, depth range, kernel size range, stride
+    arch_setting = [[[32, 40], [1], [3], 2], [[16, 24], [1, 2], [3], 1],
+                    [[24, 32], [2, 3], [3], 2], [[40, 48], [2, 3], [3, 5], 2],
+                    [[80, 88], [2, 3, 4], [3, 5], 2],
+                    [[112, 120, 128], [2, 3, 4, 5, 6], [3, 5], 1],
+                    [[192, 200, 208, 216], [2, 3, 4, 5, 6], [3, 5], 2],
+                    [[320, 328, 336, 344, 352], [1, 2], [3, 5], 1],
+                    [list(range(1280, 1409, 8)), [1], [1], 1]]
 
     def __init__(
         self,
         arch_setting: List[List],
-        first_channels: int = 40,
-        last_channels: int = 1408,
         widen_factor: float = 1.,
         out_indices: Sequence[int] = (7, ),
         frozen_stages: int = -1,
@@ -48,7 +75,6 @@ class BigNASMobileNet(BaseBackbone):
 
         super().__init__(init_cfg)
 
-        self.arch_setting = arch_setting
         self.widen_factor = widen_factor
         self.out_indices = out_indices
         self.frozen_stages = frozen_stages
@@ -60,6 +86,9 @@ class BigNASMobileNet(BaseBackbone):
 
         self.in_channels = make_divisible(first_channels * widen_factor, 8)
 
+        in_channel_mutable = xxx
+        out_channel_mutable = xxx
+        derived_mutable = xxx
         self.conv1 = ConvModule(
             in_channels=3,
             out_channels=self.in_channels,
@@ -69,6 +98,7 @@ class BigNASMobileNet(BaseBackbone):
             conv_cfg=self.conv_cfg,
             norm_cfg=self.norm_cfg,
             act_cfg=self.act_cfg)
+        self.conv1.bn.mutable_in = DerivedMutable(self.conv1.conv.mutable_out)
 
         self.layers = []
 
