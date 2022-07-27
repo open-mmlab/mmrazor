@@ -31,7 +31,6 @@ class SingleConvConnector(BaseConnector):
         super().__init__(init_cfg)
         self.conv = build_conv_layer(
             conv_cfg, in_channel, out_channel, kernel_size=1, stride=1)
-        self.init_parameters()
 
     def forward_train(self, feature: torch.Tensor) -> torch.Tensor:
         """Forward computation.
@@ -41,8 +40,12 @@ class SingleConvConnector(BaseConnector):
         """
         return self.conv(feature)
 
-    def init_parameters(self) -> None:
-        """Init parameters."""
+    def init_weights(self) -> None:
+        """Init parameters.
+
+        In the subclass of ``BaseModule``, `init_weights` will be called
+        automativally.
+        """
         with torch.no_grad():
             for m in self.modules():
                 if isinstance(m, nn.Conv2d):
