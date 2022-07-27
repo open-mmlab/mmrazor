@@ -18,7 +18,7 @@ model = dict(
         cfg_path='mmcls::resnet/resnet18_8xb32_in1k.py', pretrained=False),
     teacher=dict(
         cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=True),
-    teacher_ckpt='resnet34_8xb32_in1k_20210831-f257d4e6.pth',
+    teacher_ckpt='resnet50_8xb32_in1k_20210831-ea4938fc.pth',
     distiller=dict(
         type='ConfigurableDistiller',
         student_recorders=dict(
@@ -36,9 +36,9 @@ model = dict(
                 type='KLDivergence', tau=6, loss_weight=10, reduction='mean')),
         student_connectors=dict(
             loss_f4=dict(
-                type='ReLUConnector', in_channel=512, out_channel=2048),
+                type='ConvBNReLUConnector', in_channel=512, out_channel=2048),
             loss_f3=dict(
-                type='ReLUConnector', in_channel=256, out_channel=1024)),
+                type='ConvBNReLUConnector', in_channel=256, out_channel=1024)),
         loss_forward_mappings=dict(
             loss_f4=dict(
                 s_feature=dict(

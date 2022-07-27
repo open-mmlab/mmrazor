@@ -72,6 +72,10 @@ class ConfigurableDistiller(BaseDistiller):
         `student_recorders``; otherwise, it means the recorder is in
         ``teacher_recorders``.
 
+        If a distill loss in ``loss_forward_mappings`` needs to convert feature
+        by connector, its corresponding connector must contain the same name as
+        it.
+
     Examples:
         >>> distill_losses = dict(
         ...     loss_neck=dict(type='L2Loss', loss_weight=5))
@@ -83,10 +87,12 @@ class ConfigurableDistiller(BaseDistiller):
         ...     feat = dict(type='ModuleOutputs', sources=['neck.gap']))
 
         >>> student_connectors = dict(
-        ...     loss_neck = dict(type='ReLUConnector', sources=['neck.gap']))
+        ...     loss_neck = dict(
+        ...         type='ReLUConnector', in_channel=32, out_channel=64))
 
         >>> teacher_connectors = dict(
-        ...     loss_neck = dict(type='ReLUConnector', sources=['neck.gap']))
+        ...     loss_neck = dict(
+        ...         type='ReLUConnector', in_channel=32, out_channel=64))
 
         >>> loss_forward_mappings = dict(
         ...     loss_neck=dict(
@@ -148,8 +154,9 @@ class ConfigurableDistiller(BaseDistiller):
         distill_connecotrs = nn.ModuleDict()
         if connectors:
             for loss_name, connector_cfg in connectors.items():
-                assert loss_name in self.distill_losses
-                assert loss_name not in distill_connecotrs
+                assert loss_name in self.distill_losses, \
+                    f'The corresponding loss "{loss_name}" of ' \
+                    f'{connector_cfg["type"]} is not in distill_losses.'
                 connector = MODELS.build(connector_cfg)
                 distill_connecotrs[loss_name] = connector
 

@@ -1,7 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Dict, Optional
+
 import numpy as np
 import torch
 import torch.nn as nn
+from mmcv.cnn import build_conv_layer, build_norm_layer
 
 from mmrazor.registry import MODELS
 from .base_connector import BaseConnector
@@ -14,15 +17,20 @@ class SingleConvConnector(BaseConnector):
     Args:
         in_channel (int): The input channel of the connector.
         out_channel (int): The output channel of the connector.
+        conv_cfg (dict, optional): The config to control the convolution.
+        init_cfg (dict, optional): The config to control the initialization.
     """
 
     def __init__(
         self,
         in_channel: int,
         out_channel: int,
+        conv_cfg: Optional[Dict] = None,
+        init_cfg: Optional[Dict] = None,
     ) -> None:
-        super().__init__()
-        self.conv = nn.Conv2d(in_channel, out_channel, kernel_size=1, stride=1)
+        super().__init__(init_cfg)
+        self.conv = build_conv_layer(
+            conv_cfg, in_channel, out_channel, kernel_size=1, stride=1)
         self.init_parameters()
 
     def forward_train(self, feature: torch.Tensor) -> torch.Tensor:
@@ -50,28 +58,33 @@ class SingleConvConnector(BaseConnector):
 
 
 @MODELS.register_module()
-class BNConnector(BaseConnector):
+class ConvBNConnector(BaseConnector):
     """General connector which contains a conv layer with BN.
 
     Args:
         in_channel (int): The input channels of the connector.
         out_channel (int): The output channels of the connector.
+        conv_cfg (dict, optional): The config to control the convolution.
+        init_cfg (dict, optional): The config to control the initialization.
     """
 
     def __init__(
         self,
         in_channel: int,
         out_channel: int,
+        conv_cfg: Optional[Dict] = None,
+        init_cfg: Optional[Dict] = None,
     ) -> None:
-        super().__init__()
-        self.conv = nn.Conv2d(
+        super().__init__(init_cfg)
+        self.conv = build_conv_layer(
+            conv_cfg,
             in_channel,
             out_channel,
             kernel_size=1,
             stride=1,
             padding=0,
             bias=False)
-        self.bn = nn.BatchNorm2d(out_channel)
+        _, self.bn = build_norm_layer(dict(type='BN'), out_channel)
 
     def forward_train(self, feature: torch.Tensor) -> torch.Tensor:
         """Forward computation.
@@ -83,22 +96,27 @@ class BNConnector(BaseConnector):
 
 
 @MODELS.register_module()
-class ReLUConnector(BaseConnector):
+class ConvBNReLUConnector(BaseConnector):
     """General connector which contains a conv layer with BN and ReLU.
 
     Args:
         in_channel (int): The input channels of the connector.
         out_channel (int): The output channels of the connector.
+        conv_cfg (dict, optional): The config to control the convolution.
+        init_cfg (dict, optional): The config to control the initialization.
     """
 
     def __init__(
         self,
         in_channel: int,
         out_channel: int,
+        conv_cfg: Optional[Dict] = None,
+        init_cfg: Optional[Dict] = None,
     ) -> None:
-        super().__init__()
-        self.conv = nn.Conv2d(in_channel, out_channel, kernel_size=1)
-        self.bn = nn.BatchNorm2d(out_channel)
+        super().__init__(init_cfg)
+        self.conv = build_conv_layer(
+            conv_cfg, in_channel, out_channel, kernel_size=1)
+        _, self.bn = build_norm_layer(dict(type='BN'), out_channel)
         self.relu = nn.ReLU(inplace=True)
 
     def forward_train(self, feature: torch.Tensor) -> torch.Tensor:
