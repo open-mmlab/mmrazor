@@ -2,18 +2,19 @@
 import copy
 from typing import Optional, Tuple
 
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from mmcv.cnn.bricks.registry import NORM_LAYERS
 from torch import Tensor
 from torch.nn.modules import GroupNorm
 from torch.nn.modules.batchnorm import _BatchNorm
 from torch.nn.modules.instancenorm import _InstanceNorm
 
-from mmrazor.models.mutables.derived_mutable import DerivedMutable
-from mmrazor.models.mutables.mutable_channel import MutableChannel
+from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.registry import MODELS
 from ...mutables import MutableManageMixIn
-from .base import MUTABLE_CFGS_TYPE, ChannelDynamicOP
+from .base import ChannelDynamicOP
 
 
 class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
@@ -26,35 +27,23 @@ class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
     accepted_mutable_keys = {'num_features'}
     batch_norm_type: str
 
-    def __init__(self, *, mutable_cfgs: MUTABLE_CFGS_TYPE,
-                 **bn_kwargs) -> None:
-        super().__init__(**bn_kwargs)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
-        mutable_cfgs = self.parse_mutable_cfgs(mutable_cfgs)
-        self._register_num_features_mutable(mutable_cfgs)
+        self.num_features_mutable: Optional[BaseMutable] = None
 
-    def _register_num_features_mutable(
-            self, mutable_cfgs: MUTABLE_CFGS_TYPE) -> None:
-        if 'num_features' in mutable_cfgs:
-            num_features = mutable_cfgs['num_features']
-            if isinstance(num_features, dict):
-                num_features.update(dict(num_channels=self.num_features))
-                num_features = MODELS.build(num_features)
-            assert isinstance(num_features, (MutableChannel, DerivedMutable))
-            self.num_features_mutable = num_features
+    def mutate_num_features(self, num_features_mutable: BaseMutable) -> None:
+        self.check_channels_mutable(num_features_mutable)
 
-        else:
-            self.register_parameter('num_features_mutable', None)
+        self.num_features_mutable = num_features_mutable
 
-    # FIXME
-    # might be None
     @property
-    def mutable_in(self) -> MutableChannel:
+    def mutable_in(self) -> Optional[BaseMutable]:
         """Mutable `num_features`."""
         return self.num_features_mutable
 
     @property
-    def mutable_out(self) -> MutableChannel:
+    def mutable_out(self) -> Optional[BaseMutable]:
         """Mutable `num_features`."""
         return self.num_features_mutable
 
@@ -62,17 +51,19 @@ class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
         self
     ) -> Tuple[Optional[Tensor], Optional[Tensor], Optional[Tensor],
                Optional[Tensor]]:
-        if self.affine:
+        if self.num_features_mutable is not None:
             out_mask = self.num_features_mutable.current_mask.to(
                 self.weight.device)
+        else:
+            out_mask = torch.ones_like(self.weight).bool()
+
+        if self.affine:
             weight = self.weight[out_mask]
             bias = self.bias[out_mask]
         else:
             weight, bias = self.weight, self.bias
 
         if self.track_running_stats:
-            out_mask = self.num_features_mutable.current_mask.to(
-                self.running_mean.device)
             running_mean = self.running_mean[out_mask] \
                 if not self.training or self.track_running_stats else None
             running_var = self.running_var[out_mask] \
@@ -117,7 +108,10 @@ class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
         self.check_if_mutables_fixed()
 
         running_mean, running_var, weight, bias = self._get_dynamic_params()
-        num_features = self.num_features_mutable.current_mask.sum().item()
+        if self.num_features_mutable is not None:
+            num_features = self.num_features_mutable.current_mask.sum().item()
+        else:
+            num_features = self.num_features
 
         static_bn = getattr(nn, self.batch_norm_type)(
             num_features=num_features,
@@ -138,6 +132,7 @@ class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
         return static_bn
 
 
+@NORM_LAYERS.register_module()
 class DynamicBatchNorm1d(_DynamicBatchNorm):
     batch_norm_type: str = 'BatchNorm1d'
 
@@ -147,6 +142,7 @@ class DynamicBatchNorm1d(_DynamicBatchNorm):
                 input.dim()))
 
 
+@NORM_LAYERS.register_module()
 class DynamicBatchNorm2d(_DynamicBatchNorm):
     batch_norm_type: str = 'BatchNorm2d'
 
@@ -156,6 +152,7 @@ class DynamicBatchNorm2d(_DynamicBatchNorm):
                 input.dim()))
 
 
+@NORM_LAYERS.register_module()
 class DynamicBatchNorm3d(_DynamicBatchNorm):
     batch_norm_type: str = 'BatchNorm3d'
 

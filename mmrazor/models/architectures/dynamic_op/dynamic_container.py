@@ -2,48 +2,45 @@
 from typing import Optional, Sequence
 
 from mmengine.model import Sequential
-from torch import Tensor, nn
+from torch import Tensor
 
-from mmrazor.models.mutables.mutable_value import MutableValue
-from mmrazor.registry import MODELS
-from .base import MUTABLE_CFGS_TYPE, DynamicOP
+from mmrazor.models.mutables import DerivedMutable, MutableValue
+from mmrazor.models.mutables.base_mutable import BaseMutable
+from .base import DynamicOP
 
 
 class DynamicSequential(Sequential, DynamicOP):
     accepted_mutable_keys = {'depth'}
+    forward_ignored_module = (MutableValue, DerivedMutable)
 
-    def __init__(self,
-                 *,
-                 modules: Sequence[nn.Module],
-                 mutable_cfgs: MUTABLE_CFGS_TYPE,
-                 init_cfg: Optional[dict] = None):
-        super().__init__(*modules, init_cfg=init_cfg)
-        mutable_cfgs = self.parse_mutable_cfgs(mutable_cfgs)
-        self._register_depth_mutable(mutable_cfgs)
+    def __init__(self, *args, init_cfg: Optional[dict] = None):
+        super().__init__(*args, init_cfg=init_cfg)
 
-    def _register_depth_mutable(self, mutable_cfgs: MUTABLE_CFGS_TYPE) -> None:
-        depth = mutable_cfgs['depth']
-        if isinstance(depth, dict):
-            depth = MODELS.build(depth)
-        assert isinstance(depth, MutableValue)
-        self.depth_mutable = depth
+        self.depth_mutable: Optional[BaseMutable] = None
 
-        max_choice = self.depth_mutable.max_choice
-        # HACK
-        # mutable will also be a submodule in sequential
-        if len(self) - 1 != max_choice:
-            raise ValueError('Max choice of depth mutable must be the '
-                             'same as depth of Sequential, but got max '
-                             f'choice: {max_choice}, expected max '
-                             f'depth: {len(self)}.')
-        self.depth_mutable.current_choice = len(self) - 1
+    def mutate_depth(self,
+                     depth_mutable: BaseMutable,
+                     depth_seq: Optional[Sequence[int]] = None) -> None:
+        if depth_seq is None:
+            depth_seq = getattr(depth_mutable, 'choices')
+        if depth_seq is None:
+            raise ValueError('depth sequence must be provided')
+        depth_list = list(sorted(depth_seq))
+        if depth_list[-1] != len(self):
+            raise ValueError(f'Expect max depth to be: {len(self)}, '
+                             f'but got: {depth_list[-1]}')
+
+        self.depth_list = depth_list
+        self.depth_mutable = depth_mutable
 
     def forward(self, x: Tensor) -> Tensor:
-        current_depth = self.depth_mutable.current_choice
+        if self.depth_mutable is None:
+            return self(x)
 
+        current_depth = self.get_current_choice(self.depth_mutable)
         passed_module_nums = 0
         for module in self:
-            if not isinstance(module, MutableValue):
+            if not isinstance(module, self.forward_ignored_module):
                 passed_module_nums += 1
             if passed_module_nums > current_depth:
                 break
@@ -55,12 +52,15 @@ class DynamicSequential(Sequential, DynamicOP):
     def to_static_op(self) -> Sequential:
         self.check_if_mutables_fixed()
 
-        fixed_depth = self.depth_mutable.current_choice
+        if self.depth_mutable is None:
+            fixed_depth = len(self)
+        else:
+            fixed_depth = self.get_current_choice(self.depth_mutable)
 
         modules = []
         passed_module_nums = 0
         for module in self:
-            if not isinstance(module, MutableValue):
+            if not isinstance(module, self.forward_ignored_module):
                 passed_module_nums += 1
             if passed_module_nums > fixed_depth:
                 break

@@ -13,7 +13,7 @@ from mmrazor.models.architectures import (CenterCropDynamicConv2d,
                                           DynamicLinear, DynamicSequential,
                                           ProgressiveDynamicConv2d)
 from mmrazor.models.architectures.dynamic_op import DynamicOP
-from mmrazor.models.mutables import OneShotMutableChannel
+from mmrazor.models.mutables import OneShotMutableChannel, OneShotMutableValue
 from mmrazor.models.subnet import export_fix_mutable, load_fix_subnet
 
 
@@ -26,12 +26,12 @@ class TestDynamicOP(TestCase):
         x_max = torch.rand(10, 4, 224, 224)
         out_before_mutate = d_conv2d(x_max)
 
-        mutable_in_channels = OneShotMutableChannel(
+        in_channels_mutable = OneShotMutableChannel(
             4, candidate_choices=[2, 3, 4], candidate_mode='number')
-        mutable_out_channels = OneShotMutableChannel(
+        out_channels_mutable = OneShotMutableChannel(
             10, candidate_choices=[4, 8, 10], candidate_mode='number')
-        d_conv2d.mutate_in_channels(mutable_in_channels)
-        d_conv2d.mutate_out_channels(mutable_out_channels)
+        d_conv2d.mutate_in_channels(in_channels_mutable)
+        d_conv2d.mutate_out_channels(out_channels_mutable)
 
         with pytest.raises(RuntimeError):
             d_conv2d.to_static_op()
@@ -64,10 +64,10 @@ class TestDynamicOP(TestCase):
     def test_dynamic_conv2d_single_mutable(self) -> None:
         d_conv2d = DynamicConv2d(
             in_channels=4, out_channels=10, kernel_size=3, stride=1, bias=True)
-        mutable_in_channels = OneShotMutableChannel(
+        in_channels_mutable = OneShotMutableChannel(
             4, candidate_choices=[2, 3, 4], candidate_mode='number')
 
-        d_conv2d.mutate_in_channels(mutable_in_channels)
+        d_conv2d.mutate_in_channels(in_channels_mutable)
 
         with pytest.raises(RuntimeError):
             d_conv2d.to_static_op()
@@ -102,13 +102,13 @@ class TestDynamicOP(TestCase):
             stride=1,
             bias=True)
 
-        mutable_in_channels = OneShotMutableChannel(
+        in_channels_mutable = OneShotMutableChannel(
             10, candidate_choices=[4, 8, 10], candidate_mode='number')
-        mutable_out_channels = OneShotMutableChannel(
+        out_channels_mutable = OneShotMutableChannel(
             10, candidate_choices=[4, 8, 10], candidate_mode='number')
 
-        d_conv2d.mutate_in_channels(mutable_in_channels)
-        d_conv2d.mutate_out_channels(mutable_out_channels)
+        d_conv2d.mutate_in_channels(in_channels_mutable)
+        d_conv2d.mutate_out_channels(out_channels_mutable)
 
         with pytest.raises(RuntimeError):
             d_conv2d.to_static_op()
@@ -136,14 +136,14 @@ class TestDynamicOP(TestCase):
         assert torch.equal(out1, out2)
 
     def test_dynamic_linear(self) -> None:
-        mutable_in_features = OneShotMutableChannel(
+        in_features_mutable = OneShotMutableChannel(
             10, candidate_choices=[4, 8, 10], candidate_mode='number')
-        mutable_out_features = OneShotMutableChannel(
+        out_features_mutable = OneShotMutableChannel(
             10, candidate_choices=[4, 8, 10], candidate_mode='number')
 
         d_linear = DynamicLinear(in_features=10, out_features=10, bias=True)
-        d_linear.mutate_in_features(mutable_in_features)
-        d_linear.mutate_out_features(mutable_out_features)
+        d_linear.mutate_in_features(in_features_mutable)
+        d_linear.mutate_out_features(out_features_mutable)
 
         with pytest.raises(RuntimeError):
             d_linear.to_static_op()
@@ -175,8 +175,8 @@ class TestDynamicOP(TestCase):
         self.assertTrue(torch.equal(out1, out2))
 
     def test_dynamic_sequential(self) -> None:
-        depth_cfg = dict(type='OneShotMutableValue', value_list=[2, 3, 4, 5])
-        mutable_cfgs = dict(depth=depth_cfg)
+        depth_mutable = OneShotMutableValue(
+            value_list=[2, 3, 4, 5], default_value=5)
 
         modules = [
             nn.Conv2d(3, 32, 3),
@@ -189,11 +189,11 @@ class TestDynamicOP(TestCase):
 
         with pytest.raises(ValueError):
             d_seq = DynamicSequential(*modules)
-            d_seq.mutate_depth(mutable_depth)
+            d_seq.mutate_depth(depth_mutable)
 
         modules = modules[:-1]
         d_seq = DynamicSequential(*modules)
-        d_seq.mutate_depth(mutable_depth)
+        d_seq.mutate_depth(depth_mutable)
 
         d_seq.depth_mutable.current_choice = 3
 
@@ -220,11 +220,11 @@ class TestDynamicOP(TestCase):
                           (DynamicBatchNorm2d, (10, 8, 224, 224)),
                           (DynamicBatchNorm3d, (10, 8, 3, 224, 224))])
 def test_dynamic_bn(dynamic_class: nn.Module, input_shape: Tuple[int]) -> None:
-    mutable_num_features = OneShotMutableChannel(
+    num_features_mutable = OneShotMutableChannel(
         10, candidate_choices=[4, 8, 10], candidate_mode='number')
 
     d_bn = dynamic_class(num_features=10)
-    d_bn.mutate_num_features(mutable_num_features)
+    d_bn.mutate_num_features(num_features_mutable)
 
     with pytest.raises(RuntimeError):
         d_bn.to_static_op()
@@ -256,18 +256,12 @@ def test_dynamic_bn(dynamic_class: nn.Module, input_shape: Tuple[int]) -> None:
 @pytest.mark.parametrize('dynamic_class',
                          [ProgressiveDynamicConv2d, CenterCropDynamicConv2d])
 def test_kernel_dynamic_conv2d(dynamic_class: nn.Module) -> None:
-    in_channels_cfg = dict(
-        type='OneShotMutableChannel',
-        candidate_mode='number',
-        candidate_choices=[4, 8, 10])
-    out_channels_cfg = dict(
-        candidate_mode='number', candidate_choices=[4, 8, 10], num_channels=10)
-    out_channels_cfg = OneShotMutableChannel(**out_channels_cfg)
-    kernel_size_cfg = dict(type='OneShotMutableValue', value_list=[3, 5, 7])
-    mutable_cfgs = dict(
-        in_channels=in_channels_cfg,
-        out_channels=out_channels_cfg,
-        kernel_size=kernel_size_cfg)
+
+    in_channels_mutable = OneShotMutableChannel(
+        10, candidate_choices=[4, 8, 10], candidate_mode='number')
+    out_channels_mutable = OneShotMutableChannel(
+        10, candidate_choices=[4, 8, 10], candidate_mode='number')
+    kernel_size_mutable = OneShotMutableValue(value_list=[3, 5, 7])
 
     with pytest.raises(ValueError):
         d_conv2d = dynamic_class(
@@ -277,7 +271,7 @@ def test_kernel_dynamic_conv2d(dynamic_class: nn.Module) -> None:
             kernel_size=3,
             stride=1,
             bias=True)
-        d_conv2d.mutate_kernel_size(mutable_kernel_size)
+        d_conv2d.mutate_kernel_size(kernel_size_mutable)
 
     d_conv2d = dynamic_class(
         in_channels=10,
@@ -286,10 +280,9 @@ def test_kernel_dynamic_conv2d(dynamic_class: nn.Module) -> None:
         kernel_size=7,
         stride=1,
         bias=True)
-    d_conv2d.mutate_in_channels(mutable_in_channels)
-    d_conv2d.mutate_out_channels(mutable_out_channels)
-    if mutate_kernel_size:
-        d_conv2d.mutate_kernel_size(mutable_kernel_size)
+    d_conv2d.mutate_in_channels(in_channels_mutable)
+    d_conv2d.mutate_out_channels(out_channels_mutable)
+    d_conv2d.mutate_kernel_size(kernel_size_mutable)
 
     with pytest.raises(RuntimeError):
         d_conv2d.to_static_op()

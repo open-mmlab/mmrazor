@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from mmrazor.models.mutables.mutable_channel import MutableChannel
 from mmrazor.registry import MODELS
-from .base import MUTABLE_CFGS_TYPE, DynamicOP
+from .base import MUTABLES_TYPE, DynamicOP
 
 
 class SwitchableBatchNorm2d(nn.Module, DynamicOP):
@@ -41,7 +41,7 @@ class SwitchableBatchNorm2d(nn.Module, DynamicOP):
     accepted_mutable_keys = {'num_features'}
 
     def __init__(self,
-                 mutable_cfgs: MUTABLE_CFGS_TYPE,
+                 mutable_cfgs: MUTABLES_TYPE,
                  candidate_choices: List[int],
                  eps: float = 1e-5,
                  momentum: float = 0.1,
@@ -49,7 +49,7 @@ class SwitchableBatchNorm2d(nn.Module, DynamicOP):
                  track_running_stats: bool = True):
         super().__init__()
 
-        mutable_cfgs = self.parse_mutable_cfgs(mutable_cfgs)
+        mutable_cfgs = self.parse_mutables(mutable_cfgs)
         num_features = mutable_cfgs['num_features']
         if isinstance(num_features, dict):
             num_features.update(dict(num_channels=max(candidate_choices)))

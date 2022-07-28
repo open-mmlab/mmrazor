@@ -6,12 +6,33 @@ from torch import Tensor
 from .base_mutable import CHOICE_TYPE, BaseMutable
 
 
-class DerivedMutable(BaseMutable[CHOICE_TYPE, Dict]):
+class DerivedMethodMixin:
+
+    # HACK
+    def derive_same_mutable(self):
+
+        def same_fn(mutable: BaseMutable, attribute: str) -> Callable:
+
+            def fn():
+                return getattr(mutable, attribute)
+
+            return fn
+
+        if hasattr(self, 'current_mask'):
+            return DerivedMutableChannel(
+                choice_fn=same_fn(self, 'current_choice'),
+                mask_fn=same_fn(self, 'current_mask'))
+        else:
+            return DerivedMutable(choice_fn=same_fn(self, 'current_choice'))
+
+
+class DerivedMutable(BaseMutable[CHOICE_TYPE, Dict], DerivedMethodMixin):
 
     def __init__(self,
                  choice_fn: Callable,
                  alias: Optional[str] = None,
-                 init_cfg: Optional[Dict] = None) -> None:
+                 init_cfg: Optional[Dict] = None,
+                 **kwargs) -> None:
         super().__init__(alias, init_cfg)
 
         self._choice_fn = choice_fn
@@ -36,6 +57,15 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, Dict]):
     def current_choice(self, choice: CHOICE_TYPE) -> None:
         raise RuntimeError('The choice of drived mutable can not be set!')
 
+    # TODO
+    # should be __str__? but can provide info when debug
+    def __repr__(self) -> str:
+        s = self.__class__.__name__
+        s += f'(current_choice={self.current_choice}, '
+        s += f'is_fixed={self.is_fixed})'
+
+        return s
+
 
 class DerivedMutableChannel(DerivedMutable):
 
@@ -51,3 +81,11 @@ class DerivedMutableChannel(DerivedMutable):
     @property
     def current_mask(self) -> Tensor:
         return self._mask_fn()
+
+    def __repr__(self) -> str:
+        s = self.__class__.__name__
+        s += f'(current_choice={self.current_choice}, '
+        s += f'current_mask_shape={repr(self.current_mask.shape)}, '
+        s += f'is_fixed={self.is_fixed})'
+
+        return s

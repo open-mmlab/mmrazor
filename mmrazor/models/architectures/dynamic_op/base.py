@@ -1,15 +1,14 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Set, Union
+from typing import Any, Dict, Optional, Set
 
 from torch import nn
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
-from mmrazor.models.mutables.mutable_channel import MutableChannel
 
-MUTABLE_CFG_TYPE = Union[Dict[str, Any], BaseMutable]
-MUTABLE_CFGS_TYPE = Dict[str, MUTABLE_CFG_TYPE]
+MUTABLE_TYPE = BaseMutable
+MUTABLES_TYPE = Dict[str, MUTABLE_TYPE]
+OPT_MUTABLES_TYPE = Optional[Dict[str, MUTABLE_TYPE]]
 
 
 class DynamicOP(ABC):
@@ -18,28 +17,6 @@ class DynamicOP(ABC):
     @abstractmethod
     def to_static_op(self) -> nn.Module:
         ...
-
-    @classmethod
-    def parse_mutable_cfgs(
-            cls, mutable_cfgs: MUTABLE_CFGS_TYPE) -> MUTABLE_CFGS_TYPE:
-        parsed_mutable_cfgs = dict()
-
-        for mutable_key in mutable_cfgs.keys():
-            if mutable_key in cls.accepted_mutable_keys:
-                mutable = mutable_cfgs[mutable_key]
-                if isinstance(mutable, dict):
-                    mutable = copy.deepcopy(mutable)
-                elif not isinstance(mutable, BaseMutable):
-                    raise ValueError('Type of value in `mutable_cfgs` must be'
-                                     'dict or `BaseMutable`, '
-                                     f'but got: {type(mutable)}')
-                parsed_mutable_cfgs[mutable_key] = mutable
-        if len(parsed_mutable_cfgs) == 0:
-            raise ValueError(
-                f'Expected mutable keys: {cls.accepted_mutable_keys}, '
-                f'but got: {list(mutable_cfgs.keys())}')
-
-        return parsed_mutable_cfgs
 
     def check_if_mutables_fixed(self) -> None:
 
@@ -50,15 +27,30 @@ class DynamicOP(ABC):
         for mutable_key in self.accepted_mutable_keys:
             check_fixed(getattr(self, f'{mutable_key}_mutable'))
 
+    @staticmethod
+    def get_current_choice(mutable: BaseMutable) -> Any:
+        current_choice = mutable.current_choice
+        if current_choice is None:
+            raise RuntimeError(f'current choice of mutable {type(mutable)} '
+                               'can not be None at runtime')
+
+        return current_choice
+
 
 class ChannelDynamicOP(DynamicOP):
 
     @property
     @abstractmethod
-    def mutable_in(self) -> MutableChannel:
+    def mutable_in(self) -> Optional[BaseMutable]:
         ...
 
     @property
     @abstractmethod
-    def mutable_out(self) -> MutableChannel:
+    def mutable_out(self) -> Optional[BaseMutable]:
         ...
+
+    @staticmethod
+    def check_channels_mutable(channels_mutable: BaseMutable) -> None:
+        if not hasattr(channels_mutable, 'current_mask'):
+            raise ValueError(
+                'channel mutable must have attribute `current_mask`')

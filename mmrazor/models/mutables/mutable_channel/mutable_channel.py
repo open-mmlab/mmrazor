@@ -31,6 +31,7 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, Dict]):
         # outputs, we add the mutable out of these modules to the
         # `concat_parent_mutables` of this module.
         self.concat_parent_mutables: List[MutableChannel] = list()
+        self.name = 'unbind'
 
     @property
     def same_mutables(self):
@@ -112,5 +113,6 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, Dict]):
         repr_str = self.__class__.__name__
         repr_str += f'(name={self.name}, '
         repr_str += f'num_channels={self.num_channels}, '
+        repr_str += f'current_choice={self.current_choice}, '
         repr_str += f'concat_mutable_name={concat_mutable_name})'
         return repr_str

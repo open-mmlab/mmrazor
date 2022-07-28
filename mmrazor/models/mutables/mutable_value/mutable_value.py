@@ -71,6 +71,13 @@ class MutableValue(BaseMutable[Any, Dict]):
 
         self._current_choice = choice
 
+    def __repr__(self) -> str:
+        s = self.__class__.__name__
+        s += f'(value_list={self._value_list}, '
+        s += f'current_choice={self.current_choice})'
+
+        return s
+
 
 # TODO
 # 1. use comparable for type hint
