@@ -1,13 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Any, Dict
-
 from mmrazor.registry import MODELS
 from ...mutables import OneShotMutableModule
+from ..mixins import OneShotSampleMixin
 from .module_mutator import ModuleMutator
 
 
 @MODELS.register_module()
-class OneShotModuleMutator(ModuleMutator):
+class OneShotModuleMutator(ModuleMutator, OneShotSampleMixin):
     """One-shot mutable based mutator.
 
     Examples:
@@ -50,35 +49,6 @@ class OneShotModuleMutator(ModuleMutator):
         >>> supernet.op3.current_choice
         'choice1'
     """
-
-    def sample_choices(self) -> Dict[int, Any]:
-        """Sampling by search groups.
-
-        The sampling result of the first mutable of each group is the sampling
-        result of this group.
-
-        Returns:
-            Dict[int, Any]: Random choices dict.
-        """
-        random_choices = dict()
-        for group_id, modules in self.search_groups.items():
-            random_choices[group_id] = modules[0].sample_choice()
-
-        return random_choices
-
-    def set_choices(self, choices: Dict[int, Any]) -> None:
-        """Set mutables' current choice according to choices sample by
-        :func:`sample_choices`.
-
-        Args:
-            choices (Dict[int, Any]): Choices dict. The key is group_id in
-                search groups, and the value is the sampling results
-                corresponding to this group.
-        """
-        for group_id, modules in self.search_groups.items():
-            choice = choices[group_id]
-            for module in modules:
-                module.current_choice = choice
 
     @property
     def mutable_class_type(self):

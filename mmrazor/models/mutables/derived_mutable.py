@@ -69,7 +69,7 @@ def _concat_mask_fn(mutables: Iterable[ChannelMutableProtocol]) -> Callable:
 class DerivedMethodMixin:
 
     def derive_same_mutable(self):
-        self.derive_expand_mutable(expand_ratio=1)
+        return self.derive_expand_mutable(expand_ratio=1)
 
     def derive_expand_mutable(self: MutableProtocol, expand_ratio: int):
         choice_fn = _expand_choice_fn(self, expand_ratio=expand_ratio)

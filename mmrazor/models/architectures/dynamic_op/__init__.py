@@ -7,11 +7,13 @@ from .dynamic_linear import DynamicLinear
 from .dynamic_norm import (DynamicBatchNorm1d, DynamicBatchNorm2d,
                            DynamicBatchNorm3d, DynamicGroupNorm,
                            DynamicInstanceNorm)
+from .head import DynamicLinearClsHead
 from .slimmable_dynamic_ops import SwitchableBatchNorm2d
 
 __all__ = [
     'DynamicConv2d', 'DynamicLinear', 'DynamicBatchNorm1d',
     'DynamicBatchNorm2d', 'DynamicBatchNorm3d', 'DynamicOP',
     'DynamicInstanceNorm', 'DynamicGroupNorm', 'SwitchableBatchNorm2d',
-    'ProgressiveDynamicConv2d', 'CenterCropDynamicConv2d', 'DynamicSequential'
+    'ProgressiveDynamicConv2d', 'CenterCropDynamicConv2d', 'DynamicSequential',
+    'DynamicLinearClsHead'
 ]

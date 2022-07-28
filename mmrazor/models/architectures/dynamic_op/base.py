@@ -12,7 +12,7 @@ OPT_MUTABLES_TYPE = Optional[Dict[str, MUTABLE_TYPE]]
 
 
 class DynamicOP(ABC):
-    accepted_mutable_keys: Set[str] = set()
+    accpeted_mutables: Set[str] = set()
 
     @abstractmethod
     def to_static_op(self) -> nn.Module:
@@ -24,8 +24,8 @@ class DynamicOP(ABC):
             if mutable is not None and not mutable.is_fixed:
                 raise RuntimeError(f'Mutable {type(mutable)} is not fixed.')
 
-        for mutable_key in self.accepted_mutable_keys:
-            check_fixed(getattr(self, f'{mutable_key}_mutable'))
+        for mutable in self.accpeted_mutables:
+            check_fixed(getattr(self, f'{mutable}'))
 
     @staticmethod
     def get_current_choice(mutable: BaseMutable) -> Any:
@@ -50,7 +50,7 @@ class ChannelDynamicOP(DynamicOP):
         ...
 
     @staticmethod
-    def check_channels_mutable(channels_mutable: BaseMutable) -> None:
-        if not hasattr(channels_mutable, 'current_mask'):
+    def check_mutable_channels(mutable_channels: BaseMutable) -> None:
+        if not hasattr(mutable_channels, 'current_mask'):
             raise ValueError(
                 'channel mutable must have attribute `current_mask`')

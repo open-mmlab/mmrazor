@@ -48,16 +48,9 @@ def _get_same_padding(kernel_size: int) -> Tuple[int]:
 
 @CONV_LAYERS.register_module()
 class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
-    """Applies a 2D convolution over an input signal composed of several input
-    planes according to the `mutable_in_channels` and `mutable_out_channels`
-    dynamically.
-
-    Args:
-        in_channels_cfg (Dict): Config related to `in_channels`.
-        out_channels_cfg (Dict): Config related to `out_channels`.
-    """
-
-    accepted_mutable_keys = {'in_channels', 'out_channels', 'kernel_size'}
+    accpeted_mutables = {
+        'mutable_in_channels', 'mutable_out_channels', 'mutable_kernel_size'
+    }
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -66,29 +59,29 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
         # https://pytorch.org/docs/stable/_modules/torch/nn/modules/conv.html#Conv2d
         assert self.padding_mode == 'zeros'
 
-        self.in_channels_mutable: Optional[BaseMutable] = None
-        self.out_channels_mutable: Optional[BaseMutable] = None
-        self.kernel_size_mutable: Optional[BaseMutable] = None
+        self.mutable_in_channels: Optional[BaseMutable] = None
+        self.mutable_out_channels: Optional[BaseMutable] = None
+        self.mutable_kernel_size: Optional[BaseMutable] = None
         self.kernel_size_list: Optional[List[int]] = None
 
-    def mutate_in_channels(self, in_channels_mutable: BaseMutable) -> None:
-        self.check_channels_mutable(in_channels_mutable)
+    def mutate_in_channels(self, mutable_in_channels: BaseMutable) -> None:
+        self.check_mutable_channels(mutable_in_channels)
         # TODO
-        # add warning if self.in_channels_mutable is not None
-        self.in_channels_mutable = in_channels_mutable
+        # add warning if self.mutable_in_channels is not None
+        self.mutable_in_channels = mutable_in_channels
 
-    def mutate_out_channels(self, out_channels_mutable: BaseMutable) -> None:
-        self.check_channels_mutable(out_channels_mutable)
+    def mutate_out_channels(self, mutable_out_channels: BaseMutable) -> None:
+        self.check_mutable_channels(mutable_out_channels)
         # TODO
-        # add warning if self.in_channels_mutable is not None
-        self.out_channels_mutable = out_channels_mutable
+        # add warnings
+        self.mutable_out_channels = mutable_out_channels
 
     def mutate_kernel_size(
             self,
-            kernel_size_mutable: BaseMutable,
+            mutable_kernel_size: BaseMutable,
             kernel_size_seq: Optional[Sequence[int]] = None) -> None:
         if kernel_size_seq is None:
-            kernel_size_seq = getattr(kernel_size_mutable, 'choices')
+            kernel_size_seq = getattr(mutable_kernel_size, 'choices')
         if kernel_size_seq is None:
             raise ValueError('kernel size sequence must be provided')
         kernel_size_list = list(sorted(kernel_size_seq))
@@ -99,21 +92,19 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
                 f'but got: {max_kernel_size}')
 
         self.kernel_size_list = kernel_size_list
-        self.kernel_size_mutable = kernel_size_mutable
+        self.mutable_kernel_size = mutable_kernel_size
 
     @property
     def mutable_in(self) -> Optional[BaseMutable]:
         """Mutable `in_channels`."""
-        return self.in_channels_mutable
+        return self.mutable_in_channels
 
     @property
     def mutable_out(self) -> Optional[BaseMutable]:
         """Mutable `out_channels`."""
-        return self.out_channels_mutable
+        return self.mutable_out_channels
 
     def forward(self, input: Tensor) -> Tensor:
-        """Slice the parameters according to `mutable_in_channels` and
-        `mutable_out_channels`, and forward."""
         groups = self.groups
         if self.groups == self.in_channels == self.out_channels:
             groups = input.size(1)
@@ -125,31 +116,31 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
     def _get_dynamic_params(
             self) -> Tuple[Tensor, Optional[Tensor], Tuple[int]]:
         # 1. slice kernel size of weight according to kernel size mutable
-        weight, padding = self.get_dynamic_params_by_kernel_size_mutable(
+        weight, padding = self.get_dynamic_params_by_mutable_kernel_size(
             self.weight)
 
         # 2. slice in/out channel of weight according to in_channels/out_channels mutable  # noqa: E501
-        weight, bias = self.get_dynamic_params_by_channels_mutable(
+        weight, bias = self.get_dynamic_params_by_mutable_channels(
             weight, self.bias)
         return weight, bias, padding
 
-    def get_dynamic_params_by_kernel_size_mutable(
+    def get_dynamic_params_by_mutable_kernel_size(
             self, weight: Tensor) -> Tuple[Tensor, Tuple[int]]:
         return weight, self.padding
 
-    def get_dynamic_params_by_channels_mutable(
+    def get_dynamic_params_by_mutable_channels(
             self, weight: Tensor,
             bias: Optional[Tensor]) -> Tuple[Tensor, Optional[Tensor]]:
-        if self.in_channels_mutable is None and \
-                self.out_channels_mutable is None:
+        if self.mutable_in_channels is None and \
+                self.mutable_out_channels is None:
             return weight, bias
 
-        if self.in_channels_mutable is not None:
-            in_mask = self.in_channels_mutable.current_mask.to(weight.device)
+        if self.mutable_in_channels is not None:
+            in_mask = self.mutable_in_channels.current_mask.to(weight.device)
         else:
             in_mask = torch.ones(weight.size(1)).bool().to(weight.device)
-        if self.out_channels_mutable is not None:
-            out_mask = self.out_channels_mutable.current_mask.to(weight.device)
+        if self.mutable_out_channels is not None:
+            out_mask = self.mutable_out_channels.current_mask.to(weight.device)
         else:
             out_mask = torch.ones(weight.size(0)).bool().to(weight.device)
 
@@ -173,8 +164,8 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
         weight, bias, padding = self._get_dynamic_params()
         groups = self.groups
         if groups == self.in_channels == self.out_channels and \
-                self.in_channels_mutable is not None:
-            groups = self.in_channels_mutable.current_mask.sum().item()
+                self.mutable_in_channels is not None:
+            groups = self.mutable_in_channels.current_mask.sum().item()
         out_channels = weight.size(0)
         in_channels = weight.size(1) * groups
 
@@ -221,9 +212,9 @@ class ProgressiveDynamicConv2d(DynamicConv2d):
 
     def mutate_kernel_size(
             self,
-            kernel_size_mutable: BaseMutable,
+            mutable_kernel_size: BaseMutable,
             kernel_size_seq: Optional[Sequence[int]] = None) -> None:
-        super().mutate_kernel_size(kernel_size_mutable, kernel_size_seq)
+        super().mutate_kernel_size(mutable_kernel_size, kernel_size_seq)
 
         self._register_transform_matrix()
 
@@ -231,12 +222,12 @@ class ProgressiveDynamicConv2d(DynamicConv2d):
     def _get_transform_matrix_name(src: int, tar: int) -> str:
         return f'transform_matrix_{src}to{tar}'
 
-    def get_dynamic_params_by_kernel_size_mutable(
+    def get_dynamic_params_by_mutable_kernel_size(
             self, weight: Tensor) -> Tuple[Tensor, Tuple[int]]:
-        if self.kernel_size_mutable is None or self.kernel_size_list is None:
-            raise RuntimeError('kernel size must be mutated first')
+        if self.mutable_kernel_size is None or self.kernel_size_list is None:
+            return weight, self.padding
 
-        current_kernel_size = self.get_current_choice(self.kernel_size_mutable)
+        current_kernel_size = self.get_current_choice(self.mutable_kernel_size)
         current_padding = _get_same_padding(current_kernel_size)
         if _pair(current_kernel_size) == self.kernel_size:
             return weight, current_padding
@@ -274,12 +265,12 @@ class CenterCropDynamicConv2d(DynamicConv2d):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    def get_dynamic_params_by_kernel_size_mutable(
+    def get_dynamic_params_by_mutable_kernel_size(
             self, weight: Tensor) -> Tuple[Tensor, Tuple[int]]:
-        if self.kernel_size_mutable is None or self.kernel_size_list is None:
-            raise RuntimeError('kernel size must be mutated first')
+        if self.mutable_kernel_size is None or self.kernel_size_list is None:
+            return weight, self.padding
 
-        current_kernel_size = self.get_current_choice(self.kernel_size_mutable)
+        current_kernel_size = self.get_current_choice(self.mutable_kernel_size)
         current_padding = _get_same_padding(current_kernel_size)
         if _pair(current_kernel_size) == self.kernel_size:
             return weight, current_padding

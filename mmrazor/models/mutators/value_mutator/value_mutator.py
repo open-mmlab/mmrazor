@@ -1,14 +1,16 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from abc import abstractmethod
 from typing import Dict, List, Optional, Type
 
 from torch.nn import Module
 
-from ..base_mutator import MUTABLE_TYPE, BaseMutator
+from mmrazor.models.mutables import MutableValue
+from mmrazor.registry import MODELS
+from ..base_mutator import BaseMutator
 from ..mixins import GroupMixin
 
 
-class ModuleMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
+@MODELS.register_module()
+class ValueMutator(BaseMutator[MutableValue], GroupMixin):
     """The base class for mutable based mutator.
 
     All subclass should implement the following APIS:
@@ -29,18 +31,18 @@ class ModuleMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
         if custom_group is None:
             custom_group = []
         self._custom_group = custom_group
-        self._search_groups: Optional[Dict[int, List[MUTABLE_TYPE]]] = None
+        self._search_groups: Optional[Dict[int, List[MutableValue]]] = None
 
     # TODO
     # should be a class property
     @property
-    @abstractmethod
-    def mutable_class_type(self) -> Type[MUTABLE_TYPE]:
+    def mutable_class_type(self) -> Type[MutableValue]:
         """Corresponding mutable class type.
 
         Returns:
             Type[MUTABLE_TYPE]: Mutable class type.
         """
+        return MutableValue
 
     def prepare_from_supernet(self, supernet: Module) -> None:
         """Do some necessary preparations with supernet.
@@ -55,7 +57,7 @@ class ModuleMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
         self._build_search_groups(supernet)
 
     @property
-    def search_groups(self) -> Dict[int, List[MUTABLE_TYPE]]:
+    def search_groups(self) -> Dict[int, List[MutableValue]]:
         """Search group of supernet.
 
         Note:

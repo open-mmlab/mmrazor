@@ -24,35 +24,35 @@ class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
     Args:
         num_features_cfg (Dict): Config related to `num_features`.
     """
-    accepted_mutable_keys = {'num_features'}
+    accpeted_mutables = {'mutable_num_features'}
     batch_norm_type: str
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.num_features_mutable: Optional[BaseMutable] = None
+        self.mutable_num_features: Optional[BaseMutable] = None
 
-    def mutate_num_features(self, num_features_mutable: BaseMutable) -> None:
-        self.check_channels_mutable(num_features_mutable)
+    def mutate_num_features(self, mutable_num_features: BaseMutable) -> None:
+        self.check_mutable_channels(mutable_num_features)
 
-        self.num_features_mutable = num_features_mutable
+        self.mutable_num_features = mutable_num_features
 
     @property
     def mutable_in(self) -> Optional[BaseMutable]:
         """Mutable `num_features`."""
-        return self.num_features_mutable
+        return self.mutable_num_features
 
     @property
     def mutable_out(self) -> Optional[BaseMutable]:
         """Mutable `num_features`."""
-        return self.num_features_mutable
+        return self.mutable_num_features
 
     def _get_dynamic_params(
         self
     ) -> Tuple[Optional[Tensor], Optional[Tensor], Optional[Tensor],
                Optional[Tensor]]:
-        if self.num_features_mutable is not None:
-            out_mask = self.num_features_mutable.current_mask.to(
+        if self.mutable_num_features is not None:
+            out_mask = self.mutable_num_features.current_mask.to(
                 self.weight.device)
         else:
             out_mask = torch.ones_like(self.weight).bool()
@@ -108,8 +108,8 @@ class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
         self.check_if_mutables_fixed()
 
         running_mean, running_var, weight, bias = self._get_dynamic_params()
-        if self.num_features_mutable is not None:
-            num_features = self.num_features_mutable.current_mask.sum().item()
+        if self.mutable_num_features is not None:
+            num_features = self.mutable_num_features.current_mask.sum().item()
         else:
             num_features = self.num_features
 

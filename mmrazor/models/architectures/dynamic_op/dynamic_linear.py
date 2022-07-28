@@ -19,47 +19,47 @@ class DynamicLinear(nn.Linear, ChannelDynamicOP):
         out_features_cfg (Dict): Config related to `out_features`.
     """
 
-    accepted_mutable_keys = {'in_features', 'out_features'}
+    accpeted_mutables = {'mutable_in_features', 'mutable_out_features'}
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.in_features_mutable: Optional[BaseMutable] = None
-        self.out_features_mutable: Optional[BaseMutable] = None
+        self.mutable_in_features: Optional[BaseMutable] = None
+        self.mutable_out_features: Optional[BaseMutable] = None
 
-    def mutate_in_features(self, in_features_mutable: BaseMutable) -> None:
-        self.check_channels_mutable(in_features_mutable)
+    def mutate_in_features(self, mutable_in_features: BaseMutable) -> None:
+        self.check_mutable_channels(mutable_in_features)
 
-        self.in_features_mutable = in_features_mutable
+        self.mutable_in_features = mutable_in_features
 
-    def mutate_out_features(self, out_features_mutable: BaseMutable) -> None:
-        self.check_channels_mutable(out_features_mutable)
+    def mutate_out_features(self, mutable_out_features: BaseMutable) -> None:
+        self.check_mutable_channels(mutable_out_features)
 
-        self.out_features_mutable = out_features_mutable
+        self.mutable_out_features = mutable_out_features
 
     @property
     def mutable_in(self) -> Optional[BaseMutable]:
         """Mutable `in_features`."""
-        return self.in_features_mutable
+        return self.mutable_in_features
 
     @property
     def mutable_out(self) -> Optional[BaseMutable]:
         """Mutable `out_features`."""
-        return self.out_features_mutable
+        return self.mutable_out_features
 
     def _get_dynamic_params(self) -> Tuple[Tensor, Optional[Tensor]]:
-        if self.in_features_mutable is None and \
-                self.out_features_mutable is None:
+        if self.mutable_in_features is None and \
+                self.mutable_out_features is None:
             return self.weight, self.bias
 
-        if self.in_features_mutable is not None:
-            in_mask = self.in_features_mutable.current_mask.to(
+        if self.mutable_in_features is not None:
+            in_mask = self.mutable_in_features.current_mask.to(
                 self.weight.device)
         else:
             in_mask = torch.ones(self.weight.size(1)).bool().to(
                 self.weight.device)
-        if self.out_features_mutable is not None:
-            out_mask = self.out_features_mutable.current_mask.to(
+        if self.mutable_out_features is not None:
+            out_mask = self.mutable_out_features.current_mask.to(
                 self.weight.device)
         else:
             out_mask = torch.ones(self.weight.size(0)).bool().to(

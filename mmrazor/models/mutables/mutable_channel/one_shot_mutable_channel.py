@@ -170,3 +170,16 @@ class OneShotMutableChannel(MutableChannel[int]):
         self.is_fixed = True
 
         self._candidate_choices = [current_choice]
+
+    def __repr__(self):
+        concat_mutable_name = [
+            mutable.name for mutable in self.concat_parent_mutables
+        ]
+        repr_str = self.__class__.__name__
+        repr_str += f'(name={self.name}, '
+        repr_str += f'num_channels={self.num_channels}, '
+        repr_str += f'current_choice={self.current_choice}, '
+        repr_str += f'choices={self.choices}, '
+        repr_str += f'current_mask_shape={self.current_mask.shape}, '
+        repr_str += f'concat_mutable_name={concat_mutable_name})'
+        return repr_str

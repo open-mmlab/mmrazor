@@ -55,7 +55,7 @@ class SwitchableBatchNorm2d(nn.Module, DynamicOP):
             num_features.update(dict(num_channels=max(candidate_choices)))
             num_features = MODELS.build(num_features)
         assert isinstance(num_features, MutableChannel)
-        self.num_features_mutable = num_features
+        self.mutable_num_features = num_features
 
         bns = [
             nn.BatchNorm2d(num_features, eps, momentum, affine,
@@ -67,22 +67,22 @@ class SwitchableBatchNorm2d(nn.Module, DynamicOP):
     @property
     def mutable_in(self) -> MutableChannel:
         """Mutable `num_features`."""
-        return self.num_features_mutable
+        return self.mutable_num_features
 
     @property
     def mutable_out(self) -> MutableChannel:
         """Mutable `num_features`."""
-        return self.num_features_mutable
+        return self.mutable_num_features
 
     def forward(self, input):
         """Forward computation according to the current switch of the slimmable
         networks."""
-        current_choice = self.num_features_mutable.current_choice
-        idx = self.num_features_mutable.choices.index(current_choice)
+        current_choice = self.mutable_num_features.current_choice
+        idx = self.mutable_num_features.choices.index(current_choice)
         return self.bns[idx](input)
 
     def to_static_op(self) -> nn.Module:
-        current_choice = self.num_features_mutable.current_choice
-        bn_idx = self.num_features_mutable.choices.index(current_choice)
+        current_choice = self.mutable_num_features.current_choice
+        bn_idx = self.mutable_num_features.choices.index(current_choice)
 
         return self.bns[bn_idx]

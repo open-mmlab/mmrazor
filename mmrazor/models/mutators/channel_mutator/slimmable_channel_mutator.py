@@ -111,7 +111,7 @@ class SlimmableChannelMutator(ChannelMutator):
                 if isinstance(child, DynamicBatchNorm2d):
                     mutable_cfgs = self.find_mutable_cfg_by_module_name(
                         module_name)
-                    key = module_name + '.num_features_mutable'
+                    key = module_name + '.mutable_num_features'
                     candidate_choices = self.channel_cfgs[key][
                         'current_choice']
                     sbn = switchable_bn_converter(child, mutable_cfgs,
