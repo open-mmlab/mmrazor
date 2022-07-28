@@ -67,6 +67,7 @@ class ConvBNConnector(BaseConnector):
     Args:
         in_channel (int): The input channels of the connector.
         out_channel (int): The output channels of the connector.
+        norm_cfg (dict): The config to control the normalization.
         conv_cfg (dict, optional): The config to control the convolution.
         init_cfg (dict, optional): The config to control the initialization.
     """
@@ -75,6 +76,7 @@ class ConvBNConnector(BaseConnector):
         self,
         in_channel: int,
         out_channel: int,
+        norm_cfg: Dict,
         conv_cfg: Optional[Dict] = None,
         init_cfg: Optional[Dict] = None,
     ) -> None:
@@ -87,7 +89,7 @@ class ConvBNConnector(BaseConnector):
             stride=1,
             padding=0,
             bias=False)
-        _, self.bn = build_norm_layer(dict(type='BN'), out_channel)
+        _, self.bn = build_norm_layer(norm_cfg, out_channel)
 
     def forward_train(self, feature: torch.Tensor) -> torch.Tensor:
         """Forward computation.
@@ -105,6 +107,7 @@ class ConvBNReLUConnector(BaseConnector):
     Args:
         in_channel (int): The input channels of the connector.
         out_channel (int): The output channels of the connector.
+        norm_cfg (dict): The config to control the normalization.
         conv_cfg (dict, optional): The config to control the convolution.
         init_cfg (dict, optional): The config to control the initialization.
     """
@@ -113,13 +116,14 @@ class ConvBNReLUConnector(BaseConnector):
         self,
         in_channel: int,
         out_channel: int,
+        norm_cfg: Dict,
         conv_cfg: Optional[Dict] = None,
         init_cfg: Optional[Dict] = None,
     ) -> None:
         super().__init__(init_cfg)
         self.conv = build_conv_layer(
             conv_cfg, in_channel, out_channel, kernel_size=1)
-        _, self.bn = build_norm_layer(dict(type='BN'), out_channel)
+        _, self.bn = build_norm_layer(norm_cfg, out_channel)
         self.relu = nn.ReLU(inplace=True)
 
     def forward_train(self, feature: torch.Tensor) -> torch.Tensor:

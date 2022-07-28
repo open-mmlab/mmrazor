@@ -36,9 +36,15 @@ model = dict(
                 type='KLDivergence', tau=6, loss_weight=10, reduction='mean')),
         student_connectors=dict(
             loss_f4=dict(
-                type='ConvBNReLUConnector', in_channel=512, out_channel=2048),
+                type='ConvBNReLUConnector',
+                in_channel=512,
+                out_channel=2048,
+                norm_cfg=dict(type='BN')),
             loss_f3=dict(
-                type='ConvBNReLUConnector', in_channel=256, out_channel=1024)),
+                type='ConvBNReLUConnector',
+                in_channel=256,
+                out_channel=1024,
+                norm_cfg=dict(type='BN'))),
         loss_forward_mappings=dict(
             loss_f4=dict(
                 s_feature=dict(

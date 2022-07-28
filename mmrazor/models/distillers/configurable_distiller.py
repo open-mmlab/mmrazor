@@ -88,11 +88,11 @@ class ConfigurableDistiller(BaseDistiller):
 
         >>> student_connectors = dict(
         ...     loss_neck = dict(
-        ...         type='ReLUConnector', in_channel=32, out_channel=64))
+        ...         type='SingleConvConnector', in_channel=32, out_channel=64))
 
         >>> teacher_connectors = dict(
         ...     loss_neck = dict(
-        ...         type='ReLUConnector', in_channel=32, out_channel=64))
+        ...         type='SingleConvConnector', in_channel=32, out_channel=64))
 
         >>> loss_forward_mappings = dict(
         ...     loss_neck=dict(
