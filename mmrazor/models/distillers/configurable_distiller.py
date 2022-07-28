@@ -89,9 +89,9 @@ class ConfigurableDistiller(BaseDistiller):
         >>> loss_forward_mappings = dict(
         ...     loss_neck=dict(
         ...         s_feature=dict(from_recorder='feat', from_student=True,
-        ...                        connector_name='loss_neck_sfeat'),
+        ...                        connector='loss_neck_sfeat'),
         ...         t_feature=dict(from_recorder='feat', from_student=False,
-        ...                        connector_name='loss_neck_tfeat')))
+        ...                        connector='loss_neck_tfeat')))
     """
 
     def __init__(self,
@@ -113,6 +113,8 @@ class ConfigurableDistiller(BaseDistiller):
 
         self.distill_losses = self.build_distill_losses(distill_losses)
 
+        self.connectors = self.build_connectors(connectors)
+
         if loss_forward_mappings:
             # Check if loss_forward_mappings is in the correct format.
             self._check_loss_forward_mappings(self.distill_losses,
@@ -122,8 +124,6 @@ class ConfigurableDistiller(BaseDistiller):
             self.loss_forward_mappings = loss_forward_mappings
         else:
             self.loss_forward_mappings = dict()
-
-        self.connectors = self.build_connectors(connectors)
 
     def set_deliveries_override(self, override: bool) -> None:
         """Set the `override_data` of all deliveries."""
@@ -183,7 +183,7 @@ class ConfigurableDistiller(BaseDistiller):
                    from_student: bool,
                    record_idx: int = 0,
                    data_idx: Optional[int] = None,
-                   connector_name: Optional[str] = None) -> List:
+                   connector: Optional[str] = None) -> List:
         """According to each item in ``record_infos``, get the corresponding
         record in ``recorder_manager``."""
 
@@ -193,8 +193,8 @@ class ConfigurableDistiller(BaseDistiller):
             recorder_ = self.teacher_recorders.get_recorder(recorder)
         record_data = recorder_.get_record_data(record_idx, data_idx)
 
-        if connector_name:
-            record_data = self.connectors[connector_name](record_data)
+        if connector:
+            record_data = self.connectors[connector](record_data)
 
         return record_data
 
@@ -272,3 +272,8 @@ class ConfigurableDistiller(BaseDistiller):
                     assert recorder in teacher_recorders.recorders, \
                         f'For {forward_key}, "{recorder}" must be in \
                         `teacher_recorders`.'
+
+                if 'connector' in record_info:
+                    connector: str = record_info['connector']
+                    assert connector in self.connectors, \
+                        f'{connector} must be in "connectors".'

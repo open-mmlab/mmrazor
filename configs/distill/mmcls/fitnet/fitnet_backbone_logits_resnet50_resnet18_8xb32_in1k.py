@@ -51,7 +51,7 @@ model = dict(
                     from_student=True,
                     recorder='bb_s4',
                     record_idx=1,
-                    connector_name='loss_s4_sfeat'),
+                    connector='loss_s4_sfeat'),
                 t_feature=dict(
                     from_student=False, recorder='bb_s4', record_idx=2)),
             loss_s3=dict(
@@ -59,7 +59,7 @@ model = dict(
                     from_student=True,
                     recorder='bb_s3',
                     record_idx=1,
-                    connector_name='loss_s3_sfeat'),
+                    connector='loss_s3_sfeat'),
                 t_feature=dict(
                     from_student=False, recorder='bb_s3', record_idx=2)),
             loss_kl=dict(
