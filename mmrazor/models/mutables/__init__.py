@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .derived_mutable import DerivedMutable, DerivedMutableChannel
+from .derived_mutable import DerivedMutable
 from .mutable_channel import MutableChannel, OneShotMutableChannel
 from .mutable_manage_mixin import MutableManageMixIn
 from .mutable_module import (DiffChoiceRoute, DiffMutableModule, DiffMutableOP,
@@ -10,5 +10,5 @@ __all__ = [
     'OneShotMutableOP', 'OneShotMutableModule', 'DiffMutableOP',
     'DiffChoiceRoute', 'DiffMutableModule', 'MutableManageMixIn',
     'OneShotMutableChannel', 'MutableChannel', 'MutableValue',
-    'OneShotMutableValue', 'DerivedMutableChannel', 'DerivedMutable'
+    'OneShotMutableValue', 'DerivedMutable'
 ]

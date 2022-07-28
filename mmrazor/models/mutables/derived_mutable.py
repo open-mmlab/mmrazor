@@ -1,41 +1,104 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Callable, Dict, Optional
+from typing import Any, Callable, Dict, Iterable, Optional, Protocol
 
+import torch
 from torch import Tensor
 
 from .base_mutable import CHOICE_TYPE, BaseMutable
 
 
+class MutableProtocol(Protocol):
+
+    @property
+    def current_choice(self) -> Any:
+        ...
+
+
+class ChannelMutableProtocol(MutableProtocol):
+
+    @property
+    def current_mask(self) -> Tensor:
+        ...
+
+
+def _expand_choice_fn(mutable: MutableProtocol, expand_ratio: int) -> Callable:
+
+    def fn():
+        return mutable.current_choice * expand_ratio
+
+    return fn
+
+
+def _expand_mask_fn(mutable: MutableProtocol, expand_ratio: int) -> Callable:
+    if not hasattr(mutable, 'current_mask'):
+        raise ValueError('mutable must have attribute `currnet_mask`')
+
+    def fn():
+        mask = mutable.current_mask
+        expand_num_channels = mask.size(0) * expand_ratio
+        expand_choice = mutable.current_choice * expand_ratio
+        expand_mask = torch.zeros(expand_num_channels).bool()
+        expand_mask[:expand_choice] = True
+
+        return expand_mask
+
+    return fn
+
+
+def _concat_choice_fn(mutables: Iterable[ChannelMutableProtocol]) -> Callable:
+
+    def fn():
+        return sum((m.current_choice for m in mutables))
+
+    return fn
+
+
+def _concat_mask_fn(mutables: Iterable[ChannelMutableProtocol]) -> Callable:
+    for mutable in mutables:
+        if not hasattr(mutable, 'current_mask'):
+            raise ValueError('mutable must have attribute `currnet_mask`')
+
+    def fn():
+        return torch.cat([m.current_mask for m in mutables])
+
+    return fn
+
+
+# TODO
+# how to use class in type hint before defined
 class DerivedMethodMixin:
 
-    # HACK
     def derive_same_mutable(self):
+        self.derive_expand_mutable(expand_ratio=1)
 
-        def same_fn(mutable: BaseMutable, attribute: str) -> Callable:
+    def derive_expand_mutable(self: MutableProtocol, expand_ratio: int):
+        choice_fn = _expand_choice_fn(self, expand_ratio=expand_ratio)
 
-            def fn():
-                return getattr(mutable, attribute)
-
-            return fn
-
+        mask_fn: Optional[Callable] = None
         if hasattr(self, 'current_mask'):
-            return DerivedMutableChannel(
-                choice_fn=same_fn(self, 'current_choice'),
-                mask_fn=same_fn(self, 'current_mask'))
-        else:
-            return DerivedMutable(choice_fn=same_fn(self, 'current_choice'))
+            mask_fn = _expand_mask_fn(self, expand_ratio=expand_ratio)
+
+        return DerivedMutable(choice_fn=choice_fn, mask_fn=mask_fn)
+
+    @staticmethod
+    def derive_concat_mutable(mutables: Iterable[ChannelMutableProtocol]):
+        choice_fn = _concat_choice_fn(mutables)
+        mask_fn = _concat_mask_fn(mutables)
+
+        return DerivedMutable(choice_fn=choice_fn, mask_fn=mask_fn)
 
 
 class DerivedMutable(BaseMutable[CHOICE_TYPE, Dict], DerivedMethodMixin):
 
     def __init__(self,
                  choice_fn: Callable,
+                 mask_fn: Optional[Callable] = None,
                  alias: Optional[str] = None,
-                 init_cfg: Optional[Dict] = None,
-                 **kwargs) -> None:
+                 init_cfg: Optional[Dict] = None) -> None:
         super().__init__(alias, init_cfg)
 
-        self._choice_fn = choice_fn
+        self.choice_fn = choice_fn
+        self.mask_fn = mask_fn
 
     # TODO
     # has no effect
@@ -51,41 +114,27 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, Dict], DerivedMethodMixin):
 
     @property
     def current_choice(self) -> CHOICE_TYPE:
-        return self._choice_fn()
+        return self.choice_fn()
 
     @current_choice.setter
     def current_choice(self, choice: CHOICE_TYPE) -> None:
-        raise RuntimeError('The choice of drived mutable can not be set!')
+        raise RuntimeError('Choice of drived mutable can not be set!')
+
+    @property
+    def current_mask(self) -> Tensor:
+        if self.mask_fn is None:
+            raise RuntimeError(
+                '`mask_fn` must be set before access `current_mask`')
+        return self.mask_fn()
 
     # TODO
     # should be __str__? but can provide info when debug
     def __repr__(self) -> str:
-        s = self.__class__.__name__
-        s += f'(current_choice={self.current_choice}, '
-        s += f'is_fixed={self.is_fixed})'
-
-        return s
-
-
-class DerivedMutableChannel(DerivedMutable):
-
-    def __init__(self,
-                 choice_fn: Callable,
-                 mask_fn: Callable,
-                 alias: Optional[str] = None,
-                 init_cfg: Optional[Dict] = None) -> None:
-        super().__init__(choice_fn, alias, init_cfg)
-
-        self._mask_fn = mask_fn
-
-    @property
-    def current_mask(self) -> Tensor:
-        return self._mask_fn()
-
-    def __repr__(self) -> str:
-        s = self.__class__.__name__
-        s += f'(current_choice={self.current_choice}, '
-        s += f'current_mask_shape={repr(self.current_mask.shape)}, '
+        s = f'{self.__class__.__name__}('
+        if self.choice_fn is not None:
+            s += f'current_choice={self.current_choice}, '
+        if self.mask_fn is not None:
+            s += f'current_mask_shape={self.current_mask.shape}, '
         s += f'is_fixed={self.is_fixed})'
 
         return s
