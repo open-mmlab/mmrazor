@@ -19,6 +19,7 @@ class SingleTeacherDistill(BaseAlgorithm):
     only use one teacher.
 
     Args:
+        distiller (dict): The config dict for built distiller.
         teacher (dict | BaseModel): The config dict for teacher model or built
             teacher model.
         teacher_ckpt (str): The path of teacher's checkpoint. Defaults to None.
@@ -29,6 +30,8 @@ class SingleTeacherDistill(BaseAlgorithm):
             Batch Norm and its variants only. Defaults to True.
         student_trainable (bool): Whether the student is trainable. Defaults
             to True.
+        calculate_student_loss (bool): Whether to calculate student loss
+            (original task loss) to update student model. Defaults to True.
     """
 
     def __init__(self,
@@ -38,6 +41,7 @@ class SingleTeacherDistill(BaseAlgorithm):
                  teacher_trainable: bool = False,
                  teacher_norm_eval: bool = True,
                  student_trainable: bool = True,
+                 calculate_student_loss: bool = True,
                  **kwargs) -> None:
         super().__init__(**kwargs)
 
@@ -60,8 +64,12 @@ class SingleTeacherDistill(BaseAlgorithm):
         self.teacher_norm_eval = teacher_norm_eval
 
         # The student model will not calculate gradients and update parameters
-        # during some pretraining process.
+        # in some pretraining process.
         self.student_trainable = student_trainable
+
+        # The student loss will not be updated into ``losses`` in some
+        # pretraining process.
+        self.calculate_student_loss = calculate_student_loss
 
         # In ``ConfigurableDistller``, the recorder manager is just
         # constructed, but not really initialized yet.
@@ -100,7 +108,7 @@ class SingleTeacherDistill(BaseAlgorithm):
         # override the origin data with the recorded data.
         self.distiller.set_deliveries_override(True)
         # Original task loss will not be used during some pretraining process.
-        if self.distiller.calculate_student_loss:
+        if self.calculate_student_loss:
             with self.distiller.student_recorders, self.distiller.deliveries:
                 student_losses = self.student(
                     batch_inputs, data_samples, mode='loss')

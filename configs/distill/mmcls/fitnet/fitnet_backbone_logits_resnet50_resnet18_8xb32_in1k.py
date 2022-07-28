@@ -22,40 +22,46 @@ model = dict(
     distiller=dict(
         type='ConfigurableDistiller',
         student_recorders=dict(
-            feat_4=dict(type='ModuleOutputs', source='backbone.layer4.1.relu'),
-            feat_3=dict(type='ModuleOutputs', source='backbone.layer3.1.relu'),
+            bb_s4=dict(type='ModuleOutputs', source='backbone.layer4.1.relu'),
+            bb_s3=dict(type='ModuleOutputs', source='backbone.layer3.1.relu'),
             fc=dict(type='ModuleOutputs', source='head.fc')),
         teacher_recorders=dict(
-            feat_4=dict(type='ModuleOutputs', source='backbone.layer4.2.relu'),
-            feat_3=dict(type='ModuleOutputs', source='backbone.layer3.5.relu'),
+            bb_s4=dict(type='ModuleOutputs', source='backbone.layer4.2.relu'),
+            bb_s3=dict(type='ModuleOutputs', source='backbone.layer3.5.relu'),
             fc=dict(type='ModuleOutputs', source='head.fc')),
         distill_losses=dict(
-            loss_f4=dict(type='L2Loss', loss_weight=10),
-            loss_f3=dict(type='L2Loss', loss_weight=10),
+            loss_s4=dict(type='L2Loss', loss_weight=10),
+            loss_s3=dict(type='L2Loss', loss_weight=10),
             loss_kl=dict(
                 type='KLDivergence', tau=6, loss_weight=10, reduction='mean')),
-        student_connectors=dict(
-            loss_f4=dict(
+        connectors=dict(
+            loss_s4_sfeat=dict(
                 type='ConvBNReLUConnector',
                 in_channel=512,
                 out_channel=2048,
                 norm_cfg=dict(type='BN')),
-            loss_f3=dict(
+            loss_s3_sfeat=dict(
                 type='ConvBNReLUConnector',
                 in_channel=256,
                 out_channel=1024,
                 norm_cfg=dict(type='BN'))),
         loss_forward_mappings=dict(
-            loss_f4=dict(
+            loss_s4=dict(
                 s_feature=dict(
-                    from_student=True, recorder='feat_4', record_idx=1),
+                    from_student=True,
+                    recorder='bb_s4',
+                    record_idx=1,
+                    connector_name='loss_s4_sfeat'),
                 t_feature=dict(
-                    from_student=False, recorder='feat_4', record_idx=2)),
-            loss_f3=dict(
+                    from_student=False, recorder='bb_s4', record_idx=2)),
+            loss_s3=dict(
                 s_feature=dict(
-                    from_student=True, recorder='feat_3', record_idx=1),
+                    from_student=True,
+                    recorder='bb_s3',
+                    record_idx=1,
+                    connector_name='loss_s3_sfeat'),
                 t_feature=dict(
-                    from_student=False, recorder='feat_3', record_idx=2)),
+                    from_student=False, recorder='bb_s3', record_idx=2)),
             loss_kl=dict(
                 preds_S=dict(from_student=True, recorder='fc'),
                 preds_T=dict(from_student=False, recorder='fc')))))
