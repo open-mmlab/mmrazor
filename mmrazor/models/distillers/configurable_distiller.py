@@ -38,9 +38,6 @@ class ConfigurableDistiller(BaseDistiller):
         distill_deliveries (dict, optional): Config for multiple deliveries. A
             distill algorithm may have more than one delivery. Defaults to
             None.
-        connectors (dict, optional): Config for multiple connectors. A
-            distillation model may have more than one connector. Defaults to
-            None.
         distill_losses: (Dict[str, Dict], optional): Config for multiple
             distill losses. A distill algorithm may have more than one distill
             loss. Defaults to None.
@@ -67,45 +64,33 @@ class ConfigurableDistiller(BaseDistiller):
         `student_recorders``; otherwise, it means the recorder is in
         ``teacher_recorders``.
 
-        A connector can be called according to its `connector_name`, so that a
-        input can use a different connector in different loss.
-
     Examples:
         >>> distill_losses = dict(
-        ...     loss_neck=dict(type='L2Loss', loss_weight=5))
+        ...     loss_kl=dict(type='KLDivergence', tau=1, loss_weight=5))
 
         >>> student_recorders = dict(
-        ...     feat = dict(type='ModuleOutputs', sources=['neck.gap']))
+        ...     fc = dict(type='ModuleOutputs', sources=['head.fc']))
 
         >>> teacher_recorders = dict(
-        ...     feat = dict(type='ModuleOutputs', sources=['neck.gap']))
-
-        >>> connectors = dict(
-        ...     loss_neck_sfeat = dict(
-        ...         type='SingleConvConnector', in_channel=32, out_channel=64),
-        ...     loss_neck_tfeat = dict(
-        ...         type='SingleConvConnector', in_channel=32, out_channel=64))
+        ...     fc = dict(type='ModuleOutputs', sources=['head.fc']))
 
         >>> loss_forward_mappings = dict(
-        ...     loss_neck=dict(
-        ...         s_feature=dict(from_recorder='feat', from_student=True,
-        ...                        connector='loss_neck_sfeat'),
-        ...         t_feature=dict(from_recorder='feat', from_student=False,
-        ...                        connector='loss_neck_tfeat')))
+        ...     loss_kl=dict(
+        ...         preds_S=dict(from_recorder='fc', from_student=True),
+        ...         preds_T=dict(from_recorder='fc', from_student=False)))
     """
 
     def __init__(self,
                  student_recorders: Optional[Dict[str, Dict]] = None,
                  teacher_recorders: Optional[Dict[str, Dict]] = None,
                  distill_deliveries: Optional[Dict[str, Dict]] = None,
-                 connectors: Optional[Dict[str, Dict]] = None,
                  distill_losses: Optional[Dict[str, Dict]] = None,
                  loss_forward_mappings: Optional[Dict[str, Dict]] = None,
                  **kwargs):
         super().__init__(**kwargs)
         # The recorder manager is just constructed, but not really initialized
         # yet. Recorder manager initialization needs to input the corresponding
-        # model.
+        #  model.
         self.student_recorders = RecorderManager(student_recorders)
         self.teacher_recorders = RecorderManager(teacher_recorders)
 
@@ -113,10 +98,8 @@ class ConfigurableDistiller(BaseDistiller):
 
         self.distill_losses = self.build_distill_losses(distill_losses)
 
-        self.connectors = self.build_connectors(connectors)
-
         if loss_forward_mappings:
-            # Check if loss_forward_mappings is in the correct format.
+            # Check if loss_forward_mappings is in the correct format
             self._check_loss_forward_mappings(self.distill_losses,
                                               loss_forward_mappings,
                                               self.student_recorders,
@@ -125,7 +108,7 @@ class ConfigurableDistiller(BaseDistiller):
         else:
             self.loss_forward_mappings = dict()
 
-    def set_deliveries_override(self, override: bool) -> None:
+    def set_deliveries_override(self, override: bool):
         """Set the `override_data` of all deliveries."""
         self.deliveries.override_data = override
 
@@ -136,23 +119,6 @@ class ConfigurableDistiller(BaseDistiller):
     def prepare_from_teacher(self, model: nn.Module) -> None:
         """Initialize teacher recorders."""
         self.teacher_recorders.initialize(model)
-
-    def build_connectors(
-        self,
-        connectors: Optional[Dict[str, Dict]] = None,
-    ) -> nn.ModuleDict:
-        """Initialize connectors."""
-
-        distill_connecotrs = nn.ModuleDict()
-        if connectors:
-            for connector_name, connector_cfg in connectors.items():
-                assert connector_name not in distill_connecotrs, \
-                    f'{connector_name} is already in "distill_connecotrs".'
-
-                connector = MODELS.build(connector_cfg)
-                distill_connecotrs[connector_name] = connector
-
-        return distill_connecotrs
 
     def build_distill_losses(
         self,
@@ -182,8 +148,7 @@ class ConfigurableDistiller(BaseDistiller):
                    recorder: str,
                    from_student: bool,
                    record_idx: int = 0,
-                   data_idx: Optional[int] = None,
-                   connector: Optional[str] = None) -> List:
+                   data_idx: Optional[int] = None) -> List:
         """According to each item in ``record_infos``, get the corresponding
         record in ``recorder_manager``."""
 
@@ -191,12 +156,8 @@ class ConfigurableDistiller(BaseDistiller):
             recorder_ = self.student_recorders.get_recorder(recorder)
         else:
             recorder_ = self.teacher_recorders.get_recorder(recorder)
-        record_data = recorder_.get_record_data(record_idx, data_idx)
 
-        if connector:
-            record_data = self.connectors[connector](record_data)
-
-        return record_data
+        return recorder_.get_record_data(record_idx, data_idx)
 
     def compute_distill_losses(self) -> LossResults:
         """Compute distill losses automatically."""
@@ -204,8 +165,8 @@ class ConfigurableDistiller(BaseDistiller):
         losses = dict()
         for loss_name, forward_mappings in self.loss_forward_mappings.items():
             forward_kwargs = dict()
-            for forward_key, record in forward_mappings.items():
-                forward_var = self.get_record(**record)
+            for forward_key, record_info in forward_mappings.items():
+                forward_var = self.get_record(**record_info)
                 forward_kwargs[forward_key] = forward_var
 
             loss_module = self.distill_losses[loss_name]
@@ -272,8 +233,3 @@ class ConfigurableDistiller(BaseDistiller):
                     assert recorder in teacher_recorders.recorders, \
                         f'For {forward_key}, "{recorder}" must be in \
                         `teacher_recorders`.'
-
-                if 'connector' in record_info:
-                    connector: str = record_info['connector']
-                    assert connector in self.connectors, \
-                        f'{connector} must be in "connectors".'
