@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .general_connector import (ConvBNConnector, ConvBNReLUConnector,
-                                SingleConvConnector)
+from .conv_connector import ConvConnector
 
-__all__ = ['ConvBNConnector', 'ConvBNReLUConnector', 'SingleConvConnector']
+__all__ = ['ConvConnector']
