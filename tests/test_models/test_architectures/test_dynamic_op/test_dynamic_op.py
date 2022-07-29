@@ -14,7 +14,7 @@ from mmrazor.models.architectures import (CenterCropDynamicConv2d,
                                           ProgressiveDynamicConv2d)
 from mmrazor.models.architectures.dynamic_op import DynamicOP
 from mmrazor.models.mutables import OneShotMutableChannel, OneShotMutableValue
-from mmrazor.models.subnet import export_fix_mutable, load_fix_subnet
+from mmrazor.structures.subnet import export_fix_subnet, load_fix_subnet
 
 
 class TestDynamicOP(TestCase):
@@ -49,7 +49,7 @@ class TestDynamicOP(TestCase):
         out1 = d_conv2d(x)
         assert out1.size(1) == 4
 
-        fix_mutables = export_fix_mutable(d_conv2d)
+        fix_mutables = export_fix_subnet(d_conv2d)
         with pytest.raises(RuntimeError):
             load_fix_subnet(d_conv2d, fix_mutables)
 
@@ -82,7 +82,7 @@ class TestDynamicOP(TestCase):
         with pytest.raises(RuntimeError):
             _ = d_conv2d.to_static_op()
 
-        fix_mutables = export_fix_mutable(d_conv2d)
+        fix_mutables = export_fix_subnet(d_conv2d)
         with pytest.raises(RuntimeError):
             load_fix_subnet(d_conv2d, fix_mutables)
 
@@ -123,7 +123,7 @@ class TestDynamicOP(TestCase):
         with pytest.raises(RuntimeError):
             _ = d_conv2d.to_static_op()
 
-        fix_mutables = export_fix_mutable(d_conv2d)
+        fix_mutables = export_fix_subnet(d_conv2d)
         with pytest.raises(RuntimeError):
             load_fix_subnet(d_conv2d, fix_mutables)
 
@@ -158,7 +158,7 @@ class TestDynamicOP(TestCase):
         with pytest.raises(RuntimeError):
             _ = d_linear.to_static_op()
 
-        fix_mutables = export_fix_mutable(d_linear)
+        fix_mutables = export_fix_subnet(d_linear)
         with pytest.raises(RuntimeError):
             load_fix_subnet(d_linear, fix_mutables)
         assert isinstance(d_linear, nn.Linear)
@@ -235,7 +235,7 @@ def test_dynamic_bn(dynamic_class: nn.Module, input_shape: Tuple[int]) -> None:
     out1 = d_bn(x)
     assert out1.size(1) == 8
 
-    fix_mutables = export_fix_mutable(d_bn)
+    fix_mutables = export_fix_subnet(d_bn)
     with pytest.raises(RuntimeError):
         load_fix_subnet(d_bn, fix_mutables)
     assert isinstance(d_bn, dynamic_class)
@@ -299,7 +299,7 @@ def test_kernel_dynamic_conv2d(dynamic_class: nn.Module,
     out1 = d_conv2d(x)
     assert out1.size(1) == 8
 
-    fix_mutables = export_fix_mutable(d_conv2d)
+    fix_mutables = export_fix_subnet(d_conv2d)
     print(fix_mutables)
     with pytest.raises(RuntimeError):
         load_fix_subnet(d_conv2d, fix_mutables)
