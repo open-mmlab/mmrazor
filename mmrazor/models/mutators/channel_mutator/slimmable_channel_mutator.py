@@ -6,7 +6,6 @@ import torch.nn as nn
 from torch.nn import Module
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.core.tracer import PathList
 from mmrazor.models.architectures.dynamic_op import DynamicBatchNorm2d
 from mmrazor.models.mutables import OneShotMutableChannel
 from mmrazor.registry import MODELS

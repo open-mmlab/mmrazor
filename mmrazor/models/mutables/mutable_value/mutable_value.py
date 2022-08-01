@@ -4,10 +4,11 @@ from typing import Any, Dict, List, Optional
 
 from mmrazor.registry import MODELS
 from ..base_mutable import BaseMutable
+from ..derived_mutable import DerivedMethodMixin
 
 
 @MODELS.register_module()
-class MutableValue(BaseMutable[Any, Dict]):
+class MutableValue(BaseMutable[Any, Dict], DerivedMethodMixin):
 
     def __init__(self,
                  value_list: List[Any],

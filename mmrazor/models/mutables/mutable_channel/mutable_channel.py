@@ -5,14 +5,16 @@ from typing import Dict, List
 import torch
 
 from ..base_mutable import CHOICE_TYPE, BaseMutable
+from ..derived_mutable import DerivedMethodMixin
 
 
-class MutableChannel(BaseMutable[CHOICE_TYPE, Dict]):
-    """A type of ``MUTABLES`` for single path supernet such as AutoSlim. In
+class MutableChannel(BaseMutable[CHOICE_TYPE, Dict], DerivedMethodMixin):
+    """A type of ``MUTABLES`` for single path supernet such as AutoSlim.
+
+    In
     single path supernet, each module only has one choice invoked at the same
     time. A path is obtained by sampling all the available choices. It is the
     base class for one shot channel mutables.
-
     Args:
         num_channels (int): The raw number of channels.
         init_cfg (dict, optional): initialization configuration dict for
@@ -87,10 +89,11 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, Dict]):
         self.name = name
 
     def fix_chosen(self, chosen: Dict) -> None:
-        """Fix mutable with subnet config. This operation would convert
+        """Fix mutable with subnet config.
+
+        This operation would convert
         `unfixed` mode to `fixed` mode. The :attr:`is_fixed` will be set to
         True and only the selected operations can be retained.
-
         Args:
             chosen (str): The chosen key in ``MUTABLE``. Defaults to None.
         """

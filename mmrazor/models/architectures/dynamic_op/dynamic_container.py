@@ -10,19 +10,19 @@ from .base import DynamicOP
 
 
 class DynamicSequential(Sequential, DynamicOP):
-    accepted_mutable_keys = {'depth'}
+    accpeted_mutables = {'mutable_depth'}
     forward_ignored_module = (MutableValue, DerivedMutable)
 
     def __init__(self, *args, init_cfg: Optional[dict] = None):
         super().__init__(*args, init_cfg=init_cfg)
 
-        self.depth_mutable: Optional[BaseMutable] = None
+        self.mutable_depth: Optional[BaseMutable] = None
 
     def mutate_depth(self,
-                     depth_mutable: BaseMutable,
+                     mutable_depth: BaseMutable,
                      depth_seq: Optional[Sequence[int]] = None) -> None:
         if depth_seq is None:
-            depth_seq = getattr(depth_mutable, 'choices')
+            depth_seq = getattr(mutable_depth, 'choices')
         if depth_seq is None:
             raise ValueError('depth sequence must be provided')
         depth_list = list(sorted(depth_seq))
@@ -31,16 +31,18 @@ class DynamicSequential(Sequential, DynamicOP):
                              f'but got: {depth_list[-1]}')
 
         self.depth_list = depth_list
-        self.depth_mutable = depth_mutable
+        self.mutable_depth = mutable_depth
 
     def forward(self, x: Tensor) -> Tensor:
-        if self.depth_mutable is None:
+        if self.mutable_depth is None:
             return self(x)
 
-        current_depth = self.get_current_choice(self.depth_mutable)
+        current_depth = self.get_current_choice(self.mutable_depth)
         passed_module_nums = 0
         for module in self:
-            if not isinstance(module, self.forward_ignored_module):
+            if isinstance(module, self.forward_ignored_module):
+                continue
+            else:
                 passed_module_nums += 1
             if passed_module_nums > current_depth:
                 break
@@ -52,15 +54,17 @@ class DynamicSequential(Sequential, DynamicOP):
     def to_static_op(self) -> Sequential:
         self.check_if_mutables_fixed()
 
-        if self.depth_mutable is None:
+        if self.mutable_depth is None:
             fixed_depth = len(self)
         else:
-            fixed_depth = self.get_current_choice(self.depth_mutable)
+            fixed_depth = self.get_current_choice(self.mutable_depth)
 
         modules = []
         passed_module_nums = 0
         for module in self:
-            if not isinstance(module, self.forward_ignored_module):
+            if isinstance(module, self.forward_ignored_module):
+                continue
+            else:
                 passed_module_nums += 1
             if passed_module_nums > fixed_depth:
                 break
