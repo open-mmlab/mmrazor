@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from .ab_loss import ABLoss
 from .cwd import ChannelWiseDivergence
 from .kl_divergence import KLDivergence
 from .l2_loss import L2Loss
@@ -7,5 +8,5 @@ from .weighted_soft_label_distillation import WSLD
 
 __all__ = [
     'ChannelWiseDivergence', 'KLDivergence', 'AngleWiseRKD', 'DistanceWiseRKD',
-    'WSLD', 'L2Loss'
+    'WSLD', 'L2Loss', 'ABLoss'
 ]
