@@ -3,6 +3,7 @@ from .base import DynamicOP
 from .dynamic_container import DynamicSequential
 from .dynamic_conv import (CenterCropDynamicConv2d, DynamicConv2d,
                            ProgressiveDynamicConv2d)
+from .dynamic_function import DynamicInputResizer
 from .dynamic_linear import DynamicLinear
 from .dynamic_norm import (DynamicBatchNorm1d, DynamicBatchNorm2d,
                            DynamicBatchNorm3d, DynamicGroupNorm,
@@ -15,5 +16,5 @@ __all__ = [
     'DynamicBatchNorm2d', 'DynamicBatchNorm3d', 'DynamicOP',
     'DynamicInstanceNorm', 'DynamicGroupNorm', 'SwitchableBatchNorm2d',
     'ProgressiveDynamicConv2d', 'CenterCropDynamicConv2d', 'DynamicSequential',
-    'DynamicLinearClsHead'
+    'DynamicLinearClsHead', 'DynamicInputResizer'
 ]

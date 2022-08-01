@@ -3,7 +3,9 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models import BNConnector, ReLUConnector, SingleConvConnector
+from mmrazor.models.architectures.connectors import (ConvBNConnector,
+                                                     ConvBNReLUConnector,
+                                                     SingleConvConnector)
 
 
 class TestConnector(TestCase):
@@ -22,14 +24,14 @@ class TestConnector(TestCase):
 
     def test_bn_connector(self):
         bn_connector_cfg = dict(in_channel=1, out_channel=3)
-        bn_connector = BNConnector(**bn_connector_cfg)
+        bn_connector = ConvBNConnector(**bn_connector_cfg)
 
         output = bn_connector.forward_train(self.s_feat)
         assert output.size() == self.t_feat.size()
 
     def test_relu_connector(self):
         relu_connector_cfg = dict(in_channel=1, out_channel=3)
-        relu_connector = ReLUConnector(**relu_connector_cfg)
+        relu_connector = ConvBNReLUConnector(**relu_connector_cfg)
 
         output = relu_connector.forward_train(self.s_feat)
         assert output.size() == self.t_feat.size()
