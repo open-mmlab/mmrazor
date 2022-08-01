@@ -1,14 +1,18 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch
 from torch.nn import Module
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.ops import InputResizer
+from mmrazor.registry import MODELS
 from .base import DynamicOP
 
 
+# TODO
+# consider use data preprocessor
+@MODELS.register_module()
 class DynamicInputResizer(InputResizer, DynamicOP):
     valid_interpolation_type = {
         'nearest', 'linear', 'bilinear', 'bicubic', 'trilinear', 'area',
@@ -42,3 +46,21 @@ class DynamicInputResizer(InputResizer, DynamicOP):
             align_corners=self._align_corners,
             scale_factor=self._scale_factor,
             recompute_scale_factor=self._recompute_scale_factor)
+
+    def sample_choice(self) -> Tuple[int]:
+        if self.mutable_shape is None:
+            raise RuntimeError('Please mutate shape before sample choice.')
+
+        return self.mutable_shape.sample_choice()
+
+    def max_choice(self) -> Tuple[int]:
+        if self.mutable_shape is None:
+            raise RuntimeError('Please mutate shape before access max choice.')
+
+        return self.mutable_shape.max_choice()
+
+    def min_choice(self) -> Tuple[int]:
+        if self.mutable_shape is None:
+            raise RuntimeError('Please mutate shape before access min choice.')
+
+        return self.mutable_shape.min_choice()

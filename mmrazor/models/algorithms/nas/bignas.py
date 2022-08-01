@@ -8,7 +8,9 @@ from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper
 from torch import nn
 
+from mmrazor.models.architectures.dynamic_op import DynamicInputResizer
 from mmrazor.models.distillers import ConfigurableDistiller
+from mmrazor.models.mutables import OneShotMutableValue
 from mmrazor.models.mutators.base_mutator import BaseMutator
 from mmrazor.models.utils import (add_prefix,
                                   reinitialize_optim_wrapper_count_status)
@@ -27,6 +29,7 @@ class BigNAS(BaseAlgorithm):
                  mutators: VALID_MUTATORS_TYPE,
                  distiller: VALID_DISTILLER_TYPE,
                  architecture: Union[BaseModel, Dict],
+                 resizer_cfg: Optional[Dict] = None,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  init_cfg: Optional[Dict] = None,
                  num_samples: int = 2) -> None:
@@ -44,12 +47,11 @@ class BigNAS(BaseAlgorithm):
         self.distiller.prepare_from_teacher(self.architecture)
         self.distiller.prepare_from_student(self.architecture)
 
+        self.input_resizer = self._build_input_resizer(resizer_cfg)
+
         self.num_samples = num_samples
 
         self._optim_wrapper_count_status_reinitialized = False
-
-        import pdb
-        pdb.set_trace()
 
     def _build_mutator(self, mutator: VALID_MUTATOR_TYPE) -> BaseMutator:
         """build mutator."""
@@ -61,6 +63,26 @@ class BigNAS(BaseAlgorithm):
                             f'{type(mutator)}')
 
         return mutator
+
+    def _build_input_resizer(
+            self,
+            resizer_cfg: Optional[Dict]) -> Optional[DynamicInputResizer]:
+        if resizer_cfg is None:
+            return None
+        input_resizer_cfg = resizer_cfg['input_resizer']
+        input_resizer = MODELS.build(input_resizer_cfg)
+        if not isinstance(input_resizer, DynamicInputResizer):
+            raise TypeError('input_resizer should be a `dict` or '
+                            '`DynamicInputResizer` instance, but got '
+                            f'{type(input_resizer)}')
+        mutable_shape_cfg = resizer_cfg['mutable_shape']
+        mutable_shape = MODELS.build(mutable_shape_cfg)
+        if not isinstance(mutable_shape, OneShotMutableValue):
+            raise ValueError('input_resizer should have OneShotMutableValue '
+                             'attribute `mutable_depth`.')
+        input_resizer.mutate_shape(mutable_shape)
+
+        return input_resizer
 
     def _build_distiller(
             self, distiller: VALID_DISTILLER_TYPE) -> ConfigurableDistiller:
@@ -78,20 +100,32 @@ class BigNAS(BaseAlgorithm):
 
         for name, mutator in self.mutators.items():
             subnet_dict[name] = mutator.sample_choices()
+        if self.input_resizer is not None:
+            random_choice = self.input_resizer.sample_choice()
+            subnet_dict['input_resizer'] = random_choice
 
         return subnet_dict
 
     def set_subnet(self, subnet_dict: Dict) -> None:
         for name, mutator in self.mutators.items():
             mutator.set_choices(subnet_dict[name])
+        if self.input_resizer is not None:
+            self.input_resizer.current_choice = \
+                subnet_dict['input_resizer']
 
     def set_max_subnet(self) -> None:
         for mutator in self.mutators.values():
             mutator.set_choices(mutator.max_choices)
+        if self.input_resizer is not None:
+            max_choice = self.input_resizer.max_choice
+            self.input_resizer.current_choice = max_choice
 
     def set_min_subnet(self) -> None:
         for mutator in self.mutators.values():
             mutator.set_choices(mutator.min_choices)
+        if self.input_resizer is not None:
+            min_choice = self.input_resizer.min_choice
+            self.input_resizer.current_choice = min_choice
 
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
@@ -121,6 +155,8 @@ class BigNAS(BaseAlgorithm):
             self._optim_wrapper_count_status_reinitialized = True
 
         batch_inputs, data_samples = self.data_preprocessor(data, True)
+        if self.input_resizer is not None:
+            batch_inputs = self.input_resizer(batch_inputs)
 
         total_losses = dict()
         self.set_max_subnet()
@@ -187,6 +223,8 @@ class BigNASDDP(MMDistributedDataParallel):
             self._optim_wrapper_count_status_reinitialized = True
 
         batch_inputs, data_samples = self.module.data_preprocessor(data, True)
+        if self.module.input_resizer is not None:
+            batch_inputs = self.module.input_resizer(batch_inputs)
 
         total_losses = dict()
         self.module.set_max_subnet()

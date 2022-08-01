@@ -54,7 +54,13 @@ model = dict(
                 preds_T=dict(recorder='fc', from_student=False)))),
     mutators=dict(
         channel_mutator=dict(type='mmrazor.BigNASChannelMutator'),
-        value_mutator=dict(type='mmrazor.DynamicValueMutator')))
+        value_mutator=dict(type='mmrazor.DynamicValueMutator')),
+    resizer_cfg=dict(
+        input_resizer=dict(type='mmrazor.DynamicInputResizer'),
+        mutable_shape=dict(
+            type='mmrazor.OneShotMutableValue',
+            value_list=[(192, 192), (224, 224), (288, 288), (320, 320)],
+            default_value=(224, 224))))
 
 model_wrapper_cfg = dict(
     type='mmrazor.BigNASDDP',

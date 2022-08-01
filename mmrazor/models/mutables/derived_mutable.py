@@ -128,7 +128,7 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, Dict], DerivedMethodMixin):
         return self.mask_fn()
 
     # TODO
-    # should be __str__? but can provide info when debug
+    # should be __str__? but can not provide info when debug
     def __repr__(self) -> str:
         s = f'{self.__class__.__name__}('
         if self.choice_fn is not None:
