@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Optional, Tuple
+from typing import Optional
 
 import torch
 from torch.nn import Module
@@ -46,21 +46,3 @@ class DynamicInputResizer(InputResizer, DynamicOP):
             align_corners=self._align_corners,
             scale_factor=self._scale_factor,
             recompute_scale_factor=self._recompute_scale_factor)
-
-    def sample_choice(self) -> Tuple[int]:
-        if self.mutable_shape is None:
-            raise RuntimeError('Please mutate shape before sample choice.')
-
-        return self.mutable_shape.sample_choice()
-
-    def max_choice(self) -> Tuple[int]:
-        if self.mutable_shape is None:
-            raise RuntimeError('Please mutate shape before access max choice.')
-
-        return self.mutable_shape.max_choice()
-
-    def min_choice(self) -> Tuple[int]:
-        if self.mutable_shape is None:
-            raise RuntimeError('Please mutate shape before access min choice.')
-
-        return self.mutable_shape.min_choice()

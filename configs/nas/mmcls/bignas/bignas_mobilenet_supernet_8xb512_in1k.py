@@ -1,5 +1,5 @@
 _base_ = [
-    'mmrazor::_base_/settings/imagenet_bs1024_spos.py',
+    'mmrazor::_base_/settings/imagenet_bs2048_autoslim_pil.py',
     'mmcls::_base_/default_runtime.py',
 ]
 
@@ -31,7 +31,13 @@ supernet = dict(
             label_smooth_val=0.1,
             mode='original',
             loss_weight=1.0),
-        topk=(1, 5)))
+        topk=(1, 5)),
+    input_resizer_cfg=dict(
+        input_resizer=dict(type='mmrazor.DynamicInputResizer'),
+        mutable_shape=dict(
+            type='mmrazor.OneShotMutableValue',
+            value_list=[(192, 192), (224, 224), (288, 288), (320, 320)],
+            default_value=(224, 224))))
 
 # !autoslim algorithm config
 num_samples = 2
@@ -54,15 +60,19 @@ model = dict(
                 preds_T=dict(recorder='fc', from_student=False)))),
     mutators=dict(
         channel_mutator=dict(type='mmrazor.BigNASChannelMutator'),
-        value_mutator=dict(type='mmrazor.DynamicValueMutator')),
-    resizer_cfg=dict(
-        input_resizer=dict(type='mmrazor.DynamicInputResizer'),
-        mutable_shape=dict(
-            type='mmrazor.OneShotMutableValue',
-            value_list=[(192, 192), (224, 224), (288, 288), (320, 320)],
-            default_value=(224, 224))))
+        value_mutator=dict(type='mmrazor.DynamicValueMutator')))
 
 model_wrapper_cfg = dict(
     type='mmrazor.BigNASDDP',
     broadcast_buffers=False,
     find_unused_parameters=False)
+
+optim_wrapper = dict(accumulative_counts=num_samples + 2)
+
+# learning policy
+max_epochs = 100
+param_scheduler = dict(end=max_epochs)
+
+# train, val, test setting
+train_cfg = dict(max_epochs=max_epochs)
+val_cfg = dict(type='mmrazor.AutoSlimValLoop')
