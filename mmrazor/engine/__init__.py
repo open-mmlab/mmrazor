@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .hooks import DumpSubnetHook
-from .optimizers import SeparateOptimWrapperConstructor
+from .optimizers import DsnasOptimWrapper, SeparateOptimWrapperConstructor
 from .runner import (AutoSlimValLoop, DartsEpochBasedTrainLoop,
                      DartsIterBasedTrainLoop, EvolutionSearchLoop,
                      GreedySamplerTrainLoop, SingleTeacherDistillValLoop,
@@ -10,5 +10,5 @@ __all__ = [
     'SeparateOptimWrapperConstructor', 'DumpSubnetHook',
     'SingleTeacherDistillValLoop', 'DartsEpochBasedTrainLoop',
     'DartsIterBasedTrainLoop', 'SlimmableValLoop', 'EvolutionSearchLoop',
-    'GreedySamplerTrainLoop', 'AutoSlimValLoop'
+    'GreedySamplerTrainLoop', 'AutoSlimValLoop', 'DsnasOptimWrapper'
 ]

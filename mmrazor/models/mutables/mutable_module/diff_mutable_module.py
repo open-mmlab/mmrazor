@@ -58,9 +58,15 @@ class DiffMutableModule(MutableModule[CHOICE_TYPE, CHOSEN_TYPE]):
         else:
             return self.forward_arch_param(x, arch_param=arch_param)
 
-    def build_arch_param(self) -> nn.Parameter:
+    def build_arch_param(self, is_random: bool = True) -> nn.Parameter:
         """Build learnable architecture parameters."""
-        return nn.Parameter(torch.randn(self.num_choices) * 1e-3)
+        if is_random:
+            return nn.Parameter(torch.randn(self.num_choices) * 1e-3)
+        else:
+            loc_mean = 1.0
+            loc_std = 0.01
+            return nn.Parameter(
+                torch.zeros(self.num_choices).normal_(loc_mean, loc_std))
 
     def compute_arch_probs(self, arch_param: nn.Parameter) -> Tensor:
         """compute chosen probs according to architecture params."""

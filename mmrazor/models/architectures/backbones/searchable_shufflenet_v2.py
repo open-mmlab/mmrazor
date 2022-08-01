@@ -28,6 +28,7 @@ class SearchableShuffleNetV2(BaseBackbone):
             Default: -1, which means not freezing any parameters.
         with_last_layer (bool): Whether is last layer.
             Default: True, which means not need to add `Placeholder``.
+        adjust_channels (bool): Whether to adjust channels. Default: False.
         conv_cfg (dict, optional): Config dict for convolution layer.
             Default: None, which means using conv2d.
         norm_cfg (dict): Config dict for normalization layer.
@@ -71,6 +72,7 @@ class SearchableShuffleNetV2(BaseBackbone):
                  out_indices: Sequence[int] = (4, ),
                  frozen_stages: int = -1,
                  with_last_layer: bool = True,
+                 adjust_channels: bool = False,
                  conv_cfg: Optional[Dict] = None,
                  norm_cfg: Dict = dict(type='BN'),
                  act_cfg: Dict = dict(type='ReLU'),
@@ -98,6 +100,7 @@ class SearchableShuffleNetV2(BaseBackbone):
         self.act_cfg = act_cfg
         self.norm_eval = norm_eval
         self.with_cp = with_cp
+        self.adjust_channels = adjust_channels
 
         last_channels = 1024
         self.in_channels = 16 * stem_multiplier
@@ -148,12 +151,15 @@ class SearchableShuffleNetV2(BaseBackbone):
         layers = []
         for i in range(num_blocks):
             stride = 2 if i == 0 else 1
-
+            in_channels = self.in_channels
+            if i > 0 and self.adjust_channels:
+                in_channels = self.in_channels // 2
             mutable_cfg.update(
                 module_kwargs=dict(
-                    in_channels=self.in_channels,
+                    in_channels=in_channels,
                     out_channels=out_channels,
-                    stride=stride))
+                    stride=stride,
+                    adjust_channel=self.adjust_channels))
             layers.append(MODELS.build(mutable_cfg))
             self.in_channels = out_channels
 
