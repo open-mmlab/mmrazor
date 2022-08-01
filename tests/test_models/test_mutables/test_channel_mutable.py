@@ -19,13 +19,6 @@ class TestChannelMutables(TestCase):
                 candidate_mode='xxx')
 
         with pytest.raises(AssertionError):
-            # Number of candidate choices must be greater than 0
-            OneShotMutableChannel(
-                num_channels=8,
-                candidate_choices=list(),
-                candidate_mode='ratio')
-
-        with pytest.raises(AssertionError):
             # The candidate ratio should be in range(0, 1].
             OneShotMutableChannel(
                 num_channels=8,

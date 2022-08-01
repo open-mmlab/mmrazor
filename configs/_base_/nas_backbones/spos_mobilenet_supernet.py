@@ -46,7 +46,7 @@ _FIRST_MUTABLE = dict(
 
 arch_setting = [
     # Parameters to build layers. 3 parameters are needed to construct a
-    # layer, from left to right: channel, num_blocks, mutable_cfg.
+    # layer, from left to right: channel, num_blocks, stride, mutable_cfg.
     [24, 1, 1, _FIRST_MUTABLE],
     [32, 4, 2, _STAGE_MUTABLE],
     [56, 4, 2, _STAGE_MUTABLE],

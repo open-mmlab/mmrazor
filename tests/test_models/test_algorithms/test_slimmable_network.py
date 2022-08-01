@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import pytest
 import torch
 import torch.distributed as dist
-from mmcls.data import ClsDataSample
+from mmcls.structures import ClsDataSample
 from mmcv import fileio
 from mmengine.optim import build_optim_wrapper
 
@@ -27,7 +27,12 @@ MODEL_CFG = dict(
 
 MUTATOR_CFG = dict(
     type='SlimmableChannelMutator',
-    mutable_cfg=dict(type='SlimmableMutableChannel'),
+    global_mutable_cfgs=dict(
+        in_features=dict(type='OneShotMutableChannel'),
+        out_features=dict(type='OneShotMutableChannel'),
+        in_channels=dict(type='OneShotMutableChannel'),
+        out_channels=dict(type='OneShotMutableChannel'),
+        num_features=dict(type='OneShotMutableChannel')),
     tracer_cfg=dict(
         type='BackwardTracer',
         loss_calculator=dict(type='ImageClassifierPseudoLoss')))

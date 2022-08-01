@@ -6,13 +6,13 @@ from torch.nn.modules import GroupNorm
 from torch.nn.modules.batchnorm import _BatchNorm
 from torch.nn.modules.instancenorm import _InstanceNorm
 
-from ...architectures import (DynamicBatchNorm, DynamicConv2d,
+from ...architectures import (DynamicBatchNorm1d, DynamicBatchNorm2d,
+                              DynamicBatchNorm3d, DynamicConv2d,
                               DynamicGroupNorm, DynamicInstanceNorm,
                               DynamicLinear)
 
 
-def dynamic_conv2d_converter(module: nn.Conv2d, in_channels_cfg: Dict,
-                             out_channels_cfg: Dict) -> DynamicConv2d:
+def dynamic_conv2d_converter(module: nn.Conv2d) -> DynamicConv2d:
     """Convert a nn.Conv2d module to a DynamicConv2d.
 
     Args:
@@ -21,8 +21,6 @@ def dynamic_conv2d_converter(module: nn.Conv2d, in_channels_cfg: Dict,
         out_channels_cfg (Dict): Config related to `out_channels`.
     """
     dynamic_conv = DynamicConv2d(
-        in_channels_cfg=in_channels_cfg,
-        out_channels_cfg=out_channels_cfg,
         in_channels=module.in_channels,
         out_channels=module.out_channels,
         kernel_size=module.kernel_size,
@@ -35,8 +33,7 @@ def dynamic_conv2d_converter(module: nn.Conv2d, in_channels_cfg: Dict,
     return dynamic_conv
 
 
-def dynamic_linear_converter(module: nn.Linear, in_channels_cfg: Dict,
-                             out_channels_cfg: Dict) -> DynamicLinear:
+def dynamic_linear_converter(module: nn.Linear) -> DynamicLinear:
     """Convert a nn.Linear module to a DynamicLinear.
 
     Args:
@@ -45,26 +42,52 @@ def dynamic_linear_converter(module: nn.Linear, in_channels_cfg: Dict,
         out_features_cfg (Dict): Config related to `out_features`.
     """
     dynamic_linear = DynamicLinear(
-        in_features_cfg=in_channels_cfg,
-        out_features_cfg=out_channels_cfg,
         in_features=module.in_features,
         out_features=module.out_features,
         bias=True if module.bias is not None else False)
     return dynamic_linear
 
 
-def dynamic_bn_converter(
-        module: _BatchNorm,
-        in_channels_cfg: Dict,
-        out_channels_cfg: Optional[Dict] = None) -> DynamicBatchNorm:
-    """Convert a _BatchNorm module to a DynamicBatchNorm.
+def dynamic_batch_norm_1d_converter(module: _BatchNorm) -> DynamicBatchNorm1d:
+    """Convert a _BatchNorm module to a DynamicBatchNorm1d.
 
     Args:
         module (:obj:`torch.nn._BatchNorm`): The original BatchNorm module.
         num_features_cfg (Dict): Config related to `num_features`.
     """
-    dynamic_bn = DynamicBatchNorm(
-        num_features_cfg=in_channels_cfg,
+    dynamic_bn = DynamicBatchNorm1d(
+        num_features=module.num_features,
+        eps=module.eps,
+        momentum=module.momentum,
+        affine=module.affine,
+        track_running_stats=module.track_running_stats)
+    return dynamic_bn
+
+
+def dynamic_batch_norm_2d_converter(module: _BatchNorm) -> DynamicBatchNorm2d:
+    """Convert a _BatchNorm module to a DynamicBatchNorm2d.
+
+    Args:
+        module (:obj:`torch.nn._BatchNorm`): The original BatchNorm module.
+        num_features_cfg (Dict): Config related to `num_features`.
+    """
+    dynamic_bn = DynamicBatchNorm2d(
+        num_features=module.num_features,
+        eps=module.eps,
+        momentum=module.momentum,
+        affine=module.affine,
+        track_running_stats=module.track_running_stats)
+    return dynamic_bn
+
+
+def dynamic_batch_norm_3d_converter(module: _BatchNorm) -> DynamicBatchNorm3d:
+    """Convert a _BatchNorm module to a DynamicBatchNorm3d.
+
+    Args:
+        module (:obj:`torch.nn._BatchNorm`): The original BatchNorm module.
+        num_features_cfg (Dict): Config related to `num_features`.
+    """
+    dynamic_bn = DynamicBatchNorm3d(
         num_features=module.num_features,
         eps=module.eps,
         momentum=module.momentum,
@@ -116,9 +139,9 @@ def dynamic_gn_converter(
 DEFAULT_MODULE_CONVERTERS: Dict[Callable, Callable] = {
     nn.Conv2d: dynamic_conv2d_converter,
     nn.Linear: dynamic_linear_converter,
-    nn.BatchNorm1d: dynamic_bn_converter,
-    nn.BatchNorm2d: dynamic_bn_converter,
-    nn.BatchNorm3d: dynamic_bn_converter,
+    nn.BatchNorm1d: dynamic_batch_norm_1d_converter,
+    nn.BatchNorm2d: dynamic_batch_norm_2d_converter,
+    nn.BatchNorm3d: dynamic_batch_norm_3d_converter,
     nn.InstanceNorm1d: dynamic_in_converter,
     nn.InstanceNorm2d: dynamic_in_converter,
     nn.InstanceNorm3d: dynamic_in_converter,

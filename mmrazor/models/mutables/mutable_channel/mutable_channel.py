@@ -1,18 +1,20 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import abstractmethod
-from typing import List
+from typing import Dict, List
 
 import torch
 
-from ..base_mutable import CHOICE_TYPE, CHOSEN_TYPE, BaseMutable
+from ..base_mutable import CHOICE_TYPE, BaseMutable
+from ..derived_mutable import DerivedMethodMixin
 
 
-class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
-    """A type of ``MUTABLES`` for single path supernet such as AutoSlim. In
+class MutableChannel(BaseMutable[CHOICE_TYPE, Dict], DerivedMethodMixin):
+    """A type of ``MUTABLES`` for single path supernet such as AutoSlim.
+
+    In
     single path supernet, each module only has one choice invoked at the same
     time. A path is obtained by sampling all the available choices. It is the
     base class for one shot channel mutables.
-
     Args:
         num_channels (int): The raw number of channels.
         init_cfg (dict, optional): initialization configuration dict for
@@ -31,6 +33,7 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
         # outputs, we add the mutable out of these modules to the
         # `concat_parent_mutables` of this module.
         self.concat_parent_mutables: List[MutableChannel] = list()
+        self.name = 'unbind'
 
     @property
     def same_mutables(self):
@@ -75,11 +78,7 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
                 mutable.current_mask for mutable in self.concat_parent_mutables
             ])
         else:
-            # TODO
-            if self.is_fixed:
-                return self.convert_choice_to_mask(0)
-            else:
-                return self.convert_choice_to_mask(self.current_choice)
+            return self.convert_choice_to_mask(self.current_choice)
 
     def bind_mutable_name(self, name: str) -> None:
         """Bind a MutableChannel to its name.
@@ -89,11 +88,12 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
         """
         self.name = name
 
-    def fix_chosen(self, chosen: CHOSEN_TYPE) -> None:
-        """Fix mutable with subnet config. This operation would convert
+    def fix_chosen(self, chosen: Dict) -> None:
+        """Fix mutable with subnet config.
+
+        This operation would convert
         `unfixed` mode to `fixed` mode. The :attr:`is_fixed` will be set to
         True and only the selected operations can be retained.
-
         Args:
             chosen (str): The chosen key in ``MUTABLE``. Defaults to None.
         """
@@ -102,11 +102,12 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
                 'The mode of current MUTABLE is `fixed`. '
                 'Please do not call `fix_chosen` function again.')
 
-        # TODO
-        # should fixed op still have candidate_choices?
-        self._candidate_choices = [chosen]
-        self._chosen = chosen
+        current_choice = chosen['current_choice']
+        self.current_choice = current_choice
         self.is_fixed = True
+
+    def dump_chosen(self) -> Dict:
+        return dict(current_choice=self.current_choice)
 
     def __repr__(self):
         concat_mutable_name = [
@@ -115,5 +116,6 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
         repr_str = self.__class__.__name__
         repr_str += f'(name={self.name}, '
         repr_str += f'num_channels={self.num_channels}, '
+        repr_str += f'current_choice={self.current_choice}, '
         repr_str += f'concat_mutable_name={concat_mutable_name})'
         return repr_str
