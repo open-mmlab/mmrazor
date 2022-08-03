@@ -71,19 +71,30 @@ def main():
                                 osp.splitext(osp.basename(args.config))[0])
 
     # enable automatic-mixed-precision training
-    if args.amp is True:
-        optim_wrapper = cfg.optim_wrapper.type
-        if optim_wrapper == 'AmpOptimWrapper':
-            print_log(
-                'AMP training is already enabled in your config.',
-                logger='current',
-                level=logging.WARNING)
-        else:
-            assert optim_wrapper == 'OptimWrapper', (
-                '`--amp` is only supported when the optimizer wrapper type is '
-                f'`OptimWrapper` but got {optim_wrapper}.')
-            cfg.optim_wrapper.type = 'AmpOptimWrapper'
-            cfg.optim_wrapper.loss_scale = 'dynamic'
+    if args.amp:
+        if getattr(cfg.optim_wrapper, 'type', None):
+            optim_wrapper = cfg.optim_wrapper.type
+            if optim_wrapper == 'AmpOptimWrapper':
+                print_log(
+                    'AMP training is already enabled in your config.',
+                    logger='current',
+                    level=logging.WARNING)
+            else:
+                assert optim_wrapper == 'OptimWrapper', (
+                    '`--amp` is only supported when the optimizer wrapper '
+                    f'type is `OptimWrapper` but got {optim_wrapper}.')
+                cfg.optim_wrapper.type = 'AmpOptimWrapper'
+                cfg.optim_wrapper.loss_scale = 'dynamic'
+
+        if getattr(cfg.optim_wrapper, 'constructor', None):
+            if cfg.optim_wrapper.architecture.type == 'OptimWrapper':
+                cfg.optim_wrapper.architecture.type = 'AmpOptimWrapper'
+                cfg.optim_wrapper.architecture.loss_scale = 'dynamic'
+
+            # TODO: support amp training for mutator
+            # if cfg.optim_wrapper.mutator.type == 'OptimWrapper':
+            #     cfg.optim_wrapper.mutator.type = 'AmpOptimWrapper'
+            #     cfg.optim_wrapper.mutator.loss_scale = 'dynamic'
 
     # enable automatically scaling LR
     if args.auto_scale_lr:
