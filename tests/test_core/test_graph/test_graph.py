@@ -68,7 +68,7 @@ class TestGraph(TestCase):
 
                     # check channels
                     try:
-                        graph.check_channels()
+                        graph.check()
                     except Exception as e:
                         self.fail(str(e) + '\n' + str(graph))
 

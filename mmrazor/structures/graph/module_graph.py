@@ -1,4 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+"""This module defines ModuleNode and ModuleGraph.
+
+They model the computation graph of a model based on BaseNode and BaseGraph
+"""
 import copy
 from collections import OrderedDict
 from typing import Dict, List, TypeVar, Union
@@ -7,6 +11,7 @@ import torch.nn as nn
 from torch.nn import Module
 
 from ..tracer.backward_tracer import BackwardTracer
+# from ..tracer.fx_tracer import FxBaseNode, FxTracer
 from ..tracer.loss_calculator import ImageClassifierPseudoLoss
 from ..tracer.path import ConcatNode as PathCatNode
 from ..tracer.path import Node as PathNode
@@ -17,70 +22,87 @@ from .base_graph import BaseGraph, BaseNode
 
 
 class ModuleNode(BaseNode):
-    pre_defined_node_val = ['cat', 'bind', 'pass']
+    """A node in a computation graph.
+
+    All nodes are divided to four types, the detail of definition can be found
+    in functions  self.is_{xxx}_node.
+    """
+
+    pre_defined_node_val_str = ['cat', 'bind', 'pass']
 
     def __init__(self,
                  name: str,
                  val: Union[Module, str],
-                 expand_ratio=1) -> None:
-        """expand_ratio is used in bind-node where the out_channel is always a
-        multiple of the in_channel.
-
-        Example:
-            y=AdaptiveAvgPooling(size=2)(x).flatten(1)
-            channel(x)=4*channel(y)
+                 expand_ratio: int = 1) -> None:
         """
-        assert isinstance(
-            val, Module
-        ) or val in self.__class__.pre_defined_node_val, \
-            f'{val} node is not allowed'
+        Args:
+            name (str): the name of the node
+            val (Module | str): content of the node. It can be Module or
+            string. If val is a string, the string can only be one of
+                self.pre_defined_node_val_str
+            expand_ratio (int): expand_ratio is used in bind node,
+                where the out_channel is always a multiple of the in_channel.
+        Note:
+            Here, we give an example of expand_ratio.
+            >>> class Pool(nn.Module):
+                    def forward(x):
+                        return F.adaptive_avg_pool2d(x,2).flatten(1)
+            >>> node= ModuleNode('pass_0',Pool(),expadn_ratio=4)
+            >>> assert node.out_channels == node.in_channels*4
+        """
+
+        assert (isinstance(val, Module)
+                or val in self.__class__.pre_defined_node_val_str
+                ), f'{val} node is not allowed'
+        if expand_ratio != 1:
+            assert val == 'pass', 'expand != 1 is only valid when val=="pass"'
         super().__init__(name, val)
-        assert expand_ratio == 1 or val == 'pass'
         self.expand_ratio = expand_ratio
 
     # channel
 
     @property
-    def in_channels(self):
-        """return the in_channels of the node."""
+    def in_channels(self) -> int:
+        """int: the in_channels of the node."""
         if isinstance(self.val, nn.Module):
-            if isinstance(self.val, nn.Conv2d):
-                return self.val.in_channels
-            elif isinstance(self.val, nn.modules.batchnorm._BatchNorm):
-                return self.val.num_features
-            elif isinstance(self.val, nn.Linear):
-                return self.val.in_features
-            else:
-                raise NotImplementedError(f'unsupported module: {self.val}')
+            MAPPING = {
+                nn.Conv2d: 'in_channels',
+                nn.modules.batchnorm._BatchNorm: 'num_features',
+                nn.modules.Linear: 'in_features',
+            }
+            for basetype in MAPPING:
+                if isinstance(self.val, basetype):
+                    return getattr(self.val, MAPPING[basetype])
+            raise NotImplementedError(f'unsupported module: {self.val}')
         elif self.is_bind_node() or self.is_pass_node():
-            if len(self.pre) > 0:
-                return self.pre[0].out_channels
+            if len(self.prev_nodes) > 0:
+                return self.prev_nodes[0].out_channels
             else:
                 return 0
         elif self.is_cat_node():
             return sum([
                 node.out_channels if node.out_channels is not None else 0
-                for node in self.pre
+                for node in self.prev_nodes
             ])
         else:
             raise NotImplementedError(f'unsupported node type: {self.type()}')
 
     @property
-    def out_channels(self):
-        """return the out_channels of the node."""
+    def out_channels(self) -> int:
+        """int: the out_channels of the node."""
         if isinstance(self.val, nn.Module):
-
-            if isinstance(self.val, nn.Conv2d):
-                return self.val.out_channels
-            elif isinstance(self.val, nn.modules.batchnorm._BatchNorm):
-                return self.val.num_features
-            elif isinstance(self.val, nn.Linear):
-                return self.val.out_features
-            else:
-                raise NotImplementedError(f'unsupported module: {self.val}')
+            MAPPING = {
+                nn.Conv2d: 'out_channels',
+                nn.modules.batchnorm._BatchNorm: 'num_features',
+                nn.modules.Linear: 'out_features',
+            }
+            for basetype in MAPPING:
+                if isinstance(self.val, basetype):
+                    return getattr(self.val, MAPPING[basetype])
+            raise NotImplementedError(f'unsupported module: {self.val}')
         elif self.is_bind_node():
-            if len(self.pre) > 0:
-                return self.pre[0].out_channels
+            if len(self.prev_nodes) > 0:
+                return self.prev_nodes[0].out_channels
             else:
                 return 0
         elif self.is_pass_node():
@@ -88,20 +110,10 @@ class ModuleNode(BaseNode):
         elif self.is_cat_node():
             return sum([
                 node.out_channels if node.out_channels is not None else 0
-                for node in self.pre
+                for node in self.prev_nodes
             ])
         else:
             raise NotImplementedError(f'unsupported node type: {self.type()}')
-
-    def check_channel(self):
-        """Check if the channels of the node is matchable with previous nodes
-        and next nodes."""
-        if self.is_cat_node():
-            pass
-        else:
-            for pre in self.pre:
-                assert pre.out_channels == self.in_channels, \
-                    f'{self} has channel error'
 
     # other
 
@@ -111,15 +123,20 @@ class ModuleNode(BaseNode):
     # node type
 
     def type(self) -> str:
+        """The basic type of the node.
+
+        Basic types are divided into seveval major types, detailed in
+        self.is_{xxx}_node
+        """
         if isinstance(self.val, Module):
             if isinstance(self.val, nn.Conv2d):
                 if self.val.groups == 1:
                     return 'conv'
-                elif self.val.groups == self.val.in_channels \
-                        == self.val.out_channels:
+                elif self.val.groups == self.val.in_channels == \
+                        self.val.out_channels:
                     return 'dwconv'
                 else:
-                    raise NotImplementedError('group_wise conv')
+                    return 'gwconv'
             elif isinstance(self.val, nn.modules.batchnorm._BatchNorm):
                 return 'bn'
             elif isinstance(self.val, nn.Linear):
@@ -148,14 +165,41 @@ class ModuleNode(BaseNode):
 
     def is_mix_node(self):
         """mix node represents a module that mixs all input channels and
-        generete new output channels."""
-        return self.type() in ['conv', 'linear']
+        generete new output channels, such as conv and linear."""
+        return self.type() in ['conv', 'linear', 'gwconv']
+
+    # check
+
+    def check_channel(self):
+        """Check if the channels of the node is matchable with previous nodes
+        and next nodes."""
+        if self.is_cat_node():
+            pass
+        else:
+            for pre in self.prev_nodes:
+                assert pre.out_channels == self.in_channels, \
+                    f'{self} has channel error'
+
+    def check_type(self):
+        """Check if the node has right number of previous nodes according to
+        their type."""
+        if self.is_pass_node():
+            assert len(self.prev_nodes) <= 1, '{name} pass node error'
+        elif self.is_cat_node():
+            pass
+        elif self.is_bind_node():
+            assert len(self.prev_nodes) > 1, '{name} bind node error'
+        elif self.is_mix_node():
+            assert len(self.prev_nodes) <= 1, '{name} mix node error'
+        else:
+            raise NotImplementedError(f'{self}')
 
 
 MODULENODE = TypeVar('MODULENODE', bound=ModuleNode)
 
 
 class ModuleGraph(BaseGraph[MODULENODE]):
+    """Computatation Graph."""
 
     # functions to generate module graph.
 
@@ -170,7 +214,8 @@ class ModuleGraph(BaseGraph[MODULENODE]):
     def init_using_backward_tracer(
         model: Module,
         backward_tracer=BackwardTracer(
-            loss_calculator=ImageClassifierPseudoLoss())):
+            loss_calculator=ImageClassifierPseudoLoss()),
+    ):
         """init module graph using backward tracer."""
         path_lists = backward_tracer.trace(model)
         graph = ModuleGraph.init_from_path_list(path_lists, model)
@@ -187,12 +232,16 @@ class ModuleGraph(BaseGraph[MODULENODE]):
         the relation among modules."""
         pass
 
-    def check_channels(self):
-        """check if the channels is matchable among all nodes in the graph."""
+    # check
+
+    def check(self):
+        """Check if the graph is valid."""
         for node in self:
             node.check_channel()
+            node.check_type()
 
     # static method for models that can't use tracer
+
     @staticmethod
     def connect_module(pre: Module, next: Module):
         """This function is used to write hardcode in modules to generate Graph
@@ -216,6 +265,7 @@ class ModuleGraph(BaseGraph[MODULENODE]):
 
 
 class ToGraph:
+    """Base class for converters for ModuleGraph."""
 
     def __init__(self) -> None:
         self.graph = ModuleGraph[ModuleNode]()
@@ -223,70 +273,77 @@ class ToGraph:
         self.bind_num = 0
         self.pass_num = 0
 
-    def new_cat(self):
-        node = self.graph.add_or_find_node(
-            ModuleNode(f'cat_{self.cat_num}', 'cat'))
-        self.cat_num += 1
+    # add node
+
+    def new_placeholder_node(self, type: str, expand_ratio=1):
+        """New cat/bind/pass node."""
+        assert type in ['cat', 'pass', 'bind']
+        if expand_ratio != 1:
+            assert type == 'pass'
+        if type == 'cat':
+            num = self.cat_num
+            self.cat_num += 1
+        elif type == 'pass':
+            num = self.pass_num
+            self.pass_num += 1
+        elif type == 'bind':
+            num = self.bind_num
+            self.bind_num += 1
+        else:
+            pass
+        node = ModuleNode(f'{type}_{num}', type, expand_ratio=expand_ratio)
+        self.graph.add_or_find_node(node)
         return node
 
-    def new_pass(self, expand_ratio=1):
-        node = self.graph.add_or_find_node(
-            ModuleNode(
-                f'pass_{self.pass_num}', 'pass', expand_ratio=expand_ratio))
-        self.pass_num += 1
-        return node
+    # insert nodes
 
-    def new_bind(self):
-        node = self.graph.add_or_find_node(
-            ModuleNode(f'bind_{self.bind_num}', 'bind'))
-        self.bind_num += 1
-        return node
+    def insert_node_before(self, node: ModuleNode, new_node: ModuleNode):
+        """Insert a new node before a node."""
+        for pre in node.prev_nodes:
+            self.graph.connect(pre, new_node)
+        for pre in new_node.prev_nodes:
+            self.graph.disconnect(pre, node)
+        self.graph.connect(new_node, node)
 
-    # add nodes
-
-    def add_bind_nodes(self):
-        """deal with special occation."""
+    def insert_bind_nodes(self):
+        """Add bind nodes before the nodes which only need one previous node
+        but have more than one."""
 
         need_bind_nodes = []
         for node in self.graph:
-            if isinstance(node.val, nn.Conv2d) \
-                    or isinstance(node.val, nn.Linear) \
-                    or isinstance(node.val,
-                                  nn.modules.batchnorm._BatchNorm):
-                if len(node.pre) > 1:
+            if (isinstance(node.val, nn.Conv2d)
+                    or isinstance(node.val, nn.Linear)
+                    or isinstance(node.val, nn.modules.batchnorm._BatchNorm)):
+                if len(node.prev_nodes) > 1:
                     need_bind_nodes.append(node)
         for node in need_bind_nodes:
-            self.add_bind_node_before(node)
+            bind_node = self.new_placeholder_node('bind')
+            self.insert_node_before(node, bind_node)
 
-    def add_bind_node_before(self, node: ModuleNode):
-        bind_node = self.new_bind()
-        for pre in node.pre:
-            self.graph.connect(pre, bind_node)
-        for pre in bind_node.pre:
-            self.graph.disconnect(pre, node)
-        self.graph.connect(bind_node, node)
-
-    def add_pass_nodes(self):
+    def insert_pass_nodes(self):
+        """Add pass nodes where the channel conflict."""
         for node in copy.copy(list(self.graph.nodes.values())):
-            if len(node.pre) == 1:
-                pre: ModuleNode = node.pre[0]
+            if len(node.prev_nodes) == 1:
+                pre: ModuleNode = node.prev_nodes[0]
                 if node.in_channels != pre.out_channels:
                     assert node.in_channels % pre.out_channels == 0
-                    self.add_pass_node_before(node)
+                    pass_node = self.new_placeholder_node(
+                        'pass', node.in_channels // pre.out_channels)
+                    self.insert_node_before(node, pass_node)
 
-    def add_pass_node_before(self, node: ModuleNode):
-        assert len(node.pre) == 1
-        pre: ModuleNode = node.pre[0]
-        assert node.in_channels % pre.out_channels == 0
-
-        pass_node = self.new_pass(node.in_channels // pre.out_channels)
-
-        self.graph.connect(pass_node, node)
-        self.graph.connect(pre, pass_node)
-        self.graph.disconnect(pre, node)
+    def remove_redundant_pass_nodes(self):
+        """Remove redundant pass nodes, which do not change number of channels
+        and  do not represent any module."""
+        for node in copy.copy(list(self.graph.nodes.values())):
+            if (node.is_pass_node() and len(node.prev_nodes) == 1
+                    and len(node.next_nodes) == 1
+                    and not isinstance(node.val, nn.Module)
+                    and node.in_channels == node.out_channels):
+                self.graph.delete_node(node)
 
     # topo_rename_nodes
     def topo_rename(self):
+        """Rename cat, bind, pass nodes in topological order."""
         self.cat_num = 0
         self.bind_num = 0
         self.pass_num = 0
@@ -296,8 +353,8 @@ class ToGraph:
             if isinstance(node.val, Module):
                 pass
             elif node.is_pass_node():
-                node.name = f'_{self.bind_num}'
-                self.bind_num += 1
+                node.name = f'pass_{self.pass_num}'
+                self.pass_num += 1
             elif node.is_cat_node():
                 node.name = f'cat_{self.cat_num}'
                 self.cat_num += 1
@@ -310,30 +367,41 @@ class ToGraph:
         self.graph.nodes = sorted_nodes
 
     # other
-    def post_operations(self):
-        self.add_bind_nodes()
-        self.add_pass_nodes()
+    def post_process(self):
+        """Some post process after init a basic module graph."""
+        self.remove_redundant_pass_nodes()
+        self.insert_bind_nodes()
+        self.insert_pass_nodes()
         self.topo_rename()
 
 
 class PathToGraph(ToGraph):
+    """The class converts pathlist, which is generated by backward tracer, to a
+    module graph."""
 
     def __init__(self, path_list: PathList, model: Module) -> None:
+        """
+            Args:
+                path_list (PathList): path_list generated by backward tracer.
+                model (Module): the model corresponding to the path_list
+        """
         super().__init__()
         self.path_list = path_list
         self.cat_dict: Dict[str, str] = {}
         self.cat_num = 0
         self.bind_num = 0
         self.name2module = dict(model.named_modules())
-        self.parse()
+        self.parse(self.path_list)
 
-        self.post_operations()
+        self.post_process()
 
-    def parse(self):
-        self.parse_unit(self.path_list, [])
+    def parse(self, path_list: PathList):
+        """Parse path list."""
+        self.parse_unit(path_list, [])
 
     def parse_unit(self, path_unit: Union[PathList, Path, PathNode],
                    next_nodes: List[ModuleNode]):
+        """Parse a node(unit) in path list."""
         current_node = None
         # path_list
         if isinstance(path_unit, PathList):
@@ -364,11 +432,15 @@ class PathToGraph(ToGraph):
         return current_node
 
     def add_or_find_cat_node(self, pathnode: PathCatNode):
+        """Receive a cat-node.
+
+        If the cat-node exists in the graph, the corresponding node is
+        returned, or a new cat node is added to the graph.
+        """
 
         def unify_cat_name(name: str):
             cat_name = name.split('_')
-            inputs = cat_name[1:]
-            inputs.sort()
+            inputs = sorted(cat_name[1:])
             return f"cat_{'_'.join(inputs)}"
 
         name_id = pathnode.name
@@ -383,6 +455,11 @@ class PathToGraph(ToGraph):
         return node
 
     def add_or_find_node(self, pathnode: PathNode) -> Module:
+        """Receive a cat-node.
+
+        If the cat-node exists in the graph, the corresponding node is
+        returned, or a new cat node is added to the graph.
+        """
         if isinstance(pathnode, PathCatNode):
             return self.add_or_find_cat_node(pathnode)
         else:
@@ -391,6 +468,7 @@ class PathToGraph(ToGraph):
             module = self.name2module[name]
             return self.graph.add_or_find_node(ModuleNode(name, module))
 
-    def connect_nexts(self, node, nexts):
+    def connect_nexts(self, node, nexts: List[ModuleNode]):
+        """Connext the node and the nodes in nexts."""
         for next in nexts:
             self.graph.connect(node, next)
