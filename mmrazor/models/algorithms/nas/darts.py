@@ -291,6 +291,24 @@ class Darts(BaseAlgorithm):
         return hessian
 
 
+class BatchNormWrapper(nn.Module):
+    """Wrapper for BatchNorm. For more information,
+    Please refer to https://github.com/NVIDIA/apex/issues/121
+    """
+
+    def __init__(self, m):
+        super(BatchNormWrapper, self).__init__()
+        self.m = m
+        # Set the batch norm to eval mode
+        self.m.eval()
+
+    def forward(self, x):
+        """Convert fp16 to fp32 when forward"""
+        input_type = x.dtype
+        x = self.m(x.float())
+        return x.to(input_type)
+
+
 @MODEL_WRAPPERS.register_module()
 class DartsDDP(MMDistributedDataParallel):
     """DDP for Darts and rewrite train_step of MMDDP."""
@@ -303,6 +321,18 @@ class DartsDDP(MMDistributedDataParallel):
             if os.environ.get('LOCAL_RANK') is not None:
                 device_ids = [int(os.environ['LOCAL_RANK'])]
         super().__init__(device_ids=device_ids, **kwargs)
+
+        fp16 = True
+        if fp16:
+
+            def add_fp16_bn_wrapper(model):
+                for child_name, child in model.named_children():
+                    if isinstance(child, nn.BatchNorm2d):
+                        setattr(model, child_name, BatchNormWrapper(child))
+                    else:
+                        add_fp16_bn_wrapper(child)
+
+            add_fp16_bn_wrapper(self.module)
 
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
