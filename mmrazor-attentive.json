@@ -1,0 +1,2778 @@
+{
+    "model.backbone.first_conv.conv.weight": [
+        24,
+        3,
+        3,
+        3
+    ],
+    "model.backbone.first_conv.bn.weight": [
+        24
+    ],
+    "model.backbone.first_conv.bn.bias": [
+        24
+    ],
+    "model.backbone.first_conv.bn.running_mean": [
+        24
+    ],
+    "model.backbone.first_conv.bn.running_var": [
+        24
+    ],
+    "model.backbone.first_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.0.0.shortcut.conv.weight": [
+        24,
+        24,
+        1,
+        1
+    ],
+    "model.backbone.blocks.0.0.depthwise_conv.conv.weight": [
+        24,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.0.0.depthwise_conv.bn.weight": [
+        24
+    ],
+    "model.backbone.blocks.0.0.depthwise_conv.bn.bias": [
+        24
+    ],
+    "model.backbone.blocks.0.0.depthwise_conv.bn.running_mean": [
+        24
+    ],
+    "model.backbone.blocks.0.0.depthwise_conv.bn.running_var": [
+        24
+    ],
+    "model.backbone.blocks.0.0.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.0.0.linear_conv.conv.weight": [
+        24,
+        24,
+        1,
+        1
+    ],
+    "model.backbone.blocks.0.0.linear_conv.bn.weight": [
+        24
+    ],
+    "model.backbone.blocks.0.0.linear_conv.bn.bias": [
+        24
+    ],
+    "model.backbone.blocks.0.0.linear_conv.bn.running_mean": [
+        24
+    ],
+    "model.backbone.blocks.0.0.linear_conv.bn.running_var": [
+        24
+    ],
+    "model.backbone.blocks.0.0.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.0.1.shortcut.conv.weight": [
+        24,
+        24,
+        1,
+        1
+    ],
+    "model.backbone.blocks.0.1.depthwise_conv.conv.weight": [
+        24,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.0.1.depthwise_conv.bn.weight": [
+        24
+    ],
+    "model.backbone.blocks.0.1.depthwise_conv.bn.bias": [
+        24
+    ],
+    "model.backbone.blocks.0.1.depthwise_conv.bn.running_mean": [
+        24
+    ],
+    "model.backbone.blocks.0.1.depthwise_conv.bn.running_var": [
+        24
+    ],
+    "model.backbone.blocks.0.1.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.0.1.linear_conv.conv.weight": [
+        24,
+        24,
+        1,
+        1
+    ],
+    "model.backbone.blocks.0.1.linear_conv.bn.weight": [
+        24
+    ],
+    "model.backbone.blocks.0.1.linear_conv.bn.bias": [
+        24
+    ],
+    "model.backbone.blocks.0.1.linear_conv.bn.running_mean": [
+        24
+    ],
+    "model.backbone.blocks.0.1.linear_conv.bn.running_var": [
+        24
+    ],
+    "model.backbone.blocks.0.1.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.1.0.shortcut.conv.weight": [
+        32,
+        24,
+        1,
+        1
+    ],
+    "model.backbone.blocks.1.0.expand_conv.conv.weight": [
+        144,
+        24,
+        1,
+        1
+    ],
+    "model.backbone.blocks.1.0.expand_conv.bn.weight": [
+        144
+    ],
+    "model.backbone.blocks.1.0.expand_conv.bn.bias": [
+        144
+    ],
+    "model.backbone.blocks.1.0.expand_conv.bn.running_mean": [
+        144
+    ],
+    "model.backbone.blocks.1.0.expand_conv.bn.running_var": [
+        144
+    ],
+    "model.backbone.blocks.1.0.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.1.0.depthwise_conv.conv.weight": [
+        144,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.1.0.depthwise_conv.bn.weight": [
+        144
+    ],
+    "model.backbone.blocks.1.0.depthwise_conv.bn.bias": [
+        144
+    ],
+    "model.backbone.blocks.1.0.depthwise_conv.bn.running_mean": [
+        144
+    ],
+    "model.backbone.blocks.1.0.depthwise_conv.bn.running_var": [
+        144
+    ],
+    "model.backbone.blocks.1.0.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.1.0.linear_conv.conv.weight": [
+        32,
+        144,
+        1,
+        1
+    ],
+    "model.backbone.blocks.1.0.linear_conv.bn.weight": [
+        32
+    ],
+    "model.backbone.blocks.1.0.linear_conv.bn.bias": [
+        32
+    ],
+    "model.backbone.blocks.1.0.linear_conv.bn.running_mean": [
+        32
+    ],
+    "model.backbone.blocks.1.0.linear_conv.bn.running_var": [
+        32
+    ],
+    "model.backbone.blocks.1.0.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.1.1.shortcut.conv.weight": [
+        32,
+        32,
+        1,
+        1
+    ],
+    "model.backbone.blocks.1.1.expand_conv.conv.weight": [
+        192,
+        32,
+        1,
+        1
+    ],
+    "model.backbone.blocks.1.1.expand_conv.bn.weight": [
+        192
+    ],
+    "model.backbone.blocks.1.1.expand_conv.bn.bias": [
+        192
+    ],
+    "model.backbone.blocks.1.1.expand_conv.bn.running_mean": [
+        192
+    ],
+    "model.backbone.blocks.1.1.expand_conv.bn.running_var": [
+        192
+    ],
+    "model.backbone.blocks.1.1.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.1.1.depthwise_conv.conv.weight": [
+        192,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.1.1.depthwise_conv.bn.weight": [
+        192
+    ],
+    "model.backbone.blocks.1.1.depthwise_conv.bn.bias": [
+        192
+    ],
+    "model.backbone.blocks.1.1.depthwise_conv.bn.running_mean": [
+        192
+    ],
+    "model.backbone.blocks.1.1.depthwise_conv.bn.running_var": [
+        192
+    ],
+    "model.backbone.blocks.1.1.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.1.1.linear_conv.conv.weight": [
+        32,
+        192,
+        1,
+        1
+    ],
+    "model.backbone.blocks.1.1.linear_conv.bn.weight": [
+        32
+    ],
+    "model.backbone.blocks.1.1.linear_conv.bn.bias": [
+        32
+    ],
+    "model.backbone.blocks.1.1.linear_conv.bn.running_mean": [
+        32
+    ],
+    "model.backbone.blocks.1.1.linear_conv.bn.running_var": [
+        32
+    ],
+    "model.backbone.blocks.1.1.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.1.2.shortcut.conv.weight": [
+        32,
+        32,
+        1,
+        1
+    ],
+    "model.backbone.blocks.1.2.expand_conv.conv.weight": [
+        192,
+        32,
+        1,
+        1
+    ],
+    "model.backbone.blocks.1.2.expand_conv.bn.weight": [
+        192
+    ],
+    "model.backbone.blocks.1.2.expand_conv.bn.bias": [
+        192
+    ],
+    "model.backbone.blocks.1.2.expand_conv.bn.running_mean": [
+        192
+    ],
+    "model.backbone.blocks.1.2.expand_conv.bn.running_var": [
+        192
+    ],
+    "model.backbone.blocks.1.2.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.1.2.depthwise_conv.conv.weight": [
+        192,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.1.2.depthwise_conv.bn.weight": [
+        192
+    ],
+    "model.backbone.blocks.1.2.depthwise_conv.bn.bias": [
+        192
+    ],
+    "model.backbone.blocks.1.2.depthwise_conv.bn.running_mean": [
+        192
+    ],
+    "model.backbone.blocks.1.2.depthwise_conv.bn.running_var": [
+        192
+    ],
+    "model.backbone.blocks.1.2.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.1.2.linear_conv.conv.weight": [
+        32,
+        192,
+        1,
+        1
+    ],
+    "model.backbone.blocks.1.2.linear_conv.bn.weight": [
+        32
+    ],
+    "model.backbone.blocks.1.2.linear_conv.bn.bias": [
+        32
+    ],
+    "model.backbone.blocks.1.2.linear_conv.bn.running_mean": [
+        32
+    ],
+    "model.backbone.blocks.1.2.linear_conv.bn.running_var": [
+        32
+    ],
+    "model.backbone.blocks.1.2.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.1.3.shortcut.conv.weight": [
+        32,
+        32,
+        1,
+        1
+    ],
+    "model.backbone.blocks.1.3.expand_conv.conv.weight": [
+        192,
+        32,
+        1,
+        1
+    ],
+    "model.backbone.blocks.1.3.expand_conv.bn.weight": [
+        192
+    ],
+    "model.backbone.blocks.1.3.expand_conv.bn.bias": [
+        192
+    ],
+    "model.backbone.blocks.1.3.expand_conv.bn.running_mean": [
+        192
+    ],
+    "model.backbone.blocks.1.3.expand_conv.bn.running_var": [
+        192
+    ],
+    "model.backbone.blocks.1.3.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.1.3.depthwise_conv.conv.weight": [
+        192,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.1.3.depthwise_conv.bn.weight": [
+        192
+    ],
+    "model.backbone.blocks.1.3.depthwise_conv.bn.bias": [
+        192
+    ],
+    "model.backbone.blocks.1.3.depthwise_conv.bn.running_mean": [
+        192
+    ],
+    "model.backbone.blocks.1.3.depthwise_conv.bn.running_var": [
+        192
+    ],
+    "model.backbone.blocks.1.3.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.1.3.linear_conv.conv.weight": [
+        32,
+        192,
+        1,
+        1
+    ],
+    "model.backbone.blocks.1.3.linear_conv.bn.weight": [
+        32
+    ],
+    "model.backbone.blocks.1.3.linear_conv.bn.bias": [
+        32
+    ],
+    "model.backbone.blocks.1.3.linear_conv.bn.running_mean": [
+        32
+    ],
+    "model.backbone.blocks.1.3.linear_conv.bn.running_var": [
+        32
+    ],
+    "model.backbone.blocks.1.3.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.1.4.shortcut.conv.weight": [
+        32,
+        32,
+        1,
+        1
+    ],
+    "model.backbone.blocks.1.4.expand_conv.conv.weight": [
+        192,
+        32,
+        1,
+        1
+    ],
+    "model.backbone.blocks.1.4.expand_conv.bn.weight": [
+        192
+    ],
+    "model.backbone.blocks.1.4.expand_conv.bn.bias": [
+        192
+    ],
+    "model.backbone.blocks.1.4.expand_conv.bn.running_mean": [
+        192
+    ],
+    "model.backbone.blocks.1.4.expand_conv.bn.running_var": [
+        192
+    ],
+    "model.backbone.blocks.1.4.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.1.4.depthwise_conv.conv.weight": [
+        192,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.1.4.depthwise_conv.bn.weight": [
+        192
+    ],
+    "model.backbone.blocks.1.4.depthwise_conv.bn.bias": [
+        192
+    ],
+    "model.backbone.blocks.1.4.depthwise_conv.bn.running_mean": [
+        192
+    ],
+    "model.backbone.blocks.1.4.depthwise_conv.bn.running_var": [
+        192
+    ],
+    "model.backbone.blocks.1.4.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.1.4.linear_conv.conv.weight": [
+        32,
+        192,
+        1,
+        1
+    ],
+    "model.backbone.blocks.1.4.linear_conv.bn.weight": [
+        32
+    ],
+    "model.backbone.blocks.1.4.linear_conv.bn.bias": [
+        32
+    ],
+    "model.backbone.blocks.1.4.linear_conv.bn.running_mean": [
+        32
+    ],
+    "model.backbone.blocks.1.4.linear_conv.bn.running_var": [
+        32
+    ],
+    "model.backbone.blocks.1.4.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.0.shortcut.conv.weight": [
+        40,
+        32,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.0.expand_conv.conv.weight": [
+        192,
+        32,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.0.expand_conv.bn.weight": [
+        192
+    ],
+    "model.backbone.blocks.2.0.expand_conv.bn.bias": [
+        192
+    ],
+    "model.backbone.blocks.2.0.expand_conv.bn.running_mean": [
+        192
+    ],
+    "model.backbone.blocks.2.0.expand_conv.bn.running_var": [
+        192
+    ],
+    "model.backbone.blocks.2.0.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.0.depthwise_conv.conv.weight": [
+        192,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.2.0.depthwise_conv.bn.weight": [
+        192
+    ],
+    "model.backbone.blocks.2.0.depthwise_conv.bn.bias": [
+        192
+    ],
+    "model.backbone.blocks.2.0.depthwise_conv.bn.running_mean": [
+        192
+    ],
+    "model.backbone.blocks.2.0.depthwise_conv.bn.running_var": [
+        192
+    ],
+    "model.backbone.blocks.2.0.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.0.se.conv1.conv.weight": [
+        48,
+        192,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.0.se.conv1.conv.bias": [
+        48
+    ],
+    "model.backbone.blocks.2.0.se.conv2.conv.weight": [
+        192,
+        48,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.0.se.conv2.conv.bias": [
+        192
+    ],
+    "model.backbone.blocks.2.0.linear_conv.conv.weight": [
+        40,
+        192,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.0.linear_conv.bn.weight": [
+        40
+    ],
+    "model.backbone.blocks.2.0.linear_conv.bn.bias": [
+        40
+    ],
+    "model.backbone.blocks.2.0.linear_conv.bn.running_mean": [
+        40
+    ],
+    "model.backbone.blocks.2.0.linear_conv.bn.running_var": [
+        40
+    ],
+    "model.backbone.blocks.2.0.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.1.shortcut.conv.weight": [
+        40,
+        40,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.1.expand_conv.conv.weight": [
+        240,
+        40,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.1.expand_conv.bn.weight": [
+        240
+    ],
+    "model.backbone.blocks.2.1.expand_conv.bn.bias": [
+        240
+    ],
+    "model.backbone.blocks.2.1.expand_conv.bn.running_mean": [
+        240
+    ],
+    "model.backbone.blocks.2.1.expand_conv.bn.running_var": [
+        240
+    ],
+    "model.backbone.blocks.2.1.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.1.depthwise_conv.conv.weight": [
+        240,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.2.1.depthwise_conv.bn.weight": [
+        240
+    ],
+    "model.backbone.blocks.2.1.depthwise_conv.bn.bias": [
+        240
+    ],
+    "model.backbone.blocks.2.1.depthwise_conv.bn.running_mean": [
+        240
+    ],
+    "model.backbone.blocks.2.1.depthwise_conv.bn.running_var": [
+        240
+    ],
+    "model.backbone.blocks.2.1.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.1.se.conv1.conv.weight": [
+        64,
+        240,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.1.se.conv1.conv.bias": [
+        64
+    ],
+    "model.backbone.blocks.2.1.se.conv2.conv.weight": [
+        240,
+        64,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.1.se.conv2.conv.bias": [
+        240
+    ],
+    "model.backbone.blocks.2.1.linear_conv.conv.weight": [
+        40,
+        240,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.1.linear_conv.bn.weight": [
+        40
+    ],
+    "model.backbone.blocks.2.1.linear_conv.bn.bias": [
+        40
+    ],
+    "model.backbone.blocks.2.1.linear_conv.bn.running_mean": [
+        40
+    ],
+    "model.backbone.blocks.2.1.linear_conv.bn.running_var": [
+        40
+    ],
+    "model.backbone.blocks.2.1.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.2.shortcut.conv.weight": [
+        40,
+        40,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.2.expand_conv.conv.weight": [
+        240,
+        40,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.2.expand_conv.bn.weight": [
+        240
+    ],
+    "model.backbone.blocks.2.2.expand_conv.bn.bias": [
+        240
+    ],
+    "model.backbone.blocks.2.2.expand_conv.bn.running_mean": [
+        240
+    ],
+    "model.backbone.blocks.2.2.expand_conv.bn.running_var": [
+        240
+    ],
+    "model.backbone.blocks.2.2.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.2.depthwise_conv.conv.weight": [
+        240,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.2.2.depthwise_conv.bn.weight": [
+        240
+    ],
+    "model.backbone.blocks.2.2.depthwise_conv.bn.bias": [
+        240
+    ],
+    "model.backbone.blocks.2.2.depthwise_conv.bn.running_mean": [
+        240
+    ],
+    "model.backbone.blocks.2.2.depthwise_conv.bn.running_var": [
+        240
+    ],
+    "model.backbone.blocks.2.2.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.2.se.conv1.conv.weight": [
+        64,
+        240,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.2.se.conv1.conv.bias": [
+        64
+    ],
+    "model.backbone.blocks.2.2.se.conv2.conv.weight": [
+        240,
+        64,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.2.se.conv2.conv.bias": [
+        240
+    ],
+    "model.backbone.blocks.2.2.linear_conv.conv.weight": [
+        40,
+        240,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.2.linear_conv.bn.weight": [
+        40
+    ],
+    "model.backbone.blocks.2.2.linear_conv.bn.bias": [
+        40
+    ],
+    "model.backbone.blocks.2.2.linear_conv.bn.running_mean": [
+        40
+    ],
+    "model.backbone.blocks.2.2.linear_conv.bn.running_var": [
+        40
+    ],
+    "model.backbone.blocks.2.2.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.3.shortcut.conv.weight": [
+        40,
+        40,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.3.expand_conv.conv.weight": [
+        240,
+        40,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.3.expand_conv.bn.weight": [
+        240
+    ],
+    "model.backbone.blocks.2.3.expand_conv.bn.bias": [
+        240
+    ],
+    "model.backbone.blocks.2.3.expand_conv.bn.running_mean": [
+        240
+    ],
+    "model.backbone.blocks.2.3.expand_conv.bn.running_var": [
+        240
+    ],
+    "model.backbone.blocks.2.3.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.3.depthwise_conv.conv.weight": [
+        240,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.2.3.depthwise_conv.bn.weight": [
+        240
+    ],
+    "model.backbone.blocks.2.3.depthwise_conv.bn.bias": [
+        240
+    ],
+    "model.backbone.blocks.2.3.depthwise_conv.bn.running_mean": [
+        240
+    ],
+    "model.backbone.blocks.2.3.depthwise_conv.bn.running_var": [
+        240
+    ],
+    "model.backbone.blocks.2.3.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.3.se.conv1.conv.weight": [
+        64,
+        240,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.3.se.conv1.conv.bias": [
+        64
+    ],
+    "model.backbone.blocks.2.3.se.conv2.conv.weight": [
+        240,
+        64,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.3.se.conv2.conv.bias": [
+        240
+    ],
+    "model.backbone.blocks.2.3.linear_conv.conv.weight": [
+        40,
+        240,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.3.linear_conv.bn.weight": [
+        40
+    ],
+    "model.backbone.blocks.2.3.linear_conv.bn.bias": [
+        40
+    ],
+    "model.backbone.blocks.2.3.linear_conv.bn.running_mean": [
+        40
+    ],
+    "model.backbone.blocks.2.3.linear_conv.bn.running_var": [
+        40
+    ],
+    "model.backbone.blocks.2.3.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.4.shortcut.conv.weight": [
+        40,
+        40,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.4.expand_conv.conv.weight": [
+        240,
+        40,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.4.expand_conv.bn.weight": [
+        240
+    ],
+    "model.backbone.blocks.2.4.expand_conv.bn.bias": [
+        240
+    ],
+    "model.backbone.blocks.2.4.expand_conv.bn.running_mean": [
+        240
+    ],
+    "model.backbone.blocks.2.4.expand_conv.bn.running_var": [
+        240
+    ],
+    "model.backbone.blocks.2.4.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.4.depthwise_conv.conv.weight": [
+        240,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.2.4.depthwise_conv.bn.weight": [
+        240
+    ],
+    "model.backbone.blocks.2.4.depthwise_conv.bn.bias": [
+        240
+    ],
+    "model.backbone.blocks.2.4.depthwise_conv.bn.running_mean": [
+        240
+    ],
+    "model.backbone.blocks.2.4.depthwise_conv.bn.running_var": [
+        240
+    ],
+    "model.backbone.blocks.2.4.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.4.se.conv1.conv.weight": [
+        64,
+        240,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.4.se.conv1.conv.bias": [
+        64
+    ],
+    "model.backbone.blocks.2.4.se.conv2.conv.weight": [
+        240,
+        64,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.4.se.conv2.conv.bias": [
+        240
+    ],
+    "model.backbone.blocks.2.4.linear_conv.conv.weight": [
+        40,
+        240,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.4.linear_conv.bn.weight": [
+        40
+    ],
+    "model.backbone.blocks.2.4.linear_conv.bn.bias": [
+        40
+    ],
+    "model.backbone.blocks.2.4.linear_conv.bn.running_mean": [
+        40
+    ],
+    "model.backbone.blocks.2.4.linear_conv.bn.running_var": [
+        40
+    ],
+    "model.backbone.blocks.2.4.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.5.shortcut.conv.weight": [
+        40,
+        40,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.5.expand_conv.conv.weight": [
+        240,
+        40,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.5.expand_conv.bn.weight": [
+        240
+    ],
+    "model.backbone.blocks.2.5.expand_conv.bn.bias": [
+        240
+    ],
+    "model.backbone.blocks.2.5.expand_conv.bn.running_mean": [
+        240
+    ],
+    "model.backbone.blocks.2.5.expand_conv.bn.running_var": [
+        240
+    ],
+    "model.backbone.blocks.2.5.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.5.depthwise_conv.conv.weight": [
+        240,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.2.5.depthwise_conv.bn.weight": [
+        240
+    ],
+    "model.backbone.blocks.2.5.depthwise_conv.bn.bias": [
+        240
+    ],
+    "model.backbone.blocks.2.5.depthwise_conv.bn.running_mean": [
+        240
+    ],
+    "model.backbone.blocks.2.5.depthwise_conv.bn.running_var": [
+        240
+    ],
+    "model.backbone.blocks.2.5.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.2.5.se.conv1.conv.weight": [
+        64,
+        240,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.5.se.conv1.conv.bias": [
+        64
+    ],
+    "model.backbone.blocks.2.5.se.conv2.conv.weight": [
+        240,
+        64,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.5.se.conv2.conv.bias": [
+        240
+    ],
+    "model.backbone.blocks.2.5.linear_conv.conv.weight": [
+        40,
+        240,
+        1,
+        1
+    ],
+    "model.backbone.blocks.2.5.linear_conv.bn.weight": [
+        40
+    ],
+    "model.backbone.blocks.2.5.linear_conv.bn.bias": [
+        40
+    ],
+    "model.backbone.blocks.2.5.linear_conv.bn.running_mean": [
+        40
+    ],
+    "model.backbone.blocks.2.5.linear_conv.bn.running_var": [
+        40
+    ],
+    "model.backbone.blocks.2.5.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.0.shortcut.conv.weight": [
+        72,
+        40,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.0.expand_conv.conv.weight": [
+        240,
+        40,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.0.expand_conv.bn.weight": [
+        240
+    ],
+    "model.backbone.blocks.3.0.expand_conv.bn.bias": [
+        240
+    ],
+    "model.backbone.blocks.3.0.expand_conv.bn.running_mean": [
+        240
+    ],
+    "model.backbone.blocks.3.0.expand_conv.bn.running_var": [
+        240
+    ],
+    "model.backbone.blocks.3.0.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.0.depthwise_conv.conv.weight": [
+        240,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.3.0.depthwise_conv.bn.weight": [
+        240
+    ],
+    "model.backbone.blocks.3.0.depthwise_conv.bn.bias": [
+        240
+    ],
+    "model.backbone.blocks.3.0.depthwise_conv.bn.running_mean": [
+        240
+    ],
+    "model.backbone.blocks.3.0.depthwise_conv.bn.running_var": [
+        240
+    ],
+    "model.backbone.blocks.3.0.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.0.linear_conv.conv.weight": [
+        72,
+        240,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.0.linear_conv.bn.weight": [
+        72
+    ],
+    "model.backbone.blocks.3.0.linear_conv.bn.bias": [
+        72
+    ],
+    "model.backbone.blocks.3.0.linear_conv.bn.running_mean": [
+        72
+    ],
+    "model.backbone.blocks.3.0.linear_conv.bn.running_var": [
+        72
+    ],
+    "model.backbone.blocks.3.0.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.1.shortcut.conv.weight": [
+        72,
+        72,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.1.expand_conv.conv.weight": [
+        432,
+        72,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.1.expand_conv.bn.weight": [
+        432
+    ],
+    "model.backbone.blocks.3.1.expand_conv.bn.bias": [
+        432
+    ],
+    "model.backbone.blocks.3.1.expand_conv.bn.running_mean": [
+        432
+    ],
+    "model.backbone.blocks.3.1.expand_conv.bn.running_var": [
+        432
+    ],
+    "model.backbone.blocks.3.1.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.1.depthwise_conv.conv.weight": [
+        432,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.3.1.depthwise_conv.bn.weight": [
+        432
+    ],
+    "model.backbone.blocks.3.1.depthwise_conv.bn.bias": [
+        432
+    ],
+    "model.backbone.blocks.3.1.depthwise_conv.bn.running_mean": [
+        432
+    ],
+    "model.backbone.blocks.3.1.depthwise_conv.bn.running_var": [
+        432
+    ],
+    "model.backbone.blocks.3.1.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.1.linear_conv.conv.weight": [
+        72,
+        432,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.1.linear_conv.bn.weight": [
+        72
+    ],
+    "model.backbone.blocks.3.1.linear_conv.bn.bias": [
+        72
+    ],
+    "model.backbone.blocks.3.1.linear_conv.bn.running_mean": [
+        72
+    ],
+    "model.backbone.blocks.3.1.linear_conv.bn.running_var": [
+        72
+    ],
+    "model.backbone.blocks.3.1.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.2.shortcut.conv.weight": [
+        72,
+        72,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.2.expand_conv.conv.weight": [
+        432,
+        72,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.2.expand_conv.bn.weight": [
+        432
+    ],
+    "model.backbone.blocks.3.2.expand_conv.bn.bias": [
+        432
+    ],
+    "model.backbone.blocks.3.2.expand_conv.bn.running_mean": [
+        432
+    ],
+    "model.backbone.blocks.3.2.expand_conv.bn.running_var": [
+        432
+    ],
+    "model.backbone.blocks.3.2.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.2.depthwise_conv.conv.weight": [
+        432,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.3.2.depthwise_conv.bn.weight": [
+        432
+    ],
+    "model.backbone.blocks.3.2.depthwise_conv.bn.bias": [
+        432
+    ],
+    "model.backbone.blocks.3.2.depthwise_conv.bn.running_mean": [
+        432
+    ],
+    "model.backbone.blocks.3.2.depthwise_conv.bn.running_var": [
+        432
+    ],
+    "model.backbone.blocks.3.2.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.2.linear_conv.conv.weight": [
+        72,
+        432,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.2.linear_conv.bn.weight": [
+        72
+    ],
+    "model.backbone.blocks.3.2.linear_conv.bn.bias": [
+        72
+    ],
+    "model.backbone.blocks.3.2.linear_conv.bn.running_mean": [
+        72
+    ],
+    "model.backbone.blocks.3.2.linear_conv.bn.running_var": [
+        72
+    ],
+    "model.backbone.blocks.3.2.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.3.shortcut.conv.weight": [
+        72,
+        72,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.3.expand_conv.conv.weight": [
+        432,
+        72,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.3.expand_conv.bn.weight": [
+        432
+    ],
+    "model.backbone.blocks.3.3.expand_conv.bn.bias": [
+        432
+    ],
+    "model.backbone.blocks.3.3.expand_conv.bn.running_mean": [
+        432
+    ],
+    "model.backbone.blocks.3.3.expand_conv.bn.running_var": [
+        432
+    ],
+    "model.backbone.blocks.3.3.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.3.depthwise_conv.conv.weight": [
+        432,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.3.3.depthwise_conv.bn.weight": [
+        432
+    ],
+    "model.backbone.blocks.3.3.depthwise_conv.bn.bias": [
+        432
+    ],
+    "model.backbone.blocks.3.3.depthwise_conv.bn.running_mean": [
+        432
+    ],
+    "model.backbone.blocks.3.3.depthwise_conv.bn.running_var": [
+        432
+    ],
+    "model.backbone.blocks.3.3.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.3.linear_conv.conv.weight": [
+        72,
+        432,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.3.linear_conv.bn.weight": [
+        72
+    ],
+    "model.backbone.blocks.3.3.linear_conv.bn.bias": [
+        72
+    ],
+    "model.backbone.blocks.3.3.linear_conv.bn.running_mean": [
+        72
+    ],
+    "model.backbone.blocks.3.3.linear_conv.bn.running_var": [
+        72
+    ],
+    "model.backbone.blocks.3.3.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.4.shortcut.conv.weight": [
+        72,
+        72,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.4.expand_conv.conv.weight": [
+        432,
+        72,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.4.expand_conv.bn.weight": [
+        432
+    ],
+    "model.backbone.blocks.3.4.expand_conv.bn.bias": [
+        432
+    ],
+    "model.backbone.blocks.3.4.expand_conv.bn.running_mean": [
+        432
+    ],
+    "model.backbone.blocks.3.4.expand_conv.bn.running_var": [
+        432
+    ],
+    "model.backbone.blocks.3.4.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.4.depthwise_conv.conv.weight": [
+        432,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.3.4.depthwise_conv.bn.weight": [
+        432
+    ],
+    "model.backbone.blocks.3.4.depthwise_conv.bn.bias": [
+        432
+    ],
+    "model.backbone.blocks.3.4.depthwise_conv.bn.running_mean": [
+        432
+    ],
+    "model.backbone.blocks.3.4.depthwise_conv.bn.running_var": [
+        432
+    ],
+    "model.backbone.blocks.3.4.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.4.linear_conv.conv.weight": [
+        72,
+        432,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.4.linear_conv.bn.weight": [
+        72
+    ],
+    "model.backbone.blocks.3.4.linear_conv.bn.bias": [
+        72
+    ],
+    "model.backbone.blocks.3.4.linear_conv.bn.running_mean": [
+        72
+    ],
+    "model.backbone.blocks.3.4.linear_conv.bn.running_var": [
+        72
+    ],
+    "model.backbone.blocks.3.4.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.5.shortcut.conv.weight": [
+        72,
+        72,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.5.expand_conv.conv.weight": [
+        432,
+        72,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.5.expand_conv.bn.weight": [
+        432
+    ],
+    "model.backbone.blocks.3.5.expand_conv.bn.bias": [
+        432
+    ],
+    "model.backbone.blocks.3.5.expand_conv.bn.running_mean": [
+        432
+    ],
+    "model.backbone.blocks.3.5.expand_conv.bn.running_var": [
+        432
+    ],
+    "model.backbone.blocks.3.5.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.5.depthwise_conv.conv.weight": [
+        432,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.3.5.depthwise_conv.bn.weight": [
+        432
+    ],
+    "model.backbone.blocks.3.5.depthwise_conv.bn.bias": [
+        432
+    ],
+    "model.backbone.blocks.3.5.depthwise_conv.bn.running_mean": [
+        432
+    ],
+    "model.backbone.blocks.3.5.depthwise_conv.bn.running_var": [
+        432
+    ],
+    "model.backbone.blocks.3.5.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.3.5.linear_conv.conv.weight": [
+        72,
+        432,
+        1,
+        1
+    ],
+    "model.backbone.blocks.3.5.linear_conv.bn.weight": [
+        72
+    ],
+    "model.backbone.blocks.3.5.linear_conv.bn.bias": [
+        72
+    ],
+    "model.backbone.blocks.3.5.linear_conv.bn.running_mean": [
+        72
+    ],
+    "model.backbone.blocks.3.5.linear_conv.bn.running_var": [
+        72
+    ],
+    "model.backbone.blocks.3.5.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.0.shortcut.conv.weight": [
+        128,
+        72,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.0.expand_conv.conv.weight": [
+        432,
+        72,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.0.expand_conv.bn.weight": [
+        432
+    ],
+    "model.backbone.blocks.4.0.expand_conv.bn.bias": [
+        432
+    ],
+    "model.backbone.blocks.4.0.expand_conv.bn.running_mean": [
+        432
+    ],
+    "model.backbone.blocks.4.0.expand_conv.bn.running_var": [
+        432
+    ],
+    "model.backbone.blocks.4.0.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.0.depthwise_conv.conv.weight": [
+        432,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.4.0.depthwise_conv.bn.weight": [
+        432
+    ],
+    "model.backbone.blocks.4.0.depthwise_conv.bn.bias": [
+        432
+    ],
+    "model.backbone.blocks.4.0.depthwise_conv.bn.running_mean": [
+        432
+    ],
+    "model.backbone.blocks.4.0.depthwise_conv.bn.running_var": [
+        432
+    ],
+    "model.backbone.blocks.4.0.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.0.se.conv1.conv.weight": [
+        112,
+        432,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.0.se.conv1.conv.bias": [
+        112
+    ],
+    "model.backbone.blocks.4.0.se.conv2.conv.weight": [
+        432,
+        112,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.0.se.conv2.conv.bias": [
+        432
+    ],
+    "model.backbone.blocks.4.0.linear_conv.conv.weight": [
+        128,
+        432,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.0.linear_conv.bn.weight": [
+        128
+    ],
+    "model.backbone.blocks.4.0.linear_conv.bn.bias": [
+        128
+    ],
+    "model.backbone.blocks.4.0.linear_conv.bn.running_mean": [
+        128
+    ],
+    "model.backbone.blocks.4.0.linear_conv.bn.running_var": [
+        128
+    ],
+    "model.backbone.blocks.4.0.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.1.shortcut.conv.weight": [
+        128,
+        128,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.1.expand_conv.conv.weight": [
+        768,
+        128,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.1.expand_conv.bn.weight": [
+        768
+    ],
+    "model.backbone.blocks.4.1.expand_conv.bn.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.1.expand_conv.bn.running_mean": [
+        768
+    ],
+    "model.backbone.blocks.4.1.expand_conv.bn.running_var": [
+        768
+    ],
+    "model.backbone.blocks.4.1.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.1.depthwise_conv.conv.weight": [
+        768,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.4.1.depthwise_conv.bn.weight": [
+        768
+    ],
+    "model.backbone.blocks.4.1.depthwise_conv.bn.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.1.depthwise_conv.bn.running_mean": [
+        768
+    ],
+    "model.backbone.blocks.4.1.depthwise_conv.bn.running_var": [
+        768
+    ],
+    "model.backbone.blocks.4.1.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.1.se.conv1.conv.weight": [
+        192,
+        768,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.1.se.conv1.conv.bias": [
+        192
+    ],
+    "model.backbone.blocks.4.1.se.conv2.conv.weight": [
+        768,
+        192,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.1.se.conv2.conv.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.1.linear_conv.conv.weight": [
+        128,
+        768,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.1.linear_conv.bn.weight": [
+        128
+    ],
+    "model.backbone.blocks.4.1.linear_conv.bn.bias": [
+        128
+    ],
+    "model.backbone.blocks.4.1.linear_conv.bn.running_mean": [
+        128
+    ],
+    "model.backbone.blocks.4.1.linear_conv.bn.running_var": [
+        128
+    ],
+    "model.backbone.blocks.4.1.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.2.shortcut.conv.weight": [
+        128,
+        128,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.2.expand_conv.conv.weight": [
+        768,
+        128,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.2.expand_conv.bn.weight": [
+        768
+    ],
+    "model.backbone.blocks.4.2.expand_conv.bn.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.2.expand_conv.bn.running_mean": [
+        768
+    ],
+    "model.backbone.blocks.4.2.expand_conv.bn.running_var": [
+        768
+    ],
+    "model.backbone.blocks.4.2.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.2.depthwise_conv.conv.weight": [
+        768,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.4.2.depthwise_conv.bn.weight": [
+        768
+    ],
+    "model.backbone.blocks.4.2.depthwise_conv.bn.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.2.depthwise_conv.bn.running_mean": [
+        768
+    ],
+    "model.backbone.blocks.4.2.depthwise_conv.bn.running_var": [
+        768
+    ],
+    "model.backbone.blocks.4.2.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.2.se.conv1.conv.weight": [
+        192,
+        768,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.2.se.conv1.conv.bias": [
+        192
+    ],
+    "model.backbone.blocks.4.2.se.conv2.conv.weight": [
+        768,
+        192,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.2.se.conv2.conv.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.2.linear_conv.conv.weight": [
+        128,
+        768,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.2.linear_conv.bn.weight": [
+        128
+    ],
+    "model.backbone.blocks.4.2.linear_conv.bn.bias": [
+        128
+    ],
+    "model.backbone.blocks.4.2.linear_conv.bn.running_mean": [
+        128
+    ],
+    "model.backbone.blocks.4.2.linear_conv.bn.running_var": [
+        128
+    ],
+    "model.backbone.blocks.4.2.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.3.shortcut.conv.weight": [
+        128,
+        128,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.3.expand_conv.conv.weight": [
+        768,
+        128,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.3.expand_conv.bn.weight": [
+        768
+    ],
+    "model.backbone.blocks.4.3.expand_conv.bn.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.3.expand_conv.bn.running_mean": [
+        768
+    ],
+    "model.backbone.blocks.4.3.expand_conv.bn.running_var": [
+        768
+    ],
+    "model.backbone.blocks.4.3.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.3.depthwise_conv.conv.weight": [
+        768,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.4.3.depthwise_conv.bn.weight": [
+        768
+    ],
+    "model.backbone.blocks.4.3.depthwise_conv.bn.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.3.depthwise_conv.bn.running_mean": [
+        768
+    ],
+    "model.backbone.blocks.4.3.depthwise_conv.bn.running_var": [
+        768
+    ],
+    "model.backbone.blocks.4.3.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.3.se.conv1.conv.weight": [
+        192,
+        768,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.3.se.conv1.conv.bias": [
+        192
+    ],
+    "model.backbone.blocks.4.3.se.conv2.conv.weight": [
+        768,
+        192,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.3.se.conv2.conv.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.3.linear_conv.conv.weight": [
+        128,
+        768,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.3.linear_conv.bn.weight": [
+        128
+    ],
+    "model.backbone.blocks.4.3.linear_conv.bn.bias": [
+        128
+    ],
+    "model.backbone.blocks.4.3.linear_conv.bn.running_mean": [
+        128
+    ],
+    "model.backbone.blocks.4.3.linear_conv.bn.running_var": [
+        128
+    ],
+    "model.backbone.blocks.4.3.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.4.shortcut.conv.weight": [
+        128,
+        128,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.4.expand_conv.conv.weight": [
+        768,
+        128,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.4.expand_conv.bn.weight": [
+        768
+    ],
+    "model.backbone.blocks.4.4.expand_conv.bn.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.4.expand_conv.bn.running_mean": [
+        768
+    ],
+    "model.backbone.blocks.4.4.expand_conv.bn.running_var": [
+        768
+    ],
+    "model.backbone.blocks.4.4.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.4.depthwise_conv.conv.weight": [
+        768,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.4.4.depthwise_conv.bn.weight": [
+        768
+    ],
+    "model.backbone.blocks.4.4.depthwise_conv.bn.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.4.depthwise_conv.bn.running_mean": [
+        768
+    ],
+    "model.backbone.blocks.4.4.depthwise_conv.bn.running_var": [
+        768
+    ],
+    "model.backbone.blocks.4.4.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.4.se.conv1.conv.weight": [
+        192,
+        768,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.4.se.conv1.conv.bias": [
+        192
+    ],
+    "model.backbone.blocks.4.4.se.conv2.conv.weight": [
+        768,
+        192,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.4.se.conv2.conv.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.4.linear_conv.conv.weight": [
+        128,
+        768,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.4.linear_conv.bn.weight": [
+        128
+    ],
+    "model.backbone.blocks.4.4.linear_conv.bn.bias": [
+        128
+    ],
+    "model.backbone.blocks.4.4.linear_conv.bn.running_mean": [
+        128
+    ],
+    "model.backbone.blocks.4.4.linear_conv.bn.running_var": [
+        128
+    ],
+    "model.backbone.blocks.4.4.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.5.shortcut.conv.weight": [
+        128,
+        128,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.5.expand_conv.conv.weight": [
+        768,
+        128,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.5.expand_conv.bn.weight": [
+        768
+    ],
+    "model.backbone.blocks.4.5.expand_conv.bn.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.5.expand_conv.bn.running_mean": [
+        768
+    ],
+    "model.backbone.blocks.4.5.expand_conv.bn.running_var": [
+        768
+    ],
+    "model.backbone.blocks.4.5.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.5.depthwise_conv.conv.weight": [
+        768,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.4.5.depthwise_conv.bn.weight": [
+        768
+    ],
+    "model.backbone.blocks.4.5.depthwise_conv.bn.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.5.depthwise_conv.bn.running_mean": [
+        768
+    ],
+    "model.backbone.blocks.4.5.depthwise_conv.bn.running_var": [
+        768
+    ],
+    "model.backbone.blocks.4.5.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.5.se.conv1.conv.weight": [
+        192,
+        768,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.5.se.conv1.conv.bias": [
+        192
+    ],
+    "model.backbone.blocks.4.5.se.conv2.conv.weight": [
+        768,
+        192,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.5.se.conv2.conv.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.5.linear_conv.conv.weight": [
+        128,
+        768,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.5.linear_conv.bn.weight": [
+        128
+    ],
+    "model.backbone.blocks.4.5.linear_conv.bn.bias": [
+        128
+    ],
+    "model.backbone.blocks.4.5.linear_conv.bn.running_mean": [
+        128
+    ],
+    "model.backbone.blocks.4.5.linear_conv.bn.running_var": [
+        128
+    ],
+    "model.backbone.blocks.4.5.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.6.shortcut.conv.weight": [
+        128,
+        128,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.6.expand_conv.conv.weight": [
+        768,
+        128,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.6.expand_conv.bn.weight": [
+        768
+    ],
+    "model.backbone.blocks.4.6.expand_conv.bn.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.6.expand_conv.bn.running_mean": [
+        768
+    ],
+    "model.backbone.blocks.4.6.expand_conv.bn.running_var": [
+        768
+    ],
+    "model.backbone.blocks.4.6.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.6.depthwise_conv.conv.weight": [
+        768,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.4.6.depthwise_conv.bn.weight": [
+        768
+    ],
+    "model.backbone.blocks.4.6.depthwise_conv.bn.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.6.depthwise_conv.bn.running_mean": [
+        768
+    ],
+    "model.backbone.blocks.4.6.depthwise_conv.bn.running_var": [
+        768
+    ],
+    "model.backbone.blocks.4.6.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.6.se.conv1.conv.weight": [
+        192,
+        768,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.6.se.conv1.conv.bias": [
+        192
+    ],
+    "model.backbone.blocks.4.6.se.conv2.conv.weight": [
+        768,
+        192,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.6.se.conv2.conv.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.6.linear_conv.conv.weight": [
+        128,
+        768,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.6.linear_conv.bn.weight": [
+        128
+    ],
+    "model.backbone.blocks.4.6.linear_conv.bn.bias": [
+        128
+    ],
+    "model.backbone.blocks.4.6.linear_conv.bn.running_mean": [
+        128
+    ],
+    "model.backbone.blocks.4.6.linear_conv.bn.running_var": [
+        128
+    ],
+    "model.backbone.blocks.4.6.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.7.shortcut.conv.weight": [
+        128,
+        128,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.7.expand_conv.conv.weight": [
+        768,
+        128,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.7.expand_conv.bn.weight": [
+        768
+    ],
+    "model.backbone.blocks.4.7.expand_conv.bn.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.7.expand_conv.bn.running_mean": [
+        768
+    ],
+    "model.backbone.blocks.4.7.expand_conv.bn.running_var": [
+        768
+    ],
+    "model.backbone.blocks.4.7.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.7.depthwise_conv.conv.weight": [
+        768,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.4.7.depthwise_conv.bn.weight": [
+        768
+    ],
+    "model.backbone.blocks.4.7.depthwise_conv.bn.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.7.depthwise_conv.bn.running_mean": [
+        768
+    ],
+    "model.backbone.blocks.4.7.depthwise_conv.bn.running_var": [
+        768
+    ],
+    "model.backbone.blocks.4.7.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.4.7.se.conv1.conv.weight": [
+        192,
+        768,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.7.se.conv1.conv.bias": [
+        192
+    ],
+    "model.backbone.blocks.4.7.se.conv2.conv.weight": [
+        768,
+        192,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.7.se.conv2.conv.bias": [
+        768
+    ],
+    "model.backbone.blocks.4.7.linear_conv.conv.weight": [
+        128,
+        768,
+        1,
+        1
+    ],
+    "model.backbone.blocks.4.7.linear_conv.bn.weight": [
+        128
+    ],
+    "model.backbone.blocks.4.7.linear_conv.bn.bias": [
+        128
+    ],
+    "model.backbone.blocks.4.7.linear_conv.bn.running_mean": [
+        128
+    ],
+    "model.backbone.blocks.4.7.linear_conv.bn.running_var": [
+        128
+    ],
+    "model.backbone.blocks.4.7.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.0.shortcut.conv.weight": [
+        216,
+        128,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.0.expand_conv.conv.weight": [
+        768,
+        128,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.0.expand_conv.bn.weight": [
+        768
+    ],
+    "model.backbone.blocks.5.0.expand_conv.bn.bias": [
+        768
+    ],
+    "model.backbone.blocks.5.0.expand_conv.bn.running_mean": [
+        768
+    ],
+    "model.backbone.blocks.5.0.expand_conv.bn.running_var": [
+        768
+    ],
+    "model.backbone.blocks.5.0.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.0.depthwise_conv.conv.weight": [
+        768,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.5.0.depthwise_conv.bn.weight": [
+        768
+    ],
+    "model.backbone.blocks.5.0.depthwise_conv.bn.bias": [
+        768
+    ],
+    "model.backbone.blocks.5.0.depthwise_conv.bn.running_mean": [
+        768
+    ],
+    "model.backbone.blocks.5.0.depthwise_conv.bn.running_var": [
+        768
+    ],
+    "model.backbone.blocks.5.0.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.0.se.conv1.conv.weight": [
+        192,
+        768,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.0.se.conv1.conv.bias": [
+        192
+    ],
+    "model.backbone.blocks.5.0.se.conv2.conv.weight": [
+        768,
+        192,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.0.se.conv2.conv.bias": [
+        768
+    ],
+    "model.backbone.blocks.5.0.linear_conv.conv.weight": [
+        216,
+        768,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.0.linear_conv.bn.weight": [
+        216
+    ],
+    "model.backbone.blocks.5.0.linear_conv.bn.bias": [
+        216
+    ],
+    "model.backbone.blocks.5.0.linear_conv.bn.running_mean": [
+        216
+    ],
+    "model.backbone.blocks.5.0.linear_conv.bn.running_var": [
+        216
+    ],
+    "model.backbone.blocks.5.0.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.1.shortcut.conv.weight": [
+        216,
+        216,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.1.expand_conv.conv.weight": [
+        1296,
+        216,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.1.expand_conv.bn.weight": [
+        1296
+    ],
+    "model.backbone.blocks.5.1.expand_conv.bn.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.1.expand_conv.bn.running_mean": [
+        1296
+    ],
+    "model.backbone.blocks.5.1.expand_conv.bn.running_var": [
+        1296
+    ],
+    "model.backbone.blocks.5.1.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.1.depthwise_conv.conv.weight": [
+        1296,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.5.1.depthwise_conv.bn.weight": [
+        1296
+    ],
+    "model.backbone.blocks.5.1.depthwise_conv.bn.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.1.depthwise_conv.bn.running_mean": [
+        1296
+    ],
+    "model.backbone.blocks.5.1.depthwise_conv.bn.running_var": [
+        1296
+    ],
+    "model.backbone.blocks.5.1.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.1.se.conv1.conv.weight": [
+        328,
+        1296,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.1.se.conv1.conv.bias": [
+        328
+    ],
+    "model.backbone.blocks.5.1.se.conv2.conv.weight": [
+        1296,
+        328,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.1.se.conv2.conv.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.1.linear_conv.conv.weight": [
+        216,
+        1296,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.1.linear_conv.bn.weight": [
+        216
+    ],
+    "model.backbone.blocks.5.1.linear_conv.bn.bias": [
+        216
+    ],
+    "model.backbone.blocks.5.1.linear_conv.bn.running_mean": [
+        216
+    ],
+    "model.backbone.blocks.5.1.linear_conv.bn.running_var": [
+        216
+    ],
+    "model.backbone.blocks.5.1.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.2.shortcut.conv.weight": [
+        216,
+        216,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.2.expand_conv.conv.weight": [
+        1296,
+        216,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.2.expand_conv.bn.weight": [
+        1296
+    ],
+    "model.backbone.blocks.5.2.expand_conv.bn.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.2.expand_conv.bn.running_mean": [
+        1296
+    ],
+    "model.backbone.blocks.5.2.expand_conv.bn.running_var": [
+        1296
+    ],
+    "model.backbone.blocks.5.2.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.2.depthwise_conv.conv.weight": [
+        1296,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.5.2.depthwise_conv.bn.weight": [
+        1296
+    ],
+    "model.backbone.blocks.5.2.depthwise_conv.bn.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.2.depthwise_conv.bn.running_mean": [
+        1296
+    ],
+    "model.backbone.blocks.5.2.depthwise_conv.bn.running_var": [
+        1296
+    ],
+    "model.backbone.blocks.5.2.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.2.se.conv1.conv.weight": [
+        328,
+        1296,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.2.se.conv1.conv.bias": [
+        328
+    ],
+    "model.backbone.blocks.5.2.se.conv2.conv.weight": [
+        1296,
+        328,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.2.se.conv2.conv.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.2.linear_conv.conv.weight": [
+        216,
+        1296,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.2.linear_conv.bn.weight": [
+        216
+    ],
+    "model.backbone.blocks.5.2.linear_conv.bn.bias": [
+        216
+    ],
+    "model.backbone.blocks.5.2.linear_conv.bn.running_mean": [
+        216
+    ],
+    "model.backbone.blocks.5.2.linear_conv.bn.running_var": [
+        216
+    ],
+    "model.backbone.blocks.5.2.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.3.shortcut.conv.weight": [
+        216,
+        216,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.3.expand_conv.conv.weight": [
+        1296,
+        216,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.3.expand_conv.bn.weight": [
+        1296
+    ],
+    "model.backbone.blocks.5.3.expand_conv.bn.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.3.expand_conv.bn.running_mean": [
+        1296
+    ],
+    "model.backbone.blocks.5.3.expand_conv.bn.running_var": [
+        1296
+    ],
+    "model.backbone.blocks.5.3.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.3.depthwise_conv.conv.weight": [
+        1296,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.5.3.depthwise_conv.bn.weight": [
+        1296
+    ],
+    "model.backbone.blocks.5.3.depthwise_conv.bn.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.3.depthwise_conv.bn.running_mean": [
+        1296
+    ],
+    "model.backbone.blocks.5.3.depthwise_conv.bn.running_var": [
+        1296
+    ],
+    "model.backbone.blocks.5.3.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.3.se.conv1.conv.weight": [
+        328,
+        1296,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.3.se.conv1.conv.bias": [
+        328
+    ],
+    "model.backbone.blocks.5.3.se.conv2.conv.weight": [
+        1296,
+        328,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.3.se.conv2.conv.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.3.linear_conv.conv.weight": [
+        216,
+        1296,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.3.linear_conv.bn.weight": [
+        216
+    ],
+    "model.backbone.blocks.5.3.linear_conv.bn.bias": [
+        216
+    ],
+    "model.backbone.blocks.5.3.linear_conv.bn.running_mean": [
+        216
+    ],
+    "model.backbone.blocks.5.3.linear_conv.bn.running_var": [
+        216
+    ],
+    "model.backbone.blocks.5.3.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.4.shortcut.conv.weight": [
+        216,
+        216,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.4.expand_conv.conv.weight": [
+        1296,
+        216,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.4.expand_conv.bn.weight": [
+        1296
+    ],
+    "model.backbone.blocks.5.4.expand_conv.bn.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.4.expand_conv.bn.running_mean": [
+        1296
+    ],
+    "model.backbone.blocks.5.4.expand_conv.bn.running_var": [
+        1296
+    ],
+    "model.backbone.blocks.5.4.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.4.depthwise_conv.conv.weight": [
+        1296,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.5.4.depthwise_conv.bn.weight": [
+        1296
+    ],
+    "model.backbone.blocks.5.4.depthwise_conv.bn.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.4.depthwise_conv.bn.running_mean": [
+        1296
+    ],
+    "model.backbone.blocks.5.4.depthwise_conv.bn.running_var": [
+        1296
+    ],
+    "model.backbone.blocks.5.4.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.4.se.conv1.conv.weight": [
+        328,
+        1296,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.4.se.conv1.conv.bias": [
+        328
+    ],
+    "model.backbone.blocks.5.4.se.conv2.conv.weight": [
+        1296,
+        328,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.4.se.conv2.conv.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.4.linear_conv.conv.weight": [
+        216,
+        1296,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.4.linear_conv.bn.weight": [
+        216
+    ],
+    "model.backbone.blocks.5.4.linear_conv.bn.bias": [
+        216
+    ],
+    "model.backbone.blocks.5.4.linear_conv.bn.running_mean": [
+        216
+    ],
+    "model.backbone.blocks.5.4.linear_conv.bn.running_var": [
+        216
+    ],
+    "model.backbone.blocks.5.4.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.5.shortcut.conv.weight": [
+        216,
+        216,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.5.expand_conv.conv.weight": [
+        1296,
+        216,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.5.expand_conv.bn.weight": [
+        1296
+    ],
+    "model.backbone.blocks.5.5.expand_conv.bn.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.5.expand_conv.bn.running_mean": [
+        1296
+    ],
+    "model.backbone.blocks.5.5.expand_conv.bn.running_var": [
+        1296
+    ],
+    "model.backbone.blocks.5.5.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.5.depthwise_conv.conv.weight": [
+        1296,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.5.5.depthwise_conv.bn.weight": [
+        1296
+    ],
+    "model.backbone.blocks.5.5.depthwise_conv.bn.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.5.depthwise_conv.bn.running_mean": [
+        1296
+    ],
+    "model.backbone.blocks.5.5.depthwise_conv.bn.running_var": [
+        1296
+    ],
+    "model.backbone.blocks.5.5.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.5.se.conv1.conv.weight": [
+        328,
+        1296,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.5.se.conv1.conv.bias": [
+        328
+    ],
+    "model.backbone.blocks.5.5.se.conv2.conv.weight": [
+        1296,
+        328,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.5.se.conv2.conv.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.5.linear_conv.conv.weight": [
+        216,
+        1296,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.5.linear_conv.bn.weight": [
+        216
+    ],
+    "model.backbone.blocks.5.5.linear_conv.bn.bias": [
+        216
+    ],
+    "model.backbone.blocks.5.5.linear_conv.bn.running_mean": [
+        216
+    ],
+    "model.backbone.blocks.5.5.linear_conv.bn.running_var": [
+        216
+    ],
+    "model.backbone.blocks.5.5.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.6.shortcut.conv.weight": [
+        216,
+        216,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.6.expand_conv.conv.weight": [
+        1296,
+        216,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.6.expand_conv.bn.weight": [
+        1296
+    ],
+    "model.backbone.blocks.5.6.expand_conv.bn.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.6.expand_conv.bn.running_mean": [
+        1296
+    ],
+    "model.backbone.blocks.5.6.expand_conv.bn.running_var": [
+        1296
+    ],
+    "model.backbone.blocks.5.6.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.6.depthwise_conv.conv.weight": [
+        1296,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.5.6.depthwise_conv.bn.weight": [
+        1296
+    ],
+    "model.backbone.blocks.5.6.depthwise_conv.bn.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.6.depthwise_conv.bn.running_mean": [
+        1296
+    ],
+    "model.backbone.blocks.5.6.depthwise_conv.bn.running_var": [
+        1296
+    ],
+    "model.backbone.blocks.5.6.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.6.se.conv1.conv.weight": [
+        328,
+        1296,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.6.se.conv1.conv.bias": [
+        328
+    ],
+    "model.backbone.blocks.5.6.se.conv2.conv.weight": [
+        1296,
+        328,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.6.se.conv2.conv.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.6.linear_conv.conv.weight": [
+        216,
+        1296,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.6.linear_conv.bn.weight": [
+        216
+    ],
+    "model.backbone.blocks.5.6.linear_conv.bn.bias": [
+        216
+    ],
+    "model.backbone.blocks.5.6.linear_conv.bn.running_mean": [
+        216
+    ],
+    "model.backbone.blocks.5.6.linear_conv.bn.running_var": [
+        216
+    ],
+    "model.backbone.blocks.5.6.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.7.shortcut.conv.weight": [
+        216,
+        216,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.7.expand_conv.conv.weight": [
+        1296,
+        216,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.7.expand_conv.bn.weight": [
+        1296
+    ],
+    "model.backbone.blocks.5.7.expand_conv.bn.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.7.expand_conv.bn.running_mean": [
+        1296
+    ],
+    "model.backbone.blocks.5.7.expand_conv.bn.running_var": [
+        1296
+    ],
+    "model.backbone.blocks.5.7.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.7.depthwise_conv.conv.weight": [
+        1296,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.5.7.depthwise_conv.bn.weight": [
+        1296
+    ],
+    "model.backbone.blocks.5.7.depthwise_conv.bn.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.7.depthwise_conv.bn.running_mean": [
+        1296
+    ],
+    "model.backbone.blocks.5.7.depthwise_conv.bn.running_var": [
+        1296
+    ],
+    "model.backbone.blocks.5.7.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.5.7.se.conv1.conv.weight": [
+        328,
+        1296,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.7.se.conv1.conv.bias": [
+        328
+    ],
+    "model.backbone.blocks.5.7.se.conv2.conv.weight": [
+        1296,
+        328,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.7.se.conv2.conv.bias": [
+        1296
+    ],
+    "model.backbone.blocks.5.7.linear_conv.conv.weight": [
+        216,
+        1296,
+        1,
+        1
+    ],
+    "model.backbone.blocks.5.7.linear_conv.bn.weight": [
+        216
+    ],
+    "model.backbone.blocks.5.7.linear_conv.bn.bias": [
+        216
+    ],
+    "model.backbone.blocks.5.7.linear_conv.bn.running_mean": [
+        216
+    ],
+    "model.backbone.blocks.5.7.linear_conv.bn.running_var": [
+        216
+    ],
+    "model.backbone.blocks.5.7.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.6.0.shortcut.conv.weight": [
+        224,
+        216,
+        1,
+        1
+    ],
+    "model.backbone.blocks.6.0.expand_conv.conv.weight": [
+        1296,
+        216,
+        1,
+        1
+    ],
+    "model.backbone.blocks.6.0.expand_conv.bn.weight": [
+        1296
+    ],
+    "model.backbone.blocks.6.0.expand_conv.bn.bias": [
+        1296
+    ],
+    "model.backbone.blocks.6.0.expand_conv.bn.running_mean": [
+        1296
+    ],
+    "model.backbone.blocks.6.0.expand_conv.bn.running_var": [
+        1296
+    ],
+    "model.backbone.blocks.6.0.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.6.0.depthwise_conv.conv.weight": [
+        1296,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.6.0.depthwise_conv.bn.weight": [
+        1296
+    ],
+    "model.backbone.blocks.6.0.depthwise_conv.bn.bias": [
+        1296
+    ],
+    "model.backbone.blocks.6.0.depthwise_conv.bn.running_mean": [
+        1296
+    ],
+    "model.backbone.blocks.6.0.depthwise_conv.bn.running_var": [
+        1296
+    ],
+    "model.backbone.blocks.6.0.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.6.0.se.conv1.conv.weight": [
+        328,
+        1296,
+        1,
+        1
+    ],
+    "model.backbone.blocks.6.0.se.conv1.conv.bias": [
+        328
+    ],
+    "model.backbone.blocks.6.0.se.conv2.conv.weight": [
+        1296,
+        328,
+        1,
+        1
+    ],
+    "model.backbone.blocks.6.0.se.conv2.conv.bias": [
+        1296
+    ],
+    "model.backbone.blocks.6.0.linear_conv.conv.weight": [
+        224,
+        1296,
+        1,
+        1
+    ],
+    "model.backbone.blocks.6.0.linear_conv.bn.weight": [
+        224
+    ],
+    "model.backbone.blocks.6.0.linear_conv.bn.bias": [
+        224
+    ],
+    "model.backbone.blocks.6.0.linear_conv.bn.running_mean": [
+        224
+    ],
+    "model.backbone.blocks.6.0.linear_conv.bn.running_var": [
+        224
+    ],
+    "model.backbone.blocks.6.0.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.6.1.shortcut.conv.weight": [
+        224,
+        224,
+        1,
+        1
+    ],
+    "model.backbone.blocks.6.1.expand_conv.conv.weight": [
+        1344,
+        224,
+        1,
+        1
+    ],
+    "model.backbone.blocks.6.1.expand_conv.bn.weight": [
+        1344
+    ],
+    "model.backbone.blocks.6.1.expand_conv.bn.bias": [
+        1344
+    ],
+    "model.backbone.blocks.6.1.expand_conv.bn.running_mean": [
+        1344
+    ],
+    "model.backbone.blocks.6.1.expand_conv.bn.running_var": [
+        1344
+    ],
+    "model.backbone.blocks.6.1.expand_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.6.1.depthwise_conv.conv.weight": [
+        1344,
+        1,
+        5,
+        5
+    ],
+    "model.backbone.blocks.6.1.depthwise_conv.bn.weight": [
+        1344
+    ],
+    "model.backbone.blocks.6.1.depthwise_conv.bn.bias": [
+        1344
+    ],
+    "model.backbone.blocks.6.1.depthwise_conv.bn.running_mean": [
+        1344
+    ],
+    "model.backbone.blocks.6.1.depthwise_conv.bn.running_var": [
+        1344
+    ],
+    "model.backbone.blocks.6.1.depthwise_conv.bn.num_batches_tracked": [],
+    "model.backbone.blocks.6.1.se.conv1.conv.weight": [
+        336,
+        1344,
+        1,
+        1
+    ],
+    "model.backbone.blocks.6.1.se.conv1.conv.bias": [
+        336
+    ],
+    "model.backbone.blocks.6.1.se.conv2.conv.weight": [
+        1344,
+        336,
+        1,
+        1
+    ],
+    "model.backbone.blocks.6.1.se.conv2.conv.bias": [
+        1344
+    ],
+    "model.backbone.blocks.6.1.linear_conv.conv.weight": [
+        224,
+        1344,
+        1,
+        1
+    ],
+    "model.backbone.blocks.6.1.linear_conv.bn.weight": [
+        224
+    ],
+    "model.backbone.blocks.6.1.linear_conv.bn.bias": [
+        224
+    ],
+    "model.backbone.blocks.6.1.linear_conv.bn.running_mean": [
+        224
+    ],
+    "model.backbone.blocks.6.1.linear_conv.bn.running_var": [
+        224
+    ],
+    "model.backbone.blocks.6.1.linear_conv.bn.num_batches_tracked": [],
+    "model.backbone.last_conv.final_expand_layer.conv.weight": [
+        1344,
+        224,
+        1,
+        1
+    ],
+    "model.backbone.last_conv.final_expand_layer.bn.weight": [
+        1344
+    ],
+    "model.backbone.last_conv.final_expand_layer.bn.bias": [
+        1344
+    ],
+    "model.backbone.last_conv.final_expand_layer.bn.running_mean": [
+        1344
+    ],
+    "model.backbone.last_conv.final_expand_layer.bn.running_var": [
+        1344
+    ],
+    "model.backbone.last_conv.final_expand_layer.bn.num_batches_tracked": [],
+    "model.backbone.last_conv.feature_mix_layer.conv.weight": [
+        1984,
+        1344,
+        1,
+        1
+    ],
+    "model.head.fc.weight": [
+        1000,
+        1984
+    ],
+    "model.head.fc.bias": [
+        1000
+    ]
+}

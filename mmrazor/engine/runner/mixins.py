@@ -100,6 +100,14 @@ class CalibrateBNMixin:
             if isinstance(module, _BatchNorm):
                 mean_average_meter = module.__mean_average_meter__
                 var_average_meter = module.__var_average_meter__
+                if mean_average_meter.count == 0 or \
+                        var_average_meter.count == 0:
+                    assert mean_average_meter.count == 0 and \
+                        var_average_meter.count == 0
+                    self.runner.logger.debug(
+                        f'layer {name} is not chosen, ignored')
+                    continue
+
                 calibrated_bn_mean = mean_average_meter.avg
                 calibrated_bn_var = var_average_meter.avg
 

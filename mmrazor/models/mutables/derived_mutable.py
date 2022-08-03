@@ -2,6 +2,7 @@
 from typing import Any, Callable, Dict, Iterable, Optional, Protocol
 
 import torch
+from mmcls.models.utils import make_divisible
 from torch import Tensor
 
 from .base_mutable import CHOICE_TYPE, BaseMutable
@@ -45,6 +46,41 @@ def _expand_mask_fn(mutable: MutableProtocol, expand_ratio: int) -> Callable:
     return fn
 
 
+def _divide_and_divise(x: int, ratio: int, divisor: int = 8) -> int:
+    new_x = x // ratio
+
+    return make_divisible(new_x, divisor)
+
+
+def _divide_choice_fn(mutable: MutableProtocol,
+                      ratio: int,
+                      divisor: int = 8) -> Callable:
+
+    def fn():
+        return _divide_and_divise(mutable.current_choice, ratio, divisor)
+
+    return fn
+
+
+def _divide_mask_fn(mutable: MutableProtocol,
+                    ratio: int,
+                    divisor: int = 8) -> Callable:
+    if not hasattr(mutable, 'current_mask'):
+        raise ValueError('mutable must have attribute `currnet_mask`')
+
+    def fn():
+        mask = mutable.current_mask
+        divide_num_channels = _divide_and_divise(mask.size(0), ratio, divisor)
+        divide_choice = _divide_and_divise(mutable.current_choice, ratio,
+                                           divisor)
+        divide_mask = torch.zeros(divide_num_channels).bool()
+        divide_mask[:divide_choice] = True
+
+        return divide_mask
+
+    return fn
+
+
 def _concat_choice_fn(mutables: Iterable[ChannelMutableProtocol]) -> Callable:
 
     def fn():
@@ -77,6 +113,17 @@ class DerivedMethodMixin:
         mask_fn: Optional[Callable] = None
         if hasattr(self, 'current_mask'):
             mask_fn = _expand_mask_fn(self, expand_ratio=expand_ratio)
+
+        return DerivedMutable(choice_fn=choice_fn, mask_fn=mask_fn)
+
+    def derive_divide_mutable(self: MutableProtocol,
+                              ratio: int,
+                              divisor: int = 8):
+        choice_fn = _divide_choice_fn(self, ratio=ratio, divisor=divisor)
+
+        mask_fn: Optional[Callable] = None
+        if hasattr(self, 'current_mask'):
+            mask_fn = _divide_mask_fn(self, ratio=ratio, divisor=divisor)
 
         return DerivedMutable(choice_fn=choice_fn, mask_fn=mask_fn)
 
@@ -134,7 +181,7 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, Dict], DerivedMethodMixin):
         if self.choice_fn is not None:
             s += f'current_choice={self.current_choice}, '
         if self.mask_fn is not None:
-            s += f'current_mask_shape={self.current_mask.shape}, '
+            s += f'activated_mask_nums={self.current_mask.sum().item()}, '
         s += f'is_fixed={self.is_fixed})'
 
         return s

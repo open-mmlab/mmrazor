@@ -1,5 +1,5 @@
 _base_ = [
-    'mmrazor::_base_/settings/imagenet_bs2048_autoslim_pil.py',
+    # 'mmrazor::_base_/settings/imagenet_bs2048_autoslim_pil.py',
     'mmcls::_base_/default_runtime.py',
 ]
 
@@ -19,12 +19,14 @@ supernet = dict(
     type='mmrazor.SearchableImageClassifier',
     # data_preprocessor=_base_.preprocess_cfg,
     backbone=dict(
-        type='BigNASMobileNet', last_out_channels_range=[1280, 1408, 8]),
+        type='AttentiveMobileNet',
+        first_out_channels_range=[16, 24, 8],
+        last_out_channels_range=[1792, 1984, 1984 - 1792]),
     neck=dict(type='GlobalAveragePooling'),
     head=dict(
         type='DynamicLinearClsHead',
         num_classes=1000,
-        in_channels=1408,
+        in_channels=1984,
         loss=dict(
             type='LabelSmoothLoss',
             num_classes=1000,
@@ -36,7 +38,7 @@ supernet = dict(
         input_resizer=dict(type='mmrazor.DynamicInputResizer'),
         mutable_shape=dict(
             type='mmrazor.OneShotMutableValue',
-            value_list=[(192, 192), (224, 224), (288, 288), (320, 320)],
+            value_list=[(192, 192), (224, 224), (256, 256), (288, 288)],
             default_value=(224, 224))))
 
 # !autoslim algorithm config

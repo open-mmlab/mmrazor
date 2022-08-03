@@ -1,10 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 
 import numpy as np
 import torch
 
 from mmrazor.registry import MODELS
+from ..derived_mutable import DerivedMutable
+from ..mutable_value import OneShotMutableValue
 from .mutable_channel import MutableChannel
 
 CANDIDATE_CHOICE_TYPE = List[Union[float, int]]
@@ -183,3 +185,54 @@ class OneShotMutableChannel(MutableChannel[int]):
         repr_str += f'current_mask_shape={self.current_mask.shape}, '
         repr_str += f'concat_mutable_name={concat_mutable_name})'
         return repr_str
+
+    def __rmul__(self, other) -> DerivedMutable:
+        return self * other
+
+    def __mul__(self, other) -> DerivedMutable:
+        if isinstance(other, int):
+            return self.derive_expand_mutable(other)
+
+        def expand_choice_fn(mutable1: 'OneShotMutableChannel',
+                             mutable2: OneShotMutableValue) -> Callable:
+
+            def fn():
+                return mutable1.current_choice * mutable2.current_choice
+
+            return fn
+
+        def expand_mask_fn(mutable1: 'OneShotMutableChannel',
+                           mutable2: OneShotMutableValue) -> Callable:
+
+            def fn():
+                mask = mutable1.current_mask
+                max_expand_ratio = mutable2.max_choice
+                current_expand_ratio = mutable2.current_choice
+                expand_num_channels = mask.size(0) * max_expand_ratio
+
+                expand_choice = mutable1.current_choice * current_expand_ratio
+                expand_mask = torch.zeros(expand_num_channels).bool()
+                expand_mask[:expand_choice] = True
+
+                return expand_mask
+
+            return fn
+
+        if isinstance(other, OneShotMutableValue):
+            return DerivedMutable(
+                choice_fn=expand_choice_fn(self, other),
+                mask_fn=expand_mask_fn(self, other))
+
+        raise TypeError(f'Unsupported type {type(other)} for mul!')
+
+    def __rdiv__(self, other) -> DerivedMutable:
+        return self / other
+
+    def __div__(self, other) -> DerivedMutable:
+        if isinstance(other, int):
+            return self.derive_divide_mutable(other)
+        if isinstance(other, tuple):
+            assert len(other) == 2
+            return self.derive_divide_mutable(*other)
+
+        raise TypeError(f'Unsupported type {type(other)} for div!')

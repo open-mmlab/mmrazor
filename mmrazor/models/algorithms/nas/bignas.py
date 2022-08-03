@@ -49,9 +49,6 @@ class BigNAS(BaseAlgorithm):
 
         self._optim_wrapper_count_status_reinitialized = False
 
-        import pdb
-        pdb.set_trace()
-
     def _build_mutator(self, mutator: VALID_MUTATOR_TYPE) -> BaseMutator:
         """build mutator."""
         if isinstance(mutator, dict):

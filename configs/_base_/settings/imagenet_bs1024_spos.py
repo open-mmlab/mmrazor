@@ -61,13 +61,13 @@ paramwise_cfg = dict(
     bias_decay_mult=0.0, norm_decay_mult=0.0, dwconv_decay_mult=0.0)
 
 optim_wrapper = dict(
-    optimizer=dict(type='mmcls.SGD', lr=0.5, momentum=0.9, weight_decay=4e-5),
+    optimizer=dict(type='SGD', lr=0.5, momentum=0.9, weight_decay=4e-5),
     paramwise_cfg=paramwise_cfg,
     clip_grad=None)
 
 # leanring policy
 param_scheduler = dict(
-    type='mmcls.PolyLR',
+    type='PolyLR',
     power=1.0,
     eta_min=0.0,
     by_epoch=True,
