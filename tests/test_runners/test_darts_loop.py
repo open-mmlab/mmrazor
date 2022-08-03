@@ -150,7 +150,6 @@ class TestDartsLoop(TestCase):
         self.assertEqual(loop.max_epochs, 3)
         self.assertEqual(loop.max_iters, 12)
         self.assertIsInstance(loop.mutator_dataloader, DataLoader)
-        self.assertEqual(loop.multi_loaders.num_loaders, 2)
 
         # 2. DartsIterBasedTrainLoop
         cfg = copy.deepcopy(self.iter_based_cfg)
@@ -162,7 +161,6 @@ class TestDartsLoop(TestCase):
         self.assertIsInstance(loop.runner, Runner)
         self.assertEqual(loop.max_iters, 12)
         self.assertIsInstance(loop.mutator_dataloader, DataLoader)
-        self.assertEqual(loop.multi_loaders.num_loaders, 2)
 
     def test_run(self):
         # 1. test DartsEpochBasedTrainLoop
