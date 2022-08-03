@@ -81,9 +81,10 @@ class ToyDataPreprocessor(torch.nn.Module):
 
 
 class TestDarts(TestCase):
-    device: str = 'cpu'
 
     def setUp(self) -> None:
+        self.device: str = 'cpu'
+
         OPTIMIZER_CFG = dict(
             type='SGD',
             lr=0.5,
@@ -209,14 +210,15 @@ class TestDartsDDP(TestDarts):
             backend = 'gloo'
         dist.init_process_group(backend, rank=0, world_size=1)
 
-    def prepare_model(self) -> Darts:
+    def prepare_model(self, device_ids=None) -> Darts:
         model = ToyDiffModule().to(self.device)
         mutator = DiffModuleMutator().to(self.device)
         mutator.prepare_from_supernet(model)
 
         algo = Darts(model, mutator)
 
-        return DartsDDP(module=algo, find_unused_parameters=True)
+        return DartsDDP(
+            module=algo, find_unused_parameters=True, device_ids=device_ids)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -228,6 +230,48 @@ class TestDartsDDP(TestDarts):
         ddp_model = self.prepare_model()
         # ddp_model = DartsDDP(module=model, device_ids=[0])
         self.assertIsInstance(ddp_model, DartsDDP)
+
+    def test_dartsddp_train_step(self) -> None:
+        model = ToyDiffModule(data_preprocessor=ToyDataPreprocessor())
+        mutator = DiffModuleMutator()
+        mutator.prepare_from_supernet(model)
+
+        # data is tensor
+        algo = Darts(model, mutator)
+        ddp_model = DartsDDP(module=algo, find_unused_parameters=True)
+        data = self._prepare_fake_data()
+        optim_wrapper = build_optim_wrapper(ddp_model, self.OPTIM_WRAPPER_CFG)
+        loss = ddp_model.train_step(data, optim_wrapper)
+
+        print(loss)
+
+        # data is tuple or list
+        algo = Darts(model, mutator)
+        ddp_model = DartsDDP(module=algo, find_unused_parameters=True)
+        data = [self._prepare_fake_data() for _ in range(2)]
+        optim_wrapper_dict = OptimWrapperDict(
+            architecture=OptimWrapper(SGD(model.parameters(), lr=0.1)),
+            mutator=OptimWrapper(SGD(model.parameters(), lr=0.01)))
+        loss = ddp_model.train_step(data, optim_wrapper_dict)
+
+        print(loss)
+
+    def test_dartsddp_with_unroll(self) -> None:
+        model = ToyDiffModule(data_preprocessor=ToyDataPreprocessor())
+        mutator = DiffModuleMutator()
+        mutator.prepare_from_supernet(model)
+
+        # data is tuple or list
+        algo = Darts(model, mutator, unroll=True)
+        ddp_model = DartsDDP(module=algo, find_unused_parameters=True)
+
+        data = [self._prepare_fake_data() for _ in range(2)]
+        optim_wrapper_dict = OptimWrapperDict(
+            architecture=OptimWrapper(SGD(model.parameters(), lr=0.1)),
+            mutator=OptimWrapper(SGD(model.parameters(), lr=0.01)))
+        loss = ddp_model.train_step(data, optim_wrapper_dict)
+
+        print(loss)
 
 
 if __name__ == '__main__':
