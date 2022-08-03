@@ -142,9 +142,11 @@ class Darts(BaseAlgorithm):
 
             # Update the parameter of mutator
             if self.unroll:
-                optim_wrapper['mutator'].zero_grad()
-                mutator_log_vars = self._unrolled_backward(
-                    mutator_data, supernet_data, optim_wrapper['architecture'])
+                with optim_wrapper['mutator'].optim_context(self):
+                    optim_wrapper['mutator'].zero_grad()
+                    mutator_log_vars = self._unrolled_backward(
+                        mutator_data, supernet_data,
+                        optim_wrapper['architecture'])
                 optim_wrapper['mutator'].step()
                 log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
             else:
@@ -342,7 +344,7 @@ class DartsDDP(MMDistributedDataParallel):
             if self.module.unroll:
                 optim_wrapper['mutator'].zero_grad()
                 mutator_log_vars = self._unrolled_backward(
-                    mutator_data, supernet_data, optim_wrapper['architecture'])
+                    mutator_data, supernet_data, optim_wrapper)
                 optim_wrapper['mutator'].step()
                 log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
             else:
@@ -353,10 +355,11 @@ class DartsDDP(MMDistributedDataParallel):
                         mutator_batch_inputs,
                         mutator_data_samples,
                         mode='loss')
-                mutator_losses, mutator_log_vars = self.module.parse_losses(
-                    mutator_loss)
-                optim_wrapper['mutator'].update_params(mutator_losses)
-                log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
+
+                    mutator_losses, mutator_log_vars = self.module.parse_losses(  # noqa: E501
+                        mutator_loss)
+                    optim_wrapper['mutator'].update_params(mutator_losses)
+                    log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
 
             # Update the parameter of supernet
             with optim_wrapper['architecture'].optim_context(self):
@@ -364,10 +367,11 @@ class DartsDDP(MMDistributedDataParallel):
                     self.module.data_preprocessor(supernet_data, True)
                 supernet_loss = self(
                     supernet_batch_inputs, supernet_data_samples, mode='loss')
-            supernet_losses, supernet_log_vars = self.module.parse_losses(
-                supernet_loss)
-            optim_wrapper['architecture'].update_params(supernet_losses)
-            log_vars.update(add_prefix(supernet_log_vars, 'supernet'))
+
+                supernet_losses, supernet_log_vars = self.module.parse_losses(
+                    supernet_loss)
+                optim_wrapper['architecture'].update_params(supernet_losses)
+                log_vars.update(add_prefix(supernet_log_vars, 'supernet'))
 
         else:
             # Enable automatic mixed precision training context.
@@ -386,11 +390,12 @@ class DartsDDP(MMDistributedDataParallel):
             tuple(self.module.architecture.parameters()))
 
         # do virtual step on training data
-        lr = optim_wrapper.param_groups[0]['lr']
-        momentum = optim_wrapper.param_groups[0]['momentum']
-        weight_decay = optim_wrapper.param_groups[0]['weight_decay']
+        lr = optim_wrapper['architecture'].param_groups[0]['lr']
+        momentum = optim_wrapper['architecture'].param_groups[0]['momentum']
+        weight_decay = optim_wrapper['architecture'].param_groups[0][
+            'weight_decay']
         self._compute_virtual_model(supernet_data, lr, momentum, weight_decay,
-                                    optim_wrapper)
+                                    optim_wrapper['architecture'])
 
         # calculate unrolled loss on validation data
         # keep gradients for model here for compute hessian
@@ -405,7 +410,8 @@ class DartsDDP(MMDistributedDataParallel):
         # the gradients of mutator loss. The gradients of model and arch
         # can directly obtained. For more information, please refer to
         # https://github.com/open-mmlab/mmengine/blob/main/mmengine/optim/optimizer/optimizer_wrapper.py
-        optim_wrapper.backward(mutator_losses)
+        optim_wrapper['mutator'].backward(mutator_losses)
+
         d_model = [
             param.grad for param in self.module.architecture.parameters()
         ]
@@ -413,7 +419,7 @@ class DartsDDP(MMDistributedDataParallel):
 
         # compute hessian and final gradients
         hessian = self._compute_hessian(backup_params, d_model, supernet_data,
-                                        optim_wrapper)
+                                        optim_wrapper['architecture'])
 
         w_arch = tuple(self.module.mutator.parameters())
 

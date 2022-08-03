@@ -33,8 +33,11 @@ optim_wrapper = dict(
     _delete_=True,
     constructor='mmrazor.SeparateOptimWrapperConstructor',
     architecture=dict(
+        type='OptimWrapper',
         optimizer=dict(type='SGD', lr=0.025, momentum=0.9, weight_decay=3e-4),
         clip_grad=dict(max_norm=5, norm_type=2)),
-    mutator=dict(optimizer=dict(type='Adam', lr=3e-4, weight_decay=1e-3)))
+    mutator=dict(
+        type='OptimWrapper',
+        optimizer=dict(type='Adam', lr=3e-4, weight_decay=1e-3)))
 
 find_unused_parameter = False
