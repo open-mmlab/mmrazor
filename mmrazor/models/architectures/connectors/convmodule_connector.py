@@ -1,12 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import warnings
 from typing import Dict, Optional, Tuple, Union
 
 import torch
-import torch.nn as nn
-from mmcv.cnn import (build_activation_layer, build_conv_layer,
-                      build_norm_layer, build_padding_layer)
-from mmcv.utils import _BatchNorm, _InstanceNorm
+from mmcv.cnn import ConvModule
 
 from mmrazor.registry import MODELS
 from .base_connector import BaseConnector
@@ -73,80 +69,10 @@ class ConvModuleConncetor(BaseConnector):
         init_cfg: Optional[Dict] = None,
     ) -> None:
         super().__init__(init_cfg)
-        assert conv_cfg is None or isinstance(conv_cfg, dict), \
-            'conv_cfg must be None or a dict, ' \
-            f'but got {type(conv_cfg).__name__}.'
-        assert norm_cfg is None or isinstance(norm_cfg, dict), \
-            'norm_cfg must be None or a dict, ' \
-            f'but got {type(norm_cfg).__name__}.'
-        assert act_cfg is None or isinstance(act_cfg, dict), \
-            'act_cfg must be None or a dict, ' \
-            f'but got {type(act_cfg).__name__}.'
-
-        official_padding_mode = ['zeros', 'circular']
-        self.with_spectral_norm = with_spectral_norm
-        self.with_explicit_padding = padding_mode not in official_padding_mode
-        self.order = order
-        assert isinstance(self.order, tuple) and len(self.order) == 3, \
-            '"order" must be a tuple and with length 3.'
-        assert set(order) == set(['conv', 'norm', 'act']), \
-            'the set of "order" must be equal to the set of ' \
-            '["conv", "norm", "act"].'
-
-        self.with_norm = norm_cfg is not None
-        self.with_activation = act_cfg is not None
-        # if the conv layer is before a norm layer, bias is unnecessary.
-        if bias == 'auto':
-            bias = not self.with_norm
-        self.with_bias = bias
-
-        if self.with_explicit_padding:
-            pad_cfg = dict(type=padding_mode)
-            self.padding_layer = build_padding_layer(pad_cfg, padding)
-
-        # reset padding to 0 for conv module
-        conv_padding = 0 if self.with_explicit_padding else padding
-        # build convolution layer
-        self.conv = build_conv_layer(
-            conv_cfg,
-            in_channel,
-            out_channel,
-            kernel_size,
-            stride=stride,
-            padding=conv_padding,
-            dilation=dilation,
-            groups=groups,
-            bias=bias)
-
-        if self.with_spectral_norm:
-            self.conv = nn.utils.spectral_norm(self.conv)
-
-        # build normalization layers
-        if self.with_norm:
-            # norm layer is after conv layer
-            if order.index('norm') > order.index('conv'):
-                norm_channels = out_channel
-            else:
-                norm_channels = in_channel
-            self.norm_name, self.norm = build_norm_layer(
-                norm_cfg, norm_channels)
-            self.add_module(self.norm_name, self.norm)
-            if self.with_bias:
-                if isinstance(self.norm, (_BatchNorm, _InstanceNorm)):
-                    warnings.warn(
-                        'Unnecessary conv bias before batch/instance norm')
-        else:
-            self.norm_name = None
-
-        # build activation layer
-        if self.with_activation:
-            act_cfg_ = act_cfg.copy()
-            # nn.Tanh has no 'inplace' argument
-            if act_cfg_['type'] not in [
-                    'Tanh', 'PReLU', 'Sigmoid', 'HSigmoid', 'Swish', 'GELU'
-            ]:
-                act_cfg_.setdefault('inplace', inplace)
-            self.activate = build_activation_layer(act_cfg_)
+        self.conv_module = ConvModule(in_channel, out_channel, kernel_size,
+                                      stride, padding, dilation, groups, bias,
+                                      conv_cfg, norm_cfg, act_cfg, inplace,
+                                      with_spectral_norm, padding_mode, order)
 
     def forward_train(self, feature: torch.Tensor) -> torch.Tensor:
         """Forward computation.
@@ -154,13 +80,13 @@ class ConvModuleConncetor(BaseConnector):
         Args:
             feature (torch.Tensor): Input feature.
         """
-        for layer in self.order:
+        for layer in self.conv_module.order:
             if layer == 'conv':
-                if self.with_explicit_padding:
-                    feature = self.padding_layer(feature)
-                feature = self.conv(feature)
-            elif layer == 'norm' and self.with_norm:
-                feature = self.norm(feature)
-            elif layer == 'act' and self.with_activation:
-                feature = self.activate(feature)
+                if self.conv_module.with_explicit_padding:
+                    feature = self.conv_module.padding_layer(feature)
+                feature = self.conv_module.conv(feature)
+            elif layer == 'norm' and self.conv_module.with_norm:
+                feature = self.conv_module.norm(feature)
+            elif layer == 'act' and self.conv_module.with_activation:
+                feature = self.conv_module.activate(feature)
         return feature
