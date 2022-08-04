@@ -16,10 +16,10 @@ class PTQ(BaseAlgorithm):
         self.quantizer = MODELS.build(quantizer)
 
     def prepare(self):
-        self.quantizer.prepare()
+        return self.quantizer.prepare(self.architecture)
 
-    def convert(self):
-        self.quantizer.convert()
+    def convert(self, model):
+        return self.quantizer.convert(model)
 
     @property
     def state(self):
