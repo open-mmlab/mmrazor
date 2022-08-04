@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple, no_type_check
 
 import torch.nn as nn
 from mmcls.models.backbones.base_backbone import BaseBackbone
@@ -23,50 +23,55 @@ def _range_to_list(range_: List[int]) -> List[int]:
 
 def _mutate_conv_module(
     conv_module: ConvModule,
-    in_channels_derive_cfg: Optional[Tuple[BaseMutable, int]] = None,
-    out_channels_derive_cfg: Optional[Tuple[BaseMutable, int]] = None,
+    derived_in_channels: Optional[BaseMutable] = None,
+    derived_out_channels: Optional[BaseMutable] = None,
     kernel_size_derive_cfg: Optional[Tuple[BaseMutable,
                                            Sequence[int]]] = None):
-    if in_channels_derive_cfg is not None:
-        mutable_in_channels, expand_ratio = in_channels_derive_cfg
-        conv_module.conv.mutate_in_channels(
-            mutable_in_channels.derive_expand_mutable(expand_ratio))
-    if out_channels_derive_cfg is not None:
-        mutable_out_channels, expand_ratio = out_channels_derive_cfg
-        conv_module.conv.mutate_out_channels(
-            mutable_out_channels.derive_expand_mutable(expand_ratio))
+    if derived_in_channels is not None:
+        conv_module.conv.mutate_in_channels(derived_in_channels)
+    if derived_out_channels is not None:
+        conv_module.conv.mutate_out_channels(derived_out_channels)
         if conv_module.with_norm:
-            conv_module.bn.mutate_num_features(
-                mutable_out_channels.derive_expand_mutable(expand_ratio))
+            conv_module.bn.mutate_num_features(derived_out_channels)
 
     if kernel_size_derive_cfg is not None:
         mutable_kernel_size, kernel_size_list = kernel_size_derive_cfg
-        conv_module.conv.mutate_kernel_size(
-            mutable_kernel_size.derive_same_mutable(), kernel_size_list)
+        if mutable_kernel_size is not None:
+            conv_module.conv.mutate_kernel_size(
+                mutable_kernel_size.derive_same_mutable(), kernel_size_list)
 
 
 @MODELS.register_module()
 class BigNASMobileNet(BaseBackbone):
     # Parameters to build layers. 5 parameters are needed to construct a
     # layer, from left to right:
-    # expand_ratio,
-    # [min_channel, max_channel, step]
-    # [min_num_blocks, max_num_blocks, step]
-    # [min_kernel_size, max_kernel_size, step]
-    # stride
+    # expand_ratio, channels, num_blocks, kernel_size, stride
     arch_settings = [
-        [1, [16, 24, 8], [1, 2, 1], [3, 3, 2], 1],
-        [6, [24, 32, 8], [2, 3, 1], [3, 3, 2], 2],
-        [6, [40, 48, 8], [2, 3, 1], [3, 5, 2], 2],
-        [6, [80, 88, 8], [2, 4, 1], [3, 5, 2], 2],
-        [6, [112, 128, 8], [2, 6, 1], [3, 5, 2], 1],
-        [6, [192, 216, 8], [2, 6, 1], [3, 5, 2], 2],
-        [6, [320, 352, 8], [1, 2, 1], [3, 5, 2], 1],
+        [1, 24, 2, 3, 1],
+        [6, 32, 3, 3, 2],
+        [6, 48, 3, 5, 2],
+        [6, 88, 4, 5, 2],
+        [6, 128, 6, 5, 1],
+        [6, 216, 6, 5, 2],
+        [6, 352, 2, 5, 1],
     ]
 
+    # [min_channels, max_channels, step]
+    # [min_num_blocks, max_num_blocks, step]
+    # [min_kernel_size, max_kernel_size, step]
+    mutable_settings = [[[32, 40, 8], None, None],
+                        [[16, 24, 8], [1, 2, 1], None],
+                        [[24, 32, 8], [2, 3, 1], None],
+                        [[40, 48, 8], [2, 3, 1], [3, 5, 2]],
+                        [[80, 88, 8], [2, 4, 1], [3, 5, 2]],
+                        [[112, 128, 8], [2, 6, 1], [3, 5, 2]],
+                        [[192, 216, 8], [2, 6, 1], [3, 5, 2]],
+                        [[320, 352, 8], [1, 2, 1], [3, 5, 2]],
+                        [[1280, 1408, 8], None, None]]
+
     def __init__(self,
-                 first_out_channels_range=[32, 40, 8],
-                 last_out_channels_range=[1280, 1408, 8],
+                 first_out_channels=40,
+                 last_out_channels=1408,
                  widen_factor=1.,
                  out_indices=(7, ),
                  frozen_stages=-1,
@@ -101,13 +106,9 @@ class BigNASMobileNet(BaseBackbone):
         self.norm_eval = norm_eval
         self.with_cp = with_cp
 
-        self.source_mutables = nn.ModuleDict()
-
-        first_out_channels = [
-            make_divisible(x * widen_factor, 8)
-            for x in _range_to_list(first_out_channels_range)
-        ]
-        self.in_channels = max(first_out_channels)
+        first_out_channels = make_divisible(first_out_channels * widen_factor,
+                                            8)
+        self.in_channels = first_out_channels
 
         self.conv1 = ConvModule(
             in_channels=3,
@@ -118,47 +119,31 @@ class BigNASMobileNet(BaseBackbone):
             conv_cfg=self.conv_cfg,
             norm_cfg=self.norm_cfg,
             act_cfg=self.act_cfg)
-        mutable_out_channels = OneShotMutableChannel(
-            num_channels=self.in_channels,
-            candidate_choices=first_out_channels,
-            candidate_mode='number')
-        self.source_mutables['conv1'] = mutable_out_channels
-        _mutate_conv_module(
-            self.conv1, out_channels_derive_cfg=(mutable_out_channels, 1))
-        self.last_mutable = mutable_out_channels
 
         self.layers = []
         for i, layer_cfg in enumerate(self.arch_settings):
             print(f'stage {i + 1}: {layer_cfg}')
-            expand_ratio, channel_range, num_blocks_range, \
-                kernel_size_range, stride = layer_cfg
-            out_channels_list = [
-                make_divisible(x * widen_factor, 8)
-                for x in _range_to_list(channel_range)
-            ]
-            num_blocks_list = _range_to_list(num_blocks_range)
-            kernel_size_list = _range_to_list(kernel_size_range)
+            expand_ratio, channels, num_blocks, \
+                kernel_size, stride = layer_cfg
+            out_channels = make_divisible(channels * widen_factor, 8)
 
             inverted_res_layer = self.make_layer(
-                out_channels_list=out_channels_list,
-                num_blocks_list=num_blocks_list,
-                kernel_size_list=kernel_size_list,
+                out_channels=out_channels,
+                num_blocks=num_blocks,
+                kernel_size=kernel_size,
                 stride=stride,
-                expand_ratio=expand_ratio,
-                stage_idx=i + 1)
+                expand_ratio=expand_ratio)
             layer_name = f'layer{i + 1}'
             self.add_module(layer_name, inverted_res_layer)
             self.layers.append(layer_name)
 
-        last_out_channels = [
-            make_divisible(x * widen_factor, 8)
-            for x in _range_to_list(last_out_channels_range)
-        ]
-        out_channels = max(last_out_channels)
-
+        if widen_factor > 1.0:
+            self.out_channel = int(last_out_channels * widen_factor)
+        else:
+            self.out_channel = last_out_channels
         layer = ConvModule(
             in_channels=self.in_channels,
-            out_channels=out_channels,
+            out_channels=self.out_channel,
             kernel_size=1,
             stride=1,
             padding=0,
@@ -168,19 +153,11 @@ class BigNASMobileNet(BaseBackbone):
         self.add_module('conv2', layer)
         self.layers.append('conv2')
 
-        mutable_out_channels = OneShotMutableChannel(
-            num_channels=out_channels,
-            candidate_choices=last_out_channels,
-            candidate_mode='number')
-        _mutate_conv_module(
-            self.conv2,
-            in_channels_derive_cfg=(self.last_mutable, 1),
-            out_channels_derive_cfg=(mutable_out_channels, 1))
-        self.source_mutables['conv2'] = mutable_out_channels
-        self.last_mutable = mutable_out_channels
+        self.all_layers = ['conv1'] + self.layers
+        self.mutate()
 
-    def make_layer(self, out_channels_list, num_blocks_list, kernel_size_list,
-                   stride, expand_ratio, stage_idx):
+    def make_layer(self, out_channels, num_blocks, kernel_size, stride,
+                   expand_ratio):
         """Stack InvertedResidual blocks to build a layer for MobileNetV2.
 
         Args:
@@ -190,16 +167,8 @@ class BigNASMobileNet(BaseBackbone):
             expand_ratio (int): Expand the number of channels of the
                 hidden layer in InvertedResidual by this ratio. Default: 6.
         """
-        mutable_list = nn.ModuleList()
-        mutable_kernel_size = OneShotMutableValue(
-            value_list=kernel_size_list, default_value=max(kernel_size_list))
-        mutable_list.append(mutable_kernel_size)
-        last_mutable = self.last_mutable
-
-        out_channels = max(out_channels_list)
-        kernel_size = max(kernel_size_list)
         layers = []
-        for i in range(max(num_blocks_list)):
+        for i in range(num_blocks):
             if i >= 1:
                 stride = 1
             mb_layer = MBBlock(
@@ -212,47 +181,95 @@ class BigNASMobileNet(BaseBackbone):
                 norm_cfg=self.norm_cfg,
                 act_cfg=self.act_cfg,
                 with_cp=self.with_cp)
-            if mb_layer.with_expand_conv:
-                _mutate_conv_module(
-                    mb_layer.expand_conv,
-                    in_channels_derive_cfg=(last_mutable, 1),
-                    out_channels_derive_cfg=(last_mutable, expand_ratio))
-
-            _mutate_conv_module(
-                mb_layer.depthwise_conv,
-                in_channels_derive_cfg=(last_mutable, expand_ratio),
-                out_channels_derive_cfg=(last_mutable, expand_ratio),
-                kernel_size_derive_cfg=(mutable_kernel_size, kernel_size_list))
-            if mb_layer.with_res_shortcut:
-                out_channels_derive_cfg = (last_mutable, 1)
-            else:
-                mutable_out_channels = OneShotMutableChannel(
-                    num_channels=out_channels,
-                    candidate_choices=out_channels_list,
-                    candidate_mode='number')
-                out_channels_derive_cfg = (mutable_out_channels, 1)
-                mutable_list.append(mutable_out_channels)
-            _mutate_conv_module(
-                mb_layer.linear_conv,
-                in_channels_derive_cfg=(last_mutable, expand_ratio),
-                out_channels_derive_cfg=out_channels_derive_cfg)
-
             layers.append(mb_layer)
             self.in_channels = out_channels
 
-            if not mb_layer.with_res_shortcut:
-                last_mutable = mutable_out_channels
+        return DynamicSequential(*layers)
 
-        dynamic_seq = DynamicSequential(*layers)
-        mutable_depth = OneShotMutableValue(
-            value_list=num_blocks_list, default_value=max(num_blocks_list))
-        mutable_list.append(mutable_depth)
-        dynamic_seq.mutate_depth(mutable_depth, depth_seq=num_blocks_list)
+    # FIXME
+    # fix type lint
+    @no_type_check
+    def mutate(self) -> None:
+        source_mutables = nn.ModuleDict()
 
-        self.source_mutables[f'stage_{stage_idx}'] = mutable_list
+        last_mutable = None
+        for layer_idx, mutable_cfg in enumerate(self.mutable_settings):
+            layer = getattr(self, self.all_layers[layer_idx])
+            mutable_list = nn.ModuleList()
+
+            channels_range: Optional[List] = mutable_cfg[0]
+            num_blocks_range: Optional[List] = mutable_cfg[1]
+            kernel_size_range: Optional[List] = mutable_cfg[2]
+            channels_list: Optional[List] = None
+            num_blocks_list: Optional[List[int]] = None
+            kernel_size_list: Optional[List[int]] = None
+            mutable_channel: Optional[BaseMutable] = None
+            mutable_depth: Optional[BaseMutable] = None
+            mutable_kernel_size: Optional[BaseMutable] = None
+            if channels_range is not None:
+                channels_list = _range_to_list(channels_range)
+                mutable_channel = OneShotMutableChannel(
+                    num_channels=max(channels_list),
+                    candidate_mode='number',
+                    candidate_choices=channels_list)
+                mutable_list.append(mutable_channel)
+            if num_blocks_range is not None:
+                num_blocks_list = _range_to_list(num_blocks_range)
+                mutable_depth = OneShotMutableValue(
+                    value_list=num_blocks_list,
+                    default_value=max(num_blocks_list))
+                mutable_list.append(mutable_depth)
+            if kernel_size_range is not None:
+                kernel_size_list = _range_to_list(kernel_size_range)
+                mutable_kernel_size = OneShotMutableValue(
+                    value_list=kernel_size_list,
+                    default_value=max(kernel_size_list))
+                mutable_list.append(mutable_kernel_size)
+            source_mutables[self.all_layers[layer_idx]] = mutable_list
+
+            if layer_idx == 0 or layer_idx == len(self.all_layers) - 1:
+                if last_mutable is None:
+                    derive_in_channels = None
+                else:
+                    last_mutable = last_mutable * 1
+                _mutate_conv_module(
+                    layer,
+                    derived_in_channels=derive_in_channels,
+                    derived_out_channels=mutable_channel * 1)
+                last_mutable = mutable_channel
+            else:
+                if mutable_depth is not None:
+                    layer.mutate_depth(mutable_depth, num_blocks_list)
+                for mb_layer in layer:
+                    # HACK
+                    # try modify __iter__ ?
+                    if isinstance(mb_layer, layer.forward_ignored_module):
+                        continue
+                    expand_ratio = mb_layer.expand_ratio
+                    if mb_layer.with_expand_conv:
+                        _mutate_conv_module(
+                            mb_layer.expand_conv,
+                            derived_in_channels=last_mutable * 1,
+                            derived_out_channels=last_mutable * expand_ratio)
+                    _mutate_conv_module(
+                        mb_layer.depthwise_conv,
+                        derived_in_channels=last_mutable * expand_ratio,
+                        derived_out_channels=last_mutable * expand_ratio,
+                        kernel_size_derive_cfg=(mutable_kernel_size,
+                                                kernel_size_list))
+                    if mb_layer.with_res_shortcut:
+                        derived_out_channels = last_mutable * 1
+                    else:
+                        derived_out_channels = mutable_channel * 1
+                    _mutate_conv_module(
+                        mb_layer.linear_conv,
+                        derived_in_channels=last_mutable * expand_ratio,
+                        derived_out_channels=derived_out_channels)
+                    if not mb_layer.with_res_shortcut:
+                        last_mutable = mutable_channel
+
         self.last_mutable = last_mutable
-
-        return dynamic_seq
+        self.source_mutables = source_mutables
 
     def forward(self, x):
         x = self.conv1(x)

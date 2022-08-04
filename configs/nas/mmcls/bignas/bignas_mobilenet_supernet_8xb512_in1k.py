@@ -18,8 +18,7 @@ data_preprocessor = dict(
 supernet = dict(
     type='mmrazor.SearchableImageClassifier',
     # data_preprocessor=_base_.preprocess_cfg,
-    backbone=dict(
-        type='BigNASMobileNet', last_out_channels_range=[1280, 1408, 8]),
+    backbone=dict(type='BigNASMobileNet'),
     neck=dict(type='GlobalAveragePooling'),
     head=dict(
         type='DynamicLinearClsHead',
