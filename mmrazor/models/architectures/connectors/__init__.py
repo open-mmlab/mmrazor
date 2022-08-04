@@ -1,4 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .conv_connector import ConvConnector
+from .convmodule_connector import ConvModuleConncetor
 
-__all__ = ['ConvConnector']
+__all__ = ['ConvModuleConncetor']

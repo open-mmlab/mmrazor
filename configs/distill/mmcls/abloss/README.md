@@ -54,7 +54,7 @@ $PRETRAIN_WORK_DIR
 
 ### Modify Distillation training config
 
-open file './configs/kd/ab_loss/classification/resnet/abloss_res18_cifar10_distillation_8xb16_teacher_res50_head_train.py'
+open file 'configs/distill/mmcls/abloss/abloss_head_resnet50_resnet18_8xb32_in1k.py'
 
 ```python
 # modify init_cfg in model settings
