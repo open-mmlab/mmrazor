@@ -15,9 +15,10 @@ class DKDLoss(nn.Module):
         1. target class knowledge distillation (TCKD)
         2. non-target class knowledge distillation (NCKD).
     """
+
     def __init__(
         self,
-        tau: float = 1.0,
+        tau: float = 4.0,
         alpha: float = 1.0,
         beta: float = 8.0,
         reduction: str = 'batchmean',

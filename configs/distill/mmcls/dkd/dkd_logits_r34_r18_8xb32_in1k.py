@@ -27,7 +27,12 @@ model = dict(
         teacher_recorders=dict(
             fc=dict(type='ModuleOutputs', source='head.fc')),
         distill_losses=dict(
-            loss_dkd=dict(type='DKDLoss', tau=1, beta=0.5, loss_weight=1)),
+            loss_dkd=dict(
+                type='DKDLoss',
+                tau=1,
+                beta=0.5,
+                loss_weight=1,
+                reduction='mean')),
         loss_forward_mappings=dict(
             loss_dkd=dict(
                 student=dict(from_student=True, recorder='fc'),
