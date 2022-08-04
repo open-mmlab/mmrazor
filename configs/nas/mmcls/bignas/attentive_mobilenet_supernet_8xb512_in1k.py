@@ -1,5 +1,5 @@
 _base_ = [
-    # 'mmrazor::_base_/settings/imagenet_bs2048_autoslim_pil.py',
+    'mmrazor::_base_/settings/imagenet_bs2048_autoslim_pil.py',
     'mmcls::_base_/default_runtime.py',
 ]
 
@@ -17,11 +17,11 @@ data_preprocessor = dict(
 
 supernet = dict(
     type='mmrazor.SearchableImageClassifier',
-    # data_preprocessor=_base_.preprocess_cfg,
     backbone=dict(
         type='AttentiveMobileNet',
         first_out_channels_range=[16, 24, 8],
-        last_out_channels_range=[1792, 1984, 1984 - 1792]),
+        last_out_channels_range=[1792, 1984, 1984 - 1792],
+        act_cfg=dict(type='Swish')),
     neck=dict(type='GlobalAveragePooling'),
     head=dict(
         type='DynamicLinearClsHead',
@@ -77,4 +77,5 @@ param_scheduler = dict(end=max_epochs)
 
 # train, val, test setting
 train_cfg = dict(max_epochs=max_epochs)
-val_cfg = dict(type='mmrazor.AutoSlimValLoop')
+val_cfg = dict(type='mmrazor.AutoSlimValLoop', calibrated_sample_nums=4096)
+test_cfg = dict(type='mmrazor.AutoSlimTestLoop', calibrated_sample_nums=4096)

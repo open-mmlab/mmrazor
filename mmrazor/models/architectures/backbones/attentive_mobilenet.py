@@ -90,7 +90,7 @@ class AttentiveMobileNet(BaseBackbone):
                  frozen_stages=-1,
                  conv_cfg=dict(type='CenterCropDynamicConv2d'),
                  norm_cfg=dict(type='DynamicBatchNorm2d'),
-                 act_cfg=dict(type='ReLU'),
+                 act_cfg=dict(type='Swish'),
                  norm_eval=False,
                  with_cp=False,
                  init_cfg=[

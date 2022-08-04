@@ -27,7 +27,6 @@ class BigNAS(BaseAlgorithm):
                  mutators: VALID_MUTATORS_TYPE,
                  distiller: VALID_DISTILLER_TYPE,
                  architecture: Union[BaseModel, Dict],
-                 resizer_cfg: Optional[Dict] = None,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  init_cfg: Optional[Dict] = None,
                  num_samples: int = 2) -> None:

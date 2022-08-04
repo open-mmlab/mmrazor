@@ -72,8 +72,8 @@ class CalibrateBNMixin:
                 hook_handles.append(handle)
 
         self.runner.model.train()
-        self.runner.logger.debug('start calibrating batch norm statistics')
-        self.runner.logger.debug(
+        self.runner.logger.info('start calibrating batch norm statistics')
+        self.runner.logger.info(
             f'total sample numbers for calibration: {calibrated_sample_nums}')
         remaining = calibrated_sample_nums
         for data_batch in dataloader:
@@ -134,5 +134,6 @@ class CalibrateBNMixin:
                 del module.__var_average_meter__
 
         self.runner.logger.debug('remove all hooks for calibration')
+        self.runner.logger.info('calibrate batch norm statistics done')
         for handle in hook_handles:
             handle.remove()
