@@ -79,3 +79,5 @@ param_scheduler = dict(end=max_epochs)
 train_cfg = dict(max_epochs=max_epochs)
 val_cfg = dict(type='mmrazor.AutoSlimValLoop', calibrated_sample_nums=4096)
 test_cfg = dict(type='mmrazor.AutoSlimTestLoop', calibrated_sample_nums=4096)
+
+log_level = 'DEBUG'

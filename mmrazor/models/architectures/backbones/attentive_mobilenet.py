@@ -6,7 +6,8 @@ import torch.nn as nn
 from mmcls.models.backbones.base_backbone import BaseBackbone
 from mmcls.models.utils import make_divisible
 from mmcls.registry import MODELS
-from mmcv.cnn import ConvModule
+from mmcv.cnn import ConvModule, constant_init
+from mmengine.logging import MMLogger
 from mmengine.model import Sequential
 from torch.nn.modules.batchnorm import _BatchNorm
 
@@ -14,6 +15,8 @@ from mmrazor.models.architectures.dynamic_op import DynamicSequential
 from mmrazor.models.mutables import OneShotMutableChannel, OneShotMutableValue
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.ops.gml_mobilenet_series import GMLMBBlock, GMLSELayer
+
+logger = MMLogger.get_current_instance()
 
 
 def _range_to_list(range_: List[int]) -> List[int]:
@@ -92,6 +95,7 @@ class AttentiveMobileNet(BaseBackbone):
                  norm_cfg=dict(type='DynamicBatchNorm2d'),
                  act_cfg=dict(type='Swish'),
                  norm_eval=False,
+                 zero_init_residual=True,
                  with_cp=False,
                  init_cfg=[
                      dict(type='Kaiming', layer=['Conv2d']),
@@ -117,6 +121,7 @@ class AttentiveMobileNet(BaseBackbone):
         self.norm_cfg = norm_cfg
         self.act_cfg = act_cfg
         self.norm_eval = norm_eval
+        self.zero_init_residual = zero_init_residual
         self.with_cp = with_cp
 
         self.source_mutables = nn.ModuleDict()
@@ -217,6 +222,7 @@ class AttentiveMobileNet(BaseBackbone):
 
         self.add_module('last_conv', Sequential(last_layers))
         self.layers.append('last_conv')
+        logger.debug(f'source mutables:\n {self.source_mutables}')
 
     def make_layer(self, out_channels_list, num_blocks_list, kernel_size_list,
                    stride, expand_ratio_list, use_se, stage_idx):
@@ -359,3 +365,17 @@ class AttentiveMobileNet(BaseBackbone):
             for m in self.modules():
                 if isinstance(m, _BatchNorm):
                     m.eval()
+
+    def init_weights(self) -> None:
+        super().init_weights()
+
+        if self.zero_init_residual:
+            for name, module in self.named_modules():
+                if isinstance(module, GMLMBBlock):
+                    if module.with_res_shortcut or \
+                            module.with_attentive_shortcut:
+                        norm_layer = module.linear_conv.norm
+                        constant_init(norm_layer, val=0)
+                        logger.debug(
+                            f'init {type(norm_layer)} of linear_conv in '
+                            f'`{name}` to zero')
