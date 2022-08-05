@@ -11,6 +11,7 @@ from mmcls.structures import ClsDataSample
 from mmengine.model import BaseModel
 from mmengine.optim import build_optim_wrapper
 from mmengine.optim.optimizer import OptimWrapper, OptimWrapperDict
+from torch import Tensor
 from torch.optim import SGD
 
 from mmrazor.models import Darts, DiffModuleMutator, DiffMutableOP
@@ -154,7 +155,8 @@ class TestDarts(TestCase):
         mutator = DiffModuleMutator()
         mutator.prepare_from_supernet(model)
         algo = Darts(model, mutator)
-        print(algo.search_subnet())
+        subnet = algo.search_subnet()
+        self.assertIsInstance(subnet, dict)
 
     def test_darts_train_step(self) -> None:
         model = ToyDiffModule(data_preprocessor=ToyDataPreprocessor())
@@ -167,7 +169,7 @@ class TestDarts(TestCase):
         optim_wrapper = build_optim_wrapper(algo, self.OPTIM_WRAPPER_CFG)
         loss = algo.train_step(data, optim_wrapper)
 
-        print(loss)
+        self.assertTrue(isinstance(loss['loss'], Tensor))
 
         # data is tuple or list
         algo = Darts(model, mutator)
@@ -177,7 +179,7 @@ class TestDarts(TestCase):
             mutator=OptimWrapper(SGD(model.parameters(), lr=0.01)))
         loss = algo.train_step(data, optim_wrapper_dict)
 
-        print(loss)
+        self.assertIsNotNone(loss)
 
     def test_darts_with_unroll(self) -> None:
         model = ToyDiffModule(data_preprocessor=ToyDataPreprocessor())
@@ -192,7 +194,7 @@ class TestDarts(TestCase):
             mutator=OptimWrapper(SGD(model.parameters(), lr=0.01)))
         loss = algo.train_step(data, optim_wrapper_dict)
 
-        print(loss)
+        self.assertIsNotNone(loss)
 
 
 class TestDartsDDP(TestDarts):
@@ -243,7 +245,7 @@ class TestDartsDDP(TestDarts):
         optim_wrapper = build_optim_wrapper(ddp_model, self.OPTIM_WRAPPER_CFG)
         loss = ddp_model.train_step(data, optim_wrapper)
 
-        print(loss)
+        self.assertIsNotNone(loss)
 
         # data is tuple or list
         algo = Darts(model, mutator)
@@ -254,7 +256,7 @@ class TestDartsDDP(TestDarts):
             mutator=OptimWrapper(SGD(model.parameters(), lr=0.01)))
         loss = ddp_model.train_step(data, optim_wrapper_dict)
 
-        print(loss)
+        self.assertIsNotNone(loss)
 
     def test_dartsddp_with_unroll(self) -> None:
         model = ToyDiffModule(data_preprocessor=ToyDataPreprocessor())
@@ -271,7 +273,7 @@ class TestDartsDDP(TestDarts):
             mutator=OptimWrapper(SGD(model.parameters(), lr=0.01)))
         loss = ddp_model.train_step(data, optim_wrapper_dict)
 
-        print(loss)
+        self.assertIsNotNone(loss)
 
 
 if __name__ == '__main__':
