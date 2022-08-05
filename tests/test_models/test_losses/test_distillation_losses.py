@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models import L2Loss
+from mmrazor.models import ABLoss
 
 
 class TestLosses(TestCase):
@@ -26,15 +26,9 @@ class TestLosses(TestCase):
         loss_3d = loss_instance.forward(self.feats_3d, self.feats_3d)
         self.assertTrue(loss_3d.numel() == 1)
 
-    def test_l2_loss(self):
-        l2_loss_cfg = dict(loss_weight=10, normalize=True)
-        l2_loss = L2Loss(**l2_loss_cfg)
-        self.normal_test_1d(l2_loss)
-        self.normal_test_2d(l2_loss)
-        self.normal_test_3d(l2_loss)
-
-        l2_loss_cfg['div_element'] = True
-        l2_loss = L2Loss(**l2_loss_cfg)
-        self.normal_test_1d(l2_loss)
-        self.normal_test_2d(l2_loss)
-        self.normal_test_3d(l2_loss)
+    def test_ab_loss(self):
+        ab_loss_cfg = dict(loss_weight=1.0, margin=1.0)
+        ab_loss = ABLoss(**ab_loss_cfg)
+        self.normal_test_1d(ab_loss)
+        self.normal_test_2d(ab_loss)
+        self.normal_test_3d(ab_loss)

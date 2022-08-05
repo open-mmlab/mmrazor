@@ -146,9 +146,6 @@ class ConfigurableDistiller(BaseDistiller):
         distill_connecotrs = nn.ModuleDict()
         if connectors:
             for connector_name, connector_cfg in connectors.items():
-                assert connector_name not in distill_connecotrs, \
-                    f'{connector_name} is already in "distill_connecotrs".'
-
                 connector = MODELS.build(connector_cfg)
                 distill_connecotrs[connector_name] = connector
 
