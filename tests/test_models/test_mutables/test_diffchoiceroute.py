@@ -56,6 +56,15 @@ class TestDiffChoiceRoute(TestCase):
 
         new_diff_choice_route.fix_chosen(chosen=['first_edge'])
 
+        # test sample choice
+        arch_param = mutator.build_arch_param(
+            new_diff_choice_route.num_choices)
+        new_diff_choice_route.sample_choice(arch_param)
+
+        # test dump_chosen
+        with pytest.raises(AssertionError):
+            new_diff_choice_route.dump_chosen()
+
     def test_forward_fixed(self):
         edges_dict = nn.ModuleDict({
             'first_edge': nn.Conv2d(32, 32, 3, 1, 1),

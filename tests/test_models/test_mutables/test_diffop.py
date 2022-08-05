@@ -116,6 +116,10 @@ class TestDiffOP(TestCase):
         output = op.forward(input)
         assert output is not None
 
+        # test dump_chosen
+        with pytest.raises(AssertionError):
+            op.dump_chosen()
+
         # test forward when is_fixed is True
         op.fix_chosen('torch_conv2d_7x7')
         output = op.forward(input)
