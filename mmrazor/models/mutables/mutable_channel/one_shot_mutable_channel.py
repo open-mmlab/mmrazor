@@ -167,6 +167,7 @@ class OneShotMutableChannel(MutableChannel[int]):
         origin_channels = dumped_chosen['origin_channels']
 
         assert current_choice <= origin_channels
+        assert origin_channels == self.num_channels
 
         self.current_choice = current_choice
         self.is_fixed = True

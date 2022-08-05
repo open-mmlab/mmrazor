@@ -46,10 +46,10 @@ class MutableValue(BaseMutable[Any, Dict], DerivedMethodMixin):
         all_choices = chosen['all_choices']
         current_choice = chosen['current_choice']
 
-        assert all_choices == self.choices
+        assert all_choices == self.choices, \
+            f'Expect choices to be: {self.choices}, but got: {all_choices}'
         assert current_choice in self.choices
 
-        self._value_list = [current_choice]
         self.current_choice = current_choice
         self.is_fixed = True
 

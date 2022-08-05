@@ -8,11 +8,16 @@ from mmrazor.utils import FixMutable, ValidFixMutable
 def _dynamic_to_static(model: nn.Module) -> None:
     from mmrazor.models.architectures.dynamic_op.base import DynamicOP
 
-    def traverse_children(module: nn.Module) -> None:
+    def traverse_children(module: nn.Module, prefix: str = '') -> None:
         for name, child in module.named_children():
-            traverse_children(child)
+            child_name = name if prefix == '' else f'{prefix}.{name}'
+            traverse_children(child, child_name)
             if isinstance(child, DynamicOP):
-                setattr(module, name, child.to_static_op())
+                try:
+                    setattr(module, name, child.to_static_op())
+                except Exception as e:
+                    raise RuntimeError(
+                        f'Error occurs when make `{child_name}` static') from e
 
     if isinstance(model, DynamicOP):
         raise RuntimeError('Supernet can not be a dynamic model!')

@@ -4,9 +4,9 @@ from typing import Optional, Tuple
 
 import torch
 from mmcls.models import ClsHead
-from mmcls.registry import MODELS
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
+from mmrazor.registry import MODELS
 from ..dynamic_linear import DynamicLinear
 from .base import DynamicHead
 

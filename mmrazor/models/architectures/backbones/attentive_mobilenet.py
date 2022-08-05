@@ -5,7 +5,6 @@ from typing import List, Optional, Sequence, Tuple
 import torch.nn as nn
 from mmcls.models.backbones.base_backbone import BaseBackbone
 from mmcls.models.utils import make_divisible
-from mmcls.registry import MODELS
 from mmcv.cnn import ConvModule, constant_init
 from mmengine.logging import MMLogger
 from mmengine.model import Sequential
@@ -15,6 +14,7 @@ from mmrazor.models.architectures.dynamic_op import DynamicSequential
 from mmrazor.models.mutables import OneShotMutableChannel, OneShotMutableValue
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.ops.gml_mobilenet_series import GMLMBBlock, GMLSELayer
+from mmrazor.registry import MODELS
 
 logger = MMLogger.get_current_instance()
 
@@ -232,9 +232,6 @@ class AttentiveMobileNet(BaseBackbone):
         logger.debug(f'layers:\n {self.layers}')
         logger.debug(f'blocks:\n {self.blocks}')
         logger.debug(f'source mutables:\n {self.source_mutables}')
-
-        import pdb
-        pdb.set_trace()
 
     def make_layer(self, out_channels_list, num_blocks_list, kernel_size_list,
                    stride, expand_ratio_list, use_se, stage_idx):
