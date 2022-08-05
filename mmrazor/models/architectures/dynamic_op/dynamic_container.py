@@ -1,8 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Optional, Sequence
+from typing import Iterator, Optional, Sequence
 
 from mmengine.model import Sequential
 from torch import Tensor
+from torch.nn import Module
 
 from mmrazor.models.mutables import DerivedMutable, MutableValue
 from mmrazor.models.mutables.base_mutable import BaseMutable
@@ -39,17 +40,28 @@ class DynamicSequential(Sequential, DynamicOP):
 
         current_depth = self.get_current_choice(self.mutable_depth)
         passed_module_nums = 0
-        for module in self:
-            if isinstance(module, self.forward_ignored_module):
-                continue
-            else:
-                passed_module_nums += 1
+        for module in self.pure_modules():
+            passed_module_nums += 1
             if passed_module_nums > current_depth:
                 break
 
             x = module(x)
 
         return x
+
+    @property
+    def pure_module_nums(self) -> int:
+        nums = 0
+        for _ in self.pure_modules():
+            nums += 1
+
+        return nums
+
+    def pure_modules(self) -> Iterator[Module]:
+        for module in self._modules.values():
+            if isinstance(module, self.forward_ignored_module):
+                continue
+            yield module
 
     def to_static_op(self) -> Sequential:
         self.check_if_mutables_fixed()

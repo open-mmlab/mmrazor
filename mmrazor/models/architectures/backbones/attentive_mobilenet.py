@@ -91,6 +91,7 @@ class AttentiveMobileNet(BaseBackbone):
                  widen_factor=1.,
                  out_indices=(7, ),
                  frozen_stages=-1,
+                 dropout_stages=6,
                  conv_cfg=dict(type='CenterCropDynamicConv2d'),
                  norm_cfg=dict(type='DynamicBatchNorm2d'),
                  act_cfg=dict(type='Swish'),
@@ -115,8 +116,12 @@ class AttentiveMobileNet(BaseBackbone):
         if frozen_stages not in range(-1, 8):
             raise ValueError('frozen_stages must be in range(-1, 8). '
                              f'But received {frozen_stages}')
+        if dropout_stages not in range(-1, 8):
+            raise ValueError('dropout_stages must be in range(-1, 8). '
+                             f'But received {dropout_stages}')
         self.out_indices = out_indices
         self.frozen_stages = frozen_stages
+        self.dropout_stages = dropout_stages
         self.conv_cfg = conv_cfg
         self.norm_cfg = norm_cfg
         self.act_cfg = act_cfg
@@ -222,7 +227,14 @@ class AttentiveMobileNet(BaseBackbone):
 
         self.add_module('last_conv', Sequential(last_layers))
         self.layers.append('last_conv')
+        self.blocks = self.layers[:-1]
+
+        logger.debug(f'layers:\n {self.layers}')
+        logger.debug(f'blocks:\n {self.blocks}')
         logger.debug(f'source mutables:\n {self.source_mutables}')
+
+        import pdb
+        pdb.set_trace()
 
     def make_layer(self, out_channels_list, num_blocks_list, kernel_size_list,
                    stride, expand_ratio_list, use_se, stage_idx):
@@ -348,9 +360,39 @@ class AttentiveMobileNet(BaseBackbone):
 
         return tuple(outs)
 
+    def set_dropout(self, drop_prob: float) -> None:
+        total_block_nums = self.block_nums
+        visited_block_nums = 0
+        for idx, layer_name in enumerate(self.blocks, start=1):
+            layer = getattr(self, layer_name)
+            assert isinstance(layer, DynamicSequential)
+            visited_block_nums += layer.pure_module_nums
+            if idx < self.dropout_stages:
+                continue
+
+            for mb_idx, mb_layer in enumerate(layer.pure_modules()):
+                if isinstance(mb_layer, GMLMBBlock):
+                    ratio = (visited_block_nums - layer.pure_module_nums +
+                             mb_idx) / total_block_nums
+                    mb_drop_prob = drop_prob * ratio
+                    mb_layer.drop_prob = mb_drop_prob
+
+                    logger.debug(f'set drop prob `{mb_drop_prob}` '
+                                 f'to layer: {layer_name}.{mb_idx}')
+
+    @property
+    def block_nums(self) -> int:
+        total_block_nums = 0
+        for layer_name in self.blocks:
+            layer = getattr(self, layer_name)
+            assert isinstance(layer, DynamicSequential)
+            total_block_nums += layer.pure_module_nums
+
+        return total_block_nums
+
     def _freeze_stages(self):
         if self.frozen_stages >= 0:
-            for param in self.conv1.parameters():
+            for param in self.first_conv.parameters():
                 param.requires_grad = False
         for i in range(1, self.frozen_stages + 1):
             layer = getattr(self, f'layer{i}')

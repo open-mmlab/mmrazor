@@ -5,7 +5,8 @@ import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 from mmcls.models.utils import make_divisible
 from mmcv.cnn import ConvModule
-from mmcv.cnn.bricks import DropPath, build_conv_layer
+from mmcv.cnn.bricks import build_conv_layer
+from mmcv.cnn.bricks.drop import drop_path
 from mmengine import is_tuple_of
 from mmengine.model import BaseModule
 from torch import Tensor, nn
@@ -155,7 +156,7 @@ class GMLMBBlock(BaseOP):
             Default: dict(type='BN').
         act_cfg (dict): Config dict for activation layer.
             Default: dict(type='ReLU').
-        drop_path_rate (float): stochastic depth rate. Defaults to 0.
+        drop_prob (float): stochastic depth rate. Defaults to 0.
         with_cp (bool): Use checkpoint or not. Using checkpoint will save some
             memory while slowing down the training speed. Default: False.
 
@@ -170,7 +171,7 @@ class GMLMBBlock(BaseOP):
                  conv_cfg=None,
                  norm_cfg=dict(type='BN'),
                  act_cfg=dict(type='ReLU'),
-                 drop_path_rate=0.,
+                 drop_prob=0.,
                  with_cp=False,
                  with_attentive_shortcut=False,
                  **kwargs):
@@ -193,8 +194,7 @@ class GMLMBBlock(BaseOP):
         self.norm_cfg = norm_cfg
         self.act_cfg = act_cfg
         self.with_cp = with_cp
-        self.drop_path = DropPath(
-            drop_path_rate) if drop_path_rate > 0 else nn.Identity()
+        self.drop_prob = drop_prob
         self.with_se = se_cfg is not None
         self.mid_channels = self.in_channels * expand_ratio
         self.with_expand_conv = (self.mid_channels != self.in_channels)
@@ -257,9 +257,18 @@ class GMLMBBlock(BaseOP):
             out = self.linear_conv(out)
 
             if self.with_res_shortcut:
-                return x + self.drop_path(out)
+                if self.drop_prob > 0.:
+                    out = drop_path(out, self.drop_prob, self.training)
+                return x + out
+
             elif self.with_attentive_shortcut:
-                return self.shortcut(x) + self.drop_path(out)
+                sx = self.shortcut(x)
+                if self.drop_prob > 0. and \
+                        x.size(1) == sx.size(1) and \
+                        self.shortcut.reduction == 1:
+                    out = drop_path(out, self.drop_prob, self.training)
+                return sx + out
+
             else:
                 return out
 
