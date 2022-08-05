@@ -16,10 +16,10 @@ class PTQ(BaseAlgorithm):
         self.quantizer = MODELS.build(quantizer)
 
     def prepare(self):
-        return self.quantizer.prepare(self.architecture)
+        self.architecture = self.quantizer.prepare(self.architecture)
 
-    def convert(self, model):
-        return self.quantizer.convert(model)
+    def convert(self):
+        self.architecture = self.quantizer.convert(self.architecture)
 
     @property
     def state(self):
@@ -38,6 +38,9 @@ class PTQ(BaseAlgorithm):
                     submodule.enable_fake_quant()
                 else:
                     submodule.disable_fake_quant()
+
+        self.observers_enabled = observers_enabled
+        self.fake_quants_enabled = fake_quants_enabled
         
 
 

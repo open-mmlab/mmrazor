@@ -1,13 +1,16 @@
 import torch
 from mmengine.model import BaseModel
-from mmrazor.structures.quantization import DefalutQconfigs
+from mmrazor.structures.quantization import DefalutQconfigs, QuantizeScheme
+from mmrazor.structures.quantization import SupportQtypes, CheckArgs
 from mmrazor.models.utils import CustomTracer
 from torch.ao.quantization.fx import prepare
-from torch.ao.quantization import _fuse_fx, _convert_fx
+from torch.ao.quantization import _fuse_fx, _convert_fx, QConfig
+from mmrazor.models import BaseObserver, BaseFakeQuant
 
 @MODELS.register_module()
 class BaseQuantizer(BaseModel)
-    def __init__(self, 
+
+    def __init__(self,
                  example_inputs,
                  qconfig=DefalutQconfigs.default, 
                  prepare_custom_config=None,
@@ -20,7 +23,7 @@ class BaseQuantizer(BaseModel)
         super().__init__(init_cfg)
         # TODO: check_qconfig, qconfig_convert
         if check_qconfig(qconfig):
-            self.qconfig = qconfig_convert(qconfig)
+            self.qconfig = self.qconfig_convert(qconfig)
         else:
             raise
         if prepare_custom_config is None:
@@ -40,9 +43,38 @@ class BaseQuantizer(BaseModel)
         
         self.is_standalone_module = is_standalone_module
         self.is_qat = is_qat
-        self.example_inputs = example_inputs
+        self.example_inputs = (torch.randn(example_inputs))
         self.convert_custom_config = convert_custom_config
         self._remove_qconfig = _remove_qconfig
+
+    def check_qconfig(self, qconfig):
+        is_pass = True
+        for arg in CheckArgs:
+            if arg == 'qtype':
+                if arg in SupportQtypes and arg in qconfig.keys():
+                    continue
+                else:
+                    is_pass = False
+                    break
+            else:
+                if isinstance(arg, dict) and arg in qconfig.keys():
+                    continue
+                else:
+                    is_pass = False
+                    break
+        return is_pass
+
+    def qconfig_convert(self, qconfig):
+        self.w_observer = MODELS.build(qconfig.w_observer)
+        self.a_observer = MODELS.build(qconfig.a_observer)
+        self.w_fake_quant = MODELS.build(qconfig.w_fake_quant)
+        self.a_fake_quant = MODELS.build(qconfig.a_fake_quant)
+        self.w_qscheme = QuantizeScheme(**qconfig.w_qscheme)
+        self.a_qscheme = QuantizeScheme(**qconfig.a_qscheme)
+        w_qconfig = self.w_fake_quant.with_args(observer=self.w_observer, **self.w_qscheme)
+        a_qconfig = self.a_fake_quant.with_args(observer=self.a_observer, **self.a_qscheme)
+        torch_qconfig = QConfig(weight=w_qconfig, activation=a_qconfig)
+        return torch_qconfig
 
     @abstract
     def preprare(self, model):
