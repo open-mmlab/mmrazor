@@ -1,4 +1,5 @@
 from torch.ao.quantization.observer import UniformQuantizationObserverBase
+from mmrazor.model.utils import sync_tensor, pot_quantization
 
 @MODELS.register_module()
 class BaseObserver(UniformQuantizationObserverBase):
@@ -29,10 +30,10 @@ class BaseObserver(UniformQuantizationObserverBase):
     def calculate_qparams(self) -> Tuple[torch.Tensor, torch.Tensor]:
         r"""Calculates the quantization parameters."""
         scale, zero_point = self._calculate_qparams(self.min_val, self.max_val)
-        if self.is_pot_scale:
-            scale = float_to_pot(scale)
         scale.data = sync_tensor(scale).data
         zero_point.data = sync_tensor(zero_point).data
+        if self.is_pot_scale:
+            scale = pot_quantization(scale)
         return scale, zero_point
 
 
