@@ -36,12 +36,12 @@ model = dict(
                 type='KLDivergence', tau=6, loss_weight=10, reduction='mean')),
         connectors=dict(
             loss_s4_sfeat=dict(
-                type='ConvBNReLUConnector',
+                type='ConvModuleConncetor',
                 in_channel=512,
                 out_channel=2048,
                 norm_cfg=dict(type='BN')),
             loss_s3_sfeat=dict(
-                type='ConvBNReLUConnector',
+                type='ConvModuleConncetor',
                 in_channel=256,
                 out_channel=1024,
                 norm_cfg=dict(type='BN'))),
