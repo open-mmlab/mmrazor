@@ -42,7 +42,6 @@ class DKDLoss(nn.Module):
             gt_labels = torch.stack([i.gt_label.score for i in data_samples])
         else:
             gt_labels = torch.hstack([i.gt_label.label for i in data_samples])
-
         gt_mask = self._get_gt_mask(student, gt_labels)
         tckd_loss = self.get_tckd_loss(student, teacher, gt_labels, gt_mask)
         nckd_loss = self.get_nckd_loss(student, teacher, gt_mask)
@@ -78,7 +77,6 @@ class DKDLoss(nn.Module):
         return torch.cat([t1, t2], dim=1)
 
     def _get_gt_mask(self, logits, target):
-
         target = target.reshape(-1)
         return torch.zeros_like(logits).scatter_(1, target.unsqueeze(1),
                                                  1).bool()
