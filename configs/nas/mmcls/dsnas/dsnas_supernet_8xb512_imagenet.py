@@ -32,10 +32,12 @@ model = dict(
 model_wrapper_cfg = dict(
     type='mmrazor.DsnasDDP',
     broadcast_buffers=False,
-    find_unused_parameters=False)
+    find_unused_parameters=True)
 
 custom_hooks = [
-    dict(type='mmrazor.DumpSubnetHook'),
+    dict(type='mmrazor.DumpSubnetHook',
+         interval=5,
+         max_keep_subnets=2),
 ]
 
 # TRAINING
@@ -44,10 +46,9 @@ optim_wrapper = dict(
     constructor='mmrazor.SeparateOptimWrapperConstructor',
     architecture=dict(
         # type='mmrazor.DsnasOptimWrapper',
-        optimizer=dict(type='SGD', lr=0.025, momentum=0.9, weight_decay=3e-4),
-        clip_grad=dict(max_norm=5, norm_type=2)),
+        optimizer=dict(type='SGD', lr=0.5, momentum=0.9, weight_decay=4e-5)),
     mutator=dict(
         type='mmrazor.DsnasOptimWrapper',
-        optimizer=dict(type='Adam', lr=3e-4, weight_decay=1e-3)))
+        optimizer=dict(type='Adam', lr=0.001, weight_decay=0.0)))
 
 randomness = dict(seed=22, diff_rank_seed=True)

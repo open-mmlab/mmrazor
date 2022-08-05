@@ -10,17 +10,17 @@ preprocess_cfg = dict(
 
 train_pipeline = [
     dict(type='mmcls.LoadImageFromFile'),
-    dict(type='mmcls.RandomResizedCrop', scale=224),
-    dict(
-        type='mmcls.ColorJitter', brightness=0.4, contrast=0.4,
-        saturation=0.4),
+    dict(type='mmcls.RandomResizedCrop', scale=224, backend='pillow'),
+    # dict(
+    #     type='mmcls.ColorJitter', brightness=0.4, contrast=0.4,
+    #     saturation=0.4),
     dict(type='mmcls.RandomFlip', prob=0.5, direction='horizontal'),
     dict(type='mmcls.PackClsInputs'),
 ]
 
 test_pipeline = [
     dict(type='mmcls.LoadImageFromFile'),
-    dict(type='mmcls.ResizeEdge', scale=256, edge='short'),
+    dict(type='mmcls.ResizeEdge', scale=256, edge='short', backend='pillow'),
     dict(type='mmcls.CenterCrop', crop_size=224),
     dict(type='mmcls.PackClsInputs'),
 ]
@@ -73,27 +73,12 @@ param_scheduler = [
     dict(
         type='mmcls.CosineAnnealingLR',
         T_max=50,
-        eta_min=1e-3,
-        begin=0,
-        end=50),
+        eta_min=0.0,
+        by_epoch=True,
+    ),
 ]
 
 # train, val, test setting
-train_cfg = dict(
-    type='mmrazor.DartsEpochBasedTrainLoop',
-    mutator_dataloader=dict(
-        batch_size=256,
-        num_workers=4,
-        dataset=dict(
-            type=dataset_type,
-            data_root='data/imagenet',
-            ann_file='meta/train.txt',
-            data_prefix='train',
-            pipeline=train_pipeline),
-        sampler=dict(type='mmcls.DefaultSampler', shuffle=True),
-        persistent_workers=True,
-    ),
-    max_epochs=240,
-)
+train_cfg = dict(by_epoch=True, max_epochs=240)
 val_cfg = dict()
 test_cfg = dict()

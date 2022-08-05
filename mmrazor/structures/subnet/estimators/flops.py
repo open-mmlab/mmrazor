@@ -5,11 +5,12 @@ from functools import wraps
 from typing import IO, Callable, Dict, Iterable, Optional, Tuple, Type
 
 from mmcv.cnn.utils import flops_counter as mmcv_flops_counter
-from mmcv.cnn.utils import get_model_complexity_info
+# from mmcv.cnn.utils import get_model_complexity_info
 from torch.nn import Module
 
 from mmrazor.utils import ValidFixMutable
 from ..fix_subnet import load_fix_subnet
+from .flops_counter import get_model_complexity_info
 
 
 class FlopsEstimator:
@@ -96,6 +97,8 @@ class FlopsEstimator:
             input_shape: Iterable[int] = (3, 224, 224),
             input_constructor: Optional[Callable] = None,
             print_per_layer_stat: bool = True,
+            add_attr_for_each: bool = False,
+            return_resources_model: bool = False,
             as_strings: bool = True,
             flush: bool = False,
             ost: IO = sys.stdout) -> Tuple:
@@ -138,6 +141,8 @@ class FlopsEstimator:
             input_shape=input_shape,
             input_constructor=input_constructor,
             print_per_layer_stat=print_per_layer_stat,
+            add_attr_for_each=add_attr_for_each,
+            return_resources_model=return_resources_model,
             as_strings=as_strings,
             flush=flush,
             ost=ost)

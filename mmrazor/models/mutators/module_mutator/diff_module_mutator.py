@@ -129,16 +129,27 @@ class DiffModuleMutator(ModuleMutator):
         """
         return DiffMutableModule
 
-    def compute_loss(self):
+    def compute_loss(
+            self,
+            flops_model,
+            update_flops_loss: bool = False) -> Dict[str, torch.Tensor]:
         """Compute mutator loss."""
-        mutator_loss = 0.0
+        arch_loss = 0.0
+        flops_loss = 0.0
         self.arch_weights = dict()
         for k, v in self.arch_params.items():
             probs = F.softmax(v, -1)
             self.arch_weights[k] = self.sample_weights(v, probs)
             self.arch_weights[k].requires_grad_()
-            mutator_loss += torch.log(
+            arch_loss += torch.log(
                 (self.arch_weights[k] * probs).sum(-1)).sum()
+            index = (self.arch_weights[k] == 1).nonzero().item()
+            # TODO add func(flops_model) to get mutator_flops: Dict
+            # flops_loss += probs[index] * mutator_flops[k][index]
+            flops_loss += probs[index] * 8.20
+        mutator_loss = dict(arch_loss=arch_loss)
+        if update_flops_loss:
+            mutator_loss['flops_loss'] = flops_loss
         return mutator_loss
 
     def handle_grads(self):
