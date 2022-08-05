@@ -22,23 +22,17 @@ class TestConnector(TestCase):
         assert output.size() == self.t_feat.size()
 
         convmodule_connector_cfg['order'] = ('conv', 'norm')
-        with self.assertRaisesRegex(
-                AssertionError, '"order" must be a tuple and with length 3.'):
+        with self.assertRaises(AssertionError):
             _ = ConvModuleConncetor(**convmodule_connector_cfg)
 
         convmodule_connector_cfg['act_cfg'] = 'ReLU'
-        with self.assertRaisesRegex(
-                AssertionError, 'act_cfg must be None or a dict, but got str'):
+        with self.assertRaises(AssertionError):
             _ = ConvModuleConncetor(**convmodule_connector_cfg)
 
         convmodule_connector_cfg['norm_cfg'] = 'BN'
-        with self.assertRaisesRegex(
-                AssertionError,
-                'norm_cfg must be None or a dict, but got str'):
+        with self.assertRaises(AssertionError):
             _ = ConvModuleConncetor(**convmodule_connector_cfg)
 
         convmodule_connector_cfg['conv_cfg'] = 'conv2d'
-        with self.assertRaisesRegex(
-                AssertionError,
-                'conv_cfg must be None or a dict, but got str'):
+        with self.assertRaises(AssertionError):
             _ = ConvModuleConncetor(**convmodule_connector_cfg)
