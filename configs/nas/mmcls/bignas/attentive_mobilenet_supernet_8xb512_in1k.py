@@ -21,6 +21,7 @@ supernet = dict(
         type='AttentiveMobileNet',
         first_out_channels_range=[16, 24, 8],
         last_out_channels_range=[1792, 1984, 1984 - 1792],
+        dropout_stages=6,
         act_cfg=dict(type='Swish')),
     neck=dict(type='GlobalAveragePooling'),
     head=dict(
@@ -46,6 +47,7 @@ num_samples = 2
 model = dict(
     type='mmrazor.BigNAS',
     num_samples=num_samples,
+    drop_prob=0.2,
     architecture=supernet,
     data_preprocessor=data_preprocessor,
     distiller=dict(
