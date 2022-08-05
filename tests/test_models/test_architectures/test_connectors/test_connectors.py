@@ -13,7 +13,7 @@ class TestConnector(TestCase):
         cls.s_feat = torch.randn(1, 1, 5, 5)
         cls.t_feat = torch.randn(1, 3, 5, 5)
 
-    def test_conv_connector(self):
+    def test_convmodule_connector(self):
         convmodule_connector_cfg = dict(
             in_channel=1, out_channel=3, norm_cfg=dict(type='BN'))
         convmodule_connector = ConvModuleConncetor(**convmodule_connector_cfg)
