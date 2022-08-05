@@ -13,6 +13,7 @@ from mmrazor.models.mutators.base_mutator import BaseMutator
 from mmrazor.models.utils import (add_prefix,
                                   reinitialize_optim_wrapper_count_status)
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
+from mmrazor.structures.subnet import load_fix_subnet
 from ..base import BaseAlgorithm
 
 VALID_MUTATOR_TYPE = Union[BaseMutator, Dict]
@@ -30,7 +31,8 @@ class BigNAS(BaseAlgorithm):
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  init_cfg: Optional[Dict] = None,
                  num_samples: int = 2,
-                 drop_prob: float = 0.2) -> None:
+                 drop_prob: float = 0.2,
+                 subnet_dict: Optional[str] = None) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
 
         built_mutators = dict()
@@ -49,6 +51,9 @@ class BigNAS(BaseAlgorithm):
         self.drop_prob = drop_prob
 
         self._optim_wrapper_count_status_reinitialized = False
+
+        if subnet_dict is not None:
+            load_fix_subnet(self, subnet_dict)
 
     def _build_mutator(self, mutator: VALID_MUTATOR_TYPE) -> BaseMutator:
         """build mutator."""
