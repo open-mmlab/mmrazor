@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 
 from mmrazor.models import *  # noqa:F403,F401
+from mmrazor.models.mutators import DiffModuleMutator
 from mmrazor.registry import MODELS
 
 MODELS.register_module(name='torchConv2d', module=nn.Conv2d, force=True)
@@ -40,7 +41,9 @@ class TestDiffOP(TestCase):
         op = MODELS.build(op_cfg)
         input = torch.randn(4, 32, 64, 64)
 
-        arch_param = op.build_arch_param()
+        diffmutator = DiffModuleMutator()
+        diffmutator.prepare_from_supernet(op)
+        arch_param = diffmutator.build_arch_param(op.num_choices)
         output = op.forward_arch_param(input, arch_param=arch_param)
         assert output is not None
 
@@ -48,7 +51,6 @@ class TestDiffOP(TestCase):
         assert output is not None
 
         # test when some element of arch_param is 0
-        arch_param = op.build_arch_param()
         arch_param = nn.Parameter(torch.ones(op.num_choices))
         output = op.forward_arch_param(input, arch_param=arch_param)
         assert output is not None
@@ -107,7 +109,9 @@ class TestDiffOP(TestCase):
         input = torch.randn(4, 32, 64, 64)
 
         # test set_forward_args
-        arch_param = op.build_arch_param()
+        diffmutator = DiffModuleMutator()
+        diffmutator.prepare_from_supernet(op)
+        arch_param = diffmutator.build_arch_param(op.num_choices)
         op.set_forward_args(arch_param=arch_param)
         output = op.forward(input)
         assert output is not None

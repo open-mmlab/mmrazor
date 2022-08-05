@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 
 from mmrazor.models import *  # noqa:F403,F401
+from mmrazor.models.mutators import DiffModuleMutator
 from mmrazor.registry import MODELS
 
 MODELS.register_module(name='torchConv2d', module=nn.Conv2d, force=True)
@@ -32,8 +33,10 @@ class TestGumbelChoiceRoute(TestCase):
 
         # test with_arch_param = True
         GumbelChoiceRoute = MODELS.build(gumbel_choice_route_cfg)
+        mutator = DiffModuleMutator()
+        mutator.prepare_from_supernet(GumbelChoiceRoute)
 
-        arch_param = GumbelChoiceRoute.build_arch_param()
+        arch_param = mutator.build_arch_param(GumbelChoiceRoute.num_choices)
         assert len(arch_param) == 5
         GumbelChoiceRoute.set_temperature(1.0)
 
@@ -48,8 +51,10 @@ class TestGumbelChoiceRoute(TestCase):
         new_gumbel_choice_route_cfg['with_arch_param'] = False
 
         new_gumbel_choice_route = MODELS.build(new_gumbel_choice_route_cfg)
+        mutator.prepare_from_supernet(new_gumbel_choice_route)
 
-        arch_param = new_gumbel_choice_route.build_arch_param()
+        arch_param = mutator.build_arch_param(
+            new_gumbel_choice_route.num_choices)
         output = new_gumbel_choice_route.forward_arch_param(
             x=x, arch_param=arch_param)
         assert output is not None
