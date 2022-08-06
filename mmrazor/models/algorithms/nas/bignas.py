@@ -2,6 +2,7 @@
 import os
 from typing import Dict, List, Optional, Union
 
+import mmengine.dist as dist
 import torch
 from mmengine import BaseDataElement
 from mmengine.model import BaseModel, MMDistributedDataParallel
@@ -83,6 +84,8 @@ class BigNAS(BaseAlgorithm):
         for name, mutator in self.mutators.items():
             subnet_dict[name] = mutator.sample_choices()
 
+        dist.broadcast_object_list([subnet_dict])
+        print(f'rank: {dist.get_rank()}, subnet_dict: {subnet_dict}')
         return subnet_dict
 
     def set_subnet(self, subnet_dict: Dict) -> None:
