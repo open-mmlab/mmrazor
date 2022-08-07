@@ -157,7 +157,6 @@ class AttentiveMobileNet(BaseBackbone):
 
         self.layers = []
         for i, layer_cfg in enumerate(self.arch_settings):
-            print(f'stage {i + 1}: {layer_cfg}')
             expand_ratio_range, channel_range, num_blocks_range, \
                 kernel_size_range, stride, use_se = layer_cfg
             out_channels_list = [
@@ -229,9 +228,9 @@ class AttentiveMobileNet(BaseBackbone):
         self.layers.append('last_conv')
         self.blocks = self.layers[:-1]
 
-        logger.debug(f'layers:\n {self.layers}')
-        logger.debug(f'blocks:\n {self.blocks}')
-        logger.debug(f'source mutables:\n {self.source_mutables}')
+        logger.info(f'layers:\n {self.layers}')
+        logger.info(f'blocks:\n {self.blocks}')
+        logger.info(f'source mutables:\n {self.source_mutables}')
 
     def make_layer(self, out_channels_list, num_blocks_list, kernel_size_list,
                    stride, expand_ratio_list, use_se, stage_idx):

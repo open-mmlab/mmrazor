@@ -83,9 +83,8 @@ class BigNAS(BaseAlgorithm):
 
         for name, mutator in self.mutators.items():
             subnet_dict[name] = mutator.sample_choices()
-
         dist.broadcast_object_list([subnet_dict])
-        print(f'rank: {dist.get_rank()}, subnet_dict: {subnet_dict}')
+
         return subnet_dict
 
     def set_subnet(self, subnet_dict: Dict) -> None:
@@ -140,7 +139,9 @@ class BigNAS(BaseAlgorithm):
 
         total_losses = dict()
         self.set_max_subnet()
-        self.architecture.set_dropout(self.drop_prob)
+        # TODO
+        # simplify
+        self.architecture.backbone.set_dropout(self.drop_prob)
         with optim_wrapper.optim_context(
                 self), self.distiller.teacher_recorders:  # type: ignore
             max_subnet_losses = self(batch_inputs, data_samples, mode='loss')
@@ -149,7 +150,8 @@ class BigNAS(BaseAlgorithm):
         total_losses.update(add_prefix(max_subnet_losses, 'max_subnet'))
 
         self.set_min_subnet()
-        self.architecture.set_dropout(0.)
+        # TODO
+        self.architecture.backbone.set_dropout(0.)
         min_subnet_losses = distill_step(batch_inputs, data_samples)
         total_losses.update(add_prefix(min_subnet_losses, 'min_subnet'))
 
@@ -208,7 +210,8 @@ class BigNASDDP(MMDistributedDataParallel):
 
         total_losses = dict()
         self.module.set_max_subnet()
-        self.module.architecture.set_dropout(self.module.drop_prob)
+        # TODO
+        self.module.architecture.backbone.set_dropout(self.module.drop_prob)
         with optim_wrapper.optim_context(
                 self), self.module.distiller.teacher_recorders:  # type: ignore
             max_subnet_losses = self(batch_inputs, data_samples, mode='loss')
@@ -218,7 +221,8 @@ class BigNASDDP(MMDistributedDataParallel):
         total_losses.update(add_prefix(max_subnet_losses, 'max_subnet'))
 
         self.module.set_min_subnet()
-        self.module.architecture.set_dropout(0.)
+        # TODO
+        self.module.architecture.backbone.set_dropout(0.)
         min_subnet_losses = distill_step(batch_inputs, data_samples)
         total_losses.update(add_prefix(min_subnet_losses, 'min_subnet'))
 

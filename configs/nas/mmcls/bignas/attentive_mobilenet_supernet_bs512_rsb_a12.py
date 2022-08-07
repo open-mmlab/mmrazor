@@ -1,4 +1,4 @@
-default_scope = 'mmrazor'
+default_scope = 'mmcls'
 
 # !dataset config
 # ==========================================================================
@@ -15,7 +15,7 @@ if use_ceph:
 else:
     file_client_args = dict(backend='disk')
 
-dataset_type = 'mmcls.ImageNet'
+dataset_type = 'ImageNet'
 preprocess_cfg = dict(
     # RGB format normalization parameters
     mean=[123.675, 116.28, 103.53],
@@ -68,8 +68,7 @@ test_pipeline = [
 ]
 
 train_dataloader = dict(
-    _scope_='mmcls',
-    batch_size=256,
+    batch_size=64,
     num_workers=16,
     dataset=dict(
         type=dataset_type,
@@ -82,8 +81,7 @@ train_dataloader = dict(
 )
 
 val_dataloader = dict(
-    _scope_='mmcls',
-    batch_size=256,
+    batch_size=64,
     num_workers=16,
     dataset=dict(
         type=dataset_type,
@@ -94,7 +92,7 @@ val_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=False),
     persistent_workers=True,
 )
-val_evaluator = dict(_scope_='mmcls', type='Accuracy', topk=(1, 5))
+val_evaluator = dict(type='Accuracy', topk=(1, 5))
 
 # If you want standard test, please manually configure the test dataset
 test_dataloader = val_dataloader
@@ -103,6 +101,7 @@ test_evaluator = val_evaluator
 # !supernet config
 # ==========================================================================
 supernet = dict(
+    _scope_='mmrazor',
     type='SearchableImageClassifier',
     backbone=dict(
         type='AttentiveMobileNet',
@@ -110,25 +109,22 @@ supernet = dict(
         last_out_channels_range=[1792, 1984, 1984 - 1792],
         dropout_stages=6,
         act_cfg=dict(type='Swish')),
-    neck=dict(_scope_='mmcls', type='GlobalAveragePooling'),
+    neck=dict(type='mmcls.GlobalAveragePooling'),
     head=dict(
         type='DynamicLinearClsHead',
         num_classes=1000,
         in_channels=1984,
         loss=dict(
-            _scope_='mmcls',
-            type='LabelSmoothLoss',
+            type='mmcls.LabelSmoothLoss',
             num_classes=1000,
             label_smooth_val=0.1,
             mode='original',
             loss_weight=1.0),
         topk=(1, 5)),
-    train_cfg=dict(
-        _scope_='mmcls',
-        augments=[
-            dict(type='Mixup', alpha=0.2, num_classes=1000),
-            dict(type='CutMix', alpha=1.0, num_classes=1000)
-        ]),
+    train_cfg=dict(augments=[
+        dict(type='mmcls.Mixup', alpha=0.2, num_classes=1000),
+        dict(type='mmcls.CutMix', alpha=1.0, num_classes=1000)
+    ]),
     input_resizer_cfg=dict(
         input_resizer=dict(type='DynamicInputResizer'),
         mutable_shape=dict(
@@ -162,18 +158,21 @@ model = dict(
         channel_mutator=dict(type='BigNASChannelMutator'),
         value_mutator=dict(type='DynamicValueMutator')))
 
+# bug, must have `mmrazor` prefix
 model_wrapper_cfg = dict(
-    type='BigNASDDP', broadcast_buffers=False, find_unused_parameters=True)
+    type='mmrazor.BigNASDDP',
+    broadcast_buffers=False,
+    find_unused_parameters=True)
 
 # !schedule config
 # ==========================================================================
 optim_wrapper = dict(
-    optimizer=dict(weight_decay=0.01),
+    optimizer=dict(type='Lamb', lr=0.005, weight_decay=0.01),
     paramwise_cfg=dict(bias_decay_mult=0., norm_decay_mult=0.),
     accumulative_counts=num_samples + 2)
 # NOTE: `auto_scale_lr` is for automatically scaling LR,
 # based on the actual training batch size.
-auto_scale_lr = dict(base_batch_size=2048)
+auto_scale_lr = dict(base_batch_size=64 * 8)
 
 # learning policy
 param_scheduler = [
@@ -198,8 +197,8 @@ param_scheduler = [
 
 # train, val, test setting
 train_cfg = dict(by_epoch=True, max_epochs=600, val_interval=1)
-val_cfg = dict(type='AutoSlimValLoop', calibrated_sample_nums=4096)
-test_cfg = dict(type='AutoSlimTestLoop', calibrated_sample_nums=4096)
+val_cfg = dict(type='mmrazor.AutoSlimValLoop', calibrated_sample_nums=4096)
+test_cfg = dict(type='mmrazor.AutoSlimTestLoop', calibrated_sample_nums=4096)
 
 # !runtime config
 # ==========================================================================
@@ -237,8 +236,8 @@ env_cfg = dict(
 )
 
 # set visualizer
-vis_backends = [dict(type='mmcls.LocalVisBackend')]
-visualizer = dict(type='mmcls.ClsVisualizer', vis_backends=vis_backends)
+vis_backends = [dict(type='LocalVisBackend')]
+visualizer = dict(type='ClsVisualizer', vis_backends=vis_backends)
 
 # load from which checkpoint
 load_from = None
