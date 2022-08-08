@@ -1,10 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
-from .adaround import AdaRoundFakeQuantize
-from .base import FakeQuantize
-from .lsq import LearnableFakeQuantize
-from .qdrop import QDropFakeQuantize
+from .base import BaseFakeQuantize
 
-__all__ = [
-    'FakeQuantize', 'AdaRoundFakeQuantize', 'QDropFakeQuantize',
-    'LearnableFakeQuantize'
-]
+__all__ = ['BaseFakeQuantize']

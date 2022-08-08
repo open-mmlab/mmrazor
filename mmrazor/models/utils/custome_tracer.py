@@ -3,7 +3,7 @@ import functools
 import torch
 from torch._C import ScriptObject  # type: ignore[attr-defined]
 from torch.fx import GraphModule, Tracer
-from torch.fx._symbolic_trace import (Graph, _autowrap_check, _CPatchManager,
+from torch.fx._symbolic_trace import (Graph, _autowrap_check,
                                       _patch_wrapped_functions, _Patcher)
 from torch.fx.proxy import Proxy
 from types import FunctionType, MethodType
@@ -51,9 +51,8 @@ class TracedMethodRegistry:
 
 
 def custom_symbolic_tracer(root,
-                           concrete_args=None,
-                           enable_cpatching: bool = False):
-    tracer = CustomTracer(enable_cpatching=enable_cpatching)
+                           concrete_args=None):
+    tracer = CustomTracer()
     graph = tracer.trace(root, concrete_args)
     name = root.__class__.__name__ if isinstance(
         root, torch.nn.Module) else root.__name__
@@ -167,35 +166,34 @@ class CustomTracer(Tracer):
                 self._autowrap_function_ids)
             return self.call_module(mod, forward, args, kwargs)
 
-        with _CPatchManager(self):
-            with _Patcher() as patcher:
-                # allow duplicate patches to support the case of nested calls
-                patcher.patch_method(
-                    torch.nn.Module,
-                    "__getattr__",
-                    module_getattr_wrapper,
-                    deduplicate=False)
-                patcher.patch_method(
-                    torch.nn.Module,
-                    "__call__",
-                    module_call_wrapper,
-                    deduplicate=False)
+        with _Patcher() as patcher:
+            # allow duplicate patches to support the case of nested calls
+            patcher.patch_method(
+                torch.nn.Module,
+                "__getattr__",
+                module_getattr_wrapper,
+                deduplicate=False)
+            patcher.patch_method(
+                torch.nn.Module,
+                "__call__",
+                module_call_wrapper,
+                deduplicate=False)
 
-                for name, value in TracedMethodRegistry.method_dict.items():
-                    wrapped = value['wrapped']
-                    patcher.patch_method(
-                        value['mod'], name, wrapped, deduplicate=False)
+            for name, value in TracedMethodRegistry.method_dict.items():
+                wrapped = value['wrapped']
+                patcher.patch_method(
+                    value['mod'], name, wrapped, deduplicate=False)
 
-                _patch_wrapped_functions(patcher)
-                _autowrap_check(patcher, fn_globals,
+            _patch_wrapped_functions(patcher)
+            _autowrap_check(patcher, fn_globals,
+                            self._autowrap_function_ids)
+            for module in self._autowrap_search:
+                _autowrap_check(patcher, module.__dict__,
                                 self._autowrap_function_ids)
-                for module in self._autowrap_search:
-                    _autowrap_check(patcher, module.__dict__,
-                                    self._autowrap_function_ids)
-                self.create_node(
-                    'output',
-                    'output', (self.create_arg(fn(*args)), ), {},
-                    type_expr=fn.__annotations__.get('return', None))
+            self.create_node(
+                'output',
+                'output', (self.create_arg(fn(*args)), ), {},
+                type_expr=fn.__annotations__.get('return', None))
 
         self.submodule_paths = None
 

@@ -1,5 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
-from .minmax import EMAMinMaxObserver, MinMaxObserver
-from .mse import MSEObserver
+from .base import BaseObserver
 
-__all__ = ['MinMaxObserver', 'MSEObserver', 'EMAMinMaxObserver']
+__all__ = ['BaseObserver']

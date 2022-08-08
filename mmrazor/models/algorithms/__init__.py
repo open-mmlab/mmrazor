@@ -3,33 +3,28 @@ from .base import BaseAlgorithm
 from .distill import (DAFLDataFreeDistillation, DataFreeDistillation,
                       FpnTeacherDistill, OverhaulFeatureDistillation,
                       SelfDistill, SingleTeacherDistill)
-from .nas import DSNAS, DSNASDDP, SPOS, AutoSlim, AutoSlimDDP, Darts, DartsDDP
+from .nas import SPOS, AutoSlim, AutoSlimDDP, Darts, DartsDDP, Dsnas, DsnasDDP
 from .pruning import SlimmableNetwork, SlimmableNetworkDDP
 from .pruning.ite_prune_algorithm import ItePruneAlgorithm
-from .quantization import GeneralQuant
+from .quantization import PTQ
 
 __all__ = [
-    # base
-    'BaseAlgorithm',
-    # distill
-    'DAFLDataFreeDistillation',
-    'DataFreeDistillation',
-    'FpnTeacherDistill',
-    'OverhaulFeatureDistillation',
-    'SelfDistill',
     'SingleTeacherDistill',
-    # nas
-    'DSNAS',
-    'DSNASDDP',
+    'BaseAlgorithm',
+    'FpnTeacherDistill',
     'SPOS',
+    'SlimmableNetwork',
+    'SlimmableNetworkDDP',
     'AutoSlim',
     'AutoSlimDDP',
     'Darts',
     'DartsDDP',
-    # pruning
-    'SlimmableNetwork',
-    'SlimmableNetworkDDP',
+    'SelfDistill',
+    'DataFreeDistillation',
+    'DAFLDataFreeDistillation',
+    'OverhaulFeatureDistillation',
     'ItePruneAlgorithm',
-    # quantization
-    'GeneralQuant'
+    'Dsnas',
+    'DsnasDDP',
+    'PTQ'
 ]

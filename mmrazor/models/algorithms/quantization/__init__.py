@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
-from .base import GeneralQuant
+from .qat import PTQ
 
-__all__ = ['GeneralQuant']
+__all__ = ['PTQ']
