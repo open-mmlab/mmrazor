@@ -91,6 +91,15 @@ class MutableValue(BaseMutable[Any, Dict], DerivedMethodMixin):
 
         raise TypeError(f'Unsupported type {type(other)} for mul!')
 
+    def __floordiv__(self, other) -> DerivedMutable:
+        if isinstance(other, int):
+            return self.derive_divide_mutable(other)
+        if isinstance(other, tuple):
+            assert len(other) == 2
+            return self.derive_divide_mutable(*other)
+
+        raise TypeError(f'Unsupported type {type(other)} for div!')
+
 
 # TODO
 # 1. use comparable for type hint

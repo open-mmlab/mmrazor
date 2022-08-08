@@ -160,7 +160,7 @@ class OneShotMutableChannel(MutableChannel[int, Dict]):
         repr_str += f'num_channels={self.num_channels}, '
         repr_str += f'current_choice={self.current_choice}, '
         repr_str += f'choices={self.choices}, '
-        repr_str += f'current_mask_shape={self.current_mask.shape}, '
+        repr_str += f'activated_channels={self.current_mask.sum().item()}, '
         repr_str += f'concat_mutable_name={concat_mutable_name})'
         return repr_str
 
@@ -203,10 +203,7 @@ class OneShotMutableChannel(MutableChannel[int, Dict]):
 
         raise TypeError(f'Unsupported type {type(other)} for mul!')
 
-    def __rdiv__(self, other) -> DerivedMutable:
-        return self / other
-
-    def __div__(self, other) -> DerivedMutable:
+    def __floordiv__(self, other) -> DerivedMutable:
         if isinstance(other, int):
             return self.derive_divide_mutable(other)
         if isinstance(other, tuple):

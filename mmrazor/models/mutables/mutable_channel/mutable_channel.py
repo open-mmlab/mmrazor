@@ -33,6 +33,7 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE],
         # outputs, we add the mutable out of these modules to the
         # `concat_parent_mutables` of this module.
         self.concat_parent_mutables: List[MutableChannel] = list()
+        self.name = 'unbind'
 
     @property
     def same_mutables(self):
@@ -104,6 +105,8 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE],
                 'The mode of current MUTABLE is `fixed`. '
                 'Please do not call `fix_chosen` function again.')
 
+        # TODO
+        # should fixed op still have candidate_choices?
         self._chosen = chosen
         self.is_fixed = True
 
