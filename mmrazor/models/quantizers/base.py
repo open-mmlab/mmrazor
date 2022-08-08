@@ -6,6 +6,7 @@ from mmrazor.models.utils import CustomTracer
 from torch.ao.quantization.fx import prepare
 from torch.ao.quantization import _fuse_fx, _convert_fx, QConfig
 from mmrazor.models import BaseObserver, BaseFakeQuant
+from mmrazor.registry import MODELS
 
 @MODELS.register_module()
 class BaseQuantizer(BaseModel)
