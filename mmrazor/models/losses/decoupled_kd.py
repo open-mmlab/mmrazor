@@ -14,20 +14,20 @@ class DKDLoss(nn.Module):
     reformulate the classical KD loss into two parts:
         1. target class knowledge distillation (TCKD)
         2. non-target class knowledge distillation (NCKD).
-        Args:
-        tau (float): Temperature coefficient. Defaults to 4.0.
-        alpha (float): Weight of TCKD loss. Defaults to 1.0.
-        beta (float): Weight of NCKD loss. Defaults to 8.0.
-        reduction (str): Specifies the reduction to apply to the loss:
-            ``'none'`` | ``'batchmean'`` | ``'sum'`` | ``'mean'``.
-            ``'none'``: no reduction will be applied,
-            ``'batchmean'``: the sum of the output will be divided by
-                the batchsize,
-            ``'sum'``: the output will be summed,
-            ``'mean'``: the output will be divided by the number of
-                elements in the output.
-            Default: ``'batchmean'``
-        loss_weight (float): Weight of loss. Defaults to 1.0.
+    Args:
+    tau (float): Temperature coefficient. Defaults to 4.0.
+    alpha (float): Weight of TCKD loss. Defaults to 1.0.
+    beta (float): Weight of NCKD loss. Defaults to 8.0.
+    reduction (str): Specifies the reduction to apply to the loss:
+        ``'none'`` | ``'batchmean'`` | ``'sum'`` | ``'mean'``.
+        ``'none'``: no reduction will be applied,
+        ``'batchmean'``: the sum of the output will be divided by
+            the batchsize,
+        ``'sum'``: the output will be summed,
+        ``'mean'``: the output will be divided by the number of
+            elements in the output.
+        Default: ``'batchmean'``
+    loss_weight (float): Weight of loss. Defaults to 1.0.
     """
 
     def __init__(
