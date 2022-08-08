@@ -6,6 +6,7 @@ from .distill import (DAFLDataFreeDistillation, DataFreeDistillation,
 from .nas import SPOS, AutoSlim, AutoSlimDDP, Darts, DartsDDP, Dsnas, DsnasDDP
 from .pruning import SlimmableNetwork, SlimmableNetworkDDP
 from .pruning.ite_prune_algorithm import ItePruneAlgorithm
+from .quantization import PTQ
 
 __all__ = [
     'SingleTeacherDistill',
@@ -25,4 +26,5 @@ __all__ = [
     'ItePruneAlgorithm',
     'Dsnas',
     'DsnasDDP',
+    'PTQ'
 ]

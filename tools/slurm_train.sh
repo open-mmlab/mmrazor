@@ -2,12 +2,12 @@
 
 set -x
 
-PARTITION=$1
-JOB_NAME=$2
-CONFIG=$3
-WORK_DIR=$4
-GPUS=${GPUS:-8}
-GPUS_PER_NODE=${GPUS_PER_NODE:-8}
+PARTITION="mm_model"
+JOB_NAME="qat_demo"
+CONFIG="configs/quantization/qat/demo.py"
+WORK_DIR="../experiments/qat_demo"
+GPUS=${GPUS:-2}
+GPUS_PER_NODE=${GPUS_PER_NODE:-2}
 CPUS_PER_TASK=${CPUS_PER_TASK:-5}
 SRUN_ARGS=${SRUN_ARGS:-""}
 PY_ARGS=${@:5}

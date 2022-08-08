@@ -6,8 +6,8 @@ _base_ = [
 ]
 
 train_cfg = dict(
-    type='QATEpochBasedLoop',
-    max_epochs=20,
+    type='mmrazor.QATEpochBasedLoop',
+    max_epochs=2,
     calibrate_dataloader=None
 )
 
@@ -29,10 +29,10 @@ model = dict(
         is_qat=True,
         qconfig=dict(
             qtype='affine',
-            w_observer=dict(type='MSEObserver'),
-            a_observer=dict(type='EMAMSEObserver'),
-            w_fakequantize=dict(type='AdaRoundFakeQuantize'),
-            a_fakequantize=dict(type='FixedFakeQuantize')，
+            w_observer=dict(type='BaseObserver'),
+            a_observer=dict(type='BaseObserver'),
+            w_fakequantize=dict(type='BaseFakeQuantize'),
+            a_fakequantize=dict(type='BaseFakeQuantize')，
             w_qscheme=dict(
                 bit=2,
                 is_symmetry=False,
