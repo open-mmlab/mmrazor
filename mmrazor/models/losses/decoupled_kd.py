@@ -15,7 +15,7 @@ class DKDLoss(nn.Module):
         1. target class knowledge distillation (TCKD)
         2. non-target class knowledge distillation (NCKD).
         Args:
-        tau (float): Temperature coefficient. Defaults to 1.0.
+        tau (float): Temperature coefficient. Defaults to 4.0.
         alpha (float): Weight of TCKD loss. Defaults to 1.0.
         beta (float): Weight of NCKD loss. Defaults to 8.0.
         reduction (str): Specifies the reduction to apply to the loss:
