@@ -18,23 +18,39 @@ model = dict(
         cfg_path='mmcls::resnet/resnet18_8xb32_in1k.py', pretrained=False),
     distiller=dict(
         student_recorders=dict(
-            fc=dict(type='ModuleOutputs', source='head.fc'),
+            bb_s1=dict(type='ModuleOutputs', source='backbone.layer1.1.relu'),
+            bb_s2=dict(type='ModuleOutputs', source='backbone.layer2.1.relu'),
+            bb_s3=dict(type='ModuleOutputs', source='backbone.layer3.1.relu'),
             data_samples=dict(type='ModuleInputs', source='')),
         distill_losses=dict(
-            loss_fet=dict(type='L2Loss', normalize=False, mult=0.03),
-            loss_label=dict(type='CrossEntropyLoss', loss_weight=0.7),
-            loss_softlabel=dict(type='KDSoftCELoss', tau=3, loss_weight=0.3)),
+            loss_fet_1=dict(type='L2Loss', normalize=False, mult=0.03),
+            loss_label_1=dict(type='CrossEntropyLoss', loss_weight=0.7),
+            loss_softl_1=dict(type='KDSoftCELoss', tau=3, loss_weight=0.3),
+            loss_fet_2=dict(type='L2Loss', normalize=False, mult=0.03),
+            loss_label_2=dict(type='CrossEntropyLoss', loss_weight=0.7),
+            loss_softl_2=dict(type='KDSoftCELoss', tau=3, loss_weight=0.3),
+            loss_fet_3=dict(type='L2Loss', normalize=False, mult=0.),
+            loss_label_3=dict(type='CrossEntropyLoss', loss_weight=0.7),
+            loss_softl_3=dict(type='KDSoftCELoss', tau=3, loss_weight=0.3)),
         connectors=dict(
-            loss_s4_sfeat=dict(
-                type='ConvModuleConncetor',
-                in_channel=512,
-                out_channel=2048,
-                norm_cfg=dict(type='BN')),
+            loss_s1_sfeat=dict(
+                type='BYOTConncetor',
+                in_channel=64,
+                out_channel=512,
+                expansion=1,
+                num_classes=100),
+            loss_s2_sfeat=dict(
+                type='BYOTConncetor',
+                in_channel=128,
+                out_channel=512,
+                expansion=1,
+                num_classes=100),
             loss_s3_sfeat=dict(
-                type='ConvModuleConncetor',
+                type='BYOTConncetor',
                 in_channel=256,
-                out_channel=1024,
-                norm_cfg=dict(type='BN'))),
+                out_channel=512,
+                expansion=1,
+                num_classes=100)),
         loss_forward_mappings=dict(
             loss_fet=dict(
                 s_feature=dict(recorder='fc', from_student=True),
