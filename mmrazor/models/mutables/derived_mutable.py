@@ -18,13 +18,13 @@ class MutableProtocol(Protocol):  # pragma: no cover
 
     @property
     def current_choice(self) -> Any:
-        ...
+        """Current choice."""
 
     def derive_expand_mutable(self, expand_ratio: int) -> Any:
-        ...
+        """Derive expand mutable."""
 
     def derive_divide_mutable(self, ratio: int, divisor: int) -> Any:
-        ...
+        """Derive divide mutable."""
 
 
 class MutableChannelProtocol(MutableProtocol):  # pragma: no cover
@@ -32,7 +32,7 @@ class MutableChannelProtocol(MutableProtocol):  # pragma: no cover
 
     @property
     def current_mask(self) -> Tensor:
-        ...
+        """Current mask."""
 
 
 def _expand_choice_fn(mutable: MutableProtocol, expand_ratio: int) -> Callable:
@@ -122,12 +122,15 @@ def _concat_mask_fn(mutables: Iterable[MutableChannelProtocol]) -> Callable:
 
 
 class DerivedMethodMixin:
+    """A mixin that provides some useful method to derive mutable."""
 
     def derive_same_mutable(self: MutableProtocol) -> 'DerivedMutable':
+        """Derive same mutable as the source."""
         return self.derive_expand_mutable(expand_ratio=1)
 
     def derive_expand_mutable(self: MutableProtocol,
                               expand_ratio: int) -> 'DerivedMutable':
+        """Derive expand mutable, usually used with `expand_ratio`."""
         choice_fn = _expand_choice_fn(self, expand_ratio=expand_ratio)
 
         mask_fn: Optional[Callable] = None
@@ -139,6 +142,7 @@ class DerivedMethodMixin:
     def derive_divide_mutable(self: MutableProtocol,
                               ratio: int,
                               divisor: int = 8) -> 'DerivedMutable':
+        """Derive divide mutable, usually used with `make_divisable`."""
         choice_fn = _divide_choice_fn(self, ratio=ratio, divisor=divisor)
 
         mask_fn: Optional[Callable] = None
@@ -150,6 +154,7 @@ class DerivedMethodMixin:
     @staticmethod
     def derive_concat_mutable(
             mutables: Iterable[MutableChannelProtocol]) -> 'DerivedMutable':
+        """Derive concat mutable, usually used with `torch.cat`."""
         choice_fn = _concat_choice_fn(mutables)
         mask_fn = _concat_mask_fn(mutables)
 
