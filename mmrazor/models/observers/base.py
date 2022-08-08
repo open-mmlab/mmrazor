@@ -1,8 +1,9 @@
-from torch.ao.quantization.observer import UniformQuantizationObserverBase
-from mmrazor.model.utils import sync_tensor, pot_quantization
+from torch.ao.quantization.observer import _ObserverBase
+from mmrazor.models.utils import sync_tensor, pot_quantization
+from mmrazor.registry import MODELS
 
 @MODELS.register_module()
-class BaseObserver(UniformQuantizationObserverBase):
+class BaseObserver(_ObserverBase):
 
     min_val: torch.Tensor
     max_val: torch.Tensor
