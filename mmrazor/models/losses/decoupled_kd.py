@@ -37,7 +37,7 @@ class DKDLoss(nn.Module):
         beta: float = 8.0,
         reduction: str = 'batchmean',
         loss_weight: float = 1.0,
-    ):
+    ) -> None:
         super(DKDLoss, self).__init__()
         self.tau = tau
         accept_reduction = {'none', 'batchmean', 'sum', 'mean'}
@@ -49,7 +49,20 @@ class DKDLoss(nn.Module):
         self.beta = beta
         self.loss_weight = loss_weight
 
-    def forward(self, student, teacher, data_samples):
+    def forward(
+        self,
+        student: torch.Tensor,
+        teacher: torch.Tensor,
+        data_samples: list,
+    ) -> torch.Tensor:
+        """DKDLoss forward function.
+
+        Args:
+            student (torch.Tensor): Student featuremap.
+            teacher (torch.Tensor): Teacher featuremap.
+            data_samples (list): List of model input sample data,
+            contains gt_label (dict of label and one-hot score)
+        """
         # Unpack data samples and pack targets
         if 'score' in data_samples[0].gt_label:
             # Batch augmentation may convert labels to one-hot format scores.
@@ -57,45 +70,71 @@ class DKDLoss(nn.Module):
         else:
             gt_labels = torch.hstack([i.gt_label.label for i in data_samples])
         gt_mask = self._get_gt_mask(student, gt_labels)
-        tckd_loss = self.get_tckd_loss(student, teacher, gt_labels, gt_mask)
-        nckd_loss = self.get_nckd_loss(student, teacher, gt_mask)
+        tckd_loss = self._get_tckd_loss(student, teacher, gt_labels, gt_mask)
+        nckd_loss = self._get_nckd_loss(student, teacher, gt_mask)
         loss = self.alpha * tckd_loss + self.beta * nckd_loss
         return self.loss_weight * loss
 
-    def get_nckd_loss(self, student, teacher, gt_mask):
-        # non-target class knowledge distillation
+    def _get_nckd_loss(
+        self,
+        student: torch.Tensor,
+        teacher: torch.Tensor,
+        gt_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        """Clac non-target class knowledge distillation."""
         s_nckd = F.log_softmax(student / self.tau - 1000.0 * gt_mask, dim=1)
         t_nckd = F.softmax(teacher / self.tau - 1000.0 * gt_mask, dim=1)
         return self.kl_loss(s_nckd, t_nckd)
 
-    def get_tckd_loss(self, student, teacher, gt_labels, gt_mask):
-        # target class knowledge distillation
+    def _get_tckd_loss(
+        self,
+        student: torch.Tensor,
+        teacher: torch.Tensor,
+        gt_labels: torch.Tensor,
+        gt_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        """Calc target class knowledge distillation."""
         other_mask = self._get_non_gt_mask(student, gt_labels)
         s_tckd = F.softmax(student / self.tau, dim=1)
         t_tckd = F.softmax(teacher / self.tau, dim=1)
         mask_student = torch.log(self._cat_mask(s_tckd, gt_mask, other_mask))
         mask_teacher = self._cat_mask(t_tckd, gt_mask, other_mask)
-        return self.kl_loss(mask_student, mask_teacher)
+        return self._kl_loss(mask_student, mask_teacher)
 
-    def kl_loss(self, student, teacher):
+    def _kl_loss(
+        self,
+        student: torch.Tensor,
+        teacher: torch.Tensor,
+    ) -> torch.Tensor:
         kl_loss = F.kl_div(
             student, teacher, size_average=False,
             reduction=self.reduction) * self.tau**2
-        if self.reduction != 'batchmean':
-            kl_loss /= student.shape[0]
         return kl_loss
 
-    def _cat_mask(self, t, mask1, mask2):
-        t1 = (t * mask1).sum(dim=1, keepdims=True)
-        t2 = (t * mask2).sum(1, keepdims=True)
+    def _cat_mask(
+        self,
+        target: torch.Tensor,
+        mask1: torch.Tensor,
+        mask2: torch.Tensor,
+    ) -> torch.Tensor:
+        t1 = (target * mask1).sum(dim=1, keepdims=True)
+        t2 = (target * mask2).sum(1, keepdims=True)
         return torch.cat([t1, t2], dim=1)
 
-    def _get_gt_mask(self, logits, target):
+    def _get_gt_mask(
+        self,
+        logits: torch.Tensor,
+        target: torch.Tensor,
+    ) -> torch.Tensor:
         target = target.reshape(-1)
         return torch.zeros_like(logits).scatter_(1, target.unsqueeze(1),
                                                  1).bool()
 
-    def _get_non_gt_mask(self, logits, target):
+    def _get_non_gt_mask(
+        self,
+        logits: torch.Tensor,
+        target: torch.Tensor,
+    ) -> torch.Tensor:
         target = target.reshape(-1)
         return torch.ones_like(logits).scatter_(1, target.unsqueeze(1),
                                                 0).bool()

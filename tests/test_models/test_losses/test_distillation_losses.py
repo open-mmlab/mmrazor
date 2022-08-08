@@ -13,6 +13,11 @@ class MockLabel(dict):
     """
 
     def __init__(self, num_classes):
+        """Mock gt_label dict.
+
+        Args:
+            num_classes (int): label class num.
+        """
         self.label = torch.rand(1) * num_classes
         self.label = torch.floor(self.label).type(torch.int64)
         self.score = F.one_hot(self.label, num_classes=num_classes).float()
@@ -24,6 +29,11 @@ class MockDataSample(dict):
     """
 
     def __init__(self, num_classes):
+        """Mock model input: data_sample dict.
+
+        Args:
+            num_classes (int): label class num.
+        """
         # add data_sample's content here
         self.gt_label = MockLabel(num_classes)
 
