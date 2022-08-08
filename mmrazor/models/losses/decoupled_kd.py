@@ -84,7 +84,7 @@ class DKDLoss(nn.Module):
         """Clac non-target class knowledge distillation."""
         s_nckd = F.log_softmax(student / self.tau - 1000.0 * gt_mask, dim=1)
         t_nckd = F.softmax(teacher / self.tau - 1000.0 * gt_mask, dim=1)
-        return self.kl_loss(s_nckd, t_nckd)
+        return self._kl_loss(s_nckd, t_nckd)
 
     def _get_tckd_loss(
         self,
