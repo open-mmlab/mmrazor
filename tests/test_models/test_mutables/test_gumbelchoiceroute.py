@@ -36,7 +36,7 @@ class TestGumbelChoiceRoute(TestCase):
         mutator = DiffModuleMutator()
         mutator.prepare_from_supernet(GumbelChoiceRoute)
 
-        arch_param = mutator.build_arch_param(GumbelChoiceRoute.num_choices)
+        arch_param = nn.Parameter(torch.randn(len(edges_dict)))
         assert len(arch_param) == 5
         GumbelChoiceRoute.set_temperature(1.0)
 
@@ -53,8 +53,7 @@ class TestGumbelChoiceRoute(TestCase):
         new_gumbel_choice_route = MODELS.build(new_gumbel_choice_route_cfg)
         mutator.prepare_from_supernet(new_gumbel_choice_route)
 
-        arch_param = mutator.build_arch_param(
-            new_gumbel_choice_route.num_choices)
+        arch_param = nn.Parameter(torch.randn(len(edges_dict)))
         output = new_gumbel_choice_route.forward_arch_param(
             x=x, arch_param=arch_param)
         assert output is not None

@@ -33,11 +33,9 @@ class TestDiffChoiceRoute(TestCase):
         mutator = DiffModuleMutator()
         mutator.prepare_from_supernet(diffchoiceroute)
 
-        arch_param = mutator.build_arch_param(num_choices=len(edges_dict))
-        assert len(arch_param) == 5
+        arch_param = nn.Parameter(torch.randn(len(edges_dict)))
 
         x = [torch.randn(4, 32, 64, 64) for _ in range(5)]
-
         output = diffchoiceroute.forward_arch_param(x=x, arch_param=arch_param)
         assert output is not None
 
@@ -49,7 +47,7 @@ class TestDiffChoiceRoute(TestCase):
 
         mutator.prepare_from_supernet(new_diff_choice_route)
 
-        arch_param = mutator.build_arch_param(num_choices=len(edges_dict))
+        arch_param = nn.Parameter(torch.randn(len(edges_dict)))
         output = new_diff_choice_route.forward_arch_param(
             x=x, arch_param=arch_param)
         assert output is not None
@@ -57,8 +55,7 @@ class TestDiffChoiceRoute(TestCase):
         new_diff_choice_route.fix_chosen(chosen=['first_edge'])
 
         # test sample choice
-        arch_param = mutator.build_arch_param(
-            new_diff_choice_route.num_choices)
+        arch_param = nn.Parameter(torch.randn(len(edges_dict)))
         new_diff_choice_route.sample_choice(arch_param)
 
         # test dump_chosen

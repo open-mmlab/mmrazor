@@ -43,7 +43,7 @@ class TestDiffOP(TestCase):
 
         diffmutator = DiffModuleMutator()
         diffmutator.prepare_from_supernet(op)
-        arch_param = diffmutator.build_arch_param(op.num_choices)
+        arch_param = nn.Parameter(torch.randn(len(op_cfg['candidates'])))
         output = op.forward_arch_param(input, arch_param=arch_param)
         assert output is not None
 
@@ -111,7 +111,7 @@ class TestDiffOP(TestCase):
         # test set_forward_args
         diffmutator = DiffModuleMutator()
         diffmutator.prepare_from_supernet(op)
-        arch_param = diffmutator.build_arch_param(op.num_choices)
+        arch_param = nn.Parameter(torch.randn(len(op_cfg['candidates'])))
         op.set_forward_args(arch_param=arch_param)
         output = op.forward(input)
         assert output is not None
