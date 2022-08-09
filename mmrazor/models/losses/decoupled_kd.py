@@ -51,17 +51,20 @@ class DKDLoss(nn.Module):
 
     def forward(
         self,
-        student: torch.Tensor,
-        teacher: torch.Tensor,
+        preds_S: torch.Tensor,
+        preds_T: torch.Tensor,
         data_samples: list,
     ) -> torch.Tensor:
         """DKDLoss forward function.
 
         Args:
-            student (torch.Tensor): Student featuremap.
-            teacher (torch.Tensor): Teacher featuremap.
+            preds_S (torch.Tensor): The student model prediction, shape (N, C).
+            preds_T (torch.Tensor): The teacher model prediction, shape (N, C).
             data_samples (list): List of model input sample data,
             contains gt_label (dict of label and one-hot score)
+
+        Return:
+            torch.Tensor: The calculated loss value.
         """
         # Unpack data samples and pack targets
         if 'score' in data_samples[0].gt_label:
@@ -69,9 +72,9 @@ class DKDLoss(nn.Module):
             gt_labels = torch.stack([i.gt_label.score for i in data_samples])
         else:
             gt_labels = torch.hstack([i.gt_label.label for i in data_samples])
-        gt_mask = self._get_gt_mask(student, gt_labels)
-        tckd_loss = self._get_tckd_loss(student, teacher, gt_labels, gt_mask)
-        nckd_loss = self._get_nckd_loss(student, teacher, gt_mask)
+        gt_mask = self._get_gt_mask(preds_S, gt_labels)
+        tckd_loss = self._get_tckd_loss(preds_S, preds_T, gt_labels, gt_mask)
+        nckd_loss = self._get_nckd_loss(preds_S, preds_T, gt_mask)
         loss = self.alpha * tckd_loss + self.beta * nckd_loss
         return self.loss_weight * loss
 
@@ -82,6 +85,7 @@ class DKDLoss(nn.Module):
         gt_mask: torch.Tensor,
     ) -> torch.Tensor:
         """Clac non-target class knowledge distillation."""
+        # implementation to mask out gt_mask, faster than index
         s_nckd = F.log_softmax(student / self.tau - 1000.0 * gt_mask, dim=1)
         t_nckd = F.softmax(teacher / self.tau - 1000.0 * gt_mask, dim=1)
         return self._kl_loss(s_nckd, t_nckd)
@@ -94,11 +98,11 @@ class DKDLoss(nn.Module):
         gt_mask: torch.Tensor,
     ) -> torch.Tensor:
         """Calc target class knowledge distillation."""
-        other_mask = self._get_non_gt_mask(student, gt_labels)
+        non_gt_mask = self._get_non_gt_mask(student, gt_labels)
         s_tckd = F.softmax(student / self.tau, dim=1)
         t_tckd = F.softmax(teacher / self.tau, dim=1)
-        mask_student = torch.log(self._cat_mask(s_tckd, gt_mask, other_mask))
-        mask_teacher = self._cat_mask(t_tckd, gt_mask, other_mask)
+        mask_student = torch.log(self._cat_mask(s_tckd, gt_mask, non_gt_mask))
+        mask_teacher = self._cat_mask(t_tckd, gt_mask, non_gt_mask)
         return self._kl_loss(mask_student, mask_teacher)
 
     def _kl_loss(
@@ -106,6 +110,7 @@ class DKDLoss(nn.Module):
         student: torch.Tensor,
         teacher: torch.Tensor,
     ) -> torch.Tensor:
+        """Calc kl."""
         kl_loss = F.kl_div(
             student, teacher, size_average=False,
             reduction=self.reduction) * self.tau**2
@@ -117,8 +122,9 @@ class DKDLoss(nn.Module):
         mask1: torch.Tensor,
         mask2: torch.Tensor,
     ) -> torch.Tensor:
+        """cat pt & pnt."""
         t1 = (target * mask1).sum(dim=1, keepdims=True)
-        t2 = (target * mask2).sum(1, keepdims=True)
+        t2 = (target * mask2).sum(dim=1, keepdims=True)
         return torch.cat([t1, t2], dim=1)
 
     def _get_gt_mask(
@@ -126,6 +132,15 @@ class DKDLoss(nn.Module):
         logits: torch.Tensor,
         target: torch.Tensor,
     ) -> torch.Tensor:
+        """Clac groundtruth mask on logits with target class tensor.
+
+        Args:
+            logits (torch.Tensor): The prediction logits with shape (N, C).
+            target (torch.Tensor): The gt_label target with shape (N, C).
+
+        Return:
+            torch.Tensor: The maksed logits.
+        """
         target = target.reshape(-1)
         return torch.zeros_like(logits).scatter_(1, target.unsqueeze(1),
                                                  1).bool()
@@ -135,6 +150,15 @@ class DKDLoss(nn.Module):
         logits: torch.Tensor,
         target: torch.Tensor,
     ) -> torch.Tensor:
+        """Clac non-groundtruth mask on logits with target class tensor.
+
+        Args:
+            logits (torch.Tensor): The prediction logits with shape (N, C).
+            target (torch.Tensor): The gt_label target with shape (N, C).
+
+        Return:
+            torch.Tensor: The The maksed logits.
+        """
         target = target.reshape(-1)
         return torch.ones_like(logits).scatter_(1, target.unsqueeze(1),
                                                 0).bool()
