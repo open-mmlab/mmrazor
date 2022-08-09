@@ -1,16 +1,15 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import inspect
+import logging
 from collections.abc import Iterable
 from typing import Any, Callable, Dict, Optional, Protocol, Set, Union
 
 import torch
 from mmcls.models.utils import make_divisible
-from mmengine.logging import MMLogger
+from mmengine.logging import print_log
 from torch import Tensor
 
 from .base_mutable import CHOICE_TYPE, BaseMutable
-
-logger = MMLogger.get_current_instance()
 
 
 class MutableProtocol(Protocol):  # pragma: no cover
@@ -222,7 +221,9 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, Dict], DerivedMethodMixin):
             if len(source_mutables) == 0:
                 # TODO
                 # warning or raise error?
-                logger.warning('Can not find source mutables automatically')
+                print_log(
+                    'Can not find source mutables automatically',
+                    level=logging.WARNING)
         else:
             source_mutables = set(source_mutables)
         for mutable in source_mutables:
