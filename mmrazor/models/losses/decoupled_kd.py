@@ -80,39 +80,39 @@ class DKDLoss(nn.Module):
 
     def _get_nckd_loss(
         self,
-        student: torch.Tensor,
-        teacher: torch.Tensor,
+        preds_S: torch.Tensor,
+        preds_T: torch.Tensor,
         gt_mask: torch.Tensor,
     ) -> torch.Tensor:
         """Clac non-target class knowledge distillation."""
         # implementation to mask out gt_mask, faster than index
-        s_nckd = F.log_softmax(student / self.tau - 1000.0 * gt_mask, dim=1)
-        t_nckd = F.softmax(teacher / self.tau - 1000.0 * gt_mask, dim=1)
+        s_nckd = F.log_softmax(preds_S / self.tau - 1000.0 * gt_mask, dim=1)
+        t_nckd = F.softmax(preds_T / self.tau - 1000.0 * gt_mask, dim=1)
         return self._kl_loss(s_nckd, t_nckd)
 
     def _get_tckd_loss(
         self,
-        student: torch.Tensor,
-        teacher: torch.Tensor,
+        preds_S: torch.Tensor,
+        preds_T: torch.Tensor,
         gt_labels: torch.Tensor,
         gt_mask: torch.Tensor,
     ) -> torch.Tensor:
         """Calc target class knowledge distillation."""
-        non_gt_mask = self._get_non_gt_mask(student, gt_labels)
-        s_tckd = F.softmax(student / self.tau, dim=1)
-        t_tckd = F.softmax(teacher / self.tau, dim=1)
+        non_gt_mask = self._get_non_gt_mask(preds_S, gt_labels)
+        s_tckd = F.softmax(preds_S / self.tau, dim=1)
+        t_tckd = F.softmax(preds_T / self.tau, dim=1)
         mask_student = torch.log(self._cat_mask(s_tckd, gt_mask, non_gt_mask))
         mask_teacher = self._cat_mask(t_tckd, gt_mask, non_gt_mask)
         return self._kl_loss(mask_student, mask_teacher)
 
     def _kl_loss(
         self,
-        student: torch.Tensor,
-        teacher: torch.Tensor,
+        preds_S: torch.Tensor,
+        preds_T: torch.Tensor,
     ) -> torch.Tensor:
         """Calc kl."""
         kl_loss = F.kl_div(
-            student, teacher, size_average=False,
+            preds_S, preds_T, size_average=False,
             reduction=self.reduction) * self.tau**2
         return kl_loss
 
