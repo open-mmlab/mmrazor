@@ -1,0 +1,27 @@
+# Copyright (c) OpenMMLab. All rights reserved.
+from math import log
+from typing import Optional, Tuple, Union
+
+import torch
+import torch.nn as nn
+
+from mmrazor.registry import MODELS
+from .base_connector import BaseConnector
+
+
+@MODELS.register_module()
+class GTConncetor(BaseConnector):
+
+    def forward_train(self, data_samples: list) -> torch.Tensor:
+        """Forward computation.
+
+        Args:
+            data_samplers (list): Model input data samples.
+        """
+        # Unpack data samples and pack targets
+        if 'score' in data_samples[0].gt_label:
+            # Batch augmentation may convert labels to one-hot format scores.
+            gt_labels = torch.stack([i.gt_label.score for i in data_samples])
+        else:
+            gt_labels = torch.hstack([i.gt_label.label for i in data_samples])
+        return gt_labels

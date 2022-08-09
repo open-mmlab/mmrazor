@@ -50,15 +50,34 @@ model = dict(
                 in_channel=256,
                 out_channel=512,
                 expansion=1,
-                num_classes=100)),
+                num_classes=100),
+            loss_gt=dict(type='GTConncetor')),
         loss_forward_mappings=dict(
-            loss_fet=dict(
+            loss_fet_s1=dict(
                 s_feature=dict(recorder='fc', from_student=True),
                 t_feature=dict(recorder='fc', from_student=True)),
-            loss_label=dict(
+            loss_label_s1=dict(
                 cls_score=dict(recorder='fc', from_student=True),
                 label=dict(recorder='fc', from_student=True)),
-            loss_softlabel=dict(
+            loss_softlabel_s1=dict(
+                preds_S=dict(recorder='fc', from_student=True),
+                preds_T=dict(recorder='fc', from_student=True)),
+            loss_fet_s2=dict(
+                s_feature=dict(recorder='fc', from_student=True),
+                t_feature=dict(recorder='fc', from_student=True)),
+            loss_label_s2=dict(
+                cls_score=dict(recorder='fc', from_student=True),
+                label=dict(recorder='fc', from_student=True)),
+            loss_softlabel_s2=dict(
+                preds_S=dict(recorder='fc', from_student=True),
+                preds_T=dict(recorder='fc', from_student=True)),
+            loss_fet_s3=dict(
+                s_feature=dict(recorder='fc', from_student=True),
+                t_feature=dict(recorder='fc', from_student=True)),
+            loss_label_s3=dict(
+                cls_score=dict(recorder='fc', from_student=True),
+                label=dict(recorder='fc', from_student=True)),
+            loss_softlabel_s3=dict(
                 preds_S=dict(recorder='fc', from_student=True),
                 preds_T=dict(recorder='fc', from_student=True)))))
 
