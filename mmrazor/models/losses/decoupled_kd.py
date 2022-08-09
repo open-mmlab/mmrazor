@@ -157,7 +157,7 @@ class DKDLoss(nn.Module):
             target (torch.Tensor): The gt_label target with shape (N, C).
 
         Return:
-            torch.Tensor: The The masked logits.
+            torch.Tensor: The masked logits.
         """
         target = target.reshape(-1)
         return torch.ones_like(logits).scatter_(1, target.unsqueeze(1),
