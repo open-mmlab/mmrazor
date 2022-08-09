@@ -118,13 +118,13 @@ class DKDLoss(nn.Module):
 
     def _cat_mask(
         self,
-        target: torch.Tensor,
-        mask1: torch.Tensor,
-        mask2: torch.Tensor,
+        tckd: torch.Tensor,
+        gt_mask: torch.Tensor,
+        non_gt_mask: torch.Tensor,
     ) -> torch.Tensor:
-        """cat pt & pnt."""
-        t1 = (target * mask1).sum(dim=1, keepdims=True)
-        t2 = (target * mask2).sum(dim=1, keepdims=True)
+        """Cat pt & pnt."""
+        t1 = (tckd * gt_mask).sum(dim=1, keepdims=True)
+        t2 = (tckd * non_gt_mask).sum(dim=1, keepdims=True)
         return torch.cat([t1, t2], dim=1)
 
     def _get_gt_mask(
