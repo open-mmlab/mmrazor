@@ -15,9 +15,9 @@ class DKDLoss(nn.Module):
         1. target class knowledge distillation (TCKD)
         2. non-target class knowledge distillation (NCKD).
     Args:
-    tau (float): Temperature coefficient. Defaults to 4.0.
+    tau (float): Temperature coefficient. Defaults to 1.0.
     alpha (float): Weight of TCKD loss. Defaults to 1.0.
-    beta (float): Weight of NCKD loss. Defaults to 8.0.
+    beta (float): Weight of NCKD loss. Defaults to 1.0.
     reduction (str): Specifies the reduction to apply to the loss:
         ``'none'`` | ``'batchmean'`` | ``'sum'`` | ``'mean'``.
         ``'none'``: no reduction will be applied,
@@ -32,9 +32,9 @@ class DKDLoss(nn.Module):
 
     def __init__(
         self,
-        tau: float = 4.0,
+        tau: float = 1.0,
         alpha: float = 1.0,
-        beta: float = 8.0,
+        beta: float = 1.0,
         reduction: str = 'batchmean',
         loss_weight: float = 1.0,
     ) -> None:
@@ -53,25 +53,18 @@ class DKDLoss(nn.Module):
         self,
         preds_S: torch.Tensor,
         preds_T: torch.Tensor,
-        data_samples: list,
+        gt_labels: torch.Tensor,
     ) -> torch.Tensor:
         """DKDLoss forward function.
 
         Args:
             preds_S (torch.Tensor): The student model prediction, shape (N, C).
             preds_T (torch.Tensor): The teacher model prediction, shape (N, C).
-            data_samples (list): List of model input sample data,
-            contains gt_label (dict of label and one-hot score)
+            gt_labels (torch.Tensor): The gt label tensor, shape (N, C).
 
         Return:
             torch.Tensor: The calculated loss value.
         """
-        # Unpack data samples and pack targets
-        if 'score' in data_samples[0].gt_label:
-            # Batch augmentation may convert labels to one-hot format scores.
-            gt_labels = torch.stack([i.gt_label.score for i in data_samples])
-        else:
-            gt_labels = torch.hstack([i.gt_label.label for i in data_samples])
         gt_mask = self._get_gt_mask(preds_S, gt_labels)
         tckd_loss = self._get_tckd_loss(preds_S, preds_T, gt_labels, gt_mask)
         nckd_loss = self._get_nckd_loss(preds_S, preds_T, gt_mask)

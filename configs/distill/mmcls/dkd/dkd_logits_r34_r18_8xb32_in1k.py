@@ -23,7 +23,7 @@ model = dict(
         type='ConfigurableDistiller',
         student_recorders=dict(
             fc=dict(type='ModuleOutputs', source='head.fc'),
-            data_samples=dict(type='ModuleInputs', source='')),
+            gt_labels=dict(type='ModuleInputs', source='head.loss_module')),
         teacher_recorders=dict(
             fc=dict(type='ModuleOutputs', source='head.fc')),
         distill_losses=dict(
@@ -37,8 +37,8 @@ model = dict(
             loss_dkd=dict(
                 preds_S=dict(from_student=True, recorder='fc'),
                 preds_T=dict(from_student=False, recorder='fc'),
-                data_samples=dict(
-                    recorder='data_samples', from_student=True, data_idx=1)))))
+                gt_labels=dict(
+                    recorder='gt_labels', from_student=True, data_idx=1)))))
 
 find_unused_parameters = True
 
