@@ -35,8 +35,8 @@ model = dict(
                 reduction='mean')),
         loss_forward_mappings=dict(
             loss_dkd=dict(
-                student=dict(from_student=True, recorder='fc'),
-                teacher=dict(from_student=False, recorder='fc'),
+                preds_S=dict(from_student=True, recorder='fc'),
+                preds_T=dict(from_student=False, recorder='fc'),
                 data_samples=dict(
                     recorder='data_samples', from_student=True, data_idx=1)))))
 

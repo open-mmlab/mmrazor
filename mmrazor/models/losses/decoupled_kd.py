@@ -84,7 +84,7 @@ class DKDLoss(nn.Module):
         preds_T: torch.Tensor,
         gt_mask: torch.Tensor,
     ) -> torch.Tensor:
-        """Clac non-target class knowledge distillation."""
+        """Calculate non-target class knowledge distillation."""
         # implementation to mask out gt_mask, faster than index
         s_nckd = F.log_softmax(preds_S / self.tau - 1000.0 * gt_mask, dim=1)
         t_nckd = F.softmax(preds_T / self.tau - 1000.0 * gt_mask, dim=1)
@@ -97,7 +97,7 @@ class DKDLoss(nn.Module):
         gt_labels: torch.Tensor,
         gt_mask: torch.Tensor,
     ) -> torch.Tensor:
-        """Calc target class knowledge distillation."""
+        """Calculate target class knowledge distillation."""
         non_gt_mask = self._get_non_gt_mask(preds_S, gt_labels)
         s_tckd = F.softmax(preds_S / self.tau, dim=1)
         t_tckd = F.softmax(preds_T / self.tau, dim=1)
@@ -110,7 +110,7 @@ class DKDLoss(nn.Module):
         preds_S: torch.Tensor,
         preds_T: torch.Tensor,
     ) -> torch.Tensor:
-        """Calc kl."""
+        """Calculate the KL Divergence."""
         kl_loss = F.kl_div(
             preds_S, preds_T, size_average=False,
             reduction=self.reduction) * self.tau**2
@@ -122,7 +122,7 @@ class DKDLoss(nn.Module):
         gt_mask: torch.Tensor,
         non_gt_mask: torch.Tensor,
     ) -> torch.Tensor:
-        """Cat pt & pnt."""
+        """Calculate preds of target (pt) & preds of non-target (pnt)."""
         t1 = (tckd * gt_mask).sum(dim=1, keepdims=True)
         t2 = (tckd * non_gt_mask).sum(dim=1, keepdims=True)
         return torch.cat([t1, t2], dim=1)
@@ -132,14 +132,14 @@ class DKDLoss(nn.Module):
         logits: torch.Tensor,
         target: torch.Tensor,
     ) -> torch.Tensor:
-        """Clac groundtruth mask on logits with target class tensor.
+        """Calculate groundtruth mask on logits with target class tensor.
 
         Args:
             logits (torch.Tensor): The prediction logits with shape (N, C).
             target (torch.Tensor): The gt_label target with shape (N, C).
 
         Return:
-            torch.Tensor: The maksed logits.
+            torch.Tensor: The masked logits.
         """
         target = target.reshape(-1)
         return torch.zeros_like(logits).scatter_(1, target.unsqueeze(1),
@@ -150,14 +150,14 @@ class DKDLoss(nn.Module):
         logits: torch.Tensor,
         target: torch.Tensor,
     ) -> torch.Tensor:
-        """Clac non-groundtruth mask on logits with target class tensor.
+        """Calculate non-groundtruth mask on logits with target class tensor.
 
         Args:
             logits (torch.Tensor): The prediction logits with shape (N, C).
             target (torch.Tensor): The gt_label target with shape (N, C).
 
         Return:
-            torch.Tensor: The The maksed logits.
+            torch.Tensor: The The masked logits.
         """
         target = target.reshape(-1)
         return torch.ones_like(logits).scatter_(1, target.unsqueeze(1),
