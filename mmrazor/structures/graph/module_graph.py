@@ -133,12 +133,12 @@ class ModuleNode(BaseNode):
         if isinstance(self.val, Module):
             if isinstance(self.val, nn.Conv2d):
                 if self.val.groups == 1:
-                    return 'conv'
+                    return 'conv2d'
                 elif self.val.groups == self.val.in_channels == \
                         self.val.out_channels:
-                    return 'dwconv'
+                    return 'dwconv2d'
                 else:
-                    return 'gwconv'
+                    return 'gwconv2d'
             elif isinstance(self.val, nn.modules.batchnorm._BatchNorm):
                 return 'bn'
             elif isinstance(self.val, nn.Linear):
@@ -156,7 +156,7 @@ class ModuleNode(BaseNode):
     def is_pass_node(self):
         """pass node represent a module whose in-channels correspond out-
         channels one-to-one."""
-        return self.type in ['bn', 'dwconv', 'pass_placeholder']
+        return self.type in ['bn', 'dwconv2d', 'pass_placeholder']
 
     def is_cat_node(self):
         """cat node represents a cat module."""
@@ -170,7 +170,7 @@ class ModuleNode(BaseNode):
     def is_mix_node(self):
         """mix node represents a module that mixs all input channels and
         generete new output channels, such as conv and linear."""
-        return self.type in ['conv', 'linear', 'gwconv']
+        return self.type in ['conv2d', 'linear', 'gwconv2d']
 
     # check
 
