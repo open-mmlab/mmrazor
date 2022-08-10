@@ -47,7 +47,7 @@ class ModuleNode(BaseNode):
             >>> class Pool(nn.Module):
                     def forward(x):
                         return F.adaptive_avg_pool2d(x,2).flatten(1)
-            >>> node= ModuleNode('pass_0',Pool(),expadn_ratio=4)
+            >>> node= ModuleNode('pass_0',Pool(),expand_ratio=4)
             >>> assert node.out_channels == node.in_channels*4
         """
 
@@ -206,6 +206,10 @@ MODULENODE = TypeVar('MODULENODE', bound=ModuleNode)
 
 class ModuleGraph(BaseGraph[MODULENODE]):
     """Computatation Graph."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._model = None
 
     # functions to generate module graph.
 

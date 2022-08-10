@@ -90,7 +90,7 @@ class BaseGraph(Generic[BASENODE]):
 
         # connect
         for old in graph:
-            for pre in old.pre:
+            for pre in old.prev_nodes:
                 new_graph.connect(old2new[pre], old2new[old])
         return new_graph
 
