@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 
 from mmrazor.models import *  # noqa:F403,F401
-from mmrazor.models.mutators import DiffModuleMutator
 from mmrazor.registry import MODELS
 
 MODELS.register_module(name='torchConv2d', module=nn.Conv2d, force=True)
@@ -30,9 +29,6 @@ class TestDiffChoiceRoute(TestCase):
 
         # test with_arch_param = True
         diffchoiceroute = MODELS.build(diff_choice_route_cfg)
-        mutator = DiffModuleMutator()
-        mutator.prepare_from_supernet(diffchoiceroute)
-
         arch_param = nn.Parameter(torch.randn(len(edges_dict)))
 
         x = [torch.randn(4, 32, 64, 64) for _ in range(5)]
@@ -44,9 +40,6 @@ class TestDiffChoiceRoute(TestCase):
         new_diff_choice_route_cfg['with_arch_param'] = False
 
         new_diff_choice_route = MODELS.build(new_diff_choice_route_cfg)
-
-        mutator.prepare_from_supernet(new_diff_choice_route)
-
         arch_param = nn.Parameter(torch.randn(len(edges_dict)))
         output = new_diff_choice_route.forward_arch_param(
             x=x, arch_param=arch_param)
