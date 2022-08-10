@@ -1,5 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import logging
+
 import mmcv
+from mmengine.logging import print_log
 from torch import nn
 
 from mmrazor.utils import FixMutable, ValidFixMutable
@@ -62,6 +65,11 @@ def load_fix_subnet(model: nn.Module,
 def export_fix_subnet(model: nn.Module,
                       dump_derived_mutable: bool = False) -> FixMutable:
     """Export subnet that can be loaded by :func:`load_fix_subnet`."""
+    if dump_derived_mutable:
+        print_log(
+            'Trying to dump information of all derived mutables, '
+            'this might harm readability of the exported configurations.',
+            level=logging.WARNING)
 
     # Avoid circular import
     from mmrazor.models.mutables import DerivedMutable
