@@ -31,6 +31,7 @@ def load_fix_subnet(model: nn.Module,
         raise TypeError('fix_mutable should be a `str` or `dict`'
                         f'but got {type(fix_mutable)}')
     # Avoid circular import
+    from mmrazor.models.mutables import DerivedMutable
     from mmrazor.models.mutables.base_mutable import BaseMutable
 
     for name, module in model.named_modules():
@@ -46,9 +47,11 @@ def load_fix_subnet(model: nn.Module,
                 chosen = fix_mutable.get(alias, None)
             else:
                 mutable_name = name.lstrip(prefix)
-                assert mutable_name in fix_mutable, \
-                    f'The module name {mutable_name} is not in ' \
-                    'fix_mutable, please check your `fix_mutable`.'
+                if mutable_name not in fix_mutable and \
+                        not isinstance(module, DerivedMutable):
+                    raise RuntimeError(
+                        f'The module name {mutable_name} is not in '
+                        'fix_mutable, please check your `fix_mutable`.')
                 chosen = fix_mutable.get(mutable_name, None)
             module.fix_chosen(chosen)
 
@@ -56,15 +59,20 @@ def load_fix_subnet(model: nn.Module,
     _dynamic_to_static(model)
 
 
-def export_fix_subnet(model: nn.Module) -> FixMutable:
+def export_fix_subnet(model: nn.Module,
+                      dump_derived_mutable: bool = False) -> FixMutable:
     """Export subnet that can be loaded by :func:`load_fix_subnet`."""
 
     # Avoid circular import
+    from mmrazor.models.mutables import DerivedMutable
     from mmrazor.models.mutables.base_mutable import BaseMutable
 
     fix_subnet = dict()
     for name, module in model.named_modules():
         if isinstance(module, BaseMutable):
+            if isinstance(module, DerivedMutable) and not dump_derived_mutable:
+                continue
+
             assert not module.is_fixed
             if module.alias:
                 fix_subnet[module.alias] = module.dump_chosen()

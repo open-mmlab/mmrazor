@@ -1,9 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import inspect
+import logging
 from collections.abc import Iterable
 from typing import Any, Callable, Dict, Optional, Protocol, Set, Union
 
 import torch
+from mmengine.logging import print_log
 from torch import Tensor
 
 from ..utils import make_divisible
@@ -239,10 +241,10 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, CHOICE_TYPE],
         Warning:
             Fix derived mutable will have no actually effect.
         """
-        if self.is_fixed:
-            raise RuntimeError('DerivedMutable can not be fixed twice')
-
-        self.is_fixed = True
+        print_log(
+            'Trying to fix chosen for derived mutable, '
+            'which will have no effect.',
+            level=logging.WARNING)
 
     def dump_chosen(self) -> CHOICE_TYPE:
         """Dump information of chosen.
@@ -250,7 +252,26 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, CHOICE_TYPE],
         Returns:
             Dict: Dumped information.
         """
+        print_log(
+            'Trying to dump chosen for derived mutable, '
+            'but its value depend on the source mutables.',
+            level=logging.WARNING)
         return self.current_choice
+
+    @property
+    def is_fixed(self) -> bool:
+        """Whether the derived mutable is fixed.
+
+        Note:
+            Depends on whether all source mutables are already fixed.
+        """
+        return all(m.is_fixed for m in self.source_mutables)
+
+    @is_fixed.setter
+    def is_fixed(self, is_fixed: bool) -> bool:
+        """Setter of is fixed."""
+        raise RuntimeError(
+            '`is_fixed` of derived mutable should not be modified directly')
 
     @property
     def num_choices(self) -> int:

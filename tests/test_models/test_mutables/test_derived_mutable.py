@@ -11,6 +11,40 @@ from mmrazor.models.mutables.base_mutable import BaseMutable
 
 class TestDerivedMutable(TestCase):
 
+    def test_is_fixed(self) -> None:
+        mc = OneShotMutableChannel(
+            num_channels=10,
+            candidate_choices=[2, 8, 10],
+            candidate_mode='number')
+        mc.current_choice = 2
+
+        mv = OneShotMutableValue(value_list=[2, 3, 4])
+        mv.current_choice = 3
+
+        derived_mutable = mc * mv
+        assert not derived_mutable.is_fixed
+
+        with pytest.raises(RuntimeError):
+            derived_mutable.is_fixed = True
+
+        mc.fix_chosen(mc.dump_chosen())
+        assert not derived_mutable.is_fixed
+        mv.fix_chosen(mv.dump_chosen())
+        assert derived_mutable.is_fixed
+
+    def test_fix_dump_chosen(self) -> None:
+        mv = OneShotMutableValue(value_list=[2, 3, 4])
+        mv.current_choice = 3
+
+        derived_mutable = mv * 2
+        assert derived_mutable.dump_chosen() == 6
+
+        mv.current_choice = 4
+        assert derived_mutable.dump_chosen() == 8
+
+        # nothing will happen
+        derived_mutable.fix_chosen(derived_mutable.dump_chosen())
+
     def test_derived_same_mutable(self) -> None:
         mc = OneShotMutableChannel(
             num_channels=3,
@@ -102,14 +136,6 @@ class TestDerivedMutable(TestCase):
         assert mv_derived.current_choice == 16
         mv.current_choice == 120
         assert mv_derived.current_choice == 16
-
-    def test_double_fixed(self) -> None:
-        choice_fn = lambda x: x  # noqa: E731
-        derived_mutable = DerivedMutable(choice_fn, source_mutables=[])
-        derived_mutable.fix_chosen({})
-
-        with pytest.raises(RuntimeError):
-            derived_mutable.fix_chosen({})
 
     def test_source_mutables(self) -> None:
         useless_fn = lambda x: x  # noqa: E731
@@ -219,11 +245,6 @@ def test_derived_expand_mutable(expand_ratio: int) -> None:
         mv_derived.current_choice = 123
     with pytest.raises(RuntimeError):
         _ = mv_derived.current_mask
-
-    chosen = mv_derived.dump_chosen()
-    assert chosen == mv.current_choice * expand_ratio
-    mv_derived.fix_chosen(chosen)
-    assert mv_derived.is_fixed
 
     mv.current_choice = 5
     assert mv_derived.current_choice == 5 * expand_ratio

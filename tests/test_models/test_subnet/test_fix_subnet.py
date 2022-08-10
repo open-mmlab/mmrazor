@@ -5,7 +5,7 @@ import pytest
 import torch.nn as nn
 
 from mmrazor.models import *  # noqa:F403,F401
-from mmrazor.models.mutables import OneShotMutableOP
+from mmrazor.models.mutables import OneShotMutableOP, OneShotMutableValue
 from mmrazor.registry import MODELS
 from mmrazor.structures import export_fix_subnet, load_fix_subnet
 from mmrazor.utils import FixMutable
@@ -37,6 +37,15 @@ class MockModel(nn.Module):
         return x
 
 
+class MockModelWithDerivedMutable(nn.Module):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.source_mutable = OneShotMutableValue([2, 3, 4], default_value=3)
+        self.derived_mutable = self.source_mutable * 2
+
+
 class TestFixSubnet(TestCase):
 
     def test_load_fix_subnet(self):
@@ -63,6 +72,11 @@ class TestFixSubnet(TestCase):
             model = MockModel()
             load_fix_subnet(model, fix_subnet=10)
 
+        model = MockModel()
+        fix_subnet.pop('mutable1')
+        with pytest.raises(RuntimeError):
+            load_fix_subnet(model, fix_subnet)
+
     def test_export_fix_subnet(self):
         # get FixSubnet
         fix_subnet = {
@@ -82,3 +96,25 @@ class TestFixSubnet(TestCase):
         exported_fix_subnet = export_fix_subnet(model)
 
         self.assertDictEqual(fix_subnet, exported_fix_subnet)
+
+    def test_export_fix_subnet_with_derived_mutable(self) -> None:
+        model = MockModelWithDerivedMutable()
+        fix_subnet = export_fix_subnet(model)
+        self.assertDictEqual(
+            fix_subnet, {'source_mutable': model.source_mutable.dump_chosen()})
+        fix_subnet['source_mutable']['current_choice'] = 4
+        load_fix_subnet(model, fix_subnet)
+        assert model.source_mutable.current_choice == 4
+        assert model.derived_mutable.current_choice == 8
+
+        model = MockModelWithDerivedMutable()
+        fix_subnet = export_fix_subnet(model, dump_derived_mutable=True)
+        self.assertDictEqual(
+            fix_subnet, {
+                'source_mutable': model.source_mutable.dump_chosen(),
+                'derived_mutable': model.derived_mutable.dump_chosen()
+            })
+        fix_subnet['source_mutable']['current_choice'] = 2
+        load_fix_subnet(model, fix_subnet)
+        assert model.source_mutable.current_choice == 2
+        assert model.derived_mutable.current_choice == 4
