@@ -6,12 +6,12 @@ import torch
 from torch import Tensor, nn
 from torch.nn import Module
 
-from mmrazor.structures import (BackwardTracer, ConcatNode, ConvNode,
-                                DepthWiseConvNode, LinearNode, NormNode, Path,
-                                PathList)
+from mmrazor.structures import (BackwardTracer, Path, PathConcatNode,
+                                PathConvNode, PathDepthWiseConvNode,
+                                PathLinearNode, PathList, PathNormNode)
 
-NONPASS_NODES = (ConvNode, LinearNode, ConcatNode)
-PASS_NODES = (NormNode, DepthWiseConvNode)
+NONPASS_NODES = (PathConvNode, PathLinearNode, PathConcatNode)
+PASS_NODES = (PathNormNode, PathDepthWiseConvNode)
 
 
 class MultiConcatModel(Module):
@@ -98,23 +98,23 @@ class TestBackwardTracer(TestCase):
         nonpass2parents = path_list.find_nodes_parents(NONPASS_NODES)
         assert len(nonpass2parents) == 3
         assert nonpass2parents['op1'] == list()
-        assert nonpass2parents['op2'] == list({NormNode('bn1')})
+        assert nonpass2parents['op2'] == list({PathNormNode('bn1')})
         assert nonpass2parents['op3'] == list(
-            {NormNode('bn2'), NormNode('bn1')})
+            {PathNormNode('bn2'), PathNormNode('bn1')})
 
         nonpass2nonpassparents = path_list.find_nodes_parents(
             NONPASS_NODES, non_pass=NONPASS_NODES)
         assert len(nonpass2parents) == 3
         assert nonpass2nonpassparents['op1'] == list()
-        assert nonpass2nonpassparents['op2'] == list({ConvNode('op1')})
+        assert nonpass2nonpassparents['op2'] == list({PathConvNode('op1')})
         assert nonpass2nonpassparents['op3'] == list(
-            {ConvNode('op2'), ConvNode('op1')})
+            {PathConvNode('op2'), PathConvNode('op1')})
 
         pass2nonpassparents = path_list.find_nodes_parents(
             PASS_NODES, non_pass=NONPASS_NODES)
         assert len(pass2nonpassparents) == 2
-        assert pass2nonpassparents['bn1'] == list({ConvNode('op1')})
-        assert pass2nonpassparents['bn2'] == list({ConvNode('op2')})
+        assert pass2nonpassparents['bn1'] == list({PathConvNode('op1')})
+        assert pass2nonpassparents['bn2'] == list({PathConvNode('op2')})
 
     def test_trace_multi_cat(self) -> None:
         loss_calculator = ToyCNNPseudoLoss()
@@ -129,11 +129,11 @@ class TestBackwardTracer(TestCase):
         assert len(nonpass2parents) == 4
         assert nonpass2parents['op1'] == list()
         assert nonpass2parents['op2'] == list()
-        path_list1 = PathList(Path(ConvNode('op1')))
-        path_list2 = PathList(Path(ConvNode('op2')))
+        path_list1 = PathList(Path(PathConvNode('op1')))
+        path_list2 = PathList(Path(PathConvNode('op2')))
         # only one parent
         assert len(nonpass2parents['op3']) == 1
-        assert isinstance(nonpass2parents['op3'][0], ConcatNode)
+        assert isinstance(nonpass2parents['op3'][0], PathConcatNode)
         assert len(nonpass2parents['op3'][0]) == 2
         assert nonpass2parents['op3'][0].get_module_names() == ['op1', 'op2']
         assert nonpass2parents['op3'][0].path_lists == [path_list1, path_list2]
@@ -152,29 +152,31 @@ class TestBackwardTracer(TestCase):
         assert nonpass2parents['op3'] == list()
         # only one parent
         assert len(nonpass2parents['op4']) == 1
-        assert isinstance(nonpass2parents['op4'][0], ConcatNode)
+        assert isinstance(nonpass2parents['op4'][0], PathConcatNode)
         assert nonpass2parents['op4'][0].get_module_names() == [
             'op1', 'op2', 'op3'
         ]
 
     def test_repr(self):
-        toy_node = ConvNode('op1')
-        assert repr(toy_node) == 'ConvNode(\'op1\')'
+        toy_node = PathConvNode('op1')
+        assert repr(toy_node) == 'PathConvNode(\'op1\')'
 
-        toy_path = Path([ConvNode('op1'), ConvNode('op2')])
+        toy_path = Path([PathConvNode('op1'), PathConvNode('op2')])
         assert repr(
-            toy_path) == 'Path(\n  ConvNode(\'op1\'),\n  ConvNode(\'op2\')\n)'
+            toy_path
+        ) == 'Path(\n  PathConvNode(\'op1\'),\n  PathConvNode(\'op2\')\n)'
 
-        toy_path_list = PathList(Path(ConvNode('op1')))
-        assert repr(toy_path_list
-                    ) == 'PathList(\n  Path(\n    ConvNode(\'op1\')\n  )\n)'
+        toy_path_list = PathList(Path(PathConvNode('op1')))
+        assert repr(
+            toy_path_list
+        ) == 'PathList(\n  Path(\n    PathConvNode(\'op1\')\n  )\n)'
 
-        path_list1 = PathList(Path(ConvNode('op1')))
-        path_list2 = PathList(Path(ConvNode('op2')))
-        toy_concat_node = ConcatNode('op3', [path_list1, path_list2])
+        path_list1 = PathList(Path(PathConvNode('op1')))
+        path_list2 = PathList(Path(PathConvNode('op2')))
+        toy_concat_node = PathConcatNode('op3', [path_list1, path_list2])
         assert repr(
             toy_concat_node
-        ) == 'ConcatNode(\n  PathList(\n    Path(\n      ConvNode(\'op1\')\n    )\n  ),\n  PathList(\n    Path(\n      ConvNode(\'op2\')\n    )\n  )\n)'  # noqa: E501
+        ) == 'PathConcatNode(\n  PathList(\n    Path(\n      PathConvNode(\'op1\')\n    )\n  ),\n  PathList(\n    Path(\n      PathConvNode(\'op2\')\n    )\n  )\n)'  # noqa: E501
 
     def test_reset_bn_running_stats(self):
         _test_reset_bn_running_stats(False)
@@ -182,17 +184,17 @@ class TestBackwardTracer(TestCase):
             _test_reset_bn_running_stats(True)
 
     def test_node(self):
-        node1 = ConvNode('conv1')
-        node2 = ConvNode('conv2')
+        node1 = PathConvNode('conv1')
+        node2 = PathConvNode('conv2')
         assert node1 != node2
 
-        node1 = ConvNode('conv1')
-        node2 = ConvNode('conv1')
+        node1 = PathConvNode('conv1')
+        node2 = PathConvNode('conv1')
         assert node1 == node2
 
     def test_path(self):
-        node1 = ConvNode('conv1')
-        node2 = ConvNode('conv2')
+        node1 = PathConvNode('conv1')
+        node2 = PathConvNode('conv2')
 
         path1 = Path([node1])
         path2 = Path([node2])
@@ -205,8 +207,8 @@ class TestBackwardTracer(TestCase):
         assert path1[0] == node1
 
     def test_path_list(self):
-        node1 = ConvNode('conv1')
-        node2 = ConvNode('conv2')
+        node1 = PathConvNode('conv1')
+        node2 = PathConvNode('conv2')
 
         path1 = Path([node1])
         path2 = Path([node2])

@@ -4,15 +4,11 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.structures import (ConcatNode, ConvNode, DepthWiseConvNode,
-                                LinearNode, NormNode)
 from mmrazor.structures.graph import ModuleGraph
 from ...data.models import (AddCatModel, ConcatModel, LineModel,
                             MultiConcatModel, MultiConcatModel2, ResBlock)
 
 sys.setrecursionlimit(int(1e8))
-NONPASS_NODES = (ConvNode, LinearNode, ConcatNode)
-PASS_NODES = (NormNode, DepthWiseConvNode)
 
 
 class ToyCNNPseudoLoss:

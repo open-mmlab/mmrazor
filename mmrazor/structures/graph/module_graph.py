@@ -13,9 +13,7 @@ from torch.nn import Module
 from ..tracer.backward_tracer import BackwardTracer
 # from ..tracer.fx_tracer import FxBaseNode, FxTracer
 from ..tracer.loss_calculator import ImageClassifierPseudoLoss
-from ..tracer.path import ConcatNode as PathCatNode
-from ..tracer.path import Node as PathNode
-from ..tracer.path import Path, PathList
+from ..tracer.path import Path, PathConcatNode, PathList, PathNode
 from .base_graph import BaseGraph, BaseNode
 
 # ModuleNode && ModuleGraph
@@ -426,7 +424,7 @@ class PathToGraph(ToGraph):
         elif isinstance(path_unit, PathNode):
 
             # cat node: [cat_path_lists]
-            if isinstance(path_unit, PathCatNode):
+            if isinstance(path_unit, PathConcatNode):
                 current_node = self.add_or_find_node(path_unit)
                 self.connect_nexts(current_node, next_nodes)
                 for catpath in path_unit.path_lists:  # sibling
@@ -438,7 +436,7 @@ class PathToGraph(ToGraph):
                 self.connect_nexts(current_node, next_nodes)
         return current_node
 
-    def add_or_find_cat_node(self, pathnode: PathCatNode):
+    def add_or_find_cat_node(self, pathnode: PathConcatNode):
         """Receive a cat-node.
 
         If the cat-node exists in the graph, the corresponding node is
@@ -467,7 +465,7 @@ class PathToGraph(ToGraph):
         If the cat-node exists in the graph, the corresponding node is
         returned, or a new cat node is added to the graph.
         """
-        if isinstance(pathnode, PathCatNode):
+        if isinstance(pathnode, PathConcatNode):
             return self.add_or_find_cat_node(pathnode)
         else:
             name = pathnode.name
