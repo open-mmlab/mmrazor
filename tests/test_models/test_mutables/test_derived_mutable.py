@@ -73,6 +73,10 @@ class TestDerivedMutable(TestCase):
             mc_derived.current_mask,
             torch.tensor([1, 1, 1, 1, 1, 1, 0, 0, 0], dtype=torch.bool))
 
+        with pytest.raises(RuntimeError):
+            mc_derived.current_mask = torch.ones(
+                mc_derived.current_mask.size())
+
     def test_mutable_divide(self) -> None:
         mc = OneShotMutableChannel(
             num_channels=128,
@@ -101,13 +105,17 @@ class TestDerivedMutable(TestCase):
 
     def test_double_fixed(self) -> None:
         choice_fn = lambda x: x  # noqa: E731
-        derived_mutable = DerivedMutable(choice_fn)
+        derived_mutable = DerivedMutable(choice_fn, source_mutables=[])
         derived_mutable.fix_chosen({})
 
         with pytest.raises(RuntimeError):
             derived_mutable.fix_chosen({})
 
     def test_source_mutables(self) -> None:
+        useless_fn = lambda x: x  # noqa: E731
+        with pytest.raises(RuntimeError):
+            _ = DerivedMutable(choice_fn=useless_fn)
+
         mc1 = OneShotMutableChannel(
             num_channels=3, candidate_choices=[1, 3], candidate_mode='number')
         mc2 = OneShotMutableChannel(
@@ -156,6 +164,39 @@ class TestDerivedMutable(TestCase):
             mask_fn=dict_closure_fn({2: [mc1, mc2, mc3]}, {3: dd_mutable}))
         assert dddd_mutable.source_mutables == {mc1, mc2, mc3}
 
+    def test_nested_mutables(self) -> None:
+        source_a = OneShotMutableChannel(
+            num_channels=2, candidate_choices=[1, 2], candidate_mode='number')
+        source_b = OneShotMutableChannel(
+            num_channels=3, candidate_choices=[2, 3], candidate_mode='number')
+
+        # derive from
+        derived_c = source_a * 1
+        concat_mutables = [source_b, derived_c]
+        derived_d = DerivedMutable.derive_concat_mutable(concat_mutables)
+        concat_mutables = [derived_c, derived_d]
+        derived_e = DerivedMutable.derive_concat_mutable(concat_mutables)
+
+        assert derived_c.source_mutables == {source_a}
+        assert derived_d.source_mutables == {source_a, source_b}
+        assert derived_e.source_mutables == {source_a, source_b}
+
+        source_a.current_choice = 1
+        source_b.current_choice = 3
+
+        assert derived_c.current_choice == 1
+        assert torch.equal(derived_c.current_mask,
+                           torch.tensor([1, 0], dtype=torch.bool))
+
+        assert derived_d.current_choice == 4
+        assert torch.equal(derived_d.current_mask,
+                           torch.tensor([1, 1, 1, 1, 0], dtype=torch.bool))
+
+        assert derived_e.current_choice == 5
+        assert torch.equal(
+            derived_e.current_mask,
+            torch.tensor([1, 0, 1, 1, 1, 1, 0], dtype=torch.bool))
+
 
 @pytest.mark.parametrize('expand_ratio', [1, 2, 3])
 def test_derived_expand_mutable(expand_ratio: int) -> None:
@@ -180,7 +221,7 @@ def test_derived_expand_mutable(expand_ratio: int) -> None:
         _ = mv_derived.current_mask
 
     chosen = mv_derived.dump_chosen()
-    assert chosen == {'current_choice': mv.current_choice * expand_ratio}
+    assert chosen == mv.current_choice * expand_ratio
     mv_derived.fix_chosen(chosen)
     assert mv_derived.is_fixed
 

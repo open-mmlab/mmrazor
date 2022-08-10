@@ -1,14 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import inspect
-import logging
 from collections.abc import Iterable
 from typing import Any, Callable, Dict, Optional, Protocol, Set, Union
 
 import torch
-from mmcls.models.utils import make_divisible
-from mmengine.logging import print_log
 from torch import Tensor
 
+from ..utils import make_divisible
 from .base_mutable import CHOICE_TYPE, BaseMutable
 
 
@@ -110,9 +108,6 @@ def _concat_choice_fn(mutables: Iterable[MutableChannelProtocol]) -> Callable:
 
 def _concat_mask_fn(mutables: Iterable[MutableChannelProtocol]) -> Callable:
     """Helper function to build `mask_fn` for concat derived mutable."""
-    for mutable in mutables:
-        if not hasattr(mutable, 'current_mask'):
-            raise RuntimeError('mutable must have attribute `currnet_mask`')
 
     def fn():
         return torch.cat([m.current_mask for m in mutables])
@@ -154,13 +149,19 @@ class DerivedMethodMixin:
     def derive_concat_mutable(
             mutables: Iterable[MutableChannelProtocol]) -> 'DerivedMutable':
         """Derive concat mutable, usually used with `torch.cat`."""
+        for mutable in mutables:
+            if not hasattr(mutable, 'current_mask'):
+                raise RuntimeError('Source mutable of concat derived mutable '
+                                   'must have attribute `currnet_mask`')
+
         choice_fn = _concat_choice_fn(mutables)
         mask_fn = _concat_mask_fn(mutables)
 
         return DerivedMutable(choice_fn=choice_fn, mask_fn=mask_fn)
 
 
-class DerivedMutable(BaseMutable[CHOICE_TYPE, Dict], DerivedMethodMixin):
+class DerivedMutable(BaseMutable[CHOICE_TYPE, CHOICE_TYPE],
+                     DerivedMethodMixin):
     """Class for derived mutable.
 
     A derived mutable is a mutable derived from other mutables that has
@@ -219,11 +220,9 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, Dict], DerivedMethodMixin):
         if source_mutables is None:
             source_mutables = self._trace_source_mutables()
             if len(source_mutables) == 0:
-                # TODO
-                # warning or raise error?
-                print_log(
-                    'Can not find source mutables automatically',
-                    level=logging.WARNING)
+                raise RuntimeError(
+                    'Can not find source mutables automatically, '
+                    'please provide manually.')
         else:
             source_mutables = set(source_mutables)
         for mutable in source_mutables:
@@ -234,7 +233,7 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, Dict], DerivedMethodMixin):
 
     # TODO
     # has no effect
-    def fix_chosen(self, chosen: Dict) -> None:
+    def fix_chosen(self, chosen: CHOICE_TYPE) -> None:
         """Fix mutable with subnet config.
 
         Warning:
@@ -245,13 +244,13 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, Dict], DerivedMethodMixin):
 
         self.is_fixed = True
 
-    def dump_chosen(self) -> Dict:
+    def dump_chosen(self) -> CHOICE_TYPE:
         """Dump information of chosen.
 
         Returns:
             Dict: Dumped information.
         """
-        return dict(current_choice=self.current_choice)
+        return self.current_choice
 
     @property
     def num_choices(self) -> int:
@@ -279,15 +278,25 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, Dict], DerivedMethodMixin):
             RuntimeError: Error when `current_choice` of derived mutable
                 is modified directly.
         """
-        raise RuntimeError('Choice of drived mutable can not be set!')
+        raise RuntimeError('Choice of drived mutable can not be set.')
 
     @property
     def current_mask(self) -> Tensor:
         """Current mask of derived mutable."""
         if self.mask_fn is None:
             raise RuntimeError(
-                '`mask_fn` must be set before access `current_mask`')
+                '`mask_fn` must be set before access `current_mask`.')
         return self.mask_fn()
+
+    @current_mask.setter
+    def current_mask(self, mask: Tensor) -> None:
+        """Setter of current mask.
+
+        Raises:
+            RuntimeError: Error when `current_mask` of derived mutable
+                is modified directly.
+        """
+        raise RuntimeError('Mask of drived mutable can not be set.')
 
     @staticmethod
     def _trace_source_mutables_from_closure(
@@ -343,8 +352,7 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, Dict], DerivedMethodMixin):
     # should be __str__? but can not provide info when debug
     def __repr__(self) -> str:  # pragma: no cover
         s = f'{self.__class__.__name__}('
-        if self.choice_fn is not None:
-            s += f'current_choice={self.current_choice}, '
+        s += f'current_choice={self.current_choice}, '
         if self.mask_fn is not None:
             s += f'activated_channels={self.current_mask.sum().item()}, '
         s += f'source_mutables={self.source_mutables}, '
