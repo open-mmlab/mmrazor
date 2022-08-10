@@ -28,7 +28,9 @@ class ModuleNode(BaseNode):
     in functions  self.is_{xxx}_node.
     """
 
-    pre_defined_node_val_str = ['cat', 'bind', 'pass']
+    pre_defined_node_val_str = [
+        'cat_placeholder', 'bind_placeholder', 'pass_placeholder'
+    ]
 
     def __init__(self,
                  name: str,
@@ -55,7 +57,8 @@ class ModuleNode(BaseNode):
                 or val in self.__class__.pre_defined_node_val_str
                 ), f'{val} node is not allowed'
         if expand_ratio != 1:
-            assert val == 'pass', 'expand != 1 is only valid when val=="pass"'
+            assert val == 'pass_placeholder', \
+                'expand != 1 is only valid when val=="pass"'
         super().__init__(name, val)
         self.expand_ratio = expand_ratio
 
@@ -144,7 +147,9 @@ class ModuleNode(BaseNode):
             else:
                 raise NotImplementedError(f'{self}')
         else:
-            if self.val in ['cat', 'bind', 'pass']:
+            if self.val in [
+                    'cat_placeholder', 'bind_placeholder', 'pass_placeholder'
+            ]:
                 return self.val
             else:
                 raise NotImplementedError()
@@ -152,16 +157,16 @@ class ModuleNode(BaseNode):
     def is_pass_node(self):
         """pass node represent a module whose in-channels correspond out-
         channels one-to-one."""
-        return self.type() in ['bn', 'dwconv', 'pass']
+        return self.type() in ['bn', 'dwconv', 'pass_placeholder']
 
     def is_cat_node(self):
         """cat node represents a cat module."""
-        return self.type() == 'cat'
+        return self.type() == 'cat_placeholder'
 
     def is_bind_node(self):
         """bind node represent a node that has multiple inputs, and their
         channels are bound one-to-one."""
-        return self.type() == 'bind'
+        return self.type() == 'bind_placeholder'
 
     def is_mix_node(self):
         """mix node represents a module that mixs all input channels and
@@ -269,26 +274,28 @@ class ToGraph:
 
     def __init__(self) -> None:
         self.graph = ModuleGraph[ModuleNode]()
-        self.cat_num = 0
-        self.bind_num = 0
-        self.pass_num = 0
+        self.cat_placeholder_num = 0
+        self.bind_placeholder_num = 0
+        self.pass_placeholder_num = 0
 
     # add node
 
     def new_placeholder_node(self, type: str, expand_ratio=1):
         """New cat/bind/pass node."""
-        assert type in ['cat', 'pass', 'bind']
+        assert type in [
+            'cat_placeholder', 'pass_placeholder', 'bind_placeholder'
+        ]
         if expand_ratio != 1:
-            assert type == 'pass'
-        if type == 'cat':
-            num = self.cat_num
-            self.cat_num += 1
-        elif type == 'pass':
-            num = self.pass_num
-            self.pass_num += 1
-        elif type == 'bind':
-            num = self.bind_num
-            self.bind_num += 1
+            assert type == 'pass_placeholder'
+        if type == 'cat_placeholder':
+            num = self.cat_placeholder_num
+            self.cat_placeholder_num += 1
+        elif type == 'pass_placeholder':
+            num = self.pass_placeholder_num
+            self.pass_placeholder_num += 1
+        elif type == 'bind_placeholder':
+            num = self.bind_placeholder_num
+            self.bind_placeholder_num += 1
         else:
             pass
         node = ModuleNode(f'{type}_{num}', type, expand_ratio=expand_ratio)
@@ -317,7 +324,7 @@ class ToGraph:
                 if len(node.prev_nodes) > 1:
                     need_bind_nodes.append(node)
         for node in need_bind_nodes:
-            bind_node = self.new_placeholder_node('bind')
+            bind_node = self.new_placeholder_node('bind_placeholder')
             self.insert_node_before(node, bind_node)
 
     def insert_pass_nodes(self):
@@ -328,7 +335,8 @@ class ToGraph:
                 if node.in_channels != pre.out_channels:
                     assert node.in_channels % pre.out_channels == 0
                     pass_node = self.new_placeholder_node(
-                        'pass', node.in_channels // pre.out_channels)
+                        'pass_placeholder',
+                        node.in_channels // pre.out_channels)
                     self.insert_node_before(node, pass_node)
 
     def remove_redundant_pass_nodes(self):
@@ -344,23 +352,23 @@ class ToGraph:
     # topo_rename_nodes
     def topo_rename(self):
         """Rename cat, bind, pass nodes in topological order."""
-        self.cat_num = 0
-        self.bind_num = 0
-        self.pass_num = 0
+        self.cat_placeholder_num = 0
+        self.bind_placeholder_num = 0
+        self.pass_placeholder_num = 0
         sorted_nodes = OrderedDict()
         for node in self.graph.topo_traverse():
             node: ModuleNode
             if isinstance(node.val, Module):
                 pass
             elif node.is_pass_node():
-                node.name = f'pass_{self.pass_num}'
-                self.pass_num += 1
+                node.name = f'pass_{self.pass_placeholder_num}'
+                self.pass_placeholder_num += 1
             elif node.is_cat_node():
-                node.name = f'cat_{self.cat_num}'
-                self.cat_num += 1
+                node.name = f'cat_{self.cat_placeholder_num}'
+                self.cat_placeholder_num += 1
             elif node.is_bind_node():
-                node.name = f'bind_{self.bind_num}'
-                self.bind_num += 1
+                node.name = f'bind_{self.bind_placeholder_num}'
+                self.bind_placeholder_num += 1
             else:
                 pass
             sorted_nodes[node.name] = node
@@ -388,8 +396,6 @@ class PathToGraph(ToGraph):
         super().__init__()
         self.path_list = path_list
         self.cat_dict: Dict[str, str] = {}
-        self.cat_num = 0
-        self.bind_num = 0
         self.name2module = dict(model.named_modules())
         self.parse(self.path_list)
 
@@ -448,10 +454,10 @@ class PathToGraph(ToGraph):
         if name_id in self.cat_dict:
             name = self.cat_dict[name_id]
         else:
-            name = f'cat_{self.cat_num}'
-            self.cat_num += 1
+            name = f'cat_{self.cat_placeholder_num}'
+            self.cat_placeholder_num += 1
             self.cat_dict[name_id] = name
-        node = self.graph.add_or_find_node(ModuleNode(name, 'cat'))
+        node = self.graph.add_or_find_node(ModuleNode(name, 'cat_placeholder'))
         return node
 
     def add_or_find_node(self, pathnode: PathNode) -> Module:
