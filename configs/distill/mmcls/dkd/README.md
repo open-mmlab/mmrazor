@@ -51,3 +51,7 @@ sh tools/slurm_train.sh $PARTITION $JOB_NAME \
   configs/distill/mmcls/dkd/dkd_logits_r34_r18_8xb32_in1k.py \
   $DISTILLATION_WORK_DIR
 ```
+
+### Acknowledgement
+
+Shout out to Davidgzx for his special contribution.
