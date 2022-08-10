@@ -88,7 +88,7 @@ class ModuleNode(BaseNode):
                 for node in self.prev_nodes
             ])
         else:
-            raise NotImplementedError(f'unsupported node type: {self.type()}')
+            raise NotImplementedError(f'unsupported node type: {self.type}')
 
     @property
     def out_channels(self) -> int:
@@ -116,7 +116,7 @@ class ModuleNode(BaseNode):
                 for node in self.prev_nodes
             ])
         else:
-            raise NotImplementedError(f'unsupported node type: {self.type()}')
+            raise NotImplementedError(f'unsupported node type: {self.type}')
 
     # other
 
@@ -125,6 +125,7 @@ class ModuleNode(BaseNode):
 
     # node type
 
+    @property
     def type(self) -> str:
         """The basic type of the node.
 
@@ -157,21 +158,21 @@ class ModuleNode(BaseNode):
     def is_pass_node(self):
         """pass node represent a module whose in-channels correspond out-
         channels one-to-one."""
-        return self.type() in ['bn', 'dwconv', 'pass_placeholder']
+        return self.type in ['bn', 'dwconv', 'pass_placeholder']
 
     def is_cat_node(self):
         """cat node represents a cat module."""
-        return self.type() == 'cat_placeholder'
+        return self.type == 'cat_placeholder'
 
     def is_bind_node(self):
         """bind node represent a node that has multiple inputs, and their
         channels are bound one-to-one."""
-        return self.type() == 'bind_placeholder'
+        return self.type == 'bind_placeholder'
 
     def is_mix_node(self):
         """mix node represents a module that mixs all input channels and
         generete new output channels, such as conv and linear."""
-        return self.type() in ['conv', 'linear', 'gwconv']
+        return self.type in ['conv', 'linear', 'gwconv']
 
     # check
 
