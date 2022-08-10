@@ -1,10 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Any, Dict, List, Optional
 
-import torch
-import torch.distributions as D
 import torch.nn as nn
-import torch.nn.functional as F
 
 from mmrazor.registry import MODELS
 from ...mutables import DiffMutableModule
@@ -107,19 +104,6 @@ class DiffModuleMutator(ModuleMutator):
             for m in mutables:
                 m.current_choice = choice
 
-    def sample_weights(self,
-                       arch_param: nn.Parameter,
-                       cate_prob: torch.Tensor,
-                       random_sample: bool = False):
-        """Use one-hot distributions to sample the arch weights based on the
-        arch params."""
-        if random_sample:
-            uni = torch.ones_like(arch_param)
-            m = D.one_hot_categorical.OneHotCategorical(uni)
-        else:
-            m = D.one_hot_categorical.OneHotCategorical(probs=cate_prob)
-        return m.sample()
-
     @property
     def mutable_class_type(self):
         """Differentiable mutable class type.
@@ -128,34 +112,3 @@ class DiffModuleMutator(ModuleMutator):
             Type[DiffMutableModule]: Class type of differentiable mutable.
         """
         return DiffMutableModule
-
-    def compute_loss(
-            self,
-            flops_model,
-            update_flops_loss: bool = False) -> Dict[str, torch.Tensor]:
-        """Compute mutator loss."""
-        arch_loss = 0.0
-        flops_loss = 0.0
-        self.arch_weights = dict()
-        for k, v in self.arch_params.items():
-            probs = F.softmax(v, -1)
-            self.arch_weights[k] = self.sample_weights(v, probs)
-            self.arch_weights[k].requires_grad_()
-            arch_loss += torch.log(
-                (self.arch_weights[k] * probs).sum(-1)).sum()
-            index = (self.arch_weights[k] == 1).nonzero().item()
-            # TODO add func(flops_model) to get mutator_flops: Dict
-            # flops_loss += probs[index] * mutator_flops[k][index]
-            flops_loss += probs[index] * 8.20
-        mutator_loss = dict(arch_loss=arch_loss)
-        if update_flops_loss:
-            mutator_loss['flops_loss'] = flops_loss
-        return mutator_loss
-
-    def handle_grads(self):
-        """Handle grads of arch params & arch weights."""
-        assert hasattr(self, 'arch_weights'), \
-            'Call self.gather_loss() first to get self.arch_weights.'
-        for k, v in self.arch_params.items():
-            v.grad.data.mul_(self.arch_weights[k].grad.data.sum())
-            self.arch_weights[k].grad.zero_()

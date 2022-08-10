@@ -1,5 +1,5 @@
 _STAGE_MUTABLE = dict(
-    type='mmrazor.DiffMutableOP',
+    type='mmrazor.OneHotMutableOP',
     candidates=dict(
         shuffle_3x3=dict(type='ShuffleBlock', kernel_size=3),
         shuffle_5x5=dict(type='ShuffleBlock', kernel_size=5),

@@ -28,18 +28,15 @@ import warnings
 from functools import partial
 from typing import Any, Callable, Dict, Optional, TextIO, Tuple
 
+import mmcv
 import numpy as np
 import torch
 import torch.nn as nn
-
-import mmcv
 
 
 def get_model_complexity_info(model: nn.Module,
                               input_shape: tuple,
                               print_per_layer_stat: bool = True,
-                              return_resources_model: bool = False,
-                              add_attr_for_each: bool = False,
                               as_strings: bool = True,
                               input_constructor: Optional[Callable] = None,
                               flush: bool = False,
@@ -110,19 +107,12 @@ def get_model_complexity_info(model: nn.Module,
     flops_count, params_count = flops_model.compute_average_flops_cost()
     if print_per_layer_stat:
         print_model_with_flops(
-            flops_model,
-            flops_count,
-            params_count,
-            ost=ost,
-            flush=flush,
-            add_attr_for_each=add_attr_for_each)
+            flops_model, flops_count, params_count, ost=ost, flush=flush)
 
     flops_model.stop_flops_count()
     if as_strings:
         return flops_to_string(flops_count), params_to_string(params_count)
 
-    if return_resources_model:
-        return flops_count, params_count, flops_model
     return flops_count, params_count
 
 
@@ -210,15 +200,15 @@ def params_to_string(num_params: float,
             return str(num_params)
 
 
-def print_model_with_flops(model: nn.Module,
-                           total_flops: float,
-                           total_params: float,
-                           units: Optional[str] = 'GFLOPs',
-                           precision: int = 3,
-                           ost: TextIO = sys.stdout,
-                           flush: bool = False,
-                           add_attr_for_each: bool = False,
-                           ) -> None:
+def print_model_with_flops(
+    model: nn.Module,
+    total_flops: float,
+    total_params: float,
+    units: Optional[str] = 'GFLOPs',
+    precision: int = 3,
+    ost: TextIO = sys.stdout,
+    flush: bool = False,
+) -> None:
     """Print a model with FLOPs for each layer.
 
     Args:
@@ -290,9 +280,6 @@ def print_model_with_flops(model: nn.Module,
     def flops_repr(self):
         accumulated_num_params = self.accumulate_params()
         accumulated_flops_cost = self.accumulate_flops()
-        if add_attr_for_each and not is_supported_instance(self):
-            self.__flops__ = accumulated_flops_cost
-            self.__params__ = accumulated_num_params
         return ', '.join([
             params_to_string(
                 accumulated_num_params, units='M', precision=precision),
@@ -322,39 +309,6 @@ def print_model_with_flops(model: nn.Module,
     model.apply(add_extra_repr)
     print(model, file=ost, flush=flush)
     model.apply(del_extra_repr)
-
-
-def get_specific_module_flops(model, fix_mutable):
-
-    def accumulate_params(self):
-        if is_supported_instance(self):
-            return self.__params__
-        else:
-            sum = 0
-            for m in self.children():
-                sum += m.accumulate_params()
-            return sum
-
-    def accumulate_flops(self):
-        if is_supported_instance(self):
-            return self.__flops__ / model.__batch_counter__
-        else:
-            sum = 0
-            for m in self.children():
-                sum += m.accumulate_flops()
-            return sum
-
-    def flops_record(self):
-        accumulated_num_params = self.accumulate_params()
-        accumulated_flops_cost = self.accumulate_flops()
-        if not is_supported_instance(self):
-            self.__flops__ = accumulated_flops_cost
-            self.__params__ = accumulated_num_params
-
-    def add_record(m):
-        m.accumulate_flops = accumulate_flops.__get__(m)
-        m.accumulate_params = accumulate_params.__get__(m)
-        get_flops_record = flops_record.__get__(m)
 
 
 def get_model_parameters_number(model: nn.Module) -> float:

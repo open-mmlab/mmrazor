@@ -1,20 +1,22 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import copy
 import os
 from typing import Dict, List, Optional, Union
 
 import torch
 import torch.distributed as dist
+import torch.nn.functional as F
 from torch import nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmengine.logging import MessageHub
 from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper, OptimWrapperDict
+from mmrazor.evaluators.op_spec_counters import get_model_complexity_info
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.mutators import DiffModuleMutator
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
-from mmrazor.structures import FlopsEstimator, export_fix_subnet
 from mmrazor.utils import FixMutable
 from ..base import BaseAlgorithm
 
@@ -86,6 +88,8 @@ class Dsnas(BaseAlgorithm):
             self.mutator.prepare_from_supernet(
                 self.architecture, is_random=False)
             self.is_supernet = True
+            self.search_space_name_list = list(
+                self.mutator.name2mutable.keys())
 
         self.is_fixed = False
         self.is_measured = False
@@ -95,26 +99,26 @@ class Dsnas(BaseAlgorithm):
         assert pretrain_epochs < finetune_epochs, \
             f'finetune stage(>={finetune_epochs} epochs) must be later than \
               pretrain stage(<={pretrain_epochs} epochs).'
-        self.flops_constraints = flops_constraints
 
-    def set_subnet(self):
-        subnet = self.mutator.sample_choices()
-        self.mutator.set_choices(subnet)
+        self.flops_constraints = flops_constraints
 
     def search_subnet(self):
         """Search subnet by mutator."""
 
         # Avoid circular import
         from mmrazor.structures import export_fix_subnet
-        self.set_subnet()
+
+        subnet = self.mutator.sample_choices()
+        self.mutator.set_choices(subnet)
         return export_fix_subnet(self)
-    
+
     def fix_subnet(self):
         """Fix subnet when finetuning."""
-        self.set_subnet()
-        for name, module in self.architecture.named_modules():
+        subnet = self.mutator.sample_choices()
+        self.mutator.set_choices(subnet)
+        for module in self.architecture.modules():
             if isinstance(module, BaseMutable):
-                module.fix_chosen(module.choices)
+                module.fix_chosen(module.current_choice)
 
     def _get_subnet_constraints(self):
         """Get model constraints.
@@ -122,26 +126,15 @@ class Dsnas(BaseAlgorithm):
         Returns:
             fix_subnet_flops: The result of model constraints.
         """
+        # Avoid circular import
+        from mmrazor.structures import load_fix_subnet
+
         fix_mutable = self.search_subnet()
-        return FlopsEstimator.get_model_complexity_info(
-            self,
-            fix_mutable=fix_mutable,
-            as_strings=False,
-            print_per_layer_stat=False)[0]
-    
-    def _get_mutable_constraints(self):
-        """Get mutable constraints by recording per layer stat.
-        
-        Returns:
-            Supernet with per layer stat recorded.
-        """
-        return FlopsEstimator.get_model_complexity_info(
-            self,
-            fix_mutable=None,
-            as_strings=False,
-            print_per_layer_stat=True,
-            add_attr_for_each=True,
-            return_resources_model=True)[2]
+        copied_model = copy.deepcopy(self)
+        if fix_mutable is not None:
+            load_fix_subnet(copied_model, fix_mutable)
+        return get_model_complexity_info(
+            copied_model, as_strings=False, print_per_layer_stat=False)[0]
 
     def train(self, mode=True):
         """Convert the model into eval mode while keep normalization layer
@@ -168,28 +161,14 @@ class Dsnas(BaseAlgorithm):
             cur_epoch = self.message_hub.get_info('epoch')
 
             # TODO process the input
-            # 1. update mutator
-            if cur_epoch >= self.pretrain_epochs and \
-               cur_epoch < self.finetune_epochs:
-                with optim_wrapper['mutator'].optim_context(self):
-                    mutator_loss = self.mutator.compute_loss()
-                    mutator_losses, mutator_log_vars = \
-                        self.parse_losses(mutator_loss)
+            if cur_epoch == self.finetune_epochs and not self.is_fixed:
+                # synchronize arch params to start the finetune stage.
+                for k, v in self.mutator.arch_params.items():
+                    dist.broadcast(v, src=0)
+                self.fix_subnet()
+                self.is_fixed = True
 
-                optim_wrapper['mutator'].update_params(
-                    mutator_losses, retain_graph=True)
-                log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
-                # deal with the grad of arch params & weights
-                self.mutator.handle_grads()
-            if cur_epoch == self.finetune_epochs:
-                if not self.is_fixed:
-                    # synchronize arch params to start the finetune stage.
-                    for k, v in self.mutator.arch_params.items():
-                        dist.broadcast(v, src=0)
-                    self.fix_subnet()
-                    self.is_fixed = True
-
-            # 2. update architecture
+            # 1. update architecture
             with optim_wrapper['architecture'].optim_context(self):
                 supernet_batch_inputs, supernet_data_samples = \
                     self.data_preprocessor(data, True)
@@ -198,8 +177,20 @@ class Dsnas(BaseAlgorithm):
 
             supernet_losses, supernet_log_vars = self.parse_losses(
                 supernet_loss)
-            optim_wrapper['architecture'].update_params(supernet_losses)
+            optim_wrapper['architecture'].update_params(
+                supernet_losses, retain_graph=self.update_mutator(cur_epoch))
             log_vars.update(add_prefix(supernet_log_vars, 'supernet'))
+
+            # 2. update mutator
+            if self.update_mutator(cur_epoch):
+                with optim_wrapper['mutator'].optim_context(self):
+                    mutator_loss = self.compute_mutator_loss(cur_epoch)
+                mutator_losses, mutator_log_vars = \
+                    self.parse_losses(mutator_loss)
+                optim_wrapper['mutator'].update_params(mutator_losses)
+                log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
+                # handle the grad of arch params & weights
+                self.handle_grads()
 
         else:
             # Enable automatic mixed precision training context.
@@ -210,6 +201,54 @@ class Dsnas(BaseAlgorithm):
             optim_wrapper.update_params(parsed_losses)
 
         return log_vars
+
+    def update_mutator(self, cur_epoch: int) -> bool:
+        """Whether to update mutator."""
+        if cur_epoch >= self.pretrain_epochs and \
+           cur_epoch < self.finetune_epochs:
+            return True
+        return False
+
+    def compute_mutator_loss(self, cur_epoch: int) -> Dict[str, torch.Tensor]:
+        """Compute mutator loss.
+
+        In this method, arch_loss & flops_loss[optional] are computed
+        by traversing arch_weights & probs in search groups.
+
+        Args:
+            cur_epoch (int): Current training epoch.
+
+        Returns:
+            Dict: Loss of the mutator.
+        """
+        if cur_epoch == self.pretrain_epochs + 1 and not self.is_measured:
+            # flops_model = self.module._get_mutable_constraints()
+            self.is_measured = True
+        # subnet_flops = self._get_subnet_constraints()
+        arch_loss = 0.0
+        # flops_loss = 0.0
+        for name, module in self.architecture.named_modules():
+            if isinstance(module, BaseMutable):
+                k = str(self.search_space_name_list.index(name))
+                probs = F.softmax(self.mutator.arch_params[k], -1)
+                arch_loss += torch.log(
+                    (module.arch_weights * probs).sum(-1)).sum()
+                # index = (module.arch_weights == 1).nonzero().item()
+                # TODO add mutator_flops: Dict[str, List]
+                # flops_loss += probs[index] * mutator_flops[k][index]
+        mutator_loss = dict(arch_loss=arch_loss)
+        # if subnet_flops >= self.flops_constraints:
+        #     mutator_loss['flops_loss'] = flops_loss
+        return mutator_loss
+
+    def handle_grads(self):
+        """Handle grads of arch params & arch weights."""
+        for name, module in self.architecture.named_modules():
+            if isinstance(module, BaseMutable):
+                k = str(self.search_space_name_list.index(name))
+                self.mutator.arch_params[k].grad.data.mul_(
+                    module.arch_weights.grad.data.sum())
+                module.arch_weights.grad.zero_()
 
 
 @MODEL_WRAPPERS.register_module()
@@ -240,28 +279,6 @@ class DsnasDDP(MMDistributedDataParallel):
             cur_epoch = self.message_hub.get_info('epoch')
 
             # TODO process the input
-            # 1. update mutator
-            if cur_epoch >= self.module.pretrain_epochs and \
-               cur_epoch < self.module.finetune_epochs:
-                if cur_epoch == self.module.pretrain_epochs + 1 and \
-                   not self.module.is_measured:
-                    flops_model = self.module._get_mutable_constraints()
-                    self.module.is_measured = True
-                subnet_flops = self.module._get_subnet_constraints()
-                update_flops_loss = False
-                if subnet_flops >= self.module.flops_constraints:
-                    update_flops_loss = True
-                with optim_wrapper['mutator'].optim_context(self):
-                    mutator_loss = self.module.mutator.compute_loss(
-                        flops_model, update_flops_loss)
-                    mutator_losses, mutator_log_vars = \
-                        self.module.parse_losses(mutator_loss)
-
-                optim_wrapper['mutator'].update_params(
-                    mutator_losses, retain_graph=True)
-                log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
-                # deal with the grad of arch params & weights
-                self.module.mutator.handle_grads()
             if cur_epoch == self.module.finetune_epochs and \
                not self.module.is_fixed:
                 # synchronize arch params to start the finetune stage.
@@ -270,7 +287,7 @@ class DsnasDDP(MMDistributedDataParallel):
                 self.module.fix_subnet()
                 self.module.is_fixed = True
 
-            # 2. update architecture
+            # 1. update architecture
             with optim_wrapper['architecture'].optim_context(self):
                 supernet_batch_inputs, supernet_data_samples = \
                     self.module.data_preprocessor(data, True)
@@ -279,8 +296,21 @@ class DsnasDDP(MMDistributedDataParallel):
 
             supernet_losses, supernet_log_vars = self.module.parse_losses(
                 supernet_loss)
-            optim_wrapper['architecture'].update_params(supernet_losses)
+            optim_wrapper['architecture'].update_params(
+                supernet_losses,
+                retain_graph=self.module.update_mutator(cur_epoch))
             log_vars.update(add_prefix(supernet_log_vars, 'supernet'))
+
+            # 2. update mutator
+            if self.module.update_mutator(cur_epoch):
+                with optim_wrapper['mutator'].optim_context(self):
+                    mutator_loss = self.module.compute_mutator_loss(cur_epoch)
+                mutator_losses, mutator_log_vars = \
+                    self.module.parse_losses(mutator_loss)
+                optim_wrapper['mutator'].update_params(mutator_losses)
+                log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
+                # handle the grad of arch params & weights
+                self.module.handle_grads()
 
         else:
             # Enable automatic mixed precision training context.

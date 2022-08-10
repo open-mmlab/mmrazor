@@ -11,9 +11,6 @@ preprocess_cfg = dict(
 train_pipeline = [
     dict(type='mmcls.LoadImageFromFile'),
     dict(type='mmcls.RandomResizedCrop', scale=224, backend='pillow'),
-    # dict(
-    #     type='mmcls.ColorJitter', brightness=0.4, contrast=0.4,
-    #     saturation=0.4),
     dict(type='mmcls.RandomFlip', prob=0.5, direction='horizontal'),
     dict(type='mmcls.PackClsInputs'),
 ]
@@ -26,8 +23,8 @@ test_pipeline = [
 ]
 
 train_dataloader = dict(
-    batch_size=256,
-    num_workers=4,
+    batch_size=512,
+    num_workers=15,
     dataset=dict(
         type=dataset_type,
         data_root='data/imagenet',
@@ -39,8 +36,8 @@ train_dataloader = dict(
 )
 
 val_dataloader = dict(
-    batch_size=256,
-    num_workers=4,
+    batch_size=100,
+    num_workers=15,
     dataset=dict(
         type=dataset_type,
         data_root='data/imagenet',
@@ -68,7 +65,6 @@ optim_wrapper = dict(
     clip_grad=dict(max_norm=5, norm_type=2))
 
 # leanring policy
-# TODO support different optim use different scheduler (wait mmengine)
 param_scheduler = [
     dict(
         type='mmcls.CosineAnnealingLR',
@@ -80,5 +76,11 @@ param_scheduler = [
 
 # train, val, test setting
 train_cfg = dict(by_epoch=True, max_epochs=240)
-val_cfg = dict()
+val_cfg = dict(
+    type='mmrazor.EvaluatorLoop',
+    dataloader=val_dataloader,
+    evaluator=dict(
+        type='mmrazor.NaiveEvaluator',
+        metrics=dict(type='mmcls.Accuracy', topk=(1, 5)),
+    ))
 test_cfg = dict()

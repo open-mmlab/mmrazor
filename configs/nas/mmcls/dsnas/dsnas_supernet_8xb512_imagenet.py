@@ -1,12 +1,10 @@
 _base_ = [
-    'mmrazor::_base_/settings/imagenet_bs512_dsnas.py',
+    'mmrazor::_base_/settings/imagenet_bs1024_dsnas.py',
     'mmrazor::_base_/nas_backbones/dsnas_shufflenet_supernet.py',
     'mmcls::_base_/default_runtime.py',
 ]
 
 # model
-mutator = dict(type='mmrazor.DiffModuleMutator')
-
 model = dict(
     type='mmrazor.Dsnas',
     architecture=dict(
@@ -35,9 +33,7 @@ model_wrapper_cfg = dict(
     find_unused_parameters=True)
 
 custom_hooks = [
-    dict(type='mmrazor.DumpSubnetHook',
-         interval=5,
-         max_keep_subnets=2),
+    dict(type='mmrazor.DumpSubnetHook', interval=5, max_keep_subnets=2),
 ]
 
 # TRAINING
@@ -45,10 +41,8 @@ optim_wrapper = dict(
     _delete_=True,
     constructor='mmrazor.SeparateOptimWrapperConstructor',
     architecture=dict(
-        # type='mmrazor.DsnasOptimWrapper',
-        optimizer=dict(type='SGD', lr=0.5, momentum=0.9, weight_decay=4e-5)),
-    mutator=dict(
         type='mmrazor.DsnasOptimWrapper',
-        optimizer=dict(type='Adam', lr=0.001, weight_decay=0.0)))
+        optimizer=dict(type='SGD', lr=0.5, momentum=0.9, weight_decay=4e-5)),
+    mutator=dict(optimizer=dict(type='Adam', lr=0.001, weight_decay=0.0)))
 
-randomness = dict(seed=22, diff_rank_seed=True)
+randomness = dict(seed=22, diff_rank_seed=False)

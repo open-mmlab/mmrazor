@@ -48,4 +48,5 @@ class EarlyArchFixerHook(Hook):
                 if argmax_index:
                     if mutable.key not in mutator.fix_arch_index.keys():
                         mutator.fix_arch_index[mutable.key] = [
-                            sort_arch_params[1][0].item(), arch_param]
+                            sort_arch_params[1][0].item(), arch_param
+                        ]
