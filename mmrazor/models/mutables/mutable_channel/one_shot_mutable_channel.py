@@ -6,7 +6,6 @@ import torch
 
 from mmrazor.registry import MODELS
 from ..derived_mutable import DerivedMutable
-from ..mutable_value import OneShotMutableValue
 from .mutable_channel import MutableChannel
 
 
@@ -170,6 +169,8 @@ class OneShotMutableChannel(MutableChannel[int, Dict]):
     def __mul__(self, other) -> DerivedMutable:
         if isinstance(other, int):
             return self.derive_expand_mutable(other)
+
+        from ..mutable_value import OneShotMutableValue
 
         def expand_choice_fn(mutable1: 'OneShotMutableChannel',
                              mutable2: OneShotMutableValue) -> Callable:

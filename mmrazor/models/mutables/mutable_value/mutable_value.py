@@ -110,7 +110,7 @@ class MutableValue(BaseMutable[Any, Dict], DerivedMethodMixin):
 
         self._current_choice = choice
 
-    def __rmul__(self, other: int) -> DerivedMutable:
+    def __rmul__(self, other) -> DerivedMutable:
         """Please refer to method :func:`__mul__`."""
         return self * other
 
@@ -217,3 +217,20 @@ class OneShotMutableValue(MutableValue):
             Any: Min choice.
         """
         return self.choices[0]
+
+    def __mul__(self, other) -> DerivedMutable:
+        """Overload `*` operator.
+
+        Args:
+            other (int, OneShotMutableChannel): Expand ratio or
+                OneShotMutableChannel.
+
+        Returns:
+            DerivedMutable: Derived expand mutable.
+        """
+        from ..mutable_channel import OneShotMutableChannel
+
+        if isinstance(other, OneShotMutableChannel):
+            return other * self
+
+        return super().__mul__(other)
