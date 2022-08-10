@@ -40,7 +40,7 @@ class TestDiffOP(TestCase):
         op = MODELS.build(op_cfg)
         input = torch.randn(4, 32, 64, 64)
 
-        arch_param = op.build_arch_param()
+        arch_param = nn.Parameter(torch.randn(len(op_cfg['candidates'])))
         output = op.forward_arch_param(input, arch_param=arch_param)
         assert output is not None
 
@@ -48,7 +48,6 @@ class TestDiffOP(TestCase):
         assert output is not None
 
         # test when some element of arch_param is 0
-        arch_param = op.build_arch_param()
         arch_param = nn.Parameter(torch.ones(op.num_choices))
         output = op.forward_arch_param(input, arch_param=arch_param)
         assert output is not None
@@ -107,10 +106,14 @@ class TestDiffOP(TestCase):
         input = torch.randn(4, 32, 64, 64)
 
         # test set_forward_args
-        arch_param = op.build_arch_param()
+        arch_param = nn.Parameter(torch.randn(len(op_cfg['candidates'])))
         op.set_forward_args(arch_param=arch_param)
         output = op.forward(input)
         assert output is not None
+
+        # test dump_chosen
+        with pytest.raises(AssertionError):
+            op.dump_chosen()
 
         # test forward when is_fixed is True
         op.fix_chosen('torch_conv2d_7x7')

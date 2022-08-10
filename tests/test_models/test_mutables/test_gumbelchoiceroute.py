@@ -33,7 +33,7 @@ class TestGumbelChoiceRoute(TestCase):
         # test with_arch_param = True
         GumbelChoiceRoute = MODELS.build(gumbel_choice_route_cfg)
 
-        arch_param = GumbelChoiceRoute.build_arch_param()
+        arch_param = nn.Parameter(torch.randn(len(edges_dict)))
         assert len(arch_param) == 5
         GumbelChoiceRoute.set_temperature(1.0)
 
@@ -49,7 +49,7 @@ class TestGumbelChoiceRoute(TestCase):
 
         new_gumbel_choice_route = MODELS.build(new_gumbel_choice_route_cfg)
 
-        arch_param = new_gumbel_choice_route.build_arch_param()
+        arch_param = nn.Parameter(torch.randn(len(edges_dict)))
         output = new_gumbel_choice_route.forward_arch_param(
             x=x, arch_param=arch_param)
         assert output is not None
