@@ -25,7 +25,7 @@ State-of-the-art distillation methods are mainly based on distilling deep featur
 
 | Dataset  | Model     | Teacher   | Top-1 (%) | Top-5 (%) | Configs                                                                                           | Download                                                                                             |
 | -------- | --------- | --------- | --------- | --------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| ImageNet | ResNet-18 | ResNet-34 | 71.368    | 90.256    | [config](/configs/distill/mmcls/dkd/dkd_res18_imagenet_distillation_8xb32_teacher_res34_train.py) | [model & log](https://autolink.sensetime.com/pages/model/share/afc68955-e25d-4488-b044-5e801b3ff62f) |
+| ImageNet | ResNet-18 | ResNet-34 | 71.368    | 90.256    | [config](dkd_logits_r34_r18_8xb32_in1k.py) | [model & log](https://autolink.sensetime.com/pages/model/share/afc68955-e25d-4488-b044-5e801b3ff62f) |
 
 ## Citation
 
@@ -48,6 +48,6 @@ https://mmclassification.readthedocs.io/en/latest/papers/resnet.html
 
 ```bash
 sh tools/slurm_train.sh $PARTITION $JOB_NAME \
-  configs/distill/mmcls/dkd/dkd_res18_cifar100_distillation_8xb16_teacher_res50_mimic.py \
+  configs/distill/mmcls/dkd/dkd_logits_r34_r18_8xb32_in1k.py \
   $DISTILLATION_WORK_DIR
 ```
