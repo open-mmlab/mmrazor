@@ -272,7 +272,7 @@ class GraphConverter:
 
     # add node
 
-    def new_placeholder_node(self, type: str, expand_ratio=1):
+    def _new_placeholder_node(self, type: str, expand_ratio=1):
         """New cat/bind/pass node."""
         assert type in [
             'cat_placeholder', 'pass_placeholder', 'bind_placeholder'
@@ -296,7 +296,7 @@ class GraphConverter:
 
     # insert nodes
 
-    def insert_node_before(self, node: ModuleNode, new_node: ModuleNode):
+    def _insert_node_before(self, node: ModuleNode, new_node: ModuleNode):
         """Insert a new node before a node."""
         for pre in node.prev_nodes:
             self.graph.connect(pre, new_node)
@@ -304,7 +304,7 @@ class GraphConverter:
             self.graph.disconnect(pre, node)
         self.graph.connect(new_node, node)
 
-    def insert_bind_nodes(self):
+    def _insert_bind_nodes(self):
         """Add bind nodes before the nodes which only need one previous node
         but have more than one."""
 
@@ -316,22 +316,22 @@ class GraphConverter:
                 if len(node.prev_nodes) > 1:
                     need_bind_nodes.append(node)
         for node in need_bind_nodes:
-            bind_node = self.new_placeholder_node('bind_placeholder')
-            self.insert_node_before(node, bind_node)
+            bind_node = self._new_placeholder_node('bind_placeholder')
+            self._insert_node_before(node, bind_node)
 
-    def insert_pass_nodes(self):
+    def _insert_pass_nodes(self):
         """Add pass nodes where the channel conflict."""
         for node in copy.copy(list(self.graph.nodes.values())):
             if len(node.prev_nodes) == 1:
                 pre: ModuleNode = node.prev_nodes[0]
                 if node.in_channels != pre.out_channels:
                     assert node.in_channels % pre.out_channels == 0
-                    pass_node = self.new_placeholder_node(
+                    pass_node = self._new_placeholder_node(
                         'pass_placeholder',
                         node.in_channels // pre.out_channels)
-                    self.insert_node_before(node, pass_node)
+                    self._insert_node_before(node, pass_node)
 
-    def remove_redundant_pass_nodes(self):
+    def _remove_redundant_pass_nodes(self):
         """Remove redundant pass nodes, which do not change number of channels
         and  do not represent any module."""
         for node in copy.copy(list(self.graph.nodes.values())):
@@ -342,7 +342,7 @@ class GraphConverter:
                 self.graph.delete_node(node)
 
     # topo_rename_nodes
-    def topo_rename(self):
+    def _topo_rename(self):
         """Rename cat, bind, pass nodes in topological order."""
         self.cat_placeholder_num = 0
         self.bind_placeholder_num = 0
@@ -367,12 +367,12 @@ class GraphConverter:
         self.graph.nodes = sorted_nodes
 
     # other
-    def post_process(self):
+    def _post_process(self):
         """Some post process after init a basic module graph."""
-        self.remove_redundant_pass_nodes()
-        self.insert_bind_nodes()
-        self.insert_pass_nodes()
-        self.topo_rename()
+        self._remove_redundant_pass_nodes()
+        self._insert_bind_nodes()
+        self._insert_pass_nodes()
+        self._topo_rename()
 
 
 class PathToGraphConverter(GraphConverter):
@@ -389,28 +389,28 @@ class PathToGraphConverter(GraphConverter):
         self.path_list = path_list
         self.cat_dict: Dict[str, str] = {}
         self.name2module = dict(model.named_modules())
-        self.parse(self.path_list)
+        self._pass(self.path_list)
 
-        self.post_process()
+        self._post_process()
 
-    def parse(self, path_list: PathList):
+    def _pass(self, path_list: PathList):
         """Parse path list."""
-        self.parse_unit(path_list, [])
+        self._parse_helper(path_list, [])
 
-    def parse_unit(self, path_unit: Union[PathList, Path, PathNode],
-                   next_nodes: List[ModuleNode]):
+    def _parse_helper(self, path_unit: Union[PathList, Path, PathNode],
+                      next_nodes: List[ModuleNode]):
         """Parse a node(unit) in path list."""
         current_node = None
         # path_list
         if isinstance(path_unit, PathList):
             for single_path in path_unit:  # sibling
-                self.parse_unit(single_path, next_nodes)
+                self._parse_helper(single_path, next_nodes)
 
         # path:
         elif isinstance(path_unit, Path):
             current_nexts = next_nodes
             for node in path_unit:  # parent -> children
-                current_node = self.parse_unit(node, current_nexts)
+                current_node = self._parse_helper(node, current_nexts)
                 current_nexts = [current_node]
 
         # Node
@@ -418,18 +418,18 @@ class PathToGraphConverter(GraphConverter):
 
             # cat node: [cat_path_lists]
             if isinstance(path_unit, PathConcatNode):
-                current_node = self.add_or_find_node(path_unit)
-                self.connect_nexts(current_node, next_nodes)
+                current_node = self._add_or_find_node(path_unit)
+                self._connect_nexts(current_node, next_nodes)
                 for catpath in path_unit.path_lists:  # sibling
-                    self.parse_unit(catpath, [current_node])
+                    self._parse_helper(catpath, [current_node])
 
             # single node
             else:
-                current_node = self.add_or_find_node(path_unit)
-                self.connect_nexts(current_node, next_nodes)
+                current_node = self._add_or_find_node(path_unit)
+                self._connect_nexts(current_node, next_nodes)
         return current_node
 
-    def add_or_find_cat_node(self, pathnode: PathConcatNode):
+    def _add_or_find_cat_node(self, pathnode: PathConcatNode):
         """Receive a cat-node.
 
         If the cat-node exists in the graph, the corresponding node is
@@ -452,21 +452,21 @@ class PathToGraphConverter(GraphConverter):
         node = self.graph.add_or_find_node(ModuleNode(name, 'cat_placeholder'))
         return node
 
-    def add_or_find_node(self, pathnode: PathNode) -> Module:
+    def _add_or_find_node(self, pathnode: PathNode) -> Module:
         """Receive a cat-node.
 
         If the cat-node exists in the graph, the corresponding node is
         returned, or a new cat node is added to the graph.
         """
         if isinstance(pathnode, PathConcatNode):
-            return self.add_or_find_cat_node(pathnode)
+            return self._add_or_find_cat_node(pathnode)
         else:
             name = pathnode.name
             assert name in self.name2module, f"{name} doesn't exist in model"
             module = self.name2module[name]
             return self.graph.add_or_find_node(ModuleNode(name, module))
 
-    def connect_nexts(self, node, nexts: List[ModuleNode]):
+    def _connect_nexts(self, node, nexts: List[ModuleNode]):
         """Connext the node and the nodes in nexts."""
         for next in nexts:
             self.graph.connect(node, next)
