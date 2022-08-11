@@ -1,10 +1,15 @@
+import torch
 from torch.ao.quantization import FakeQuantize
 from mmrazor.registry import MODELS
-from mmrazor.model.utils import is_symmetric_quant
+from mmrazor.models.utils import (_is_per_channel, _is_per_tensor, 
+    _is_symmetric_quant, _is_float_qparams) 
+from mmrazor.models.observers import MinMaxObserver
+
 
 @MODELS.register_module()
 class BaseFakeQuantize(FakeQuantize):
-    def __init__(self, observer):
+    def __init__(self, observer=MinMaxObserver()):
+        super().__init__()
         self.activation_post_process = observer
         self.quant_min = self.activation_post_process.quant_min
         self.quant_max = self.activation_post_process.quant_max
@@ -27,7 +32,7 @@ class BaseFakeQuantize(FakeQuantize):
         bitrange = torch.tensor(self.quant_max - self.quant_min + 1).double()
         self.bitwidth = int(torch.log2(bitrange).item())
         self.is_pot_scale = self.activation_post_process.is_pot_scale
-        self.is_symmetric_quant = is_symmetric_quant(self.qscheme)
+        self.is_symmetric_quant = _is_symmetric_quant(self.qscheme)
 
 
         

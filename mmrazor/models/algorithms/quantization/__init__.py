@@ -1,3 +1,3 @@
-from .qat import PTQ
+from .qat import QAT
 
-__all__ = ['PTQ']
+__all__ = ['QAT']

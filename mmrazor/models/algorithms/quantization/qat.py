@@ -2,10 +2,7 @@ from mmrazor.registry import MODELS
 from ..base import BaseAlgorithm
 
 @MODELS.register_module()
-class PTQ(BaseAlgorithm):
-
-    observers_enabled: True
-    fake_quants_enabled: True
+class QAT(BaseAlgorithm):
 
     def __init__(self,
                  architecture,
@@ -14,6 +11,8 @@ class PTQ(BaseAlgorithm):
                  init_cfg=None):
         super().__init__(architecture, data_preprocessor, init_cfg)
         self.quantizer = MODELS.build(quantizer)
+        self.observers_enabled = True
+        self.fake_quants_enabled = True
 
     def prepare(self):
         self.architecture = self.quantizer.prepare(self.architecture)
@@ -23,7 +22,7 @@ class PTQ(BaseAlgorithm):
 
     @property
     def state(self):
-        return (self.observers_enabled, fake_quants_enabled)
+        return (self.observers_enabled, self.fake_quants_enabled)
 
     @state.setter
     def state(self, observers_enabled, fake_quants_enabled):

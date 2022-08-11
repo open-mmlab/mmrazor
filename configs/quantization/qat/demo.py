@@ -1,38 +1,27 @@
 _base_ = [
-    'mmcls::_base_/datasets/imagenet_bs32.py',
-    'mmcls::resnet/resnet34_8xb32_in1k.py',
-    'mmcls::_base_/schedules/imagenet_bs256.py',
-    'mmcls::_base_/default_runtime.py'
+    'mmcls::resnet/resnet18_8xb16_cifar10.py'
 ]
 
 train_cfg = dict(
+    _delete_=True,
     type='mmrazor.QATEpochBasedLoop',
-    max_epochs=2,
+    max_epochs=3,
     calibrate_dataloader=None
 )
 
-# model = dict(
-#     type='QAT',
-#     architecture=_base_.resnet,
-#     quantizer=dict(
-#         type='TensorRTQuantizer',
-#         example_inputs=(1, 3, 224, 224),
-#         is_qat=True)
-# )
-
 model = dict(
-    type='QAT',
-    architecture=_base_.resnet,
+    _delete_=True,
+    type='mmrazor.QAT',
+    architecture=_base_.model,
     quantizer=dict(
-        type='BaseQuantizer',
-        example_inputs=(1, 3, 224, 224),
+        type='mmrazor.CustomQuantizer',
         is_qat=True,
         qconfig=dict(
             qtype='affine',
-            w_observer=dict(type='BaseObserver'),
-            a_observer=dict(type='BaseObserver'),
-            w_fakequantize=dict(type='BaseFakeQuantize'),
-            a_fakequantize=dict(type='BaseFakeQuantize')，
+            w_observer=dict(type='mmrazor.MinMaxObserver'),
+            a_observer=dict(type='mmrazor.MinMaxObserver'),
+            w_fake_quant=dict(type='mmrazor.BaseFakeQuantize'),
+            a_fake_quant=dict(type='mmrazor.BaseFakeQuantize'),
             w_qscheme=dict(
                 bit=2,
                 is_symmetry=False,
@@ -45,7 +34,16 @@ model = dict(
                 is_per_channel=False,
                 is_pot_scale=False),
         ),
-        prepare_custom_config=None,
-        convert_custom_config=None,
+        prepare_custom_config_dict=None,
+        convert_custom_config_dict=None,
     )
 )
+
+# model = dict(
+#     type='QAT',
+#     architecture=_base_.resnet,
+#     quantizer=dict(
+#         type='TensorRTQuantizer',
+#         example_inputs=(1, 3, 224, 224),
+#         is_qat=True)
+# )

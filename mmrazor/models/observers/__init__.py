@@ -1,3 +1,3 @@
-from .base import BaseObserver
+from .base import BaseObserver, MinMaxObserver
 
-__all__ = ['BaseObserver']
+__all__ = ['BaseObserver', 'MinMaxObserver']
