@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Optional
+from unittest.mock import MagicMock
 
 import pytest
 import torch
@@ -20,6 +21,19 @@ def test_dynamic_linear(bias) -> None:
         10, candidate_choices=[4, 8, 10], candidate_mode='number')
 
     d_linear = DynamicLinear(in_features=10, out_features=10, bias=bias)
+
+    mock_mutable = MagicMock()
+    with pytest.raises(ValueError):
+        d_linear.mutate_in_features(mock_mutable)
+    with pytest.raises(ValueError):
+        d_linear.mutate_out_features(mock_mutable)
+
+    mock_mutable.current_mask = torch.rand(8)
+    with pytest.raises(ValueError):
+        d_linear.mutate_in_features(mock_mutable)
+    with pytest.raises(ValueError):
+        d_linear.mutate_out_features(mock_mutable)
+
     d_linear.mutate_in_features(mutable_in_features)
     d_linear.mutate_out_features(mutable_out_features)
 

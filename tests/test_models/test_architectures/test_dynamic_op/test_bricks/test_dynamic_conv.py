@@ -29,12 +29,12 @@ class TestDynamicConv2d(TestCase):
         mock_mutable = MagicMock()
         with pytest.raises(ValueError):
             d_conv2d.mutate_in_channels(mock_mutable)
+        with pytest.raises(ValueError):
+            d_conv2d.mutate_out_channels(mock_mutable)
+
         mock_mutable.current_mask = torch.rand(4)
         with pytest.raises(ValueError):
             d_conv2d.mutate_in_channels(mock_mutable)
-        with pytest.raises(ValueError):
-            d_conv2d.mutate_out_channels(mock_mutable)
-        mock_mutable.current_mask = torch.rand(4)
         with pytest.raises(ValueError):
             d_conv2d.mutate_out_channels(mock_mutable)
 
