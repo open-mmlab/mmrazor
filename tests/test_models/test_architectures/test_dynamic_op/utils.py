@@ -5,7 +5,7 @@ from mmrazor.models.architectures.dynamic_op import DynamicOP
 
 
 def fix_dynamic_op(op: DynamicOP, fix_mutables: Optional[Dict] = None) -> None:
-    for mutable_name in op.accpeted_mutables:
+    for mutable_name in op.accepted_mutables:
         mutable = getattr(op, mutable_name)
         if mutable is None:
             continue

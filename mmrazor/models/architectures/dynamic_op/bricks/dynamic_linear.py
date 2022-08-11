@@ -19,7 +19,7 @@ class DynamicLinear(nn.Linear, ChannelDynamicOP):
         out_features_cfg (Dict): Config related to `out_features`.
     """
 
-    accpeted_mutables = {'mutable_in_features', 'mutable_out_features'}
+    accepted_mutables = {'mutable_in_features', 'mutable_out_features'}
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)

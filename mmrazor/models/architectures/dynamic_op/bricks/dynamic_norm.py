@@ -19,7 +19,7 @@ class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
     Args:
         num_features_cfg (Dict): Config related to `num_features`.
     """
-    accpeted_mutables = {'mutable_num_features'}
+    accepted_mutables = {'mutable_num_features'}
     batch_norm_type: str
 
     def __init__(self, *args, **kwargs) -> None:

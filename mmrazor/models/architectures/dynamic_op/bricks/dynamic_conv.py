@@ -14,6 +14,7 @@ from ..base import ChannelDynamicOP
 
 
 def _ntuple(n: int) -> Callable:  # pragma: no cover
+    """Repeat a number n times."""
 
     def parse(x):
         if isinstance(x, Iterable):
@@ -28,6 +29,11 @@ _pair = _ntuple(2)
 
 def _get_current_kernel_pos(source_kernel_size: int,
                             target_kernel_size: int) -> Tuple[int, int]:
+    """Get position of current kernel size.
+
+    Returns:
+        Tuple[int, int]: (upper left position, bottom right position)
+    """
     assert source_kernel_size >= target_kernel_size, \
         '`source_kernel_size` must greater or equal than `target_kernel_size`'
 
@@ -41,6 +47,7 @@ def _get_current_kernel_pos(source_kernel_size: int,
 
 
 def _get_same_padding(kernel_size: int) -> Tuple[int]:
+    """Get same padding according to kernel size."""
     assert kernel_size & 1
 
     return _pair(kernel_size >> 1)
@@ -48,7 +55,23 @@ def _get_same_padding(kernel_size: int) -> Tuple[int]:
 
 @CONV_LAYERS.register_module()
 class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
-    accpeted_mutables = {
+    """Dynamic Conv2d OP.
+
+    Note:
+        Arguments for ``__init__`` of ``DynamicConv2d`` is totally same as
+        :obj:`torch.nn.Conv2d`.
+
+    Attributes:
+        mutable_in_channels (BaseMutable, optional): Mutable for controlling
+            ``in_channels``.
+        mutable_out_channels (BaseMutable, optional): Mutable for controlling
+            ``out_channels``.
+        mutable_kernel_size (BaseMutable, optional): Mutable for controlling
+            ``kernel_size``.
+        kernel_size_list (list[int], optional): List of kernel size. Should be
+            set if ``kernel_size`` if mutable.
+    """
+    accepted_mutables = {
         'mutable_in_channels', 'mutable_out_channels', 'mutable_kernel_size'
     }
 
@@ -65,21 +88,61 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
         self.kernel_size_list: Optional[List[int]] = None
 
     def mutate_in_channels(self, mutable_in_channels: BaseMutable) -> None:
+        """Mutate ``in_channels`` with given mutable.
+
+        Args:
+            mutable_in_channels (BaseMutable): Mutable for controlling
+                ``in_channels``.
+
+        Raises:
+            ValueError: Error if size of mask if not same as ``in_channels``.
+        """
         self.check_mutable_channels(mutable_in_channels)
-        # TODO
-        # add warning if self.mutable_in_channels is not None
+        mask_size = mutable_in_channels.current_mask.size(0)
+        if mask_size != self.in_channels:
+            raise ValueError(
+                f'Expect mask size of mutable to be {self.in_channels} as '
+                f'`in_channels`, but got: {mask_size}.')
+
         self.mutable_in_channels = mutable_in_channels
 
     def mutate_out_channels(self, mutable_out_channels: BaseMutable) -> None:
+        """Mutate ``out_channels`` with given mutable.
+
+        Args:
+            mutable_out_channels (BaseMutable): Mutable for controlling
+                ``out_channels``.
+
+        Raises:
+            ValueError: Error if size of mask if not same as ``out_channels``.
+        """
         self.check_mutable_channels(mutable_out_channels)
-        # TODO
-        # add warnings
+        mask_size = mutable_out_channels.current_mask.size(0)
+        if mask_size != self.out_channels:
+            raise ValueError(
+                f'Expect mask size of mutable to be {self.out_channels} as '
+                f'`out_channels`, but got: {mask_size}.')
+
         self.mutable_out_channels = mutable_out_channels
 
     def mutate_kernel_size(
             self,
             mutable_kernel_size: BaseMutable,
             kernel_size_seq: Optional[Sequence[int]] = None) -> None:
+        """Mutate ``kernel_size`` with given mutable.
+
+        Args:
+            mutable_kernel_size (BaseMutable): Mutable for controlling
+                ``kernel_size``.
+
+        Note:
+            ``kernel_size_seq`` must be provided if ``mutable_kernel_size``
+            does not have ``choices`` attribute.
+
+        Raises:
+            ValueError: Error if max choice of ``kernel_size_list``
+                not same as ``kernel_size``.
+        """
         if kernel_size_seq is None:
             kernel_size_seq = getattr(mutable_kernel_size, 'choices', None)
         if kernel_size_seq is None or len(kernel_size_seq) == 0:
@@ -96,15 +159,16 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
 
     @property
     def mutable_in(self) -> Optional[BaseMutable]:
-        """Mutable `in_channels`."""
+        """Mutable for controlling ``in_channels``."""
         return self.mutable_in_channels
 
     @property
     def mutable_out(self) -> Optional[BaseMutable]:
-        """Mutable `out_channels`."""
+        """Mutable for controlling ``out_channels``."""
         return self.mutable_out_channels
 
     def forward(self, input: Tensor) -> Tensor:
+        """Forward of dynamic conv2d OP."""
         groups = self.groups
         if self.groups == self.in_channels == self.out_channels:
             groups = input.size(1)
@@ -115,6 +179,12 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
 
     def _get_dynamic_params(
             self) -> Tuple[Tensor, Optional[Tensor], Tuple[int]]:
+        """Get dynamic parameters that will be used in forward process.
+
+        Returns:
+            Tuple[Tensor, Optional[Tensor], Tuple[int]]: Sliced weight, bias
+                and padding.
+        """
         # 1. slice kernel size of weight according to kernel size mutable
         weight, padding = self.get_dynamic_params_by_mutable_kernel_size(
             self.weight)
@@ -126,11 +196,22 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
 
     def get_dynamic_params_by_mutable_kernel_size(
             self, weight: Tensor) -> Tuple[Tensor, Tuple[int]]:
+        """Get sliced weight and padding according to ``mutable_kernel_size``.
+
+        Returns:
+            Tuple[Tensor, Tuple[int]]: Sliced weight and padding.
+        """
         return weight, self.padding
 
     def get_dynamic_params_by_mutable_channels(
             self, weight: Tensor,
             bias: Optional[Tensor]) -> Tuple[Tensor, Optional[Tensor]]:
+        """Get sliced weight and bias according to ``mutable_in_channels`` and
+        ``mutable_out_channels``.
+
+        Returns:
+            Tuple[Tensor, Optional[Tensor]]: Sliced weight and bias.
+        """
         if self.mutable_in_channels is None and \
                 self.mutable_out_channels is None:
             return weight, bias
@@ -159,6 +240,11 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
         return weight, bias
 
     def to_static_op(self) -> nn.Conv2d:
+        """Convert dynamic conv2d to :obj:`torch.nn.Conv2d`.
+
+        Returns:
+            nn.Conv2d: :obj:`torch.nn.Conv2d` with sliced parameters.
+        """
         self.check_if_mutables_fixed()
 
         weight, bias, padding = self._get_dynamic_params()
@@ -191,39 +277,49 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
 
 @CONV_LAYERS.register_module()
 class ProgressiveDynamicConv2d(DynamicConv2d):
+    """Dynamic conv2d with (progressive shrinking) elastic kernel size.
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    Refers to `Once-for-All: Train One Network and Specialize it for Efficient
+    Deployment <http://arxiv.org/abs/1908.09791>`_.
+    """
 
-    def _register_transform_matrix(self) -> None:
+    def _register_transformation_matrix(self) -> None:
+        """Register transformation matrix that used in progressive
+        shrinking."""
         assert self.kernel_size_list is not None
 
-        transform_matrix_name_list = []
+        transformation_matrix_name_list = []
         for i in range(len(self.kernel_size_list) - 1, 0, -1):
             source_kernel_size = self.kernel_size_list[i]
             target_kernel_size = self.kernel_size_list[i - 1]
-            transform_matrix_name = self._get_transform_matrix_name(
+            transformation_matrix_name = self._get_transformation_matrix_name(
                 src=source_kernel_size, tar=target_kernel_size)
-            transform_matrix_name_list.append(transform_matrix_name)
-            transform_matrix = nn.Parameter(torch.eye(target_kernel_size**2))
+            transformation_matrix_name_list.append(transformation_matrix_name)
+            transformation_matrix = nn.Parameter(
+                torch.eye(target_kernel_size**2))
             self.register_parameter(
-                name=transform_matrix_name, param=transform_matrix)
-        self._transform_matrix_name_list = transform_matrix_name_list
+                name=transformation_matrix_name, param=transformation_matrix)
+        self._transformation_matrix_name_list = transformation_matrix_name_list
 
     def mutate_kernel_size(
             self,
             mutable_kernel_size: BaseMutable,
             kernel_size_seq: Optional[Sequence[int]] = None) -> None:
+        """Mutate ``kernel_size`` with given mutable and register
+        transformation matrix."""
         super().mutate_kernel_size(mutable_kernel_size, kernel_size_seq)
 
-        self._register_transform_matrix()
+        self._register_transformation_matrix()
 
     @staticmethod
-    def _get_transform_matrix_name(src: int, tar: int) -> str:
-        return f'transform_matrix_{src}to{tar}'
+    def _get_transformation_matrix_name(src: int, tar: int) -> str:
+        """Get name of transformation matrix."""
+        return f'transformation_matrix_{src}to{tar}'
 
     def get_dynamic_params_by_mutable_kernel_size(
             self, weight: Tensor) -> Tuple[Tensor, Tuple[int]]:
+        """Get sliced weight and bias according to ``mutable_in_channels`` and
+        ``mutable_out_channels``."""
         if self.mutable_kernel_size is None or self.kernel_size_list is None:
             return weight, self.padding
 
@@ -238,9 +334,9 @@ class ProgressiveDynamicConv2d(DynamicConv2d):
             if source_kernel_size <= current_kernel_size:
                 break
             target_kernel_size = self.kernel_size_list[i - 1]
-            transform_matrix = getattr(
+            transformation_matrix = getattr(
                 self,
-                self._get_transform_matrix_name(
+                self._get_transformation_matrix_name(
                     src=source_kernel_size, tar=target_kernel_size))
 
             start_offset, end_offset = _get_current_kernel_pos(
@@ -249,7 +345,7 @@ class ProgressiveDynamicConv2d(DynamicConv2d):
             target_weight = current_weight[:, :, start_offset:end_offset,
                                            start_offset:end_offset]
             target_weight = target_weight.reshape(-1, target_kernel_size**2)
-            target_weight = F.linear(target_weight, transform_matrix)
+            target_weight = F.linear(target_weight, transformation_matrix)
             target_weight = target_weight.reshape(
                 weight.size(0), weight.size(1), target_kernel_size,
                 target_kernel_size)
@@ -261,12 +357,12 @@ class ProgressiveDynamicConv2d(DynamicConv2d):
 
 @CONV_LAYERS.register_module()
 class CenterCropDynamicConv2d(DynamicConv2d):
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    """Dynamic conv2d with (center crop) elastic kernel size."""
 
     def get_dynamic_params_by_mutable_kernel_size(
             self, weight: Tensor) -> Tuple[Tensor, Tuple[int]]:
+        """Get sliced weight and bias according to ``mutable_in_channels`` and
+        ``mutable_out_channels``."""
         if self.mutable_kernel_size is None or self.kernel_size_list is None:
             return weight, self.padding
 

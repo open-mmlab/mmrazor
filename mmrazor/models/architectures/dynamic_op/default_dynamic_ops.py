@@ -23,7 +23,7 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
         in_channels_cfg (Dict): Config related to `in_channels`.
         out_channels_cfg (Dict): Config related to `out_channels`.
     """
-    accpeted_mutables = {'mutable_in_channels', 'mutable_out_channels'}
+    accepted_mutables = {'mutable_in_channels', 'mutable_out_channels'}
 
     def __init__(self, in_channels_cfg, out_channels_cfg, *args, **kwargs):
         super(DynamicConv2d, self).__init__(*args, **kwargs)
@@ -119,7 +119,7 @@ class DynamicLinear(nn.Linear, ChannelDynamicOP):
         in_features_cfg (Dict): Config related to `in_features`.
         out_features_cfg (Dict): Config related to `out_features`.
     """
-    accpeted_mutables = {'mutable_in_features', 'mutable_out_features'}
+    accepted_mutables = {'mutable_in_features', 'mutable_out_features'}
 
     def __init__(self, in_features_cfg, out_features_cfg, *args, **kwargs):
         super(DynamicLinear, self).__init__(*args, **kwargs)
@@ -166,7 +166,7 @@ class DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
     Args:
         num_features_cfg (Dict): Config related to `num_features`.
     """
-    accpeted_mutables = {'mutable_num_features'}
+    accepted_mutables = {'mutable_num_features'}
 
     def __init__(self, num_features_cfg, *args, **kwargs):
         super(DynamicBatchNorm, self).__init__(*args, **kwargs)
@@ -242,7 +242,7 @@ class DynamicInstanceNorm(_InstanceNorm, ChannelDynamicOP):
     Args:
         num_features_cfg (Dict): Config related to `num_features`.
     """
-    accpeted_mutables = {'mutable_num_features'}
+    accepted_mutables = {'mutable_num_features'}
 
     def __init__(self, num_features_cfg, *args, **kwargs):
         super(DynamicInstanceNorm, self).__init__(*args, **kwargs)
@@ -296,7 +296,7 @@ class DynamicGroupNorm(GroupNorm, ChannelDynamicOP):
     Args:
         num_channels_cfg (Dict): Config related to `num_channels`.
     """
-    accpeted_mutables = {'mutable_num_features'}
+    accepted_mutables = {'mutable_num_features'}
 
     def __init__(self, num_channels_cfg, *args, **kwargs):
         super(DynamicGroupNorm, self).__init__(*args, **kwargs)

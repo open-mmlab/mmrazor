@@ -2,6 +2,7 @@
 import copy
 from typing import Type
 from unittest import TestCase
+from unittest.mock import MagicMock
 
 import pytest
 import torch
@@ -24,6 +25,18 @@ class TestDynamicConv2d(TestCase):
             kernel_size=3,
             stride=1,
             bias=True)
+
+        mock_mutable = MagicMock()
+        with pytest.raises(ValueError):
+            d_conv2d.mutate_in_channels(mock_mutable)
+        mock_mutable.current_mask = torch.rand(4)
+        with pytest.raises(ValueError):
+            d_conv2d.mutate_in_channels(mock_mutable)
+        with pytest.raises(ValueError):
+            d_conv2d.mutate_out_channels(mock_mutable)
+        mock_mutable.current_mask = torch.rand(4)
+        with pytest.raises(ValueError):
+            d_conv2d.mutate_out_channels(mock_mutable)
 
         mutable_in_channels = OneShotMutableChannel(
             10, candidate_choices=[4, 8, 10], candidate_mode='number')
