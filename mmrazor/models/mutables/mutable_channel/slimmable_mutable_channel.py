@@ -72,8 +72,8 @@ class SlimmableMutableChannel(MutableChannel[int, Dict[str, int]]):
 
         # TODO
         # remove after remove `current_choice`
-        self.current_choice = self._candidate_choices.index(chosen)
-        self._candidate_choices = [chosen]
+        self.current_choice = self.candidate_choices.index(chosen)
+        self._chosen = chosen
 
         super().fix_chosen(chosen)
 
@@ -83,7 +83,9 @@ class SlimmableMutableChannel(MutableChannel[int, Dict[str, int]]):
 
     def convert_choice_to_mask(self, choice: int) -> torch.Tensor:
         """Get the mask according to the input choice."""
-        if not hasattr(self, '_candidate_choices'):
+        if self.is_fixed:
+            num_channels = self._chosen
+        elif not hasattr(self, '_candidate_choices'):
             # todo: we trace the supernet before set_candidate_choices.
             #  It's hacky
             num_channels = self.num_channels

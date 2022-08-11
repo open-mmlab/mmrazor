@@ -21,6 +21,9 @@ def _dynamic_to_static(model: nn.Module) -> None:
             else:
                 traverse_children(child)
 
+    if isinstance(model, DynamicOP):
+        raise RuntimeError('Root model can not be dynamic op.')
+
     traverse_children(model)
 
 
@@ -33,6 +36,11 @@ def load_fix_subnet(model: nn.Module,
     if not isinstance(fix_mutable, dict):
         raise TypeError('fix_mutable should be a `str` or `dict`'
                         f'but got {type(fix_mutable)}')
+
+    from mmrazor.models.architectures.dynamic_op import DynamicOP
+    if isinstance(model, DynamicOP):
+        raise RuntimeError('Root model can not be dynamic op.')
+
     # Avoid circular import
     from mmrazor.models.mutables import DerivedMutable
     from mmrazor.models.mutables.base_mutable import BaseMutable

@@ -11,7 +11,6 @@ from torch.nn.modules.instancenorm import _InstanceNorm
 
 from mmrazor.models.mutables.mutable_channel import MutableChannel
 from mmrazor.registry import MODELS
-from ...mutables import MutableManageMixIn
 from .base import ChannelDynamicOP
 
 
@@ -24,6 +23,7 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
         in_channels_cfg (Dict): Config related to `in_channels`.
         out_channels_cfg (Dict): Config related to `out_channels`.
     """
+    accpeted_mutables = {'mutable_in_channels', 'mutable_out_channels'}
 
     def __init__(self, in_channels_cfg, out_channels_cfg, *args, **kwargs):
         super(DynamicConv2d, self).__init__(*args, **kwargs)
@@ -111,7 +111,7 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
         return static_conv2d
 
 
-class DynamicLinear(nn.Linear, MutableManageMixIn):
+class DynamicLinear(nn.Linear, ChannelDynamicOP):
     """Applies a linear transformation to the incoming data according to the
     `mutable_in_features` and `mutable_out_features` dynamically.
 
@@ -119,6 +119,7 @@ class DynamicLinear(nn.Linear, MutableManageMixIn):
         in_features_cfg (Dict): Config related to `in_features`.
         out_features_cfg (Dict): Config related to `out_features`.
     """
+    accpeted_mutables = {'mutable_in_features', 'mutable_out_features'}
 
     def __init__(self, in_features_cfg, out_features_cfg, *args, **kwargs):
         super(DynamicLinear, self).__init__(*args, **kwargs)
@@ -153,14 +154,19 @@ class DynamicLinear(nn.Linear, MutableManageMixIn):
 
         return F.linear(input, weight, bias)
 
+    # TODO
+    def to_static_op(self) -> nn.Module:
+        return self
 
-class DynamicBatchNorm(_BatchNorm, MutableManageMixIn):
+
+class DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
     """Applies Batch Normalization over an input according to the
     `mutable_num_features` dynamically.
 
     Args:
         num_features_cfg (Dict): Config related to `num_features`.
     """
+    accpeted_mutables = {'mutable_num_features'}
 
     def __init__(self, num_features_cfg, *args, **kwargs):
         super(DynamicBatchNorm, self).__init__(*args, **kwargs)
@@ -224,14 +230,19 @@ class DynamicBatchNorm(_BatchNorm, MutableManageMixIn):
         return F.batch_norm(input, running_mean, running_var, weight, bias,
                             bn_training, exponential_average_factor, self.eps)
 
+    # TODO
+    def to_static_op(self) -> nn.Module:
+        return self
 
-class DynamicInstanceNorm(_InstanceNorm, MutableManageMixIn):
+
+class DynamicInstanceNorm(_InstanceNorm, ChannelDynamicOP):
     """Applies Instance Normalization over an input according to the
     `mutable_num_features` dynamically.
 
     Args:
         num_features_cfg (Dict): Config related to `num_features`.
     """
+    accpeted_mutables = {'mutable_num_features'}
 
     def __init__(self, num_features_cfg, *args, **kwargs):
         super(DynamicInstanceNorm, self).__init__(*args, **kwargs)
@@ -273,14 +284,19 @@ class DynamicInstanceNorm(_InstanceNorm, MutableManageMixIn):
                                self.training or not self.track_running_stats,
                                self.momentum, self.eps)
 
+    # TODO
+    def to_static_op(self) -> nn.Module:
+        return self
 
-class DynamicGroupNorm(GroupNorm, MutableManageMixIn):
+
+class DynamicGroupNorm(GroupNorm, ChannelDynamicOP):
     """Applies Group Normalization over a mini-batch of inputs according to the
     `mutable_num_channels` dynamically.
 
     Args:
         num_channels_cfg (Dict): Config related to `num_channels`.
     """
+    accpeted_mutables = {'mutable_num_features'}
 
     def __init__(self, num_channels_cfg, *args, **kwargs):
         super(DynamicGroupNorm, self).__init__(*args, **kwargs)
@@ -311,3 +327,7 @@ class DynamicGroupNorm(GroupNorm, MutableManageMixIn):
             weight, bias = self.weight, self.bias
 
         return F.group_norm(input, self.num_groups, weight, bias, self.eps)
+
+    # TODO
+    def to_static_op(self) -> nn.Module:
+        return self
