@@ -28,8 +28,12 @@ class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
         self.mutable_num_features: Optional[BaseMutable] = None
 
     def mutate_num_features(self, mutable_num_features: BaseMutable) -> None:
-        self.check_mutable_channels(mutable_num_features)
+        if not self.affine and not self.track_running_stats:
+            raise RuntimeError(
+                'num_features can not be mutated if both `affine` and '
+                '`tracking_running_stats` are False')
 
+        self.check_mutable_channels(mutable_num_features)
         self.mutable_num_features = mutable_num_features
 
     @property
@@ -42,15 +46,27 @@ class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
         """Mutable `num_features`."""
         return self.mutable_num_features
 
+    def _get_out_mask(self) -> Optional[torch.Tensor]:
+        if self.affine:
+            refer_tensor = self.weight
+        elif self.track_running_stats:
+            refer_tensor = self.running_mean
+        else:
+            return None
+
+        if self.mutable_num_features is not None:
+            out_mask = self.mutable_num_features.current_mask.to(
+                refer_tensor.device)
+        else:
+            out_mask = torch.ones_like(refer_tensor).bool()
+
+        return out_mask
+
     def _get_dynamic_params(
         self
     ) -> Tuple[Optional[Tensor], Optional[Tensor], Optional[Tensor],
                Optional[Tensor]]:
-        if self.mutable_num_features is not None:
-            out_mask = self.mutable_num_features.current_mask.to(
-                self.weight.device)
-        else:
-            out_mask = torch.ones_like(self.weight).bool()
+        out_mask = self._get_out_mask()
 
         if self.affine:
             weight = self.weight[out_mask]
@@ -99,9 +115,10 @@ class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
         out = F.batch_norm(input, running_mean, running_var, weight, bias,
                            bn_training, exponential_average_factor, self.eps)
 
-        if self.track_running_stats:
-            self.running_mean.copy_(running_mean)
-            self.running_var.copy_(running_var)
+        if self.training and self.track_running_stats:
+            out_mask = self._get_out_mask()
+            self.running_mean.masked_scatter_(out_mask, running_mean)
+            self.running_var.masked_scatter_(out_mask, running_var)
 
         return out
 
