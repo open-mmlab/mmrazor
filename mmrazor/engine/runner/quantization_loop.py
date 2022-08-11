@@ -1,5 +1,7 @@
 from mmrazor.registry import LOOPS
 from mmengine.runner import EpochBasedTrainLoop
+from typing import Union, Optional, List, Tuple, Dict
+from torch.utils.data import DataLoader
 
 @LOOPS.register_module()
 class QATEpochBasedLoop(EpochBasedTrainLoop):
@@ -19,7 +21,7 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
                          val_begin, 
                          val_interval, 
                          dynamic_intervals)
-        if isinstance(dataloader, dict):
+        if isinstance(calibrate_dataloader, dict):
             # Determine whether or not different ranks use different seed.
             diff_rank_seed = runner._randomness_cfg.get(
                 'diff_rank_seed', False)
@@ -29,20 +31,27 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
             self.calibrate_dataloader = calibrate_dataloader
         
         self.is_calibrate = True if calibrate_dataloader is not None else False
+        
+        if self.runner.distributed:
+            self.model = runner.model.module
+        else:
+            self.model = runner.model
     
+    # TODO: to finish
     def calibrate(self, calibrate_dataloader) -> None:
+        pass
     
     def run(self) -> None:
         """Launch training."""
         self.runner.call_hook('before_train')
         
-        self.runner.model.prepare()
+        self.model.prepare()
         
         if self.is_calibrate:
-            self.runner.model.state(1, 0)
+            self.model.state(1, 0)
             self.calibrate(self.calibrate_dataloader)
         
-        self.runner.model.state(1, 1)
+        self.model.state(1, 1)
 
         while self._epoch < self._max_epochs:
             self.run_epoch()
@@ -53,7 +62,7 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
                     and self._epoch % self.val_interval == 0):
                 self.runner.val_loop.run()
         
-        self.runner.model.convert()
+        self.model.convert()
         
         self.runner.val_loop.run()
         

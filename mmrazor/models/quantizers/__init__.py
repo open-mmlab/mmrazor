@@ -1,3 +1,3 @@
-from .base import BaseQuantizer
+from .base import CustomQuantizer
 
-__all__ = ['BaseQuantizer']
+__all__ = ['CustomQuantizer']

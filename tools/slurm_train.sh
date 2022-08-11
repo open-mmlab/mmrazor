@@ -22,4 +22,4 @@ srun -p ${PARTITION} \
     --cpus-per-task=${CPUS_PER_TASK} \
     --kill-on-bad-exit=1 \
     ${SRUN_ARGS} \
-    python -u tools/train.py ${CONFIG} --work-dir=${WORK_DIR} --launcher="slurm" ${PY_ARGS}
+    python -u tools/train.py ${CONFIG} --work-dir=${WORK_DIR} --launcher="slurm" --cfg-options dist.port=12341 ${PY_ARGS}
