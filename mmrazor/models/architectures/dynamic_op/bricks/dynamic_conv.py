@@ -13,7 +13,7 @@ from mmrazor.models.mutables.base_mutable import BaseMutable
 from ..base import ChannelDynamicOP
 
 
-def _ntuple(n: int) -> Callable:
+def _ntuple(n: int) -> Callable:  # pragma: no cover
 
     def parse(x):
         if isinstance(x, Iterable):
@@ -28,8 +28,8 @@ _pair = _ntuple(2)
 
 def _get_current_kernel_pos(source_kernel_size: int,
                             target_kernel_size: int) -> Tuple[int, int]:
-    assert source_kernel_size > target_kernel_size, \
-        '`source_kernel_size` must greater than `target_kernel_size`'
+    assert source_kernel_size >= target_kernel_size, \
+        '`source_kernel_size` must greater or equal than `target_kernel_size`'
 
     center = source_kernel_size >> 1
     current_offset = target_kernel_size >> 1
@@ -81,8 +81,8 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
             mutable_kernel_size: BaseMutable,
             kernel_size_seq: Optional[Sequence[int]] = None) -> None:
         if kernel_size_seq is None:
-            kernel_size_seq = getattr(mutable_kernel_size, 'choices')
-        if kernel_size_seq is None:
+            kernel_size_seq = getattr(mutable_kernel_size, 'choices', None)
+        if kernel_size_seq is None or len(kernel_size_seq) == 0:
             raise ValueError('kernel size sequence must be provided')
         kernel_size_list = list(sorted(kernel_size_seq))
         max_kernel_size = _pair(kernel_size_list[-1])
