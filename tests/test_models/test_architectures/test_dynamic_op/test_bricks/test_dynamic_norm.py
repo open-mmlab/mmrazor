@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Tuple, Type
+from unittest.mock import MagicMock
 
 import pytest
 import torch
@@ -34,6 +35,13 @@ def test_dynamic_bn(dynamic_class: Type[nn.modules.batchnorm._BatchNorm],
         with pytest.raises(RuntimeError):
             d_bn.mutate_num_features(mutable_num_features)
     else:
+        mock_mutable = MagicMock()
+        with pytest.raises(ValueError):
+            d_bn.mutate_num_features(mock_mutable)
+        mock_mutable.current_mask = torch.rand(5)
+        with pytest.raises(ValueError):
+            d_bn.mutate_num_features(mock_mutable)
+
         d_bn.mutate_num_features(mutable_num_features)
     assert d_bn.mutable_in is d_bn.mutable_out
 

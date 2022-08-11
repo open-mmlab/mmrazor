@@ -243,7 +243,7 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
         """Convert dynamic conv2d to :obj:`torch.nn.Conv2d`.
 
         Returns:
-            nn.Conv2d: :obj:`torch.nn.Conv2d` with sliced parameters.
+            torch.nn.Conv2d: :obj:`torch.nn.Conv2d` with sliced parameters.
         """
         self.check_if_mutables_fixed()
 

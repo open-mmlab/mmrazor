@@ -13,11 +13,16 @@ from ..base import ChannelDynamicOP
 
 
 class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
-    """Applies Batch Normalization over an input according to the
-    `mutable_num_features` dynamically.
+    """Dynamic BatchNormxd OP.
 
-    Args:
-        num_features_cfg (Dict): Config related to `num_features`.
+    Note:
+        Arguments for ``__init__`` of ``DynamicBatchNormxd`` is totally same as
+        :obj:`torch.nn.BatchNormxd`.
+
+    Attributes:
+        mutable_num_features (BaseMutable, optional): Mutable for controlling
+            ``num_features``.
+        batch_norm_type (str): Type of BatchNorm.
     """
     accepted_mutables = {'mutable_num_features'}
     batch_norm_type: str
@@ -28,25 +33,43 @@ class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
         self.mutable_num_features: Optional[BaseMutable] = None
 
     def mutate_num_features(self, mutable_num_features: BaseMutable) -> None:
+        """Mutate ``num_features`` with given mutable.
+
+        Args:
+            mutable_num_features (BaseMutable): Mutable for controlling
+                ``num_features``.
+
+        Raises:
+            RuntimeError: Error if both ``affine`` and
+                ``tracking_running_stats`` are False.
+            ValueError: Error if size of mask if not same as ``num_features``.
+        """
         if not self.affine and not self.track_running_stats:
             raise RuntimeError(
                 'num_features can not be mutated if both `affine` and '
                 '`tracking_running_stats` are False')
 
         self.check_mutable_channels(mutable_num_features)
+        mask_size = mutable_num_features.current_mask.size(0)
+        if mask_size != self.num_features:
+            raise ValueError(
+                f'Expect mask size of mutable to be {self.num_features} as '
+                f'`num_features`, but got: {mask_size}.')
+
         self.mutable_num_features = mutable_num_features
 
     @property
     def mutable_in(self) -> Optional[BaseMutable]:
-        """Mutable `num_features`."""
+        """Mutable for controlling ``num_features``."""
         return self.mutable_num_features
 
     @property
     def mutable_out(self) -> Optional[BaseMutable]:
-        """Mutable `num_features`."""
+        """Mutable for controlling ``num_features``."""
         return self.mutable_num_features
 
-    def _get_out_mask(self) -> Optional[torch.Tensor]:
+    def _get_num_features_mask(self) -> Optional[torch.Tensor]:
+        """Get mask of ``num_features``"""
         if self.affine:
             refer_tensor = self.weight
         elif self.track_running_stats:
@@ -66,7 +89,14 @@ class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
         self
     ) -> Tuple[Optional[Tensor], Optional[Tensor], Optional[Tensor],
                Optional[Tensor]]:
-        out_mask = self._get_out_mask()
+        """Get dynamic parameters that will be used in forward process.
+
+        Returns:
+            Tuple[Optional[Tensor], Optional[Tensor], Optional[Tensor],
+                Optional[Tensor]]: Sliced running_mean, running_var, weight and
+                bias.
+        """
+        out_mask = self._get_num_features_mask()
 
         if self.affine:
             weight = self.weight[out_mask]
@@ -85,8 +115,7 @@ class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
         return running_mean, running_var, weight, bias
 
     def forward(self, input: Tensor) -> Tensor:
-        """Slice the parameters according to `mutable_num_features`, and
-        forward."""
+        """Forward of dynamic BatchNormxd OP."""
         self._check_input_dim(input)
 
         if self.momentum is None:
@@ -115,14 +144,21 @@ class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
         out = F.batch_norm(input, running_mean, running_var, weight, bias,
                            bn_training, exponential_average_factor, self.eps)
 
+        # copy changed running statistics
         if self.training and self.track_running_stats:
-            out_mask = self._get_out_mask()
+            out_mask = self._get_num_features_mask()
             self.running_mean.masked_scatter_(out_mask, running_mean)
             self.running_var.masked_scatter_(out_mask, running_var)
 
         return out
 
     def to_static_op(self) -> nn.Module:
+        """Convert dynamic BatchNormxd to :obj:`torch.nn.BatchNormxd`.
+
+        Returns:
+            torch.nn.BatchNormxd: :obj:`torch.nn.BatchNormxd` with sliced
+                parameters.
+        """
         self.check_if_mutables_fixed()
 
         running_mean, running_var, weight, bias = self._get_dynamic_params()
@@ -152,9 +188,11 @@ class _DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
 
 @NORM_LAYERS.register_module()
 class DynamicBatchNorm1d(_DynamicBatchNorm):
+    """Dynamic BatchNorm1d OP."""
     batch_norm_type: str = 'BatchNorm1d'
 
     def _check_input_dim(self, input: Tensor) -> None:
+        """Check if input dimension is valid."""
         if input.dim() != 2 and input.dim() != 3:
             raise ValueError('expected 2D or 3D input (got {}D input)'.format(
                 input.dim()))
@@ -162,9 +200,11 @@ class DynamicBatchNorm1d(_DynamicBatchNorm):
 
 @NORM_LAYERS.register_module()
 class DynamicBatchNorm2d(_DynamicBatchNorm):
+    """Dynamic BatchNorm2d OP."""
     batch_norm_type: str = 'BatchNorm2d'
 
     def _check_input_dim(self, input: Tensor) -> None:
+        """Check if input dimension is valid."""
         if input.dim() != 4:
             raise ValueError('expected 4D input (got {}D input)'.format(
                 input.dim()))
@@ -172,9 +212,11 @@ class DynamicBatchNorm2d(_DynamicBatchNorm):
 
 @NORM_LAYERS.register_module()
 class DynamicBatchNorm3d(_DynamicBatchNorm):
+    """Dynamic BatchNorm3d OP."""
     batch_norm_type: str = 'BatchNorm3d'
 
     def _check_input_dim(self, input: Tensor) -> None:
+        """Check if input dimension is valid."""
         if input.dim() != 5:
             raise ValueError('expected 5D input (got {}D input)'.format(
                 input.dim()))
