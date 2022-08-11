@@ -58,16 +58,6 @@ class DiffMutableModule(MutableModule[CHOICE_TYPE, CHOSEN_TYPE]):
         else:
             return self.forward_arch_param(x, arch_param=arch_param)
 
-    def build_arch_param(self, is_random: bool = True) -> nn.Parameter:
-        """Build learnable architecture parameters."""
-        if is_random:
-            return nn.Parameter(torch.randn(self.num_choices) * 1e-3)
-        else:
-            loc_mean = 1.0
-            loc_std = 0.01
-            return nn.Parameter(
-                torch.zeros(self.num_choices).normal_(loc_mean, loc_std))
-
     def compute_arch_probs(self, arch_param: nn.Parameter) -> Tensor:
         """compute chosen probs according to architecture params."""
         return F.softmax(arch_param, -1)
@@ -238,9 +228,11 @@ class DiffMutableOP(DiffMutableModule[str, str]):
         self.is_fixed = True
 
     def sample_choice(self, arch_param):
+        """Sample choice based on arch_parameters."""
         return self.choices[torch.argmax(arch_param).item()]
 
     def dump_chosen(self):
+        """Dump current choice."""
         assert self.current_choice is not None
         return self.current_choice
 
@@ -487,10 +479,12 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
         return list(self._candidates.keys())
 
     def dump_chosen(self):
+        """dump current choice."""
         assert self.current_choice is not None
         return self.current_choice
 
     def sample_choice(self, arch_param):
+        """sample choice based on `arch_param`."""
         sort_idx = torch.argsort(-arch_param).cpu().numpy().tolist()
         choice_idx = sort_idx[:self.num_chosen]
         choice = [self.choices[i] for i in choice_idx]

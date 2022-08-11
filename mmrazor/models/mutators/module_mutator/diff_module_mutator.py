@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Any, Dict, List, Optional
 
+import torch
 import torch.nn as nn
 
 from mmrazor.registry import MODELS
@@ -27,6 +28,15 @@ class DiffModuleMutator(ModuleMutator):
                  custom_group: Optional[List[List[str]]] = None,
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(custom_group=custom_group, init_cfg=init_cfg)
+
+    def build_arch_param(self,
+                         num_choices: int,
+                         is_random: bool = True) -> nn.Parameter:
+        """Build learnable architecture parameters."""
+        if is_random:
+            return nn.Parameter(torch.randn(num_choices) * 1e-3)
+        else:
+            return nn.Parameter(torch.zeros(num_choices).normal_(1.0, 0.01))
 
     def prepare_from_supernet(self,
                               supernet: nn.Module,
@@ -55,7 +65,8 @@ class DiffModuleMutator(ModuleMutator):
         arch_params = nn.ParameterDict()
 
         for group_id, modules in self.search_groups.items():
-            group_arch_param = modules[0].build_arch_param(is_random)
+            group_arch_param = self.build_arch_param(
+                modules[0].num_choices, is_random=is_random)
             arch_params[str(group_id)] = group_arch_param
 
         return arch_params

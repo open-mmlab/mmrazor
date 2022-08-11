@@ -73,6 +73,7 @@ class SlimmableMutableChannel(MutableChannel[int, Dict[str, int]]):
         # TODO
         # remove after remove `current_choice`
         self.current_choice = self._candidate_choices.index(chosen)
+        self._candidate_choices = [chosen]
 
         super().fix_chosen(chosen)
 

@@ -27,13 +27,13 @@ class NaiveEvaluator(Evaluator):
 
     def __init__(self,
                  metrics: Union[dict, BaseMetric, Sequence],
-                 default_shape: Tuple[int] = (1, 3, 224, 224),
+                 default_shape: Tuple = (1, 3, 224, 224),
                  units: str = 'M',
                  test_fn=None,
                  disabled_counters=None):
         super(NaiveEvaluator, self).__init__(metrics=metrics)
         assert len(default_shape) in [3, 4, 5], \
-                    f'Unsupported shape: {default_shape}'
+            f'Unsupported shape: {default_shape}'
         self.default_shape = default_shape
         self.units = units
         self.test_fn = test_fn
