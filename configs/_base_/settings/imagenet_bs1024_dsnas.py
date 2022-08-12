@@ -60,19 +60,20 @@ paramwise_cfg = dict(
 # optimizer
 optim_wrapper = dict(
     architecture=dict(
-        type='mmcls.SGD', lr=0.025, momentum=0.9, weight_decay=3e-4),
-    mutator=dict(type='mmcls.Adam', lr=3e-4, weight_decay=1e-3),
-    clip_grad=dict(max_norm=5, norm_type=2))
+        type='mmcls.SGD', lr=0.5, momentum=0.9, weight_decay=4e-5),
+    mutator=dict(type='mmcls.Adam', lr=2e-3, weight_decay=0.0),
+    # clip_grad=dict(max_norm=5, norm_type=2),
+)
 
 # leanring policy
-param_scheduler = [
-    dict(
+param_scheduler = dict(
+    architecture=dict(
         type='mmcls.CosineAnnealingLR',
-        T_max=50,
+        T_max=240,
         eta_min=0.0,
         by_epoch=True,
     ),
-]
+    mutator=dict(type='mmcls.ConstantLR', factor=1, begin=0, end=240))
 
 # train, val, test setting
 train_cfg = dict(by_epoch=True, max_epochs=240)

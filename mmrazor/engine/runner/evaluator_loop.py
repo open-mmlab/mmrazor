@@ -42,7 +42,7 @@ class EvaluatorLoop(ValLoop):
         else:
             model = self.runner.model
 
-        if not model.is_fixed:
+        if model.is_supernet:
             model = self.export_subnet(model)
         # compute metrics with resources(latency/flops/capacity) evaluated.
         metrics = self.evaluator.evaluate(

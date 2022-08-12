@@ -91,7 +91,6 @@ class Dsnas(BaseAlgorithm):
             self.search_space_name_list = list(
                 self.mutator.name2mutable.keys())
 
-        self.is_fixed = False
         self.is_measured = False
         self.norm_training = norm_training
         self.pretrain_epochs = pretrain_epochs
@@ -119,6 +118,7 @@ class Dsnas(BaseAlgorithm):
         for module in self.architecture.modules():
             if isinstance(module, BaseMutable):
                 module.fix_chosen(module.current_choice)
+        self.is_supernet = False
 
     def _get_subnet_constraints(self):
         """Get model constraints.
@@ -161,12 +161,11 @@ class Dsnas(BaseAlgorithm):
             cur_epoch = self.message_hub.get_info('epoch')
 
             # TODO process the input
-            if cur_epoch == self.finetune_epochs and not self.is_fixed:
+            if cur_epoch == self.finetune_epochs and self.is_supernet:
                 # synchronize arch params to start the finetune stage.
                 for k, v in self.mutator.arch_params.items():
                     dist.broadcast(v, src=0)
                 self.fix_subnet()
-                self.is_fixed = True
 
             # 1. update architecture
             with optim_wrapper['architecture'].optim_context(self):
@@ -177,8 +176,9 @@ class Dsnas(BaseAlgorithm):
 
             supernet_losses, supernet_log_vars = self.parse_losses(
                 supernet_loss)
-            optim_wrapper['architecture'].update_params(
-                supernet_losses, retain_graph=self.update_mutator(cur_epoch))
+            optim_wrapper['architecture'].update_params(  # type: ignore
+                supernet_losses,
+                retain_graph=self.update_mutator(cur_epoch))
             log_vars.update(add_prefix(supernet_log_vars, 'supernet'))
 
             # 2. update mutator
@@ -280,12 +280,11 @@ class DsnasDDP(MMDistributedDataParallel):
 
             # TODO process the input
             if cur_epoch == self.module.finetune_epochs and \
-               not self.module.is_fixed:
+               self.module.is_supernet:
                 # synchronize arch params to start the finetune stage.
                 for k, v in self.module.mutator.arch_params.items():
                     dist.broadcast(v, src=0)
                 self.module.fix_subnet()
-                self.module.is_fixed = True
 
             # 1. update architecture
             with optim_wrapper['architecture'].optim_context(self):
@@ -296,7 +295,7 @@ class DsnasDDP(MMDistributedDataParallel):
 
             supernet_losses, supernet_log_vars = self.module.parse_losses(
                 supernet_loss)
-            optim_wrapper['architecture'].update_params(
+            optim_wrapper['architecture'].update_params(  # type: ignore
                 supernet_losses,
                 retain_graph=self.module.update_mutator(cur_epoch))
             log_vars.update(add_prefix(supernet_log_vars, 'supernet'))
