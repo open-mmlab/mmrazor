@@ -22,7 +22,7 @@ model = dict(
     distiller=dict(
         student_recorders=dict(
             fc=dict(type='ModuleOutputs', source='head.fc'),
-            data_samples=dict(type='ModuleInputs', source='')),
+            data_samples=dict(type='ModuleInputs', source='head.loss_module')),
         teacher_recorders=dict(
             fc=dict(type='ModuleOutputs', source='head.fc')),
         distill_losses=dict(

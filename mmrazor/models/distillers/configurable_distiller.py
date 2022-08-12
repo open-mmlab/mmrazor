@@ -237,7 +237,8 @@ class ConfigurableDistiller(BaseDistiller):
             loss_module = losses[loss_name]
             loss_forward_keys = signature(
                 loss_module.forward).parameters.keys()
-            assert len(loss_forward_keys) == len(forward_mappings.keys())
+            # NEED REVIEW: Whether default args allowed in loss?
+            # assert len(loss_forward_keys) == len(forward_mappings.keys())
 
             for forward_key, record_info in forward_mappings.items():
                 assert forward_key in loss_forward_keys, \
