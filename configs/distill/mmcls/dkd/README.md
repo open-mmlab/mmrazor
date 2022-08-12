@@ -12,16 +12,7 @@ State-of-the-art distillation methods are mainly based on distilling deep featur
 
 ## Results and models
 
-### 1. Classification
-
-#### Vanilla
-
-| Dataset  | Model     | Top-1 (%) | Top-5 (%) | Download                                                                                                                                                                                                                        |
-| -------- | --------- | --------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ImageNet | ResNet-18 | 69.90     | 89.43     | [model](https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_8xb32_in1k_20210831-fbbb1da6.pth) \| [log](https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_8xb32_in1k_20210831-fbbb1da6.log.json) |
-| ImageNet | ResNet-34 | 76.55     | 93.06     | [model](https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth) \| [log](https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.log.json) |
-
-#### Distillation
+### Classification
 
 | Dataset  | Model     | Teacher   | Top-1 (%) | Top-5 (%) | Configs                                                                                           | Download                                                                                             |
 | -------- | --------- | --------- | --------- | --------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
@@ -52,6 +43,6 @@ sh tools/slurm_train.sh $PARTITION $JOB_NAME \
   $DISTILLATION_WORK_DIR
 ```
 
-### Acknowledgement
+## Acknowledgement
 
 Shout out to Davidgzx for his special contribution.
