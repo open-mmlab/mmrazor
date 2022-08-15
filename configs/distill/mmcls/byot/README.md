@@ -14,7 +14,7 @@ Convolutional neural networks have been widely deployed in various application s
 
 | Location | Dataset  |                             Model                             | Params(M) | Flops(G) | Top-1 (%) | Top-5 (%) |                                               Download                                               |
 | :------: | :------: | :-----------------------------------------------------------: | :-------: | :------: | :-------: | :-------: | :--------------------------------------------------------------------------------------------------: |
-|  logits  | CIFAR100 | [R18_BYOT](byot_resnet18_cifar100_distillation_8xb16_in1k.py) |   11.22   |   0.56   |   80.63   |   95.57   | [model & log](https://autolink.sensetime.com/pages/model/share/cc736db2-e363-4c39-a446-e811cf50e09f) |
+|  logits  | CIFAR100 | [R18_BYOT](./byot_logits_resnet18_cifar100_8xb16_in1k.py) |   11.22   |   0.56   |   80.63   |   95.57   | [model & log](https://autolink.sensetime.com/pages/model/share/cc736db2-e363-4c39-a446-e811cf50e09f) |
 
 ## Citation
 
