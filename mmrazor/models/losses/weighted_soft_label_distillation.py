@@ -27,17 +27,7 @@ class WSLD(nn.Module):
         self.softmax = nn.Softmax(dim=1)
         self.logsoftmax = nn.LogSoftmax(dim=1)
 
-    def forward(self, student, teacher, data_samples):
-
-        # Unpack data samples and pack targets
-        if 'score' in data_samples[0].gt_label:
-            # Batch augmentation may convert labels to one-hot format scores.
-            gt_labels = torch.stack([i.gt_label.score for i in data_samples])
-            one_hot_labels = gt_labels.float()
-        else:
-            gt_labels = torch.hstack([i.gt_label.label for i in data_samples])
-            one_hot_labels = F.one_hot(
-                gt_labels, num_classes=self.num_classes).float()
+    def forward(self, student, teacher, gt_labels):
 
         student_logits = student / self.tau
         teacher_logits = teacher / self.tau
