@@ -99,6 +99,7 @@ class BaseRecorder(metaclass=ABCMeta):
 
     def reset_data_buffer(self) -> None:
         """Clear data in data_buffer."""
+
         self._data_buffer = list()
 
     def __enter__(self):
