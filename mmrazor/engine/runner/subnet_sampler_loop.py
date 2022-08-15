@@ -7,11 +7,11 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import mmcv
 import torch
+from torch.utils.data import DataLoader
+
 from mmengine.evaluator import Evaluator
 from mmengine.runner import IterBasedTrainLoop
 from mmengine.utils import is_list_of
-from torch.utils.data import DataLoader
-
 from mmrazor.registry import LOOPS
 from mmrazor.structures import Candidates, FlopsEstimator, export_fix_subnet
 from mmrazor.utils import SupportRandomSubnet

@@ -2,7 +2,7 @@
 import copy
 import sys
 from functools import wraps
-from typing import IO, Callable, Dict, Iterable, Optional, Tuple, Type
+from typing import Callable, Dict, Optional, TextIO, Tuple, Type
 
 from mmcv.cnn.utils import flops_counter as mmcv_flops_counter
 from mmcv.cnn.utils import get_model_complexity_info
@@ -93,12 +93,12 @@ class FlopsEstimator:
     def get_model_complexity_info(
             model: Module,
             fix_mutable: Optional[ValidFixMutable] = None,
-            input_shape: Iterable[int] = (3, 224, 224),
+            input_shape: Tuple[int, int, int] = (3, 224, 224),
             input_constructor: Optional[Callable] = None,
             print_per_layer_stat: bool = True,
             as_strings: bool = True,
             flush: bool = False,
-            ost: IO = sys.stdout) -> Tuple:
+            ost: TextIO = sys.stdout) -> Tuple:
         """Get complexity information of model.
 
         This method is based on ``get_model_complexity_info`` of mmcv. It can
@@ -111,7 +111,7 @@ class FlopsEstimator:
             fix_mutable (ValidFixMutable, optional): The config of fixed
                 subnet. When this argument is specified, the function will
                 return complexity information of the subnet. Default: None.
-            input_shape (Iterable[int]): Input shape used for calculation.
+            input_shape (Tuple[int]): Input shape used for calculation.
             print_per_layer_stat (bool): Whether to print complexity
                 information for each layer in a model. Default: True.
             as_strings (bool): Output FLOPs and params counts in a string form.

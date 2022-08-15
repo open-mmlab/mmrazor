@@ -2,11 +2,11 @@
 from typing import Dict, List, Optional, Union
 
 import torch
-from mmengine import BaseDataElement
-from mmengine.model import BaseModel
 from torch import nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
+from mmengine import BaseDataElement
+from mmengine.model import BaseModel
 from mmrazor.models.mutators import OneShotModuleMutator
 from mmrazor.registry import MODELS
 from mmrazor.utils import SingleMutatorRandomSubnet, ValidFixMutable

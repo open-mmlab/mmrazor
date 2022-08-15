@@ -5,7 +5,6 @@ import os.path as osp
 
 from mmengine.config import Config, DictAction
 from mmengine.runner import Runner
-
 from mmrazor.utils import register_all_modules
 
 

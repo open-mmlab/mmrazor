@@ -3,11 +3,11 @@ from typing import Dict, List, Optional, Union
 
 import torch
 from mmcv.runner import load_checkpoint
-from mmengine import BaseDataElement
-from mmengine.model import BaseModel
 from torch import nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
+from mmengine import BaseDataElement
+from mmengine.model import BaseModel
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import MODELS
 from ...base import BaseAlgorithm, LossResults

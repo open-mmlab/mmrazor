@@ -2,9 +2,9 @@
 import logging
 
 import mmcv
-from mmengine.logging import print_log
 from torch import nn
 
+from mmengine.logging import print_log
 from mmrazor.utils import FixMutable, ValidFixMutable
 
 

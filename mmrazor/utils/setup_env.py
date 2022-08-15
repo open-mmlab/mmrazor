@@ -6,6 +6,7 @@ import warnings
 
 import cv2
 import torch.multiprocessing as mp
+
 from mmengine import DefaultScope
 
 
@@ -71,12 +72,13 @@ def register_all_modules(init_default_scope: bool = True) -> None:
             DefaultScope.get_instance('mmrazor', scope_name='mmrazor')
             return
         current_scope = DefaultScope.get_current_instance()
-        if current_scope.scope_name != 'mmrazor':
-            warnings.warn('The current default scope '
-                          f'"{current_scope.scope_name}" is not "mmrazor", '
-                          '`register_all_modules` will force the current'
-                          'default scope to be "mmrazor". If this is not '
-                          'expected, please set `init_default_scope=False`.')
+        if current_scope.scope_name != 'mmrazor':  # type: ignore
+            warnings.warn(
+                'The current default scope '  # type: ignore
+                f'"{current_scope.scope_name}" is not '
+                '"mmrazor", `register_all_modules` will force the current'
+                'default scope to be "mmrazor". If this is not expected, '
+                'please set `init_default_scope=False`.')
             # avoid name conflict
             new_instance_name = f'mmrazor-{datetime.datetime.now()}'
             DefaultScope.get_instance(new_instance_name, scope_name='mmrazor')

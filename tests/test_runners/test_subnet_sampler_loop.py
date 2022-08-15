@@ -8,12 +8,12 @@ from unittest.mock import MagicMock, patch
 
 import torch
 import torch.nn as nn
+from torch.utils.data import Dataset
+
 from mmengine.config import Config
 from mmengine.evaluator import BaseMetric
 from mmengine.model import BaseModel
 from mmengine.runner import Runner
-from torch.utils.data import Dataset
-
 from mmrazor.engine import GreedySamplerTrainLoop  # noqa: F401
 from mmrazor.registry import DATASETS, METRICS, MODELS
 

@@ -6,11 +6,11 @@ from typing import Dict, List, Optional, Union
 
 import mmcv
 import torch
+from torch import nn
+
 from mmengine import BaseDataElement
 from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper
-from torch import nn
-
 from mmrazor.models.mutators import SlimmableChannelMutator
 from mmrazor.models.utils import (add_prefix,
                                   reinitialize_optim_wrapper_count_status)

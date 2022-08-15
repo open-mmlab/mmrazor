@@ -1,10 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict, List, Union
 
-from mmengine.evaluator import Evaluator
-from mmengine.runner import ValLoop
 from torch.utils.data import DataLoader
 
+from mmengine.evaluator import Evaluator
+from mmengine.runner import ValLoop
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import LOOPS
 
@@ -27,7 +27,7 @@ class AutoSlimValLoop(ValLoop):
         # just for convenience
         self._model = model
 
-    def run(self) -> None:
+    def run(self):
         """Launch validation."""
         self.runner.call_hook('before_val')
 

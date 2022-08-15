@@ -10,8 +10,8 @@ import torch
 import torch.distributed as dist
 from mmcls.structures import ClsDataSample
 from mmcv import fileio
-from mmengine.optim import build_optim_wrapper
 
+from mmengine.optim import build_optim_wrapper
 from mmrazor.models.algorithms import SlimmableNetwork, SlimmableNetworkDDP
 
 MODEL_CFG = dict(
