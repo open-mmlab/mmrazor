@@ -14,8 +14,8 @@ State-of-the-art distillation methods are mainly based on distilling deep featur
 
 ### Classification
 
-| Dataset  | Model     | Teacher   | Top-1 (%) | Top-5 (%) | Configs                                                                                           | Download                                                                                             |
-| -------- | --------- | --------- | --------- | --------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Dataset  | Model     | Teacher   | Top-1 (%) | Top-5 (%) | Configs                                    | Download                                                                                             |
+| -------- | --------- | --------- | --------- | --------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
 | ImageNet | ResNet-18 | ResNet-34 | 71.368    | 90.256    | [config](dkd_logits_r34_r18_8xb32_in1k.py) | [model & log](https://autolink.sensetime.com/pages/model/share/afc68955-e25d-4488-b044-5e801b3ff62f) |
 
 ## Citation
