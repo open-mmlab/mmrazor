@@ -6,13 +6,13 @@ from torch.utils.data import DataLoader
 
 from mmengine.evaluator import Evaluator
 from mmengine.runner import ValLoop
-from mmrazor.registry import ESTIMATOR, LOOPS
-from mmrazor.structures import BaseEstimator
+from mmrazor.registry import ESTIMATORS, LOOPS
+from mmrazor.structures import ResourceEstimator
 
 
 @LOOPS.register_module()
 class EvaluatorLoop(ValLoop):
-    """Loop for validation with BaseEstimator.
+    """Loop for validation with ResourceEstimator.
 
     Args:
         runner (Runner): A reference of runner.
@@ -30,9 +30,20 @@ class EvaluatorLoop(ValLoop):
             disabled_counters (list): One can limit which ops' spec would be
                 calculated. Default to `None`.
             as_strings (bool): Output FLOPs and params counts in a string
-                form. Default to True.
+                form. Default to False.
         fp16 (bool): Whether to enable fp16 validation. Defaults to
             False.
+
+    Example:
+    >>> modify the `val_cfg` in configs as follows:
+        val_cfg = dict(
+            type='mmrazor.EvaluatorLoop',
+            dataloader=val_dataloader,
+            evaluator=val_evaluator,
+            estimator_cfg=dict(type='mmrazor.ResourceEstimator'),
+            resource_args=dict(
+                input_shape=(1, 3, 224, 224),
+                measure_inference=True))
     """
 
     def __init__(self,
@@ -45,7 +56,7 @@ class EvaluatorLoop(ValLoop):
         super().__init__(runner, dataloader, evaluator, fp16)
         self.resource_args = resource_args
         if estimator_cfg:
-            self.estimator: BaseEstimator = ESTIMATOR.build(estimator_cfg)
+            self.estimator: ResourceEstimator = ESTIMATORS.build(estimator_cfg)
         else:
             self.estimator = None  # type: ignore
 
@@ -79,7 +90,7 @@ class EvaluatorLoop(ValLoop):
         if model.is_supernet:
             model = self.export_subnet(model)
 
-        resource_results = self.estimator.evaluate(
+        resource_results = self.estimator.estimate(
             model=model, resource_args=resource_args)
 
         return resource_results

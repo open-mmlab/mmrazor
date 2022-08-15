@@ -1,4 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .base_estimator import BaseEstimator
+from .resource_estimator import ResourceEstimator
 
-__all__ = ['BaseEstimator']
+__all__ = ['ResourceEstimator']
