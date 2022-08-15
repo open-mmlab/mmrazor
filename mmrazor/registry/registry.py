@@ -40,7 +40,7 @@ def build_razor_model_from_cfg(
     # TODO relay on mmengine:HAOCHENYE/config_new_feature
     if cfg.get('cfg_path', None) and not cfg.get('type', None):
         from mmengine.config import get_model
-        model = get_model(**cfg)
+        model = get_model(**cfg)  # type: ignore
         return model
 
     from mmrazor.structures import load_fix_subnet
@@ -111,3 +111,6 @@ TASK_UTILS = Registry('task util', parent=MMENGINE_TASK_UTILS)
 VISUALIZERS = Registry('visualizer', parent=MMENGINE_VISUALIZERS)
 # manage visualizer backend
 VISBACKENDS = Registry('vis_backend', parent=MMENGINE_VISBACKENDS)
+
+ESTIMATOR = Registry('estimator')
+OP_SPEC_COUNTERS = Registry('op_counters')
