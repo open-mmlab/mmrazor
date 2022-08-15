@@ -22,7 +22,7 @@ model = dict(
     distiller=dict(
         student_recorders=dict(
             fc=dict(type='ModuleOutputs', source='head.fc'),
-            data_samples=dict(type='ModuleInputs', source='head.loss_module')),
+            gt_labels=dict(type='ModuleInputs', source='head.loss_module')),
         teacher_recorders=dict(
             fc=dict(type='ModuleOutputs', source='head.fc')),
         distill_losses=dict(
@@ -31,8 +31,8 @@ model = dict(
             loss_wsld=dict(
                 student=dict(recorder='fc', from_student=True),
                 teacher=dict(recorder='fc', from_student=False),
-                data_samples=dict(
-                    recorder='data_samples', from_student=True, data_idx=1)))))
+                gt_labels=dict(
+                    recorder='gt_labels', from_student=True, data_idx=1)))))
 
 find_unused_parameters = True
 
