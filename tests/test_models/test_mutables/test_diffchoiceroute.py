@@ -29,12 +29,9 @@ class TestDiffChoiceRoute(TestCase):
 
         # test with_arch_param = True
         diffchoiceroute = MODELS.build(diff_choice_route_cfg)
-
-        arch_param = diffchoiceroute.build_arch_param()
-        assert len(arch_param) == 5
+        arch_param = nn.Parameter(torch.randn(len(edges_dict)))
 
         x = [torch.randn(4, 32, 64, 64) for _ in range(5)]
-
         output = diffchoiceroute.forward_arch_param(x=x, arch_param=arch_param)
         assert output is not None
 
@@ -43,13 +40,20 @@ class TestDiffChoiceRoute(TestCase):
         new_diff_choice_route_cfg['with_arch_param'] = False
 
         new_diff_choice_route = MODELS.build(new_diff_choice_route_cfg)
-
-        arch_param = new_diff_choice_route.build_arch_param()
+        arch_param = nn.Parameter(torch.randn(len(edges_dict)))
         output = new_diff_choice_route.forward_arch_param(
             x=x, arch_param=arch_param)
         assert output is not None
 
         new_diff_choice_route.fix_chosen(chosen=['first_edge'])
+
+        # test sample choice
+        arch_param = nn.Parameter(torch.randn(len(edges_dict)))
+        new_diff_choice_route.sample_choice(arch_param)
+
+        # test dump_chosen
+        with pytest.raises(AssertionError):
+            new_diff_choice_route.dump_chosen()
 
     def test_forward_fixed(self):
         edges_dict = nn.ModuleDict({

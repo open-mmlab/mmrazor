@@ -5,7 +5,8 @@ import pytest
 import torch.nn as nn
 
 from mmrazor.models import *  # noqa: F401,F403
-from mmrazor.models.mutables import DiffMutableModule, DiffMutableOP
+from mmrazor.models.mutables import DiffMutableModule
+from mmrazor.models.mutators import DiffModuleMutator
 from mmrazor.registry import MODELS
 
 MODELS.register_module(name='torchConv2d', module=nn.Conv2d, force=True)
@@ -101,7 +102,7 @@ class TestDiffModuleMutator(TestCase):
 
     def test_diff_mutator_diffop_layer(self) -> None:
         model = SearchableLayer(self.MUTABLE_CFG)
-        mutator: DiffMutableOP = MODELS.build(self.MUTATOR_CFG)
+        mutator: DiffModuleMutator = MODELS.build(self.MUTATOR_CFG)
 
         mutator.prepare_from_supernet(model)
         assert list(mutator.search_groups.keys()) == [0, 1, 2]
@@ -115,7 +116,7 @@ class TestDiffModuleMutator(TestCase):
             ['slayer1.op2', 'slayer2.op2', 'slayer3.op2'],
             ['slayer1.op3', 'slayer2.op3', 'slayer3.op3'],
         ]
-        mutator: DiffMutableOP = MODELS.build(mutator_cfg)
+        mutator: DiffModuleMutator = MODELS.build(mutator_cfg)
 
         mutator.prepare_from_supernet(model)
         assert list(mutator.search_groups.keys()) == [0, 1, 2]
@@ -132,7 +133,7 @@ class TestDiffModuleMutator(TestCase):
             ['slayer1.op2', 'slayer2.op2', 'slayer3.op2'],
             ['slayer1.op3', 'slayer2.op3', 'slayer3.op3_error_key'],
         ]
-        mutator: DiffMutableOP = MODELS.build(mutator_cfg)
+        mutator: DiffModuleMutator = MODELS.build(mutator_cfg)
 
         with pytest.raises(AssertionError):
             mutator.prepare_from_supernet(model)
@@ -142,7 +143,7 @@ class TestDiffModuleMutator(TestCase):
 
         mutator_cfg = self.MUTATOR_CFG.copy()
         mutator_cfg['custom_group'] = [['op1'], ['op2'], ['op3']]
-        mutator: DiffMutableOP = MODELS.build(mutator_cfg)
+        mutator: DiffModuleMutator = MODELS.build(mutator_cfg)
 
         mutator.prepare_from_supernet(model)
 
@@ -161,7 +162,7 @@ class TestDiffModuleMutator(TestCase):
                                            'slayer1.op2', 'slayer2.op2',
                                            'slayer3.op2'
                                        ], ['slayer1.op3', 'slayer2.op3']]
-        mutator: DiffMutableOP = MODELS.build(mutator_cfg)
+        mutator: DiffModuleMutator = MODELS.build(mutator_cfg)
 
         mutator.prepare_from_supernet(model)
 
@@ -179,7 +180,7 @@ class TestDiffModuleMutator(TestCase):
             ['slayer1.op2', 'slayer2.op2', 'slayer3.op2'],
             ['slayer1.op3', 'slayer2.op3', 'slayer2.op3'],
         ]
-        mutator: DiffMutableOP = MODELS.build(mutator_cfg)
+        mutator: DiffModuleMutator = MODELS.build(mutator_cfg)
 
         with pytest.raises(AssertionError):
             mutator.prepare_from_supernet(model)
@@ -193,7 +194,7 @@ class TestDiffModuleMutator(TestCase):
             ['slayer1.op2', 'slayer2.op2', 'slayer3.op2'],
             ['slayer1.op3', 'slayer2.op3', 'slayer3.op3'],
         ]
-        mutator: DiffMutableOP = MODELS.build(mutator_cfg)
+        mutator: DiffModuleMutator = MODELS.build(mutator_cfg)
 
         with pytest.raises(AssertionError):
             mutator.prepare_from_supernet(model)
@@ -207,10 +208,25 @@ class TestDiffModuleMutator(TestCase):
             ['slayer1.op2', 'slayer2.op2', 'slayer3.op2'],
             ['slayer1.op3', 'slayer2.op3', 'slayer3.op3'],
         ]
-        mutator: DiffMutableOP = MODELS.build(mutator_cfg)
+        mutator: DiffModuleMutator = MODELS.build(mutator_cfg)
 
         with pytest.raises(AssertionError):
             mutator.prepare_from_supernet(model)
+
+    def test_sample_and_set_choices(self):
+        model = SearchableModel(self.MUTABLE_CFG)
+
+        mutator_cfg = self.MUTATOR_CFG.copy()
+        mutator_cfg['custom_group'] = [
+            ['slayer1.op1', 'slayer2.op1', 'slayer3.op1'],
+            ['slayer1.op2', 'slayer2.op2', 'slayer3.op2'],
+            ['slayer1.op3', 'slayer2.op3', 'slayer3.op3'],
+        ]
+        mutator: DiffModuleMutator = MODELS.build(mutator_cfg)
+        mutator.prepare_from_supernet(model)
+        choices = mutator.sample_choices()
+        mutator.set_choices(choices)
+        self.assertTrue(len(choices) == 3)
 
 
 if __name__ == '__main__':
