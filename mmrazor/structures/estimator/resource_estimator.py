@@ -30,7 +30,7 @@ class ResourceEstimator(BaseEstimator):
         >>> estimator.estimate(
         ...     model=conv2d,
         ...     resource_args=dict(input_shape=(1, 3, 64, 64)))
-        {'flops': 3.444, 'capacity': 0.001, 'latency': 0.0}
+        {'flops': 3.444, 'params': 0.001, 'latency': 0.0}
 
         >>> # calculate resources of custom modules
         >>> class CustomModule(nn.Module):
@@ -53,7 +53,7 @@ class ResourceEstimator(BaseEstimator):
         >>> estimator.estimate(
         ...     model=model,
         ...     resource_args=dict(input_shape=(1, 3, 64, 64)))
-        {'flops': 1.0, 'capacity': 0.7, 'latency': 0.0}
+        {'flops': 1.0, 'params': 0.7, 'latency': 0.0}
 
         >>> # calculate mmrazor.model flops
         NOTE: check 'EvaluatorLoop' in engine.runner.evaluator_val_loop
@@ -75,9 +75,10 @@ class ResourceEstimator(BaseEstimator):
             measure_inference = resource_args.pop('measure_inference', False)
             if 'input_shape' not in resource_args.keys():
                 resource_args['input_shape'] = self.default_shape
-            resource_args['disabled_counters'] = self.disabled_counters
+            if 'disabled_counters' not in resource_args.keys():
+                resource_args['disabled_counters'] = self.disabled_counters
             model.eval()
-            flops, capacity = get_model_complexity_info(model, **resource_args)
+            flops, params = get_model_complexity_info(model, **resource_args)
             if measure_inference:
                 latency = repeat_measure_inference_speed(
                     model, resource_args, max_iter=100, repeat_num=2)
@@ -88,10 +89,10 @@ class ResourceEstimator(BaseEstimator):
                 raise ValueError('Set units to None, when as_trings=True.')
             if self.units is not None:
                 flops = params_units_convert(flops, self.units)
-                capacity = params_units_convert(capacity, self.units)
+                params = params_units_convert(params, self.units)
             results.update({
                 'flops': flops,
-                'capacity': capacity,
+                'params': params,
                 'latency': latency
             })
         broadcast_object_list([results])

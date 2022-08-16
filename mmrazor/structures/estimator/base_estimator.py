@@ -42,6 +42,6 @@ class BaseEstimator(metaclass=ABCMeta):
 
         Returns:
             Dict[str, float]): A dict that containing resource results(flops,
-                capacity and latency).
+                params and latency).
         """
         pass

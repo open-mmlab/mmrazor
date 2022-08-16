@@ -80,14 +80,14 @@ class EvaluatorLoop(ValLoop):
 
     def estimate_resources(self, resource_args: Dict[str,
                                                      Any]) -> Dict[str, float]:
-        """Estimate model resources: latency/flops/capacity."""
+        """Estimate model resources: latency/flops/params."""
         if self.runner.distributed:
             model = self.runner.model.module
         else:
             model = self.runner.model
 
         # TODO confirm the state judgement.
-        if model.is_supernet:
+        if hasattr(model, 'is_supernet') and model.is_supernet:
             model = self.export_subnet(model)
 
         resource_results = self.estimator.estimate(
