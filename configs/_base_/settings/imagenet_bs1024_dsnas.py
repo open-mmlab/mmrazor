@@ -67,13 +67,17 @@ optim_wrapper = dict(
 
 # leanring policy
 param_scheduler = dict(
-    architecture=dict(
-        type='mmcls.CosineAnnealingLR',
-        T_max=240,
-        eta_min=0.0,
-        by_epoch=True,
-    ),
-    mutator=dict(type='mmcls.ConstantLR', factor=1, begin=0, end=240))
+    architecture=[
+        dict(type='mmcls.LinearLR', end=5, by_epoch=True, start_factor=0.0001),
+        dict(
+            type='mmcls.CosineAnnealingLR',
+            T_max=240,
+            begin=5,
+            eta_min=0.0,
+            by_epoch=True,
+        ),
+    ],
+    mutator=[])
 
 # train, val, test setting
 train_cfg = dict(by_epoch=True, max_epochs=240)
