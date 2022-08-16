@@ -12,7 +12,6 @@ from torch.nn.modules.batchnorm import _BatchNorm
 from mmengine.logging import MessageHub
 from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper, OptimWrapperDict
-from mmrazor.evaluators.op_spec_counters import get_model_complexity_info
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.mutators import DiffModuleMutator
 from mmrazor.models.utils import add_prefix
@@ -119,22 +118,6 @@ class Dsnas(BaseAlgorithm):
             if isinstance(module, BaseMutable):
                 module.fix_chosen(module.current_choice)
         self.is_supernet = False
-
-    def _get_subnet_constraints(self):
-        """Get model constraints.
-
-        Returns:
-            fix_subnet_flops: The result of model constraints.
-        """
-        # Avoid circular import
-        from mmrazor.structures import load_fix_subnet
-
-        fix_mutable = self.search_subnet()
-        copied_model = copy.deepcopy(self)
-        if fix_mutable is not None:
-            load_fix_subnet(copied_model, fix_mutable)
-        return get_model_complexity_info(
-            copied_model, as_strings=False, print_per_layer_stat=False)[0]
 
     def train(self, mode=True):
         """Convert the model into eval mode while keep normalization layer
