@@ -21,7 +21,7 @@ Convolutional neural networks have been widely deployed in various application s
 ```latex
 @ARTICLE{2019arXiv190508094Z,
        author = {{Zhang}, Linfeng and {Song}, Jiebo and {Gao}, Anni and {Chen}, Jingwei and {Bao}, Chenglong and {Ma}, Kaisheng},
-        title = "{Be Your Own Teacher: Improve the Performance of Convolutional Neural Networks via Self Distillation}",
+        title = {Be Your Own Teacher: Improve the Performance of Convolutional Neural Networks via Self Distillation},
       journal = {arXiv e-prints},
      keywords = {Computer Science - Machine Learning, Statistics - Machine Learning},
          year = 2019,
