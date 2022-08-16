@@ -5,10 +5,9 @@ from functools import wraps
 from typing import IO, Callable, Dict, Iterable, Optional, Tuple, Type
 
 from mmcv.cnn.utils import flops_counter as mmcv_flops_counter
-# from mmcv.cnn.utils import get_model_complexity_info
+from mmcv.cnn.utils import get_model_complexity_info
 from torch.nn import Module
 
-from mmrazor.evaluators.op_spec_counters import get_model_complexity_info
 from mmrazor.utils import ValidFixMutable
 from ..fix_subnet import load_fix_subnet
 
@@ -94,7 +93,7 @@ class FlopsEstimator:
     def get_model_complexity_info(
             model: Module,
             fix_mutable: Optional[ValidFixMutable] = None,
-            input_shape: Iterable[int] = (1, 3, 224, 224),
+            input_shape: Iterable[int] = (3, 224, 224),
             input_constructor: Optional[Callable] = None,
             print_per_layer_stat: bool = True,
             as_strings: bool = True,
