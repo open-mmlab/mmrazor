@@ -6,17 +6,13 @@ import torch.distributed as dist
 
 
 class GatherTensors(torch.autograd.Function):
-    """Gather tensors from all GPUS, supporting backward propagation. see more
-    details in torch.distributed.all_gather and torch.distributed.all_reduce.
+    """Gather tensors from all GPUS, supporting backward propagation.
 
-    Args:
-        ctx: Context to be used for forward propagation.
-        input (torch.Tensor): Tensor to be broadcast from current process.
+    See more details in torch.distributed.all_gather and
+    torch.distributed.all_reduce.
     """
 
     # TODO: The return type of this function will report an error in python3.7.
-    # error: Incompatible return value type (got "Tuple[Any, ...]",
-    # expected "Tuple[Any]")
     @staticmethod
     def forward(ctx: Any, input: torch.Tensor):
         """Forward function.
@@ -27,6 +23,7 @@ class GatherTensors(torch.autograd.Function):
         during the backward pass.
 
         Args:
+            ctx (Any): Context to be used for forward propagation.
             input (torch.Tensor): Tensor to be broadcast from current process.
         """
         output = [
@@ -53,6 +50,7 @@ class GatherTensors(torch.autograd.Function):
         output.
 
         Args:
+            ctx (Any): Context to be used for forward propagation.
             grads (torch.Tensor): Grads to be merged from current process.
         """
         rank = dist.get_rank()

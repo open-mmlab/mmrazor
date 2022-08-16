@@ -65,7 +65,7 @@ class DAFLGenerator(BaseGenerator):
             nn.Conv2d(self.hidden_channels // 2, 3, 3, stride=1, padding=1),
             nn.Tanh(), nn.BatchNorm2d(3, affine=False))
 
-    # TODO: The return type of this function will report an error in python3.7.
+    # TODO: The typing of this function will report an error in python3.7.
     def forward(self, data=None, batch_size=None) -> torch.Tensor:
         """Forward function for generator.
 

@@ -17,11 +17,11 @@ class DAFLLoss(nn.Module):
         loss_weight (float): Weight of the loss.
     """
 
-    def __init__(self, loss_weight=1.0):
+    def __init__(self, loss_weight=1.0) -> None:
         super().__init__()
         self.loss_weight = loss_weight
 
-    def forward(self, preds_T: torch.Tensor):
+    def forward(self, preds_T: torch.Tensor) -> torch.Tensor:
         """Forward function for the DAFLLoss.
 
         Args:
@@ -29,7 +29,7 @@ class DAFLLoss(nn.Module):
         """
         return self.loss_weight * self.forward_train(preds_T)
 
-    def forward_trian(self, preds_T: torch.Tensor):
+    def forward_trian(self, preds_T: torch.Tensor) -> torch.Tensor:
         """Forward function during training.
 
         Args:
@@ -47,7 +47,7 @@ class ActivationLoss(DAFLLoss):
         norm_type (str, optional):The type of the norm. Defaults to 'abs'.
     """
 
-    def __init__(self, norm_type='abs', **kwargs):
+    def __init__(self, norm_type='abs', **kwargs) -> None:
 
         super().__init__(**kwargs)
         assert norm_type in ['norm', 'abs'], \
@@ -59,7 +59,7 @@ class ActivationLoss(DAFLLoss):
         elif self.norm_type == 'abs':
             self.norm_fn = lambda x: -x.abs().mean()
 
-    def forward(self, feat_T: torch.Tensor):
+    def forward(self, feat_T: torch.Tensor) -> torch.Tensor:
         """Forward function for the ActivationLoss.
 
         Args:
@@ -67,7 +67,7 @@ class ActivationLoss(DAFLLoss):
         """
         return self.loss_weight * self.forward_train(feat_T)
 
-    def forward_train(self, feat_T: torch.Tensor):
+    def forward_train(self, feat_T: torch.Tensor) -> torch.Tensor:
         """Forward function in training for the ActivationLoss.
 
         Args:
@@ -82,10 +82,10 @@ class OnehotLikeLoss(DAFLLoss):
     """The loss function for measuring the one-hot-likeness of the target
     logits."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
-    def forward_train(self, preds_T: torch.Tensor):
+    def forward_train(self, preds_T: torch.Tensor) -> torch.Tensor:
         """Forward function in training for the OnehotLikeLoss.
 
         Args:
@@ -104,12 +104,12 @@ class InformationEntropyLoss(DAFLLoss):
             collecting tensors from multiple gpus. Defaults to True.
     """
 
-    def __init__(self, gather=True, **kwargs):
+    def __init__(self, gather=True, **kwargs) -> None:
         super().__init__(**kwargs)
         self.gather = gather
         _, self.world_size = get_dist_info()
 
-    def forward_train(self, preds_T: torch.Tensor):
+    def forward_train(self, preds_T: torch.Tensor) -> torch.Tensor:
         """Forward function in training for the InformationEntropyLoss.
 
         Args:
