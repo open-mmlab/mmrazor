@@ -12,7 +12,7 @@ from mmengine.config import Config
 from mmengine.evaluator import BaseMetric
 from mmengine.model import BaseModel
 from mmengine.runner import Runner
-from mmrazor.engine import EvaluatorLoop
+from mmrazor.engine import ResourceEvaluatorLoop
 from mmrazor.registry import DATASETS, METRICS, MODELS
 
 
@@ -68,7 +68,7 @@ class ToyMetric_EvaluatorValLoop(BaseMetric):
         return dict(acc=1)
 
 
-class TestEvaluatorLoop(TestCase):
+class TestResourceEvaluatorLoop(TestCase):
 
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
@@ -88,7 +88,7 @@ class TestEvaluatorLoop(TestCase):
             val_dataloader=val_dataloader,
             val_evaluator=val_evaluator,
             val_cfg=dict(
-                type='EvaluatorLoop',
+                type='ResourceEvaluatorLoop',
                 dataloader=val_dataloader,
                 evaluator=val_evaluator,
                 estimator_cfg=dict(type='ResourceEstimator'),
@@ -117,7 +117,7 @@ class TestEvaluatorLoop(TestCase):
         runner = Runner.from_cfg(cfg)
         loop = runner.build_val_loop(cfg.val_cfg)
 
-        self.assertIsInstance(loop, EvaluatorLoop)
+        self.assertIsInstance(loop, ResourceEvaluatorLoop)
 
     def test_run(self):
         cfg = copy.deepcopy(self.val_loop_cfg)

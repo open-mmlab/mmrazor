@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 import torch.nn
 
@@ -9,7 +9,6 @@ from .base_estimator import BaseEstimator
 from .flops_params_counter import (get_model_complexity_info,
                                    params_units_convert)
 from .latency import repeat_measure_inference_speed
-from .op_spec_counters import BaseCounter
 
 
 @ESTIMATORS.register_module()
@@ -20,8 +19,11 @@ class ResourceEstimator(BaseEstimator):
         default_shape (tuple): Input data's default shape, for calculating
             resources consume. Defaults to (1, 3, 224, 224)
         units (str): Resource units. Defaults to 'M'.
-        disable_counters (BaseCounter): Disable spec op counters.
+        disable_counters (list): Disable spec op counters.
             Defaults to None.
+        NOTE: disable_counters contains the op counter class names
+              in estimator.op_spec_counters that require to be disabled,
+              such as 'ConvCounter', 'BatchNorm2dCounter', ...
 
     Examples:
         >>> # direct calculate resource consume of nn.Conv2d
@@ -54,16 +56,24 @@ class ResourceEstimator(BaseEstimator):
         ...     model=model,
         ...     resource_args=dict(input_shape=(1, 3, 64, 64)))
         {'flops': 1.0, 'params': 0.7, 'latency': 0.0}
+        ...
+        >>> # calculate resources of custom modules with disable_counters
+        >>> estimator.estimate(
+        ...     model=model,
+        ...     resource_args=dict(
+        ...         input_shape=(1, 3, 64, 64),
+        ...         disabled_counters=['CustomModuleCounter']))
+        {'flops': 0.0, 'params': 0.0, 'latency': 0.0}
 
-        >>> # calculate mmrazor.model flops
-        NOTE: check 'EvaluatorLoop' in engine.runner.evaluator_val_loop
+        >>> # calculate resources of mmrazor.models
+        NOTE: check 'ResourceEvaluatorLoop' in engine.runner.evaluator_val_loop
               for more details.
     """
 
     def __init__(self,
                  default_shape: Tuple = (1, 3, 224, 224),
                  units: str = 'M',
-                 disabled_counters: BaseCounter = None):
+                 disabled_counters: List[str] = None):
         super().__init__(default_shape, units, disabled_counters)
 
     def estimate(

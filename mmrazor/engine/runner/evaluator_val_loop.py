@@ -11,7 +11,7 @@ from mmrazor.structures import ResourceEstimator
 
 
 @LOOPS.register_module()
-class EvaluatorLoop(ValLoop):
+class ResourceEvaluatorLoop(ValLoop):
     """Loop for validation with ResourceEstimator.
 
     Args:
@@ -31,13 +31,12 @@ class EvaluatorLoop(ValLoop):
                 calculated. Default to `None`.
             as_strings (bool): Output FLOPs and params counts in a string
                 form. Default to False.
-        fp16 (bool): Whether to enable fp16 validation. Defaults to
-            False.
+        fp16 (bool): Whether to enable fp16 validation. Defaults to False.
 
     Example:
     >>> modify the `val_cfg` in configs as follows:
         val_cfg = dict(
-            type='mmrazor.EvaluatorLoop',
+            type='mmrazor.ResourceEvaluatorLoop',
             dataloader=val_dataloader,
             evaluator=val_evaluator,
             estimator_cfg=dict(type='mmrazor.ResourceEstimator'),
@@ -96,7 +95,15 @@ class EvaluatorLoop(ValLoop):
         return resource_results
 
     def export_subnet(self, model):
-        """Export current best subnet."""
+        """Export current best subnet.
+
+        NOTE: This method is called when it comes to those NAS algorithms that
+        require building a supernet for training.
+
+        For those algorithms, measuring subnet resources is more meaningful
+        than supernet during validation, therefore this method is required to
+        get the current searched subnet from the supernet.
+        """
         # Avoid circular import
         from mmrazor.models.mutables.base_mutable import BaseMutable
         from mmrazor.structures import load_fix_subnet

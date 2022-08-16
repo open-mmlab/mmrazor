@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import copy
 import os
 import os.path as osp
 import random
@@ -14,7 +15,8 @@ from mmengine.evaluator import Evaluator
 from mmengine.runner import EpochBasedTrainLoop
 from mmengine.utils import is_list_of
 from mmrazor.registry import LOOPS
-from mmrazor.structures import Candidates, FlopsEstimator, export_fix_subnet
+from mmrazor.structures import Candidates, export_fix_subnet, load_fix_subnet
+from mmrazor.structures.estimator import ResourceEstimator
 from mmrazor.utils import SupportRandomSubnet
 from .utils import crossover
 
@@ -299,8 +301,14 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
 
         self.model.set_subnet(random_subnet)
         fix_mutable = export_fix_subnet(self.model)
-        flops: float = FlopsEstimator.get_model_complexity_info(
-            self.model, fix_mutable=fix_mutable, as_strings=False)[0]
+        copied_model = copy.deepcopy(self.model)
+        load_fix_subnet(copied_model, fix_mutable)
+
+        estimator = ResourceEstimator()
+        flops = estimator.estimate(
+            model=copied_model,
+            resource_args=dict(input_shape=(1, 3, 224, 224)))[0]
+
         if self.flops_range[0] < flops < self.flops_range[1]:
             return True
         else:
