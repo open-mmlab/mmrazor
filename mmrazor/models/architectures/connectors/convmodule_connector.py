@@ -15,13 +15,13 @@ class ConvModuleConncetor(BaseConnector):
     Args:
         in_channel (int): The input channel of the connector.
         out_channel (int): The output channel of the connector.
-        kernel_size (int | tuple[int]): Size of the convolving kernel.
+        kernel_size (int | tuple[int, int]): Size of the convolving kernel.
             Same as that in ``nn._ConvNd``.
-        stride (int | tuple[int]): Stride of the convolution.
+        stride (int | tuple[int, int]): Stride of the convolution.
             Same as that in ``nn._ConvNd``.
-        padding (int | tuple[int]): Zero-padding added to both sides of
+        padding (int | tuple[int, int]): Zero-padding added to both sides of
             the input. Same as that in ``nn._ConvNd``.
-        dilation (int | tuple[int]): Spacing between kernel elements.
+        dilation (int | tuple[int, int]): Spacing between kernel elements.
             Same as that in ``nn._ConvNd``.
         groups (int): Number of blocked connections from input channels to
             output channels. Same as that in ``nn._ConvNd``.
@@ -53,10 +53,10 @@ class ConvModuleConncetor(BaseConnector):
         self,
         in_channel: int,
         out_channel: int,
-        kernel_size: Union[int, Tuple[int]] = 1,
-        stride: Union[int, Tuple[int]] = 1,
-        padding: Union[int, Tuple[int]] = 0,
-        dilation: Union[int, Tuple[int]] = 1,
+        kernel_size: Union[int, Tuple[int, int]] = 1,
+        stride: Union[int, Tuple[int, int]] = 1,
+        padding: Union[int, Tuple[int, int]] = 0,
+        dilation: Union[int, Tuple[int, int]] = 1,
         groups: int = 1,
         bias: Union[str, bool] = 'auto',
         conv_cfg: Optional[Dict] = None,
