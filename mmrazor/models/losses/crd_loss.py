@@ -37,13 +37,17 @@ class CRDLoss(nn.Module):
                 'you should pass a dict with key \'sample_idx\' in mimic function.'
         assert 'contrast_sample_idxs' in input_data, \
                 'you should pass a dict with key \'contrast_sample_idxs\' in mimic function.'
-        sample_idx_list = [sample for sample in data_samples['sample_idx']]
-        idx = input_data['sample_idx']
-        if 'sample_idx' in input_data:
-            sample_idx = input_data['sample_idx']
+        dev = input_data.contrast_sample_idxs.device
+        sample_idxs = torch.Tensor([
+            sample.sample_idx for sample in data_samples
+        ]).to(torch.long).to(dev)
+        if 'contrast_sample_idxs' in input_data:
+            contrast_sample_idxs = torch.stack(
+                [sample.contrast_sample_idxs for sample in data_samples])
         else:
-            sample_idx = None
-        out_s, out_t = self.contrast(s_feats, t_feats, idx, sample_idx)
+            contrast_sample_idxs = None
+        out_s, out_t = self.contrast(s_feats, t_feats, sample_idxs,
+                                     contrast_sample_idxs)
         s_loss = self.criterion_s_t(out_s)
         t_loss = self.criterion_s_t(out_t)
         loss = s_loss + t_loss

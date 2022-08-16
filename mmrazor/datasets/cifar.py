@@ -114,8 +114,8 @@ class CRD_CIFAR10(CIFAR10):
             self.cls_negative[self.gt_labels[idx]],
             self.neg_num,
             replace=replace)
-        contrast_sample_idx = np.hstack((np.asarray([pos_idx]), neg_idx))
-        data['contrast_sample_idxs'] = contrast_sample_idx
+        contrast_sample_idxs = np.hstack((np.asarray([pos_idx]), neg_idx))
+        data['contrast_sample_idxs'] = contrast_sample_idxs
         return data
 
     def prepare_data(self, idx) -> Any:

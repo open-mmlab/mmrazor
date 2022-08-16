@@ -32,8 +32,14 @@ model = dict(
             loss_crd_tea=dict(type='CRDConnector', dim_in=2048, dim_out=128)),
         loss_forward_mappings=dict(
             loss_crd=dict(
-                s_feats=dict(from_student=True, recorder='neck'),
-                t_feats=dict(from_student=False, recorder='neck'),
+                s_feats=dict(
+                    from_student=True,
+                    recorder='neck',
+                    connector='loss_crd_stu'),
+                t_feats=dict(
+                    from_student=False,
+                    recorder='neck',
+                    connector='loss_crd_tea'),
                 data_samples=dict(
                     from_student=True, recorder='data_samples', data_idx=1)))))
 

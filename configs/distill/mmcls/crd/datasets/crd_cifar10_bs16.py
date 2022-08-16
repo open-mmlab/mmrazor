@@ -17,6 +17,7 @@ test_pipeline = [
     dict(type='PackClsInputs'),
 ]
 
+neg_num = 16384
 train_dataloader = dict(
     batch_size=16,
     num_workers=2,
@@ -24,7 +25,8 @@ train_dataloader = dict(
         type=dataset_type,
         data_prefix='data/cifar10',
         test_mode=False,
-        pipeline=train_pipeline),
+        pipeline=train_pipeline,
+        neg_num=neg_num),
     sampler=dict(type='DefaultSampler', shuffle=True),
     persistent_workers=True,
 )
@@ -36,7 +38,8 @@ val_dataloader = dict(
         type=dataset_type,
         data_prefix='data/cifar10/',
         test_mode=True,
-        pipeline=test_pipeline),
+        pipeline=test_pipeline,
+        neg_num=neg_num),
     sampler=dict(type='DefaultSampler', shuffle=False),
     persistent_workers=True,
 )
