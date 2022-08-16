@@ -35,7 +35,8 @@ class DAFLGenerator(BaseGenerator):
         leaky_slope: float = 0.2,
         init_cfg: Optional[Dict] = None,
     ) -> None:
-        super().__init__(img_size, latent_dim, hidden_channels, init_cfg=init_cfg)
+        super().__init__(
+            img_size, latent_dim, hidden_channels, init_cfg=init_cfg)
         self.init_size = self.img_size // (scale_factor**2)
         self.scale_factor = scale_factor
         self.linear = nn.Linear(self.latent_dim,
@@ -64,11 +65,8 @@ class DAFLGenerator(BaseGenerator):
             nn.Conv2d(self.hidden_channels // 2, 3, 3, stride=1, padding=1),
             nn.Tanh(), nn.BatchNorm2d(3, affine=False))
 
-    def forward(
-        self,
-        data: Optional[torch.Tensor] = None,
-        batch_size: Optional[int] = None
-    ) -> torch.Tensor:
+    # TODO: The return type of this function will report an error in python3.7.
+    def forward(self, data=None, batch_size=None) -> torch.Tensor:
         """Forward function for generator.
 
         Args:

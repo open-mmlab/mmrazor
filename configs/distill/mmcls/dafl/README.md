@@ -14,15 +14,15 @@ Learning portable neural networks is very essential for computer vision for the 
 
 ### Classification
 
-|               Location               | Dataset  |                                                   Teacher                                                    |                                                   Student                                                    |  Acc  | Acc(T) | Acc(S) |                                                                  Config                                                                  | Download                                                                                                                                  |
-| :----------------------------------: | :------: | :----------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------: | :---: | :----: | :----: | :--------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------- |
+|               Location               | Dataset  |                                                     Teacher                                                     |                                                     Student                                                     |  Acc  | Acc(T) | Acc(S) |                      Config                       | Download                                                                                                                                     |
+| :----------------------------------: | :------: | :-------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------: | :---: | :----: | :----: | :-----------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------------------- |
 | backbone (pretrain) & logits (train) | ImageNet | [resnet34](https://github.com/open-mmlab/mmclassification/blob/master/configs/resnet/resnet34_8xb16_cifar10.py) | [resnet18](https://github.com/open-mmlab/mmclassification/blob/master/configs/resnet/resnet18_8xb16_cifar10.py) | 93.34 | 95.34  | 94.82  | [config](./dafl_logits_r34_r18_8xb256_cifar10.py) | [teacher](https://download.openmmlab.com/mmclassification/v0/resnet/resnet34_b16x8_cifar10_20210528-a8aa36a6.pth) \|[model](<>) \| [log](<>) |
 
 ## Citation
 
 ```latex
 @inproceedings{DBLP:conf/iccv/ChenW0YLSXX019,
-  author    = {Hanting Chen, Yunhe Wang, Chang Xu, Zhaohui Yang, Chuanjian Liu, 
+  author    = {Hanting Chen, Yunhe Wang, Chang Xu, Zhaohui Yang, Chuanjian Liu,
                Boxin Shi, Chunjing Xu, Chao Xu and Qi Tian},
   title     = {Data-Free Learning of Student Networks},
   booktitle = {2019 {IEEE/CVF} International Conference on Computer Vision, {ICCV}

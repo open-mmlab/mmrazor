@@ -67,5 +67,5 @@ class TestLosses(TestCase):
         self.assertTrue(loss_ie.numel() == 1)
 
         with self.assertRaisesRegex(AssertionError,
-                                    '"norm_type" must be "fro" or "abs"'):
+                                    '"norm_type" must be "norm" or "abs"'):
             _ = ActivationLoss(**dafl_loss_cfg, norm_type='random')

@@ -21,9 +21,7 @@ model = dict(
             build_cfg=dict(
                 cfg_path='mmcls::resnet/resnet34_8xb16_cifar10.py',
                 pretrained=True),
-            ckpt_path='resnet34_b16x8_cifar10_20210528-a8aa36a6.pth'
-        ),
-    ),
+            ckpt_path='resnet34_b16x8_cifar10_20210528-a8aa36a6.pth')),
     generator=dict(
         type='DAFLGenerator',
         img_size=32,
@@ -78,11 +76,7 @@ auto_scale_lr = dict(base_batch_size=256)
 param_scheduler = dict(
     _delete_=True,
     architecture=[
-        dict(
-            type='LinearLR',
-            end=500,
-            by_epoch=False,
-            start_factor=0.0001),
+        dict(type='LinearLR', end=500, by_epoch=False, start_factor=0.0001),
         dict(
             type='MultiStepLR',
             begin=500,
@@ -90,30 +84,20 @@ param_scheduler = dict(
             by_epoch=False)
     ],
     generator=dict(
-        type='LinearLR',
-        end=500,
-        by_epoch=False,
-        start_factor=0.0001))
+        type='LinearLR', end=500, by_epoch=False, start_factor=0.0001))
 
 train_cfg = dict(
-    _delete_=True,
-    by_epoch=False,
-    max_iters=250 * 120,
-    val_interval=150)
+    _delete_=True, by_epoch=False, max_iters=250 * 120, val_interval=150)
 
 train_dataloader = dict(
-    batch_size=256,
-    sampler=dict(type='InfiniteSampler', shuffle=True))
+    batch_size=256, sampler=dict(type='InfiniteSampler', shuffle=True))
 val_dataloader = dict(batch_size=256)
 val_evaluator = dict(type='Accuracy', topk=(1, 5))
 
 default_hooks = dict(
     logger=dict(type='LoggerHook', interval=75, log_metric_by_epoch=False),
     checkpoint=dict(
-        type='CheckpointHook',
-        by_epoch=False,
-        interval=150,
-        max_keep_ckpts=2))
+        type='CheckpointHook', by_epoch=False, interval=150, max_keep_ckpts=2))
 
 log_processor = dict(by_epoch=False)
 # Must set diff_rank_seed to True!

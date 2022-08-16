@@ -4,10 +4,10 @@ from typing import Dict, List
 import torch
 import torch.nn as nn
 from mmcv.runner import load_checkpoint
-from mmengine.optim import OptimWrapper, OPTIMIZERS
+from mmengine.optim import OptimWrapper
 
-from mmrazor.registry import MODELS
 from mmrazor.models.utils import add_prefix, set_requires_grad
+from mmrazor.registry import MODELS
 from ...base import BaseAlgorithm
 
 
@@ -32,17 +32,16 @@ class DataFreeDistillation(BaseAlgorithm):
             Defaults to False.
     """
 
-    def __init__(
-        self,
-        distiller: dict,
-        generator_distiller: dict,
-        teachers: Dict[dict, str],
-        generator: dict,
-        student_iter: int = 1,
-        student_train_first: bool = False,
-        **kwargs) -> None:
+    # TODO: The typing of this file will report many errors in python3.7.
+    def __init__(self,
+                 distiller,
+                 generator_distiller,
+                 teachers,
+                 generator,
+                 student_iter=1,
+                 student_train_first=False,
+                 **kwargs) -> None:
         super().__init__(**kwargs)
-
         self.student_iter = student_iter
         self.student_train_first = student_train_first
         self.distiller = MODELS.build(distiller)
@@ -79,8 +78,7 @@ class DataFreeDistillation(BaseAlgorithm):
         """Alias for ``architecture``."""
         return self.architecture
 
-    def train_step(self, data: List[dict],
-                   optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
+    def train_step(self, data, optim_wrapper):
         """Train step for DataFreeDistillation.
 
         Args:
@@ -91,23 +89,22 @@ class DataFreeDistillation(BaseAlgorithm):
         log_vars = dict()
 
         if self.student_train_first:
-            _, dis_log_vars = self.train_student(
-                data, optim_wrapper['architecture'])
+            _, dis_log_vars = self.train_student(data,
+                                                 optim_wrapper['architecture'])
 
             _, generator_loss_vars = self.train_generator(
                 data, optim_wrapper['generator'])
         else:
             _, generator_loss_vars = self.train_generator(
                 data, optim_wrapper['generator'])
-            _, dis_log_vars = self.train_student(
-                data, optim_wrapper['architecture'])
+            _, dis_log_vars = self.train_student(data,
+                                                 optim_wrapper['architecture'])
 
         log_vars.update(dis_log_vars)
         log_vars.update(generator_loss_vars)
         return log_vars
 
-    def train_student(self, data: List[dict],
-                      optimizer: OPTIMIZERS) -> Dict[str, torch.Tensor]:
+    def train_student(self, data, optimizer):
         """Train step for the student model.
 
         Args:
@@ -134,12 +131,12 @@ class DataFreeDistillation(BaseAlgorithm):
             distill_loss, distill_log_vars = self.parse_losses(loss_distill)
             optimizer.update_params(distill_loss)
             distill_log_vars.pop('loss')
-            log_vars.update(add_prefix(distill_log_vars, 'distill_iter' + str(iter)))
+            log_vars.update(
+                add_prefix(distill_log_vars, 'distill_iter' + str(iter)))
 
         return distill_loss, log_vars
 
-    def train_generator(self, data: List[dict],
-                        optimizer: OPTIMIZERS) -> Dict[str, torch.Tensor]:
+    def train_generator(self, data, optimizer):
         """Train step for the generator.
 
         Args:
@@ -186,7 +183,8 @@ class DAFLDataFreeDistillation(DataFreeDistillation):
             teacher.eval()
 
         # fakeimg initialization and revised by generator.
-        fakeimg_init = torch.randn((batch_size, self.generator.module.latent_dim))
+        fakeimg_init = torch.randn(
+            (batch_size, self.generator.module.latent_dim))
         fakeimg = self.generator(fakeimg_init, batch_size)
         _, data_samples = self.data_preprocessor(data, True)
 

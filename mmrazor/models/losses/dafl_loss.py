@@ -16,6 +16,7 @@ class DAFLLoss(nn.Module):
     Args:
         loss_weight (float): Weight of the loss.
     """
+
     def __init__(self, loss_weight=1.0):
         super().__init__()
         self.loss_weight = loss_weight
@@ -49,11 +50,11 @@ class ActivationLoss(DAFLLoss):
     def __init__(self, norm_type='abs', **kwargs):
 
         super().__init__(**kwargs)
-        assert norm_type in ['fro', 'abs'], \
-            '"norm_type" must be "fro" or "abs"'
+        assert norm_type in ['norm', 'abs'], \
+            '"norm_type" must be "norm" or "abs"'
         self.norm_type = norm_type
 
-        if self.norm_type == 'fro':
+        if self.norm_type == 'norm':
             self.norm_fn = lambda x: -x.norm()
         elif self.norm_type == 'abs':
             self.norm_fn = lambda x: -x.abs().mean()

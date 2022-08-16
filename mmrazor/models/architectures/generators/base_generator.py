@@ -18,28 +18,25 @@ class BaseGenerator(BaseModule):
             Defaults to None.
     """
 
-    def __init__(
-        self,
-        img_size: int,
-        latent_dim: int,
-        hidden_channels: int,
-        init_cfg: Optional[Dict] = None
-    ) -> None:
+    def __init__(self,
+                 img_size: int,
+                 latent_dim: int,
+                 hidden_channels: int,
+                 init_cfg: Optional[Dict] = None) -> None:
         super().__init__(init_cfg=init_cfg)
         self.img_size = img_size
         self.latent_dim = latent_dim
         self.hidden_channels = hidden_channels
 
-    def process_latent(
-        self,
-        latent_data: Optional[torch.Tensor] = None,
-        batch_size: int = 0
-    ) -> torch.Tensor:
+    def process_latent(self,
+                       latent_data: Optional[torch.Tensor] = None,
+                       batch_size: int = 0) -> torch.Tensor:
         """Generate the latent data if the input is None. Put the latent data
         into the current gpu.
 
         Args:
-            latent_data (torch.Tensor, optional): The latent data. Defaults to None.
+            latent_data (torch.Tensor, optional): The latent data. Defaults to
+                None.
             batch_size (int): the batch size of the latent data. Defaults to 0.
         """
         if isinstance(latent_data, torch.Tensor):

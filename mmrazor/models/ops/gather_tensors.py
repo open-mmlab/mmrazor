@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Tuple, List, Any
+from typing import Any
 
 import torch
 import torch.distributed as dist
@@ -14,8 +14,11 @@ class GatherTensors(torch.autograd.Function):
         input (torch.Tensor): Tensor to be broadcast from current process.
     """
 
+    # TODO: The return type of this function will report an error in python3.7.
+    # error: Incompatible return value type (got "Tuple[Any, ...]",
+    # expected "Tuple[Any]")
     @staticmethod
-    def forward(ctx: Any, input: torch.Tensor) -> Tuple[List[torch.Tensor]]:
+    def forward(ctx: Any, input: torch.Tensor):
         """Forward function.
 
         It must accept a context ctx as the first argument.
@@ -37,10 +40,10 @@ class GatherTensors(torch.autograd.Function):
         """Backward function.
 
         It must accept a context :attr:`ctx` as the first argument, followed by
-        as many outputs did :func:`forward` return, and it should return as many
-        tensors, as there were inputs to :func:`forward`. Each argument is the
-        gradient w.r.t the given output, and each returned value should be the
-        gradient w.r.t. the corresponding input.
+        as many outputs did :func:`forward` return, and it should return as
+        many tensors, as there were inputs to :func:`forward`. Each argument is
+        the gradient w.r.t the given output, and each returned value should be
+        the gradient w.r.t. the corresponding input.
 
         The context can be used to retrieve tensors saved during the forward
         pass. It also has an attribute :attr:`ctx.needs_input_grad` as a tuple

@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Union, List
+from typing import List, Union
 
 import torch
 import torch.nn as nn
@@ -21,10 +21,9 @@ def get_module_device(module: nn.Module) -> torch.device:
 
     return torch.device('cpu')
 
-def set_requires_grad(
-    nets: Union[nn.Module, List[nn.Module]],
-    requires_grad: bool = False
-) -> None:
+
+def set_requires_grad(nets: Union[nn.Module, List[nn.Module]],
+                      requires_grad: bool = False) -> None:
     """Set requires_grad for all the networks.
 
     Args:
