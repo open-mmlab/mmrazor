@@ -1,8 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from mmrazor.registry import MODELS
-from mmrazor.structures import DistillDeliveryManager, RecorderManager
 from ..algorithms.base import LossResults
 from .configurable_distiller import ConfigurableDistiller
 
@@ -10,42 +9,11 @@ from .configurable_distiller import ConfigurableDistiller
 @MODELS.register_module()
 class BYOTDistiller(ConfigurableDistiller):
     """``BYOTDistiller`` inherits ``ConfigurableDistiller`` and only modifies
-    ``get_record()`` function.
+    ``get_record()`` function to ``get_record_with_cidx()``.
 
     In ``BYOTDistiller``, ``self.teacher_recorder`` records self-teacher data
     which requires detach().
     """
-
-    def __init__(self,
-                 student_recorders: Optional[Dict[str, Dict]] = None,
-                 teacher_recorders: Optional[Dict[str, Dict]] = None,
-                 distill_deliveries: Optional[Dict[str, Dict]] = None,
-                 connectors: Optional[Dict[str, Dict]] = None,
-                 distill_losses: Optional[Dict[str, Dict]] = None,
-                 loss_forward_mappings: Optional[Dict[str, Dict]] = None,
-                 **kwargs):
-        super().__init__(**kwargs)
-        # The recorder manager is just constructed, but not really initialized
-        # yet. Recorder manager initialization needs to input the corresponding
-        # model.
-        self.student_recorders = RecorderManager(student_recorders)
-        self.teacher_recorders = RecorderManager(teacher_recorders)
-
-        self.deliveries = DistillDeliveryManager(distill_deliveries)
-
-        self.distill_losses = self.build_distill_losses(distill_losses)
-
-        self.connectors = self.build_connectors(connectors)
-
-        if loss_forward_mappings:
-            # Check if loss_forward_mappings is in the correct format.
-            self._check_loss_forward_mappings(self.distill_losses,
-                                              loss_forward_mappings,
-                                              self.student_recorders,
-                                              self.teacher_recorders)
-            self.loss_forward_mappings = loss_forward_mappings
-        else:
-            self.loss_forward_mappings = dict()
 
     def compute_distill_losses(self) -> LossResults:
         """Compute distill losses automatically."""
@@ -72,7 +40,11 @@ class BYOTDistiller(ConfigurableDistiller):
                              connector_idx: Optional[int] = None,
                              connector: Optional[str] = None) -> List:
         """According to each item in ``record_infos``, get the corresponding
-        record in ``recorder_manager``."""
+        record in ``recorder_manager``.
+
+        Introduce ``connector_idx`` as index of connnector's output.
+        """
+        # NEED REVIEW: Whether add connector_idx to get_record()? (byot, fbkd)
 
         if from_student:
             recorder_ = self.student_recorders.get_recorder(recorder)

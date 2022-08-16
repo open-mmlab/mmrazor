@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models import ABLoss, DKDLoss
+from mmrazor.models import ABLoss, DKDLoss, KDSoftCELoss
 
 
 class TestLosses(TestCase):
@@ -50,3 +50,9 @@ class TestLosses(TestCase):
         dkd_loss = DKDLoss(**dkd_loss_cfg)
         # dkd requires label logits
         self.normal_test_1d(dkd_loss, labels=True)
+
+    def test_kdSoftce_loss(self):
+        kdSoftce_loss_cfg = dict(loss_weight=1.0)
+        kdSoftce_loss = KDSoftCELoss(**kdSoftce_loss_cfg)
+        # kd soft ce loss requires label logits
+        self.normal_test_1d(kdSoftce_loss, labels=True)

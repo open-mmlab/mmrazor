@@ -15,15 +15,17 @@ class BYOTConnector(BaseConnector):
     """BYOTConnector connector that adds a self-attention with DartsSepConv.
 
     Args:
-        in_channel (int): The input channel of the connector.
-        out_channel (int): The output channel of the connector.
+        in_channel (int): The input channel of the DartsSepConv.
+            Use like input_tensor_channel = in_channel * expansion.
+        out_channel (int): The output channel of the DartsSepConv.
+            Use like output_tensor_channel = out_channel * expansion.
         num_classes (int): The classification class num.
-        expansion (int): Expansion of DartsSepConv.
-        pool_size (int | tuple[int]): Average 2D pool size.
+        expansion (int): Expansion of DartsSepConv. Default to 4.
+        pool_size (int | tuple[int]): Average 2D pool size. Default to 4.
         kernel_size (int | tuple[int]): Size of the convolving kernel in
-            DartsSepConv. Same as that in ``nn._ConvNd``.
+            DartsSepConv. Same as that in ``nn._ConvNd``. Default to 3.
         stride (int | tuple[int]): Stride of the first layer in DartsSepConv.
-            Same as that in ``nn._ConvNd``.
+            Same as that in ``nn._ConvNd``. Default to 1.
         init_cfg (dict, optional): The config to control the initialization.
     """
 
@@ -65,7 +67,7 @@ class BYOTConnector(BaseConnector):
         self.scala = nn.Sequential(*scala)
         self.fc = nn.Linear(out_channel * expansion, num_classes)
 
-    def forward_train(self, feature: torch.Tensor):
+    def forward_train(self, feature: torch.Tensor) -> torch.Tensor:
         """Forward computation.
 
         Args:
