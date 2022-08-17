@@ -22,15 +22,8 @@ class ResourceEvaluatorLoop(ValLoop):
         estimator (Dict[str, Any]): Used for building a resource estimator.
             Default to be dict().
         resource_args (Dict[str, Any]): Resource information for estimator.
-        NOTE: resource_args accept the following input items():
-            input_shape (tuple): Input shape (including batchsize) used for
-                model resources calculation.
-            measure_inference (bool): whether to measure infer speed or not.
-                Default to False.
-            disabled_counters (list): One can limit which ops' spec would be
-                calculated. Default to `None`.
-            as_strings (bool): Output FLOPs and params counts in a string
-                form. Default to False.
+            Check `ResourceEstimator.estimate()` in structures.estimator
+            for more details.
         fp16 (bool): Whether to enable fp16 validation. Defaults to False.
 
     Example:

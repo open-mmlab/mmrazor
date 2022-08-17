@@ -15,7 +15,8 @@ def get_model_complexity_info(model,
                               input_constructor=None,
                               flush=False,
                               ost=sys.stdout,
-                              disabled_counters=None):
+                              disabled_counters=None,
+                              add_resource_attr=False):
     """Get complexity information of a model. This method can calculate FLOPs
     and parameter counts of a model with corresponding input shape. It can also
     print complexity information for each layer in a model. Supported layers
@@ -40,17 +41,19 @@ def get_model_complexity_info(model,
         input_shape (tuple): Input shape (including batchsize) used for
             calculation.
         print_per_layer_stat (bool): Whether to print complexity information
-            for each layer in a model. Default: True.
+            for each layer in a model. Default to True.
         as_strings (bool): Output FLOPs and params counts in a string form.
-            Default: True.
+            Default to True.
         input_constructor (None | callable): If specified, it takes a callable
             method that generates input. otherwise, it will generate a random
-            tensor with input shape to calculate FLOPs. Default: None.
-        flush (bool): same as that in :func:`print`. Default: False.
+            tensor with input shape to calculate FLOPs. Default to None.
+        flush (bool): same as that in :func:`print`. Default to False.
         ost (stream): same as ``file`` param in :func:`print`.
-            Default: sys.stdout.
+            Default to sys.stdout.
         disabled_counters (list): One can limit which ops' spec would be
             calculated. Default to `None`.
+        add_resource_attr (bool): Whether to add `__flops__` and `__params__`
+            attributes for each sub-module in model. Default to False.
 
     Returns:
         tuple[float | str]: If ``as_strings`` is set to True, it will return
@@ -79,8 +82,9 @@ def get_model_complexity_info(model,
 
         _ = flops_params_model(batch)
 
-    flops_count, params_count = flops_params_model.compute_average_flops_params_cost(  # noqa: E501
-    )
+    flops_count, params_count = \
+        flops_params_model.compute_average_flops_params_cost()
+
     if print_per_layer_stat:
         print_model_with_flops_params(
             flops_params_model,
@@ -88,97 +92,35 @@ def get_model_complexity_info(model,
             params_count,
             ost=ost,
             flush=flush)
-    flops_params_model.stop_flops_params_count()
+
+    if add_resource_attr:
+        # NOTE: if `add_resource_attr=True`, `stop_flops_params_count()`
+        # is supposed to be called outside this function.
+        accumulate_sub_module_flops_params(flops_params_model)
+    else:
+        flops_params_model.stop_flops_params_count()
 
     if as_strings:
-        return flops_to_string(flops_count), params_to_string(params_count)
+        flops_string = str(params_units_convert(flops_count)) + ' GFLOPs'
+        params_string = str(params_units_convert(params_count)) + ' M'
+        return flops_string, params_string
 
     return flops_count, params_count
 
 
-def flops_to_string(flops, units='GFLOPs', precision=3):
-    """Convert FLOPs number into a string.
-    Note that Here we take a multiply-add counts as one FLOP.
-    Args:
-        flops (float): FLOPs number to be converted.
-        units (str | None): Converted FLOPs units. Options are None, 'GFLOPs',
-            'MFLOPs', 'KFLOPs', 'FLOPs'. If set to None, it will automatically
-            choose the most suitable unit for FLOPs. Default: 'GFLOPs'.
-        precision (int): Digit number after the decimal point. Default: 2.
-    Returns:
-        str: The converted FLOPs number with units.
-    Examples:
-        >>> flops_to_string(1e9)
-        '1.0 GFLOPs'
-        >>> flops_to_string(2e5, 'MFLOPs')
-        '0.2 MFLOPs'
-        >>> flops_to_string(3e-9, None)
-        '3e-09 FLOPs'
-    """
-    if units is None:
-        if flops // 10**9 > 0:
-            return str(round(flops / 10.**9, precision)) + ' GFLOPs'
-        elif flops // 10**6 > 0:
-            return str(round(flops / 10.**6, precision)) + ' MFLOPs'
-        elif flops // 10**3 > 0:
-            return str(round(flops / 10.**3, precision)) + ' KFLOPs'
-        else:
-            return str(flops) + ' FLOPs'
-    else:
-        if units == 'GFLOPs':
-            return str(round(flops / 10.**9, precision)) + ' ' + units
-        elif units == 'MFLOPs':
-            return str(round(flops / 10.**6, precision)) + ' ' + units
-        elif units == 'KFLOPs':
-            return str(round(flops / 10.**3, precision)) + ' ' + units
-        else:
-            return str(flops) + ' FLOPs'
-
-
-def params_to_string(num_params, units='M', precision=3):
-    """Convert parameter number into a string.
-    Args:
-        num_params (float): Parameter number to be converted.
-        units (str | None): Converted FLOPs units. Options are None, 'M',
-            'K' and ''. If set to None, it will automatically choose the most
-            suitable unit for Parameter number. Default: None.
-        precision (int): Digit number after the decimal point. Default: 2.
-    Returns:
-        str: The converted parameter number with units.
-    Examples:
-        >>> params_to_string(1e9)
-        '1000.0 M'
-        >>> params_to_string(2e5)
-        '200.0 k'
-        >>> params_to_string(3e-9)
-        '3e-09'
-    """
-    if units is None:
-        if num_params // 10**6 > 0:
-            return str(round(num_params / 10**6, precision)) + ' M'
-        elif num_params // 10**3:
-            return str(round(num_params / 10**3, precision)) + ' k'
-        else:
-            return str(num_params)
-    else:
-        if units == 'M':
-            return str(round(num_params / 10.**6, precision)) + ' ' + units
-        elif units == 'K':
-            return str(round(num_params / 10.**3, precision)) + ' ' + units
-        else:
-            return str(num_params)
-
-
 def params_units_convert(num_params, units='M', precision=3):
     """Convert parameter number with units.
+    
     Args:
         num_params (float): Parameter number to be converted.
         units (str | None): Converted FLOPs units. Options are None, 'M',
             'K' and ''. If set to None, it will automatically choose the most
-            suitable unit for Parameter number. Default: None.
-        precision (int): Digit number after the decimal point. Default: 2.
+            suitable unit for Parameter number. Default to None.
+        precision (int): Digit number after the decimal point. Default to 2.
+    
     Returns:
         str: The converted parameter number.
+    
     Examples:
         >>> params_units_convert(1e9)
         '1000.0'
@@ -201,20 +143,22 @@ def params_units_convert(num_params, units='M', precision=3):
 def print_model_with_flops_params(model,
                                   total_flops,
                                   total_params,
-                                  units='GFLOPs',
+                                  units='G',
                                   precision=3,
                                   ost=sys.stdout,
                                   flush=False):
     """Print a model with FLOPs and Params for each layer.
+
     Args:
         model (nn.Module): The model to be printed.
         total_flops (float): Total FLOPs of the model.
         total_params (float): Total parameter counts of the model.
-        units (str | None): Converted FLOPs units. Default: 'GFLOPs'.
-        precision (int): Digit number after the decimal point. Default: 3.
+        units (str | None): Converted FLOPs units. Default to 'G'.
+        precision (int): Digit number after the decimal point. Default to 3.
         ost (stream): same as `file` param in :func:`print`.
-            Default: sys.stdout.
-        flush (bool): same as that in :func:`print`. Default: False.
+            Default to sys.stdout.
+        flush (bool): same as that in :func:`print`. Default to False.
+
     Example:
         >>> class ExampleModel(nn.Module):
         >>> def __init__(self):
@@ -271,12 +215,14 @@ def print_model_with_flops_params(model,
     def flops_repr(self):
         accumulated_num_params = self.accumulate_params()
         accumulated_flops_cost = self.accumulate_flops()
+        flops_string = str(params_units_convert(accumulated_flops_cost,
+            units=units, precision=precision)) + ' ' + units + 'FLOPs'
+        params_string = str(params_units_convert(accumulated_num_params,
+            units='M', precision=precision)) + ' ' + 'M'
         return ', '.join([
-            params_to_string(
-                accumulated_num_params, units='M', precision=precision),
+            params_string,
             '{:.3%} Params'.format(accumulated_num_params / total_params),
-            flops_to_string(
-                accumulated_flops_cost, units=units, precision=precision),
+            flops_string,
             '{:.3%} FLOPs'.format(accumulated_flops_cost / total_flops),
             self.original_extra_repr()
         ])
@@ -300,6 +246,44 @@ def print_model_with_flops_params(model,
     model.apply(add_extra_repr)
     print(model, file=ost, flush=flush)
     model.apply(del_extra_repr)
+
+
+def accumulate_sub_module_flops_params(model, convert_unit=True):
+    """Accumulate FLOPs and params for each module in the model. Each module
+    in the model will have the `__flops__` and `__params__` parameters.
+
+    Args:
+        model (nn.Module): The model to be accumulated.
+        convert_unit (bool): Whether to convert value under the set unit.
+            Default to True.
+    """
+
+    def accumulate_params(module):
+        if is_supported_instance(module):
+            return module.__params__
+        else:
+            sum = 0
+            for m in module.children():
+                sum += accumulate_params(m)
+            return sum
+
+    def accumulate_flops(module):
+        if is_supported_instance(module):
+            return module.__flops__ / model.__batch_counter__
+        else:
+            sum = 0
+            for m in module.children():
+                sum += accumulate_flops(m)
+            return sum
+
+    for module in model.modules():
+        _flops = accumulate_flops(module)
+        _params = accumulate_params(module)
+        module.__flops__ = _flops
+        module.__params__ = _params
+        if convert_unit:
+            module.__flops__ = params_units_convert(_flops, units='M')
+            module.__params__ = params_units_convert(_params, units='K')
 
 
 def get_model_parameters_number(model):
@@ -460,11 +444,10 @@ def is_supported_instance(module):
 
 
 def remove_flops_params_counter_hook_function(module):
-    if is_supported_instance(module):
-        if hasattr(module, '__flops_params_handle__'):
-            module.__flops_params_handle__.remove()
-            del module.__flops_params_handle__
-        if hasattr(module, '__flops__'):
-            del module.__flops__
-        if hasattr(module, '__params__'):
-            del module.__params__
+    if hasattr(module, '__flops_params_handle__'):
+        module.__flops_params_handle__.remove()
+        del module.__flops_params_handle__
+    if hasattr(module, '__flops__'):
+        del module.__flops__
+    if hasattr(module, '__params__'):
+        del module.__params__

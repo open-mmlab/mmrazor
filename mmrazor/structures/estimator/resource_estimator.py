@@ -79,7 +79,21 @@ class ResourceEstimator(BaseEstimator):
     def estimate(
         self, model: torch.nn.Module, resource_args: Dict[str, Any] = dict()
     ) -> Dict[str, float]:
-        """Estimate the resources(flops/params/latency) of the given model."""
+        """Estimate the resources(flops/params/latency) of the given model.
+
+        NOTE: resource_args accept the following input items():
+            input_shape (tuple): Input shape (including batchsize) used for
+                model resources calculation.
+            measure_inference (bool): whether to measure infer speed or not.
+                Default to False.
+            disabled_counters (list): One can limit which ops' spec would be
+                calculated. Default to `None`.
+            as_strings (bool): Output FLOPs and params counts in a string
+                form. Default to False.
+            add_resource_attr (bool): Whether to measure a model with adding
+                `__flops__` and `__params__` attributes on each module of the
+                model. Default to False.
+        """
         results = dict()
         if is_main_process():
             measure_inference = resource_args.pop('measure_inference', False)
