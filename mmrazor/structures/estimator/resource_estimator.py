@@ -66,8 +66,8 @@ class ResourceEstimator(BaseEstimator):
         {'flops': 0.0, 'params': 0.0, 'latency': 0.0}
 
         >>> # calculate resources of mmrazor.models
-        NOTE: check 'ResourceEvaluatorLoop' in engine.runner.evaluator_val_loop
-              for more details.
+        NOTE: check 'ResourceEvaluatorLoop' in 
+              engine.runner.resource_evaluator_val_loop for more details.
     """
 
     def __init__(self,
