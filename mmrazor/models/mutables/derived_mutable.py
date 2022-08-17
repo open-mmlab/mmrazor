@@ -1,4 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import sys
+
+if sys.version_info < (3, 8):
+    from typing_extensions import Protocol
+else:
+    from typing import Protocol
+
 import inspect
 import logging
 from typing import Any, Callable, Dict, Iterable, Optional, Set, Union
@@ -6,7 +13,6 @@ from typing import Any, Callable, Dict, Iterable, Optional, Set, Union
 import torch
 from mmengine.logging import print_log
 from torch import Tensor
-from typing_extensions import Protocol
 
 from ..utils import make_divisible
 from .base_mutable import CHOICE_TYPE, BaseMutable

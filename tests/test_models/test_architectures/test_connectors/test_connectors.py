@@ -13,7 +13,7 @@ class TestConnector(TestCase):
         cls.s_feat = torch.randn(1, 1, 5, 5)
         cls.t_feat = torch.randn(1, 3, 5, 5)
 
-    def test_conv_connector(self):
+    def test_convmodule_connector(self):
         convmodule_connector_cfg = dict(
             in_channel=1, out_channel=3, norm_cfg=dict(type='BN'))
         convmodule_connector = ConvModuleConncetor(**convmodule_connector_cfg)
@@ -22,25 +22,19 @@ class TestConnector(TestCase):
         assert output.size() == self.t_feat.size()
 
         convmodule_connector_cfg['order'] = ('conv', 'norm')
-        with self.assertRaisesRegex(
-                AssertionError, '"order" must be a tuple and with length 3.'):
+        with self.assertRaises(AssertionError):
             _ = ConvModuleConncetor(**convmodule_connector_cfg)
 
         convmodule_connector_cfg['act_cfg'] = 'ReLU'
-        with self.assertRaisesRegex(
-                AssertionError, 'act_cfg must be None or a dict, but got str'):
+        with self.assertRaises(AssertionError):
             _ = ConvModuleConncetor(**convmodule_connector_cfg)
 
         convmodule_connector_cfg['norm_cfg'] = 'BN'
-        with self.assertRaisesRegex(
-                AssertionError,
-                'norm_cfg must be None or a dict, but got str'):
+        with self.assertRaises(AssertionError):
             _ = ConvModuleConncetor(**convmodule_connector_cfg)
 
         convmodule_connector_cfg['conv_cfg'] = 'conv2d'
-        with self.assertRaisesRegex(
-                AssertionError,
-                'conv_cfg must be None or a dict, but got str'):
+        with self.assertRaises(AssertionError):
             _ = ConvModuleConncetor(**convmodule_connector_cfg)
 
     def test_crd_connector(self, example_input):
