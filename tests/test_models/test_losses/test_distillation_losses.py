@@ -69,3 +69,11 @@ class TestLosses(TestCase):
         with self.assertRaisesRegex(AssertionError,
                                     '"norm_type" must be "norm" or "abs"'):
             _ = ActivationLoss(**dafl_loss_cfg, norm_type='random')
+
+        # test gather_tensors
+        ie_loss = InformationEntropyLoss(**dafl_loss_cfg, gather=True)
+        ie_loss.world_size = 2
+        with self.assertRaisesRegex(
+                RuntimeError,
+                'Default process group has not been initialized'):
+            loss_ie = ie_loss.forward(self.feats_1d)
