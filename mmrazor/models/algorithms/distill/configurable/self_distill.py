@@ -12,8 +12,8 @@ from ...base import BaseAlgorithm, LossResults
 
 @MODELS.register_module()
 class SelfDistill(BaseAlgorithm):
-    """``SingleTeacherDistill`` can be used to develop distill algorithms
-    without teacher.
+    """``SelfDistill`` can be used to develop distill algorithms without
+    teacher.
 
     Args:
         distiller (dict): The config dict for built distiller. Distiller may
