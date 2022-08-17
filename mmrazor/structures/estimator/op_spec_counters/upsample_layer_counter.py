@@ -6,6 +6,7 @@ from .base_counter import BaseCounter
 
 @OP_SPEC_COUNTERS.register_module()
 class UpsampleCounter(BaseCounter):
+    """FLOPs/params counter for Upsample function."""
 
     @staticmethod
     def add_count_hook(module, input, output):

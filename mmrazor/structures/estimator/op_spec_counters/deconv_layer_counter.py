@@ -6,6 +6,7 @@ from .base_counter import BaseCounter
 
 @OP_SPEC_COUNTERS.register_module()
 class ConvTranspose2dCounter(BaseCounter):
+    """FLOPs/params counter for Decov module series."""
 
     @staticmethod
     def add_count_hook(module, input, output):

@@ -7,6 +7,7 @@ from .base_counter import BaseCounter
 
 
 class BNCounter(BaseCounter):
+    """FLOPs/params counter for BatchNormalization series."""
 
     @staticmethod
     def add_count_hook(module, input, output):

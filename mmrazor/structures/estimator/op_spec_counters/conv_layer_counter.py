@@ -6,6 +6,7 @@ from .base_counter import BaseCounter
 
 
 class ConvCounter(BaseCounter):
+    """FLOPs/params counter for Conv module series."""
 
     @staticmethod
     def add_count_hook(module, input, output):

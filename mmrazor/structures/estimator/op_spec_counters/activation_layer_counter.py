@@ -6,6 +6,7 @@ from .base_counter import BaseCounter
 
 @OP_SPEC_COUNTERS.register_module()
 class ReLUCounter(BaseCounter):
+    """FLOPs/params counter for ReLU series activate function."""
 
     @staticmethod
     def add_count_hook(module, input, output):

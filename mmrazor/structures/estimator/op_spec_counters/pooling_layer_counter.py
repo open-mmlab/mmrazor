@@ -7,6 +7,7 @@ from .base_counter import BaseCounter
 
 
 class PoolCounter(BaseCounter):
+    """FLOPs/params counter for Pooling series."""
 
     @staticmethod
     def add_count_hook(module, input, output):

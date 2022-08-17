@@ -8,6 +8,7 @@ from .base_counter import BaseCounter
 
 @OP_SPEC_COUNTERS.register_module()
 class LinearCounter(BaseCounter):
+    """FLOPs/params counter for Linear operation series."""
 
     @staticmethod
     def add_count_hook(module, input, output):
