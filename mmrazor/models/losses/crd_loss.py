@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 # flake8: noqa
 import math
+from typing import Union
 
 import torch
 import torch.nn as nn
@@ -13,6 +14,14 @@ class CRDLoss(nn.Module):
     """Variate CRD Loss, ICLR 2020.
 
     https://arxiv.org/abs/1910.10699
+    Args:
+        loss_weight (float, optional): loss weight. Defaults to 1.0.
+        temperature (float, optional): temperature. Defaults to 0.07.
+        neg_num (int, optional): number of negative samples. Defaults to 16384.
+        sample_n (int, optional): number of total samples. Defaults to 50000.
+        dim_out (int, optional): output channels. Defaults to 128.
+        momentum (float, optional): momentum. Defaults to 0.5.
+        eps (double, optional): eps. Defaults to 1e-7.
     """
 
     def __init__(self,
@@ -55,9 +64,15 @@ class CRDLoss(nn.Module):
 
 
 class ContrastLoss(nn.Module):
-    """contrastive loss, corresponding to Eq (18)"""
+    """contrastive loss, corresponding to Eq (18)
 
-    def __init__(self, n_data, eps=1e-7):
+    Args:
+        n_data (int): number of data
+        eps (float, optional): eps. Defaults to 1e-7.
+    """
+
+    def __init__(self, n_data: int, eps: float = 1e-7):
+        """_summary_"""
         super(ContrastLoss, self).__init__()
         self.n_data = n_data
         self.eps = eps
@@ -87,9 +102,21 @@ class ContrastMemory(nn.Module):
     """memory buffer that supplies large amount of negative samples.
 
     https://github.com/HobbitLong/RepDistiller/blob/master/crd/memory.py
+
+    Args:
+        dim_out (int, optional): output channels. Defaults to 128.
+        n_sample (int, optional): number of total samples. Defaults to 50000.
+        neg_sample (int, optional): number of negative samples. Defaults to 16384.
+        T (float, optional): temperature. Defaults to 0.07.
+        momentum (float, optional): momentum. Defaults to 0.5.
     """
 
-    def __init__(self, dim_out, n_sample, neg_sample, T=0.07, momentum=0.5):
+    def __init__(self,
+                 dim_out: int,
+                 n_sample: int,
+                 neg_sample: int,
+                 T: float = 0.07,
+                 momentum: float = 0.5):
         super(ContrastMemory, self).__init__()
         self.n_sample = n_sample
         self.unigrams = torch.ones(self.n_sample)
@@ -107,7 +134,11 @@ class ContrastMemory(nn.Module):
             'memory_v2',
             torch.rand(n_sample, dim_out).mul_(2 * stdv).add_(-stdv))
 
-    def forward(self, feat_s, feat_t, idx, sample_idx=None):
+    def forward(self,
+                feat_s: torch.Tensor,
+                feat_t: torch.Tensor,
+                idx: torch.Tensor,
+                sample_idx: Union[None, torch.Tensor] = None) -> torch.Tensor:
         neg_sample = int(self.params[0].item())
         T = self.params[1].item()
         Z_s = self.params[2].item()
@@ -173,9 +204,12 @@ class AliasMethod(object):
     """
     From: https://hips.seas.harvard.edu/blog/2013/03/03/
     the-alias-method-efficient-sampling-with-many-discrete-outcomes/
+
+    Args:
+        probs (torch.Tensor): probility vector.
     """
 
-    def __init__(self, probs):
+    def __init__(self, probs: torch.Tensor) -> None:
 
         if probs.sum() > 1:
             probs.div_(probs.sum())
@@ -213,10 +247,11 @@ class AliasMethod(object):
             self.prob[last_one] = 1
 
     def cuda(self):
+        """To cuda device."""
         self.prob = self.prob.cuda()
         self.alias = self.alias.cuda()
 
-    def draw(self, N):
+    def draw(self, N: int) -> torch.Tensor:
         """Draw N samples from multinomial."""
         neg_sample = self.alias.size(0)
 
