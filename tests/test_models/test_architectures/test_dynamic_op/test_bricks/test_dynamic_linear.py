@@ -6,8 +6,8 @@ import pytest
 import torch
 from torch import nn
 
-from mmrazor.models.architectures.dynamic_op import DynamicOP
-from mmrazor.models.architectures.dynamic_op.bricks import DynamicLinear
+from mmrazor.models.architectures.dynamic_op.bricks import (DynamicLinear,
+                                                            DynamicLinearMixin)
 from mmrazor.models.mutables import OneShotMutableChannel
 from mmrazor.structures.subnet import export_fix_subnet, load_fix_subnet
 from ..utils import fix_dynamic_op
@@ -40,8 +40,8 @@ def test_dynamic_linear(bias) -> None:
     with pytest.raises(RuntimeError):
         d_linear.to_static_op()
 
-    d_linear.mutable_in.current_choice = 8
-    d_linear.mutable_out.current_choice = 4
+    d_linear.mutable_in_channels.current_choice = 8
+    d_linear.mutable_out_channels.current_choice = 4
 
     x = torch.rand(10, 8)
     out1 = d_linear(x)
@@ -55,14 +55,14 @@ def test_dynamic_linear(bias) -> None:
         load_fix_subnet(d_linear, fix_mutables)
     fix_dynamic_op(d_linear, fix_mutables)
     assert isinstance(d_linear, nn.Linear)
-    assert isinstance(d_linear, DynamicOP)
+    assert isinstance(d_linear, DynamicLinearMixin)
 
     s_linear = d_linear.to_static_op()
     assert s_linear.weight.size(0) == 4
     assert s_linear.weight.size(1) == 8
     if bias:
         assert s_linear.bias.size(0) == 4
-    assert not isinstance(s_linear, DynamicOP)
+    assert not isinstance(s_linear, DynamicLinearMixin)
     assert isinstance(s_linear, nn.Linear)
     out2 = s_linear(x)
 
@@ -87,11 +87,11 @@ def test_dynamic_linear_mutable_single_features(
             d_linear.mutate_out_features(mutable_channels)
 
     if is_mutate_in_features:
-        d_linear.mutable_in.current_choice = in_features
-        assert d_linear.mutable_out is None
+        d_linear.mutable_in_channels.current_choice = in_features
+        assert d_linear.mutable_out_channels is None
     elif is_mutate_in_features is False:
-        d_linear.mutable_out_features.current_choice = out_features
-        assert d_linear.mutable_in is None
+        d_linear.mutable_out_channels.current_choice = out_features
+        assert d_linear.mutable_in_channels is None
 
     x = torch.rand(3, in_features)
     out1 = d_linear(x)

@@ -5,13 +5,10 @@ from mmrazor.models.architectures.dynamic_op import DynamicOP
 
 
 def fix_dynamic_op(op: DynamicOP, fix_mutables: Optional[Dict] = None) -> None:
-    for mutable_name in op.accepted_mutables:
-        mutable = getattr(op, mutable_name)
-        if mutable is None:
-            continue
+    for name, mutable in op.mutable_attrs.items():
 
         if fix_mutables is not None:
-            chosen = fix_mutables[mutable_name]
+            chosen = fix_mutables[f'mutable_attrs.{name}']
         else:
             chosen = mutable.dump_chosen()
 

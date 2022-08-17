@@ -10,18 +10,18 @@ from mmrazor.utils import FixMutable, ValidFixMutable
 
 def _dynamic_to_static(model: nn.Module) -> None:
     # Avoid circular import
-    from mmrazor.models.architectures.dynamic_op.base import DynamicOP
+    from mmrazor.models.architectures.dynamic_op.bricks import DynamicMixin
 
     def traverse_children(module: nn.Module) -> None:
         # TODO
         # dynamicop must have no dynamic child
         for name, child in module.named_children():
-            if isinstance(child, DynamicOP):
+            if isinstance(child, DynamicMixin):
                 setattr(module, name, child.to_static_op())
             else:
                 traverse_children(child)
 
-    if isinstance(model, DynamicOP):
+    if isinstance(model, DynamicMixin):
         raise RuntimeError('Root model can not be dynamic op.')
 
     traverse_children(model)
@@ -37,8 +37,8 @@ def load_fix_subnet(model: nn.Module,
         raise TypeError('fix_mutable should be a `str` or `dict`'
                         f'but got {type(fix_mutable)}')
 
-    from mmrazor.models.architectures.dynamic_op import DynamicOP
-    if isinstance(model, DynamicOP):
+    from mmrazor.models.architectures.dynamic_op.bricks import DynamicMixin
+    if isinstance(model, DynamicMixin):
         raise RuntimeError('Root model can not be dynamic op.')
 
     # Avoid circular import

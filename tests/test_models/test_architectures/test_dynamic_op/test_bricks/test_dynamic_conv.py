@@ -8,8 +8,9 @@ import pytest
 import torch
 from torch import nn
 
-from mmrazor.models.architectures.dynamic_op.bricks import (
-    CenterCropDynamicConv2d, DynamicConv2d, ProgressiveDynamicConv2d)
+from mmrazor.models.architectures.dynamic_op.bricks import (BigNasConv2d,
+                                                            DynamicConv2d,
+                                                            OFAConv2d)
 from mmrazor.models.mutables import OneShotMutableChannel, OneShotMutableValue
 from mmrazor.structures.subnet import export_fix_subnet, load_fix_subnet
 from ..utils import fix_dynamic_op
@@ -49,8 +50,8 @@ class TestDynamicConv2d(TestCase):
         with pytest.raises(RuntimeError):
             d_conv2d.to_static_op()
 
-        d_conv2d.mutable_in.current_choice = 8
-        d_conv2d.mutable_out.current_choice = 8
+        d_conv2d.mutable_in_channels.current_choice = 8
+        d_conv2d.mutable_out_channels.current_choice = 8
 
         x = torch.rand(10, 8, 224, 224)
         out1 = d_conv2d(x)
@@ -91,14 +92,14 @@ def test_dynamic_conv2d(bias: bool) -> None:
     with pytest.raises(RuntimeError):
         d_conv2d.to_static_op()
 
-    d_conv2d.mutable_in.current_choice = 4
+    d_conv2d.mutable_in_channels.current_choice = 4
     d_conv2d.mutate_out_channels = 10
 
     out_max = d_conv2d(x_max)
     assert torch.equal(out_before_mutate, out_max)
 
-    d_conv2d.mutable_in.current_choice = 3
-    d_conv2d.mutable_out.current_choice = 4
+    d_conv2d.mutable_in_channels.current_choice = 3
+    d_conv2d.mutable_out_channels.current_choice = 4
 
     x = torch.rand(10, 3, 224, 224)
     out1 = d_conv2d(x)
@@ -139,11 +140,11 @@ def test_dynamic_conv2d_mutable_single_channels(is_mutate_in_channels: bool,
         d_conv2d.to_static_op()
 
     if is_mutate_in_channels:
-        d_conv2d.mutable_in.current_choice = in_channels
-        assert d_conv2d.mutable_out is None
+        d_conv2d.mutable_in_channels.current_choice = in_channels
+        assert d_conv2d.mutable_out_channels is None
     else:
         d_conv2d.mutable_out_channels.current_choice = out_channels
-        assert d_conv2d.mutable_in is None
+        assert d_conv2d.mutable_in_channels is None
 
     x = torch.rand(3, in_channels, 224, 224)
     out1 = d_conv2d(x)
@@ -166,8 +167,7 @@ def test_dynamic_conv2d_mutable_single_channels(is_mutate_in_channels: bool,
     assert torch.equal(out1, out2)
 
 
-@pytest.mark.parametrize('dynamic_class',
-                         [ProgressiveDynamicConv2d, CenterCropDynamicConv2d])
+@pytest.mark.parametrize('dynamic_class', [OFAConv2d, BigNasConv2d])
 @pytest.mark.parametrize('kernel_size_list', [None, [5], [3, 5, 7]])
 def test_kernel_dynamic_conv2d(dynamic_class: Type[nn.Conv2d],
                                kernel_size_list: bool) -> None:
@@ -210,11 +210,11 @@ def test_kernel_dynamic_conv2d(dynamic_class: Type[nn.Conv2d],
     with pytest.raises(RuntimeError):
         d_conv2d.to_static_op()
 
-    d_conv2d.mutable_in.current_choice = 8
-    d_conv2d.mutable_out.current_choice = 8
+    d_conv2d.mutable_in_channels.current_choice = 8
+    d_conv2d.mutable_out_channels.current_choice = 8
     if kernel_size_list is not None:
         kernel_size = mutable_kernel_size.sample_choice()
-        d_conv2d.mutable_kernel_size.current_choice = kernel_size
+        d_conv2d.mutable_attrs['kernel_size'].current_choice = kernel_size
 
     x = torch.rand(3, 8, 224, 224)
     out1 = d_conv2d(x)
@@ -237,12 +237,11 @@ def test_kernel_dynamic_conv2d(dynamic_class: Type[nn.Conv2d],
     assert torch.equal(out1, out2)
 
 
-@pytest.mark.parametrize('dynamic_class',
-                         [ProgressiveDynamicConv2d, CenterCropDynamicConv2d])
+@pytest.mark.parametrize('dynamic_class', [OFAConv2d, BigNasConv2d])
 def test_mutable_kernel_dynamic_conv2d_grad(
         dynamic_class: Type[nn.Conv2d]) -> None:
-    from mmrazor.models.architectures.dynamic_op.bricks.dynamic_conv import \
-        _get_current_kernel_pos
+    from mmrazor.models.architectures.dynamic_op.bricks import \
+        dynamic_conv_mixins
 
     kernel_size_list = [3, 5, 7]
     d_conv2d = dynamic_class(
@@ -263,7 +262,7 @@ def test_mutable_kernel_dynamic_conv2d_grad(
         out = d_conv2d(x).sum()
         out.backward()
 
-        start_offset, end_offset = _get_current_kernel_pos(
+        start_offset, end_offset = dynamic_conv_mixins._get_current_kernel_pos(
             max(kernel_size_list), kernel_size)
 
         mask = torch.ones_like(
