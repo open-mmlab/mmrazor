@@ -172,8 +172,8 @@ class DynamicBatchNormMixin(DynamicChannelMixin):
         else:
             return None
 
-        if self.mutable_num_features is not None:
-            out_mask = self.mutable_num_features.current_mask.to(
+        if 'num_features' in self.mutable_attrs:
+            out_mask = self.mutable_attrs['num_features'].current_mask.to(
                 refer_tensor.device)
         else:
             out_mask = torch.ones_like(refer_tensor).bool()
@@ -218,7 +218,7 @@ class DynamicBatchNormMixin(DynamicChannelMixin):
         """
         self.check_if_mutables_fixed()
 
-        running_mean, running_var, weight, bias = self._get_dynamic_params()
+        running_mean, running_var, weight, bias = self.get_dynamic_params()
         if 'num_features' in self.mutable_attrs:
             num_features = self.mutable_attrs['num_features'].current_mask.sum(
             ).item()

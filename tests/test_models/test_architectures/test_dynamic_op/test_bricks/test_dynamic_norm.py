@@ -6,10 +6,10 @@ import pytest
 import torch
 from torch import nn
 
-from mmrazor.models.architectures.dynamic_op import DynamicOP
 from mmrazor.models.architectures.dynamic_op.bricks import (DynamicBatchNorm1d,
                                                             DynamicBatchNorm2d,
-                                                            DynamicBatchNorm3d)
+                                                            DynamicBatchNorm3d,
+                                                            DynamicMixin)
 from mmrazor.models.mutables import OneShotMutableChannel
 from mmrazor.structures.subnet import export_fix_subnet, load_fix_subnet
 from ..utils import fix_dynamic_op
@@ -61,7 +61,7 @@ def test_dynamic_bn(dynamic_class: Type[nn.modules.batchnorm._BatchNorm],
         load_fix_subnet(d_bn, fix_mutables)
     fix_dynamic_op(d_bn, fix_mutables)
     assert isinstance(d_bn, dynamic_class)
-    assert isinstance(d_bn, DynamicOP)
+    assert isinstance(d_bn, DynamicMixin)
 
     s_bn = d_bn.to_static_op()
     if affine:
@@ -70,8 +70,8 @@ def test_dynamic_bn(dynamic_class: Type[nn.modules.batchnorm._BatchNorm],
     if track_running_stats:
         assert s_bn.running_mean.size(0) == 8
         assert s_bn.running_var.size(0) == 8
-    assert not isinstance(s_bn, DynamicOP)
-    assert isinstance(s_bn, getattr(nn, d_bn.batch_norm_type))
+    assert not isinstance(s_bn, DynamicMixin)
+    assert isinstance(s_bn, d_bn.static_op_factory)
     out2 = s_bn(x)
 
     assert torch.equal(out1, out2)
@@ -99,7 +99,7 @@ def test_bn_track_running_stats(
 
     d_bn.train()
     s_bn.train()
-    mask = d_bn._get_out_mask()
+    mask = d_bn._get_num_features_mask()
     for _ in range(10):
         x = torch.rand(*input_shape)
         _ = d_bn(x)

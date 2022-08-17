@@ -6,6 +6,7 @@ from typing import Callable, Iterable, Optional, Sequence, Tuple
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
+from torch.nn.modules.conv import _ConvNd
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from .dynamic_mixins import DynamicChannelMixin
@@ -59,11 +60,11 @@ class DynamicConvMixin(DynamicChannelMixin):
 
     @property
     @abstractmethod
-    def conv_func(self: nn._ConvNd):
+    def conv_func(self: _ConvNd):
         """The function that will be used in ``forward_mixin``."""
         pass
 
-    def mutate_in_channels(self: nn._ConvNd,
+    def mutate_in_channels(self: _ConvNd,
                            mutable_in_channels: BaseMutable) -> None:
         """Mutate ``in_channels`` with given mutable.
 
@@ -84,7 +85,7 @@ class DynamicConvMixin(DynamicChannelMixin):
 
         self.mutable_attrs['in_channels'] = mutable_in_channels
 
-    def mutate_out_channels(self: nn._ConvNd,
+    def mutate_out_channels(self: _ConvNd,
                             mutable_out_channels: BaseMutable) -> None:
         """Mutate ``out_channels`` with given mutable.
 
@@ -106,19 +107,19 @@ class DynamicConvMixin(DynamicChannelMixin):
         self.mutable_attrs['out_channels'] = mutable_out_channels
 
     @property
-    def mutable_in_channels(self) -> Optional[BaseMutable]:
+    def mutable_in_channels(self: _ConvNd) -> Optional[BaseMutable]:
         """Mutable related to input."""
         assert hasattr(self, 'mutable_attrs')
         return getattr(self.mutable_attrs, 'in_channels', None)  # type:ignore
 
     @property
-    def mutable_out_channels(self) -> Optional[BaseMutable]:
+    def mutable_out_channels(self: _ConvNd) -> Optional[BaseMutable]:
         """Mutable related to output."""
         assert hasattr(self, 'mutable_attrs')
         return getattr(self.mutable_attrs, 'out_channels', None)  # type:ignore
 
     def get_dynamic_params(
-            self: nn._ConvNd) -> Tuple[Tensor, Optional[Tensor], Tuple[int]]:
+            self: _ConvNd) -> Tuple[Tensor, Optional[Tensor], Tuple[int]]:
         """Get dynamic parameters that will be used in forward process.
 
         Returns:
@@ -132,7 +133,7 @@ class DynamicConvMixin(DynamicChannelMixin):
         return weight, bias, self.padding
 
     def _get_dynamic_params_by_mutable_channels(
-            self: nn._ConvNd, weight: Tensor,
+            self: _ConvNd, weight: Tensor,
             bias: Optional[Tensor]) -> Tuple[Tensor, Optional[Tensor]]:
         """Get sliced weight and bias according to ``mutable_in_channels`` and
         ``mutable_out_channels``.
@@ -169,7 +170,7 @@ class DynamicConvMixin(DynamicChannelMixin):
         bias = self.bias[out_mask] if self.bias is not None else None
         return weight, bias
 
-    def forward_mixin(self: nn._ConvNd, x: Tensor) -> Tensor:
+    def forward_mixin(self: _ConvNd, x: Tensor) -> Tensor:
         """Forward of dynamic conv2d OP."""
         groups = self.groups
         if self.groups == self.in_channels == self.out_channels:
@@ -179,7 +180,7 @@ class DynamicConvMixin(DynamicChannelMixin):
         return self.conv_func(x, weight, bias, self.stride, padding,
                               self.dilation, groups)
 
-    def to_static_op(self: nn._ConvNd) -> nn.Conv2d:
+    def to_static_op(self: _ConvNd) -> nn.Conv2d:
         """Convert dynamic conv2d to :obj:`torch.nn.Conv2d`.
 
         Returns:
@@ -221,7 +222,7 @@ class BigNasConvMixin(DynamicConvMixin):
     ``out_channels`` and ``kernel_size``."""
 
     def mutate_kernel_size(
-            self: nn._ConvNd,
+            self: _ConvNd,
             mutable_kernel_size: BaseMutable,
             kernel_size_seq: Optional[Sequence[int]] = None) -> None:
         """Mutate ``kernel_size`` with given mutable.
@@ -255,7 +256,7 @@ class BigNasConvMixin(DynamicConvMixin):
         self.mutable_attrs['kernel_size'] = mutable_kernel_size
 
     def get_dynamic_params(
-            self: nn._ConvNd) -> Tuple[Tensor, Optional[Tensor], Tuple[int]]:
+            self: _ConvNd) -> Tuple[Tensor, Optional[Tensor], Tuple[int]]:
         """Get dynamic parameters that will be used in forward process.
 
         Returns:
@@ -273,7 +274,7 @@ class BigNasConvMixin(DynamicConvMixin):
         return weight, bias, padding
 
     def _get_dynamic_params_by_mutable_kernel_size(
-            self: nn._ConvNd, weight: Tensor) -> Tuple[Tensor, Tuple[int]]:
+            self: _ConvNd, weight: Tensor) -> Tuple[Tensor, Tuple[int]]:
         """Get sliced weight and bias according to ``mutable_in_channels`` and
         ``mutable_out_channels``."""
         if 'kernel_size' not in self.mutable_attrs \
@@ -298,7 +299,7 @@ class BigNasConvMixin(DynamicConvMixin):
 
         return current_weight, current_padding
 
-    def forward_mixin(self: nn._ConvNd, x: Tensor) -> Tensor:
+    def forward_mixin(self: _ConvNd, x: Tensor) -> Tensor:
         """Forward of dynamic conv2d OP."""
         groups = self.groups
         if self.groups == self.in_channels == self.out_channels:
@@ -314,7 +315,7 @@ class OFAConvMixin(BigNasConvMixin):
     ``out_channels`` and ``kernel_size``."""
 
     def mutate_kernel_size(
-            self: nn._ConvNd,
+            self: _ConvNd,
             mutable_kernel_size: BaseMutable,
             kernel_size_seq: Optional[Sequence[int]] = None) -> None:
         """Mutate ``kernel_size`` with given mutable and register
@@ -323,7 +324,7 @@ class OFAConvMixin(BigNasConvMixin):
 
         self._register_trans_matrix()
 
-    def _register_trans_matrix(self: nn._ConvNd) -> None:
+    def _register_trans_matrix(self: _ConvNd) -> None:
         """Register transformation matrix that used in progressive
         shrinking."""
         assert self.kernel_size_list is not None
@@ -346,7 +347,7 @@ class OFAConvMixin(BigNasConvMixin):
         return f'trans_matrix_{src}to{tar}'
 
     def _get_dynamic_params_by_mutable_kernel_size(
-            self: nn._ConvNd, weight: Tensor) -> Tuple[Tensor, Tuple[int]]:
+            self: _ConvNd, weight: Tensor) -> Tuple[Tensor, Tuple[int]]:
         """Get sliced weight and bias according to ``mutable_in_channels`` and
         ``mutable_out_channels``."""
 

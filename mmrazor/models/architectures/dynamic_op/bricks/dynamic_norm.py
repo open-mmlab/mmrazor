@@ -30,6 +30,22 @@ class _DynamicBatchNorm(_BatchNorm, DynamicBatchNormMixin):
 
         self.mutable_attrs: Dict[str, Optional[BaseMutable]] = nn.ModuleDict()
 
+    @classmethod
+    def convert_from(cls, module: _BatchNorm):
+        """Convert a _BatchNorm module to a DynamicBatchNorm.
+
+        Args:
+            module (:obj:`torch.nn._BatchNorm`): The original BatchNorm module.
+        """
+        dynamic_bn = cls(
+            num_features=module.num_features,
+            eps=module.eps,
+            momentum=module.momentum,
+            affine=module.affine,
+            track_running_stats=module.track_running_stats)
+
+        return dynamic_bn
+
     def forward(self, input: Tensor) -> Tensor:
         """Forward of dynamic BatchNormxd OP."""
         self._check_input_dim(input)
