@@ -9,7 +9,11 @@ from mmrazor.registry import MODELS
 
 @MODELS.register_module()
 class KDSoftCELoss(nn.Module):
-    """KD Softmax CE Loss.
+    """Distilling the Knowledge in a Neural Network, NIPS2014. Based on Soft
+    Cross Entropy criterion.
+
+    https://arxiv.org/pdf/1503.02531.pdf
+
 
     Args:
         tau (int, optional): Temperature. Defaults to 1.
@@ -72,7 +76,6 @@ class KDSoftCELoss(nn.Module):
         reduction = (
             reduction_override if reduction_override else self.reduction)
 
-        preds_S = preds_S.detach()
         preds_S = preds_S / self.tau
         soft_label = F.softmax((preds_T / self.tau), dim=-1)
         loss_cls = self.loss_weight * self.cls_criterion(
