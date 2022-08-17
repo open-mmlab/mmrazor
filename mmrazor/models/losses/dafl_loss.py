@@ -14,7 +14,7 @@ class DAFLLoss(nn.Module):
     paper link: https://arxiv.org/pdf/1904.01186.pdf
 
     Args:
-        loss_weight (float): Weight of the loss.
+        loss_weight (float): Weight of the loss. Defaults to 1.0.
     """
 
     def __init__(self, loss_weight=1.0) -> None:
@@ -29,52 +29,13 @@ class DAFLLoss(nn.Module):
         """
         return self.loss_weight * self.forward_train(preds_T)
 
-    def forward_trian(self, preds_T: torch.Tensor) -> torch.Tensor:
+    def forward_train(self, preds_T: torch.Tensor) -> torch.Tensor:
         """Forward function during training.
 
         Args:
             preds_T (torch.Tensor): The predictions of teacher.
         """
         raise NotImplementedError
-
-
-@MODELS.register_module()
-class ActivationLoss(DAFLLoss):
-    """The loss function for measuring the activation of the target featuremap.
-    It is negative of the norm of the target featuremap.
-
-    Args:
-        norm_type (str, optional):The type of the norm. Defaults to 'abs'.
-    """
-
-    def __init__(self, norm_type='abs', **kwargs) -> None:
-
-        super().__init__(**kwargs)
-        assert norm_type in ['norm', 'abs'], \
-            '"norm_type" must be "norm" or "abs"'
-        self.norm_type = norm_type
-
-        if self.norm_type == 'norm':
-            self.norm_fn = lambda x: -x.norm()
-        elif self.norm_type == 'abs':
-            self.norm_fn = lambda x: -x.abs().mean()
-
-    def forward(self, feat_T: torch.Tensor) -> torch.Tensor:
-        """Forward function for the ActivationLoss.
-
-        Args:
-            feat_T (torch.Tensor): The featuremap of teacher.
-        """
-        return self.loss_weight * self.forward_train(feat_T)
-
-    def forward_train(self, feat_T: torch.Tensor) -> torch.Tensor:
-        """Forward function in training for the ActivationLoss.
-
-        Args:
-            feat_T (torch.Tensor): The featuremap of teacher.
-        """
-        feat_T = feat_T.view(feat_T.size(0), -1)
-        return self.norm_fn(feat_T)
 
 
 @MODELS.register_module()
@@ -121,3 +82,43 @@ class InformationEntropyLoss(DAFLLoss):
         class_prob = F.softmax(preds_T, dim=1).mean(dim=0)
         info_entropy = class_prob * torch.log10(class_prob)
         return info_entropy.sum()
+
+
+@MODELS.register_module()
+class ActivationLoss(nn.Module):
+    """The loss function for measuring the activation of the target featuremap.
+    It is negative of the norm of the target featuremap.
+
+    Args:
+        loss_weight (float): Weight of the loss. Defaults to 1.0.
+        norm_type (str, optional):The type of the norm. Defaults to 'abs'.
+    """
+
+    def __init__(self, loss_weight=1.0, norm_type='abs') -> None:
+        super().__init__()
+        self.loss_weight = loss_weight
+        assert norm_type in ['norm', 'abs'], \
+            '"norm_type" must be "norm" or "abs"'
+        self.norm_type = norm_type
+
+        if self.norm_type == 'norm':
+            self.norm_fn = lambda x: -x.norm()
+        elif self.norm_type == 'abs':
+            self.norm_fn = lambda x: -x.abs().mean()
+
+    def forward(self, feat_T: torch.Tensor) -> torch.Tensor:
+        """Forward function for the ActivationLoss.
+
+        Args:
+            feat_T (torch.Tensor): The featuremap of teacher.
+        """
+        return self.loss_weight * self.forward_train(feat_T)
+
+    def forward_train(self, feat_T: torch.Tensor) -> torch.Tensor:
+        """Forward function in training for the ActivationLoss.
+
+        Args:
+            feat_T (torch.Tensor): The featuremap of teacher.
+        """
+        feat_T = feat_T.view(feat_T.size(0), -1)
+        return self.norm_fn(feat_T)

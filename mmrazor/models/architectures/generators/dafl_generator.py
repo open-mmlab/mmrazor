@@ -65,13 +65,14 @@ class DAFLGenerator(BaseGenerator):
             nn.Conv2d(self.hidden_channels // 2, 3, 3, stride=1, padding=1),
             nn.Tanh(), nn.BatchNorm2d(3, affine=False))
 
-    # TODO: The typing of this function will report an error in python3.7.
-    def forward(self, data=None, batch_size=None) -> torch.Tensor:
+    def forward(self,
+                data: Optional[torch.Tensor] = None,
+                batch_size: int = 0) -> torch.Tensor:
         """Forward function for generator.
 
         Args:
             data (torch.Tensor, optional): The input data. Defaults to None.
-            batch_size (int, optional): Batch size. Defaults to None.
+            batch_size (int): Batch size. Defaults to 0.
         """
         batch_data = self.process_latent(data, batch_size)
         img = self.linear(batch_data)

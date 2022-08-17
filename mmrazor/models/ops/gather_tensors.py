@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Any
+from typing import Any, Tuple
 
 import torch
 import torch.distributed as dist
@@ -12,9 +12,8 @@ class GatherTensors(torch.autograd.Function):
     torch.distributed.all_reduce.
     """
 
-    # TODO: The return type of this function will report an error in python3.7.
     @staticmethod
-    def forward(ctx: Any, input: torch.Tensor):
+    def forward(ctx: Any, input: torch.Tensor) -> Tuple[Any, ...]:
         """Forward function.
 
         It must accept a context ctx as the first argument.

@@ -1,10 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import torch
 import torch.nn as nn
 from mmcv.runner import load_checkpoint
-from mmengine.optim import OptimWrapper
+from mmengine.optim import OPTIMIZERS, OptimWrapper
 
 from mmrazor.models.utils import add_prefix, set_requires_grad
 from mmrazor.registry import MODELS
@@ -23,7 +23,7 @@ class DataFreeDistillation(BaseAlgorithm):
         distiller (dict): The config dict for built distiller.
         generator_distiller (dict): The distiller collecting outputs & losses
             to update the generator.
-        teachers (dict[dict, str]): The dict of config dict for teacher models
+        teachers (dict[str, dict]): The dict of config dict for teacher models
             and their ckpt_path (optional).
         generator (dictl): The config dict for built distiller generator.
         student_iter (int): The number of student steps in train_step().
@@ -32,14 +32,13 @@ class DataFreeDistillation(BaseAlgorithm):
             Defaults to False.
     """
 
-    # TODO: The typing of this file will report many errors in python3.7.
     def __init__(self,
-                 distiller,
-                 generator_distiller,
-                 teachers,
-                 generator,
-                 student_iter=1,
-                 student_train_first=False,
+                 distiller: dict,
+                 generator_distiller: dict,
+                 teachers: Dict[str, Dict[str, dict]],
+                 generator: dict,
+                 student_iter: int = 1,
+                 student_train_first: bool = False,
                  **kwargs) -> None:
         super().__init__(**kwargs)
         self.student_iter = student_iter
@@ -53,11 +52,12 @@ class DataFreeDistillation(BaseAlgorithm):
 
         self.teachers = nn.ModuleDict()
         for teacher_name, cfg in teachers.items():
-            self.teachers[teacher_name] = MODELS.build(cfg.build_cfg)
-            if cfg.ckpt_path:
+            self.teachers[teacher_name] = MODELS.build(cfg['build_cfg'])
+            if 'ckpt_path' in cfg:
                 # avoid loaded parameters be overwritten
                 self.teachers[teacher_name].init_weights()
-                _ = load_checkpoint(self.teachers[teacher_name], cfg.ckpt_path)
+                _ = load_checkpoint(self.teachers[teacher_name],
+                                    cfg['ckpt_path'])
             self.teachers[teacher_name].eval()
             set_requires_grad(self.teachers[teacher_name], False)
 
@@ -78,7 +78,8 @@ class DataFreeDistillation(BaseAlgorithm):
         """Alias for ``architecture``."""
         return self.architecture
 
-    def train_step(self, data, optim_wrapper):
+    def train_step(self, data: List[dict],
+                   optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
         """Train step for DataFreeDistillation.
 
         Args:
@@ -91,7 +92,6 @@ class DataFreeDistillation(BaseAlgorithm):
         if self.student_train_first:
             _, dis_log_vars = self.train_student(data,
                                                  optim_wrapper['architecture'])
-
             _, generator_loss_vars = self.train_generator(
                 data, optim_wrapper['generator'])
         else:
@@ -104,7 +104,9 @@ class DataFreeDistillation(BaseAlgorithm):
         log_vars.update(generator_loss_vars)
         return log_vars
 
-    def train_student(self, data, optimizer):
+    def train_student(
+            self, data: List[dict], optimizer: OPTIMIZERS
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         """Train step for the student model.
 
         Args:
@@ -132,11 +134,13 @@ class DataFreeDistillation(BaseAlgorithm):
             optimizer.update_params(distill_loss)
             distill_log_vars.pop('loss')
             log_vars.update(
-                add_prefix(distill_log_vars, 'distill_iter' + str(iter)))
+                add_prefix(distill_log_vars, 'distill_iter' + str(iter + 1)))
 
         return distill_loss, log_vars
 
-    def train_generator(self, data, optimizer):
+    def train_generator(
+            self, data: List[dict], optimizer: OPTIMIZERS
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         """Train step for the generator.
 
         Args:
@@ -144,7 +148,8 @@ class DataFreeDistillation(BaseAlgorithm):
             optimizer (OPTIMIZERS): The optimizer to update generator.
         """
         batch_size = len(data)
-        fakeimg_init = torch.randn((batch_size, self.generator.latent_dim))
+        fakeimg_init = torch.randn(
+            (batch_size, self.generator.module.latent_dim))
         fakeimg = self.generator(fakeimg_init, batch_size)
 
         with optimizer.optim_context(self.generator):
