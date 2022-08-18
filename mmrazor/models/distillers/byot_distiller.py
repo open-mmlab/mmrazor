@@ -44,7 +44,6 @@ class BYOTDistiller(ConfigurableDistiller):
 
         Introduce ``connector_idx`` as index of connnector's output.
         """
-        # NEED REVIEW: Whether add connector_idx to get_record()? (byot, fbkd)
 
         if from_student:
             recorder_ = self.student_recorders.get_recorder(recorder)

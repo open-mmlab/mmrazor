@@ -48,15 +48,15 @@ model = dict(
             loss_fet_1=dict(
                 type='L2Loss', normalize=False, loss_weight=0.03, dist=True),
             loss_label_1=dict(type='mmcls.CrossEntropyLoss', loss_weight=0.7),
-            loss_softl_1=dict(type='KDSoftCELoss', tau=3, loss_weight=0.3),
+            loss_softl_1=dict(type='KLDivergence', tau=3, loss_weight=0.3),
             loss_fet_2=dict(
                 type='L2Loss', normalize=False, loss_weight=0.03, dist=True),
             loss_label_2=dict(type='mmcls.CrossEntropyLoss', loss_weight=0.7),
-            loss_softl_2=dict(type='KDSoftCELoss', tau=3, loss_weight=0.3),
+            loss_softl_2=dict(type='KLDivergence', tau=3, loss_weight=0.3),
             loss_fet_3=dict(
                 type='L2Loss', normalize=False, loss_weight=0., dist=True),
             loss_label_3=dict(type='mmcls.CrossEntropyLoss', loss_weight=0.7),
-            loss_softl_3=dict(type='KDSoftCELoss', tau=3, loss_weight=0.3)),
+            loss_softl_3=dict(type='KLDivergence', tau=3, loss_weight=0.3)),
         connectors=dict(
             loss_s1_sfeat=dict(
                 type='BYOTConnector',

@@ -235,15 +235,21 @@ class ConfigurableDistiller(BaseDistiller):
                     f'instance, but got {type(forward_mappings)}')
 
             loss_module = losses[loss_name]
-            loss_forward_keys = signature(
-                loss_module.forward).parameters.keys()
-            # assert len(loss_forward_keys) == len(forward_mappings.keys())
+            loss_forward_params = signature(loss_module.forward).parameters
+            loss_forward_keys = loss_forward_params.keys()
+            # Allow default params.
+            # Check non-default params, not len(params).
 
             for forward_key, record_info in forward_mappings.items():
                 assert forward_key in loss_forward_keys, \
                     f'{forward_key} is not in the signature of \
                     {type(loss_module).__name__} forward, \
                     please check your config.'
+
+                if (loss_forward_params[forward_key].default ==
+                        loss_forward_params[forward_key].empty):
+                    # default params without check
+                    continue
 
                 assert 'recorder' in record_info, \
                     'Each item of loss_forward_mappings should have ' \
