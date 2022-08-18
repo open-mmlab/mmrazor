@@ -1,10 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict, List, Union
 
-from torch.utils.data import DataLoader
-
 from mmengine.evaluator import Evaluator
 from mmengine.runner import ValLoop
+from torch.utils.data import DataLoader
+
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import LOOPS
 

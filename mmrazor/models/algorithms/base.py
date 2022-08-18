@@ -3,9 +3,9 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
-
 from mmengine import BaseDataElement
 from mmengine.model import BaseModel
+
 from mmrazor.registry import MODELS
 
 LossResults = Dict[str, torch.Tensor]

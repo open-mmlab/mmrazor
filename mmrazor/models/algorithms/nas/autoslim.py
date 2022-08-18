@@ -4,11 +4,11 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 import torch
-from torch import nn
-
 from mmengine import BaseDataElement
 from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper
+from torch import nn
+
 from mmrazor.models.distillers import ConfigurableDistiller
 from mmrazor.models.mutators import OneShotChannelMutator
 from mmrazor.models.utils import (add_prefix,

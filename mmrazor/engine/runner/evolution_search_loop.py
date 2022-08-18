@@ -8,12 +8,12 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import mmcv
 import torch
-from torch.utils.data import DataLoader
-
 from mmengine.dist import broadcast_object_list
 from mmengine.evaluator import Evaluator
 from mmengine.runner import EpochBasedTrainLoop
 from mmengine.utils import is_list_of
+from torch.utils.data import DataLoader
+
 from mmrazor.registry import LOOPS
 from mmrazor.structures import Candidates, export_fix_subnet, load_fix_subnet
 from mmrazor.structures.estimator import ResourceEstimator
@@ -305,9 +305,10 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         load_fix_subnet(copied_model, fix_mutable)
 
         estimator = ResourceEstimator()
-        flops = estimator.estimate(
+        results = estimator.estimate(
             model=copied_model,
-            resource_args=dict(input_shape=(1, 3, 224, 224)))[0]
+            resource_args=dict(input_shape=(1, 3, 224, 224)))
+        flops = results['flops']
 
         if self.flops_range[0] < flops < self.flops_range[1]:
             return True

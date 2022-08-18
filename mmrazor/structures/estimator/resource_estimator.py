@@ -2,8 +2,8 @@
 from typing import Any, Dict, List, Tuple
 
 import torch.nn
-
 from mmengine.dist import broadcast_object_list, is_main_process
+
 from mmrazor.registry import ESTIMATORS
 from .base_estimator import BaseEstimator
 from .flops_params_counter import (get_model_complexity_info,
@@ -66,7 +66,7 @@ class ResourceEstimator(BaseEstimator):
         {'flops': 0.0, 'params': 0.0, 'latency': 0.0}
 
         >>> # calculate resources of mmrazor.models
-        NOTE: check 'ResourceEvaluatorLoop' in 
+        NOTE: check 'ResourceEvaluatorLoop' in
               engine.runner.resource_evaluator_val_loop for more details.
     """
 
@@ -78,7 +78,7 @@ class ResourceEstimator(BaseEstimator):
 
     def estimate(
         self, model: torch.nn.Module, resource_args: Dict[str, Any] = dict()
-    ) -> Dict[str, float]:
+    ) -> Dict[str, Any]:
         """Estimate the resources(flops/params/latency) of the given model.
 
         NOTE: resource_args accept the following input items():

@@ -8,9 +8,9 @@ from unittest.mock import MagicMock, patch
 
 import mmcv
 import torch
+from mmengine.config import Config
 from torch.utils.data import DataLoader, Dataset
 
-from mmengine.config import Config
 from mmrazor.engine import EvolutionSearchLoop
 from mmrazor.registry import LOOPS
 from mmrazor.structures import Candidates

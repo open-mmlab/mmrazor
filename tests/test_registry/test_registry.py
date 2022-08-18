@@ -4,9 +4,9 @@ from typing import Dict, Optional, Union
 from unittest import TestCase
 
 import torch.nn as nn
-
 from mmengine.config import Config
 from mmengine.model import BaseModel
+
 from mmrazor.models import *  # noqa: F403, F401
 from mmrazor.models.algorithms.base import BaseAlgorithm
 from mmrazor.models.mutables import OneShotMutableOP

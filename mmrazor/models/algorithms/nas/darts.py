@@ -3,11 +3,11 @@ import os
 from typing import Dict, List, Optional, Union
 
 import torch
+from mmengine.model import BaseModel, MMDistributedDataParallel
+from mmengine.optim import OptimWrapper, OptimWrapperDict
 from torch import nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmengine.model import BaseModel, MMDistributedDataParallel
-from mmengine.optim import OptimWrapper, OptimWrapperDict
 from mmrazor.models.mutators import DiffModuleMutator
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import MODEL_WRAPPERS, MODELS

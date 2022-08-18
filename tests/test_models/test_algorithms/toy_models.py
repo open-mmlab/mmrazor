@@ -1,8 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 
+from mmengine.model import BaseModel
 from torch import nn
 
-from mmengine.model import BaseModel
 from mmrazor.registry import MODELS
 
 

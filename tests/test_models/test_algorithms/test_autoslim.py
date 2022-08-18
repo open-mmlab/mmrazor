@@ -9,8 +9,8 @@ import pytest
 import torch
 import torch.distributed as dist
 from mmcls.structures import ClsDataSample
-
 from mmengine.optim import build_optim_wrapper
+
 from mmrazor import digit_version
 from mmrazor.models.algorithms import AutoSlim, AutoSlimDDP
 

@@ -1,9 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict, List, Union
 
+from mmengine.runner import EpochBasedTrainLoop, IterBasedTrainLoop
 from torch.utils.data import DataLoader
 
-from mmengine.runner import EpochBasedTrainLoop, IterBasedTrainLoop
 from mmrazor.registry import LOOPS
 
 

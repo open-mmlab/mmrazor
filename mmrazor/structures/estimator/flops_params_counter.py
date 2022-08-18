@@ -110,17 +110,17 @@ def get_model_complexity_info(model,
 
 def params_units_convert(num_params, units='M', precision=3):
     """Convert parameter number with units.
-    
+
     Args:
         num_params (float): Parameter number to be converted.
         units (str | None): Converted FLOPs units. Options are None, 'M',
             'K' and ''. If set to None, it will automatically choose the most
             suitable unit for Parameter number. Default to None.
         precision (int): Digit number after the decimal point. Default to 2.
-    
+
     Returns:
         str: The converted parameter number.
-    
+
     Examples:
         >>> params_units_convert(1e9)
         '1000.0'
@@ -215,10 +215,14 @@ def print_model_with_flops_params(model,
     def flops_repr(self):
         accumulated_num_params = self.accumulate_params()
         accumulated_flops_cost = self.accumulate_flops()
-        flops_string = str(params_units_convert(accumulated_flops_cost,
-            units=units, precision=precision)) + ' ' + units + 'FLOPs'
-        params_string = str(params_units_convert(accumulated_num_params,
-            units='M', precision=precision)) + ' ' + 'M'
+        flops_string = str(
+            params_units_convert(
+                accumulated_flops_cost, units=units,
+                precision=precision)) + ' ' + units + 'FLOPs'
+        params_string = str(
+            params_units_convert(
+                accumulated_num_params, units='M',
+                precision=precision)) + ' ' + 'M'
         return ', '.join([
             params_string,
             '{:.3%} Params'.format(accumulated_num_params / total_params),
@@ -249,8 +253,8 @@ def print_model_with_flops_params(model,
 
 
 def accumulate_sub_module_flops_params(model, convert_unit=True):
-    """Accumulate FLOPs and params for each module in the model. Each module
-    in the model will have the `__flops__` and `__params__` parameters.
+    """Accumulate FLOPs and params for each module in the model. Each module in
+    the model will have the `__flops__` and `__params__` parameters.
 
     Args:
         model (nn.Module): The model to be accumulated.

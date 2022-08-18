@@ -2,10 +2,10 @@
 from typing import Dict, List, Sequence, Union
 
 import torch
-from torch.utils.data import DataLoader
-
 from mmengine.evaluator import Evaluator
 from mmengine.runner import ValLoop, autocast
+from torch.utils.data import DataLoader
+
 from mmrazor.registry import LOOPS
 
 

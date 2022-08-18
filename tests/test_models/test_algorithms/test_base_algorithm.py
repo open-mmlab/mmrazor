@@ -3,8 +3,8 @@ from unittest import TestCase
 
 import torch
 import torch.nn as nn
-
 from mmengine.model import BaseDataPreprocessor, BaseModel
+
 from mmrazor.models import BaseAlgorithm
 from mmrazor.registry import MODELS
 

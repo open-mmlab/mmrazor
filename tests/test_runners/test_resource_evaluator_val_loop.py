@@ -6,12 +6,12 @@ from unittest import TestCase
 
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset
-
 from mmengine.config import Config
 from mmengine.evaluator import BaseMetric
 from mmengine.model import BaseModel
 from mmengine.runner import Runner
+from torch.utils.data import Dataset
+
 from mmrazor.engine import ResourceEvaluatorLoop
 from mmrazor.registry import DATASETS, METRICS, MODELS
 

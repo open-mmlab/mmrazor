@@ -12,9 +12,9 @@ from collections.abc import Iterable
 from typing import Any, Callable, Dict, Optional, Set, Union
 
 import torch
+from mmengine.logging import print_log
 from torch import Tensor
 
-from mmengine.logging import print_log
 from ..utils import make_divisible
 from .base_mutable import CHOICE_TYPE, BaseMutable
 

@@ -2,10 +2,10 @@
 import copy
 from typing import Any, Dict, List, Union
 
-from torch.utils.data import DataLoader
-
 from mmengine.evaluator import Evaluator
 from mmengine.runner import ValLoop
+from torch.utils.data import DataLoader
+
 from mmrazor.registry import ESTIMATORS, LOOPS
 from mmrazor.structures import ResourceEstimator
 

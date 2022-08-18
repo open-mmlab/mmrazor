@@ -1,8 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from torch.nn import Module
-
 from mmengine.logging import MMLogger
 from mmengine.optim import OptimWrapper
+from torch.nn import Module
 
 
 def reinitialize_optim_wrapper_count_status(model: Module,

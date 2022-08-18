@@ -3,8 +3,8 @@ from unittest import TestCase
 
 import torch
 import torch.nn as nn
-
 from mmengine.model import BaseModel
+
 from mmrazor.models import SPOS, OneShotModuleMutator, OneShotMutableOP
 from mmrazor.registry import MODELS
 
