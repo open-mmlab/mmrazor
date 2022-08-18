@@ -43,18 +43,16 @@ class CRDLoss(nn.Module):
         input_data = data_samples[0]
         assert 'sample_idx' in input_data, \
             'you should pass a dict with key `sample_idx` in mimic function.'
-        assert 'contrast_sample_idxs' in input_data, \
-            'you should pass a dict with key `contrast_sample_idxs` in mimic function.'  # noqa: E501
         assert isinstance(
             input_data.sample_idx, torch.Tensor
         ), f'`sample_idx` must be a tensor, but get {type(input_data.sample_idx)}'  # noqa: E501
-        assert isinstance(
-            input_data.contrast_sample_idxs, torch.Tensor
-        ), f'`contrast_sample_idxs` must be a tensor, but get {type(input_data.contrast_sample_idxs)}'  # noqa: E501
 
         sample_idxs = torch.stack(
             [sample.sample_idx for sample in data_samples])
         if 'contrast_sample_idxs' in input_data:
+            assert isinstance(
+                input_data.contrast_sample_idxs, torch.Tensor
+            ), f'`contrast_sample_idxs` must be a tensor, but get {type(input_data.contrast_sample_idxs)}'  # noqa: E501
             contrast_sample_idxs = torch.stack(
                 [sample.contrast_sample_idxs for sample in data_samples])
         else:
