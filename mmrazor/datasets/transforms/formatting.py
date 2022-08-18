@@ -9,6 +9,7 @@ except ImportError:
     ClsDataSample = get_placeholder('mmcls')
 
 import warnings
+from typing import Any, Dict, Generator
 
 import numpy as np
 import torch
@@ -19,7 +20,7 @@ from mmrazor.registry import TRANSFORMS
 @TRANSFORMS.register_module()
 class PackCRDClsInputs(PackClsInputs):
 
-    def transform(self, results: dict) -> dict:
+    def transform(self, results: Dict) -> Dict:
         """Method to pack the input data.
 
         Args:
@@ -49,6 +50,15 @@ class PackCRDClsInputs(PackClsInputs):
         if 'gt_label' in results:
             gt_label = results['gt_label']
             data_sample.set_gt_label(gt_label)
+
+        if 'sample_idx' in results:
+            # transfer `sample_idx` to Tensor
+            self.meta_keys: Generator[Any, None, None] = (
+                key for key in self.meta_keys if key != 'sample_idx')
+            value = results['sample_idx']
+            if isinstance(value, int):
+                value = torch.tensor(value).to(torch.long)
+            data_sample.set_data(dict(sample_idx=value))
 
         if 'contrast_sample_idxs' in results:
             value = results['contrast_sample_idxs']
