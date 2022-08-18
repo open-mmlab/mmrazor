@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import logging
 
-import mmcv
+from mmengine import fileio
 from mmengine.logging import print_log
 from torch import nn
 
@@ -32,7 +32,7 @@ def load_fix_subnet(model: nn.Module,
                     prefix: str = '') -> None:
     """Load fix subnet."""
     if isinstance(fix_mutable, str):
-        fix_mutable = mmcv.fileio.load(fix_mutable)
+        fix_mutable = fileio.load(fix_mutable)
     if not isinstance(fix_mutable, dict):
         raise TypeError('fix_mutable should be a `str` or `dict`'
                         f'but got {type(fix_mutable)}')

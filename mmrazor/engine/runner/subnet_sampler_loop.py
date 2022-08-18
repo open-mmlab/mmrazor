@@ -5,8 +5,8 @@ import random
 from abc import abstractmethod
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
-import mmcv
 import torch
+from mmengine import fileio
 from mmengine.evaluator import Evaluator
 from mmengine.runner import IterBasedTrainLoop
 from mmengine.utils import is_list_of
@@ -326,6 +326,6 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
     def _save_candidates(self) -> None:
         """Save the candidates to init the next searching."""
         save_path = os.path.join(self.runner.work_dir, 'candidates.pkl')
-        mmcv.fileio.dump(self.candidates, save_path)
+        fileio.dump(self.candidates, save_path)
         self.runner.logger.info(f'candidates.pkl saved in '
                                 f'{self.runner.work_dir}')
