@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-# flake8: noqa
 import math
 from typing import Union
 
@@ -43,9 +42,9 @@ class CRDLoss(nn.Module):
     def forward(self, s_feats, t_feats, data_samples):
         input_data = data_samples[0]
         assert 'sample_idx' in input_data, \
-                'you should pass a dict with key \'sample_idx\' in mimic function.'
+            'you should pass a dict with key \'sample_idx\' in mimic function.'
         assert 'contrast_sample_idxs' in input_data, \
-                'you should pass a dict with key \'contrast_sample_idxs\' in mimic function.'
+            'you should pass a dict with key \'contrast_sample_idxs\' in mimic function.'  # noqa: E501
         dev = input_data.contrast_sample_idxs.device
         sample_idxs = torch.Tensor([
             sample.sample_idx for sample in data_samples
@@ -105,8 +104,10 @@ class ContrastMemory(nn.Module):
 
     Args:
         dim_out (int, optional): output channels. Defaults to 128.
-        n_sample (int, optional): number of total samples. Defaults to 50000.
-        neg_sample (int, optional): number of negative samples. Defaults to 16384.
+        n_sample (int, optional): number of total samples.
+            Defaults to 50000.
+        neg_sample (int, optional): number of negative samples.
+            Defaults to 16384.
         T (float, optional): temperature. Defaults to 0.07.
         momentum (float, optional): momentum. Defaults to 0.5.
     """
