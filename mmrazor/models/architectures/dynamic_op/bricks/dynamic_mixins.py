@@ -1,8 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import logging
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Set, Tuple
+from typing import Any, Dict, Optional, Set, Tuple
 
 import torch
+from mmengine import print_log
 from torch import Tensor, nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
@@ -28,9 +30,15 @@ class DynamicMixin(ABC):
         accepted_mutables (set): The string set of all accepted mutables.
     """
     accepted_mutable_attrs: Set[str] = set()
+    attr_mappings: Dict[str, str] = dict()
 
     @abstractmethod
-    def convert_from(self, module):
+    def register_mutable_attr(self, attr, mutable):
+        pass
+
+    @classmethod
+    @abstractmethod
+    def convert_from(cls, module):
         """Convert an instance of Pytorch module to a new instance of Dynamic
         module."""
 
@@ -64,6 +72,10 @@ class DynamicMixin(ABC):
 
         for mutable in self.mutable_attrs.values():  # type: ignore
             check_fixed(mutable)
+
+    def check_mutable_attr_valid(self, attr):
+        assert attr in self.attr_mappings or \
+                    attr in self.accepted_mutable_attrs
 
     @staticmethod
     def get_current_choice(mutable: BaseMutable) -> Any:
@@ -123,9 +135,37 @@ class DynamicChannelMixin(DynamicMixin):
 class DynamicBatchNormMixin(DynamicChannelMixin):
     """A mixin class for Pytorch BatchNorm, which can mutate
     ``num_features``."""
+    accepted_mutable_attrs: Set[str] = {'num_features'}
+    attr_mappings: Dict[str, str] = {
+        'in_channels': 'num_features',
+        'out_channels': 'num_features',
+    }
 
-    def mutate_num_features(self: _BatchNorm,
-                            mutable_num_features: BaseMutable) -> None:
+    def register_mutable_attr(self, attr, mutable):
+        self.check_mutable_attr_valid(attr)
+        if attr in self.attr_mappings:
+            attr_map = self.attr_mappings[attr]
+            assert attr_map in self.accepted_mutable_attrs
+            if attr_map in self.mutable_attrs:
+                print_log(
+                    f'{attr_map}({attr}) is already in `mutable_attrs`',
+                    level=logging.WARNING)
+            else:
+                self._register_mutable_attr(attr_map, mutable)
+        elif attr in self.accepted_mutable_attrs:
+            self._register_mutable_attr(attr, mutable)
+        else:
+            raise NotImplementedError
+
+    def _register_mutable_attr(self, attr, mutable):
+
+        if attr == 'num_features':
+            self._register_mutable_num_features(mutable)
+        else:
+            raise NotImplementedError
+
+    def _register_mutable_num_features(
+            self: _BatchNorm, mutable_num_features: BaseMutable) -> None:
         """Mutate ``num_features`` with given mutable.
 
         Args:
@@ -248,8 +288,39 @@ class DynamicLinearMixin(DynamicChannelMixin):
     """A mixin class for Pytorch Linear, which can mutate ``in_features`` and
     ``out_features``."""
 
-    def mutate_in_features(self: nn.Linear,
-                           mutable_in_features: BaseMutable) -> None:
+    accepted_mutable_attrs: Set[str] = {'in_features', 'out_features'}
+    attr_mappings: Dict[str, str] = {
+        'in_channels': 'in_features',
+        'out_channels': 'out_features',
+    }
+
+    def register_mutable_attr(self, attr, mutable):
+        self.check_mutable_attr_valid(attr)
+        if attr in self.attr_mappings:
+            attr_map = self.attr_mappings[attr]
+            assert attr_map in self.accepted_mutable_attrs
+            if attr_map in self.mutable_attrs:
+                print_log(
+                    f'{attr_map}({attr}) is already in `mutable_attrs`',
+                    level=logging.WARNING)
+            else:
+                self._register_mutable_attr(attr_map, mutable)
+        elif attr in self.accepted_mutable_attrs:
+            self._register_mutable_attr(attr, mutable)
+        else:
+            raise NotImplementedError
+
+    def _register_mutable_attr(self, attr, mutable):
+
+        if attr == 'in_features':
+            self._register_mutable_in_features(mutable)
+        elif attr == 'out_features':
+            self._register_mutable_out_features(mutable)
+        else:
+            raise NotImplementedError
+
+    def _register_mutable_in_features(
+            self: nn.Linear, mutable_in_features: BaseMutable) -> None:
         """Mutate ``in_features`` with given mutable.
 
         Args:
@@ -268,8 +339,8 @@ class DynamicLinearMixin(DynamicChannelMixin):
 
         self.mutable_attrs['in_features'] = mutable_in_features
 
-    def mutate_out_features(self: nn.Linear,
-                            mutable_out_features: BaseMutable) -> None:
+    def _register_mutable_out_features(
+            self: nn.Linear, mutable_out_features: BaseMutable) -> None:
         """Mutate ``out_features`` with given mutable.
 
         Args:

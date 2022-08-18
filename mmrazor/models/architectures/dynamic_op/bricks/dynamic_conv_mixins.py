@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import abstractmethod
 from itertools import repeat
-from typing import Callable, Iterable, Optional, Sequence, Tuple
+from typing import Callable, Iterable, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
@@ -64,8 +64,17 @@ class DynamicConvMixin(DynamicChannelMixin):
         """The function that will be used in ``forward_mixin``."""
         pass
 
-    def mutate_in_channels(self: _ConvNd,
-                           mutable_in_channels: BaseMutable) -> None:
+    def register_mutable_attr(self, attr, mutable):
+
+        if attr == 'in_channels':
+            self._register_mutable_in_channels(mutable)
+        elif attr == 'out_channels':
+            self._register_mutable_out_channels(mutable)
+        else:
+            raise NotImplementedError
+
+    def _register_mutable_in_channels(
+            self: _ConvNd, mutable_in_channels: BaseMutable) -> None:
         """Mutate ``in_channels`` with given mutable.
 
         Args:
@@ -85,8 +94,8 @@ class DynamicConvMixin(DynamicChannelMixin):
 
         self.mutable_attrs['in_channels'] = mutable_in_channels
 
-    def mutate_out_channels(self: _ConvNd,
-                            mutable_out_channels: BaseMutable) -> None:
+    def _register_mutable_out_channels(
+            self: _ConvNd, mutable_out_channels: BaseMutable) -> None:
         """Mutate ``out_channels`` with given mutable.
 
         Args:
@@ -221,10 +230,19 @@ class BigNasConvMixin(DynamicConvMixin):
     """A mixin class for Pytorch conv, which can mutate ``in_channels``,
     ``out_channels`` and ``kernel_size``."""
 
-    def mutate_kernel_size(
-            self: _ConvNd,
-            mutable_kernel_size: BaseMutable,
-            kernel_size_seq: Optional[Sequence[int]] = None) -> None:
+    def register_mutable_attr(self, attr, mutable):
+
+        if attr == 'in_channels':
+            self._register_mutable_in_channels(mutable)
+        elif attr == 'out_channels':
+            self._register_mutable_out_channels(mutable)
+        elif attr == 'kernel_size':
+            self._register_mutable_kernel_size(mutable)
+        else:
+            raise NotImplementedError
+
+    def _register_mutable_kernel_size(
+            self: _ConvNd, mutable_kernel_size: BaseMutable) -> None:
         """Mutate ``kernel_size`` with given mutable.
 
         Args:
@@ -239,8 +257,8 @@ class BigNasConvMixin(DynamicConvMixin):
             ValueError: Error if max choice of ``kernel_size_list``
                 not same as ``kernel_size``.
         """
-        if kernel_size_seq is None:
-            kernel_size_seq = getattr(mutable_kernel_size, 'choices', None)
+
+        kernel_size_seq = getattr(mutable_kernel_size, 'choices', None)
         if kernel_size_seq is None or len(kernel_size_seq) == 0:
             raise ValueError('kernel size sequence must be provided')
         kernel_size_list = list(sorted(kernel_size_seq))
@@ -314,14 +332,11 @@ class OFAConvMixin(BigNasConvMixin):
     """A mixin class for Pytorch conv, which can mutate ``in_channels``,
     ``out_channels`` and ``kernel_size``."""
 
-    def mutate_kernel_size(
-            self: _ConvNd,
-            mutable_kernel_size: BaseMutable,
-            kernel_size_seq: Optional[Sequence[int]] = None) -> None:
+    def _register_mutable_kernel_size(
+            self: _ConvNd, mutable_kernel_size: BaseMutable) -> None:
         """Mutate ``kernel_size`` with given mutable and register
         transformation matrix."""
-        super().mutate_kernel_size(mutable_kernel_size, kernel_size_seq)
-
+        super()._register_mutable_kernel_size(mutable_kernel_size)
         self._register_trans_matrix()
 
     def _register_trans_matrix(self: _ConvNd) -> None:

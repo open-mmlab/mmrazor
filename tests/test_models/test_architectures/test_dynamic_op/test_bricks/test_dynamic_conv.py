@@ -29,23 +29,23 @@ class TestDynamicConv2d(TestCase):
 
         mock_mutable = MagicMock()
         with pytest.raises(ValueError):
-            d_conv2d.mutate_in_channels(mock_mutable)
+            d_conv2d.register_mutable_attr('in_channels', mock_mutable)
         with pytest.raises(ValueError):
-            d_conv2d.mutate_out_channels(mock_mutable)
+            d_conv2d.register_mutable_attr('out_channels', mock_mutable)
 
         mock_mutable.current_mask = torch.rand(4)
         with pytest.raises(ValueError):
-            d_conv2d.mutate_in_channels(mock_mutable)
+            d_conv2d.register_mutable_attr('in_channels', mock_mutable)
         with pytest.raises(ValueError):
-            d_conv2d.mutate_out_channels(mock_mutable)
+            d_conv2d.register_mutable_attr('out_channels', mock_mutable)
 
         mutable_in_channels = OneShotMutableChannel(
             10, candidate_choices=[4, 8, 10], candidate_mode='number')
         mutable_out_channels = OneShotMutableChannel(
             10, candidate_choices=[4, 8, 10], candidate_mode='number')
 
-        d_conv2d.mutate_in_channels(mutable_in_channels)
-        d_conv2d.mutate_out_channels(mutable_out_channels)
+        d_conv2d.register_mutable_attr('in_channels', mutable_in_channels)
+        d_conv2d.register_mutable_attr('out_channels', mutable_out_channels)
 
         with pytest.raises(RuntimeError):
             d_conv2d.to_static_op()
@@ -86,8 +86,8 @@ def test_dynamic_conv2d(bias: bool) -> None:
         4, candidate_choices=[2, 3, 4], candidate_mode='number')
     mutable_out_channels = OneShotMutableChannel(
         10, candidate_choices=[4, 8, 10], candidate_mode='number')
-    d_conv2d.mutate_in_channels(mutable_in_channels)
-    d_conv2d.mutate_out_channels(mutable_out_channels)
+    d_conv2d.register_mutable_attr('in_channels', mutable_in_channels)
+    d_conv2d.register_mutable_attr('out_channels', mutable_out_channels)
 
     with pytest.raises(RuntimeError):
         d_conv2d.to_static_op()
@@ -132,9 +132,9 @@ def test_dynamic_conv2d_mutable_single_channels(is_mutate_in_channels: bool,
         10, candidate_choices=[4, 6, 10], candidate_mode='number')
 
     if is_mutate_in_channels:
-        d_conv2d.mutate_in_channels(mutable_channels)
+        d_conv2d.register_mutable_attr('in_channels', mutable_channels)
     else:
-        d_conv2d.mutate_out_channels(mutable_channels)
+        d_conv2d.register_mutable_attr('out_channels', mutable_channels)
 
     with pytest.raises(RuntimeError):
         d_conv2d.to_static_op()
@@ -168,7 +168,7 @@ def test_dynamic_conv2d_mutable_single_channels(is_mutate_in_channels: bool,
 
 
 @pytest.mark.parametrize('dynamic_class', [OFAConv2d, BigNasConv2d])
-@pytest.mark.parametrize('kernel_size_list', [None, [5], [3, 5, 7]])
+@pytest.mark.parametrize('kernel_size_list', [[5], [3, 5, 7]])
 def test_kernel_dynamic_conv2d(dynamic_class: Type[nn.Conv2d],
                                kernel_size_list: bool) -> None:
 
@@ -176,9 +176,8 @@ def test_kernel_dynamic_conv2d(dynamic_class: Type[nn.Conv2d],
         10, candidate_choices=[4, 8, 10], candidate_mode='number')
     mutable_out_channels = OneShotMutableChannel(
         10, candidate_choices=[4, 8, 10], candidate_mode='number')
-    mutable_kernel_size = None
-    if kernel_size_list is not None:
-        mutable_kernel_size = OneShotMutableValue(value_list=kernel_size_list)
+
+    mutable_kernel_size = OneShotMutableValue(value_list=kernel_size_list)
 
     d_conv2d = dynamic_class(
         in_channels=10,
@@ -187,25 +186,19 @@ def test_kernel_dynamic_conv2d(dynamic_class: Type[nn.Conv2d],
         kernel_size=3 if kernel_size_list is None else max(kernel_size_list),
         stride=1,
         bias=True)
-    d_conv2d.mutate_in_channels(mutable_in_channels)
-    d_conv2d.mutate_out_channels(mutable_out_channels)
+    d_conv2d.register_mutable_attr('in_channels', mutable_in_channels)
+    d_conv2d.register_mutable_attr('out_channels', mutable_out_channels)
     if kernel_size_list is not None:
         copied_mutable_kernel_size = copy.deepcopy(mutable_kernel_size)
         copied_d_conv2d = copy.deepcopy(d_conv2d)
 
         copied_mutable_kernel_size._value_list = []
         with pytest.raises(ValueError):
-            _ = copied_d_conv2d.mutate_kernel_size(copied_mutable_kernel_size)
+            _ = copied_d_conv2d.register_mutable_attr(
+                'kernel_size', copied_mutable_kernel_size)
 
-        wrong_kernel_size_list = [4]
-        with pytest.raises(ValueError):
-            copied_d_conv2d.mutate_kernel_size(copied_mutable_kernel_size,
-                                               wrong_kernel_size_list)
-
-        copied_d_conv2d.mutate_kernel_size(copied_mutable_kernel_size,
-                                           kernel_size_list)
-        d_conv2d.mutate_kernel_size(mutable_kernel_size)
-        assert d_conv2d.kernel_size_list == copied_d_conv2d.kernel_size_list
+        d_conv2d.register_mutable_attr('kernel_size', mutable_kernel_size)
+        assert d_conv2d.kernel_size_list == kernel_size_list
 
     with pytest.raises(RuntimeError):
         d_conv2d.to_static_op()
@@ -253,7 +246,7 @@ def test_mutable_kernel_dynamic_conv2d_grad(
         bias=False)
 
     mutable_kernel_size = OneShotMutableValue(value_list=kernel_size_list)
-    d_conv2d.mutate_kernel_size(mutable_kernel_size)
+    d_conv2d.register_mutable_attr('kernel_size', mutable_kernel_size)
 
     x = torch.rand(3, 3, 224, 224, requires_grad=True)
 

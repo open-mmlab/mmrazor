@@ -36,7 +36,7 @@ class DynamicConv2d(nn.Conv2d, DynamicConvMixin):
         self.mutable_attrs: Dict[str, BaseMutable] = nn.ModuleDict()
 
     @classmethod
-    def convert_from(cls, module: nn.Conv2d):
+    def convert_from(cls, module: nn.Conv2d) -> 'DynamicConv2d':
         """Convert an instance of nn.Conv2d to a new instance of
         DynamicConv2d."""
         return cls(
@@ -89,7 +89,7 @@ class BigNasConv2d(nn.Conv2d, BigNasConvMixin):
         self.mutable_attrs: Dict[str, BaseMutable] = nn.ModuleDict()
 
     @classmethod
-    def convert_from(cls, module: nn.Conv2d):
+    def convert_from(cls, module: nn.Conv2d) -> 'BigNasConv2d':
         """Convert an instance of `nn.Conv2d` to a new instance of
         `BigNasConv2d`."""
         return cls(
@@ -147,7 +147,7 @@ class OFAConv2d(nn.Conv2d, OFAConvMixin):
         self.mutable_attrs: Dict[str, BaseMutable] = nn.ModuleDict()
 
     @classmethod
-    def convert_from(cls, module: nn.Conv2d):
+    def convert_from(cls, module: nn.Conv2d) -> 'OFAConv2d':
         """Convert an instance of `nn.Conv2d` to a new instance of
         `OFAConv2d`."""
         return cls(

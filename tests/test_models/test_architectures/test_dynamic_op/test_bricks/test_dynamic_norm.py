@@ -33,16 +33,16 @@ def test_dynamic_bn(dynamic_class: Type[nn.modules.batchnorm._BatchNorm],
         track_running_stats=track_running_stats)
     if not affine and not track_running_stats:
         with pytest.raises(RuntimeError):
-            d_bn.mutate_num_features(mutable_num_features)
+            d_bn.register_mutable_attr('num_features', mutable_num_features)
     else:
         mock_mutable = MagicMock()
         with pytest.raises(ValueError):
-            d_bn.mutate_num_features(mock_mutable)
+            d_bn.register_mutable_attr('num_features', mock_mutable)
         mock_mutable.current_mask = torch.rand(5)
         with pytest.raises(ValueError):
-            d_bn.mutate_num_features(mock_mutable)
+            d_bn.register_mutable_attr('num_features', mock_mutable)
 
-        d_bn.mutate_num_features(mutable_num_features)
+        d_bn.register_mutable_attr('num_features', mutable_num_features)
     assert d_bn.mutable_in_channels is d_bn.mutable_out_channels
 
     if affine or track_running_stats:
@@ -93,7 +93,7 @@ def test_bn_track_running_stats(
     mutable_num_features.current_choice = 8
     d_bn = dynamic_class(
         num_features=10, track_running_stats=True, affine=False)
-    d_bn.mutate_num_features(mutable_num_features)
+    d_bn.register_mutable_attr('num_features', mutable_num_features)
 
     s_bn = static_class(num_features=8, track_running_stats=True, affine=False)
 

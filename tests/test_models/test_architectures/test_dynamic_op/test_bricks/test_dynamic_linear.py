@@ -24,18 +24,18 @@ def test_dynamic_linear(bias) -> None:
 
     mock_mutable = MagicMock()
     with pytest.raises(ValueError):
-        d_linear.mutate_in_features(mock_mutable)
+        d_linear.register_mutable_attr('in_features', mock_mutable)
     with pytest.raises(ValueError):
-        d_linear.mutate_out_features(mock_mutable)
+        d_linear.register_mutable_attr('out_features', mock_mutable)
 
     mock_mutable.current_mask = torch.rand(8)
     with pytest.raises(ValueError):
-        d_linear.mutate_in_features(mock_mutable)
+        d_linear.register_mutable_attr('in_features', mock_mutable)
     with pytest.raises(ValueError):
-        d_linear.mutate_out_features(mock_mutable)
+        d_linear.register_mutable_attr('out_features', mock_mutable)
 
-    d_linear.mutate_in_features(mutable_in_features)
-    d_linear.mutate_out_features(mutable_out_features)
+    d_linear.register_mutable_attr('in_features', mutable_in_features)
+    d_linear.register_mutable_attr('out_features', mutable_out_features)
 
     with pytest.raises(RuntimeError):
         d_linear.to_static_op()
@@ -82,9 +82,9 @@ def test_dynamic_linear_mutable_single_features(
 
     if is_mutate_in_features is not None:
         if is_mutate_in_features:
-            d_linear.mutate_in_features(mutable_channels)
+            d_linear.register_mutable_attr('in_channels', mutable_channels)
         else:
-            d_linear.mutate_out_features(mutable_channels)
+            d_linear.register_mutable_attr('out_channels', mutable_channels)
 
     if is_mutate_in_features:
         d_linear.mutable_in_channels.current_choice = in_features
