@@ -10,13 +10,13 @@ from mmrazor.registry import TASK_UTILS
 
 def get_model_complexity_info(model,
                               input_shape,
+                              spec_modules=[],
+                              disabled_counters=[],
                               print_per_layer_stat=False,
                               as_strings=False,
                               input_constructor=None,
                               flush=False,
-                              ost=sys.stdout,
-                              disabled_counters=None,
-                              add_resource_attr=False):
+                              ost=sys.stdout):
     """Get complexity information of a model. This method can calculate FLOPs
     and parameter counts of a model with corresponding input shape. It can also
     print complexity information for each layer in a model. Supported layers
@@ -40,6 +40,9 @@ def get_model_complexity_info(model,
         model (nn.Module): The model for complexity calculation.
         input_shape (tuple): Input shape (including batchsize) used for
             calculation.
+        spec_modules (list): A list that contains the names of several spec
+            modules, which users want to get resources infos of them.
+            e.g., ['backbone', 'head'], ['backbone.layer1']. Default to [].
         print_per_layer_stat (bool): Whether to print complexity information
             for each layer in a model. Default to True.
         as_strings (bool): Output FLOPs and params counts in a string form.
@@ -52,13 +55,13 @@ def get_model_complexity_info(model,
             Default to sys.stdout.
         disabled_counters (list): One can limit which ops' spec would be
             calculated. Default to `None`.
-        add_resource_attr (bool): Whether to add `__flops__` and `__params__`
-            attributes for each sub-module in model. Default to False.
 
     Returns:
-        tuple[float | str]: If ``as_strings`` is set to True, it will return
-            FLOPs and parameter counts in a string format. otherwise, it will
-            return those in a float number format.
+        tuple[float | str] | dict[str, float]: If `as_strings` is set to True,
+            it will return FLOPs and parameter counts in a string format.
+            Otherwise, it will return those in a float number format.
+            If len(spec_modules) > 0, it will return a resource info dict with
+            FLOPs and parameter counts of each spec module in float format.
     """
     assert type(input_shape) is tuple
     assert len(input_shape) >= 1
@@ -93,12 +96,19 @@ def get_model_complexity_info(model,
             ost=ost,
             flush=flush)
 
-    if add_resource_attr:
-        # NOTE: if `add_resource_attr=True`, `stop_flops_params_count()`
-        # is supposed to be called outside this function.
+    if len(spec_modules):
+        spec_modules_resources = dict()
         accumulate_sub_module_flops_params(flops_params_model)
-    else:
-        flops_params_model.stop_flops_params_count()
+        for name, module in flops_params_model.architecture.named_modules():
+            if name in spec_modules:
+                spec_modules_resources[name] = dict()
+                spec_modules_resources[name]['flops'] = module.__flops__
+                spec_modules_resources[name]['params'] = module.__params__
+
+    flops_params_model.stop_flops_params_count()
+
+    if len(spec_modules):
+        return spec_modules_resources
 
     if as_strings:
         flops_string = str(params_units_convert(flops_count)) + ' GFLOPs'

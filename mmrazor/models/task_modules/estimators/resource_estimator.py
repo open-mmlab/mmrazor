@@ -74,10 +74,9 @@ class ResourceEstimator(BaseEstimator):
                  units: str = 'M',
                  disabled_counters: List[str] = [],
                  as_strings: bool = False,
-                 add_resource_attr: bool = False,
                  measure_inference: bool = False):
         super().__init__(default_shape, units, disabled_counters, as_strings,
-                         add_resource_attr, measure_inference)
+                         measure_inference)
 
     def estimate(
         self, model: torch.nn.Module, resource_args: Dict[str, Any] = dict()
@@ -121,3 +120,32 @@ class ResourceEstimator(BaseEstimator):
         broadcast_object_list([results])
 
         return results
+
+    def estimate_spec_modules(
+        self, model: torch.nn.Module, resource_args: Dict[str, Any] = dict()
+    ) -> Dict[str, float]:
+        """Estimate the resources(flops/params/latency) of the spec modules.
+
+        Args:
+            model: The measured model.
+            resource_args (Dict[str, float]): Args for resources estimation.
+            NOTE: resource_args have the same items() as the init cfgs.
+
+        Returns:
+            Dict[str, float]): A dict that containing resource results(flops,
+                params) of each modules in resource_args['spec_modules'].
+        """
+        assert 'spec_modules' in resource_args, \
+            'spec_modules is required when calling estimate_spec_modules().'
+
+        resource_args.pop('measure_inference', False)
+        if 'input_shape' not in resource_args.keys():
+            resource_args['input_shape'] = self.default_shape
+        if 'disabled_counters' not in resource_args.keys():
+            resource_args['disabled_counters'] = self.disabled_counters
+
+        model.eval()
+        spec_modules_resources = get_model_complexity_info(
+            model, **resource_args)
+
+        return spec_modules_resources
