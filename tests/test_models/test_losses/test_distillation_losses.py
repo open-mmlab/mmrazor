@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models import ABLoss, DKDLoss
+from mmrazor.models import ABLoss, DKDLoss, FTLoss
 
 
 class TestLosses(TestCase):
@@ -50,3 +50,13 @@ class TestLosses(TestCase):
         dkd_loss = DKDLoss(**dkd_loss_cfg)
         # dkd requires label logits
         self.normal_test_1d(dkd_loss, labels=True)
+
+    def test_ft_loss(self):
+        ft_loss_cfg = dict(loss_weight=1.0)
+        ft_loss = FTLoss(**ft_loss_cfg)
+
+        assert ft_loss.loss_weight == 1.0
+
+        self.normal_test_1d(ft_loss)
+        self.normal_test_2d(ft_loss)
+        self.normal_test_3d(ft_loss)

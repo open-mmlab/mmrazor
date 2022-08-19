@@ -26,7 +26,6 @@ class Paraphraser(BaseConnector):
                  out_channel: int,
                  phase='pretrain',
                  use_bn: Optional[bool] = False,
-                 pretrain_criterion: Optional[Dict] = None,
                  init_cfg: Optional[Dict] = None):
 
         super(Paraphraser, self).__init__(init_cfg)
@@ -34,12 +33,6 @@ class Paraphraser(BaseConnector):
 
         assert phase in ['pretrain', 'train'], f'Unexpect `phase`: {phase}'
         self.phase = phase
-
-        # TODO: A hotfix: set `forward` func depends on self.phase.
-        if self.phase == 'pretrain':
-            assert pretrain_criterion is not None, \
-                '`pretrain_criterion` cannot be `None` if `phase` is `pretrain`'  # noqa: E501
-            self.pretrain_criterion = MODELS.build(pretrain_criterion)
 
     def _build_modules(self,
                        in_channel: int,
@@ -76,7 +69,7 @@ class Paraphraser(BaseConnector):
         factor = self.encoder(t_feat)
         t_feat_rec = self.decoder(factor)
 
-        return self.pretrain_criterion(t_feat, t_feat_rec)
+        return t_feat_rec
 
     def forward(self, x):
         if self.phase == 'train':

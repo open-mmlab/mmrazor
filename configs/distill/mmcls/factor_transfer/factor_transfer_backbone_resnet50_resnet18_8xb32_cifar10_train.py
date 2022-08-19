@@ -1,39 +1,29 @@
 _base_ = [
-    'mmcls::_base_/datasets/imagenet_bs32.py',
-    'mmcls::_base_/schedules/imagenet_bs256.py',
-    'mmcls::_base_/default_runtime.py'
+    './factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain.py'
 ]
 
+train_cfg = dict(by_epoch=True, max_epochs=200, val_interval=1)
+
 model = dict(
-    _scope_='mmrazor',
-    type='SingleTeacherDistill',
-    data_preprocessor=dict(
-        type='ImgDataPreprocessor',
-        # RGB format normalization parameters
-        mean=[123.675, 116.28, 103.53],
-        std=[58.395, 57.12, 57.375],
-        # convert image from BGR to RGB
-        bgr_to_rgb=True),
-    architecture=dict(
-        cfg_path='mmcls::resnet/resnet18_8xb32_in1k.py', pretrained=False),
-    teacher=dict(
-        cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False),
-    init_cfg=dict(
-        type='Pretrained', checkpoint='pretrain_work_dir/last_chechpoint.pth'),
+    calculate_student_loss=True,
+    student_trainable=True,
     distiller=dict(
-        type='ConfigurableDistiller',
-        student_recorders=dict(
-            fc=dict(type='ModuleOutputs', source='head.fc')),
-        teacher_recorders=dict(
-            fc=dict(type='ModuleOutputs', source='head.fc')),
-        distill_losses=dict(
-            loss_kl=dict(
-                type='KLDivergence', loss_weight=200, reduction='mean')),
+        distill_losses=dict(loss_s4=dict(type='FTLoss', loss_weight=1.0)),
+        connectors=dict(loss_s4_tfeat=dict(phase='train')),
         loss_forward_mappings=dict(
-            loss_kl=dict(
-                preds_S=dict(from_student=True, recorder='fc'),
-                preds_T=dict(from_student=False, recorder='fc')))))
-
-find_unused_parameters = True
-
-val_cfg = dict(_delete_=True, type='mmrazor.SingleTeacherDistillValLoop')
+            _delete_=True,
+            loss_s4=dict(
+                s_feature=dict(
+                    from_student=True,
+                    recorder='bb_s4',
+                    connector='loss_s4_sfeat'),
+                t_feature=dict(
+                    from_student=False,
+                    recorder='bb_s4',
+                    connector='loss_s4_tfeat'),
+            ))),
+    init_cfg=dict(
+        type='Pretrained',
+        checkpoint=  # noqa: E251
+        'work_dirs/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain/epoch_20.pth'  # noqa: E501
+    ))

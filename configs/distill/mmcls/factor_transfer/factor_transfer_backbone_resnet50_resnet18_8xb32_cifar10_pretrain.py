@@ -26,9 +26,11 @@ model = dict(
     distiller=dict(
         type='ConfigurableDistiller',
         student_recorders=dict(
-            bb_s4=dict(type='ModuleOutputs', source='backbone.layer4.1.relu')),
+            bb_s4=dict(type='ModuleOutputs',
+                       source='backbone.layer4.1.conv2')),
         teacher_recorders=dict(
-            bb_s4=dict(type='ModuleOutputs', source='backbone.layer4.2.relu')),
+            bb_s4=dict(type='ModuleOutputs',
+                       source='backbone.layer4.2.conv3')),
         distill_losses=dict(
             loss_s4_pretrain=dict(type='L2Loss', loss_weight=1.0)),
         connectors=dict(
@@ -36,15 +38,20 @@ model = dict(
                 type='Translator', in_channel=512, out_channel=1024),
             loss_s4_tfeat=dict(
                 type='Paraphraser',
+                phase='pretrain',
                 in_channel=2048,
-                out_channel=1024,
-                pretrain_criterion=dict(type='L2Loss', loss_weight=1.0))),
+                out_channel=1024)),
         loss_forward_mappings=dict(
             loss_s4_pretrain=dict(
-                x=dict(
+                s_feature=dict(
+                    # it actually is t_feature
+                    from_student=False,
+                    recorder='bb_s4'),
+                t_feature=dict(
                     from_student=False,
                     recorder='bb_s4',
-                    connector='loss_s4_tfeat')))))
+                    connector='loss_s4_tfeat'),
+            ))))
 
 find_unused_parameters = True
 
