@@ -1,12 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from unittest import TestCase
+"""from unittest import TestCase.
 
 import pytest
 import torch
 
 from mmrazor.models.architectures import DynamicConv2d
 from mmrazor.structures import export_fix_subnet, load_fix_subnet
-
+from .utils import fix_dynamic_op
 
 class TestDefaultDynamicOP(TestCase):
 
@@ -38,7 +38,9 @@ class TestDefaultDynamicOP(TestCase):
         self.assertEqual(out1.size(1), 4)
 
         fix_mutables = export_fix_subnet(d_conv2d)
-        load_fix_subnet(d_conv2d, fix_mutables)
+        with pytest.raises(RuntimeError):
+            load_fix_subnet(d_conv2d, fix_mutables)
+        fix_dynamic_op(d_conv2d, fix_mutables)
 
         out2 = d_conv2d(x)
         self.assertTrue(torch.equal(out1, out2))
@@ -77,7 +79,9 @@ class TestDefaultDynamicOP(TestCase):
         self.assertEqual(out1.size(1), 8)
 
         fix_mutables = export_fix_subnet(d_conv2d)
-        load_fix_subnet(d_conv2d, fix_mutables)
+        with pytest.raises(RuntimeError):
+            load_fix_subnet(d_conv2d, fix_mutables)
+        fix_dynamic_op(d_conv2d, fix_mutables)
 
         out2 = d_conv2d(x)
         self.assertTrue(torch.equal(out1, out2))
@@ -86,3 +90,4 @@ class TestDefaultDynamicOP(TestCase):
         out3 = s_conv2d(x)
 
         self.assertTrue(torch.equal(out1, out3))
+"""
