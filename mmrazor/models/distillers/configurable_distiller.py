@@ -180,7 +180,8 @@ class ConfigurableDistiller(BaseDistiller):
                    from_student: bool,
                    record_idx: int = 0,
                    data_idx: Optional[int] = None,
-                   connector: Optional[str] = None) -> List:
+                   connector: Optional[str] = None,
+                   connector_idx: Optional[int] = None) -> List:
         """According to each item in ``record_infos``, get the corresponding
         record in ``recorder_manager``."""
 
@@ -192,6 +193,8 @@ class ConfigurableDistiller(BaseDistiller):
 
         if connector:
             record_data = self.connectors[connector](record_data)
+        if connector_idx is not None:
+            record_data = record_data[connector_idx]
 
         return record_data
 
