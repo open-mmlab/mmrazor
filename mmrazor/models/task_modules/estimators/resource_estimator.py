@@ -4,14 +4,13 @@ from typing import Any, Dict, List, Tuple
 import torch.nn
 from mmengine.dist import broadcast_object_list, is_main_process
 
-from mmrazor.registry import ESTIMATORS
+from mmrazor.registry import TASK_UTILS
 from .base_estimator import BaseEstimator
-from .flops_params_counter import (get_model_complexity_info,
-                                   params_units_convert)
-from .latency import repeat_measure_inference_speed
+from .counters import (get_model_complexity_info, params_units_convert,
+                       repeat_measure_inference_speed)
 
 
-@ESTIMATORS.register_module()
+@TASK_UTILS.register_module()
 class ResourceEstimator(BaseEstimator):
     """Estimator for calculating the resources consume.
 
@@ -19,10 +18,10 @@ class ResourceEstimator(BaseEstimator):
         default_shape (tuple): Input data's default shape, for calculating
             resources consume. Defaults to (1, 3, 224, 224)
         units (str): Resource units. Defaults to 'M'.
-        disable_counters (list): Disable spec op counters.
+        disabled_counters (list): List of disabled spec op counters.
             Defaults to None.
-        NOTE: disable_counters contains the op counter class names
-              in estimator.op_spec_counters that require to be disabled,
+        NOTE: disabled_counters contains the op counter class names
+              in estimator.op_counters that require to be disabled,
               such as 'ConvCounter', 'BatchNorm2dCounter', ...
 
     Examples:
@@ -43,7 +42,7 @@ class ResourceEstimator(BaseEstimator):
         ...    def forward(self, x):
         ...        return x
         ...
-        >>> @OP_SPEC_COUNTERS.register_module()
+        >>> @TASK_UTILS.register_module()
         ... class CustomModuleCounter(BaseCounter):
         ...
         ...    @staticmethod
@@ -66,33 +65,33 @@ class ResourceEstimator(BaseEstimator):
         {'flops': 0.0, 'params': 0.0, 'latency': 0.0}
 
         >>> # calculate resources of mmrazor.models
-        NOTE: check 'ResourceEvaluatorLoop' in
-              engine.runner.resource_evaluator_val_loop for more details.
+        NOTE: check 'EstimateResourcesHook' in
+              mmrazor.engine.hooks.estimate_resources_hook for details.
     """
 
     def __init__(self,
                  default_shape: Tuple = (1, 3, 224, 224),
                  units: str = 'M',
-                 disabled_counters: List[str] = None):
-        super().__init__(default_shape, units, disabled_counters)
+                 disabled_counters: List[str] = [],
+                 as_strings: bool = False,
+                 add_resource_attr: bool = False,
+                 measure_inference: bool = False):
+        super().__init__(default_shape, units, disabled_counters, as_strings,
+                         add_resource_attr, measure_inference)
 
     def estimate(
         self, model: torch.nn.Module, resource_args: Dict[str, Any] = dict()
     ) -> Dict[str, Any]:
         """Estimate the resources(flops/params/latency) of the given model.
 
-        NOTE: resource_args accept the following input items():
-            input_shape (tuple): Input shape (including batchsize) used for
-                model resources calculation.
-            measure_inference (bool): whether to measure infer speed or not.
-                Default to False.
-            disabled_counters (list): One can limit which ops' spec would be
-                calculated. Default to `None`.
-            as_strings (bool): Output FLOPs and params counts in a string
-                form. Default to False.
-            add_resource_attr (bool): Whether to measure a model with adding
-                `__flops__` and `__params__` attributes on each module of the
-                model. Default to False.
+        Args:
+            model: The measured model.
+            resource_args (Dict[str, float]): Args for resources estimation.
+            NOTE: resource_args have the same items() as the init cfgs.
+
+        Returns:
+            Dict[str, str]): A dict that containing resource results(flops,
+                params and latency).
         """
         results = dict()
         if is_main_process():
@@ -108,7 +107,7 @@ class ResourceEstimator(BaseEstimator):
                     model, resource_args, max_iter=100, repeat_num=2)
             else:
                 latency = 0.0
-            as_strings = resource_args.get('as_strings', False)
+            as_strings = resource_args.get('as_strings', self.as_strings)
             if as_strings and self.units is not None:
                 raise ValueError('Set units to None, when as_trings=True.')
             if self.units is not None:

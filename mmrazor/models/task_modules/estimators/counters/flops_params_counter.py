@@ -5,7 +5,7 @@ from functools import partial
 import torch
 import torch.nn as nn
 
-from mmrazor.registry import OP_SPEC_COUNTERS
+from mmrazor.registry import TASK_UTILS
 
 
 def get_model_complexity_info(model,
@@ -356,7 +356,7 @@ def start_flops_params_count(self, disabled_counters):
                 counter_type = get_counter_type(module)
                 if (disabled_counters is None
                         or counter_type not in disabled_counters):
-                    counter = OP_SPEC_COUNTERS.build(
+                    counter = TASK_UTILS.build(
                         dict(type=counter_type, _scope_='mmrazor'))
                     handle = module.register_forward_hook(
                         counter.add_count_hook)
@@ -442,7 +442,7 @@ def get_counter_type(module):
 
 
 def is_supported_instance(module):
-    if get_counter_type(module) in OP_SPEC_COUNTERS._module_dict.keys():
+    if get_counter_type(module) in TASK_UTILS._module_dict.keys():
         return True
     return False
 

@@ -6,11 +6,10 @@ import torch
 from torch import Tensor
 from torch.nn import Conv2d, Module, Parameter
 
-from mmrazor.models import OneShotMutableModule
-from mmrazor.registry import MODELS, OP_SPEC_COUNTERS
-from mmrazor.structures import (ResourceEstimator, export_fix_subnet,
-                                load_fix_subnet)
-from mmrazor.structures.estimator.op_spec_counters import BaseCounter
+from mmrazor.models import OneShotMutableModule, ResourceEstimator
+from mmrazor.models.task_modules.estimators.counters import BaseCounter
+from mmrazor.registry import MODELS, TASK_UTILS
+from mmrazor.structures import export_fix_subnet, load_fix_subnet
 
 _FIRST_STAGE_MUTABLE = dict(
     type='OneShotMutableOP',
@@ -75,7 +74,7 @@ class FoolAddConstant(Module):
         return x + self.p
 
 
-@OP_SPEC_COUNTERS.register_module()
+@TASK_UTILS.register_module()
 class FoolAddConstantCounter(BaseCounter):
 
     @staticmethod

@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
 
-from mmrazor.registry import OP_SPEC_COUNTERS
+from mmrazor.registry import TASK_UTILS
 from ..flops_params_counter import get_model_parameters_number
 from .base_counter import BaseCounter
 
@@ -19,41 +19,41 @@ class BNCounter(BaseCounter):
         module.__params__ += get_model_parameters_number(module)
 
 
-@OP_SPEC_COUNTERS.register_module()
+@TASK_UTILS.register_module()
 class BatchNorm1dCounter(BNCounter):
     pass
 
 
-@OP_SPEC_COUNTERS.register_module()
+@TASK_UTILS.register_module()
 class BatchNorm2dCounter(BNCounter):
     pass
 
 
-@OP_SPEC_COUNTERS.register_module()
+@TASK_UTILS.register_module()
 class BatchNorm3dCounter(BNCounter):
     pass
 
 
-@OP_SPEC_COUNTERS.register_module()
+@TASK_UTILS.register_module()
 class InstanceNorm1dCounter(BNCounter):
     pass
 
 
-@OP_SPEC_COUNTERS.register_module()
+@TASK_UTILS.register_module()
 class InstanceNorm2dCounter(BNCounter):
     pass
 
 
-@OP_SPEC_COUNTERS.register_module()
+@TASK_UTILS.register_module()
 class InstanceNorm3dCounter(BNCounter):
     pass
 
 
-@OP_SPEC_COUNTERS.register_module()
+@TASK_UTILS.register_module()
 class LayerNormCounter(BNCounter):
     pass
 
 
-@OP_SPEC_COUNTERS.register_module()
+@TASK_UTILS.register_module()
 class GroupNormCounter(BNCounter):
     pass

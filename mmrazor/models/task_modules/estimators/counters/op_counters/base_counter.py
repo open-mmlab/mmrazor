@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractclassmethod
 
 
 class BaseCounter(object, metaclass=ABCMeta):
-    """Base class of all `OP_SPEC_COUNTERS`.
+    """Base class of all op module counters in `TASK_UTILS`.
 
     In ResourceEstimator, `XXModuleCounter` is responsible for `XXModule`,
     which refers to estimator/flops_params_counter.py::get_counter_type().

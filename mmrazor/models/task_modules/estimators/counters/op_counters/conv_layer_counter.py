@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
 
-from mmrazor.registry import OP_SPEC_COUNTERS
+from mmrazor.registry import TASK_UTILS
 from .base_counter import BaseCounter
 
 
@@ -42,16 +42,16 @@ class ConvCounter(BaseCounter):
         module.__params__ += int(overall_params)
 
 
-@OP_SPEC_COUNTERS.register_module()
+@TASK_UTILS.register_module()
 class Conv1dCounter(ConvCounter):
     pass
 
 
-@OP_SPEC_COUNTERS.register_module()
+@TASK_UTILS.register_module()
 class Conv2dCounter(ConvCounter):
     pass
 
 
-@OP_SPEC_COUNTERS.register_module()
+@TASK_UTILS.register_module()
 class Conv3dCounter(ConvCounter):
     pass

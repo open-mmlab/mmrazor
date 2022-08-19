@@ -1,12 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
 
-from mmrazor.registry import OP_SPEC_COUNTERS
+from mmrazor.registry import TASK_UTILS
 from ..flops_params_counter import get_model_parameters_number
 from .base_counter import BaseCounter
 
 
-@OP_SPEC_COUNTERS.register_module()
+@TASK_UTILS.register_module()
 class LinearCounter(BaseCounter):
     """FLOPs/params counter for Linear operation series."""
 

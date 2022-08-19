@@ -1,10 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from mmrazor.registry import OP_SPEC_COUNTERS
+from mmrazor.registry import TASK_UTILS
 from ..flops_params_counter import get_model_parameters_number
 from .base_counter import BaseCounter
 
 
-@OP_SPEC_COUNTERS.register_module()
+@TASK_UTILS.register_module()
 class ConvTranspose2dCounter(BaseCounter):
     """FLOPs/params counter for Decov module series."""
 

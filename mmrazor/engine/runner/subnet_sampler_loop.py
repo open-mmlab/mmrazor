@@ -13,9 +13,9 @@ from mmengine.runner import IterBasedTrainLoop
 from mmengine.utils import is_list_of
 from torch.utils.data import DataLoader
 
+from mmrazor.models.task_modules import ResourceEstimator
 from mmrazor.registry import LOOPS
 from mmrazor.structures import Candidates, export_fix_subnet, load_fix_subnet
-from mmrazor.structures.estimator import ResourceEstimator
 from mmrazor.utils import SupportRandomSubnet
 
 

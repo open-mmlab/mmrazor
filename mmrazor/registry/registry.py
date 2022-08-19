@@ -111,6 +111,3 @@ TASK_UTILS = Registry('task util', parent=MMENGINE_TASK_UTILS)
 VISUALIZERS = Registry('visualizer', parent=MMENGINE_VISUALIZERS)
 # manage visualizer backend
 VISBACKENDS = Registry('vis_backend', parent=MMENGINE_VISBACKENDS)
-
-ESTIMATORS = Registry('estimator')
-OP_SPEC_COUNTERS = Registry('op_counter')
