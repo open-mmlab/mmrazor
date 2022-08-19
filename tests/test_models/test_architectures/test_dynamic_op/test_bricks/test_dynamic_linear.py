@@ -40,8 +40,8 @@ def test_dynamic_linear(bias) -> None:
     with pytest.raises(RuntimeError):
         d_linear.to_static_op()
 
-    d_linear.mutable_in_channels.current_choice = 8
-    d_linear.mutable_out_channels.current_choice = 4
+    d_linear.get_mutable_attr('in_channels').current_choice = 8
+    d_linear.get_mutable_attr('out_channels').current_choice = 4
 
     x = torch.rand(10, 8)
     out1 = d_linear(x)
@@ -87,11 +87,11 @@ def test_dynamic_linear_mutable_single_features(
             d_linear.register_mutable_attr('out_channels', mutable_channels)
 
     if is_mutate_in_features:
-        d_linear.mutable_in_channels.current_choice = in_features
-        assert d_linear.mutable_out_channels is None
+        d_linear.get_mutable_attr('in_channels').current_choice = in_features
+        assert d_linear.get_mutable_attr('out_channels') is None
     elif is_mutate_in_features is False:
-        d_linear.mutable_out_channels.current_choice = out_features
-        assert d_linear.mutable_in_channels is None
+        d_linear.get_mutable_attr('out_channels').current_choice = out_features
+        assert d_linear.get_mutable_attr('in_channels') is None
 
     x = torch.rand(3, in_features)
     out1 = d_linear(x)

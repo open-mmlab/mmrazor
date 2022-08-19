@@ -33,8 +33,17 @@ class DynamicMixin(ABC):
     attr_mappings: Dict[str, str] = dict()
 
     @abstractmethod
-    def register_mutable_attr(self, attr, mutable):
+    def register_mutable_attr(self, attr: str, mutable: BaseMutable):
         pass
+
+    def get_mutable_attr(self, attr: str) -> BaseMutable:
+
+        self.check_mutable_attr_valid(attr)
+        if attr in self.attr_mappings:
+            attr_map = self.attr_mappings[attr]
+            return getattr(self.mutable_attrs, attr_map, None)  # type:ignore
+        else:
+            return getattr(self.mutable_attrs, attr, None)  # type:ignore
 
     @classmethod
     @abstractmethod
@@ -105,16 +114,6 @@ class DynamicChannelMixin(DynamicMixin):
         All subclass should implement ``mutable_in_channels`` and
         ``mutable_out_channels`` APIs.
     """
-
-    @property
-    @abstractmethod
-    def mutable_in_channels(self) -> Optional[BaseMutable]:
-        """Mutable related to input."""
-
-    @property
-    @abstractmethod
-    def mutable_out_channels(self) -> Optional[BaseMutable]:
-        """Mutable related to output."""
 
     @staticmethod
     def check_mutable_channels(mutable_channels: BaseMutable) -> None:
@@ -190,18 +189,6 @@ class DynamicBatchNormMixin(DynamicChannelMixin):
                 f'`num_features`, but got: {mask_size}.')
 
         self.mutable_attrs['num_features'] = mutable_num_features
-
-    @property
-    def mutable_in_channels(self: _BatchNorm) -> Optional[BaseMutable]:
-        """Mutable for controlling ``num_features``."""
-        assert hasattr(self, 'mutable_attrs')
-        return getattr(self.mutable_attrs, 'num_features', None)
-
-    @property
-    def mutable_out_channels(self: _BatchNorm) -> Optional[BaseMutable]:
-        """Mutable for controlling ``num_features``."""
-        assert hasattr(self, 'mutable_attrs')
-        return getattr(self.mutable_attrs, 'num_features', None)
 
     def _get_num_features_mask(self: _BatchNorm) -> Optional[torch.Tensor]:
         """Get mask of ``num_features``"""
@@ -358,18 +345,6 @@ class DynamicLinearMixin(DynamicChannelMixin):
                 f'`in_features`, but got: {mask_size}.')
 
         self.mutable_attrs['out_features'] = mutable_out_features
-
-    @property
-    def mutable_in_channels(self: nn.Linear) -> Optional[BaseMutable]:
-        """Mutable for controlling ``in_features``."""
-        assert hasattr(self, 'mutable_attrs')
-        return getattr(self.mutable_attrs, 'in_features', None)
-
-    @property
-    def mutable_out_channels(self: nn.Linear) -> Optional[BaseMutable]:
-        """Mutable for controlling ``out_features``."""
-        assert hasattr(self, 'mutable_attrs')
-        return getattr(self.mutable_attrs, 'out_features', None)
 
     def get_dynamic_params(self: nn.Linear) -> Tuple[Tensor, Optional[Tensor]]:
         """Get dynamic parameters that will be used in forward process.

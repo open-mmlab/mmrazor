@@ -43,10 +43,11 @@ def test_dynamic_bn(dynamic_class: Type[nn.modules.batchnorm._BatchNorm],
             d_bn.register_mutable_attr('num_features', mock_mutable)
 
         d_bn.register_mutable_attr('num_features', mutable_num_features)
-    assert d_bn.mutable_in_channels is d_bn.mutable_out_channels
+        assert d_bn.get_mutable_attr('in_channels') is d_bn.get_mutable_attr(
+            'out_channels')
 
     if affine or track_running_stats:
-        d_bn.mutable_in_channels.current_choice = 8
+        d_bn.get_mutable_attr('in_channels').current_choice = 8
 
     with pytest.raises(ValueError):
         wrong_shape_x = torch.rand(8)

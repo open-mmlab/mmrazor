@@ -50,8 +50,8 @@ class TestDynamicConv2d(TestCase):
         with pytest.raises(RuntimeError):
             d_conv2d.to_static_op()
 
-        d_conv2d.mutable_in_channels.current_choice = 8
-        d_conv2d.mutable_out_channels.current_choice = 8
+        d_conv2d.get_mutable_attr('in_channels').current_choice = 8
+        d_conv2d.get_mutable_attr('out_channels').current_choice = 8
 
         x = torch.rand(10, 8, 224, 224)
         out1 = d_conv2d(x)
@@ -92,13 +92,13 @@ def test_dynamic_conv2d(bias: bool) -> None:
     with pytest.raises(RuntimeError):
         d_conv2d.to_static_op()
 
-    d_conv2d.mutable_in_channels.current_choice = 4
+    d_conv2d.get_mutable_attr('in_channels').current_choice = 4
     d_conv2d.mutate_out_channels = 10
 
     out_max = d_conv2d(x_max)
     assert torch.equal(out_before_mutate, out_max)
 
-    d_conv2d.mutable_in_channels.current_choice = 3
+    d_conv2d.get_mutable_attr('in_channels').current_choice = 3
     d_conv2d.mutable_out_channels.current_choice = 4
 
     x = torch.rand(10, 3, 224, 224)
@@ -140,11 +140,11 @@ def test_dynamic_conv2d_mutable_single_channels(is_mutate_in_channels: bool,
         d_conv2d.to_static_op()
 
     if is_mutate_in_channels:
-        d_conv2d.mutable_in_channels.current_choice = in_channels
-        assert d_conv2d.mutable_out_channels is None
+        d_conv2d.get_mutable_attr('in_channels').current_choice = in_channels
+        assert d_conv2d.get_mutable_attr('out_channels') is None
     else:
-        d_conv2d.mutable_out_channels.current_choice = out_channels
-        assert d_conv2d.mutable_in_channels is None
+        d_conv2d.get_mutable_attr('out_channels').current_choice = out_channels
+        assert d_conv2d.get_mutable_attr('in_channels') is None
 
     x = torch.rand(3, in_channels, 224, 224)
     out1 = d_conv2d(x)
@@ -203,8 +203,8 @@ def test_kernel_dynamic_conv2d(dynamic_class: Type[nn.Conv2d],
     with pytest.raises(RuntimeError):
         d_conv2d.to_static_op()
 
-    d_conv2d.mutable_in_channels.current_choice = 8
-    d_conv2d.mutable_out_channels.current_choice = 8
+    d_conv2d.get_mutable_attr('in_channels').current_choice = 8
+    d_conv2d.get_mutable_attr('out_channels').current_choice = 8
     if kernel_size_list is not None:
         kernel_size = mutable_kernel_size.sample_choice()
         d_conv2d.mutable_attrs['kernel_size'].current_choice = kernel_size

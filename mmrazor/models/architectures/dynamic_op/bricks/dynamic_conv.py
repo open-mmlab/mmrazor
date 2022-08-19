@@ -172,5 +172,5 @@ class OFAConv2d(nn.Conv2d, OFAConvMixin):
         return nn.Conv2d
 
     def forward(self, x: Tensor) -> Tensor:
-        """Forward of ofa's conv2d."""
+        """Forward of OFA's conv2d."""
         return self.forward_mixin(x)
