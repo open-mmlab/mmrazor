@@ -6,8 +6,8 @@ import tempfile
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
-import mmcv
 import torch
+from mmengine import fileio
 from mmengine.config import Config
 from torch.utils.data import DataLoader, Dataset
 
@@ -104,7 +104,7 @@ class TestEvolutionSearchLoop(TestCase):
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
         fake_candidates = Candidates((fake_subnet, 0.))
         init_candidates_path = os.path.join(self.temp_dir, 'candidates.yaml')
-        mmcv.fileio.dump(fake_candidates, init_candidates_path)
+        fileio.dump(fake_candidates, init_candidates_path)
         loop_cfg.init_candidates = init_candidates_path
         loop = LOOPS.build(loop_cfg)
         self.assertIsInstance(loop, EvolutionSearchLoop)
