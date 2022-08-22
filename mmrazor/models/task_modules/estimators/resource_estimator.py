@@ -92,7 +92,7 @@ class ResourceEstimator(BaseEstimator):
             Dict[str, str]): A dict that containing resource results(flops,
                 params and latency).
         """
-        results = dict()
+        resource_metrics = dict()
         if is_main_process():
             measure_inference = resource_args.pop('measure_inference', False)
             if 'input_shape' not in resource_args.keys():
@@ -112,14 +112,18 @@ class ResourceEstimator(BaseEstimator):
             if self.units is not None:
                 flops = params_units_convert(flops, self.units)
                 params = params_units_convert(params, self.units)
-            results.update({
+            resource_metrics.update({
                 'flops': flops,
                 'params': params,
                 'latency': latency
             })
-        broadcast_object_list([results])
+            results = [resource_metrics]
+        else:
+            results = [None]  # type: ignore
 
-        return results
+        broadcast_object_list(results)
+
+        return results[0]
 
     def estimate_spec_modules(
         self, model: torch.nn.Module, resource_args: Dict[str, Any] = dict()
