@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models import (ABLoss, ActivationLoss, DKDLoss,
+from mmrazor.models import (ABLoss, ActivationLoss, DKDLoss, KDSoftCELoss,
                             InformationEntropyLoss, OnehotLikeLoss)
 
 
@@ -77,3 +77,9 @@ class TestLosses(TestCase):
                 RuntimeError,
                 'Default process group has not been initialized'):
             loss_ie = ie_loss.forward(self.feats_1d)
+
+    def test_kdSoftce_loss(self):
+        kdSoftce_loss_cfg = dict(loss_weight=1.0)
+        kdSoftce_loss = KDSoftCELoss(**kdSoftce_loss_cfg)
+        # kd soft ce loss requires label logits
+        self.normal_test_1d(kdSoftce_loss, labels=True)
