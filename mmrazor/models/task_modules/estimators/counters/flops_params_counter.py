@@ -43,6 +43,8 @@ def get_model_complexity_info(model,
         spec_modules (list): A list that contains the names of several spec
             modules, which users want to get resources infos of them.
             e.g., ['backbone', 'head'], ['backbone.layer1']. Default to [].
+        disabled_counters (list): One can limit which ops' spec would be
+            calculated. Default to [].
         print_per_layer_stat (bool): Whether to print complexity information
             for each layer in a model. Default to True.
         as_strings (bool): Output FLOPs and params counts in a string form.
@@ -53,8 +55,6 @@ def get_model_complexity_info(model,
         flush (bool): same as that in :func:`print`. Default to False.
         ost (stream): same as ``file`` param in :func:`print`.
             Default to sys.stdout.
-        disabled_counters (list): One can limit which ops' spec would be
-            calculated. Default to `None`.
 
     Returns:
         tuple[float | str] | dict[str, float]: If `as_strings` is set to True,
@@ -262,14 +262,12 @@ def print_model_with_flops_params(model,
     model.apply(del_extra_repr)
 
 
-def accumulate_sub_module_flops_params(model, convert_unit=True):
+def accumulate_sub_module_flops_params(model):
     """Accumulate FLOPs and params for each module in the model. Each module in
     the model will have the `__flops__` and `__params__` parameters.
 
     Args:
         model (nn.Module): The model to be accumulated.
-        convert_unit (bool): Whether to convert value under the set unit.
-            Default to True.
     """
 
     def accumulate_params(module):
@@ -295,9 +293,6 @@ def accumulate_sub_module_flops_params(model, convert_unit=True):
         _params = accumulate_params(module)
         module.__flops__ = _flops
         module.__params__ = _params
-        if convert_unit:
-            module.__flops__ = params_units_convert(_flops, units='M')
-            module.__params__ = params_units_convert(_params, units='K')
 
 
 def get_model_parameters_number(model):
