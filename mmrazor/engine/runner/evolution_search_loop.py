@@ -6,8 +6,8 @@ import random
 import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import mmcv
 import torch
+from mmengine import fileio
 from mmengine.dist import broadcast_object_list
 from mmengine.evaluator import Evaluator
 from mmengine.runner import EpochBasedTrainLoop
@@ -96,7 +96,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         if init_candidates is None:
             self.candidates = Candidates()
         else:
-            self.candidates = mmcv.fileio.load(init_candidates)
+            self.candidates = fileio.load(init_candidates)
             assert isinstance(self.candidates, Candidates), 'please use the \
                 correct init candidates file'
 
@@ -234,7 +234,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
     def _resume(self):
         """Resume searching."""
         if self.runner.rank == 0:
-            searcher_resume = mmcv.fileio.load(self.resume_from)
+            searcher_resume = fileio.load(self.resume_from)
             for k in searcher_resume.keys():
                 setattr(self, k, searcher_resume[k])
             epoch_start = int(searcher_resume['_epoch'])
@@ -250,8 +250,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             self.model.set_subnet(best_random_subnet)
             best_fix_subnet = export_fix_subnet(self.model)
             save_name = 'best_fix_subnet.yaml'
-            mmcv.fileio.dump(best_fix_subnet,
-                             osp.join(self.runner.work_dir, save_name))
+            fileio.dump(best_fix_subnet,
+                        osp.join(self.runner.work_dir, save_name))
             self.runner.logger.info(
                 'Search finished and '
                 f'{save_name} saved in {self.runner.work_dir}.')
@@ -277,7 +277,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             save_for_resume['_epoch'] = self.runner.epoch
             for k in ['candidates', 'top_k_candidates']:
                 save_for_resume[k] = getattr(self, k)
-            mmcv.fileio.dump(
+            fileio.dump(
                 save_for_resume,
                 osp.join(self.runner.work_dir,
                          f'search_epoch_{self.runner.epoch}.pkl'))

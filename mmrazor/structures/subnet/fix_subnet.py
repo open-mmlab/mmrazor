@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import logging
 
-import mmcv
+from mmengine import fileio
 from mmengine.logging import print_log
 from torch import nn
 
@@ -10,16 +10,19 @@ from mmrazor.utils import FixMutable, ValidFixMutable
 
 def _dynamic_to_static(model: nn.Module) -> None:
     # Avoid circular import
-    from mmrazor.models.architectures.dynamic_op.base import DynamicOP
+    from mmrazor.models.architectures.dynamic_op.bricks import DynamicMixin
 
     def traverse_children(module: nn.Module) -> None:
         # TODO
         # dynamicop must have no dynamic child
         for name, child in module.named_children():
-            if isinstance(child, DynamicOP):
+            if isinstance(child, DynamicMixin):
                 setattr(module, name, child.to_static_op())
             else:
                 traverse_children(child)
+
+    if isinstance(model, DynamicMixin):
+        raise RuntimeError('Root model can not be dynamic op.')
 
     traverse_children(model)
 
@@ -29,10 +32,15 @@ def load_fix_subnet(model: nn.Module,
                     prefix: str = '') -> None:
     """Load fix subnet."""
     if isinstance(fix_mutable, str):
-        fix_mutable = mmcv.fileio.load(fix_mutable)
+        fix_mutable = fileio.load(fix_mutable)
     if not isinstance(fix_mutable, dict):
         raise TypeError('fix_mutable should be a `str` or `dict`'
                         f'but got {type(fix_mutable)}')
+
+    from mmrazor.models.architectures.dynamic_op.bricks import DynamicMixin
+    if isinstance(model, DynamicMixin):
+        raise RuntimeError('Root model can not be dynamic op.')
+
     # Avoid circular import
     from mmrazor.models.mutables import DerivedMutable
     from mmrazor.models.mutables.base_mutable import BaseMutable
