@@ -309,9 +309,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         load_fix_subnet(copied_model, fix_mutable)
 
         estimator = ResourceEstimator(**self.estimator_cfg)
-        results = estimator.estimate(
-            model=copied_model,
-            resource_args=dict(input_shape=(1, 3, 224, 224)))
+        results = estimator.estimate(copied_model)
         flops = results['flops']
 
         if self.flops_range[0] < flops < self.flops_range[1]:
