@@ -3,8 +3,9 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models import (ABLoss, ActivationLoss, DKDLoss, KDSoftCELoss,
-                            InformationEntropyLoss, OnehotLikeLoss)
+from mmrazor.models import (ABLoss, ActivationLoss, DKDLoss,
+                            InformationEntropyLoss, KDSoftCELoss,
+                            OnehotLikeLoss)
 
 
 class TestLosses(TestCase):
