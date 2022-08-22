@@ -99,7 +99,7 @@ def get_model_complexity_info(model,
     if len(spec_modules):
         spec_modules_resources = dict()
         accumulate_sub_module_flops_params(flops_params_model)
-        for name, module in flops_params_model.architecture.named_modules():
+        for name, module in flops_params_model.named_modules():
             if name in spec_modules:
                 spec_modules_resources[name] = dict()
                 spec_modules_resources[name]['flops'] = module.__flops__
