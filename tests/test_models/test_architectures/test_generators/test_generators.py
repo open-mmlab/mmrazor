@@ -34,3 +34,6 @@ def test_dafl_generator():
     z_batch = torch.randn(8, 10)
     fake_img = dafl_generator(z_batch)
     assert fake_img.size() == torch.Size([8, 3, 32, 32])
+
+    with pytest.raises(AssertionError):
+        fake_img = dafl_generator(data=None, batch_size=0)

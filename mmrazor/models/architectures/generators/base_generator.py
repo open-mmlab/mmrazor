@@ -30,14 +30,14 @@ class BaseGenerator(BaseModule):
 
     def process_latent(self,
                        latent_data: Optional[torch.Tensor] = None,
-                       batch_size: int = 0) -> torch.Tensor:
+                       batch_size: int = 1) -> torch.Tensor:
         """Generate the latent data if the input is None. Put the latent data
         into the current gpu.
 
         Args:
             latent_data (torch.Tensor, optional): The latent data. Defaults to
                 None.
-            batch_size (int): the batch size of the latent data. Defaults to 0.
+            batch_size (int): The batch size of the latent data. Defaults to 1.
         """
         if isinstance(latent_data, torch.Tensor):
             assert latent_data.shape[1] == self.latent_dim, \
@@ -48,7 +48,10 @@ class BaseGenerator(BaseModule):
             else:
                 raise ValueError('The noise should be in shape of (n, c)'
                                  f'but got {latent_data.shape}')
-        elif latent_data is None and batch_size > 0:
+        elif latent_data is None:
+            assert batch_size > 0, \
+                '"batch_size" should larger than zero when "latent_data" is '\
+                f'None, but got {batch_size}.'
             batch_data = torch.randn((batch_size, self.latent_dim))
 
         # putting data on the right device

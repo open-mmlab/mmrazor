@@ -97,7 +97,7 @@ class TestDataFreeDistill(TestCase):
             optimizer=dict(
                 type='SGD', lr=0.1, weight_decay=0.01, momentum=0.9))
 
-        data = [dict(inputs=torch.randn(3, 1, 1)) for i in range(4)]
+        data = [dict(inputs=torch.randn(3, 1, 1)) for _ in range(4)]
 
         alg = DataFreeDistillation(**alg_kwargs)
         optim_wrapper = build_optim_wrapper(alg, optim_wrapper_cfg)
@@ -105,16 +105,19 @@ class TestDataFreeDistill(TestCase):
             architecture=optim_wrapper, generator=optim_wrapper)
 
         losses = alg.train_step(data, optim_wrapper_dict)
-        self.assertIn('distill_iter1.loss_dis', losses)
+        self.assertIn('distill.loss_dis', losses)
+        self.assertIn('distill.loss', losses)
         self.assertIn('generator.loss_gen', losses)
         self.assertIn('generator.loss', losses)
 
         alg_kwargs_ = copy.deepcopy(alg_kwargs)
-        alg_kwargs_['student_iter'] = 2
+        alg_kwargs_['student_iter'] = 5
         alg = DataFreeDistillation(**alg_kwargs_)
         losses = alg.train_step(data, optim_wrapper_dict)
-        self.assertIn('distill_iter1.loss_dis', losses)
-        self.assertIn('distill_iter2.loss_dis', losses)
+        self.assertIn('distill.loss_dis', losses)
+        self.assertIn('distill.loss', losses)
+        self.assertIn('generator.loss_gen', losses)
+        self.assertIn('generator.loss', losses)
 
 
 class TestDAFLDataFreeDistill(TestCase):
@@ -204,7 +207,7 @@ class TestDAFLDataFreeDistill(TestCase):
             optimizer=dict(
                 type='SGD', lr=0.1, weight_decay=0.01, momentum=0.9))
 
-        data = [dict(inputs=torch.randn(3, 1, 1)) for i in range(4)]
+        data = [dict(inputs=torch.randn(3, 1, 1)) for _ in range(4)]
 
         alg = DAFLDataFreeDistillation(**alg_kwargs)
         optim_wrapper = build_optim_wrapper(alg, optim_wrapper_cfg)
@@ -212,5 +215,6 @@ class TestDAFLDataFreeDistill(TestCase):
             architecture=optim_wrapper, generator=optim_wrapper)
         losses = alg.train_step(data, optim_wrapper_dict)
         self.assertIn('distill.loss_dis', losses)
+        self.assertIn('distill.loss', losses)
         self.assertIn('generator.loss_gen', losses)
         self.assertIn('generator.loss', losses)

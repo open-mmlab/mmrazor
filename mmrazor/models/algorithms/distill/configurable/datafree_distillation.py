@@ -88,6 +88,8 @@ class DataFreeDistillation(BaseAlgorithm):
                 update parameters.
         """
         log_vars = dict()
+        for _, teacher in self.teachers.items():
+            teacher.eval()
 
         if self.student_train_first:
             _, dis_log_vars = self.train_student(data,
@@ -116,8 +118,9 @@ class DataFreeDistillation(BaseAlgorithm):
         log_vars = dict()
         batch_size = len(data)
 
-        for iter in range(self.student_iter):
-            fakeimg_init = torch.randn((batch_size, self.generator.latent_dim))
+        for _ in range(self.student_iter):
+            fakeimg_init = torch.randn(
+                (batch_size, self.generator.module.latent_dim))
             fakeimg = self.generator(fakeimg_init, batch_size).detach()
 
             with optimizer.optim_context(self.student):
@@ -132,9 +135,7 @@ class DataFreeDistillation(BaseAlgorithm):
 
             distill_loss, distill_log_vars = self.parse_losses(loss_distill)
             optimizer.update_params(distill_loss)
-            distill_log_vars.pop('loss')
-            log_vars.update(
-                add_prefix(distill_log_vars, 'distill_iter' + str(iter + 1)))
+        log_vars = dict(add_prefix(distill_log_vars, 'distill'))
 
         return distill_loss, log_vars
 
@@ -215,7 +216,6 @@ class DAFLDataFreeDistillation(DataFreeDistillation):
             loss_distill = self.distiller.compute_distill_losses()
 
         distill_loss, distill_log_vars = self.parse_losses(loss_distill)
-        distill_log_vars.pop('loss')
         log_vars.update(add_prefix(distill_log_vars, 'distill'))
 
         optim_wrapper['generator'].update_params(generator_loss)
