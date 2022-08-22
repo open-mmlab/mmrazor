@@ -4,7 +4,7 @@ import os
 import os.path as osp
 import random
 import warnings
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import mmcv
 import torch
@@ -44,6 +44,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         mutate_prob (float): The probability of mutation. Defaults to 0.1.
         flops_range (tuple, optional): flops_range to be used for screening
             candidates.
+        estimator_cfg (Dict[str, Any]): Used for building a resource estimator.
+            Default to dict().
         score_key (str): Specify one metric in evaluation results to score
             candidates. Defaults to 'accuracy_top-1'.
         init_candidates (str, optional): The candidates file path, which is
@@ -64,6 +66,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                  num_crossover: int = 25,
                  mutate_prob: float = 0.1,
                  flops_range: Optional[Tuple[float, float]] = (0., 330 * 1e6),
+                 estimator_cfg: Dict[str, Any] = dict(),
                  score_key: str = 'accuracy_top-1',
                  init_candidates: Optional[str] = None) -> None:
         super().__init__(runner, dataloader, max_epochs)
@@ -82,6 +85,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         self.num_candidates = num_candidates
         self.top_k = top_k
         self.flops_range = flops_range
+        self.estimator_cfg = estimator_cfg
         self.score_key = score_key
         self.num_mutation = num_mutation
         self.num_crossover = num_crossover
@@ -304,7 +308,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         copied_model = copy.deepcopy(self.model)
         load_fix_subnet(copied_model, fix_mutable)
 
-        estimator = ResourceEstimator()
+        estimator = ResourceEstimator(**self.estimator_cfg)
         results = estimator.estimate(
             model=copied_model,
             resource_args=dict(input_shape=(1, 3, 224, 224)))

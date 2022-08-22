@@ -21,9 +21,9 @@ class EstimateResourcesHook(Hook):
             indicates epochs, otherwise it indicates iterations.
             Defaults to -1, which means "never".
         by_epoch (bool): Saving checkpoints by epoch or by iteration.
-            Default: True.
+            Default to True.
         estimator_cfg (Dict[str, Any]): Used for building a resource estimator.
-            Default to be dict().
+            Default to dict().
 
     Example:
     >>> add the `EstimatorResourcesHook` in custom_hooks as follows:
@@ -41,14 +41,11 @@ class EstimateResourcesHook(Hook):
     def __init__(self,
                  interval: int = -1,
                  by_epoch: bool = True,
-                 estimator_cfg: Dict[str, Any] = None,
+                 estimator_cfg: Dict[str, Any] = dict(),
                  **kwargs) -> None:
         self.interval = interval
         self.by_epoch = by_epoch
-        if estimator_cfg is not None:
-            self.estimator = ResourceEstimator(**estimator_cfg)
-        else:
-            self.estimator = ResourceEstimator()
+        self.estimator = ResourceEstimator(**estimator_cfg)
 
     def after_val_epoch(self,
                         runner,

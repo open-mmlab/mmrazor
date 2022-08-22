@@ -4,7 +4,7 @@ import math
 import os
 import random
 from abc import abstractmethod
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import mmcv
 import torch
@@ -102,7 +102,9 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         val_interval (int): Validation interval. Defaults to 1000.
         score_key (str): Specify one metric in evaluation results to score
             candidates. Defaults to 'accuracy_top-1'.
-        constraints (dict): Constraints to be used for screening candidates.
+        flops_range (dict): Constraints to be used for screening candidates.
+        estimator_cfg (Dict[str, Any]): Used for building a resource estimator.
+            Default to dict().
         num_candidates (int): The number of the candidates consist of samples
             from supernet and itself. Defaults to 1000.
         num_samples (int): The number of sample in each sampling subnet.
@@ -137,6 +139,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
                  val_interval: int = 1000,
                  score_key: str = 'accuracy_top-1',
                  flops_range: Optional[Tuple[float, float]] = (0., 330 * 1e6),
+                 estimator_cfg: Dict[str, Any] = dict(),
                  num_candidates: int = 1000,
                  num_samples: int = 10,
                  top_k: int = 5,
@@ -160,6 +163,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
 
         self.score_key = score_key
         self.flops_range = flops_range
+        self.estimator_cfg = estimator_cfg
         self.num_candidates = num_candidates
         self.num_samples = num_samples
         self.top_k = top_k
@@ -321,7 +325,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         copied_model = copy.deepcopy(self.model)
         load_fix_subnet(copied_model, fix_mutable)
 
-        estimator = ResourceEstimator()
+        estimator = ResourceEstimator(**self.estimator_cfg)
         results = estimator.estimate(
             model=copied_model,
             resource_args=dict(input_shape=(1, 3, 224, 224)))
