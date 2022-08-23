@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.runner import get_dist_info
+from mmengine.dist import get_dist_info
 
 from mmrazor.registry import MODELS
 from ..ops import GatherTensors

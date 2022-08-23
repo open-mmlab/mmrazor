@@ -4,8 +4,8 @@ import unittest
 from os.path import dirname
 
 import torch
+from mmcls.data import ClsDataSample
 from mmcls.models import *  # noqa: F401,F403
-from mmcls.structures import ClsDataSample
 
 from mmrazor import digit_version
 from mmrazor.models.mutables import SlimmableMutableChannel
