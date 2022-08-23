@@ -16,7 +16,7 @@ Many researchers have sought ways of model compression to reduce the size of a d
 
 ```bash
 sh tools/slurm_train.sh $PARTITION $JOB_NAME \
-  configs/kd/factor_transfer/classification/resnet/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain.py \
+  configs/distill/mmcls/factor_transfer/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain.py \
   $PRETRAIN_WORK_DIR
 ```
 
@@ -24,7 +24,7 @@ sh tools/slurm_train.sh $PARTITION $JOB_NAME \
 
 ```bash
 sh tools/slurm_train.sh $PARTITION $JOB_NAME \
-  configs/kd/factor_transfer/classification/resnet/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py \
+  configs/distill/mmcls/factor_transfer/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py \
   $DISTILLATION_WORK_DIR
 ```
 
@@ -32,7 +32,7 @@ sh tools/slurm_train.sh $PARTITION $JOB_NAME \
 
 ```bash
 sh tools/slurm_test.sh $PARTITION $JOB_NAME \
-  configs/kd/factor_transfer/classification/resnet/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py \
+  configs/distill/mmcls/factor_transfer/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py \
   $DISTILLATION_WORK_DIR/latest.sh --eval $EVAL_SETTING
 ```
 
