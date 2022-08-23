@@ -19,6 +19,10 @@ class Paraphraser(BaseConnector):
         in_channel ([int]): number of input channels.
         out_channel ([int]): number of output channels.
         use_bn (bool, optional): Defaults to False.
+        phase (str, optional): Training phase. Defaults to 'pretrain'.
+        use_bn (Optional[bool], optional): use BN or not. Defaults to False.
+        init_cfg (Optional[Dict], optional): The weight initialized config for
+            :class:`BaseModule`. Defaults to None.
     """
 
     def __init__(self,
@@ -26,7 +30,7 @@ class Paraphraser(BaseConnector):
                  out_channel: int,
                  phase='pretrain',
                  use_bn: Optional[bool] = False,
-                 init_cfg: Optional[Dict] = None):
+                 init_cfg: Optional[Dict] = None) -> None:
 
         super(Paraphraser, self).__init__(init_cfg)
         self._build_modules(in_channel, out_channel, use_bn)
@@ -68,20 +72,20 @@ class Paraphraser(BaseConnector):
             nn.BatchNorm2d(in_channel) if use_bn else nn.Sequential(),
             nn.LeakyReLU(0.1, inplace=True))
 
-    def forward_train(self, x):
+    def forward_train(self, x: torch.Tensor) -> torch.Tensor:
         """Forward func for training."""
         with torch.no_grad():
             factor = self.encoder(x)
         return factor
 
-    def forward_pretrain(self, t_feat):
+    def forward_pretrain(self, t_feat: torch.Tensor) -> torch.Tensor:
         """Forward func for pretraining."""
         factor = self.encoder(t_feat)
         t_feat_rec = self.decoder(factor)
 
         return t_feat_rec
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Omitted."""
         if self.phase == 'train':
             return self.forward_train(x)
@@ -103,13 +107,15 @@ class Translator(BaseConnector):
         in_channel ([int]): number of input channels.
         out_channel ([int]): number of output channels.
         use_bn (bool, optional): Defaults to False.
+        init_cfg (Optional[Dict], optional): The weight initialized config for
+            :class:`BaseModule`. Defaults to None.
     """
 
     def __init__(self,
                  in_channel: int,
                  out_channel: int,
                  use_bn: Optional[bool] = True,
-                 init_cfg: Optional[Dict] = None):
+                 init_cfg: Optional[Dict] = None) -> None:
         super(Translator, self).__init__(init_cfg)
         self.encoder = nn.Sequential(
             nn.Conv2d(in_channel, in_channel, 3, 1, 1),
@@ -122,6 +128,6 @@ class Translator(BaseConnector):
             nn.BatchNorm2d(out_channel) if use_bn else nn.Sequential(),
             nn.LeakyReLU(0.1, inplace=True))
 
-    def forward_train(self, x):
+    def forward_train(self, x: torch.Tensor) -> torch.Tensor:
         """Forward func for training."""
         return self.encoder(x)
