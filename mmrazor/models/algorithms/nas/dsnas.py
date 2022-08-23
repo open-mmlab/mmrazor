@@ -1,20 +1,23 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import copy
 import os
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import torch
 import torch.distributed as dist
 import torch.nn.functional as F
-from torch import nn
-from torch.nn.modules.batchnorm import _BatchNorm
-
 from mmengine.logging import MessageHub
 from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper, OptimWrapperDict
+from torch import nn
+from torch.nn.modules.batchnorm import _BatchNorm
+
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.mutators import DiffModuleMutator
+from mmrazor.models.task_modules import ResourceEstimator
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
+from mmrazor.structures import load_fix_subnet
 from mmrazor.utils import FixMutable
 from ..base import BaseAlgorithm
 
@@ -32,6 +35,9 @@ class Dsnas(BaseAlgorithm):
             loaded dict or built :obj:`FixSubnet`.
         pretrain_epochs (int): Num of epochs for supernet pretraining.
         finetune_epochs (int): Num of epochs for subnet finetuning.
+
+        estimator_cfg (Dict[str, Any]): Used for building a resource estimator.
+            Default to dict().
         norm_training (bool): Whether to set norm layers to training mode,
             namely, not freeze running stats (mean and var). Note: Effect on
             Batch Norm and its variants only. Defaults to False.
@@ -54,6 +60,7 @@ class Dsnas(BaseAlgorithm):
                  pretrain_epochs: int = 0,
                  finetune_epochs: int = 80,
                  flops_constraints: float = 300.0,
+                 estimator_cfg: Dict[str, Any] = dict(),
                  norm_training: bool = False,
                  data_preprocessor: Optional[Union[dict, nn.Module]] = None,
                  init_cfg: Optional[dict] = None,
@@ -89,7 +96,6 @@ class Dsnas(BaseAlgorithm):
             self.search_space_name_list = list(
                 self.mutator.name2mutable.keys())
 
-        self.is_measured = False
         self.norm_training = norm_training
         self.pretrain_epochs = pretrain_epochs
         self.finetune_epochs = finetune_epochs
@@ -98,6 +104,8 @@ class Dsnas(BaseAlgorithm):
               pretrain stage(<={pretrain_epochs} epochs).'
 
         self.flops_constraints = flops_constraints
+        self.estimator = ResourceEstimator(**estimator_cfg)
+        self.mutable_module_resources = self._get_module_resources()
 
     def search_subnet(self):
         """Search subnet by mutator."""
@@ -184,6 +192,20 @@ class Dsnas(BaseAlgorithm):
 
         return log_vars
 
+    def _get_module_resources(self):
+        """Get resources of spec modules."""
+
+        spec_modules = []
+        for name, module in self.architecture.named_modules():
+            if isinstance(module, BaseMutable):
+                for choice in module.choices:
+                    spec_modules.append(name + '._candidates.' + choice)
+
+        mutable_module_resources = self.estimator.estimate_spec_modules(
+            self.architecture, dict(spec_modules=spec_modules))
+
+        return mutable_module_resources
+
     def update_mutator(self, cur_epoch: int) -> bool:
         """Whether to update mutator."""
         if cur_epoch >= self.pretrain_epochs and \
@@ -203,24 +225,31 @@ class Dsnas(BaseAlgorithm):
         Returns:
             Dict: Loss of the mutator.
         """
-        if cur_epoch == self.pretrain_epochs + 1 and not self.is_measured:
-            # flops_model = self.module._get_mutable_constraints()
-            self.is_measured = True
-        # subnet_flops = self._get_subnet_constraints()
         arch_loss = 0.0
-        # flops_loss = 0.0
+        flops_loss = 0.0
         for name, module in self.architecture.named_modules():
             if isinstance(module, BaseMutable):
                 k = str(self.search_space_name_list.index(name))
                 probs = F.softmax(self.mutator.arch_params[k], -1)
                 arch_loss += torch.log(
                     (module.arch_weights * probs).sum(-1)).sum()
-                # index = (module.arch_weights == 1).nonzero().item()
-                # TODO add mutator_flops: Dict[str, List]
-                # flops_loss += probs[index] * mutator_flops[k][index]
+
+                # get the index of op with max arch weights.
+                index = (module.arch_weights == 1).nonzero().item()
+                _module_key = name + '._candidates.' + module.choices[index]
+                flops_loss += probs[index] * \
+                    self.mutable_module_resources[_module_key]['flops']
+
         mutator_loss = dict(arch_loss=arch_loss)
-        # if subnet_flops >= self.flops_constraints:
-        #     mutator_loss['flops_loss'] = flops_loss
+
+        copied_model = copy.deepcopy(self)
+        fix_mutable = copied_model.search_subnet()
+        load_fix_subnet(copied_model, fix_mutable)
+
+        subnet_flops = self.estimator.estimate(copied_model)['flops']
+        if subnet_flops >= self.flops_constraints:
+            mutator_loss['flops_loss'] = flops_loss
+
         return mutator_loss
 
     def handle_grads(self):

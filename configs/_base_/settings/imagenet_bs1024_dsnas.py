@@ -81,11 +81,5 @@ param_scheduler = dict(
 
 # train, val, test setting
 train_cfg = dict(by_epoch=True, max_epochs=240)
-val_cfg = dict(
-    type='mmrazor.EvaluatorLoop',
-    dataloader=val_dataloader,
-    evaluator=dict(
-        type='mmrazor.NaiveEvaluator',
-        metrics=dict(type='mmcls.Accuracy', topk=(1, 5)),
-    ))
+val_cfg = dict()
 test_cfg = dict()
