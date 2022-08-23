@@ -25,7 +25,7 @@ def _merge_node_parents(node2parents, _node2parents):
             node2parents[node] = parents
 
 
-class Node:
+class PathNode:
     """``Node`` is the data structure that represents individual instances
     within a ``Path``. It corresponds to a module or an operation such as
     concatenation in the model.
@@ -61,24 +61,24 @@ class Node:
         return f'{self._get_class_name()}(\'{self.name}\')'
 
 
-class ConvNode(Node):
+class PathConvNode(PathNode):
     """A `ConvNode` corresponds to a Conv module in the original model."""
     pass
 
 
-class DepthWiseConvNode(Node):
+class PathDepthWiseConvNode(PathNode):
     """A `DepthWiseConvNode` corresponds to a depth-wise conv module in the
     original model."""
     pass
 
 
-class NormNode(Node):
+class PathNormNode(PathNode):
     """A `NormNode` corresponds to a normalization module in the original
     model."""
     pass
 
 
-class LinearNode(Node):
+class PathLinearNode(PathNode):
     """A `LinearNode` corresponds to a linear module in the original model."""
     pass
 
@@ -92,14 +92,15 @@ class Path:
             Default to None.
     """
 
-    def __init__(self, nodes: Optional[Union[Node, List[Node]]] = None):
-        self._nodes: List[Node] = list()
+    def __init__(self,
+                 nodes: Optional[Union[PathNode, List[PathNode]]] = None):
+        self._nodes: List[PathNode] = list()
         if nodes is not None:
-            if isinstance(nodes, Node):
+            if isinstance(nodes, PathNode):
                 nodes = [nodes]
             assert isinstance(nodes, (list, tuple))
             for node in nodes:
-                assert isinstance(node, Node)
+                assert isinstance(node, PathNode)
                 self._nodes.append(node)
 
     def get_root_names(self) -> List[str]:
@@ -117,11 +118,12 @@ class Path:
             non_pass (Tuple): Ancestor nodes whose types are one of
                 `non_pass` are the parents of a specific node. Default to None.
         """
-        node2parents: Dict[str, List[Node]] = dict()
+        node2parents: Dict[str, List[PathNode]] = dict()
         for i, node in enumerate(self._nodes):
-            if isinstance(node, ConcatNode):
-                _node2parents: Dict[str, List[Node]] = node.find_nodes_parents(
-                    target_nodes, non_pass)
+            if isinstance(node, PathConcatNode):
+                _node2parents: Dict[str,
+                                    List[PathNode]] = node.find_nodes_parents(
+                                        target_nodes, non_pass)
                 _merge_node_parents(node2parents, _node2parents)
                 continue
 
@@ -140,9 +142,9 @@ class Path:
         """Return a list of nodes in the current path."""
         return self._nodes
 
-    def append(self, x: Node) -> None:
+    def append(self, x: PathNode) -> None:
         """Add a node to the end of the current path."""
-        assert isinstance(x, Node)
+        assert isinstance(x, PathNode)
         self._nodes.append(x)
 
     def pop(self, *args, **kwargs):
@@ -227,7 +229,7 @@ class PathList:
             non_pass (Tuple): Ancestor nodes whose types are one of
                 `non_pass` are the parents of a specific node. Default to None.
         """
-        node2parents: Dict[str, List[Node]] = dict()
+        node2parents: Dict[str, List[PathNode]] = dict()
         for p in self._paths:
             _node2parents = p.find_nodes_parents(target_nodes, non_pass)
             _merge_node_parents(node2parents, _node2parents)
@@ -278,7 +280,7 @@ class PathList:
         return main_str
 
 
-class ConcatNode(Node):
+class PathConcatNode(PathNode):
     """``ConcatNode`` is the data structure that represents the concatenation
     operation in a model.
 
@@ -317,7 +319,7 @@ class ConcatNode(Node):
             non_pass (Tuple): Ancestor nodes whose types are one of
                 `non_pass` are the parents of a specific node. Default to None.
         """
-        node2parents: Dict[str, List[Node]] = dict()
+        node2parents: Dict[str, List[PathNode]] = dict()
         for p in self._path_lists:
             _node2parents = p.find_nodes_parents(target_nodes, non_pass)
             _merge_node_parents(node2parents, _node2parents)

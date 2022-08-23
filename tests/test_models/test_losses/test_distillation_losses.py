@@ -3,7 +3,9 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models import ABLoss, DKDLoss, FTLoss
+from mmrazor.models import (ABLoss, ActivationLoss, DKDLoss, FTLoss,
+                            InformationEntropyLoss, KDSoftCELoss,
+                            OnehotLikeLoss)
 
 
 class TestLosses(TestCase):
@@ -60,3 +62,35 @@ class TestLosses(TestCase):
         self.normal_test_1d(ft_loss)
         self.normal_test_2d(ft_loss)
         self.normal_test_3d(ft_loss)
+
+    def test_dafl_loss(self):
+        dafl_loss_cfg = dict(loss_weight=1.0)
+        ac_loss = ActivationLoss(**dafl_loss_cfg, norm_type='abs')
+        oh_loss = OnehotLikeLoss(**dafl_loss_cfg)
+        ie_loss = InformationEntropyLoss(**dafl_loss_cfg, gather=False)
+
+        # normal test with only one input
+        loss_ac = ac_loss.forward(self.feats_1d)
+        self.assertTrue(loss_ac.numel() == 1)
+        loss_oh = oh_loss.forward(self.feats_1d)
+        self.assertTrue(loss_oh.numel() == 1)
+        loss_ie = ie_loss.forward(self.feats_1d)
+        self.assertTrue(loss_ie.numel() == 1)
+
+        with self.assertRaisesRegex(AssertionError,
+                                    '"norm_type" must be "norm" or "abs"'):
+            _ = ActivationLoss(**dafl_loss_cfg, norm_type='random')
+
+        # test gather_tensors
+        ie_loss = InformationEntropyLoss(**dafl_loss_cfg, gather=True)
+        ie_loss.world_size = 2
+        with self.assertRaisesRegex(
+                RuntimeError,
+                'Default process group has not been initialized'):
+            loss_ie = ie_loss.forward(self.feats_1d)
+
+    def test_kdSoftce_loss(self):
+        kdSoftce_loss_cfg = dict(loss_weight=1.0)
+        kdSoftce_loss = KDSoftCELoss(**kdSoftce_loss_cfg)
+        # kd soft ce loss requires label logits
+        self.normal_test_1d(kdSoftce_loss, labels=True)

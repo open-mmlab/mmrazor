@@ -2,8 +2,8 @@
 import copy
 from typing import Callable, Dict
 
-from .path import (ConcatNode, ConvNode, DepthWiseConvNode, LinearNode,
-                   NormNode, Path, PathList)
+from .path import (Path, PathConcatNode, PathConvNode, PathDepthWiseConvNode,
+                   PathLinearNode, PathList, PathNormNode)
 
 
 def _is_leaf_grad_fn(grad_fn):
@@ -40,9 +40,9 @@ def parse_conv(tracer, grad_fn, module2name, param2module, cur_path,
     name = module2name[module]
     parent = grad_fn.next_functions[0][0]
     if module.in_channels == module.groups:
-        cur_path.append(DepthWiseConvNode(name))
+        cur_path.append(PathDepthWiseConvNode(name))
     else:
-        cur_path.append(ConvNode(name))
+        cur_path.append(PathConvNode(name))
     # If a module is not a shared module and it has been visited during
     # forward, its parent modules must have been traced already.
     # However, a shared module will be visited more than once during
@@ -87,7 +87,7 @@ def parse_linear(tracer, grad_fn, module2name, param2module, cur_path,
     name = module2name[module]
     parent = grad_fn.next_functions[-2][0]
 
-    cur_path.append(LinearNode(name))
+    cur_path.append(PathLinearNode(name))
     # If a module is not a shared module and it has been visited during
     # forward, its parent modules must have been traced already.
     # However, a shared module will be visited more than once during
@@ -135,7 +135,7 @@ def parse_cat(tracer, grad_fn, module2name, param2module, cur_path,
             tracer.backward_trace(parent, module2name, param2module, Path(),
                                   sub_path_list, visited, shared_module)
             sub_path_lists.append(sub_path_list)
-        cur_path.append(ConcatNode(name, sub_path_lists))
+        cur_path.append(PathConcatNode(name, sub_path_lists))
 
         result_paths.append(copy.deepcopy(cur_path))
         cur_path.pop(-1)
@@ -165,7 +165,7 @@ def parse_norm(tracer, grad_fn, module2name, param2module, cur_path,
     module = param2module[param_id]
     name = module2name[module]
     parent = grad_fn.next_functions[0][0]
-    cur_path.append(NormNode(name))
+    cur_path.append(PathNormNode(name))
 
     visited[name] = True
     tracer.backward_trace(parent, module2name, param2module, cur_path,
