@@ -97,6 +97,11 @@ def get_model_complexity_info(model,
             flush=flush)
 
     if len(spec_modules):
+        module_names = [name for name, _ in flops_params_model.named_modules()]
+        for module in spec_modules:
+            assert module in module_names, \
+                f'All modules in spec_modules should be in the measured ' \
+                f'flops_params_model. Got module {module} in spec_modules.'
         spec_modules_resources = dict()
         accumulate_sub_module_flops_params(flops_params_model)
         for name, module in flops_params_model.named_modules():
@@ -104,6 +109,12 @@ def get_model_complexity_info(model,
                 spec_modules_resources[name] = dict()
                 spec_modules_resources[name]['flops'] = module.__flops__
                 spec_modules_resources[name]['params'] = module.__params__
+                if as_strings:
+                    spec_modules_resources[name]['flops'] = str(
+                        params_units_convert(module.__flops__,
+                                             'G')) + ' GFLOPs'
+                    spec_modules_resources[name]['params'] = str(
+                        params_units_convert(module.__params__, 'M')) + ' M'
 
     flops_params_model.stop_flops_params_count()
 
@@ -111,8 +122,8 @@ def get_model_complexity_info(model,
         return spec_modules_resources
 
     if as_strings:
-        flops_string = str(params_units_convert(flops_count)) + ' GFLOPs'
-        params_string = str(params_units_convert(params_count)) + ' M'
+        flops_string = str(params_units_convert(flops_count, 'G')) + ' GFLOPs'
+        params_string = str(params_units_convert(params_count, 'M')) + ' M'
         return flops_string, params_string
 
     return flops_count, params_count
@@ -231,8 +242,7 @@ def print_model_with_flops_params(model,
                 precision=precision)) + ' ' + units + 'FLOPs'
         params_string = str(
             params_units_convert(
-                accumulated_num_params, units='M',
-                precision=precision)) + ' ' + 'M'
+                accumulated_num_params, units='M', precision=precision)) + ' M'
         return ', '.join([
             params_string,
             '{:.3%} Params'.format(accumulated_num_params / total_params),
