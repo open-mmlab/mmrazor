@@ -3,6 +3,7 @@ from unittest import TestCase
 
 import torch
 
+from mmrazor import digit_version
 from mmrazor.models import (ABLoss, ActivationLoss, DKDLoss,
                             InformationEntropyLoss, KDSoftCELoss,
                             OnehotLikeLoss)
@@ -74,10 +75,18 @@ class TestLosses(TestCase):
         # test gather_tensors
         ie_loss = InformationEntropyLoss(**dafl_loss_cfg, gather=True)
         ie_loss.world_size = 2
-        with self.assertRaisesRegex(
-                RuntimeError,
-                'Default process group has not been initialized'):
-            loss_ie = ie_loss.forward(self.feats_1d)
+
+        # TODO: configure circle CI to test UT under multi torch versions.
+        if digit_version(torch.__version__) >= digit_version('1.8.0'):
+            with self.assertRaisesRegex(
+                    RuntimeError,
+                    'Default process group has not been initialized'):
+                loss_ie = ie_loss.forward(self.feats_1d)
+        else:
+            with self.assertRaisesRegex(
+                    AssertionError,
+                    'Default process group is not initialized'):
+                loss_ie = ie_loss.forward(self.feats_1d)
 
     def test_kdSoftce_loss(self):
         kdSoftce_loss_cfg = dict(loss_weight=1.0)
