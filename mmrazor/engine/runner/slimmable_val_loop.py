@@ -38,7 +38,7 @@ class SlimmableValLoop(ValLoop):
         # just for convenience
         self._model = model
 
-    def run(self) -> None:
+    def run(self):
         """Launch validation."""
         self.runner.call_hook('before_val')
 

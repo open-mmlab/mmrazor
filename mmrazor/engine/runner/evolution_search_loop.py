@@ -1,9 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import copy
 import os
 import os.path as osp
 import random
 import warnings
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 from mmengine import fileio
@@ -13,8 +14,9 @@ from mmengine.runner import EpochBasedTrainLoop
 from mmengine.utils import is_list_of
 from torch.utils.data import DataLoader
 
+from mmrazor.models.task_modules import ResourceEstimator
 from mmrazor.registry import LOOPS
-from mmrazor.structures import Candidates, FlopsEstimator, export_fix_subnet
+from mmrazor.structures import Candidates, export_fix_subnet, load_fix_subnet
 from mmrazor.utils import SupportRandomSubnet
 from .utils import crossover
 
@@ -42,6 +44,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         mutate_prob (float): The probability of mutation. Defaults to 0.1.
         flops_range (tuple, optional): flops_range to be used for screening
             candidates.
+        estimator_cfg (Dict[str, Any]): Used for building a resource estimator.
+            Default to dict().
         score_key (str): Specify one metric in evaluation results to score
             candidates. Defaults to 'accuracy_top-1'.
         init_candidates (str, optional): The candidates file path, which is
@@ -62,6 +66,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                  num_crossover: int = 25,
                  mutate_prob: float = 0.1,
                  flops_range: Optional[Tuple[float, float]] = (0., 330 * 1e6),
+                 estimator_cfg: Dict[str, Any] = dict(),
                  score_key: str = 'accuracy_top-1',
                  init_candidates: Optional[str] = None) -> None:
         super().__init__(runner, dataloader, max_epochs)
@@ -80,6 +85,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         self.num_candidates = num_candidates
         self.top_k = top_k
         self.flops_range = flops_range
+        self.estimator_cfg = estimator_cfg
         self.score_key = score_key
         self.num_mutation = num_mutation
         self.num_crossover = num_crossover
@@ -299,8 +305,13 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
 
         self.model.set_subnet(random_subnet)
         fix_mutable = export_fix_subnet(self.model)
-        flops: float = FlopsEstimator.get_model_complexity_info(
-            self.model, fix_mutable=fix_mutable, as_strings=False)[0]
+        copied_model = copy.deepcopy(self.model)
+        load_fix_subnet(copied_model, fix_mutable)
+
+        estimator = ResourceEstimator(**self.estimator_cfg)
+        results = estimator.estimate(copied_model)
+        flops = results['flops']
+
         if self.flops_range[0] < flops < self.flops_range[1]:
             return True
         else:
