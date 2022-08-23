@@ -1,4 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .configurable import FpnTeacherDistill, SelfDistill, SingleTeacherDistill
+from .configurable import (DAFLDataFreeDistillation, DataFreeDistillation,
+                           FpnTeacherDistill, SelfDistill,
+                           SingleTeacherDistill)
 
-__all__ = ['SingleTeacherDistill', 'FpnTeacherDistill', 'SelfDistill']
+__all__ = [
+    'SingleTeacherDistill', 'FpnTeacherDistill', 'SelfDistill',
+    'DataFreeDistillation', 'DAFLDataFreeDistillation'
+]
