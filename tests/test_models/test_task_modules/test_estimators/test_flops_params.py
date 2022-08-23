@@ -2,6 +2,7 @@
 import copy
 from unittest import TestCase
 
+import pytest
 import torch
 from torch import Tensor
 from torch.nn import Conv2d, Module, Parameter
@@ -149,6 +150,20 @@ class TestResourceEstimator(TestCase):
 
         self.assertLess(rest_flops_count, 45.158)
         self.assertLess(rest_params_count, 0.701)
+
+    def test_estimate_spec_modules(self) -> None:
+        fool_add_constant = FoolConvModule()
+        results = estimator.estimate_spec_modules(
+            model=fool_add_constant,
+            resource_args=dict(
+                input_shape=(1, 3, 224, 224), spec_modules=['add_constant']))
+        self.assertGreater(results['add_constant']['flops'], 0)
+
+        with pytest.raises(AssertionError):
+            results = estimator.estimate_spec_modules(
+                model=fool_add_constant,
+                resource_args=dict(
+                    input_shape=(1, 3, 224, 224), spec_modules=['backbone']))
 
     def test_estimate_subnet(self) -> None:
         resource_args = dict(input_shape=(1, 3, 224, 224))
