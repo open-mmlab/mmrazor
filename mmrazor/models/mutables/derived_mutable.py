@@ -8,8 +8,8 @@ else:
 
 import inspect
 import logging
-from collections.abc import Iterable
-from typing import Any, Callable, Dict, Optional, Set, Union
+from itertools import product
+from typing import Any, Callable, Dict, Iterable, Optional, Set, Union
 
 import torch
 from mmengine.logging import print_log
@@ -279,6 +279,26 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, CHOICE_TYPE],
         """Setter of is fixed."""
         raise RuntimeError(
             '`is_fixed` of derived mutable should not be modified directly')
+
+    @property
+    def choices(self):
+        origin_choices = [m.current_choice for m in self.source_mutables]
+
+        all_choices = [m.choices for m in self.source_mutables]
+
+        product_choices = product(*all_choices)
+
+        derived_choices = list()
+        for item_choices in product_choices:
+            for m, choice in zip(self.source_mutables, item_choices):
+                m.current_choice = choice
+
+            derived_choices.append(self.choice_fn())
+
+        for m, choice in zip(self.source_mutables, origin_choices):
+            m.current_choice = choice
+
+        return derived_choices
 
     @property
     def num_choices(self) -> int:
