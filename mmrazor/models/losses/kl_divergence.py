@@ -22,6 +22,9 @@ class KLDivergence(nn.Module):
                 elements in the output.
             Default: ``'batchmean'``
         loss_weight (float): Weight of loss. Defaults to 1.0.
+        teacher_detach (bool): Whether to detach the teacher model prediction.
+            Will set to ``'False'`` in some data-free distillation algorithms.
+            Defaults to True.
     """
 
     def __init__(
@@ -29,10 +32,12 @@ class KLDivergence(nn.Module):
         tau: float = 1.0,
         reduction: str = 'batchmean',
         loss_weight: float = 1.0,
+        teacher_detach: bool = True,
     ):
         super(KLDivergence, self).__init__()
         self.tau = tau
         self.loss_weight = loss_weight
+        self.teacher_detach = teacher_detach
 
         accept_reduction = {'none', 'batchmean', 'sum', 'mean'}
         assert reduction in accept_reduction, \
@@ -52,7 +57,8 @@ class KLDivergence(nn.Module):
         Return:
             torch.Tensor: The calculated loss value.
         """
-        preds_T = preds_T.detach()
+        if self.teacher_detach:
+            preds_T = preds_T.detach()
         softmax_pred_T = F.softmax(preds_T / self.tau, dim=1)
         logsoftmax_preds_S = F.log_softmax(preds_S / self.tau, dim=1)
         loss = (self.tau**2) * F.kl_div(
