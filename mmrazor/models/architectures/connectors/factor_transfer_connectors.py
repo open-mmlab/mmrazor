@@ -38,6 +38,14 @@ class Paraphraser(BaseConnector):
                        in_channel: int,
                        out_channel: int,
                        use_bn: Optional[bool] = False) -> None:
+        """A helper func to build internal modules.
+
+        Args:
+            in_channel (int): input channels
+            out_channel (int): output channels
+            use_bn (Optional[bool], optional): use BN or not.
+                Defaults to False.
+        """
 
         self.encoder = nn.Sequential(
             nn.Conv2d(in_channel, in_channel, 3, 1, 1),
@@ -61,17 +69,20 @@ class Paraphraser(BaseConnector):
             nn.LeakyReLU(0.1, inplace=True))
 
     def forward_train(self, x):
+        """Forward func for training."""
         with torch.no_grad():
             factor = self.encoder(x)
         return factor
 
     def forward_pretrain(self, t_feat):
+        """Forward func for pretraining."""
         factor = self.encoder(t_feat)
         t_feat_rec = self.decoder(factor)
 
         return t_feat_rec
 
     def forward(self, x):
+        """Omitted."""
         if self.phase == 'train':
             return self.forward_train(x)
         elif self.phase == 'pretrain':
@@ -112,4 +123,5 @@ class Translator(BaseConnector):
             nn.LeakyReLU(0.1, inplace=True))
 
     def forward_train(self, x):
+        """Forward func for training."""
         return self.encoder(x)

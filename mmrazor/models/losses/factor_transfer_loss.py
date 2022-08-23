@@ -11,6 +11,9 @@ class FTLoss(nn.Module):
     NeurIPS 2018.
 
     https://arxiv.org/pdf/1802.04977.pdf
+
+    Args:
+        loss_weight (float, optional): loss weight. Defaults to 1.0.
     """
 
     def __init__(self, loss_weight=1.0):
@@ -19,11 +22,14 @@ class FTLoss(nn.Module):
         self.loss_weight = loss_weight
 
     def forward_train(self, s_feature, t_feature):
+        """loss computation func."""
         loss = self.criterion(self.factor(s_feature), self.factor(t_feature))
         return loss
 
     def forward(self, s_feature, t_feature):
+        """the forward func."""
         return self.loss_weight * self.forward_train(s_feature, t_feature)
 
     def factor(self, x):
+        """compute factor."""
         return F.normalize(x.view(x.size(0), -1))

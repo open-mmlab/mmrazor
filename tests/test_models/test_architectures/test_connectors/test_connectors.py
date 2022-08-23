@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models import ConvModuleConncetor
+from mmrazor.models import ConvModuleConncetor, Paraphraser, Translator
 
 
 class TestConnector(TestCase):
@@ -36,3 +36,14 @@ class TestConnector(TestCase):
         convmodule_connector_cfg['conv_cfg'] = 'conv2d'
         with self.assertRaises(AssertionError):
             _ = ConvModuleConncetor(**convmodule_connector_cfg)
+
+    def test_ft_connector(self):
+        stu_connector = Translator(**dict(in_channel=1, out_channel=2))
+
+        tea_connector = Paraphraser(**dict(in_channel=3, out_channel=2))
+
+        s_connect = stu_connector.forward_train(self.s_feat)
+        t_connect = tea_connector.forward_train(self.t_feat)
+        assert s_connect.size() == t_connect.size()
+        t_pretrain = tea_connector.forward_pretrain(self.t_feat)
+        assert t_pretrain.size() == torch.Size([1, 3, 5, 5])
