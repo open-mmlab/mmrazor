@@ -17,7 +17,7 @@ Many researchers have sought ways of model compression to reduce the size of a d
 ```bash
 sh tools/slurm_train.sh $PARTITION $JOB_NAME \
   configs/kd/factor_transfer/classification/resnet/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain.py \
-  $DISTILLATION_WORK_DIR
+  $PRETRAIN_WORK_DIR
 ```
 
 ### Distillation training.
