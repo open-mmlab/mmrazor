@@ -249,7 +249,7 @@ class ConfigurableDistiller(BaseDistiller):
                     {type(loss_module).__name__} forward, \
                     please check your config.'
 
-                if (loss_forward_params[forward_key].default ==
+                if (loss_forward_params[forward_key].default !=
                         loss_forward_params[forward_key].empty):
                     # default params without check
                     continue

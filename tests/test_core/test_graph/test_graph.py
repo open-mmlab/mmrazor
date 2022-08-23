@@ -5,8 +5,8 @@ from unittest import TestCase
 import torch
 
 from mmrazor.structures.graph import ModuleGraph
-from ...data.models import (AddCatModel, ConcatModel, LineModel,
-                            MultiConcatModel, MultiConcatModel2, ResBlock)
+from tests.data.models import (AddCatModel, ConcatModel, LineModel,
+                               MultiConcatModel, MultiConcatModel2, ResBlock)
 
 sys.setrecursionlimit(int(1e8))
 

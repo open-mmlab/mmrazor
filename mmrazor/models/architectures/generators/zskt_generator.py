@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -9,12 +9,18 @@ from .base_generator import BaseGenerator
 
 
 class View(nn.Module):
+    """Class for view tensors.
 
-    def __init__(self, size):
+    Args:
+        size (int): Size of the output tensor.
+    """
+
+    def __init__(self, size: Tuple[int, ...]) -> None:
         super(View, self).__init__()
         self.size = size
 
-    def forward(self, tensor):
+    def forward(self, tensor: torch.Tensor) -> torch.Tensor:
+        """"Forward function for view tensors."""
         return tensor.view(self.size)
 
 
