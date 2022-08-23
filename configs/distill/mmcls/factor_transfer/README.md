@@ -8,9 +8,9 @@ Many researchers have sought ways of model compression to reduce the size of a d
 
 ## Getting Started
 
-| Dataset | Model     | Teacher   | Top-1 (%) | Top-5 (%) | Configs                                    | Download          |
-| ------- | --------- | --------- | --------- | --------- | ------------------------------------------ | ----------------- |
-| CIFAR10 | ResNet-18 | ResNet-50 | 94.86     | 99.88     | [config](dkd_logits_r34_r18_8xb32_in1k.py) | [model & log](<>) |
+| Dataset | Model     | Teacher   | Top-1 (%) | Top-5 (%) | Configs                                                                                                                                                            | Download          |
+| ------- | --------- | --------- | --------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
+| CIFAR10 | ResNet-18 | ResNet-50 | 94.86     | 99.88     | [pretrain](./factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain.py) \| [train](./factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py) | [model & log](<>) |
 
 ### Connectors pre-training.
 
