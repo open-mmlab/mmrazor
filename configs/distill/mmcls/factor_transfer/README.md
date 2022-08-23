@@ -14,25 +14,17 @@ Many researchers have sought ways of model compression to reduce the size of a d
 
 ### Connectors pre-training.
 
-open config file './configs/kd/factor_transfer/classification/resnet/ftloss_res18_cifar10_distillation_8xb16_teacher_res50_neck_pretrain.py'
-
-```python
-# modify teacher checkpoint path in teacher settings
-teacher = [
-    dict(
-        # TODO
-        ckpt_path='{PATH}/{teacher.pth}',
-
+```bash
 sh tools/slurm_train.sh $PARTITION $JOB_NAME \
-  configs/kd/factor_transfer/classification/resnet/ftloss_res18_cifar10_distillation_8xb16_teacher_res50_neck_pretrain.py \
-  $PRETRAIN_WORK_DIR
+  configs/kd/factor_transfer/classification/resnet/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain.py \
+  $DISTILLATION_WORK_DIR
 ```
 
 ### Distillation training.
 
 ```bash
 sh tools/slurm_train.sh $PARTITION $JOB_NAME \
-  configs/kd/factor_transfer/classification/resnet/ftloss_res18_cifar10_distillation_8xb16_teacher_res50_neck_train.py \
+  configs/kd/factor_transfer/classification/resnet/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py \
   $DISTILLATION_WORK_DIR
 ```
 
@@ -40,7 +32,7 @@ sh tools/slurm_train.sh $PARTITION $JOB_NAME \
 
 ```bash
 sh tools/slurm_test.sh $PARTITION $JOB_NAME \
-  configs/kd/factor_transfer/classification/resnet/ftloss_res18_cifar10_distillation_8xb16_teacher_res50_neck_train.py \
+  configs/kd/factor_transfer/classification/resnet/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py \
   $DISTILLATION_WORK_DIR/latest.sh --eval $EVAL_SETTING
 ```
 
