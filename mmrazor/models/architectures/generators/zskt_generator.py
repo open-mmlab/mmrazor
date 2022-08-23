@@ -12,7 +12,7 @@ class View(nn.Module):
     """Class for view tensors.
 
     Args:
-        size (int): Size of the output tensor.
+        size (Tuple[int, ...]): Size of the output tensor.
     """
 
     def __init__(self, size: Tuple[int, ...]) -> None:
@@ -26,7 +26,7 @@ class View(nn.Module):
 
 @MODELS.register_module()
 class ZSKTGenerator(BaseGenerator):
-    """Generator for cifar10. code link:
+    """Generator for ZSKT. code link:
     https://github.com/polo5/ZeroShotKnowledgeTransfer/
 
     Args:
