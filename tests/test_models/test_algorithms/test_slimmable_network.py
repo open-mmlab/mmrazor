@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import pytest
 import torch
 import torch.distributed as dist
-from mmcls.data import ClsDataSample
+from mmcls.structures import ClsDataSample
 from mmengine import fileio
 from mmengine.optim import build_optim_wrapper
 
