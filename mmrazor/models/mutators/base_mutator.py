@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Generic, Optional, Type, TypeVar
 
-from mmcv.runner import BaseModule
+from mmengine.model import BaseModule
 from torch.nn import Module
 
 from ..mutables.base_mutable import BaseMutable

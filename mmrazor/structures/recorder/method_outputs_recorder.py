@@ -3,7 +3,7 @@ import functools
 from types import FunctionType, ModuleType
 from typing import Callable, List, Optional
 
-from mmcv.utils import import_modules_from_strings
+from mmengine.utils import import_modules_from_strings
 from torch import nn
 
 from mmrazor.registry import TASK_UTILS

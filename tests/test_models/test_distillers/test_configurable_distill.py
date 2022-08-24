@@ -2,7 +2,7 @@
 import copy
 from unittest import TestCase
 
-from mmcv import ConfigDict
+from mmengine import ConfigDict
 
 from mmrazor.models import ConfigurableDistiller
 

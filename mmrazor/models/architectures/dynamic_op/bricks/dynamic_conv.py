@@ -3,7 +3,6 @@ from typing import Callable, Dict
 
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn.bricks.registry import CONV_LAYERS
 from torch import Tensor
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
@@ -12,7 +11,6 @@ from .dynamic_conv_mixins import (BigNasConvMixin, DynamicConvMixin,
                                   OFAConvMixin)
 
 
-@CONV_LAYERS.register_module()
 @MODELS.register_module()
 class DynamicConv2d(nn.Conv2d, DynamicConvMixin):
     """Dynamic Conv2d OP.
@@ -65,7 +63,6 @@ class DynamicConv2d(nn.Conv2d, DynamicConvMixin):
         return self.forward_mixin(x)
 
 
-@CONV_LAYERS.register_module()
 @MODELS.register_module()
 class BigNasConv2d(nn.Conv2d, BigNasConvMixin):
     """Conv2d used in BigNas.
@@ -118,7 +115,6 @@ class BigNasConv2d(nn.Conv2d, BigNasConvMixin):
         return self.forward_mixin(x)
 
 
-@CONV_LAYERS.register_module()
 @MODELS.register_module()
 class OFAConv2d(nn.Conv2d, OFAConvMixin):
     """Conv2d used in `Once-for-All`.

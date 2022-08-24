@@ -3,8 +3,8 @@ from typing import Dict, List, Tuple
 
 import torch
 import torch.nn as nn
-from mmcv.runner import load_checkpoint
 from mmengine.optim import OPTIMIZERS, OptimWrapper
+from mmengine.runner import load_checkpoint
 
 from mmrazor.models.utils import add_prefix, set_requires_grad
 from mmrazor.registry import MODELS
