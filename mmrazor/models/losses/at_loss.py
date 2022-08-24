@@ -28,10 +28,11 @@ class ATLoss(nn.Module):
     def forward(self, s_feature: torch.Tensor,
                 t_feature: torch.Tensor) -> torch.Tensor:
         """"Forward function for ATLoss."""
-        loss = (self.at(s_feature) - self.at(t_feature)).pow(2).mean()
+        loss = (self.calc_attention_matrix(s_feature) -
+                self.calc_attention_matrix(t_feature)).pow(2).mean()
         return self.loss_weight * loss
 
-    def at(self, x: torch.Tensor) -> torch.Tensor:
+    def calc_attention_matrix(self, x: torch.Tensor) -> torch.Tensor:
         """"Calculate the attention matrix.
 
         Args:
