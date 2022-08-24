@@ -35,3 +35,7 @@ Performing knowledge transfer from a large teacher network to a smaller student 
   year={2019}
 }
 ```
+
+## Acknowledgement
+
+Appreciate Davidgzx's contribution.

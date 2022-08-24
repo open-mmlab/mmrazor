@@ -2,9 +2,9 @@
 from typing import List, Tuple
 
 import torch
-from mmcls.data import ClsDataSample
 from mmcls.evaluation import Accuracy
 from mmcls.models.heads import LinearClsHead
+from mmcls.structures import ClsDataSample
 from torch import nn
 
 from mmrazor.models.utils import add_prefix

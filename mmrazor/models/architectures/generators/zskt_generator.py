@@ -80,12 +80,12 @@ class ZSKTGenerator(BaseGenerator):
 
     def forward(self,
                 data: Optional[torch.Tensor] = None,
-                batch_size: int = 0) -> torch.Tensor:
+                batch_size: int = 1) -> torch.Tensor:
         """Forward function for generator.
 
         Args:
             data (torch.Tensor, optional): The input data. Defaults to None.
-            batch_size (int): Batch size. Defaults to 0.
+            batch_size (int): Batch size. Defaults to 1.
         """
         batch_data = self.process_latent(data, batch_size)
         return self.layers(batch_data)
