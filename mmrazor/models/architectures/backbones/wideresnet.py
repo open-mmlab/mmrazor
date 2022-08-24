@@ -2,7 +2,7 @@
 # This file is modified from `mmcls.models.backbones.resnet`
 
 import warnings
-from typing import Dict
+from typing import Dict, Tuple
 
 import torch
 import torch.nn as nn
@@ -267,20 +267,20 @@ class WideResNet(BaseModule):
     }
 
     def __init__(self,
-                 depth,
-                 widen_factor=4,
-                 in_channels=3,
-                 stem_channels=16,
-                 base_channels=16,
-                 expansion=None,
-                 num_stages=3,
-                 strides=(1, 2, 2),
-                 dilations=(1, 1, 1),
-                 frozen_stages=-1,
-                 conv_cfg=None,
-                 norm_cfg=dict(type='BN', requires_grad=True),
-                 norm_eval=False,
-                 zero_init_residual=False,
+                 depth: int,
+                 widen_factor: int = 4,
+                 in_channels: int = 3,
+                 stem_channels: int = 16,
+                 base_channels: int = 16,
+                 expansion: int = None,
+                 num_stages: int = 3,
+                 strides: Tuple[int, ...] = (1, 2, 2),
+                 dilations: Tuple[int, ...] = (1, 1, 1),
+                 frozen_stages: int = -1,
+                 conv_cfg: Dict = None,
+                 norm_cfg: Dict = dict(type='BN', requires_grad=True),
+                 norm_eval: bool = False,
+                 zero_init_residual: bool = False,
                  init_cfg=[
                      dict(type='Kaiming', layer=['Conv2d']),
                      dict(
