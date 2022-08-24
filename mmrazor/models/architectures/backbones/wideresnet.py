@@ -2,7 +2,9 @@
 # This file is modified from `mmcls.models.backbones.resnet`
 
 import warnings
+from typing import Dict
 
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import build_conv_layer, build_norm_layer, constant_init
@@ -20,26 +22,33 @@ class BasicBlock(nn.Module):
     Args:
         in_channels (int): Input channels of this block.
         out_channels (int): Output channels of this block.
+        expansion (int): The ratio of ``out_channels/mid_channels`` where
+            ``mid_channels`` is the output channels of conv1. This is a
+            reserved argument in BasicBlock and should always be 1. Default: 1.
+        stride (int): stride of the block. Default: 1
         stride (int): stride of the block. Default: 1
         dilation (int): dilation of convolution. Default: 1
         downsample (nn.Module, optional): downsample operation on identity
             branch. Default: None.
+        droprate (float, optional): droprate of the block. Defaults to 0.
         conv_cfg (dict, optional): dictionary to construct and config conv
             layer. Default: None
         norm_cfg (dict): dictionary to construct and config norm layer.
             Default: dict(type='BN')
     """
 
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 expansion=1,
-                 stride=1,
-                 dilation=1,
-                 downsample=None,
-                 droprate=0,
-                 conv_cfg=None,
-                 norm_cfg=dict(type='BN')):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        expansion: int = 1,
+        stride: int = 1,
+        dilation: int = 1,
+        downsample: nn.Module = None,
+        droprate: float = 0,
+        conv_cfg: Dict = None,
+        norm_cfg: Dict = dict(type='BN')
+    ) -> None:  # noqa: E125
         super(BasicBlock, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -87,7 +96,15 @@ class BasicBlock(nn.Module):
     def norm2(self):
         return getattr(self, self.norm2_name)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """forward func.
+
+        Args:
+            x (torch.Tensor): input.
+
+        Returns:
+            torch.Tensor: output.
+        """
 
         identity = self.relu1(self.bn1(x))
         out = self.conv1(identity)
@@ -103,7 +120,25 @@ class BasicBlock(nn.Module):
         return out
 
 
-def get_expansion(block, widen_factor, expansion=None):
+def get_expansion(block: nn.Module,
+                  widen_factor: int,
+                  expansion: int = None) -> int:
+    """Get the expansion of a residual block.
+    The block expansion will be obtained by the following order:
+    1. If ``expansion`` is given, just return it.
+    2. If ``block`` has the attribute ``expansion``, then return
+       ``block.expansion``.
+    3. If ``block`` is ``BaseBlock``, then return ``widen_factor``.
+    3. Return the default value according the the block type:
+       4 for ``Bottleneck``.
+
+    Args:
+        block (class): The block class.
+        widen_factor (int): The given widen factor.
+        expansion (int | None): The given expansion ratio.
+    Returns:
+        int: The expansion of the block.
+    """
     if isinstance(expansion, int):
         assert expansion > 0
     elif expansion is None:
@@ -120,17 +155,36 @@ def get_expansion(block, widen_factor, expansion=None):
 
 
 class ResLayer(nn.Sequential):
+    """ResLayer to build ResNet style backbone.
+
+    Args:
+        block (nn.Module): Residual block used to build ResLayer.
+        num_blocks (int): Number of blocks.
+        in_channels (int): Input channels of this block.
+        out_channels (int): Output channels of this block.
+        expansion (int): The expansion for BasicBlock/Bottleneck.
+            If not specified, it will firstly be obtained via
+            ``block.expansion``. If the block has no attribute "expansion",
+            the following default values will be used: 1 for BasicBlock and
+            4 for Bottleneck.
+        droprate (float, optional): droprate of the layer. Defaults to 0.
+        stride (int): stride of the first block. Default: 1.
+        conv_cfg (Dict, optional): dictionary to construct and config conv
+            layer. Default: None
+        norm_cfg (Dict): dictionary to construct and config norm layer.
+            Default: dict(type='BN')
+    """
 
     def __init__(self,
-                 block,
-                 num_blocks,
-                 in_channels,
-                 out_channels,
-                 expansion,
-                 droprate=0,
-                 stride=1,
-                 conv_cfg=None,
-                 norm_cfg=dict(type='BN'),
+                 block: nn.Module,
+                 num_blocks: int,
+                 in_channels: int,
+                 out_channels: int,
+                 expansion: int,
+                 droprate: float = 0,
+                 stride: int = 1,
+                 conv_cfg: Dict = None,
+                 norm_cfg: Dict = dict(type='BN'),
                  **kwargs):
         self.block = block
         self.droprate = droprate
@@ -145,8 +199,6 @@ class ResLayer(nn.Sequential):
                 kernel_size=1,
                 stride=stride,
                 bias=False)
-
-            # downsample = nn.Sequential(*downsample)
 
         layers = []
         layers.append(
@@ -340,10 +392,11 @@ class WideResNet(BaseModule):
                     constant_init(m.norm2, 0)
 
     def forward(self, x):
+        # TODO: return multi-stage features.
         x = self.conv1(x)
         for layer_name in self.res_layers:
             res_layer = getattr(self, layer_name)
             x = res_layer(x)
         x = self.norm1(x)
         x = self.relu(x)
-        return x
+        return tuple([x])
