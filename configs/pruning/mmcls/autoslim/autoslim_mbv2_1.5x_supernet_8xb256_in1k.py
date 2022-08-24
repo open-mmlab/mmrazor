@@ -23,6 +23,7 @@ data_preprocessor = dict(
 # !autoslim algorithm config
 num_samples = 2
 model = dict(
+    _delete_=True,
     _scope_='mmrazor',
     type='AutoSlim',
     num_samples=num_samples,

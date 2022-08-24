@@ -3,7 +3,7 @@ import copy
 from unittest import TestCase
 
 import torch
-from mmcv import ConfigDict
+from mmengine import ConfigDict
 from toy_models import ToyStudent
 
 from mmrazor.models import SingleTeacherDistill

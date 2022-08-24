@@ -3,7 +3,8 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models import (ABLoss, ActivationLoss, DKDLoss,
+from mmrazor import digit_version
+from mmrazor.models import (ABLoss, ActivationLoss, ATLoss, DKDLoss, FTLoss,
                             InformationEntropyLoss, KDSoftCELoss,
                             OnehotLikeLoss)
 
@@ -53,6 +54,16 @@ class TestLosses(TestCase):
         # dkd requires label logits
         self.normal_test_1d(dkd_loss, labels=True)
 
+    def test_ft_loss(self):
+        ft_loss_cfg = dict(loss_weight=1.0)
+        ft_loss = FTLoss(**ft_loss_cfg)
+
+        assert ft_loss.loss_weight == 1.0
+
+        self.normal_test_1d(ft_loss)
+        self.normal_test_2d(ft_loss)
+        self.normal_test_3d(ft_loss)
+
     def test_dafl_loss(self):
         dafl_loss_cfg = dict(loss_weight=1.0)
         ac_loss = ActivationLoss(**dafl_loss_cfg, norm_type='abs')
@@ -74,13 +85,31 @@ class TestLosses(TestCase):
         # test gather_tensors
         ie_loss = InformationEntropyLoss(**dafl_loss_cfg, gather=True)
         ie_loss.world_size = 2
-        with self.assertRaisesRegex(
-                RuntimeError,
-                'Default process group has not been initialized'):
-            loss_ie = ie_loss.forward(self.feats_1d)
+
+        # TODO: configure circle CI to test UT under multi torch versions.
+        if digit_version(torch.__version__) >= digit_version('1.8.0'):
+            with self.assertRaisesRegex(
+                    RuntimeError,
+                    'Default process group has not been initialized'):
+                loss_ie = ie_loss.forward(self.feats_1d)
+        else:
+            with self.assertRaisesRegex(
+                    AssertionError,
+                    'Default process group is not initialized'):
+                loss_ie = ie_loss.forward(self.feats_1d)
 
     def test_kdSoftce_loss(self):
         kdSoftce_loss_cfg = dict(loss_weight=1.0)
         kdSoftce_loss = KDSoftCELoss(**kdSoftce_loss_cfg)
         # kd soft ce loss requires label logits
         self.normal_test_1d(kdSoftce_loss, labels=True)
+
+    def test_at_loss(self):
+        at_loss_cfg = dict(loss_weight=1.0)
+        at_loss = ATLoss(**at_loss_cfg)
+
+        assert at_loss.loss_weight == 1.0
+
+        self.normal_test_1d(at_loss)
+        self.normal_test_2d(at_loss)
+        self.normal_test_3d(at_loss)
