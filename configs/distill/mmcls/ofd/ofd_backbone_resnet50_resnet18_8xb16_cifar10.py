@@ -4,8 +4,6 @@ _base_ = [
     'mmcls::_base_/default_runtime.py'
 ]
 
-train_cfg = dict(by_epoch=True, max_epochs=20, val_interval=1)
-
 model = dict(
     _scope_='mmrazor',
     type='OverhaulFeatureDistillation',
@@ -17,10 +15,14 @@ model = dict(
         # convert image from BGR to RGB
         bgr_to_rgb=True),
     architecture=dict(
-        cfg_path='mmcls::resnet/resnet18_8xb16_cifar10.py', pretrained=False),
+        cfg_path=  # noqa: E251
+        'mmrazor::vanilla/cifar10/wide-resnet/wrn16_2_b16x8_cifar10.py',
+        pretrained=False),
     teacher=dict(
-        cfg_path='mmcls::resnet/resnet50_8xb16_cifar10.py', pretrained=True),
-    teacher_ckpt='resnet50_b16x8_cifar10_20210528-f54bfad9.pth',
+        cfg_path=  # noqa: E251
+        'mmrazor::vanilla/cifar10/wide-resnet/wrn28_4_b16x8_cifar10.py',
+        pretrained=False),
+    teacher_ckpt='work_dirs/wrn28_4_b16x8_cifar10/epoch_200.pth',
     calculate_student_loss=False,
     student_trainable=False,
     distiller=dict(

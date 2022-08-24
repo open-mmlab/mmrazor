@@ -1,7 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import math
 from operator import attrgetter
-from typing import Dict, Optional
 
 import torch
 import torch.nn as nn
@@ -16,24 +15,13 @@ from .configurable_distiller import ConfigurableDistiller
 @MODELS.register_module()
 class OFDDistiller(ConfigurableDistiller):
 
-    def __init__(self,
-                 student_recorders: Optional[Dict[str, Dict]] = None,
-                 teacher_recorders: Optional[Dict[str, Dict]] = None,
-                 distill_deliveries: Optional[Dict[str, Dict]] = None,
-                 connectors: Optional[Dict[str, Dict]] = None,
-                 distill_losses: Optional[Dict[str, Dict]] = None,
-                 loss_forward_mappings: Optional[Dict[str, Dict]] = None,
-                 **kwargs) -> None:
-        super().__init__(student_recorders, teacher_recorders,
-                         distill_deliveries, connectors, distill_losses,
-                         loss_forward_mappings, **kwargs)
-
     def init_ofd_connectors(self, teacher: nn.Module) -> None:
         """Initialize OFD connectors' `margin`."""
         for loss_key, loss_forward_mapping in self.loss_forward_mappings.items(
         ):
             if isinstance(self.distill_losses[loss_key], OFDLoss):
-                for _input_keys, _input_mapping in loss_forward_mapping:
+                for _input_keys, _input_mapping in loss_forward_mapping.items(
+                ):
                     recorder_mgn = self.student_recorders if _input_mapping[
                         'from_student'] else self.teacher_recorders
                     recorder = recorder_mgn.get_recorder(
@@ -46,12 +34,14 @@ class OFDDistiller(ConfigurableDistiller):
                             'Overhaul distillation only support connection on '
                             'layers: [`BatchNorm2d`, `SyncBatchNorm`]')
 
-                    if 'connector' in _input_mapping:
+                    if 'connector' in _input_mapping and not _input_mapping[
+                            'from_student']:
                         connector = self.connectors[
                             _input_mapping['connector']]
                         assert isinstance(connector, OFDTeacherConnector), (
-                            'OFD loss mapping expect type `OFDConnector`, '
-                            f'but get `{type(connector)}`')
+                            'OFD loss mapping for `t_feature` expect type '
+                            '`OFDTeacherConnector`, but get '
+                            f'`{type(connector)}`')
                         margin = self._get_margin_from_BN(bn_module)
                         connector.init_margin(margin)
 

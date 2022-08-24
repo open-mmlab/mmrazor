@@ -17,7 +17,7 @@ class OFDTeacherConnector(BaseConnector):
     def init_margin(self, margin: torch.Tensor) -> None:
         self.margin = margin
 
-    def forward(self, feature: torch.Tensor) -> torch.Tensor:
+    def forward_train(self, feature: torch.Tensor) -> torch.Tensor:
         assert self.margin is not None, (
             'margin must be initialized before training.')
         self.margin = self.margin.to(feature.device)

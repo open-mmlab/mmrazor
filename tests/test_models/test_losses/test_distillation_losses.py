@@ -5,7 +5,7 @@ import torch
 
 from mmrazor import digit_version
 from mmrazor.models import (ABLoss, ActivationLoss, ATLoss, DKDLoss, FTLoss,
-                            InformationEntropyLoss, KDSoftCELoss,
+                            InformationEntropyLoss, KDSoftCELoss, OFDLoss,
                             OnehotLikeLoss)
 
 
@@ -19,6 +19,27 @@ class TestLosses(TestCase):
 
         num_classes = 6
         cls.labels = torch.randint(0, num_classes, [5])
+
+    def test_ofd_loss(self):
+        ofd_loss = OFDLoss()
+        self.normal_test_1d(ofd_loss)
+        self.normal_test_3d(ofd_loss)
+
+        # test the calculation
+        s_feat_0 = torch.Tensor([[1, 1], [2, 2], [3, 3]])
+        t_feat_0 = torch.Tensor([[0, 0], [1, 1], [2, 2]])
+        ofd_loss_num_0 = ofd_loss.forward(s_feat_0, t_feat_0)
+        assert ofd_loss_num_0 != torch.tensor(0.0)
+
+        s_feat_1 = torch.Tensor([[1, 1], [2, 2], [3, 3]])
+        t_feat_1 = torch.Tensor([[2, 2], [3, 3], [4, 4]])
+        ofd_loss_num_1 = ofd_loss.forward(s_feat_1, t_feat_1)
+        assert ofd_loss_num_1 != torch.tensor(0.0)
+
+        s_feat_2 = torch.Tensor([[-3, -3], [-2, -2], [-1, -1]])
+        t_feat_2 = torch.Tensor([[-2, -2], [-1, -1], [0, 0]])
+        ofd_loss_num_2 = ofd_loss.forward(s_feat_2, t_feat_2)
+        assert ofd_loss_num_2 == torch.tensor(0.0)
 
     def normal_test_1d(self, loss_instance, labels=False):
         args = tuple([self.feats_1d, self.feats_1d])
