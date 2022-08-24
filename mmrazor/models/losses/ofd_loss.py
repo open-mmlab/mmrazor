@@ -42,6 +42,15 @@ class OFDLoss(nn.Module):
         loss = loss * ((s_feature > t_feature) | (t_feature > 0)).float()
         return loss.sum() / bsz / self.mul_factor
 
-    def forward(self, s_feature, t_feature):
-        """The forward func."""
+    def forward(self, s_feature: torch.Tensor,
+                t_feature: torch.Tensor) -> torch.Tensor:
+        """forward func.
+
+        Args:
+            s_feature (torch.Tensor): student's feature
+            t_feature (torch.Tensor): teacher's feature
+
+        Returns:
+            torch.Tensor: loss
+        """
         return self.loss_weight * self.forward_train(s_feature, t_feature)
