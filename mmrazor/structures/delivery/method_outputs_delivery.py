@@ -3,7 +3,7 @@ import functools
 from types import FunctionType, ModuleType
 from typing import Callable
 
-from mmcv.utils import import_modules_from_strings
+from mmengine.utils import import_modules_from_strings
 
 from mmrazor.registry import TASK_UTILS
 from .distill_delivery import DistillDelivery

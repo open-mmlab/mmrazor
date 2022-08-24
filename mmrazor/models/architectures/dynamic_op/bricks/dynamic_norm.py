@@ -3,11 +3,11 @@ from typing import Dict, Optional
 
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn.bricks.registry import NORM_LAYERS
 from torch import Tensor
 from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
+from mmrazor.registry import MODELS
 from .dynamic_mixins import DynamicBatchNormMixin
 
 
@@ -85,7 +85,7 @@ class _DynamicBatchNorm(_BatchNorm, DynamicBatchNormMixin):
         return out
 
 
-@NORM_LAYERS.register_module()
+@MODELS.register_module()
 class DynamicBatchNorm1d(_DynamicBatchNorm):
     """Dynamic BatchNorm1d OP."""
 
@@ -100,7 +100,7 @@ class DynamicBatchNorm1d(_DynamicBatchNorm):
                 input.dim()))
 
 
-@NORM_LAYERS.register_module()
+@MODELS.register_module()
 class DynamicBatchNorm2d(_DynamicBatchNorm):
     """Dynamic BatchNorm2d OP."""
 
@@ -115,7 +115,7 @@ class DynamicBatchNorm2d(_DynamicBatchNorm):
                 input.dim()))
 
 
-@NORM_LAYERS.register_module()
+@MODELS.register_module()
 class DynamicBatchNorm3d(_DynamicBatchNorm):
     """Dynamic BatchNorm3d OP."""
 

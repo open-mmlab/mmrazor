@@ -4,9 +4,9 @@ import datetime
 from pathlib import Path
 from typing import Optional
 
-import mmcv
+import mmengine
 import torch
-from mmcv import digit_version
+from mmengine import digit_version
 
 
 def parse_args():
@@ -70,9 +70,9 @@ def process_checkpoint(in_file: str,
     print(f'Successfully generated the publish-ckpt as {final_ckpt_file}.')
 
     if subnet_cfg_file is not None:
-        subnet_cfg = mmcv.fileio.load(subnet_cfg_file)
+        subnet_cfg = mmengine.fileio.load(subnet_cfg_file)
         final_subnet_cfg_file = f'{final_file_prefix}_subnet_cfg.yaml'
-        mmcv.fileio.dump(subnet_cfg, final_subnet_cfg_file)
+        mmengine.fileio.dump(subnet_cfg, final_subnet_cfg_file)
         print(f'Successfully generated the publish-subnet-cfg as \
                 {final_subnet_cfg_file}.')
 

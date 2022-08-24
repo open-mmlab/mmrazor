@@ -2,7 +2,7 @@
 from unittest import TestCase
 
 import torch
-from mmcv import ConfigDict
+from mmengine import ConfigDict
 
 from mmrazor.models import SelfDistill
 
