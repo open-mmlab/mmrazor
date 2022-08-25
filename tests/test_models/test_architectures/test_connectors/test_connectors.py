@@ -3,8 +3,9 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models import (BYOTConnector, ConvModuleConncetor, Paraphraser,
-                            Translator)
+from mmrazor.models import (BYOTConnector, ConvModuleConncetor,
+                            FBKDStudentConnector, FBKDTeacherConnector,
+                            Paraphraser, Translator)
 
 
 class TestConnector(TestCase):
@@ -68,3 +69,22 @@ class TestConnector(TestCase):
         output, logits = byot_connector.forward_train(s_feat)
         assert output.size() == t_feat.size()
         assert logits.size() == labels.size()
+
+    def test_fbkd_connector(self):
+        fbkd_stuconnector_cfg = dict(
+            in_channel=16, inter_channel=8, downsample_stride=2)
+        fbkd_stuconnector = FBKDStudentConnector(**fbkd_stuconnector_cfg)
+
+        fbkd_teaconnector_cfg = dict(
+            in_channel=16, inter_channel=8, downsample_stride=2)
+        fbkd_teaconnector = FBKDTeacherConnector(**fbkd_teaconnector_cfg)
+
+        s_feat = torch.randn(1, 16, 8, 8)
+        t_feat = torch.randn(1, 16, 8, 8)
+
+        s_output = fbkd_stuconnector(s_feat)
+        t_output = fbkd_teaconnector(t_feat)
+
+        assert len(s_output) == 6
+        assert len(t_output) == 5
+        assert torch.equal(t_output[-1], t_feat)
