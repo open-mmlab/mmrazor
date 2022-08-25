@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Generic, Optional, TypeVar
 
-from mmcv.runner import BaseModule
+from mmengine.model import BaseModule
 
 CHOICE_TYPE = TypeVar('CHOICE_TYPE')
 CHOSEN_TYPE = TypeVar('CHOSEN_TYPE')

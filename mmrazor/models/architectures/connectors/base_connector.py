@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Dict, Optional
 
 import torch
-from mmcv.runner import BaseModule
+from mmengine.model import BaseModule
 
 
 class BaseConnector(BaseModule, metaclass=ABCMeta):
@@ -23,7 +23,7 @@ class BaseConnector(BaseModule, metaclass=ABCMeta):
     def __init__(self, init_cfg: Optional[Dict] = None) -> None:
         super().__init__(init_cfg=init_cfg)
 
-    def forward(self, feature: torch.Tensor) -> None:
+    def forward(self, feature: torch.Tensor) -> torch.Tensor:
         """Forward computation.
 
         Args:

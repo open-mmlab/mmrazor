@@ -15,6 +15,8 @@ class L2Loss(nn.Module):
         mult (float): Multiplier for feature normalization. Defaults to 1.0.
         div_element (bool): Whether to divide the loss by element-wise.
             Defaults to False.
+        dist (bool): Whether to conduct two-norm dist as torch.dist(p=2).
+            Defaults to False.
     """
 
     def __init__(
@@ -23,12 +25,14 @@ class L2Loss(nn.Module):
         normalize: bool = True,
         mult: float = 1.0,
         div_element: bool = False,
+        dist: bool = False,
     ) -> None:
         super().__init__()
         self.loss_weight = loss_weight
         self.normalize = normalize
         self.mult = mult
         self.div_element = div_element
+        self.dist = dist
 
     def forward(
         self,
@@ -49,10 +53,14 @@ class L2Loss(nn.Module):
 
         loss = torch.sum(torch.pow(torch.sub(s_feature, t_feature), 2))
 
-        if self.div_element:
-            loss = loss / s_feature.numel()
+        # Calculate l2_loss as dist.
+        if self.dist:
+            loss = torch.sqrt(loss)
         else:
-            loss = loss / s_feature.size(0)
+            if self.div_element:
+                loss = loss / s_feature.numel()
+            else:
+                loss = loss / s_feature.size(0)
 
         return self.loss_weight * loss
 

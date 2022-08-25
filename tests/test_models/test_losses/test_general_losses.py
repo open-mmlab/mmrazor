@@ -1,9 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from unittest import TestCase
 
+import pytest
 import torch
 
-from mmrazor.models import L2Loss
+from mmrazor.models import L1Loss, L2Loss
 
 
 class TestLosses(TestCase):
@@ -25,6 +26,17 @@ class TestLosses(TestCase):
     def normal_test_3d(self, loss_instance):
         loss_3d = loss_instance.forward(self.feats_3d, self.feats_3d)
         self.assertTrue(loss_3d.numel() == 1)
+
+    def test_l1_loss(self):
+        l1_loss_cfg = dict(loss_weight=10)
+        l1_loss = L1Loss(**l1_loss_cfg)
+        self.normal_test_1d(l1_loss)
+        self.normal_test_2d(l1_loss)
+        self.normal_test_3d(l1_loss)
+
+        l1_loss_cfg = dict(loss_weight=10, reduction='avg')
+        with pytest.raises(AssertionError):
+            l1_loss = L1Loss(**l1_loss_cfg)
 
     def test_l2_loss(self):
         l2_loss_cfg = dict(loss_weight=10, normalize=True)

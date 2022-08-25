@@ -1,19 +1,21 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import copy
 import math
 import os
 import random
 from abc import abstractmethod
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-import mmcv
 import torch
+from mmengine import fileio
 from mmengine.evaluator import Evaluator
 from mmengine.runner import IterBasedTrainLoop
 from mmengine.utils import is_list_of
 from torch.utils.data import DataLoader
 
+from mmrazor.models.task_modules import ResourceEstimator
 from mmrazor.registry import LOOPS
-from mmrazor.structures import Candidates, FlopsEstimator, export_fix_subnet
+from mmrazor.structures import Candidates, export_fix_subnet, load_fix_subnet
 from mmrazor.utils import SupportRandomSubnet
 
 
@@ -100,7 +102,9 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         val_interval (int): Validation interval. Defaults to 1000.
         score_key (str): Specify one metric in evaluation results to score
             candidates. Defaults to 'accuracy_top-1'.
-        constraints (dict): Constraints to be used for screening candidates.
+        flops_range (dict): Constraints to be used for screening candidates.
+        estimator_cfg (Dict[str, Any]): Used for building a resource estimator.
+            Default to dict().
         num_candidates (int): The number of the candidates consist of samples
             from supernet and itself. Defaults to 1000.
         num_samples (int): The number of sample in each sampling subnet.
@@ -135,6 +139,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
                  val_interval: int = 1000,
                  score_key: str = 'accuracy_top-1',
                  flops_range: Optional[Tuple[float, float]] = (0., 330 * 1e6),
+                 estimator_cfg: Dict[str, Any] = dict(),
                  num_candidates: int = 1000,
                  num_samples: int = 10,
                  top_k: int = 5,
@@ -158,6 +163,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
 
         self.score_key = score_key
         self.flops_range = flops_range
+        self.estimator_cfg = estimator_cfg
         self.num_candidates = num_candidates
         self.num_samples = num_samples
         self.top_k = top_k
@@ -316,8 +322,13 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
 
         self.model.set_subnet(random_subnet)
         fix_mutable = export_fix_subnet(self.model)
-        flops = FlopsEstimator.get_model_complexity_info(
-            self.model, fix_mutable=fix_mutable, as_strings=False)[0]
+        copied_model = copy.deepcopy(self.model)
+        load_fix_subnet(copied_model, fix_mutable)
+
+        estimator = ResourceEstimator(**self.estimator_cfg)
+        results = estimator.estimate(copied_model)
+        flops = results['flops']
+
         if self.flops_range[0] < flops < self.flops_range[1]:
             return True
         else:
@@ -326,6 +337,6 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
     def _save_candidates(self) -> None:
         """Save the candidates to init the next searching."""
         save_path = os.path.join(self.runner.work_dir, 'candidates.pkl')
-        mmcv.fileio.dump(self.candidates, save_path)
+        fileio.dump(self.candidates, save_path)
         self.runner.logger.info(f'candidates.pkl saved in '
                                 f'{self.runner.work_dir}')
