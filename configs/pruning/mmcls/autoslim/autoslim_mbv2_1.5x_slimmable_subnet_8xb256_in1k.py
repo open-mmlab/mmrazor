@@ -36,7 +36,7 @@ model = dict(
     channel_cfg_paths=channel_cfg_paths,
     mutator=dict(
         type='SlimmableChannelMutator',
-        mutable_cfg=dict(type='SlimmableMutableChannel'),
+        channl_group_cfg=dict(type='SlimmableChannelGroup'),
         tracer_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss'))))

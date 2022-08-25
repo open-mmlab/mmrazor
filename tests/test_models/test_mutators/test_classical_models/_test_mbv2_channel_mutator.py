@@ -9,8 +9,8 @@ from mmcls.structures import ClsDataSample
 
 from mmrazor import digit_version
 from mmrazor.models.mutables import SlimmableMutableChannel
-from mmrazor.models.mutators import (OneShotChannelMutator,
-                                     SlimmableChannelMutator)
+from mmrazor.models.mutators import (OldOneShotChannelMutator,
+                                     OldSlimmableChannelMutator)
 from mmrazor.registry import MODELS
 from ..utils import load_and_merge_channel_cfgs
 
@@ -49,7 +49,7 @@ def test_oneshot_channel_mutator() -> None:
     ]
 
     model = MODELS.build(MODEL_CFG)
-    mutator: OneShotChannelMutator = MODELS.build(ONESHOT_MUTATOR_CFG)
+    mutator: OldOneShotChannelMutator = MODELS.build(ONESHOT_MUTATOR_CFG)
 
     mutator.prepare_from_supernet(model)
     assert hasattr(mutator, 'name2module')
@@ -88,7 +88,7 @@ def test_slimmable_channel_mutator() -> None:
         os.path.join(root_path, 'data/MBV2_220M.yaml')
     ]
 
-    mutator = SlimmableChannelMutator(
+    mutator = OldSlimmableChannelMutator(
         mutable_cfg=dict(type='SlimmableMutableChannel'),
         channel_cfgs=load_and_merge_channel_cfgs(channel_cfg_paths),
         tracer_cfg=dict(

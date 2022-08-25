@@ -9,7 +9,7 @@ from torch.nn.modules import GroupNorm
 from torch.nn.modules.batchnorm import _BatchNorm
 from torch.nn.modules.instancenorm import _InstanceNorm
 
-from mmrazor.models.mutables.mutable_channel import MutableChannel
+from mmrazor.models.mutables.mutable_channel import BaseMutableChannel
 from mmrazor.registry import MODELS
 from .base import ChannelDynamicOP
 
@@ -36,19 +36,19 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
         out_channels_cfg_.update(dict(num_channels=self.out_channels))
         self.mutable_out_channels = MODELS.build(out_channels_cfg_)
 
-        assert isinstance(self.mutable_in_channels, MutableChannel)
-        assert isinstance(self.mutable_out_channels, MutableChannel)
+        assert isinstance(self.mutable_in_channels, BaseMutableChannel)
+        assert isinstance(self.mutable_out_channels, BaseMutableChannel)
         # TODO
         # https://pytorch.org/docs/stable/_modules/torch/nn/modules/conv.html#Conv2d
         assert self.padding_mode == 'zeros'
 
     @property
-    def mutable_in(self) -> MutableChannel:
+    def mutable_in(self) -> BaseMutableChannel:
         """Mutable `in_channels`."""
         return self.mutable_in_channels
 
     @property
-    def mutable_out(self) -> MutableChannel:
+    def mutable_out(self) -> BaseMutableChannel:
         """Mutable `out_channels`."""
         return self.mutable_out_channels
 

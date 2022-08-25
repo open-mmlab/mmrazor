@@ -5,11 +5,11 @@ import torch
 
 from mmrazor.registry import MODELS
 from ..derived_mutable import DerivedMutable
-from .mutable_channel import MutableChannel
+from .base_mutable_channel import BaseMutableChannel
 
 
 @MODELS.register_module()
-class SimpleMutableChannel(MutableChannel):
+class SimpleMutableChannel(BaseMutableChannel):
 
     def __init__(self, num_channels, **kwargs) -> None:
         super().__init__(num_channels, **kwargs)
@@ -32,10 +32,6 @@ class SimpleMutableChannel(MutableChannel):
 
     # basic extension
 
-    @property
-    def activated_channels(self):
-        return (self.mask == 1).sum().item()
-
     def expand_mutable_mask(self, expand_ratio):
         derive_fun = partial(
             _expand_mask, mutable_mask=self, expand_ratio=expand_ratio)
@@ -50,20 +46,6 @@ class SimpleMutableChannel(MutableChannel):
         repr_str += f'activated_channels: {self.activated_channels}'
         repr_str += ')'
         return repr_str
-
-    # implement abstract methods
-
-    def num_choices(self) -> int:
-        return self.num_channels
-
-    def dump_chosen(self):
-        pass
-
-    def fix_chosen(self, chosen) -> None:
-        pass
-
-    def convert_choice_to_mask(self, choice) -> torch.Tensor:
-        return self.mask
 
 
 def _expand_mask(mutable_mask, expand_ratio):

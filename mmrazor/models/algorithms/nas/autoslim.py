@@ -14,7 +14,6 @@ from mmrazor.models.mutators import OneShotChannelMutator
 from mmrazor.models.utils import (add_prefix,
                                   reinitialize_optim_wrapper_count_status)
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
-from mmrazor.utils import SingleMutatorRandomSubnet
 from ..base import BaseAlgorithm
 
 VALID_MUTATOR_TYPE = Union[OneShotChannelMutator, Dict]
@@ -35,9 +34,8 @@ class AutoSlim(BaseAlgorithm):
                  num_samples: int = 2) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
 
-        self.mutator = self._build_mutator(mutator)
-        # `prepare_from_supernet` must be called before distiller initialized
-        self.mutator.prepare_from_supernet(self.architecture)
+        mutator['model'] = self.architecture.backbone
+        self.mutator: OneShotChannelMutator = MODELS.build(mutator)
 
         self.distiller = self._build_distiller(distiller)
         self.distiller.prepare_from_teacher(self.architecture)
@@ -70,17 +68,20 @@ class AutoSlim(BaseAlgorithm):
 
         return distiller
 
-    def sample_subnet(self) -> SingleMutatorRandomSubnet:
-        return self.mutator.sample_choices()
+    def sample_subnet(self):
+        return self.mutator.sample_subnet()
 
-    def set_subnet(self, subnet: SingleMutatorRandomSubnet) -> None:
-        self.mutator.set_choices(subnet)
+    def set_subnet(self, subnet) -> None:
+        self.mutator.apply_subnet(subnet)
+
+    def set_sampled_subnet(self):
+        self.mutator.apply_subnet(self.mutator.sample_subnet())
 
     def set_max_subnet(self) -> None:
-        self.mutator.set_max_choices()
+        self.mutator.apply_subnet(self.mutator.max_structure())
 
     def set_min_subnet(self) -> None:
-        return self.mutator.set_min_choices()
+        self.mutator.apply_subnet(self.mutator.min_structure())
 
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
@@ -125,7 +126,7 @@ class AutoSlim(BaseAlgorithm):
         total_losses.update(add_prefix(min_subnet_losses, 'min_subnet'))
 
         for sample_idx in range(self.num_samples):
-            self.set_subnet(self.sample_subnet())
+            self.set_sampled_subnet()
             random_subnet_losses = distill_step(batch_inputs, data_samples)
             total_losses.update(
                 add_prefix(random_subnet_losses,
@@ -192,7 +193,7 @@ class AutoSlimDDP(MMDistributedDataParallel):
         total_losses.update(add_prefix(min_subnet_losses, 'min_subnet'))
 
         for sample_idx in range(self.module.num_samples):
-            self.module.set_subnet(self.module.sample_subnet())
+            self.module.set_sampled_subnet()
             random_subnet_losses = distill_step(batch_inputs, data_samples)
             total_losses.update(
                 add_prefix(random_subnet_losses,

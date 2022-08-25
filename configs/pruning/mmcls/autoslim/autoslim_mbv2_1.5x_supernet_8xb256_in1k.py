@@ -43,8 +43,8 @@ model = dict(
                 preds_T=dict(recorder='fc', from_student=False)))),
     mutator=dict(
         type='OneShotChannelMutator',
-        mutable_cfg=dict(
-            type='OneShotMutableChannel',
+        channl_group_cfg=dict(
+            type='OneShotChannelGroup',
             candidate_choices=list(i / 12 for i in range(2, 13)),
             candidate_mode='ratio'),
         tracer_cfg=dict(

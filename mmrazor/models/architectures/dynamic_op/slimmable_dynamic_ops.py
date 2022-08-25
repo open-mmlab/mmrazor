@@ -4,7 +4,7 @@ from typing import Dict
 
 import torch.nn as nn
 
-from mmrazor.models.mutables.mutable_channel import MutableChannel
+from mmrazor.models.mutables.mutable_channel import BaseMutableChannel
 from mmrazor.registry import MODELS
 from .base import DynamicOP
 
@@ -62,12 +62,12 @@ class SwitchableBatchNorm2d(nn.Module, DynamicOP):
         self.mutable_num_features = MODELS.build(num_features_cfg)
 
     @property
-    def mutable_in(self) -> MutableChannel:
+    def mutable_in(self) -> BaseMutableChannel:
         """Mutable `num_features`."""
         return self.mutable_num_features
 
     @property
-    def mutable_out(self) -> MutableChannel:
+    def mutable_out(self) -> BaseMutableChannel:
         """Mutable `num_features`."""
         return self.mutable_num_features
 

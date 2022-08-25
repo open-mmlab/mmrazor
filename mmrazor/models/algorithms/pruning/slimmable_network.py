@@ -56,20 +56,13 @@ class SlimmableNetwork(BaseAlgorithm):
         self.num_subnet = len(channel_cfg_paths)
 
         channel_cfgs = self._load_and_merge_channel_cfgs(channel_cfg_paths)
-        if isinstance(mutator, dict):
-            assert mutator.get('channel_cfgs') is None, \
-                '`channel_cfgs` should not be in channel config'
-            mutator = copy.deepcopy(mutator)
-            mutator['channel_cfgs'] = channel_cfgs
-
-        self.mutator: SlimmableChannelMutator = self._build_mutator(mutator)
-        self.mutator.prepare_from_supernet(self.architecture)
+        self.mutator = self._build_mutator(
+            copy.copy(mutator), self.architecture, channel_cfgs)
 
         # must after `prepare_from_supernet`
         if len(channel_cfg_paths) == 1:
-            # Avoid circular import
-            from mmrazor.structures import load_fix_subnet
-            load_fix_subnet(self.architecture, channel_cfg_paths[0])
+            self.mutator.fix_subnet(self.mutator.subnets[0])
+            self.mutator.to_static_model()
             self.is_deployed = True
         else:
             self.is_deployed = False
@@ -110,10 +103,13 @@ class SlimmableNetwork(BaseAlgorithm):
 
         return merged_channel_cfg
 
-    def _build_mutator(self,
-                       mutator: VALID_MUTATOR_TYPE) -> SlimmableChannelMutator:
+    def _build_mutator(self, mutator: VALID_MUTATOR_TYPE, model,
+                       channel_cfgs) -> SlimmableChannelMutator:
         """build mutator."""
         if isinstance(mutator, dict):
+            mutator['model'] = model
+            assert 'channel_cfgs' not in mutator
+            mutator['channel_cfgs'] = channel_cfgs
             mutator = MODELS.build(mutator)
         if not isinstance(mutator, SlimmableChannelMutator):
             raise TypeError('mutator should be a `dict` or '
@@ -150,8 +146,8 @@ class SlimmableNetwork(BaseAlgorithm):
             self._optim_wrapper_count_status_reinitialized = True
         total_losses = dict()
 
-        for subnet_idx in range(self.num_subnet):
-            self.mutator.switch_choices(subnet_idx)
+        for subnet_idx, subnet in enumerate(self.mutator.subnets):
+            self.mutator.apply_subnet(subnet)
             with optim_wrapper.optim_context(self):
                 losses = self(batch_inputs, data_samples, mode='loss')
             parsed_losses, _ = self.parse_losses(losses)
@@ -217,8 +213,8 @@ class SlimmableNetworkDDP(MMDistributedDataParallel):
             self._optim_wrapper_count_status_reinitialized = True
         total_losses = dict()
 
-        for subnet_idx in range(self.module.num_subnet):
-            self.module.mutator.switch_choices(subnet_idx)
+        for subnet_idx, subnet in enumerate(self.module.mutator.subnets):
+            self.module.mutator.apply_subnet(subnet)
             with optim_wrapper.optim_context(self):
                 losses = self(batch_inputs, data_samples, mode='loss')
             parsed_losses, _ = self.module.parse_losses(losses)

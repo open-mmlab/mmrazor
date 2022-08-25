@@ -228,9 +228,9 @@ class OneShotMutableValue(MutableValue):
         Returns:
             DerivedMutable: Derived expand mutable.
         """
-        from ..mutable_channel import OneShotMutableChannel
+        # from ..mutable_channel import OneShotMutableChannel
 
-        if isinstance(other, OneShotMutableChannel):
-            return other * self
+        # if isinstance(other, OneShotMutableChannel):
+        #     return other * self
 
         return super().__mul__(other)

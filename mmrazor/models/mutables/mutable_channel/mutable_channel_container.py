@@ -5,17 +5,15 @@ import torch
 
 from ....registry import MODELS
 from ....utils.index_dict import IndexDict
-from .mutable_channel import MutableChannel
+from .base_mutable_channel import BaseMutableChannel
 from .simple_mutable_channel import SimpleMutableChannel
 
 
 @MODELS.register_module()
-class MutableChannelContainer(MutableChannel):
+class MutableChannelContainer(BaseMutableChannel):
 
     def __init__(self, num_channels: int, **kwargs):
         super().__init__(num_channels, **kwargs)
-        self.name = ''
-        self.num_channels = num_channels
         self.mutable_masks: IndexDict[SimpleMutableChannel] = IndexDict()
 
     # choice
@@ -41,10 +39,6 @@ class MutableChannelContainer(MutableChannel):
         return self.current_choice
 
     # basic extension
-
-    @property
-    def activated_channels(self):
-        return (self.current_mask == 1).sum().item()
 
     def register_mutable(self, mutable_mask: SimpleMutableChannel, start: int,
                          end: int):
@@ -80,17 +74,3 @@ class MutableChannelContainer(MutableChannel):
         repr_str += f'num_channels={self.num_channels}, '
         repr_str += f'activated_channels: {self.activated_channels}'
         return repr_str
-
-    # implement abstract methods
-
-    def num_choices(self) -> int:
-        return self.num_channels
-
-    def dump_chosen(self):
-        pass
-
-    def fix_chosen(self, chosen) -> None:
-        pass
-
-    def convert_choice_to_mask(self, choice) -> torch.Tensor:
-        return self.current_choice

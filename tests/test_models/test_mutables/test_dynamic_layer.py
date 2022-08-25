@@ -16,15 +16,9 @@ class TestDynamicLayer(TestCase):
     def test_dynamic_conv(self):
         imgs = torch.rand(2, 8, 16, 16)
 
-        in_channels_cfg = dict(
-            type='OneShotMutableChannel',
-            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
-            candidate_mode='ratio')
+        in_channels_cfg = dict(type='StackMutableChannel')
 
-        out_channels_cfg = dict(
-            type='OneShotMutableChannel',
-            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
-            candidate_mode='ratio')
+        out_channels_cfg = dict(type='StackMutableChannel')
 
         conv = nn.Conv2d(8, 8, 1)
         dynamic_conv = dynamic_conv2d_converter(conv, in_channels_cfg,
@@ -49,15 +43,9 @@ class TestDynamicLayer(TestCase):
     def test_dynamic_linear(self):
         imgs = torch.rand(2, 8)
 
-        in_features_cfg = dict(
-            type='OneShotMutableChannel',
-            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
-            candidate_mode='ratio')
+        in_features_cfg = dict(type='StackMutableChannel')
 
-        out_features_cfg = dict(
-            type='OneShotMutableChannel',
-            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
-            candidate_mode='ratio')
+        out_features_cfg = dict(type='StackMutableChannel')
 
         linear = nn.Linear(8, 8)
         dynamic_linear = dynamic_linear_converter(linear, in_features_cfg,
@@ -68,10 +56,7 @@ class TestDynamicLayer(TestCase):
     def test_dynamic_batchnorm(self):
         imgs = torch.rand(2, 8, 16, 16)
 
-        num_features_cfg = dict(
-            type='OneShotMutableChannel',
-            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
-            candidate_mode='ratio')
+        num_features_cfg = dict(type='StackMutableChannel')
 
         bn = nn.BatchNorm2d(8)
         dynamic_bn = dynamic_bn_converter(bn, num_features_cfg)
@@ -104,10 +89,7 @@ class TestDynamicLayer(TestCase):
     def test_dynamic_instancenorm(self):
         imgs = torch.rand(2, 8, 16, 16)
 
-        num_features_cfg = dict(
-            type='OneShotMutableChannel',
-            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
-            candidate_mode='ratio')
+        num_features_cfg = dict(type='StackMutableChannel')
 
         instance_norm = nn.InstanceNorm2d(8)
         dynamic_in = dynamic_in_converter(instance_norm, num_features_cfg)
@@ -127,10 +109,7 @@ class TestDynamicLayer(TestCase):
     def test_dynamic_groupnorm(self):
         imgs = torch.rand(2, 8, 16, 16)
 
-        num_channels_cfg = dict(
-            type='OneShotMutableChannel',
-            candidate_choices=[1 / 4, 2 / 4, 3 / 4, 1.0],
-            candidate_mode='ratio')
+        num_channels_cfg = dict(type='StackMutableChannel')
 
         gn = nn.GroupNorm(num_groups=4, num_channels=8)
         dynamic_gn = dynamic_gn_converter(gn, num_channels_cfg)

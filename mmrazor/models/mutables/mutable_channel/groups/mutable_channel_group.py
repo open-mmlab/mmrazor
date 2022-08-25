@@ -5,23 +5,20 @@ import copy
 from typing import Dict, Type, TypeVar, Union
 
 import torch.nn as nn
+from mmengine.model import BaseModule
 
-from ....architectures.dynamic_op.bricks import (DynamicBatchNorm2d,
-                                                 DynamicConv2d, DynamicLinear)
 from ....architectures.dynamic_op.bricks.dynamic_mixins import \
     DynamicChannelMixin
-from ...base_mutable import BaseMutable
 from ..mutable_channel_container import MutableChannelContainer
 from ..simple_mutable_channel import SimpleMutableChannel
 from .channel_group import ChannelGroup, is_dynamic_op
 
 
-class MutableChannelGroup(ChannelGroup, BaseMutable):
+class MutableChannelGroup(ChannelGroup, BaseModule):
 
     def __init__(self, num_channels) -> None:
         super().__init__(num_channels)
-        ChannelGroup.__init__(self, num_channels)
-        BaseMutable.__init__(self)
+        BaseModule.__init__(self)
 
     # basic property
 
@@ -113,11 +110,11 @@ class MutableChannelGroup(ChannelGroup, BaseMutable):
             if isinstance(module, DynamicChannelMixin):
                 if module.get_mutable_attr('in_channels') is None:
                     in_channels = 0
-                    if isinstance(module, DynamicConv2d):
+                    if isinstance(module, nn.Conv2d):
                         in_channels = module.in_channels
-                    elif isinstance(module, DynamicBatchNorm2d):
+                    elif isinstance(module, nn.modules.batchnorm._BatchNorm):
                         in_channels = module.num_features
-                    elif isinstance(module, DynamicLinear):
+                    elif isinstance(module, nn.Linear):
                         in_channels = module.in_features
                     else:
                         raise NotImplementedError()
@@ -125,11 +122,11 @@ class MutableChannelGroup(ChannelGroup, BaseMutable):
                                                  container_class(in_channels))
                 if module.get_mutable_attr('out_channels') is None:
                     out_channels = 0
-                    if isinstance(module, DynamicConv2d):
+                    if isinstance(module, nn.Conv2d):
                         out_channels = module.out_channels
-                    elif isinstance(module, DynamicBatchNorm2d):
+                    elif isinstance(module, nn.modules.batchnorm._BatchNorm):
                         out_channels = module.num_features
-                    elif isinstance(module, DynamicLinear):
+                    elif isinstance(module, nn.Linear):
                         out_channels = module.out_features
                     else:
                         raise NotImplementedError()
@@ -164,17 +161,6 @@ class MutableChannelGroup(ChannelGroup, BaseMutable):
                     end = channel.start + (
                         channel.end - channel.start) * channel.expand_ratio
                 container.register_mutable(mutable_mask, start, end)
-
-    # implement abstract methods
-
-    def num_choices(self) -> int:
-        return self.num_channels
-
-    def dump_chosen(self):
-        pass
-
-    def fix_chosen(self, chosen) -> None:
-        pass
 
 
 MUTABLECHANNELGROUP = TypeVar('MUTABLECHANNELGROUP', bound=MutableChannelGroup)

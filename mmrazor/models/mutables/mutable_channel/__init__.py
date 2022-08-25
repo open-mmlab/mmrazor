@@ -1,12 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .channel_groups.mutable_channel_group import MutableChannelGroup
-from .channel_groups.Simple_channel_group import SimpleChannelGroup
-from .mutable_channel import MutableChannel
-from .one_shot_mutable_channel import OneShotMutableChannel
+from .base_mutable_channel import BaseMutableChannel
+from .groups import (MutableChannelGroup, OneShotChannelGroup,
+                     SimpleChannelGroup, SlimmableChannelGroup)
+from .mutable_channel_container import MutableChannelContainer
 from .simple_mutable_channel import SimpleMutableChannel
-from .slimmable_mutable_channel import SlimmableMutableChannel
+from .stack_mutable_channel import StackMutableChannel
 
 __all__ = [
-    'OneShotMutableChannel', 'SlimmableMutableChannel', 'MutableChannel',
-    'SimpleMutableChannel', 'SimpleChannelGroup', 'MutableChannelGroup'
+    'SimpleMutableChannel', 'SimpleChannelGroup', 'MutableChannelGroup',
+    'OneShotChannelGroup', 'SlimmableChannelGroup', 'BaseMutableChannel',
+    'MutableChannelContainer', 'StackMutableChannel'
 ]

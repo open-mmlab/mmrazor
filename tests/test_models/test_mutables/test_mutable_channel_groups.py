@@ -9,12 +9,12 @@ from mmrazor.models.architectures.dynamic_op.bricks.dynamic_mixins import \
     DynamicChannelMixin
 from mmrazor.models.mutables.mutable_channel import (MutableChannelGroup,
                                                      SimpleChannelGroup)
-from mmrazor.models.mutables.mutable_channel.channel_groups.channel_group import (  # noqa
+from mmrazor.models.mutables.mutable_channel.groups.channel_group import (  # noqa
     Channel, PruneNode, is_dynamic_op)
 from mmrazor.structures.graph import ModuleGraph as ModuleGraph
 from ...test_core.test_graph.test_graph import TestGraph
 
-MUTABLE_CFG = dict(type='MutableMask')
+MUTABLE_CFG = dict(type='SimpleMutableChannl')
 TRACER_CFG = dict(
     type='BackwardTracer',
     loss_calculator=dict(type='ImageClassifierPseudoLoss'))

@@ -8,17 +8,15 @@ from torch import nn
 
 from mmrazor.models.architectures.dynamic_op.bricks import (DynamicLinear,
                                                             DynamicLinearMixin)
-from mmrazor.models.mutables import OneShotMutableChannel
+from mmrazor.models.mutables import StackMutableChannel
 from mmrazor.structures.subnet import export_fix_subnet, load_fix_subnet
 from ..utils import fix_dynamic_op
 
 
 @pytest.mark.parametrize('bias', [True, False])
 def test_dynamic_linear(bias) -> None:
-    mutable_in_features = OneShotMutableChannel(
-        10, candidate_choices=[4, 8, 10], candidate_mode='number')
-    mutable_out_features = OneShotMutableChannel(
-        10, candidate_choices=[4, 8, 10], candidate_mode='number')
+    mutable_in_features = StackMutableChannel(10)
+    mutable_out_features = StackMutableChannel(10)
 
     d_linear = DynamicLinear(in_features=10, out_features=10, bias=bias)
 
@@ -77,8 +75,7 @@ def test_dynamic_linear_mutable_single_features(
         is_mutate_in_features: Optional[bool], in_features: int,
         out_features: int) -> None:
     d_linear = DynamicLinear(in_features=10, out_features=10, bias=True)
-    mutable_channels = OneShotMutableChannel(
-        10, candidate_choices=[4, 6, 10], candidate_mode='number')
+    mutable_channels = StackMutableChannel(10)
 
     if is_mutate_in_features is not None:
         if is_mutate_in_features:

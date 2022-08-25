@@ -27,7 +27,7 @@ MODEL_CFG = dict(
 
 MUTATOR_CFG = dict(
     type='SlimmableChannelMutator',
-    mutable_cfg=dict(type='SlimmableMutableChannel'),
+    channl_group_cfg=dict(type='SlimmableChannelGroup'),
     tracer_cfg=dict(
         type='BackwardTracer',
         loss_calculator=dict(type='ImageClassifierPseudoLoss')))

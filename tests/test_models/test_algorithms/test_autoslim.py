@@ -19,19 +19,19 @@ DISTILLER_TYPE = Union[torch.nn.Module, Dict]
 
 ARCHITECTURE_CFG = dict(
     type='mmcls.ImageClassifier',
-    backbone=dict(type='MobileNetV2', widen_factor=1.5),
-    neck=dict(type='GlobalAveragePooling'),
+    backbone=dict(type='mmcls.MobileNetV2', widen_factor=1.5),
+    neck=dict(type='mmcls.GlobalAveragePooling'),
     head=dict(
-        type='LinearClsHead',
+        type='mmcls.LinearClsHead',
         num_classes=1000,
         in_channels=1920,
-        loss=dict(type='CrossEntropyLoss', loss_weight=1.0),
+        loss=dict(type='mmcls.CrossEntropyLoss', loss_weight=1.0),
         topk=(1, 5)))
 
 MUTATOR_CFG = dict(
     type='OneShotChannelMutator',
-    mutable_cfg=dict(
-        type='OneShotMutableChannel',
+    channl_group_cfg=dict(
+        type='OneShotChannelGroup',
         candidate_choices=list(i / 12 for i in range(2, 13)),
         candidate_mode='ratio'),
     tracer_cfg=dict(
@@ -49,9 +49,17 @@ DISTILLER_CFG = dict(
             preds_S=dict(recorder='fc', from_student=True),
             preds_T=dict(recorder='fc', from_student=False))))
 
-OPTIMIZER_CFG = dict(
-    type='SGD', lr=0.5, momentum=0.9, nesterov=True, weight_decay=0.0001)
-OPTIM_WRAPPER_CFG = dict(optimizer=OPTIMIZER_CFG, accumulative_counts=4)
+OPTIM_WRAPPER_CFG = dict(
+    optimizer=dict(
+        type='mmcls.SGD',
+        lr=0.5,
+        momentum=0.9,
+        weight_decay=4e-05,
+        _scope_='mmrazor'),
+    paramwise_cfg=dict(
+        bias_decay_mult=0.0, norm_decay_mult=0.0, dwconv_decay_mult=0.0),
+    clip_grad=None,
+    accumulative_counts=4)
 
 
 class FakeMutator:
@@ -78,6 +86,12 @@ class TestAutoSlim(TestCase):
         with pytest.raises(TypeError):
             _ = self.prepare_model(mutator_wrong_type)
 
+        algo = self.prepare_model()
+        self.assertSequenceEqual(
+            algo.mutator.groups[0].candidate_choices,
+            list(i / 12 for i in range(2, 13)),
+        )
+
     def test_autoslim_train_step(self) -> None:
         algo = self.prepare_model()
         data = self._prepare_fake_data()
@@ -91,11 +105,11 @@ class TestAutoSlim(TestCase):
         assert len(losses) == 7
         assert losses['max_subnet.loss'] > 0
         assert losses['min_subnet.loss'] > 0
-        assert losses['min_subnet.loss_kl'] > 0
+        assert losses['min_subnet.loss_kl'] + 1e-5 > 0
         assert losses['random_subnet_0.loss'] > 0
-        assert losses['random_subnet_0.loss_kl'] > 0
+        assert losses['random_subnet_0.loss_kl'] + 1e-5 > 0
         assert losses['random_subnet_1.loss'] > 0
-        assert losses['random_subnet_1.loss_kl'] > 0
+        assert losses['random_subnet_1.loss_kl'] + 1e-5 > 0
 
         assert algo._optim_wrapper_count_status_reinitialized
         assert optim_wrapper._inner_count == 4
