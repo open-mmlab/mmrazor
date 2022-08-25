@@ -32,10 +32,6 @@ model_wrapper_cfg = dict(
     broadcast_buffers=False,
     find_unused_parameters=True)
 
-custom_hooks = [
-    dict(type='mmrazor.DumpSubnetHook', interval=5, max_keep_subnets=2),
-]
-
 # TRAINING
 optim_wrapper = dict(
     _delete_=True,

@@ -101,6 +101,10 @@ class DiffMutableOP(DiffMutableModule[str, str]):
     Args:
         candidates (dict[str, dict]): the configs for the candidate
             operations.
+        fix_threshold (float): The threshold that determines whether to fix
+            the choice of current module as the op with the maximum `probs`.
+            It happens when the maximum prob is `fix_threshold` or more higher
+            then all the other probs. Default to 1.0.
         module_kwargs (dict[str, dict], optional): Module initialization named
             arguments. Defaults to None.
         alias (str, optional): alias of the `MUTABLE`.
@@ -113,6 +117,7 @@ class DiffMutableOP(DiffMutableModule[str, str]):
     def __init__(
         self,
         candidates: Dict[str, Dict],
+        fix_threshold: float = 1.0,
         module_kwargs: Optional[Dict[str, Dict]] = None,
         alias: Optional[str] = None,
         init_cfg: Optional[Dict] = None,
@@ -124,6 +129,10 @@ class DiffMutableOP(DiffMutableModule[str, str]):
             f'but got: {len(candidates)}'
 
         self._is_fixed = False
+        if fix_threshold < 0 or fix_threshold > 1.0:
+            raise ValueError(
+                f'The fix_threshold should be in [0, 1]. Got {fix_threshold}.')
+        self.fix_threshold = fix_threshold
         self._candidates = self._build_ops(candidates, self.module_kwargs)
 
     @staticmethod
@@ -308,7 +317,20 @@ class OneHotMutableOP(DiffMutableOP):
         else:
             # compute the probs of choice
             probs = self.compute_arch_probs(arch_param=arch_param)
-            self.arch_weights = self.sample_weights(arch_param, probs)
+
+            if not self.is_fixed:
+                self.arch_weights = self.sample_weights(arch_param, probs)
+                sorted_param = torch.topk(probs, 2)
+                index = (
+                    sorted_param[0][0] - sorted_param[0][1] >=
+                    self.fix_threshold)
+                if index:
+                    self.fix_chosen(self.choices[index])
+
+            if self.is_fixed:
+                index = self.choices.index(self._chosen[0])
+                self.arch_weights.data.zero_()
+                self.arch_weights.data[index].fill_(1.0)
             self.arch_weights.requires_grad_()
 
             # forward based on self.arch_weights

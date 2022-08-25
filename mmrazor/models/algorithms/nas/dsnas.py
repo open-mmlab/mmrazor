@@ -125,7 +125,8 @@ class Dsnas(BaseAlgorithm):
         self.mutator.set_choices(subnet)
         for module in self.architecture.modules():
             if isinstance(module, BaseMutable):
-                module.fix_chosen(module.current_choice)
+                if not module.is_fixed:
+                    module.fix_chosen(module.current_choice)
         self.is_supernet = False
 
     def train(self, mode=True):
