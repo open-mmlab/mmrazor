@@ -1,5 +1,7 @@
 # A Comprehensive Overhaul of Feature Distillation
 
+> [A Comprehensive Overhaul of Feature Distillation](https://sites.google.com/view/byeongho-heo/overhaul)
+
 ## Abstract
 
 We investigate the design aspects of feature distillation methods achieving network compression and propose a novel feature distillation method in which the distillation loss is designed to make a synergy among various aspects: teacher transform, student transform, distillation feature position and distance function. Our proposed distillation loss includes a feature transform with a newly designed margin ReLU, a new distillation feature position, and a partial L2 distance function to skip redundant information giving adverse effects to the compression of student. In ImageNet, our proposed method achieves 21.65% of top-1 error with ResNet50, which outperforms the performance of the teacher network, ResNet152. Our proposed method is evaluated on various tasks such as image classification, object detection and semantic segmentation and achieves a significant performance improvement in all tasks. The code is available at [link](https://sites.google.com/view/byeongho-heo/overhaul)
