@@ -10,6 +10,28 @@ from .single_teacher_distill import SingleTeacherDistill
 
 @MODELS.register_module()
 class OverhaulFeatureDistillation(SingleTeacherDistill):
+    """`A Comprehensive Overhaul of Feature Distillation`
+    https://sites.google.com/view/byeongho-heo/overhaul.
+
+    Inherited from ``SingleTeacherDistill``.
+
+
+    Args:
+        distiller (dict): The config dict for built distiller. Must be a
+            ``OFDDistiller``.
+        teacher (dict | BaseModel): The config dict for teacher model or built
+            teacher model.
+        teacher_ckpt (str): The path of teacher's checkpoint. Defaults to None.
+        teacher_trainable (bool): Whether the teacher is trainable. Defaults
+            to False.
+        teacher_norm_eval (bool): Whether to set teacher's norm layers to eval
+            mode, namely, freeze running stats (mean and var). Note: Effect on
+            Batch Norm and its variants only. Defaults to True.
+        student_trainable (bool): Whether the student is trainable. Defaults
+            to True.
+        calculate_student_loss (bool): Whether to calculate student loss
+            (original task loss) to update student model. Defaults to True.
+    """
 
     def __init__(self,
                  distiller: dict,

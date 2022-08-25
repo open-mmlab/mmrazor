@@ -14,6 +14,11 @@ from .configurable_distiller import ConfigurableDistiller
 
 @MODELS.register_module()
 class OFDDistiller(ConfigurableDistiller):
+    """Distiller for ``OverhaulFeatureDistillation``, inherited from
+    ``ConfigurableDistiller``, add func:
+
+    ``init_ofd_connectors`` to initialize margin.
+    """
 
     def init_ofd_connectors(self, teacher: nn.Module) -> None:
         """Initialize OFD connectors' `margin`."""
@@ -46,6 +51,14 @@ class OFDDistiller(ConfigurableDistiller):
                         connector.init_margin(margin)
 
     def _get_margin_from_BN(self, bn: nn.BatchNorm2d) -> torch.Tensor:
+        """Get margin from BN layer.
+
+        Args:
+            bn (nn.BatchNorm2d): input module, must be a BN layer.
+
+        Returns:
+            torch.Tensor: margin
+        """
         margin = []
         std = bn.weight.data
         mean = bn.bias.data
