@@ -150,7 +150,7 @@ class FBKDStudentConnector(BaseConnector):
     Towards Accurate and Efficient Detectors, ICLR2021.
     https://openreview.net/pdf?id=uKhGRvM8QNH.
 
-    Student connector of FBKD.
+    Student connector for FBKD.
 
     Args:
         in_channel (int): Number of input channels.
@@ -205,12 +205,12 @@ class FBKDStudentConnector(BaseConnector):
         Returns:
             s_spatial_mask (torch.Tensor): Student spatial-wise mask.
             s_channel_mask (torch.Tensor): Student channel-wise mask.
-            s_adapt_feat (torch.Tensor): Adaptative student feature.
+            s_feat_adapt (torch.Tensor): Adaptative student feature.
             s_channel_pool_adapt (torch.Tensor): Student feature which through
                 channel-wise pooling and adaptation_layers.
             s_spatial_pool_adapt (torch.Tensor): Student feature which through
                 spatial-wise pooling and adaptation_layers.
-            s_adapt_relation (torch.Tensor): Adaptative student relations.
+            s_relation_adapt (torch.Tensor): Adaptative student relations.
         """
         # Calculate spatial-wise mask.
         s_spatial_mask = torch.mean(torch.abs(x), [1], keepdim=True)
@@ -233,7 +233,7 @@ class FBKDStudentConnector(BaseConnector):
         s_channel_mask = s_channel_mask.view(channel_mask_size)
 
         # Adaptative and pool student feature through channel-wise.
-        s_adapt_feat = self.adaptation_layers(x)
+        s_feat_adapt = self.adaptation_layers(x)
         s_channel_pool_adapt = self.channel_wise_adaptation(
             torch.mean(x, [2, 3]))
 
@@ -244,10 +244,10 @@ class FBKDStudentConnector(BaseConnector):
 
         # Calculate non_local_adaptation.
         s_relation = self.student_non_local(x)
-        s_adapt_relation = self.non_local_adaptation(s_relation)
+        s_relation_adapt = self.non_local_adaptation(s_relation)
 
         return (s_spatial_mask, s_channel_mask, s_channel_pool_adapt,
-                s_spatial_pool_adapt, s_adapt_relation, s_adapt_feat)
+                s_spatial_pool_adapt, s_relation_adapt, s_feat_adapt)
 
 
 @MODELS.register_module()
@@ -256,7 +256,7 @@ class FBKDTeacherConnector(BaseConnector):
     Towards Accurate and Efficient Detectors, ICLR2021.
     https://openreview.net/pdf?id=uKhGRvM8QNH.
 
-    Teacher connector of FBKD.
+    Teacher connector for FBKD.
 
     Args:
         in_channel (int): Number of input channels.

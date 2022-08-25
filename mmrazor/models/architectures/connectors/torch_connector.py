@@ -50,7 +50,6 @@ class TorchFunctionalConnector(BaseConnector):
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(init_cfg)
         assert function_name is not None, 'Arg `function_name` cannot be None'
-
         if function_name not in FUNCTION_LIST:
             raise ValueError(
                 ' Arg `function_name` are not available, See this list',

@@ -93,16 +93,23 @@ class TestConnector(TestCase):
     def test_torch_connector(self):
         tensor1 = torch.rand(3, 3, 16, 16)
         functional_pool_connector = TorchFunctionalConnector(
-            function_name='avg_pool2d',
-            func_args=dict(kernel_size=4),
-        )
+            function_name='avg_pool2d', func_args=dict(kernel_size=4))
         tensor2 = functional_pool_connector.forward_train(tensor1)
         assert tensor2.shape == torch.Size([3, 3, 4, 4])
 
+        with self.assertRaises(AssertionError):
+            functional_pool_connector = TorchFunctionalConnector()
+        with self.assertRaises(ValueError):
+            functional_pool_connector = TorchFunctionalConnector(
+                function_name='fake')
+
         nn_pool_connector = TorchNNConnector(
-            module_name='AvgPool2d',
-            module_args=dict(kernel_size=4),
-        )
+            module_name='AvgPool2d', module_args=dict(kernel_size=4))
         tensor3 = nn_pool_connector.forward_train(tensor1)
         assert tensor3.shape == torch.Size([3, 3, 4, 4])
         assert torch.equal(tensor2, tensor3)
+
+        with self.assertRaises(AssertionError):
+            functional_pool_connector = TorchFunctionalConnector()
+        with self.assertRaises(ValueError):
+            functional_pool_connector = TorchNNConnector(module_name='fake')
