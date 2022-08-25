@@ -139,17 +139,23 @@ class ResourceEstimator(BaseEstimator):
             Dict[str, float]): A dict that containing resource results(flops,
                 params) of each modules in resource_args['spec_modules'].
         """
-        assert 'spec_modules' in resource_args, \
-            'spec_modules is required when calling estimate_spec_modules().'
+        if is_main_process():
+            assert 'spec_modules' in resource_args, \
+                'spec_modules is required when calling estimate_spec_modules.'
 
-        resource_args.pop('measure_inference', False)
-        if 'input_shape' not in resource_args.keys():
-            resource_args['input_shape'] = self.default_shape
-        if 'disabled_counters' not in resource_args.keys():
-            resource_args['disabled_counters'] = self.disabled_counters
+            resource_args.pop('measure_inference', False)
+            if 'input_shape' not in resource_args.keys():
+                resource_args['input_shape'] = self.default_shape
+            if 'disabled_counters' not in resource_args.keys():
+                resource_args['disabled_counters'] = self.disabled_counters
 
-        model.eval()
-        spec_modules_resources = get_model_complexity_info(
-            model, **resource_args)
+            model.eval()
+            spec_modules_resources = get_model_complexity_info(
+                model, **resource_args)
+            results = [spec_modules_resources]
+        else:
+            results = [None]  # type: ignore
 
-        return spec_modules_resources
+        broadcast_object_list(results)
+
+        return results[0]

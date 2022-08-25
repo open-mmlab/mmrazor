@@ -35,7 +35,8 @@ class Dsnas(BaseAlgorithm):
             loaded dict or built :obj:`FixSubnet`.
         pretrain_epochs (int): Num of epochs for supernet pretraining.
         finetune_epochs (int): Num of epochs for subnet finetuning.
-
+        flops_constraints (float): Flops constraints for judging whether to
+            backward flops loss or not. Default to 300.0(M).
         estimator_cfg (Dict[str, Any]): Used for building a resource estimator.
             Default to dict().
         norm_training (bool): Whether to set norm layers to training mode,
