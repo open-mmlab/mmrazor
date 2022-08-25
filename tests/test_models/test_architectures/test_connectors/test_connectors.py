@@ -5,7 +5,8 @@ import torch
 
 from mmrazor.models import (BYOTConnector, ConvModuleConncetor,
                             FBKDStudentConnector, FBKDTeacherConnector,
-                            Paraphraser, Translator)
+                            Paraphraser, TorchFunctionalConnector,
+                            TorchNNConnector, Translator)
 
 
 class TestConnector(TestCase):
@@ -88,3 +89,20 @@ class TestConnector(TestCase):
         assert len(s_output) == 6
         assert len(t_output) == 5
         assert torch.equal(t_output[-1], t_feat)
+
+    def test_torch_connector(self):
+        tensor1 = torch.rand(3, 3, 16, 16)
+        functional_pool_connector = TorchFunctionalConnector(
+            function_name='avg_pool2d',
+            func_args=dict(kernel_size=4),
+        )
+        tensor2 = functional_pool_connector.forward_train(tensor1)
+        assert tensor2.shape == torch.Size([3, 3, 4, 4])
+
+        nn_pool_connector = TorchNNConnector(
+            module_name='AvgPool2d',
+            module_args=dict(kernel_size=4),
+        )
+        tensor3 = nn_pool_connector.forward_train(tensor1)
+        assert tensor3.shape == torch.Size([3, 3, 4, 4])
+        assert torch.equal(tensor2, tensor3)
