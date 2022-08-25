@@ -29,8 +29,18 @@ class CRD_ClsDatasetMixin(object):
             sample_mode (str): sample mode.
             percent (float): sampling percentage.
         """
-        assert sample_mode in ['exact', 'random']
-        num_classes: int = len(self.CLASSES)  # type: ignore
+        assert sample_mode in [
+            'exact', 'random'
+        ], ('`sample_mode` must in [`exact`, `random`], '
+            f'but get `{sample_mode}`')
+
+        # Handle special occasion:
+        #   if dataset's ``CLASSES`` is not list of consecutive integers,
+        #   e.g. [2, 3, 5].
+        num_classes = getattr(self, 'num_classes', None)
+        if num_classes is None:
+            num_classes: int = len(self.CLASSES)  # type: ignore
+
         if not self.test_mode:  # type: ignore
             # Must fully initialize dataset first.
             self.full_init()  # type: ignore

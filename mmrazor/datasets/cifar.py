@@ -36,6 +36,7 @@ class CRD_CIFAR10(CIFAR10, CRD_ClsDatasetMixin):
         percent (float, optional): Sampling percentage. Defaults to 1.0.
         **kwargs: Other keyword arguments in :class:`BaseDataset`.
     """
+    num_classes = 10
 
     def __init__(self,
                  data_prefix: str,
@@ -53,7 +54,7 @@ class CRD_CIFAR10(CIFAR10, CRD_ClsDatasetMixin):
         kwargs['serialize_data'] = serialize_data
         CIFAR10.__init__(self, data_prefix, test_mode, metainfo, data_root,
                          download, **kwargs)
-        CRD_ClsDatasetMixin.__init__(self, neg_num, sample_mode, percent)
+        CRD_ClsDatasetMixin.__init__(self, neg_num, percent, sample_mode)
 
     def prepare_data(self, idx) -> Any:
         """Get data processed by ``self.pipeline``.
@@ -100,3 +101,4 @@ class CRD_CIFAR100(CRD_CIFAR10):
         'md5': '7973b15100ade9c7d40fb424638fde48',
     }
     METAINFO = {'classes': CIFAR100_CATEGORIES}
+    num_classes = 100
