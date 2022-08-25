@@ -31,10 +31,10 @@ class CRD_CIFAR10(CIFAR10, CRD_ClsDatasetMixin):
             Defaults to ''.
         download (bool): Whether to download the dataset if not exists.
             Defaults to True.
-        **kwargs: Other keyword arguments in :class:`BaseDataset`.
         neg_num (int, optional): Number of negative samples. Defaults to 16384.
         sample_mode (str, optional): Sample mode. Defaults to 'exact'.
         percent (float, optional): Sampling percentage. Defaults to 1.0.
+        **kwargs: Other keyword arguments in :class:`BaseDataset`.
     """
 
     def __init__(self,
