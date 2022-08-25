@@ -5,7 +5,7 @@ import re
 from collections import OrderedDict
 from pathlib import Path
 
-import mmcv
+import mmengine
 import wget
 from modelindex.load_model_index import load
 from rich.console import Console
@@ -75,7 +75,7 @@ def create_test_job_batch(commands, model_info, args, port):
 
     http_prefix = 'https://download.openmmlab.com/mmrazor/'
     if 's3://' in args.checkpoint_root:
-        from mmcv.fileio import FileClient
+        from mmengine.fileio import FileClient
         from petrel_client.common.exception import AccessDeniedError
         file_client = FileClient.infer_client(uri=args.checkpoint_root)
         checkpoint = file_client.join_path(
@@ -171,7 +171,7 @@ def summary(args):
         if not latest_json.exists():
             print(f'{model_name} has no results.')
             continue
-        latest_result = mmcv.load(latest_json, 'json')
+        latest_result = mmengine.load(latest_json, 'json')
 
         expect_result = model_info.results[0].metrics
         summary_result = {
@@ -182,8 +182,8 @@ def summary(args):
         }
         model_results[model_name] = summary_result
 
-    mmcv.fileio.dump(model_results,
-                     Path(args.work_dir) / 'summary.yml', 'yaml')
+    mmengine.fileio.dump(model_results,
+                         Path(args.work_dir) / 'summary.yml', 'yaml')
     print(f'Summary results saved in {Path(args.work_dir)}/summary.yml')
 
 

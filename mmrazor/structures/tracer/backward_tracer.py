@@ -3,7 +3,7 @@ import copy
 import re
 from collections import OrderedDict
 
-from mmcv import ConfigDict
+from mmengine import ConfigDict
 from torch.nn import Conv2d, Linear
 from torch.nn.modules import GroupNorm
 from torch.nn.modules.batchnorm import _NormBase

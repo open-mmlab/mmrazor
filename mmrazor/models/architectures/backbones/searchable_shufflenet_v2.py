@@ -4,8 +4,9 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import torch.nn as nn
 from mmcls.models.backbones.base_backbone import BaseBackbone
-from mmcv.cnn import ConvModule, constant_init, normal_init
-from mmcv.runner import ModuleList, Sequential
+from mmcv.cnn import ConvModule
+from mmengine.model import ModuleList, Sequential
+from mmengine.model.utils import constant_init, normal_init
 from torch import Tensor
 from torch.nn.modules.batchnorm import _BatchNorm
 
@@ -146,7 +147,7 @@ class SearchableShuffleNetV2(BaseBackbone):
             mutable_cfg (dict): Config of mutable.
 
         Returns:
-            mmcv.runner.Sequential: The layer made.
+            mmengine.model.Sequential: The layer made.
         """
         layers = []
         for i in range(num_blocks):
