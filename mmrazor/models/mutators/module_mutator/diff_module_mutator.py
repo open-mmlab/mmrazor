@@ -32,7 +32,15 @@ class DiffModuleMutator(ModuleMutator):
     def build_arch_param(self,
                          num_choices: int,
                          is_random: bool = True) -> nn.Parameter:
-        """Build learnable architecture parameters."""
+        """Build learnable architecture parameters.
+
+        Args:
+            is_random (bool): Whether to generate `arch_params` for supernet
+                using torch.randn, else use torch.zeros. Default to True.
+
+        Returns:
+            torch.nn.Parameter: the arch params.
+        """
         if is_random:
             return nn.Parameter(torch.randn(num_choices) * 1e-3)
         else:
@@ -41,11 +49,13 @@ class DiffModuleMutator(ModuleMutator):
     def prepare_from_supernet(self,
                               supernet: nn.Module,
                               is_random: bool = True) -> None:
-        """Inherit from ``BaseMutator``'s, generate `arch_params` in DARTS.
+        """Inherit from ``BaseMutator``'s, generate `arch_params`.
 
         Args:
             supernet (:obj:`torch.nn.Module`): The architecture to be used
                 in your algorithm.
+            is_random (bool): Whether to generate `arch_params` for supernet
+                using torch.randn, else use torch.zeros. Default to True.
         """
 
         super().prepare_from_supernet(supernet)

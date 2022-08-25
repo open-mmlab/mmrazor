@@ -67,6 +67,7 @@ class Dsnas(BaseAlgorithm):
                  **kwargs):
         super().__init__(architecture, data_preprocessor, **kwargs)
 
+        self.estimator = ResourceEstimator(**estimator_cfg)
         if fix_subnet:
             # Avoid circular import
             from mmrazor.structures import load_fix_subnet
@@ -86,6 +87,7 @@ class Dsnas(BaseAlgorithm):
                                 f'`DiffModuleMutator` instance, but got '
                                 f'{type(mutator)}')
 
+            self.mutable_module_resources = self._get_module_resources()
             # Mutator is an essential component of the NAS algorithm. It
             # provides some APIs commonly used by NAS.
             # Before using it, you must do some preparations according to
@@ -99,13 +101,12 @@ class Dsnas(BaseAlgorithm):
         self.norm_training = norm_training
         self.pretrain_epochs = pretrain_epochs
         self.finetune_epochs = finetune_epochs
-        assert pretrain_epochs < finetune_epochs, \
-            f'finetune stage(>={finetune_epochs} epochs) must be later than \
-              pretrain stage(<={pretrain_epochs} epochs).'
+        if pretrain_epochs >= finetune_epochs:
+            raise ValueError(f'Pretrain stage (optional) must be done before '
+                             f'finetuning stage. Got {pretrain_epochs} >= '
+                             f'{finetune_epochs}.')
 
         self.flops_constraints = flops_constraints
-        self.estimator = ResourceEstimator(**estimator_cfg)
-        self.mutable_module_resources = self._get_module_resources()
 
     def search_subnet(self):
         """Search subnet by mutator."""
