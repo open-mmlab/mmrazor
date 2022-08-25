@@ -8,15 +8,15 @@ class CRD_ClsDatasetMixin(object):
     """Dataset mixin for CRD algorithm on classification datasets.
 
     Args:
-        neg_num (int, optional): Number of negative samples. Defaults to 16384.
-        sample_mode (str, optional): Sample mode. Defaults to 'exact'.
-        percent (float, optional): Sampling percentage. Defaults to 1.0.
+        neg_num (int): Number of negative samples.
+        percent (float): Sampling percentage.
+        sample_mode (str): Sample mode. Defaults to 'exact'.
     """
 
     def __init__(self,
-                 neg_num: int = 16384,
-                 sample_mode: str = 'exact',
-                 percent: float = 1.0) -> None:
+                 neg_num: int,
+                 percent: float,
+                 sample_mode: str = 'exact') -> None:
 
         self._parse_fullset_contrast_info(neg_num, sample_mode, percent)
 
