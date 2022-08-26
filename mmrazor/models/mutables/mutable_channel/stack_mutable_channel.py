@@ -18,7 +18,7 @@ class StackMutableChannel(BaseMutableChannel):
 
     @current_choice.setter
     def current_choice(self, choice: int):
-        mask = torch.zeros([self.num_channels])
+        mask = torch.zeros([self.num_channels], device=self.mask.device)
         mask[0:choice] = 1
         self.mask = mask.bool()
 

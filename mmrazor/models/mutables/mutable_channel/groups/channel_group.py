@@ -6,19 +6,13 @@ from typing import Dict, List, Tuple, Type, TypeVar, Union
 import torch.nn as nn
 from torch.nn import Module
 
-from .....registry import MODELS
-from .....structures.graph import ModuleGraph, ModuleNode
-from .....utils.index_dict import IndexDict
-from ....architectures.dynamic_op.bricks.dynamic_mixins import \
-    DynamicChannelMixin
+from mmrazor.models.architectures.dynamic_op.bricks import DynamicChannelMixin
+from mmrazor.registry import MODELS
+from mmrazor.structures.graph import ModuleGraph, ModuleNode
+from mmrazor.utils import IndexDict
 from ..simple_mutable_channel import SimpleMutableChannel
 
 # PruneNode && PruneGraph
-
-
-def is_dynamic_op(module):
-    """Bool: determine if a module is a DynamicOp"""
-    return isinstance(module, DynamicChannelMixin)
 
 
 class PruneNode(ModuleNode):
@@ -66,7 +60,7 @@ class PruneNode(ModuleNode):
     def act_in_channels(self):
         """Int: activated input channel number"""
         if isinstance(self.val, nn.Module):
-            if is_dynamic_op(self.val):
+            if isinstance(self.val, DynamicChannelMixin):
                 self.val.mutable_in: SimpleMutableChannel
                 return self.val.mutable_in.activated_channels
             else:
@@ -93,7 +87,7 @@ class PruneNode(ModuleNode):
     def act_out_channels(self):
         """Int: activated output channel number"""
         if isinstance(self.val, nn.Module):
-            if is_dynamic_op(self.val):
+            if isinstance(self.val, DynamicChannelMixin):
                 return self.val.mutable_out.activated_channels
             else:
                 return self.out_channels

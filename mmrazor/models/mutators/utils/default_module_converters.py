@@ -6,9 +6,9 @@ from torch.nn.modules import GroupNorm
 from torch.nn.modules.batchnorm import _BatchNorm
 from torch.nn.modules.instancenorm import _InstanceNorm
 
-from ...architectures import (DynamicBatchNorm, DynamicConv2d,
-                              DynamicGroupNorm, DynamicInstanceNorm,
-                              DynamicLinear)
+from mmrazor.models.architectures import (DynamicBatchNorm, DynamicConv2d,
+                                          DynamicGroupNorm,
+                                          DynamicInstanceNorm, DynamicLinear)
 
 
 def dynamic_conv2d_converter(module: nn.Conv2d, in_channels_cfg: Dict,

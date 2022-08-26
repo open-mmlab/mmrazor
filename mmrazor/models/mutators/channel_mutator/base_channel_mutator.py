@@ -1,20 +1,15 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import Any, Dict, Generic, List, Optional, Set, Type, Union
+from typing import Dict, Generic, List, Optional, Set, Type, Union
 
 from torch import Tensor
 from torch.nn import Module
 
-from ....registry import MODELS, TASK_UTILS
-from ....structures import BackwardTracer
-from ....structures.graph import ModuleGraph
-from ....structures.subnet.fix_subnet import _dynamic_to_static
-from ...architectures.dynamic_op.base import ChannelDynamicOP
-from ...mutables.base_mutable import BaseMutable
-from ...mutables.mutable_channel.groups.mutable_channel_group import (
-    MUTABLECHANNELGROUP, MutableChannelGroup)
-from ...mutables.mutable_channel.groups.simple_channel_group import \
-    SimpleChannelGroup
+from mmrazor.models.architectures.dynamic_op.bricks import DynamicChannelMixin
+from mmrazor.models.mutables import (MUTABLECHANNELGROUP, MutableChannelGroup,
+                                     SimpleChannelGroup)
+from mmrazor.registry import MODELS
+from mmrazor.structures.graph import ModuleGraph
 from ..base_mutator import BaseMutator
 
 
@@ -25,7 +20,6 @@ class BaseChannelMutator(BaseMutator, Generic[MUTABLECHANNELGROUP]):
 
     def __init__(
             self,
-            model: Module,
             channl_group_cfg: Union[
                 dict, Type[MutableChannelGroup]] = SimpleChannelGroup,
             # tracer_cfg=dict(type='fx'),
@@ -37,7 +31,6 @@ class BaseChannelMutator(BaseMutator, Generic[MUTABLECHANNELGROUP]):
 
         super().__init__(init_cfg)
 
-        self.model = model
         self.tracer_cfg = tracer_cfg
         assert self.tracer_cfg['type'] in ['fx', 'BackwardTracer', 'model']
 
@@ -47,8 +40,6 @@ class BaseChannelMutator(BaseMutator, Generic[MUTABLECHANNELGROUP]):
         self.group_class, self.group_args = self._parse_group_config(
             channl_group_cfg)
 
-        self.prepare_from_supernet(self.model)
-
     # prepare model
 
     def prepare_from_supernet(self, supernet: Module) -> None:
@@ -57,19 +48,20 @@ class BaseChannelMutator(BaseMutator, Generic[MUTABLECHANNELGROUP]):
         # self.convert_dynamic_module(supernet, self.module_converters)
         supernet.eval()
 
-        def is_dynamic_op(module, module_name):
-            """determine if a module is a dynamic op for fx tracer."""
-            return isinstance(module, ChannelDynamicOP)
-
         self.group_class.prepare_model(supernet)
         self._name2module = dict(supernet.named_modules())
 
         if self.tracer_cfg['type'] == 'BackwardTracer':
-            self.tracer: BackwardTracer = TASK_UTILS.build(self.tracer_cfg)
             graph = ModuleGraph.init_using_backward_tracer(
-                supernet, self.tracer)
+                supernet, self.tracer_cfg)
         elif self.tracer_cfg['type'] == 'fx':
-            graph = ModuleGraph.init_using_fx_tracer(supernet, is_dynamic_op)
+
+            def is_dynamic_op_for_fx_tracer(module, module_name):
+                """determine if a module is a dynamic op for fx tracer."""
+                return isinstance(module, DynamicChannelMixin)
+
+            graph = ModuleGraph.init_using_fx_tracer(
+                supernet, is_dynamic_op_for_fx_tracer)
         else:
             raise NotImplementedError()
 
@@ -82,40 +74,36 @@ class BaseChannelMutator(BaseMutator, Generic[MUTABLECHANNELGROUP]):
 
     # pruning structure manage
 
-    def subnet_template(self) -> Dict:
+    @property
+    def choice_template(self) -> Dict:
         """return the template for configurate the pruning ratio of the model.
 
         Example:
             {'net.3_(0, 16)_out_2_in_1': 16, 'net.0_(0, 8)_out_2_in_1': 8}
         """
-        templabe = {}
+        template = {}
         for group in self.prunable_groups:
-            templabe[group.name] = group.current_choice
-        return templabe
+            template[group.name] = group.current_choice
+        return template
 
-    def sample_subnet(self) -> Dict[str, Union[int, float]]:
-        template = self.subnet_template()
+    def sample_choices(self) -> Dict[str, Union[int, float]]:
+        template = self.choice_template
         for key in template:
             template[key] = self._name2group[key].sample_choice()
         return template
 
-    def apply_subnet(self, config: Dict[str, Union[int, float]]):
+    def set_choices(self, config: Dict[str, Union[int, float]]):
         for name, choice in config.items():
             group = self._name2group[name]
             group.current_choice = choice
 
-    def fix_subnet(self, config: Dict[str, Any]):
-        self.apply_subnet(config)
-        for module in self.model.modules():
-            if isinstance(module, BaseMutable):
-                module._is_fixed = True  # hack
-
-    def to_static_model(self):
-        _dynamic_to_static(self.model)
+    def fix_channel_mutables(self):
+        for group in self.groups:
+            group.fix_chosen()
 
     @property
-    def current_structure(self):
-        config = self.subnet_template()
+    def current_choices(self):
+        config = self.choice_template
         for group in self.prunable_groups:
             config[group.name] = group.current_choice
         return config

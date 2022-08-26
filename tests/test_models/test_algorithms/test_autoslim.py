@@ -83,7 +83,7 @@ class TestAutoSlim(TestCase):
 
     def test_init(self) -> None:
         mutator_wrong_type = FakeMutator()
-        with pytest.raises(TypeError):
+        with pytest.raises(Exception):
             _ = self.prepare_model(mutator_wrong_type)
 
         algo = self.prepare_model()

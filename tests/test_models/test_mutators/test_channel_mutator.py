@@ -40,9 +40,10 @@ class TestChannelMutator(unittest.TestCase):
             with self.subTest(i=i, data=data):
                 model = data()
 
-                mutator = BaseChannelMutator(model)
-                subnet = mutator.sample_subnet()
-                mutator.apply_subnet(subnet)
+                mutator = BaseChannelMutator()
+                mutator.prepare_from_supernet(model)
+                subnet = mutator.sample_choices()
+                mutator.set_choices(subnet)
                 self.assertGreaterEqual(len(mutator.prunable_groups), 1)
 
                 x = torch.rand([2, 3, 224, 224])
@@ -58,12 +59,12 @@ class TestChannelMutator(unittest.TestCase):
 
                     model = data_model()
 
-                    mutator = BaseChannelMutator(
-                        model, channl_group_cfg=group_type)
+                    mutator = BaseChannelMutator(channl_group_cfg=group_type)
+                    mutator.prepare_from_supernet(model)
                     mutator.groups
 
-                    subnet = mutator.sample_subnet()
-                    mutator.apply_subnet(subnet)
+                    subnet = mutator.sample_choices()
+                    mutator.set_choices(subnet)
 
                     x = torch.rand([2, 3, 224, 224])
                     y = model(x)

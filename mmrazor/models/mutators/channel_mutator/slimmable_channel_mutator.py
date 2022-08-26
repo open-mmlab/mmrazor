@@ -3,16 +3,15 @@ from typing import Dict, List, Optional
 
 from torch.nn import Module
 
-from ....registry import MODELS
-from ...mutables import SlimmableChannelGroup
-from .channel_mutator import MUTABLECHANNELGROUP, BaseChannelMutator
+from mmrazor.models.mutables import SlimmableChannelGroup
+from mmrazor.registry import MODELS
+from .base_channel_mutator import MUTABLECHANNELGROUP, BaseChannelMutator
 
 
 @MODELS.register_module()
 class SlimmableChannelMutator(BaseChannelMutator[SlimmableChannelGroup]):
 
     def __init__(self,
-                 model: Module,
                  channel_cfgs: Dict,
                  channl_group_cfg=dict(type='SlimmableChannelGroup'),
                  tracer_cfg=dict(
@@ -20,15 +19,12 @@ class SlimmableChannelMutator(BaseChannelMutator[SlimmableChannelGroup]):
                      loss_calculator=dict(type='ImageClassifierPseudoLoss')),
                  skip_prefixes: Optional[List[str]] = None,
                  init_cfg: Optional[Dict] = None) -> None:
-        super().__init__(model, channl_group_cfg, tracer_cfg, skip_prefixes,
-                         init_cfg)
+        super().__init__(channl_group_cfg, tracer_cfg, skip_prefixes, init_cfg)
         self._subnets = self._prepare_subnets(channel_cfgs)
-        self.module2group = self._get_module2group()
-        self._reset_group_candidates()
 
-    def apply_subnet(self, config):
+    def set_choices(self, config):
         config = self._convert_subnet(config)
-        return super().apply_subnet(config)
+        return super().set_choices(config)
 
     @property
     def subnets(self):
@@ -37,7 +33,9 @@ class SlimmableChannelMutator(BaseChannelMutator[SlimmableChannelGroup]):
     # prepare model
 
     def prepare_from_supernet(self, supernet: Module) -> None:
-        return super().prepare_from_supernet(supernet)
+        super().prepare_from_supernet(supernet)
+        self.module2group = self._get_module2group()
+        self._reset_group_candidates()
 
     # private methods
 

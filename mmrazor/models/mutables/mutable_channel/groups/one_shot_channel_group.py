@@ -4,7 +4,7 @@ from typing import List, Union
 
 import torch
 
-from .....registry import MODELS
+from mmrazor.registry import MODELS
 from .simple_channel_group import SimpleChannelGroup
 
 
@@ -66,6 +66,6 @@ class OneShotChannelGroup(SimpleChannelGroup):
         self.candidate_choices = sorted(self.candidate_choices)
 
     def _generate_mask(self, num_activated_channels):
-        mask = torch.zeros([self.num_channels])
-        mask[0:num_activated_channels] = 1
+        mask = torch.zeros([self.num_channels], dtype=torch.bool)
+        mask[0:num_activated_channels] = True
         return mask.bool()

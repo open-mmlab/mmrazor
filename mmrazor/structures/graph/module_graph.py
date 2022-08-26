@@ -10,6 +10,7 @@ from typing import Dict, List, TypeVar, Union
 import torch.nn as nn
 from torch.nn import Module
 
+from mmrazor.registry import TASK_UTILS
 from ..tracer.backward_tracer import BackwardTracer
 # from ..tracer.fx_tracer import FxBaseNode, FxTracer
 from ..tracer.loss_calculator import ImageClassifierPseudoLoss
@@ -220,6 +221,8 @@ class ModuleGraph(BaseGraph[MODULENODE]):
             loss_calculator=ImageClassifierPseudoLoss()),
     ):
         """init module graph using backward tracer."""
+        if isinstance(backward_tracer, dict):
+            backward_tracer = TASK_UTILS.build(backward_tracer)
         path_lists = backward_tracer.trace(model)
         converter = PathToGraphConverter(path_lists, model)
         return converter.graph

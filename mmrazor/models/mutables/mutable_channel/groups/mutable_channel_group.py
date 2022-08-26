@@ -7,11 +7,10 @@ from typing import Dict, Type, TypeVar, Union
 import torch.nn as nn
 from mmengine.model import BaseModule
 
-from ....architectures.dynamic_op.bricks.dynamic_mixins import \
-    DynamicChannelMixin
+from mmrazor.models.architectures.dynamic_op.bricks import DynamicChannelMixin
 from ..mutable_channel_container import MutableChannelContainer
 from ..simple_mutable_channel import SimpleMutableChannel
-from .channel_group import ChannelGroup, is_dynamic_op
+from .channel_group import ChannelGroup
 
 
 class MutableChannelGroup(ChannelGroup, BaseModule):
@@ -40,7 +39,8 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
         for channel in self.input_related + self.output_related:
             if channel.node.is_prunable is False:
                 all_node_prunable = False
-            if is_dynamic_op(channel.module):
+                break
+            if isinstance(channel.module, DynamicChannelMixin):
                 have_dynamic_op = True
         return len(self.output_related) > 0\
             and len(self.input_related) > 0 \
@@ -76,6 +76,11 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
         For example, we need to register mutable to dynamic-ops
         """
         raise NotImplementedError()
+
+    def fix_chosen(self, choice=None):
+        if choice is not None:
+            self.current_choice = choice
+        self.mutable_mask.fix_chosen(None)
 
     # tools
 
@@ -139,7 +144,7 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
         # register MutableMask
         for channel in self.input_related + self.output_related:
             module = channel.module
-            if is_dynamic_op(module):
+            if isinstance(module, DynamicChannelMixin):
                 container: MutableChannelContainer
                 if channel.output_related and module.get_mutable_attr(
                         'out_channels') is not None:

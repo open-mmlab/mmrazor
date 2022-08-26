@@ -10,10 +10,12 @@ from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper
 from torch import nn
 
+from mmrazor.models.mutables import BaseMutable
 from mmrazor.models.mutators import SlimmableChannelMutator
 from mmrazor.models.utils import (add_prefix,
                                   reinitialize_optim_wrapper_count_status)
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
+from mmrazor.structures.subnet.fix_subnet import _dynamic_to_static
 from ..base import BaseAlgorithm
 
 VALID_MUTATOR_TYPE = Union[SlimmableChannelMutator, Dict]
@@ -56,13 +58,15 @@ class SlimmableNetwork(BaseAlgorithm):
         self.num_subnet = len(channel_cfg_paths)
 
         channel_cfgs = self._load_and_merge_channel_cfgs(channel_cfg_paths)
-        self.mutator = self._build_mutator(
-            copy.copy(mutator), self.architecture, channel_cfgs)
+        self.mutator = self._build_mutator(copy.copy(mutator), channel_cfgs)
+        self.mutator.prepare_from_supernet(self.architecture)
 
         # must after `prepare_from_supernet`
         if len(channel_cfg_paths) == 1:
-            self.mutator.fix_subnet(self.mutator.subnets[0])
-            self.mutator.to_static_model()
+            self.mutator.set_choices(self.mutator.subnets[0])
+            self.mutator.fix_channel_mutables()
+            self._fix_archtecture()
+            _dynamic_to_static(self.architecture)
             self.is_deployed = True
         else:
             self.is_deployed = False
@@ -103,11 +107,10 @@ class SlimmableNetwork(BaseAlgorithm):
 
         return merged_channel_cfg
 
-    def _build_mutator(self, mutator: VALID_MUTATOR_TYPE, model,
+    def _build_mutator(self, mutator: VALID_MUTATOR_TYPE,
                        channel_cfgs) -> SlimmableChannelMutator:
         """build mutator."""
         if isinstance(mutator, dict):
-            mutator['model'] = model
             assert 'channel_cfgs' not in mutator
             mutator['channel_cfgs'] = channel_cfgs
             mutator = MODELS.build(mutator)
@@ -147,7 +150,7 @@ class SlimmableNetwork(BaseAlgorithm):
         total_losses = dict()
 
         for subnet_idx, subnet in enumerate(self.mutator.subnets):
-            self.mutator.apply_subnet(subnet)
+            self.mutator.set_choices(subnet)
             with optim_wrapper.optim_context(self):
                 losses = self(batch_inputs, data_samples, mode='loss')
             parsed_losses, _ = self.parse_losses(losses)
@@ -170,6 +173,12 @@ class SlimmableNetwork(BaseAlgorithm):
         optim_wrapper.update_params(parsed_losses)
 
         return losses
+
+    def _fix_archtecture(self):
+        for module in self.architecture.modules():
+            if isinstance(module, BaseMutable):
+                if not module.is_fixed:
+                    module.fix_chosen(None)
 
 
 @MODEL_WRAPPERS.register_module()
@@ -214,7 +223,7 @@ class SlimmableNetworkDDP(MMDistributedDataParallel):
         total_losses = dict()
 
         for subnet_idx, subnet in enumerate(self.module.mutator.subnets):
-            self.module.mutator.apply_subnet(subnet)
+            self.module.mutator.set_choices(subnet)
             with optim_wrapper.optim_context(self):
                 losses = self(batch_inputs, data_samples, mode='loss')
             parsed_losses, _ = self.module.parse_losses(losses)

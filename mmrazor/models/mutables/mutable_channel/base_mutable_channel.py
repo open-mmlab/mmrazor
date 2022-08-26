@@ -44,7 +44,7 @@ class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
 
     # implementation of abstract methods
 
-    def fix_chosen(self, chosen):
+    def fix_chosen(self, chosen=None):
         """Fix mutable with subnet config. This operation would convert
         `unfixed` mode to `fixed` mode. The :attr:`is_fixed` will be set to
         True and only the selected operations can be retained.
@@ -52,6 +52,9 @@ class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
         Args:
             chosen (str): The chosen key in ``MUTABLE``. Defaults to None.
         """
+        if chosen is not None:
+            self.current_choice = chosen
+
         if self.is_fixed:
             raise AttributeError(
                 'The mode of current MUTABLE is `fixed`. '

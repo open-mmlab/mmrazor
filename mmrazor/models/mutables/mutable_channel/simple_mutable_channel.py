@@ -24,7 +24,7 @@ class SimpleMutableChannel(BaseMutableChannel):
 
     @current_choice.setter
     def current_choice(self, choice: torch.Tensor):
-        self.mask = choice
+        self.mask = choice.to(self.mask.device)
 
     @property
     def current_mask(self):

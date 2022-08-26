@@ -10,7 +10,7 @@ from mmrazor.models.architectures.dynamic_op.bricks.dynamic_mixins import \
 from mmrazor.models.mutables.mutable_channel import (MutableChannelGroup,
                                                      SimpleChannelGroup)
 from mmrazor.models.mutables.mutable_channel.groups.channel_group import (  # noqa
-    Channel, PruneNode, is_dynamic_op)
+    Channel, PruneNode)
 from mmrazor.structures.graph import ModuleGraph as ModuleGraph
 from ...test_core.test_graph.test_graph import TestGraph
 
@@ -22,7 +22,7 @@ TRACER_CFG = dict(
 
 def is_dynamic_op_for_tracer(module, module_name):
     """determine if a module is a dynamic op for fx tracer."""
-    return is_dynamic_op(module)
+    return isinstance(module, DynamicChannelMixin)
 
 
 # DEVICE = torch.device('cuda:0') if torch.cuda.is_available() \

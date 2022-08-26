@@ -5,8 +5,7 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models.architectures.dynamic_op.default_dynamic_ops import \
-    ChannelDynamicOP
+from mmrazor.models.architectures.dynamic_op.bricks import DynamicChannelMixin
 from mmrazor.structures.graph import ModuleGraph
 from ...data.models import Icep  # noqa
 from ...data.models import MultipleUseModel  # noqa
@@ -21,8 +20,8 @@ FULL_TEST = os.getenv('FULL_TEST') == 'true'
 sys.setrecursionlimit(int(1e8))
 
 
-def is_dynamic_op(module, name):
-    return isinstance(module, ChannelDynamicOP)
+def is_dynamic_op_fx(module, name):
+    return isinstance(module, DynamicChannelMixin)
 
 
 class ToyCNNPseudoLoss:

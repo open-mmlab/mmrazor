@@ -3,8 +3,8 @@ import copy
 
 import torch
 
-from ....registry import MODELS
-from ....utils.index_dict import IndexDict
+from mmrazor.registry import MODELS
+from mmrazor.utils import IndexDict
 from .base_mutable_channel import BaseMutableChannel
 from .simple_mutable_channel import SimpleMutableChannel
 

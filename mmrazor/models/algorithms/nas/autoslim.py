@@ -34,8 +34,8 @@ class AutoSlim(BaseAlgorithm):
                  num_samples: int = 2) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
 
-        mutator['model'] = self.architecture.backbone
         self.mutator: OneShotChannelMutator = MODELS.build(mutator)
+        self.mutator.prepare_from_supernet(self.architecture)
 
         self.distiller = self._build_distiller(distiller)
         self.distiller.prepare_from_teacher(self.architecture)
@@ -69,19 +69,19 @@ class AutoSlim(BaseAlgorithm):
         return distiller
 
     def sample_subnet(self):
-        return self.mutator.sample_subnet()
+        return self.mutator.sample_choices()
 
     def set_subnet(self, subnet) -> None:
-        self.mutator.apply_subnet(subnet)
+        self.mutator.set_choices(subnet)
 
     def set_sampled_subnet(self):
-        self.mutator.apply_subnet(self.mutator.sample_subnet())
+        self.mutator.set_choices(self.mutator.sample_choices())
 
     def set_max_subnet(self) -> None:
-        self.mutator.apply_subnet(self.mutator.max_structure())
+        self.mutator.set_choices(self.mutator.max_choices())
 
     def set_min_subnet(self) -> None:
-        self.mutator.apply_subnet(self.mutator.min_structure())
+        self.mutator.set_choices(self.mutator.min_choices())
 
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:

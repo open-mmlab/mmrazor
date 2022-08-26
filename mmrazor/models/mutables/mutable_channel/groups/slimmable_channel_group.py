@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from mmrazor.models.architectures.dynamic_op.bricks import (
     DynamicConv2d, DynamicLinear, SwitchableBatchNorm2d)
-from .....registry import MODELS
+from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
 from .one_shot_channel_group import OneShotChannelGroup
 
