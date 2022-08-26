@@ -32,7 +32,9 @@ class TestPackClsInputs(unittest.TestCase):
             'scale_factor': 2.0,
             'flip': False,
             'img': rng.rand(300, 400),
-            'gt_label': rng.randint(3, )
+            'gt_label': rng.randint(3, ),
+            # TODO.
+            'contrast_sample_idxs': rng.randint()
         }
         self.meta_keys = ('sample_idx', 'img_path', 'ori_shape', 'img_shape',
                           'scale_factor', 'flip')
