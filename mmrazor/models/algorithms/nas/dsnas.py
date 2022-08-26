@@ -177,7 +177,7 @@ class Dsnas(BaseAlgorithm):
             # 2. update mutator
             if self.update_mutator(cur_epoch):
                 with optim_wrapper['mutator'].optim_context(self):
-                    mutator_loss = self.compute_mutator_loss(cur_epoch)
+                    mutator_loss = self.compute_mutator_loss()
                 mutator_losses, mutator_log_vars = \
                     self.parse_losses(mutator_loss)
                 optim_wrapper['mutator'].update_params(mutator_losses)
@@ -216,14 +216,11 @@ class Dsnas(BaseAlgorithm):
             return True
         return False
 
-    def compute_mutator_loss(self, cur_epoch: int) -> Dict[str, torch.Tensor]:
+    def compute_mutator_loss(self) -> Dict[str, torch.Tensor]:
         """Compute mutator loss.
 
         In this method, arch_loss & flops_loss[optional] are computed
         by traversing arch_weights & probs in search groups.
-
-        Args:
-            cur_epoch (int): Current training epoch.
 
         Returns:
             Dict: Loss of the mutator.
@@ -317,7 +314,7 @@ class DsnasDDP(MMDistributedDataParallel):
             # 2. update mutator
             if self.module.update_mutator(cur_epoch):
                 with optim_wrapper['mutator'].optim_context(self):
-                    mutator_loss = self.module.compute_mutator_loss(cur_epoch)
+                    mutator_loss = self.module.compute_mutator_loss()
                 mutator_losses, mutator_log_vars = \
                     self.module.parse_losses(mutator_loss)
                 optim_wrapper['mutator'].update_params(mutator_losses)

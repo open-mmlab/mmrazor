@@ -2,7 +2,7 @@
 from typing import Dict, Optional
 
 import torch
-from mmengine.runner import BaseModule
+from mmengine.model import BaseModule
 
 from mmrazor.models.utils import get_module_device
 
