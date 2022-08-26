@@ -13,6 +13,7 @@ def get_model_complexity_info(model,
                               spec_modules=[],
                               disabled_counters=[],
                               print_per_layer_stat=False,
+                              units=('M', 'M'),
                               as_strings=False,
                               input_constructor=None,
                               flush=False,
@@ -47,6 +48,9 @@ def get_model_complexity_info(model,
             calculated. Default to [].
         print_per_layer_stat (bool): Whether to print complexity information
             for each layer in a model. Default to True.
+        units (tuple): A tuple pair including converted FLOPs & params
+            units. e.g., ('G', 'M') stands for FLOPs as 'G' & params as 'M'.
+            Default to ('M', 'M').
         as_strings (bool): Output FLOPs and params counts in a string form.
             Default to True.
         input_constructor (None | callable): If specified, it takes a callable
@@ -96,6 +100,10 @@ def get_model_complexity_info(model,
             ost=ost,
             flush=flush)
 
+    if as_strings:
+        flops_suffix = ' ' + units[0] + 'FLOPs' if units else ' FLOPs'
+        params_suffix = ' ' + units[1] if units else ''
+
     if len(spec_modules):
         module_names = [name for name, _ in flops_params_model.named_modules()]
         for module in spec_modules:
@@ -103,27 +111,30 @@ def get_model_complexity_info(model,
                 f'All modules in spec_modules should be in the measured ' \
                 f'flops_params_model. Got module {module} in spec_modules.'
         spec_modules_resources = dict()
-        accumulate_sub_module_flops_params(flops_params_model)
+        accumulate_sub_module_flops_params(flops_params_model, units=units)
         for name, module in flops_params_model.named_modules():
             if name in spec_modules:
                 spec_modules_resources[name] = dict()
                 spec_modules_resources[name]['flops'] = module.__flops__
                 spec_modules_resources[name]['params'] = module.__params__
                 if as_strings:
-                    spec_modules_resources[name]['flops'] = str(
-                        params_units_convert(module.__flops__,
-                                             'G')) + ' GFLOPs'
-                    spec_modules_resources[name]['params'] = str(
-                        params_units_convert(module.__params__, 'M')) + ' M'
+                    spec_modules_resources[name]['flops'] = \
+                        str(module.__flops__) + flops_suffix
+                    spec_modules_resources[name]['params'] = \
+                        str(module.__params__) + params_suffix
 
     flops_params_model.stop_flops_params_count()
 
     if len(spec_modules):
         return spec_modules_resources
 
+    if units is not None:
+        flops_count = params_units_convert(flops_count, units[0])
+        params_count = params_units_convert(params_count, units[1])
+
     if as_strings:
-        flops_string = str(params_units_convert(flops_count, 'G')) + ' GFLOPs'
-        params_string = str(params_units_convert(params_count, 'M')) + ' M'
+        flops_string = str(flops_count) + flops_suffix
+        params_string = str(params_count) + params_suffix
         return flops_string, params_string
 
     return flops_count, params_count
@@ -164,7 +175,7 @@ def params_units_convert(num_params, units='M', precision=3):
 def print_model_with_flops_params(model,
                                   total_flops,
                                   total_params,
-                                  units='G',
+                                  units=('M', 'M'),
                                   precision=3,
                                   ost=sys.stdout,
                                   flush=False):
@@ -174,7 +185,9 @@ def print_model_with_flops_params(model,
         model (nn.Module): The model to be printed.
         total_flops (float): Total FLOPs of the model.
         total_params (float): Total parameter counts of the model.
-        units (str | None): Converted FLOPs units. Default to 'G'.
+        units (tuple | none): A tuple pair including converted FLOPs & params
+            units. e.g., ('G', 'M') stands for FLOPs as 'G' & params as 'M'.
+            Default to('M', 'M').
         precision (int): Digit number after the decimal point. Default to 3.
         ost (stream): same as `file` param in :func:`print`.
             Default to sys.stdout.
@@ -214,6 +227,8 @@ def print_model_with_flops_params(model,
           (fc): Linear(0.0 M, 0.024% Params, 0.0 GFLOPs, 0.000% FLOPs, in_features=8, out_features=1, bias=True)
         )
     """
+    flops_suffix = ' ' + units[0] + 'FLOPs' if units else ' FLOPs'
+    params_suffix = ' ' + units[1] if units else ''
 
     def accumulate_params(self):
         if is_supported_instance(self):
@@ -238,11 +253,12 @@ def print_model_with_flops_params(model,
         accumulated_flops_cost = self.accumulate_flops()
         flops_string = str(
             params_units_convert(
-                accumulated_flops_cost, units=units,
-                precision=precision)) + ' ' + units + 'FLOPs'
+                accumulated_flops_cost, units=units[0],
+                precision=precision)) + flops_suffix
         params_string = str(
             params_units_convert(
-                accumulated_num_params, units='M', precision=precision)) + ' M'
+                accumulated_num_params, units=units[1],
+                precision=precision)) + params_suffix
         return ', '.join([
             params_string,
             '{:.3%} Params'.format(accumulated_num_params / total_params),
@@ -272,12 +288,15 @@ def print_model_with_flops_params(model,
     model.apply(del_extra_repr)
 
 
-def accumulate_sub_module_flops_params(model):
+def accumulate_sub_module_flops_params(model, units=None):
     """Accumulate FLOPs and params for each module in the model. Each module in
     the model will have the `__flops__` and `__params__` parameters.
 
     Args:
         model (nn.Module): The model to be accumulated.
+        units (tuple | none): A tuple pair including converted FLOPs & params
+            units. e.g., ('G', 'M') stands for FLOPs as 'G' & params as 'M'.
+            Default to None.
     """
 
     def accumulate_params(module):
@@ -303,6 +322,9 @@ def accumulate_sub_module_flops_params(model):
         _params = accumulate_params(module)
         module.__flops__ = _flops
         module.__params__ = _params
+        if units is not None:
+            module.__flops__ = params_units_convert(_flops, units[0])
+            module.__params__ = params_units_convert(_params, units[1])
 
 
 def get_model_parameters_number(model):
@@ -310,6 +332,7 @@ def get_model_parameters_number(model):
 
     Args:
         model (nn.module): The model for parameter number calculation.
+
     Returns:
         float: Parameter number of the model.
     """
@@ -339,6 +362,7 @@ def compute_average_flops_params_cost(self):
 
     A method to compute average FLOPs cost, which will be available after
     `add_flops_params_counting_methods()` is called on a desired net object.
+
     Returns:
         float: Current mean flops consumption per image.
     """
