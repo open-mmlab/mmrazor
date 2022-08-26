@@ -73,11 +73,11 @@ class TestConnector(TestCase):
 
     def test_fbkd_connector(self):
         fbkd_stuconnector_cfg = dict(
-            in_channel=16, inter_channel=8, downsample_stride=2)
+            in_channels=16, reduction=2, sub_sample=True)
         fbkd_stuconnector = FBKDStudentConnector(**fbkd_stuconnector_cfg)
 
         fbkd_teaconnector_cfg = dict(
-            in_channel=16, inter_channel=8, downsample_stride=2)
+            in_channels=16, reduction=2, sub_sample=True)
         fbkd_teaconnector = FBKDTeacherConnector(**fbkd_teaconnector_cfg)
 
         s_feat = torch.randn(1, 16, 8, 8)

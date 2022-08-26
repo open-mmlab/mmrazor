@@ -3,145 +3,70 @@ from typing import Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
+from mmcv.cnn import NonLocal2d
 
 from mmrazor.registry import MODELS
 from .base_connector import BaseConnector
 
 
-class NonLocalBlockND(nn.Module):
-    """Nonlocal block for n-dimension inputs.
+class NonLocal2dMaxpoolNstride(NonLocal2d):
+    """Nonlocal block for 2-dimension inputs, with a configurable
+    maxpool_stride.
 
-    Formulations:
-    out = w * y + x;
-    y = softmax(x * θ * φ) * g(x);
-    x is input feature;
-    * means dot-product.
+    This module is proposed in
+    "Non-local Neural Networks"
+    Paper reference: https://arxiv.org/abs/1711.07971
+    Code reference: https://github.com/AlexHex7/Non-local_pytorch
 
     Args:
-        in_channel (int): The number of input channel.
-        inter_channel (int, optional): The number of inter channel.
-            Defaults to None.
-        dimension (int): Dimension of input feature. Defaults to 2.
-        use_bn_layer (bool): Whether to use BN layer. Defaults to True.
-        with_downsample (bool): Whether to downsample. Defaults to True.
-        downsample_stride (int): Downsample stride. Defaults to 2.
+        in_channels (int): Channels of the input feature map.
+        reduction (int): Channel reduction ratio. Defaults to 2.
+        conv_cfg (dict): The config dict for convolution layers.
+            Defaults to `nn.Conv2d`.
+        norm_cfg (dict): The config dict for normalization layers.
+            Defaults to `BN`. (This parameter is only applicable to conv_out.)
+        mode (str): Options are `gaussian`, `concatenation`,
+            `embedded_gaussian` and `dot_product`. Default: dot_product.
+        sub_sample (bool): Whether to apply max pooling after pairwise
+            function (Note that the `sub_sample` is applied on spatial only).
+            Default: False.
+        maxpool_stride (int): The stride of the maxpooling module.
+            Defaults to 2.
+        zeros_init (bool): Whether to use zero to initialize weights of
+            `conv_out`. Defaults to True.
     """
 
     def __init__(self,
-                 in_channel: int,
-                 inter_channel: Optional[int] = None,
-                 dimension: int = 2,
-                 use_bn_layer: bool = True,
-                 with_downsample: bool = True,
-                 downsample_stride: int = 2) -> None:
-        """Inits the NonLocalBlockND module."""
-        super().__init__()
+                 in_channels: int,
+                 reduction: int = 2,
+                 conv_cfg: Dict = dict(type='Conv2d'),
+                 norm_cfg: Dict = dict(type='BN'),
+                 mode: str = 'embedded_gaussian',
+                 sub_sample: bool = False,
+                 maxpool_stride: int = 2,
+                 zeros_init: bool = True,
+                 **kwargs) -> None:
+        """Inits the NonLocal2dMaxpoolNstride module."""
+        super().__init__(
+            in_channels=in_channels,
+            sub_sample=sub_sample,
+            conv_cfg=conv_cfg,
+            norm_cfg=norm_cfg,
+            reduction=reduction,
+            mode=mode,
+            zeros_init=zeros_init,
+            **kwargs)
+        self.norm_cfg = norm_cfg
 
-        assert dimension in [1, 2, 3], \
-            f'"dimension" must be 1, 2 or 3, but got {dimension}.'
-        self.inter_channel = inter_channel
-
-        if self.inter_channel is None:
-            self.inter_channel = in_channel // 2
-            if self.inter_channel == 0:
-                self.inter_channel = 1
-
-        if dimension == 3:
-            conv_nd = nn.Conv3d
-            max_pool_layer = nn.MaxPool3d(
-                kernel_size=(1, downsample_stride, downsample_stride))
-            bn = nn.BatchNorm3d
-        elif dimension == 2:
-            conv_nd = nn.Conv2d
+        if sub_sample:
             max_pool_layer = nn.MaxPool2d(
-                kernel_size=(downsample_stride, downsample_stride))
-            bn = nn.BatchNorm2d
-        else:
-            conv_nd = nn.Conv1d
-            max_pool_layer = nn.MaxPool1d(kernel_size=(downsample_stride))
-            bn = nn.BatchNorm1d
-
-        # Function g() in non-local formulations.
-        self.func_g = conv_nd(
-            in_channels=in_channel,
-            out_channels=self.inter_channel,
-            kernel_size=1,
-            stride=1,
-            padding=0)
-
-        if use_bn_layer:
-            # Matrix w in non-local formulations.
-            self.weight_w = nn.Sequential(
-                conv_nd(
-                    in_channels=self.inter_channel,
-                    out_channels=in_channel,
-                    kernel_size=1,
-                    stride=1,
-                    padding=0), bn(in_channel))
-            nn.init.constant_(self.weight_w[1].weight, 0)
-            nn.init.constant_(self.weight_w[1].bias, 0)
-        else:
-            self.weight_w = conv_nd(
-                in_channels=self.inter_channel,
-                out_channels=in_channel,
-                kernel_size=1,
-                stride=1,
-                padding=0)
-            nn.init.constant_(self.weight_w.weight, 0)
-            nn.init.constant_(self.weight_w.bias, 0)
-
-        # Matrix θ in non-local formulations.
-        self.theta = conv_nd(
-            in_channels=in_channel,
-            out_channels=self.inter_channel,
-            kernel_size=1,
-            stride=1,
-            padding=0)
-
-        # Matrix φ in non-local formulations.
-        self.phi = conv_nd(
-            in_channels=in_channel,
-            out_channels=self.inter_channel,
-            kernel_size=1,
-            stride=1,
-            padding=0)
-
-        if with_downsample:
-            self.func_g = nn.Sequential(self.func_g, max_pool_layer)
-            self.phi = nn.Sequential(self.phi, max_pool_layer)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward function of NonLocalBlockND.
-
-        Args:
-            x (torch.Tensor): Input feature.
-
-        Returns:
-            out (torch.Tensor): Non-local relation matrix.
-        """
-        batch_size = x.size(0)
-
-        # Calculate θ and φ in the non-local formulations.
-        theta_x = self.theta(x).view(batch_size, self.inter_channel, -1)
-        theta_x = theta_x.permute(0, 2, 1)
-        phi_x = self.phi(x).view(batch_size, self.inter_channel, -1)
-        func_f = torch.matmul(theta_x, phi_x)
-        shape = func_f.size(-1)
-        f_div_C = func_f / shape
-
-        # Calculate y in the non-local formulations.
-        g_x = self.func_g(x).view(batch_size, self.inter_channel, -1)
-        g_x = g_x.permute(0, 2, 1)
-        nonlocal_y = torch.matmul(f_div_C, g_x)
-        nonlocal_y = nonlocal_y.permute(0, 2, 1).contiguous()
-        nonlocal_y = nonlocal_y.view(batch_size, self.inter_channel,
-                                     *x.size()[2:])
-
-        # Calculate out in the non-local formulations.
-        W_mul_y = self.weight_w(nonlocal_y)
-        out = W_mul_y + x
-
-        return out
+                kernel_size=(maxpool_stride, maxpool_stride))
+            self.g: nn.Sequential = nn.Sequential(self.g, max_pool_layer)
+            if self.mode != 'gaussian':
+                self.phi: nn.Sequential = nn.Sequential(
+                    self.phi, max_pool_layer)
+            else:
+                self.phi = max_pool_layer
 
 
 @MODELS.register_module()
@@ -153,11 +78,21 @@ class FBKDStudentConnector(BaseConnector):
     Student connector for FBKD.
 
     Args:
-        in_channel (int): Number of input channels.
-        inter_channel (int, optional): Number of inter channels.
-        with_downsample (bool): Whether to downsample.
-            Defaults to True.
-        downsample_stride (int): Downsample stride. Defaults to 2.
+        in_channels (int): Channels of the input feature map.
+        reduction (int): Channel reduction ratio. Defaults to 2.
+        conv_cfg (dict): The config dict for convolution layers.
+            Defaults to `nn.Conv2d`.
+        norm_cfg (dict): The config dict for normalization layers.
+            Defaults to `BN`. (This parameter is only applicable to conv_out.)
+        mode (str): Options are `gaussian`, `concatenation`,
+            `embedded_gaussian` and `dot_product`. Default: dot_product.
+        sub_sample (bool): Whether to apply max pooling after pairwise
+            function (Note that the `sub_sample` is applied on spatial only).
+            Default: False.
+        maxpool_stride (int): The stride of the maxpooling module.
+            Defaults to 2.
+        zeros_init (bool): Whether to use zero to initialize weights of
+            `conv_out`. Defaults to True.
         spatial_T (float): Temperature used in spatial-wise pooling.
             Defaults to 0.5.
         channel_T (float): Temperature used in channel-wise pooling.
@@ -166,33 +101,43 @@ class FBKDStudentConnector(BaseConnector):
     """
 
     def __init__(self,
-                 in_channel: int,
-                 inter_channel: int = None,
-                 with_downsample: bool = True,
-                 downsample_stride: int = 2,
+                 in_channels: int,
+                 reduction: int = 2,
+                 conv_cfg: Dict = dict(type='Conv2d'),
+                 norm_cfg: Dict = dict(type='BN'),
+                 mode: str = 'dot_product',
+                 sub_sample: bool = False,
+                 maxpool_stride: int = 2,
+                 zeros_init: bool = True,
                  spatial_T: float = 0.5,
                  channel_T: float = 0.5,
-                 init_cfg: Optional[Dict] = None) -> None:
+                 init_cfg: Optional[Dict] = None,
+                 **kwargs) -> None:
         """Inits the FBKDStuConnector."""
         super().__init__(init_cfg)
-        self.channel_wise_adaptation = nn.Linear(in_channel, in_channel)
+        self.channel_wise_adaptation = nn.Linear(in_channels, in_channels)
 
         self.spatial_wise_adaptation = nn.Conv2d(
             1, 1, kernel_size=3, stride=1, padding=1)
 
         self.adaptation_layers = nn.Conv2d(
-            in_channel, in_channel, kernel_size=1, stride=1, padding=0)
+            in_channels, in_channels, kernel_size=1, stride=1, padding=0)
 
-        self.student_non_local = NonLocalBlockND(
-            in_channel=in_channel,
-            inter_channel=inter_channel,
-            with_downsample=with_downsample,
-            downsample_stride=downsample_stride)
+        self.student_non_local = NonLocal2dMaxpoolNstride(
+            in_channels=in_channels,
+            reduction=reduction,
+            conv_cfg=conv_cfg,
+            norm_cfg=norm_cfg,
+            mode=mode,
+            sub_sample=sub_sample,
+            maxpool_stride=maxpool_stride,
+            zeros_init=zeros_init,
+            **kwargs)
 
         self.non_local_adaptation = nn.Conv2d(
-            in_channel, in_channel, kernel_size=1, stride=1, padding=0)
+            in_channels, in_channels, kernel_size=1, stride=1, padding=0)
 
-        self.in_channel = in_channel
+        self.in_channels = in_channels
         self.spatial_T = spatial_T
         self.channel_T = channel_T
 
@@ -229,7 +174,7 @@ class FBKDStudentConnector(BaseConnector):
 
         # Soften or sharpen the channel-wise mask by temperature.
         s_channel_mask = torch.softmax(
-            s_channel_mask / self.channel_T, dim=1) * self.in_channel
+            s_channel_mask / self.channel_T, dim=1) * self.in_channels
         s_channel_mask = s_channel_mask.view(channel_mask_size)
 
         # Adaptative and pool student feature through channel-wise.
@@ -259,11 +204,21 @@ class FBKDTeacherConnector(BaseConnector):
     Teacher connector for FBKD.
 
     Args:
-        in_channel (int): Number of input channels.
-        inter_channel (int): Number of inter channels.
-        with_downsample (bool, optional): Whether to downsample.
-            Defaults to True.
-        downsample_stride (int): Downsample stride. Defaults to 2.
+        in_channels (int): Channels of the input feature map.
+        reduction (int): Channel reduction ratio. Defaults to 2.
+        conv_cfg (dict): The config dict for convolution layers.
+            Defaults to `nn.Conv2d`.
+        norm_cfg (dict): The config dict for normalization layers.
+            Defaults to `BN`. (This parameter is only applicable to conv_out.)
+        mode (str): Options are `gaussian`, `concatenation`,
+            `embedded_gaussian` and `dot_product`. Default: dot_product.
+        sub_sample (bool): Whether to apply max pooling after pairwise
+            function (Note that the `sub_sample` is applied on spatial only).
+            Default: False.
+        maxpool_stride (int): The stride of the maxpooling module.
+            Defaults to 2.
+        zeros_init (bool): Whether to use zero to initialize weights of
+            `conv_out`. Defaults to True.
         spatial_T (float): Temperature used in spatial-wise pooling.
             Defaults to 0.5.
         channel_T (float): Temperature used in channel-wise pooling.
@@ -272,21 +227,31 @@ class FBKDTeacherConnector(BaseConnector):
     """
 
     def __init__(self,
-                 in_channel,
-                 inter_channel=None,
-                 with_downsample=True,
-                 downsample_stride=2,
+                 in_channels,
+                 reduction=2,
+                 conv_cfg: Dict = dict(type='Conv2d'),
+                 norm_cfg: Dict = dict(type='BN'),
+                 mode: str = 'dot_product',
+                 sub_sample: bool = False,
+                 maxpool_stride: int = 2,
+                 zeros_init: bool = True,
                  spatial_T: float = 0.5,
                  channel_T: float = 0.5,
-                 init_cfg: Optional[Dict] = None) -> None:
+                 init_cfg: Optional[Dict] = None,
+                 **kwargs) -> None:
         super().__init__(init_cfg)
-        self.teacher_non_local = NonLocalBlockND(
-            in_channel=in_channel,
-            inter_channel=inter_channel,
-            with_downsample=with_downsample,
-            downsample_stride=downsample_stride)
+        self.teacher_non_local = NonLocal2dMaxpoolNstride(
+            in_channels=in_channels,
+            reduction=reduction,
+            conv_cfg=conv_cfg,
+            norm_cfg=norm_cfg,
+            mode=mode,
+            sub_sample=sub_sample,
+            maxpool_stride=maxpool_stride,
+            zeros_init=zeros_init,
+            **kwargs)
 
-        self.in_channel = in_channel
+        self.in_channels = in_channels
         self.spatial_T = spatial_T
         self.channel_T = channel_T
 
@@ -320,7 +285,7 @@ class FBKDTeacherConnector(BaseConnector):
 
         # Soften or sharpen the channel-wise mask by temperature.
         t_channel_mask = torch.softmax(
-            t_channel_mask / self.channel_T, dim=1) * self.in_channel
+            t_channel_mask / self.channel_T, dim=1) * self.in_channels
         t_channel_mask = t_channel_mask.view(channel_mask_size)
 
         # Adaptative and pool student feature through spatial-wise.
