@@ -5,9 +5,10 @@ import unittest
 
 import numpy as np
 import torch
-from mmcls.datasets.transforms import PackClsInputs
 from mmcls.structures import ClsDataSample
 from mmengine.data import LabelData
+
+from mmrazor.datasets.transforms import PackCRDClsInputs
 
 
 class TestPackClsInputs(unittest.TestCase):
@@ -37,7 +38,7 @@ class TestPackClsInputs(unittest.TestCase):
                           'scale_factor', 'flip')
 
     def test_transform(self):
-        transform = PackClsInputs(meta_keys=self.meta_keys)
+        transform = PackCRDClsInputs(meta_keys=self.meta_keys)
         results = transform(copy.deepcopy(self.results1))
         self.assertIn('inputs', results)
         self.assertIsInstance(results['inputs'], torch.Tensor)
@@ -48,6 +49,6 @@ class TestPackClsInputs(unittest.TestCase):
         self.assertIsInstance(data_sample.gt_label, LabelData)
 
     def test_repr(self):
-        transform = PackClsInputs(meta_keys=self.meta_keys)
+        transform = PackCRDClsInputs(meta_keys=self.meta_keys)
         self.assertEqual(
             repr(transform), f'PackClsInputs(meta_keys={self.meta_keys})')
