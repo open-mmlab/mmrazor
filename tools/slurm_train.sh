@@ -2,7 +2,7 @@
 
 set -x
 
-PARTITION="mm_model"
+PARTITION="mm_dev"
 JOB_NAME="qat_demo"
 CONFIG="configs/quantization/qat/demo.py"
 WORK_DIR="../experiments/qat_demo"

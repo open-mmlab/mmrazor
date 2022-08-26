@@ -62,7 +62,7 @@ class CustomQuantizer(BaseModule):
         self._swap_ff_with_fxff(model)
 
         tracer = self.build_tracer()
-        graph_module = GraphModule(model, tracer.trace(model))
+        graph_module = GraphModule(model, tracer.trace(model, concrete_args={'mode': 'tensor'}))
 
         preserved_attributes = self.prepare_custom_config_dict.get("preserved_attributes", [])
         for attr_name in preserved_attributes:
@@ -118,10 +118,12 @@ class CustomQuantizer(BaseModule):
         self.w_observer = w_observer.with_args(**self.w_qscheme.to_observer_params())
         self.a_observer = a_observer.with_args(**self.a_qscheme.to_observer_params())
 
-        w_fake_quant = MODELS.build(qconfig['w_fake_quant'])
-        a_fake_quant = MODELS.build(qconfig['a_fake_quant'])
-        self.w_fake_quant = w_fake_quant.with_args(observer=self.w_observer)
-        self.a_fake_quant = a_fake_quant.with_args(observer=self.a_observer)
+        # w_fake_quant = MODELS.build(qconfig['w_fake_quant'])
+        # a_fake_quant = MODELS.build(qconfig['a_fake_quant'])
+        # self.w_fake_quant = w_fake_quant.with_args(observer=self.w_observer)
+        # self.a_fake_quant = a_fake_quant.with_args(observer=self.a_observer)
+        self.w_fake_quant = MODELS.build(qconfig['w_fake_quant'])
+        self.a_fake_quant = MODELS.build(qconfig['a_fake_quant'])
         
         torch_qconfig = QConfig(weight=self.w_fake_quant, activation=self.a_fake_quant)
         return torch_qconfig
@@ -162,6 +164,7 @@ class CustomQuantizer(BaseModule):
             self.prepare_custom_config_dict, "float_to_observed_custom_module_class"
         )
         skipped_module_classes += float_custom_module_classes
+        # tracer = CustomTracer(skipped_module_names, skipped_module_classes)
         tracer = QuantizationTracer(skipped_module_names, skipped_module_classes)
         return tracer
     
