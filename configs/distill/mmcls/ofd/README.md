@@ -20,10 +20,10 @@ We investigate the design aspects of feature distillation methods achieving netw
 
 #### Vanilla
 
-| Dataset | Model                                                                    | Top-1 (%) | Top-5 (%) | Download          |
-| ------- | ------------------------------------------------------------------------ | --------- | --------- | ----------------- |
-| CIFAR10 | [WRN16-2](../../../vanilla/cifar10/wide-resnet/wrn16_2_b16x8_cifar10.py) | 93.43     | 99.75     | [model & log](<>) |
-| CIFAR10 | [WRN28-4](../../../vanilla/cifar10/wide-resnet/wrn28_4_b16x8_cifar10.py) | 95.49     | 99.81     | [model & log](<>) |
+| Dataset | Model                                                                  | Top-1 (%) | Top-5 (%) | Download          |
+| ------- | ---------------------------------------------------------------------- | --------- | --------- | ----------------- |
+| CIFAR10 | [WRN16-2](../../../vanilla/mmcls/wide-resnet/wrn16_2_b16x8_cifar10.py) | 93.43     | 99.75     | [model & log](<>) |
+| CIFAR10 | [WRN28-4](../../../vanilla/mmcls/wide-resnet/wrn28_4_b16x8_cifar10.py) | 95.49     | 99.81     | [model & log](<>) |
 
 #### Distillation
 
