@@ -37,7 +37,7 @@ We investigate the design aspects of feature distillation methods achieving netw
 
 ```bash
 sh tools/slurm_train.sh $PARTITION $JOB_NAME \
-  configs/kd/ofd/classification/resnet/ofdloss_res18_cifar10_distillation_8xb16_teacher_res50_train.py \
+  configs/distill/mmcls/ofd/ofd_backbone_resnet50_resnet18_8xb16_cifar10.py \
   $DISTILLATION_WORK_DIR
 ```
 
@@ -45,7 +45,7 @@ sh tools/slurm_train.sh $PARTITION $JOB_NAME \
 
 ```bash
 sh tools/slurm_test.sh $PARTITION $JOB_NAME \
-  configs/kd/ofd/classification/resnet/ofdloss_res18_cifar10_distillation_8xb16_teacher_res50_train.py \
+  configs/distill/mmcls/ofd/ofd_backbone_resnet50_resnet18_8xb16_cifar10.py \
   $DISTILLATION_WORK_DIR/latest.pth --eval $EVAL_SETTING
 ```
 
