@@ -2,11 +2,16 @@
 from typing import Dict, Optional
 
 import torch.nn as nn
-from mmcls.models.utils import SELayer
 from mmcv.cnn import ConvModule
 
 from mmrazor.registry import MODELS
 from .base import BaseOP
+
+try:
+    from mmcls.models.utils import SELayer
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    SELayer = get_placeholder('mmcls')
 
 
 @MODELS.register_module()
