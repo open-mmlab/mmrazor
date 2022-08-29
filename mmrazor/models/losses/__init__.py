@@ -10,12 +10,13 @@ from .kd_soft_ce_loss import KDSoftCELoss
 from .kl_divergence import KLDivergence
 from .l1_loss import L1Loss
 from .l2_loss import L2Loss
+from .ofd_loss import OFDLoss
 from .relational_kd import AngleWiseRKD, DistanceWiseRKD
 from .weighted_soft_label_distillation import WSLD
 
 __all__ = [
     'ChannelWiseDivergence', 'KLDivergence', 'AngleWiseRKD', 'DistanceWiseRKD',
     'WSLD', 'L2Loss', 'ABLoss', 'DKDLoss', 'KDSoftCELoss', 'ActivationLoss',
-    'OnehotLikeLoss', 'InformationEntropyLoss', 'FTLoss', 'ATLoss', 'L1Loss',
-    'FBKDLoss'
+    'OnehotLikeLoss', 'InformationEntropyLoss', 'FTLoss', 'ATLoss', 'OFDLoss',
+    'L1Loss', 'FBKDLoss'
 ]
