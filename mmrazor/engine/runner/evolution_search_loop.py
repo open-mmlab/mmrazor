@@ -134,6 +134,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                 will be used in mutation and crossover.
             4. Implement Mutation and crossover, generate better candidates.
         """
+
         self.sample_candidates()
         self.update_candidates_scores()
 

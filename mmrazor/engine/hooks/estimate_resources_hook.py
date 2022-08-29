@@ -3,7 +3,7 @@ import copy
 from typing import Any, Dict, Optional, Sequence
 
 import torch
-from mmengine.data import BaseDataElement
+from mmengine import BaseDataElement
 from mmengine.hooks import Hook
 from mmengine.registry import HOOKS
 

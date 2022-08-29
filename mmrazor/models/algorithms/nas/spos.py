@@ -113,16 +113,16 @@ class SPOS(BaseAlgorithm):
 
     def loss(
         self,
-        batch_inputs: torch.Tensor,
+        inputs: torch.Tensor,
         data_samples: Optional[List[BaseDataElement]] = None,
     ) -> LossResults:
         """Calculate losses from a batch of inputs and data samples."""
         if self.is_supernet:
             random_subnet = self.sample_subnet()
             self.set_subnet(random_subnet)
-            return self.architecture(batch_inputs, data_samples, mode='loss')
+            return self.architecture(inputs, data_samples, mode='loss')
         else:
-            return self.architecture(batch_inputs, data_samples, mode='loss')
+            return self.architecture(inputs, data_samples, mode='loss')
 
     def train(self, mode=True):
         """Convert the model into eval mode while keep normalization layer

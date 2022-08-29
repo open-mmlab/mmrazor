@@ -80,7 +80,7 @@ class BaseAlgorithm(BaseModel):
         self.architecture = architecture
 
     def forward(self,
-                batch_inputs: torch.Tensor,
+                inputs: torch.Tensor,
                 data_samples: Optional[List[BaseDataElement]] = None,
                 mode: str = 'tensor') -> ForwardResults:
         """Returns losses or predictions of training, validation, testing, and
@@ -89,7 +89,7 @@ class BaseAlgorithm(BaseModel):
         ``forward`` method of BaseModel is an abstract method, its subclasses
         must implement this method.
 
-        Accepts ``batch_inputs`` and ``data_samples`` processed by
+        Accepts ``inputs`` and ``data_samples`` processed by
         :attr:`data_preprocessor`, and returns results according to mode
         arguments.
 
@@ -104,7 +104,7 @@ class BaseAlgorithm(BaseModel):
         loss.
 
         Args:
-            batch_inputs (torch.Tensor): batch input tensor collated by
+            inputs (torch.Tensor): batch input tensor collated by
                 :attr:`data_preprocessor`.
             data_samples (List[BaseDataElement], optional):
                 data samples collated by :attr:`data_preprocessor`.
@@ -129,36 +129,36 @@ class BaseAlgorithm(BaseModel):
                   or ``dict of tensor for custom use.
         """
         if mode == 'loss':
-            return self.loss(batch_inputs, data_samples)
+            return self.loss(inputs, data_samples)
         elif mode == 'tensor':
-            return self._forward(batch_inputs, data_samples)
+            return self._forward(inputs, data_samples)
         elif mode == 'predict':
-            return self._predict(batch_inputs, data_samples)
+            return self._predict(inputs, data_samples)
         else:
             raise RuntimeError(f'Invalid mode "{mode}". '
                                'Only supports loss, predict and tensor mode')
 
     def loss(
         self,
-        batch_inputs: torch.Tensor,
+        inputs: torch.Tensor,
         data_samples: Optional[List[BaseDataElement]] = None,
     ) -> LossResults:
         """Calculate losses from a batch of inputs and data samples."""
-        return self.architecture(batch_inputs, data_samples, mode='loss')
+        return self.architecture(inputs, data_samples, mode='loss')
 
     def _forward(
         self,
-        batch_inputs: torch.Tensor,
+        inputs: torch.Tensor,
         data_samples: Optional[List[BaseDataElement]] = None,
     ) -> TensorResults:
         """Network forward process."""
-        return self.architecture(batch_inputs, data_samples, mode='tensor')
+        return self.architecture(inputs, data_samples, mode='tensor')
 
     def _predict(
         self,
-        batch_inputs: torch.Tensor,
+        inputs: torch.Tensor,
         data_samples: Optional[List[BaseDataElement]] = None,
     ) -> PredictResults:
         """Predict results from a batch of inputs and data samples with post-
         processing."""
-        return self.architecture(batch_inputs, data_samples, mode='predict')
+        return self.architecture(inputs, data_samples, mode='predict')
