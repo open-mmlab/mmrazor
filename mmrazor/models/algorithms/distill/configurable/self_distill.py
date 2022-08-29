@@ -2,7 +2,7 @@
 from typing import List, Optional
 
 import torch
-from mmengine import BaseDataElement
+from mmengine.structures import BaseDataElement
 from torch import nn
 
 from mmrazor.models.utils import add_prefix

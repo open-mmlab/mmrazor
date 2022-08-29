@@ -97,7 +97,7 @@ class TestDataFreeDistill(TestCase):
             optimizer=dict(
                 type='SGD', lr=0.1, weight_decay=0.01, momentum=0.9))
 
-        data = [dict(inputs=torch.randn(3, 1, 1)) for _ in range(4)]
+        data = dict(inputs=torch.randn(3, 1, 1), data_samples=None)
 
         alg = DataFreeDistillation(**alg_kwargs)
         optim_wrapper = build_optim_wrapper(alg, optim_wrapper_cfg)
@@ -207,12 +207,13 @@ class TestDAFLDataFreeDistill(TestCase):
             optimizer=dict(
                 type='SGD', lr=0.1, weight_decay=0.01, momentum=0.9))
 
-        data = [dict(inputs=torch.randn(3, 1, 1)) for _ in range(4)]
+        data = dict(inputs=torch.randn(3, 1, 1), data_samples=None)
 
         alg = DAFLDataFreeDistillation(**alg_kwargs)
         optim_wrapper = build_optim_wrapper(alg, optim_wrapper_cfg)
         optim_wrapper_dict = dict(
             architecture=optim_wrapper, generator=optim_wrapper)
+
         losses = alg.train_step(data, optim_wrapper_dict)
         self.assertIn('distill.loss_dis', losses)
         self.assertIn('distill.loss', losses)

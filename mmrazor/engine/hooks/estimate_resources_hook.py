@@ -3,9 +3,9 @@ import copy
 from typing import Any, Dict, Optional, Sequence
 
 import torch
-from mmengine.data import BaseDataElement
 from mmengine.hooks import Hook
 from mmengine.registry import HOOKS
+from mmengine.structures import BaseDataElement
 
 from mmrazor.models.task_modules import ResourceEstimator
 
