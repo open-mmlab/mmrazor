@@ -28,8 +28,9 @@ class ToyModel_GreedySamplerTrainLoop(BaseModel):
         self.linear2 = nn.Linear(2, 1)
         self.mutator = mock_mutator
 
-    def forward(self, batch_inputs, labels, mode='tensor'):
-        labels = torch.stack(labels)
+    def forward(self, inputs, data_samples, mode='tensor'):
+        batch_inputs = torch.stack(inputs)
+        labels = torch.stack(data_samples)
         outputs = self.linear1(batch_inputs)
         outputs = self.linear2(outputs)
 
@@ -67,7 +68,7 @@ class ToyDataset_GreedySamplerTrainLoop(Dataset):
         return self.data.size(0)
 
     def __getitem__(self, index):
-        return dict(inputs=self.data[index], data_sample=self.label[index])
+        return dict(inputs=self.data[index], data_samples=self.label[index])
 
 
 @METRICS.register_module()
@@ -191,20 +192,15 @@ class TestGreedySamplerTrainLoop(TestCase):
         self.assertEqual(subnet, fake_subnet)
         self.assertEqual(len(loop.top_k_candidates), loop.top_k - 1)
 
-    @patch(
-        'mmrazor.engine.runner.evolution_search_loop.export_fix_subnet',
-        return_value={
-            '1': 'choice1',
-            '2': 'choice2'
-        })
-    @patch(
-        'mmrazor.models.task_modules.ResourceEstimator.estimate',
-        return_value=dict(flops=50.0, params=1.0))
-    def test_run(self, export_fix_subnet, estimate):
+    @patch('mmrazor.engine.runner.subnet_sampler_loop.export_fix_subnet')
+    @patch('mmrazor.models.task_modules.ResourceEstimator.estimate')
+    def test_run(self, mock_estimate, mock_export_fix_mutable):
         # test run with flops_range=None
         cfg = copy.deepcopy(self.iter_based_cfg)
         cfg.experiment_name = 'test_run1'
         runner = Runner.from_cfg(cfg)
+        fake_subnet = {'1': 'choice1', '2': 'choice2'}
+        runner.model.sample_subnet = MagicMock(return_value=fake_subnet)
         runner.train()
 
         self.assertEqual(runner.iter, runner.max_iters)
@@ -215,6 +211,10 @@ class TestGreedySamplerTrainLoop(TestCase):
         cfg.experiment_name = 'test_run2'
         cfg.train_cfg.flops_range = (0, 100)
         runner = Runner.from_cfg(cfg)
+        fake_subnet = {'1': 'choice1', '2': 'choice2'}
+        runner.model.sample_subnet = MagicMock(return_value=fake_subnet)
+        mock_estimate.return_value = {'flops': 50.}
+        mock_export_fix_mutable.return_value = fake_subnet
         runner.train()
 
         self.assertEqual(runner.iter, runner.max_iters)

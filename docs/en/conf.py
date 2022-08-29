@@ -17,7 +17,6 @@ import pytorch_sphinx_theme
 
 sys.path.insert(0, os.path.abspath('../..'))
 
-
 # -- Project information -----------------------------------------------------
 
 project = 'mmrazor'
@@ -25,10 +24,12 @@ copyright = '2018-2022, OpenMMLab'
 author = 'MMRazor Author'
 version_file = '../../mmflow/version.py'
 
+
 def get_version():
     with open(version_file, 'r') as f:
         exec(compile(f.read(), version_file, 'exec'))
     return locals()['__version__']
+
 
 # -- General configuration ---------------------------------------------------
 

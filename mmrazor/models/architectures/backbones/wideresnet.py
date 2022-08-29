@@ -7,8 +7,9 @@ from typing import Dict, Tuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcv.cnn import build_conv_layer, build_norm_layer, constant_init
+from mmcv.cnn import build_conv_layer, build_norm_layer
 from mmengine.model import BaseModule
+from mmengine.model.weight_init import constant_init
 
 from mmrazor.registry import MODELS
 

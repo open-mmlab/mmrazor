@@ -6,7 +6,7 @@ import torch.nn as nn
 from mmcls.models.backbones.base_backbone import BaseBackbone
 from mmcv.cnn import ConvModule
 from mmengine.model import ModuleList, Sequential
-from mmengine.model.utils import constant_init, normal_init
+from mmengine.model.weight_init import constant_init, normal_init
 from torch import Tensor
 from torch.nn.modules.batchnorm import _BatchNorm
 
