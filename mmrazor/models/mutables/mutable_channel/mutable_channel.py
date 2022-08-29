@@ -4,11 +4,12 @@ from typing import Dict, List
 
 import torch
 
-from ..base_mutable import CHOICE_TYPE, BaseMutable
+from ..base_mutable import CHOICE_TYPE, CHOSEN_TYPE, BaseMutable
 from ..derived_mutable import DerivedMethodMixin
 
 
-class MutableChannel(BaseMutable[CHOICE_TYPE, Dict], DerivedMethodMixin):
+class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE],
+                     DerivedMethodMixin):
     """A type of ``MUTABLES`` for single path supernet such as AutoSlim. In
     single path supernet, each module only has one choice invoked at the same
     time. A path is obtained by sampling all the available choices. It is the
@@ -100,8 +101,6 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, Dict], DerivedMethodMixin):
                 'The mode of current MUTABLE is `fixed`. '
                 'Please do not call `fix_chosen` function again.')
 
-        current_choice = chosen['current_choice']
-        self.current_choice = current_choice
         self.is_fixed = True
 
     def dump_chosen(self) -> Dict:

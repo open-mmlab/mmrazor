@@ -5,7 +5,7 @@ import re
 from collections import OrderedDict
 from pathlib import Path
 
-import mmcv
+import mmengine
 from modelindex.load_model_index import load
 from rich.console import Console
 from rich.syntax import Syntax
@@ -145,7 +145,7 @@ def summary(args):
         if not latest_json.exists():
             print(f'{model_name} has no results.')
             continue
-        latest_result = mmcv.load(latest_json, 'json')
+        latest_result = mmengine.load(latest_json, 'json')
 
         expect_result = model_info.results[0].metrics
         summary_result = {
@@ -156,8 +156,8 @@ def summary(args):
         }
         model_results[model_name] = summary_result
 
-    mmcv.fileio.dump(model_results,
-                     Path(args.work_dir) / 'summary.yml', 'yaml')
+    mmengine.fileio.dump(model_results,
+                         Path(args.work_dir) / 'summary.yml', 'yaml')
     print(f'Summary results saved in {Path(args.work_dir)}/summary.yml')
 
 

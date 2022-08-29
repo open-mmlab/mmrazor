@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from torch.nn import Module
 
 from mmrazor.registry import MODELS, TASK_UTILS
-from mmrazor.structures import ConcatNode, DepthWiseConvNode, PathList
+from mmrazor.structures import PathConcatNode, PathDepthWiseConvNode, PathList
 from ...mutables import MutableChannel
 from ..base_mutator import BaseMutator
 from ..utils import DEFAULT_MODULE_CONVERTERS
@@ -78,14 +78,14 @@ class ChannelMutator(BaseMutator):
         for path in path_list:
             pre_node = None
             for node in path:
-                if isinstance(node, DepthWiseConvNode):
+                if isinstance(node, PathDepthWiseConvNode):
                     module = self.name2module[node.name]
                     # The in_channels and out_channels of a depth-wise conv
                     # should be the same
                     module.mutable_out.register_same_mutable(module.mutable_in)
                     module.mutable_in.register_same_mutable(module.mutable_out)
 
-                if isinstance(node, ConcatNode):
+                if isinstance(node, PathConcatNode):
                     if pre_node is not None:
                         module_names = node.get_module_names()
                         concat_modules = [

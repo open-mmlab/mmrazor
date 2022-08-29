@@ -1,26 +1,26 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import mmcv
+import logging
+
+from mmengine import fileio
+from mmengine.logging import print_log
 from torch import nn
 
 from mmrazor.utils import FixMutable, ValidFixMutable
 
 
 def _dynamic_to_static(model: nn.Module) -> None:
-    from mmrazor.models.architectures.dynamic_op.base import DynamicOP
+    # Avoid circular import
+    from mmrazor.models.architectures.dynamic_op.bricks import DynamicMixin
 
     def traverse_children(module: nn.Module, prefix: str = '') -> None:
         for name, child in module.named_children():
-            child_name = name if prefix == '' else f'{prefix}.{name}'
-            traverse_children(child, child_name)
-            if isinstance(child, DynamicOP):
-                try:
-                    setattr(module, name, child.to_static_op())
-                except Exception as e:
-                    raise RuntimeError(
-                        f'Error occurs when make `{child_name}` static') from e
+            if isinstance(child, DynamicMixin):
+                setattr(module, name, child.to_static_op())
+            else:
+                traverse_children(child)
 
-    if isinstance(model, DynamicOP):
-        raise RuntimeError('Supernet can not be a dynamic model!')
+    if isinstance(model, DynamicMixin):
+        raise RuntimeError('Root model can not be dynamic op.')
 
     traverse_children(model)
 
@@ -30,11 +30,17 @@ def load_fix_subnet(model: nn.Module,
                     prefix: str = '') -> None:
     """Load fix subnet."""
     if isinstance(fix_mutable, str):
-        fix_mutable = mmcv.fileio.load(fix_mutable)
+        fix_mutable = fileio.load(fix_mutable)
     if not isinstance(fix_mutable, dict):
         raise TypeError('fix_mutable should be a `str` or `dict`'
                         f'but got {type(fix_mutable)}')
+
+    from mmrazor.models.architectures.dynamic_op.bricks import DynamicMixin
+    if isinstance(model, DynamicMixin):
+        raise RuntimeError('Root model can not be dynamic op.')
+
     # Avoid circular import
+    from mmrazor.models.mutables import DerivedMutable
     from mmrazor.models.mutables.base_mutable import BaseMutable
 
     for name, module in model.named_modules():
@@ -50,9 +56,11 @@ def load_fix_subnet(model: nn.Module,
                 chosen = fix_mutable.get(alias, None)
             else:
                 mutable_name = name.lstrip(prefix)
-                assert mutable_name in fix_mutable, \
-                    f'The module name {mutable_name} is not in ' \
-                    'fix_mutable, please check your `fix_mutable`.'
+                if mutable_name not in fix_mutable and \
+                        not isinstance(module, DerivedMutable):
+                    raise RuntimeError(
+                        f'The module name {mutable_name} is not in '
+                        'fix_mutable, please check your `fix_mutable`.')
                 chosen = fix_mutable.get(mutable_name, None)
             module.fix_chosen(chosen)
 
@@ -60,15 +68,25 @@ def load_fix_subnet(model: nn.Module,
     _dynamic_to_static(model)
 
 
-def export_fix_subnet(model: nn.Module) -> FixMutable:
+def export_fix_subnet(model: nn.Module,
+                      dump_derived_mutable: bool = False) -> FixMutable:
     """Export subnet that can be loaded by :func:`load_fix_subnet`."""
+    if dump_derived_mutable:
+        print_log(
+            'Trying to dump information of all derived mutables, '
+            'this might harm readability of the exported configurations.',
+            level=logging.WARNING)
 
     # Avoid circular import
+    from mmrazor.models.mutables import DerivedMutable
     from mmrazor.models.mutables.base_mutable import BaseMutable
 
     fix_subnet = dict()
     for name, module in model.named_modules():
         if isinstance(module, BaseMutable):
+            if isinstance(module, DerivedMutable) and not dump_derived_mutable:
+                continue
+
             assert not module.is_fixed
             if module.alias:
                 fix_subnet[module.alias] = module.dump_chosen()

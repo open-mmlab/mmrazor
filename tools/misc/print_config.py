@@ -2,7 +2,7 @@
 import argparse
 import warnings
 
-from mmcv import Config, DictAction
+from mmengine import Config, DictAction
 
 
 def parse_args():

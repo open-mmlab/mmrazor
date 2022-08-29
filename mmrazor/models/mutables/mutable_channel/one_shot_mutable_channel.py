@@ -6,14 +6,13 @@ import torch
 
 from mmrazor.registry import MODELS
 from ..derived_mutable import DerivedMutable
-from ..mutable_value import OneShotMutableValue
 from .mutable_channel import MutableChannel
 
 CANDIDATE_CHOICE_TYPE = List[Union[float, int]]
 
 
 @MODELS.register_module()
-class OneShotMutableChannel(MutableChannel[int]):
+class OneShotMutableChannel(MutableChannel[int, Dict]):
     """A type of ``MUTABLES`` for single path supernet such as AutoSlim. In
     single path supernet, each module only has one choice invoked at the same
     time. A path is obtained by sampling all the available choices. It is the
@@ -40,8 +39,8 @@ class OneShotMutableChannel(MutableChannel[int]):
 
     def __init__(self,
                  num_channels: int,
-                 candidate_mode: Optional[str] = None,
-                 candidate_choices: Optional[CANDIDATE_CHOICE_TYPE] = None,
+                 candidate_choices: List[Union[int, float]],
+                 candidate_mode: str = 'ratio',
                  init_cfg: Optional[Dict] = None):
         super(OneShotMutableChannel, self).__init__(
             num_channels=num_channels, init_cfg=init_cfg)
@@ -163,6 +162,9 @@ class OneShotMutableChannel(MutableChannel[int]):
             origin_channels=self.num_channels)
 
     def fix_chosen(self, dumped_chosen: Dict) -> None:
+        if self.is_fixed:
+            raise RuntimeError('OneShotMutableChannel can not be fixed twice')
+
         current_choice = dumped_chosen['current_choice']
         origin_channels = dumped_chosen['origin_channels']
 
@@ -171,8 +173,6 @@ class OneShotMutableChannel(MutableChannel[int]):
 
         self.current_choice = current_choice
         self.is_fixed = True
-
-        self._candidate_choices = [current_choice]
 
     def __repr__(self):
         concat_mutable_name = [
@@ -183,7 +183,7 @@ class OneShotMutableChannel(MutableChannel[int]):
         repr_str += f'num_channels={self.num_channels}, '
         repr_str += f'current_choice={self.current_choice}, '
         repr_str += f'choices={self.choices}, '
-        repr_str += f'current_mask_shape={self.current_mask.shape}, '
+        repr_str += f'activated_channels={self.current_mask.sum().item()}, '
         repr_str += f'concat_mutable_name={concat_mutable_name})'
         return repr_str
 
@@ -226,10 +226,7 @@ class OneShotMutableChannel(MutableChannel[int]):
 
         raise TypeError(f'Unsupported type {type(other)} for mul!')
 
-    def __rdiv__(self, other) -> DerivedMutable:
-        return self / other
-
-    def __div__(self, other) -> DerivedMutable:
+    def __floordiv__(self, other) -> DerivedMutable:
         if isinstance(other, int):
             return self.derive_divide_mutable(other)
         if isinstance(other, tuple):

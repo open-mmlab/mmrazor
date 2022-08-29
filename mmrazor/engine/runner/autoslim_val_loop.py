@@ -30,7 +30,7 @@ class AutoSlimValLoop(ValLoop, CalibrateBNMixin):
         self._model = model
         self.calibrated_sample_nums = calibrated_sample_nums
 
-    def run(self) -> None:
+    def run(self):
         """Launch validation."""
         self.runner.call_hook('before_val')
 

@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict, List
 
-from mmcv import fileio
+from mmengine import fileio
 
 from mmrazor.models.algorithms import SlimmableNetwork
 
