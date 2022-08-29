@@ -16,7 +16,7 @@ Collections:
         - https://github.com/pppppM/mmsegmentation-distiller
         - https://github.com/pppppM/mmdetection-distiller
 Models:
-  - Name: cwd_logits_pspnet_r101_d8_pspnet_r18_d8_512x1024_cityscapes_80k
+  - Name: cwd_logits_pspnet_r101-d8_pspnet_r18-d8_4xb2-80k_cityscapes-512x1024
     In Collection: CWD
     Metadata:
       Location: logits
