@@ -10,5 +10,4 @@ train_cfg = dict(
     top_k=2,
     num_mutation=2,
     num_crossover=2,
-    mutate_prob=0.1
-)
+    mutate_prob=0.1)
