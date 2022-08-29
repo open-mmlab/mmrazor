@@ -1,15 +1,22 @@
 import argparse
+import logging
 import os
 import os.path as osp
 import re
 from collections import OrderedDict
 from pathlib import Path
 
+import mmcv
 import mmengine
+from mmengine.logging import print_log
 from modelindex.load_model_index import load
 from rich.console import Console
 from rich.syntax import Syntax
 from rich.table import Table
+
+from mmrazor.testing import FastStopTrainingHook  # noqa: F401
+
+os.environ['MKL_THREADING_LAYER'] = 'GNU'
 
 console = Console()
 MMRAZOR_ROOT = Path(__file__).absolute().parents[1]
@@ -36,8 +43,17 @@ def parse_args():
     parser.add_argument('--gpus', type=int, default=8, help='num gpus')
     parser.add_argument(
         '--work-dir',
-        default='work_dirs/benchmark_test',
+        default='work_dirs/benchmark_train',
         help='the dir to save metric')
+    parser.add_argument('--amp', action='store_true', help='use amp')
+    parser.add_argument(
+        '--auto-scale-lr', action='store_true', help='use auto scale lr')
+    parser.add_argument(
+        '--auto-resume', action='store_true', help='use auto resume')
+    parser.add_argument(
+        '--replace-ceph', action='store_true', help='load data from ceph')
+    parser.add_argument(
+        '--early-stop', action='store_true', help='early stop training')
     parser.add_argument(
         '--run', action='store_true', help='run script directly')
     parser.add_argument(
@@ -64,16 +80,114 @@ def parse_args():
     return args
 
 
+def replace_to_ceph(cfg):
+
+    file_client_args = dict(
+        backend='petrel',
+        path_mapping=dict({
+            './data/coco':
+            's3://openmmlab/datasets/detection/coco',
+            'data/coco':
+            's3://openmmlab/datasets/detection/coco',
+            './data/cityscapes':
+            's3://openmmlab/datasets/segmentation/cityscapes',
+            'data/cityscapes':
+            's3://openmmlab/datasets/segmentation/cityscapes',
+            './data/imagenet':
+            's3://openmmlab/datasets/classification/imagenet',
+            'data/imagenet':
+            's3://openmmlab/datasets/classification/imagenet',
+        }))
+
+    def _process_pipeline(dataset, name):
+
+        def replace_img(pipeline):
+            if pipeline['type'] == 'LoadImageFromFile':
+                pipeline['file_client_args'] = file_client_args
+
+        def replace_ann(pipeline):
+            if pipeline['type'] == 'LoadAnnotations' or pipeline[
+                    'type'] == 'LoadPanopticAnnotations':
+                pipeline['file_client_args'] = file_client_args
+
+        if 'pipeline' in dataset:
+            replace_img(dataset.pipeline[0])
+            replace_ann(dataset.pipeline[1])
+            if 'dataset' in dataset:
+                # dataset wrapper
+                replace_img(dataset.dataset.pipeline[0])
+                replace_ann(dataset.dataset.pipeline[1])
+        else:
+            # dataset wrapper
+            replace_img(dataset.dataset.pipeline[0])
+            replace_ann(dataset.dataset.pipeline[1])
+
+    def _process_evaluator(evaluator, name):
+        if evaluator['type'] == 'CocoPanopticMetric':
+            evaluator['file_client_args'] = file_client_args
+
+    # half ceph
+    _process_pipeline(cfg.train_dataloader.dataset, cfg.filename)
+    _process_pipeline(cfg.val_dataloader.dataset, cfg.filename)
+    _process_pipeline(cfg.test_dataloader.dataset, cfg.filename)
+    _process_evaluator(cfg.val_evaluator, cfg.filename)
+    _process_evaluator(cfg.test_evaluator, cfg.filename)
+
+
 def create_train_job_batch(commands, model_info, args, port):
 
     fname = model_info.name
 
-    config = Path(model_info.config)
-    # assert config.exists(), f'{fname}: {config} not found.'
+    cfg_path = Path(model_info.config)
+
+    cfg = mmengine.Config.fromfile(cfg_path)
+
+    if args.replace_ceph:
+        replace_to_ceph(cfg)
+
+    # enable automatically scaling LR
+    if args.auto_scale_lr:
+        if 'auto_scale_lr' in cfg and \
+                'enable' in cfg.auto_scale_lr and \
+                'base_batch_size' in cfg.auto_scale_lr:
+            cfg.auto_scale_lr.enable = True
+        else:
+            raise RuntimeError('Can not find "auto_scale_lr" or '
+                               '"auto_scale_lr.enable" or '
+                               '"auto_scale_lr.base_batch_size" in your'
+                               ' configuration file.')
+
+    # enable automatic-mixed-precision training
+    if args.amp is True:
+        optim_wrapper = cfg.optim_wrapper.type
+        if optim_wrapper == 'AmpOptimWrapper':
+            print_log(
+                'AMP training is already enabled in your config.',
+                logger='current',
+                level=logging.WARNING)
+        else:
+            assert optim_wrapper == 'OptimWrapper', (
+                '`--amp` is only supported when the optimizer wrapper type is '
+                f'`OptimWrapper` but got {optim_wrapper}.')
+            cfg.optim_wrapper.type = 'AmpOptimWrapper'
+            cfg.optim_wrapper.loss_scale = 'dynamic'
+
+    if args.auto_resume:
+        cfg.resume = True
+
+    if args.early_stop:
+        if 'custom_hooks' in cfg:
+            cfg.custom_hooks.append(dict(type='mmrazor.FastStopTrainingHook'))
+        else:
+            custom_hooks = [dict(type='mmrazor.FastStopTrainingHook')]
+            cfg.custom_hooks = custom_hooks
 
     job_name = f'{args.job_name}_{fname}'
     work_dir = Path(args.work_dir) / fname
     work_dir.mkdir(parents=True, exist_ok=True)
+
+    train_cfg_path = work_dir / 'config.py'
+    cfg.dump(train_cfg_path)
 
     if args.quotatype is not None:
         quota_cfg = f'#SBATCH --quotatype {args.quotatype}\n'
@@ -82,7 +196,7 @@ def create_train_job_batch(commands, model_info, args, port):
 
     launcher = 'none' if args.local else 'slurm'
     runner = 'python' if args.local else 'srun python'
-    master_port = f'NASTER_PORT={port}'
+    master_port = f'MASTER_PORT={port}'
 
     script_name = osp.join('tools', 'train.py')
     job_script = (f'#!/bin/bash\n'
@@ -94,14 +208,14 @@ def create_train_job_batch(commands, model_info, args, port):
                   f'#SBATCH --ntasks-per-node={args.gpus}\n'
                   f'#SBATCH --ntasks={args.gpus}\n'
                   f'#SBATCH --cpus-per-task=5\n\n'
-                  f'{master_port} {runner} -u {script_name} {config} '
+                  f'{master_port} {runner} -u {script_name} {train_cfg_path} '
                   f'--work-dir {work_dir} '
                   f'--launcher={launcher}\n')
 
     with open(work_dir / 'job.sh', 'w') as f:
         f.write(job_script)
 
-    commands.append(f'echo "{config}"')
+    commands.append(f'echo "{train_cfg_path}"')
     if args.local:
         commands.append(f'bash {work_dir}/job.sh')
     else:
@@ -145,7 +259,7 @@ def summary(args):
         if not latest_json.exists():
             print(f'{model_name} has no results.')
             continue
-        latest_result = mmengine.load(latest_json, 'json')
+        latest_result = mmcv.load(latest_json, 'json')
 
         expect_result = model_info.results[0].metrics
         summary_result = {
