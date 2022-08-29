@@ -3,8 +3,8 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
-from mmengine import BaseDataElement
 from mmengine.model import BaseModel
+from mmengine.structures import BaseDataElement
 
 from mmrazor.registry import MODELS
 
@@ -80,7 +80,7 @@ class BaseAlgorithm(BaseModel):
         self.architecture = architecture
 
     def forward(self,
-                batch_inputs: torch.Tensor,
+                inputs: torch.Tensor,
                 data_samples: Optional[List[BaseDataElement]] = None,
                 mode: str = 'tensor') -> ForwardResults:
         """Returns losses or predictions of training, validation, testing, and
@@ -129,36 +129,36 @@ class BaseAlgorithm(BaseModel):
                   or ``dict of tensor for custom use.
         """
         if mode == 'loss':
-            return self.loss(batch_inputs, data_samples)
+            return self.loss(inputs, data_samples)
         elif mode == 'tensor':
-            return self._forward(batch_inputs, data_samples)
+            return self._forward(inputs, data_samples)
         elif mode == 'predict':
-            return self._predict(batch_inputs, data_samples)
+            return self._predict(inputs, data_samples)
         else:
             raise RuntimeError(f'Invalid mode "{mode}". '
                                'Only supports loss, predict and tensor mode')
 
     def loss(
         self,
-        batch_inputs: torch.Tensor,
+        inputs: torch.Tensor,
         data_samples: Optional[List[BaseDataElement]] = None,
     ) -> LossResults:
         """Calculate losses from a batch of inputs and data samples."""
-        return self.architecture(batch_inputs, data_samples, mode='loss')
+        return self.architecture(inputs, data_samples, mode='loss')
 
     def _forward(
         self,
-        batch_inputs: torch.Tensor,
+        inputs: torch.Tensor,
         data_samples: Optional[List[BaseDataElement]] = None,
     ) -> TensorResults:
         """Network forward process."""
-        return self.architecture(batch_inputs, data_samples, mode='tensor')
+        return self.architecture(inputs, data_samples, mode='tensor')
 
     def _predict(
         self,
-        batch_inputs: torch.Tensor,
+        inputs: torch.Tensor,
         data_samples: Optional[List[BaseDataElement]] = None,
     ) -> PredictResults:
         """Predict results from a batch of inputs and data samples with post-
         processing."""
-        return self.architecture(batch_inputs, data_samples, mode='predict')
+        return self.architecture(inputs, data_samples, mode='predict')

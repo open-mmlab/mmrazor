@@ -1,0 +1,61 @@
+# A Comprehensive Overhaul of Feature Distillation
+
+> [A Comprehensive Overhaul of Feature Distillation](https://sites.google.com/view/byeongho-heo/overhaul)
+
+## Abstract
+
+We investigate the design aspects of feature distillation methods achieving network compression and propose a novel feature distillation method in which the distillation loss is designed to make a synergy among various aspects: teacher transform, student transform, distillation feature position and distance function. Our proposed distillation loss includes a feature transform with a newly designed margin ReLU, a new distillation feature position, and a partial L2 distance function to skip redundant information giving adverse effects to the compression of student. In ImageNet, our proposed method achieves 21.65% of top-1 error with ResNet50, which outperforms the performance of the teacher network, ResNet152. Our proposed method is evaluated on various tasks such as image classification, object detection and semantic segmentation and achieves a significant performance improvement in all tasks. The code is available at [link](https://sites.google.com/view/byeongho-heo/overhaul)
+
+### Feature-based Distillation
+
+![structure](../../../../docs/en/imgs/model_zoo/overhaul/feature_base.png)
+
+### Margin ReLU
+
+![margin_relu](../../../../docs/en/imgs/model_zoo/overhaul/margin_relu.png)
+
+## Results and models
+
+### 1. Classification
+
+#### Vanilla
+
+| Dataset | Model                                                                  | Top-1 (%) | Top-5 (%) | Download          |
+| ------- | ---------------------------------------------------------------------- | --------- | --------- | ----------------- |
+| CIFAR10 | [WRN16-2](../../../vanilla/mmcls/wide-resnet/wrn16_2_b16x8_cifar10.py) | 93.43     | 99.75     | [model & log](<>) |
+| CIFAR10 | [WRN28-4](../../../vanilla/mmcls/wide-resnet/wrn28_4_b16x8_cifar10.py) | 95.49     | 99.81     | [model & log](<>) |
+
+#### Distillation
+
+| Dataset | Model   | Flops(M) | Teacher | Top-1 (%) | Top-5 (%) | Configs                                                     | Download          |
+| ------- | ------- | -------- | ------- | --------- | --------- | ----------------------------------------------------------- | ----------------- |
+| CIFAR10 | WRN16-2 | 101      | WRN28-4 | 95.23     | 99.79     | [config](./ofd_backbone_resnet50_resnet18_8xb16_cifar10.py) | [model & log](<>) |
+
+## Getting Started
+
+### Distillation training.
+
+```bash
+sh tools/slurm_train.sh $PARTITION $JOB_NAME \
+  configs/distill/mmcls/ofd/ofd_backbone_resnet50_resnet18_8xb16_cifar10.py \
+  $DISTILLATION_WORK_DIR
+```
+
+### Test
+
+```bash
+sh tools/slurm_test.sh $PARTITION $JOB_NAME \
+  configs/distill/mmcls/ofd/ofd_backbone_resnet50_resnet18_8xb16_cifar10.py \
+  $DISTILLATION_WORK_DIR/latest.pth --eval $EVAL_SETTING
+```
+
+## Citation
+
+```latex
+@inproceedings{heo2019overhaul,
+  title={A Comprehensive Overhaul of Feature Distillation},
+  author={Heo, Byeongho and Kim, Jeesoo and Yun, Sangdoo and Park, Hyojin and Kwak, Nojun and Choi, Jin Young},
+  booktitle = {International Conference on Computer Vision (ICCV)},
+  year={2019}
+}
+```
