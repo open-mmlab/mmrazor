@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import ABCMeta, abstractmethod
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple, Union
 
 import torch
 from mmengine.model import BaseModule
@@ -32,7 +32,9 @@ class BaseConnector(BaseModule, metaclass=ABCMeta):
         return self.forward_train(feature)
 
     @abstractmethod
-    def forward_train(self, feature) -> torch.Tensor:
+    def forward_train(
+        self, feature: torch.Tensor
+    ) -> Union[Tuple[torch.Tensor, ...], torch.Tensor]:
         """Abstract train computation.
 
         Args:

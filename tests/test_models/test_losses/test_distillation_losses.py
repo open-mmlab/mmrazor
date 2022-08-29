@@ -4,9 +4,9 @@ from unittest import TestCase
 import torch
 
 from mmrazor import digit_version
-from mmrazor.models import (ABLoss, ActivationLoss, ATLoss, DKDLoss, FTLoss,
-                            InformationEntropyLoss, KDSoftCELoss, OFDLoss,
-                            OnehotLikeLoss)
+from mmrazor.models import (ABLoss, ActivationLoss, ATLoss, DKDLoss, FBKDLoss,
+                            FTLoss, InformationEntropyLoss, KDSoftCELoss,
+                            OFDLoss, OnehotLikeLoss)
 
 
 class TestLosses(TestCase):
@@ -134,3 +134,20 @@ class TestLosses(TestCase):
         self.normal_test_1d(at_loss)
         self.normal_test_2d(at_loss)
         self.normal_test_3d(at_loss)
+
+    def test_fbkdloss(self):
+        fbkdloss_cfg = dict(loss_weight=1.0)
+        fbkdloss = FBKDLoss(**fbkdloss_cfg)
+
+        spatial_mask = torch.randn(1, 1, 3, 3)
+        channel_mask = torch.randn(1, 4, 1, 1)
+        channel_pool_adapt = torch.randn(1, 4)
+        relation_adpt = torch.randn(1, 4, 3, 3)
+
+        s_input = (spatial_mask, channel_mask, channel_pool_adapt,
+                   spatial_mask, channel_mask, relation_adpt)
+        t_input = (spatial_mask, channel_mask, spatial_mask, channel_mask,
+                   relation_adpt)
+
+        fbkd_loss = fbkdloss(s_input, t_input)
+        self.assertTrue(fbkd_loss.numel() == 1)

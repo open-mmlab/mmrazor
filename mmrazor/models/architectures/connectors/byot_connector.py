@@ -67,7 +67,7 @@ class BYOTConnector(BaseConnector):
         self.scala = nn.Sequential(*scala)
         self.fc = nn.Linear(out_channel * expansion, num_classes)
 
-    def forward_train(self, feature: torch.Tensor) -> torch.Tensor:
+    def forward_train(self, feature: torch.Tensor) -> Tuple[torch.Tensor, ...]:
         """Forward computation.
 
         Args:
