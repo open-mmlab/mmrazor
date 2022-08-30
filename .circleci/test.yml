@@ -25,7 +25,7 @@ jobs:
           name: Check docstring coverage
           command: |
             pip install interrogate
-            interrogate -v --ignore-init-method --ignore-module --ignore-nested-functions --ignore-magic --ignore-regex "__repr__" --fail-under 85 mmdet
+            interrogate -v --ignore-init-method --ignore-module --ignore-nested-functions --ignore-magic --ignore-regex "__repr__" --fail-under 85 mmrazor
 
   build_cpu:
     parameters:
@@ -65,13 +65,14 @@ jobs:
           steps:
             - run: pip install "protobuf <= 3.20.1" && sudo apt-get update && sudo apt-get -y install libprotobuf-dev protobuf-compiler cmake
       - run:
-          name: Install mmdet dependencies
+          name: Install mmrazor dependencies
           command: |
             python -m pip install git+ssh://git@github.com/open-mmlab/mmengine.git@main
             python -m pip install << parameters.mmcv >>
-            pip install -r requirements/tests.txt -r requirements/optional.txt
-            pip install albumentations>=0.3.2 --no-binary imgaug,albumentations
-            pip install git+https://github.com/cocodataset/panopticapi.git
+            python -m pip install git+ssh://git@github.com/open-mmlab/mmclassification.git@dev-1.x
+            python -m pip install git+ssh://git@github.com/open-mmlab/mmdetection.git@dev-3.x
+            python -m pip install git+ssh://git@github.com/open-mmlab/mmsegmentation.git@dev-1.x
+            pip install -r requirements.txt
       - run:
           name: Build and install
           command: |
@@ -79,7 +80,7 @@ jobs:
       - run:
           name: Run unittests
           command: |
-            python -m coverage run --branch --source mmdet -m pytest tests/
+            python -m coverage run --branch --source mmrazor -m pytest tests/
             python -m coverage xml
             python -m coverage report -m
 
@@ -106,30 +107,33 @@ jobs:
           name: Clone Repos
           command: |
             git clone -b main --depth 1 ssh://git@github.com/open-mmlab/mmengine.git /home/circleci/mmengine
+            git clone -b dev-3.x --depth 1 ssh://git@github.com/open-mmlab/mmdetection.git /home/circleci/mmdetection
+            git clone -b dev-1.x --depth 1 ssh://git@github.com/open-mmlab/mmclassification.git /home/circleci/mmclassification
+            git clone -b dev-1.x --depth 1 ssh://git@github.com/open-mmlab/mmsegmentation.git /home/circleci/mmsegmentation
       - run:
           name: Build Docker image
           command: |
-            docker build .circleci/docker -t mmdetection:gpu --build-arg PYTORCH=<< parameters.torch >> --build-arg CUDA=<< parameters.cuda >> --build-arg CUDNN=<< parameters.cudnn >>
-            docker run --gpus all -t -d -v /home/circleci/project:/mmdetection -v /home/circleci/mmengine:/mmengine -w /mmdetection --name mmdetection mmdetection:gpu
+            docker build .circleci/docker -t mmrazor:gpu --build-arg PYTORCH=<< parameters.torch >> --build-arg CUDA=<< parameters.cuda >> --build-arg CUDNN=<< parameters.cudnn >>
+            docker run --gpus all -t -d -v /home/circleci/project:/mmrazor -v /home/circleci/mmengine:/mmengine -w /mmrazor --name mmrazor mmrazor:gpu
       - run:
-          name: Install mmdet dependencies
+          name: Install mmrazor dependencies
           # pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu101/torch${{matrix.torch_version}}/index.html
           command: |
-            docker exec mmdetection pip install -e /mmengine
-            docker exec mmdetection pip install << parameters.mmcv >>
-            pip install -r requirements/tests.txt -r requirements/optional.txt
-            pip install pycocotools
-            pip install albumentations>=0.3.2 --no-binary imgaug,albumentations
-            pip install git+https://github.com/cocodataset/panopticapi.git
+            docker exec mmrazor pip install -e /mmengine
+            docker exec mmrazor pip install << parameters.mmcv >>
+            docker exec mmocr pip install -e /mmdetection
+            docker exec mmocr pip install -e /mmclassification
+            docker exec mmocr pip install -e /mmsegmentation
+            pip install -r requirements.txt
             python -c 'import mmcv; print(mmcv.__version__)'
       - run:
           name: Build and install
           command: |
-            docker exec mmdetection pip install -e .
+            docker exec mmrazor pip install -e .
       - run:
           name: Run unittests
           command: |
-            docker exec mmdetection python -m pytest tests/
+            docker exec mmrazor python -m pytest tests/
 
 workflows:
   pr_stage_lint:
@@ -140,7 +144,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - dev-3.x
+                - dev-1.x
   pr_stage_test:
     when:
       not:
@@ -151,7 +155,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - dev-3.x
+                - dev-1.x
       - build_cpu:
           name: minimum_version_cpu
           torch: 1.6.0
@@ -196,4 +200,4 @@ workflows:
           filters:
             branches:
               only:
-                - dev-3.x
+                - dev-1.x
