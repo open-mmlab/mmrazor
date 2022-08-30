@@ -8,7 +8,7 @@
 
 This paper addresses the scalability challenge of architecture search by formulating the task in a differentiable manner. Unlike conventional approaches of applying evolution or reinforcement learning over a discrete and non-differentiable search space, our method is based on the continuous relaxation of the architecture representation, allowing efficient search of the architecture using gradient descent. Extensive experiments on CIFAR-10, ImageNet, Penn Treebank and WikiText-2 show that our algorithm excels in discovering high-performance convolutional architectures for image classification and recurrent architectures for language modeling, while being orders of magnitude faster than state-of-the-art non-differentiable techniques. Our implementation has been made publicly available to facilitate further research on efficient architecture search algorithms.
 
-![pipeline](/docs/en/imgs/model_zoo/darts/pipeline.png)
+![pipeline](https://user-images.githubusercontent.com/88702197/187425171-2dfe7fbf-7c2c-4c22-9219-2234aa83e47d.png)
 
 ## Results and models
 
