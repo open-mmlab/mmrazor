@@ -1,17 +1,31 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import logging
 import time
+from typing import Any, Dict
 
 import torch
 from mmengine.logging import print_log
 
 
-def repeat_measure_inference_speed(model,
-                                   resource_args,
+def repeat_measure_inference_speed(model: torch.nn.Module,
+                                   resource_args: Dict[str, Any],
                                    max_iter: int = 100,
+                                   num_warmup: int = 5,
                                    log_interval: int = 100,
                                    repeat_num: int = 1) -> float:
-    """Repeat speed measure for multi-times to get more precise results."""
+    """Repeat speed measure for multi-times to get more precise results.
+
+    Args:
+        model (torch.nn.Module): The measured model.
+        resource_args (Dict[str, float]): resources information.
+        max_iter (int): Max iteration num for inference speed test.
+        num_warmup (int): Iteration num for warm-up stage.
+        log_interval (int): Interval num for logging the results.
+        repeat_num (int): Num of times to repeat the speed measurement.
+
+    Returns:
+        fps (float): The measured inference speed of the model.
+    """
     assert repeat_num >= 1
 
     fps_list = []
@@ -19,7 +33,7 @@ def repeat_measure_inference_speed(model,
     for _ in range(repeat_num):
 
         fps_list.append(
-            measure_inference_speed(model, resource_args, max_iter,
+            measure_inference_speed(model, resource_args, max_iter, num_warmup,
                                     log_interval))
 
     if repeat_num > 1:
@@ -39,8 +53,23 @@ def repeat_measure_inference_speed(model,
     return latency
 
 
-def measure_inference_speed(model, resource_args, max_iter: int,
-                            log_interval: int) -> float:
+def measure_inference_speed(model: torch.nn.Module,
+                            resource_args: Dict[str, Any],
+                            max_iter: int = 100,
+                            num_warmup: int = 5,
+                            log_interval: int = 100) -> float:
+    """Measure inference speed on GPU devices.
+
+    Args:
+        model (torch.nn.Module): The measured model.
+        resource_args (Dict[str, float]): resources information.
+        max_iter (int): Max iteration num for inference speed test.
+        num_warmup (int): Iteration num for warm-up stage.
+        log_interval (int): Interval num for logging the results.
+
+    Returns:
+        fps (float): The measured inference speed of the model.
+    """
     # the first several iterations may be very slow so skip them
     num_warmup = 5
     pure_inf_time = 0.0
@@ -50,7 +79,7 @@ def measure_inference_speed(model, resource_args, max_iter: int,
         device = 'cuda'
     else:
         raise NotImplementedError('To use cpu to test latency not supported.')
-    # benchmark with 100 image and take the average
+    # benchmark with {max_iter} image and take the average
     for i in range(1, max_iter):
         if device == 'cuda':
             data = torch.rand(resource_args['input_shape']).cuda()
