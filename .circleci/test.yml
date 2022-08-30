@@ -114,7 +114,7 @@ jobs:
           name: Build Docker image
           command: |
             docker build .circleci/docker -t mmrazor:gpu --build-arg PYTORCH=<< parameters.torch >> --build-arg CUDA=<< parameters.cuda >> --build-arg CUDNN=<< parameters.cudnn >>
-            docker run --gpus all -t -d -v /home/circleci/project:/mmrazor -v /home/circleci/mmengine:/mmengine -w /mmrazor --name mmrazor mmrazor:gpu
+            docker run --gpus all -t -d -v /home/circleci/project:/mmrazor -v /home/circleci/mmengine:/mmengine -v /home/circleci/mmdetection:/mmdetection -v /home/circleci/mmclassification:/mmclassification -v /home/circleci/mmsegmentation:/mmsegmentation -w /mmrazor --name mmrazor mmrazor:gpu
       - run:
           name: Install mmrazor dependencies
           # pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu101/torch${{matrix.torch_version}}/index.html
