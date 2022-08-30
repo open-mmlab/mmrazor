@@ -41,13 +41,13 @@ Or you can still install MMRazor manually
 1. Install mmcv.
 
 ```Python
-pip install mmcv -f https://download.openmmlab.com/mmcv/dist/{cu_version}/{torch_version}/index.html
+pip install 'mmcv>=2.0.0rc1' -f https://download.openmmlab.com/mmcv/dist/{cu_version}/{torch_version}/index.html
 ```
 
 Please replace `{cu_version}` and `{torch_version}` in the url to your desired one. For example, to install the latest `mmcv` with `CUDA 10.2` and `PyTorch 1.10.0`, use the following command:
 
 ```Python
-pip install mmcv -f https://download.openmmlab.com/mmcv/dist/cu102/torch1.10.0/index.html
+pip install 'mmcv>=2.0.0rc1' -f https://download.openmmlab.com/mmcv/dist/cu102/torch1.10.0/index.html
 ```
 
 See [here](https://github.com/open-mmlab/mmcv#installation) for different versions of MMCV compatible to different PyTorch and CUDA versions.
@@ -55,9 +55,12 @@ See [here](https://github.com/open-mmlab/mmcv#installation) for different versio
 Optionally, you can compile mmcv from source.
 
 ```
-MMCV_WITH_OPS=0 pip install -e . -v  # package name is mmcv-lite, would not compile operators
-MMCV_WITH_OPS=1 pip install -e . -v  # package name is mmcv, compile operators
-pip install -e . -v  # compile operators，package name is mmcv
+MMCV_WITH_OPS=0 pip install -e . -v
+# install mmcv-lite, do not compile operators
+MMCV_WITH_OPS=1 pip install -e . -v
+# install mmcv (originally called mmcv-full), compile operators
+pip install -e . -v
+# install mmcv with compiled operators，
 ```
 
 2. Install MMEngine.
@@ -98,9 +101,11 @@ conda activate openmmlab
 
 conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
 # install the latest mmcv
-pip install mmcv -f https://download.openmmlab.com/mmcv/dist/cu102/torch1.10.0/index.html
+pip install 'mmcv>=2.0.0rc1' -f https://download.openmmlab.com/mmcv/dist/cu102/torch1.10.0/index.html
 # install mmrazor
 git clone https://github.com/open-mmlab/mmrazor.git
 cd mmrazor
+git fetch origin
+git checkout -b 1.0.0rc0 origin/1.0.0rc0
 pip install -v -e .
 ```
