@@ -1,7 +1,8 @@
 # Delivery
+
 ## Introduction of Delivery
 
-`Delivery` is a mechanism used in **knowledge distillation****,** which is to **align the intermediate results** between the teacher model and the student model by delivering and rewriting these intermediate results between them. As shown in the figure below, deliveries can be used to:
+`Delivery` is a mechanism used in **knowledge distillation**\*\*,\*\* which is to **align the intermediate results** between the teacher model and the student model by delivering and rewriting these intermediate results between them. As shown in the figure below, deliveries can be used to:
 
 - **Deliver the output of a layer of the teacher model directly to a layer of the student model.** In some knowledge distillation algorithms, we may need to deliver the output of a layer of the teacher model to the student model directly. For example, in [LAD](https://arxiv.org/abs/2108.10520) algorithm, the student model needs to obtain the label assignment of the teacher model directly.
 - **Align the inputs of the teacher model and the student model.** For example, in the MMClassification framework, some widely used data augmentations such as [mixup](https://arxiv.org/abs/1710.09412) and [CutMix](https://arxiv.org/abs/1905.04899) are not implemented in Data Pipelines but in `forward_train`, and due to the randomness of these data augmentation methods, it may lead to a gap between the input of the teacher model and the student model.
@@ -10,28 +11,25 @@
 
 In general, the delivery mechanism allows us to deliver intermediate results between the teacher model and the student model **without adding additional code**, which reduces the hard coding in the source code.
 
-## Usage of Delivery 
+## Usage of Delivery
 
-Currently, we support two deliveries: `FunctionOutputs``Delivery` and `MethodOutputs``Delivery`, both of which inherit from `DistillDiliver`. And these deliveries can be managed by `Distill``Delivery``Manager` or just be used on their own.
+Currently, we support two deliveries: ``` FunctionOutputs``Delivery ``` and ``` MethodOutputs``Delivery ```, both of which inherit from `DistillDiliver`. And these deliveries can be managed by ``` Distill``Delivery``Manager ``` or just be used on their own.
 
 Their relationship is shown below.
 
 ![UML 图 (7)](https://user-images.githubusercontent.com/88702197/187408681-9cbb9508-6226-45ae-b3f4-5fcb4b03cfb2.jpg)
 
-
-
-
 ### FunctionOutputsDelivery
 
-`FunctionOutputs``Delivery` is used to align the **function's** intermediate results between the teacher model and the student model. 
+``` FunctionOutputs``Delivery ``` is used to align the **function's** intermediate results between the teacher model and the student model.
 
-> When initializing `FunctionOutputs``Delivery`, you need to pass `func_path` argument, which requires extra attention. For example,
-`anchor_inside_flags` is a function in mmdetection to check whether the
-anchors are inside the border. This function is in
-`mmdet/core/anchor/utils.py` and used in
-`mmdet/models/dense_heads/anchor_head`. Then the `func_path` should be
-`mmdet.models.dense_heads.anchor_head.anchor_inside_flags` but not
-`mmdet.core.anchor.utils.anchor_inside_flags`.
+> When initializing ``` FunctionOutputs``Delivery ```, you need to pass `func_path` argument, which requires extra attention. For example,
+> `anchor_inside_flags` is a function in mmdetection to check whether the
+> anchors are inside the border. This function is in
+> `mmdet/core/anchor/utils.py` and used in
+> `mmdet/models/dense_heads/anchor_head`. Then the `func_path` should be
+> `mmdet.models.dense_heads.anchor_head.anchor_inside_flags` but not
+> `mmdet.core.anchor.utils.anchor_inside_flags`.
 
 #### Case 1: Delivery single function's output from the teacher to the student.
 
@@ -41,18 +39,18 @@ from mmrazor.core import FunctionOutputsDelivery
 
 def toy_func() -> int:
     return random.randint(0, 1000000)
-    
+
 delivery = FunctionOutputsDelivery(max_keep_data=1, func_path='toy_module.toy_func')
 
-# override_data is False, which means that not override the data with 
-# the recorded data. So it will get the original output of toy_func 
+# override_data is False, which means that not override the data with
+# the recorded data. So it will get the original output of toy_func
 # in teacher model, and it is also recorded to be deliveried to the student.
 delivery.override_data = False
 with delivery:
     output_teacher = toy_module.toy_func()
 
-# override_data is True, which means that override the data with 
-# the recorded data, so it will get the output of toy_func 
+# override_data is True, which means that override the data with
+# the recorded data, so it will get the output of toy_func
 # in teacher model rather than the student's.
 delivery.override_data = True
 with delivery:
@@ -96,11 +94,9 @@ Out:
 True
 ```
 
-
-
 ### MethodOutputsDelivery
 
-`MethodOutputs``Delivery` is used to align the **method's** intermediate results between the teacher model and the student model. 
+``` MethodOutputs``Delivery ``` is used to align the **method's** intermediate results between the teacher model and the student model.
 
 #### Case: **Align the inputs of the teacher model and the student model**
 
@@ -164,13 +160,11 @@ True
 
 The randomness is eliminated by using `MethodOutputsDelivery`.
 
-
-
 ### 2.3 DistillDeliveryManager
 
-`Distill``Delivery``Manager` is actually a context manager, used to manage delivers. When entering the `Distill``Delivery``Manager`, all delivers managed will be started.
+``` Distill``Delivery``Manager ``` is actually a context manager, used to manage delivers. When entering the ``` Distill``Delivery``Manager ```, all delivers managed will be started.
 
-With the help of `Distill``Delivery``Manager`, we are able to manage several different DistillDeliveries with as little code as possible, thereby reducing the possibility of errors.
+With the help of ``` Distill``Delivery``Manager ```, we are able to manage several different DistillDeliveries with as little code as possible, thereby reducing the possibility of errors.
 
 #### Case: Manager deliveries with DistillDeliveryManager
 
@@ -212,8 +206,8 @@ True
 
 ## Reference
 
-[1] Zhang, Hongyi, et al. "mixup: Beyond empirical risk minimization." *arXiv* abs/1710.09412 (2017).
+\[1\] Zhang, Hongyi, et al. "mixup: Beyond empirical risk minimization." *arXiv* abs/1710.09412 (2017).
 
-[2] Yun, Sangdoo, et al. "Cutmix: Regularization strategy to train strong classifiers with localizable features." *ICCV* (2019).
+\[2\] Yun, Sangdoo, et al. "Cutmix: Regularization strategy to train strong classifiers with localizable features." *ICCV* (2019).
 
-[3] Nguyen, Chuong H., et al. "Improving object detection by label assignment distillation." *WACV* (2022).
+\[3\] Nguyen, Chuong H., et al. "Improving object detection by label assignment distillation." *WACV* (2022).
