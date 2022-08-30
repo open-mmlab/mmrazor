@@ -20,7 +20,8 @@ allows one to train deeper students that can generalize better or run faster, a 
 controlled by the chosen student capacity. For example, on CIFAR-10, a deep student network with
 almost 10.4 times less parameters outperforms a larger, state-of-the-art teacher network.
 
-![pipeline](/docs/en/imgs/model_zoo/fitnet/pipeline.png)
+<img width="743" alt="pipeline" src="https://user-images.githubusercontent.com/88702197/187423686-68719140-a978-4a19-a684-42b1d793d1fb.png">
+
 
 ## Results and models
 

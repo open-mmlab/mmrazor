@@ -8,11 +8,11 @@ We investigate the design aspects of feature distillation methods achieving netw
 
 ### Feature-based Distillation
 
-![structure](../../../../docs/en/imgs/model_zoo/overhaul/feature_base.png)
+![feature_base](https://user-images.githubusercontent.com/88702197/187423965-bb3bde16-c71a-43c6-903c-69aff1005415.png)
 
 ### Margin ReLU
 
-![margin_relu](../../../../docs/en/imgs/model_zoo/overhaul/margin_relu.png)
+![margin_relu](https://user-images.githubusercontent.com/88702197/187423981-67106ac2-48d9-4002-8b32-b92a90b1dacd.png)
 
 ## Results and models
 

@@ -10,11 +10,11 @@ Performing knowledge transfer from a large teacher network to a smaller student 
 
 ## The teacher and student decision boundaries
 
-![ZSKT_Distribution](/docs/en/imgs/model_zoo/zskt/zskt_distribution.png)
+<img width="766" alt="distribution" src="https://user-images.githubusercontent.com/88702197/187424317-9f3c5547-a838-4858-b63e-608eee8165f5.png">
 
 ## Pseudo images sampled from the generator
 
-![ZSKT_Fakeimgs](/docs/en/imgs/model_zoo/zskt/zskt_synthesis.png)
+<img width="1176" alt="synthesis" src="https://user-images.githubusercontent.com/88702197/187424322-79be0b07-66b5-4775-8e23-6c2ddca0ad0f.png">
 
 ## Results and models
 

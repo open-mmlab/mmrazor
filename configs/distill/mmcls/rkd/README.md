@@ -20,7 +20,7 @@ proposed method improves educated student models with a significant margin.
 In particular for metric learning, it allows students to outperform their
 teachers' performance, achieving the state of the arts on standard benchmark datasets.
 
-![pipeline](/docs/en/imgs/model_zoo/rkd/pipeline.png)
+![pipeline](https://user-images.githubusercontent.com/88702197/187424092-b58742aa-6724-4a89-8d28-62960efb58b4.png)
 
 ## Results and models
 
