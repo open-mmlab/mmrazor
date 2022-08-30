@@ -1,10 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import argparse
-import datetime
+import shutil
 from pathlib import Path
-from typing import Optional
+from typing import Union
 
-import mmengine
 import torch
 from mmengine import digit_version
 
@@ -12,19 +11,15 @@ from mmengine import digit_version
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Process a checkpoint to be published')
-    parser.add_argument('in_file', help='input checkpoint filename', type=str)
-    parser.add_argument(
-        'out_file', help='output checkpoint filename', default=None, type=str)
-    parser.add_argument(
-        'subnet_cfg_file',
-        help='input subnet config filename',
-        default=None,
-        type=str)
+    parser.add_argument('ckpt', help='input checkpoint filename', type=str)
+    parser.add_argument('--model-name', help='model(config) name', type=str)
+    parser.add_argument('--timestamp', help='training timestamp', type=str)
+    parser.add_argument('--out-dir', help='output dir', type=str)
     args = parser.parse_args()
     return args
 
 
-def cal_file_sha256(file_path: str) -> str:
+def cal_file_sha256(file_path: Union[str, Path]) -> str:
     import hashlib
 
     BLOCKSIZE = 65536
@@ -39,51 +34,57 @@ def cal_file_sha256(file_path: str) -> str:
     return sha256_hash.hexdigest()
 
 
-def process_checkpoint(in_file: str,
-                       out_file: Optional[str] = None,
-                       subnet_cfg_file: Optional[str] = None) -> None:
-    checkpoint = torch.load(in_file, map_location='cpu')
+def process_checkpoint(ckpt_path_str: str, model_name: str, timestamp: str,
+                       out_dir_str: str) -> None:
+
+    ckpt_path = Path(ckpt_path_str)
+    work_dir = ckpt_path.parent
+
+    out_dir: Path = Path(out_dir_str)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    tmp_ckpt_path = out_dir / 'tmp.pth'
+
+    checkpoint = torch.load(ckpt_path, map_location='cpu')
     # remove optimizer for smaller file size
     if 'optimizer' in checkpoint:
         del checkpoint['optimizer']
+    # remove message_hub for smaller file size
+    if 'message_hub' in checkpoint:
+        del checkpoint['message_hub']
+    # remove param_schedulers for smaller file size
+    if 'param_schedulers' in checkpoint:
+        del checkpoint['param_schedulers']
 
-    if out_file is None:
-        out_file = in_file
     # if it is necessary to remove some sensitive data in checkpoint['meta'],
     # add the code here.
     if digit_version(torch.__version__) >= digit_version('1.6'):
-        torch.save(checkpoint, out_file, _use_new_zipfile_serialization=False)
+        torch.save(
+            checkpoint, tmp_ckpt_path, _use_new_zipfile_serialization=False)
     else:
-        torch.save(checkpoint, out_file)
+        torch.save(checkpoint, tmp_ckpt_path)
 
-    sha = cal_file_sha256(out_file)
-    if out_file.endswith('.pth'):
-        out_file_name = out_file[:-4]
-    else:
-        out_file_name = out_file
+    sha = cal_file_sha256(tmp_ckpt_path)
+    save_ckpt_path = f'{out_dir}/{model_name}_{timestamp}-{sha[:8]}.pth'
+    tmp_ckpt_path.rename(save_ckpt_path)
+    print(f'Successfully generated the publish-ckpt as {save_ckpt_path}.')
 
-    current_date = datetime.datetime.now().strftime('%Y%m%d')
-    final_file_prefix = out_file_name + f'_{current_date}-{sha[:8]}'
-    final_ckpt_file = f'{final_file_prefix}.pth'
-    Path(out_file).rename(final_ckpt_file)
+    log_path = work_dir / timestamp / f'{timestamp}.log'
+    save_log_path = f'{out_dir}/{model_name}_{timestamp}-{sha[:8]}.log'
+    shutil.copy(str(log_path), str(save_log_path))
+    print(f'Successfully generated the publish-log as {save_log_path}.')
 
-    print(f'Successfully generated the publish-ckpt as {final_ckpt_file}.')
-
-    if subnet_cfg_file is not None:
-        subnet_cfg = mmengine.fileio.load(subnet_cfg_file)
-        final_subnet_cfg_file = f'{final_file_prefix}_subnet_cfg.yaml'
-        mmengine.fileio.dump(subnet_cfg, final_subnet_cfg_file)
-        print(f'Successfully generated the publish-subnet-cfg as \
-                {final_subnet_cfg_file}.')
+    log_path = work_dir / timestamp / f'{timestamp}.log'
+    json_path = work_dir / timestamp / f'vis_data/{timestamp}.json'
+    save_json_path = f'{out_dir}/{model_name}_{timestamp}-{sha[:8]}.json'
+    shutil.copy(str(json_path), str(save_json_path))
+    print(f'Successfully generated the publish-log as {save_json_path}.')
 
 
 def main():
     args = parse_args()
-    out_dir = Path(args.out_file).parent
-    if not out_dir.exists():
-        raise ValueError(f'Directory {out_dir} does not exist, '
-                         'please generate it manually.')
-    process_checkpoint(args.in_file, args.out_file, args.subnet_cfg_file)
+    process_checkpoint(args.ckpt, args.model_name, args.timestamp,
+                       args.out_dir)
 
 
 if __name__ == '__main__':
