@@ -1,5 +1,4 @@
 # Overview
-
 ## Why MMRazor
 
 MMRazor is a model compression toolkit for model slimming, which includes 4 mainstream technologies:
@@ -25,15 +24,16 @@ Different algorithms, e.g., NAS, pruning and KD, can be incorporated in a plug-n
 
 With better modular design, developers can implement new model compression algorithms with only a few codes, or even by simply modifying config files.
 
-## Design and Implement
 
+
+## Design and Implement
 ![overview - design and implement](https://user-images.githubusercontent.com/88702197/187396329-b5fedc96-c76b-49b7-af4e-83f1f0c27a57.jpg)
 
 ### Design
 
-There are 3 layers (**Application** / **Algorithm** / **Component**) in overview design. MMRazor mainly includes both of **Component** and **Algorithm**, while **Application** consist of some OpenMMLab upstream repos, such as MMClassification,  MMDetection,  MMSegmentation and so on.
+There are 3 layers (**Application** / **Algorithm** / **Component**) in overview design. MMRazor mainly includes both of **Component** and **Algorithm**, while **Application** consist of some OpenMMLab upstream repos, such as MMClassification,  MMDetection,  MMSegmentation and so on. 
 
-**Component** provides many useful functions for quickly implementing **Algorithm.** And thanks to OpenMMLab 's powerful and highly flexible config mode and registry mechanism\*\*, Algorithm\*\* can be conveniently applied to **Application.**
+**Component** provides many useful functions for quickly implementing **Algorithm.** And thanks to OpenMMLab 's powerful and highly flexible config mode and registry mechanism**, Algorithm** can be conveniently applied to **Application.**
 
 How to apply our lightweight algorithms to some upstream tasks? Please refer to the below.
 
@@ -41,11 +41,11 @@ How to apply our lightweight algorithms to some upstream tasks? Please refer to 
 
 In OpenMMLab, implementing vision tasks commonly includes 3 parts (model / dataset / schedule). And just like that, implementing lightweight model also includes 3 parts (algorithm / dataset / schedule) in MMRazor.
 
-`Algorithm` consist of `architecture` and `components`.
+`Algorithm` consist of `architecture` and `components`. 
 
-`Architecture` is similar to `model` of the upstream repos. You can chose to directly use the original `model` or customize the new `model` as your architecture according to different tasks. For example,  you can directly use ResNet-34 and ResNet-18 of MMClassification to implement some KD algorithms, but in NAS, you may need to customize a searchable model.
+`Architecture` is similar to `model` of the upstream repos. You can chose to directly use the original `model` or customize the new `model` as your architecture according to different tasks. For example,  you can directly use ResNet-34 and ResNet-18 of MMClassification to implement some KD algorithms, but in NAS, you may need to customize a searchable model. 
 
-``` Compone``n``ts ``` consist of various special functions for supporting different lightweight algorithms. They can be directly used in config because of  registered into MMEngine. Thus, you can pick some components you need to quickly implement your algorithm. For example, you may need `mutator` / `mutable` / `searchle backbone` if you want to implement a NAS algorithm, and you can pick from `distill loss` / `recorder` / `delivery` / `connector` if you need a KD algorithm.
+`Compone``n``ts` consist of various special functions for supporting different lightweight algorithms. They can be directly used in config because of  registered into MMEngine. Thus, you can pick some components you need to quickly implement your algorithm. For example, you may need `mutator` / `mutable` / `searchle backbone` if you want to implement a NAS algorithm, and you can pick from `distill loss` / `recorder` / `delivery` / `connector` if you need a KD algorithm.
 
 Please refer to the next section for more details about **Implement**.
 
@@ -57,7 +57,7 @@ For better understanding and using MMRazor, it is highly recommended to read the
 
 **Global**
 
-- [Algorithm](https://aicarrier.feishu.cn/docs/doccnw4XX4zCRJ3FHhZpjkWS4gf)
+-  [Algorithm](https://aicarrier.feishu.cn/docs/doccnw4XX4zCRJ3FHhZpjkWS4gf)
 
 **NAS & Pruning**
 
@@ -81,13 +81,13 @@ We provide more complete and systematic guide documents for different technical 
 - Knowledge Distillation (to add link)
 - Quantization (to add link)
 
-## Tutorials
+## Tutorials 
 
 We provide the following general tutorials according to some typical requirements. If you want to further use MMRazor, you can refer to our source code and API Reference.
 
 **Tutorial list**
 
-- [Tutorial 1: Overview](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_1_overview.html)
+- [Tutorial 1: Overview](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_1_overview.html#)
 - [Tutorial 2: Learn about Configs](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_2_learn_about_configs.html)
 - [Toturial 3: Customize Architectures](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_3_customize_architectures.html)
 - [Toturial 4: Customize NAS algorithms](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_4_customize_nas_algorithms.html)
@@ -96,9 +96,12 @@ We provide the following general tutorials according to some typical requirement
 - [Tutorial 7: Customize mixed algorithms](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_7_customize_mixed_algorithms_with_out_algorithms_components.html)
 - [Tutorial 8: Apply existing algorithms to new tasks](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_8_apply_existing_algorithms_to_new_tasks.html)
 
+
+
 ## F&Q
 
 If you encounter some trouble using MMRazor, you can find whether your question has existed in **F&Q（to add link）**. If not existed, welcome to open a [Github issue](https://github.com/open-mmlab/mmrazor/issues) for getting support, we will reply it as soon.
+
 
 ## Get support and contribute back
 

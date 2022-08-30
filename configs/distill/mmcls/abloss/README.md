@@ -10,6 +10,7 @@ An activation boundary for a neuron refers to a separating hyperplane that deter
 
 <img width="1184" alt="pipeline" src="https://user-images.githubusercontent.com/88702197/187422794-d681ed58-293a-4d9e-9e5b-9937289136a7.png">
 
+
 ## Results and models
 
 ### Classification

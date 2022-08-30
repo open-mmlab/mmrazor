@@ -1,12 +1,11 @@
 # Customize Architectures
+Different from other tasks, architectures in MMRazor may consist of some special model components, such as **searchable backbones, connectors, dynamic ops**. In MMRazor, you can not only develop some common model components like other codebases of OpenMMLab, but also develop some special model components. Here is how to develop searchable model components and common model components. 
 
-Different from other tasks, architectures in MMRazor may consist of some special model components, such as **searchable backbones, connectors, dynamic ops**. In MMRazor, you can not only develop some common model components like other codebases of OpenMMLab, but also develop some special model components. Here is how to develop searchable model components and common model components.
-
-> Please refer to these documents as follows if you want to know about **connectors** and **dynamic ops**.
+>  Please refer to these documents as follows if you want to know about **connectors** and **dynamic ops**.
 >
-> [Connector 用户文档](https://aicarrier.feishu.cn/docx/doxcnvJG0VHZLqF82MkCHyr9B8b)
+> [Connector 用户文档](https://aicarrier.feishu.cn/docx/doxcnvJG0VHZLqF82MkCHyr9B8b) 
 >
-> [Dynamic op 用户文档](https://aicarrier.feishu.cn/docx/doxcnbp4n4HeDkJI1fHlWfVklke)
+> [Dynamic op 用户文档](https://aicarrier.feishu.cn/docx/doxcnbp4n4HeDkJI1fHlWfVklke) 
 
 ## Develop searchable model components
 
@@ -73,14 +72,14 @@ class SearchableShuffleNetV2(BaseBackbone):
                 if index not in range(0, layers_nums):
                     raise ValueError('the item in out_indices must in '
                                      f'range(0, 5). But received {index}')
-
+    
             self.frozen_stages = frozen_stages
             if frozen_stages not in range(-1, layers_nums):
                 raise ValueError('frozen_stages must be in range(-1, 5). '
                                  f'But received {frozen_stages}')
-
+    
             super().__init__(init_cfg)
-
+    
             self.arch_setting = arch_setting
             self.widen_factor = widen_factor
             self.out_indices = out_indices
@@ -89,10 +88,10 @@ class SearchableShuffleNetV2(BaseBackbone):
             self.act_cfg = act_cfg
             self.norm_eval = norm_eval
             self.with_cp = with_cp
-
+    
             last_channels = 1024
             self.in_channels = 16 * stem_multiplier
-
+            
             # build the first layer
             self.conv1 = ConvModule(
                 in_channels=3,
@@ -103,7 +102,7 @@ class SearchableShuffleNetV2(BaseBackbone):
                 conv_cfg=conv_cfg,
                 norm_cfg=norm_cfg,
                 act_cfg=act_cfg)
-
+            
             # build the middle layers
             self.layers = ModuleList()
             for channel, num_blocks, mutable_cfg in arch_setting:
@@ -111,7 +110,7 @@ class SearchableShuffleNetV2(BaseBackbone):
                 layer = self._make_layer(out_channels, num_blocks,
                                          copy.deepcopy(mutable_cfg))
                 self.layers.append(layer)
-
+            
             # build the last layer
             if with_last_layer:
                 self.layers.append(

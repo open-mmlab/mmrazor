@@ -10,6 +10,7 @@ Knowledge distillation, in which a student model is trained to mimic a teacher m
 
 <img width="836" alt="pipeline" src="https://user-images.githubusercontent.com/88702197/187424617-6259a7fc-b610-40ae-92eb-f21450dcbaa1.png">
 
+
 ## Results and models
 
 ### Detection

@@ -1,18 +1,18 @@
 # Mutable
-
 ## Introduction
 
 ### What is Mutable
 
-`Mutable` is one of basic function components  in NAS algorithms and some pruning algorithms, which makes supernet searchable by providing optional modules or parameters.
+`Mutable` is one of basic function components  in NAS algorithms and some pruning algorithms, which makes supernet searchable by providing optional modules or parameters. 
 
 To understand it better, we take the mutable module as an example to explain as follows.
 
 ![1280X1280](https://user-images.githubusercontent.com/88702197/187410115-a5cd158c-aa0b-44ee-af96-7b14bb4972ad.PNG)
 
+
 As shown in the figure above,  `Mutable` is a container that holds some candidate operations, thus it can sample candidates to constitute the subnet. `Supernet` usually consists of multiple `Mutable`, therefore, `Supernet` will be searchable with the help of `Mutable`. And all candidate operations in `Mutable` constitute the search space of `SuperNet`.
 
-> If you want to know more about the relationship between Mutable and Mutator, please refer to [Mutator 用户文档](https://aicarrier.feishu.cn/docx/doxcnmcie75HcbqkfBGaEoemBKg)
+> If you want to know more about the relationship between Mutable and Mutator, please refer to [Mutator 用户文档](https://aicarrier.feishu.cn/docx/doxcnmcie75HcbqkfBGaEoemBKg) 
 
 ### Features
 
@@ -20,7 +20,7 @@ As shown in the figure above,  `Mutable` is a container that holds some candidat
 
 It is the common and basic function for NAS algorithms. We can use it to implement some classical one-shot NAS algorithms, such as [SPOS](https://arxiv.org/abs/1904.00420), [DetNAS ](https://arxiv.org/abs/1903.10979)and so on.
 
-#### 2. Support parameter mutable
+#### 2. Support parameter mutable 
 
 To implement more complicated and funny algorithms easier, we supported making some important parameters searchable, such as input channel, output channel, kernel size and so on.
 
@@ -34,7 +34,7 @@ Because of the restriction of defined architecture, there may be correlations be
 >
 > When out_channel (conv1) = 3, out_channel (conv2) = 4
 >
-> Then in_channel (conv3) must be 7 rather than mutable.
+> Then in_channel (conv3) must be 7 rather than mutable. 
 >
 > So use derived mutable from conv1 and conv2 to generate in_channel (conv3)
 
@@ -48,19 +48,18 @@ As shown in the figure above.
 
 - **White blocks** stand the basic classes, which include `BaseMutable` and `DerivedMethodMixin`. `BaseMutable` is the base class for all mutables, which defines required properties and abstracmethods. `DerivedMethodMixin` is a mixin class to provide mutable parameters with some useful methods to derive mutable.
 
-- **Gray blocks** stand different types of base mutables.
-
+- **Gray blocks** stand different types of base mutables. 
   > Because there are correlations between channels of some layers, we divide mutable parameters into `MutableChannel` and `MutableValue`, so you can also think `MutableChannel` is a special `MutableValue`.
 
-  For supporting module and parameters mutable, we provide `MutableModule`, `MutableChannel` and `MutableValue` these base classes to implement required basic functions. And we also add `OneshotMutableModule` and `DiffMutableModule` two types  based on `MutableModule` to meet different types of algorithms' requirements.
-
+  For supporting module and parameters mutable, we provide `MutableModule`, `MutableChannel` and `MutableValue` these base classes to implement required basic functions. And we also add `OneshotMutableModule` and `DiffMutableModule` two types  based on `MutableModule` to meet different types of algorithms' requirements. 
+  
   For supporting deriving from mutable parameters, we make `MutableChannel` and `MutableValue` inherit from `BaseMutable` and `DerivedMethodMixin`, thus they can get derived functions provided by `DerivedMethodMixin`.
 
-- **Red blocks** and **green blocks** stand registered classes for implementing some specific algorithms, which means that you can use them directly in configs. If they do not meet your requirements, you can also customize your mutable based on our base classes. If you are interested in their realization, please refer to their docstring.
+- **Red blocks** and **green blocks** stand registered classes for implementing some specific algorithms, which means that you can use them directly in configs. If they do not meet your requirements, you can also customize your mutable based on our base classes. If you are interested in their realization, please refer to their docstring. 
 
 ## How to use existing mutables to configure searchable backbones
 
-We will use `OneShotMutableOP` to build a `SearchableShuffleNetV2` backbone as follows.
+We will use `OneShotMutableOP` to build a `SearchableShuffleNetV2` backbone as follows. 
 
 1. Configure needed mutables
 
@@ -106,7 +105,7 @@ Then you can use it in your architecture. If existing mutables do not meet your 
 
 ### About base mutable
 
-Before customizing mutables, we need to know what some base mutables do.
+Before customizing mutables, we need to know what some base mutables do. 
 
 **BaseMutable**
 
@@ -153,7 +152,7 @@ class BaseMutable(BaseModule, ABC, Generic[CHOICE_TYPE, CHOSEN_TYPE]):
     @abstractmethod
     def fix_chosen(self, chosen: CHOSEN_TYPE) -> None:
        pass
-
+       
     @abstractmethod
     def dump_chosen(self) -> CHOSEN_TYPE:
         pass
@@ -221,7 +220,7 @@ Let's use `OneShotMutableOP` as an example for customizing mutable.
 
 First, you need to determine which type mutable to implement. Thus, you can implement your mutable faster by inheriting from correlative base mutable.
 
-Then create a new file ``` mmrazor/models/mutables/mutable_module/``one_shot_mutable_module ```, class `OneShotMutableOP` inherits from `OneShotMutableModule`.
+Then create a new file `mmrazor/models/mutables/mutable_module/``one_shot_mutable_module`, class `OneShotMutableOP` inherits from `OneShotMutableModule`.
 
 ```Python
 # Copyright (c) OpenMMLab. All rights reserved.
@@ -252,7 +251,7 @@ These basic abstract methods are mainly from `BaseMutable` and `MutableModule`, 
 @MODELS.register_module()
 class OneShotMutableOP(OneShotMutableModule[str, str]):
     ......
-
+    
     def fix_chosen(self, chosen: str) -> None:
         """Fix mutable with subnet config. This operation would convert
         `unfixed` mode to `fixed` mode. The :attr:`is_fixed` will be set to
@@ -295,11 +294,11 @@ In `OneShotMutableModule`, sample and forward these required abstract methods ar
 @MODELS.register_module()
 class OneShotMutableOP(OneShotMutableModule[str, str]):
     ......
-
+    
     def sample_choice(self) -> str:
         """uniform sampling."""
         return np.random.choice(self.choices, 1)[0]
-
+        
     def forward_fixed(self, x: Any) -> Tensor:
         """Forward with the `fixed` mutable.
         Args:
@@ -338,13 +337,13 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
 
 #### 3. Implement other methods
 
-After finishing some required methods, we need to add some special methods, such as `_build_ops`, because it is needed in building candidates for sampling.
+After finishing some required methods, we need to add some special methods, such as `_build_ops`, because it is needed in building candidates for sampling. 
 
 ```Python
 @MODELS.register_module()
 class OneShotMutableOP(OneShotMutableModule[str, str]):
     ......
-
+    
     @staticmethod
     def _build_ops(
             candidates: Union[Dict[str, Dict], nn.ModuleDict],

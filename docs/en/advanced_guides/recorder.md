@@ -1,5 +1,6 @@
 # Recorder
 
+
 ## Introduction of Recorder
 
 `Recorder` is a context manager used to record various intermediate results during the model forward. It can help `Delivery` finish data delivering by recording source data in some distillation algorithms. And it can also be used to obtain some specific data for visual analysis or other functions you want.
@@ -8,10 +9,9 @@ To adapt to more requirements, we implement multiple types of recorders to obtai
 
 In general, `Recorder` will help us expand more functions in implementing algorithms by recording various intermediate results.
 
-## Usage of Recorder
+## Usage of Recorder 
 
 Currently, we support five `Recorder`, as shown in the following table
-
 | FunctionOutputsRecorder | Record output results of some functions     |
 | ----------------------- | ------------------------------------------- |
 | MethodOutputsRecorder   | Record output results of some methods       |
@@ -25,17 +25,20 @@ Their relationship is shown below.
 
 ![UML 图 (10)](https://user-images.githubusercontent.com/88702197/187415394-926daba3-1d78-4f7e-b20a-7f9ff1e1582d.jpg)
 
+
+
+
 ### FunctionOutputsRecorder
 
-`FunctionOutputsRecorder` is used to record the output results of intermediate **function**.
+`FunctionOutputsRecorder` is used to record the output results of intermediate **function**. 
 
 > When instantiating `FunctionOutputsRecorder`, you need to pass `source` argument, which requires extra attention. For example,
-> `anchor_inside_flags` is a function in mmdetection to check whether the
-> anchors are inside the border. This function is in
-> `mmdet/core/anchor/utils.py` and used in
-> `mmdet/models/dense_heads/anchor_head`. Then the `source` argument should be
-> `mmdet.models.dense_heads.anchor_head.anchor_inside_flags` but not
-> `mmdet.core.anchor.utils.anchor_inside_flags`.
+`anchor_inside_flags` is a function in mmdetection to check whether the
+anchors are inside the border. This function is in
+`mmdet/core/anchor/utils.py` and used in
+`mmdet/models/dense_heads/anchor_head`. Then the `source` argument should be
+`mmdet.models.dense_heads.anchor_head.anchor_inside_flags` but not
+`mmdet.core.anchor.utils.anchor_inside_flags`.
 
 #### Example
 
@@ -49,10 +52,10 @@ from mmrazor.structures import FunctionOutputsRecorder
 def toy_func() -> int:
     return random.randint(0, 1000000)
 
-# instantiate with specifying used path
+# instantiate with specifing used path
 r1 = FunctionOutputsRecorder('toy_module.toy_func')
 
-# initialize is to make specified module can be recorded by
+# initialize is to make specified module can be recorded by 
 # registering customized forward hook.
 r1.initialize()
 with r1:
@@ -95,9 +98,11 @@ Out:
 119729
 ```
 
+
+
 ### MethodOutputsRecorder
 
-`MethodOutputsRecorder` is used to record the output results of intermediate **method**.
+`MethodOutputsRecorder` is used to record the output results of intermediate **method**. 
 
 #### Example
 
@@ -113,9 +118,9 @@ class Toy():
 
 toy = Toy()
 
-# instantiate with specifying used path
+# instantiate with specifing used path
 r1 = MethodOutputsRecorder('toy_module.Toy.toy_func')
-# initialize is to make specified module can be recorded by
+# initialize is to make specified module can be recorded by 
 # registering customized forward hook.
 r1.initialize()
 
@@ -186,17 +191,17 @@ class ToyModel(nn.Module):
         return self.conv2(x1 + x2)
 
 model = ToyModel()
-# instantiate with specifying module name.
+# instantiate with specifing module name.
 r1 = ModuleOutputsRecorder('conv1')
 
-# initialize is to make specified module can be recorded by
+# initialize is to make specified module can be recorded by 
 # registering customized forward hook.
 r1.initialize(model)
 
 x = torch.randn(1, 1, 1, 1)
 with r1:
     out = model(x)
-
+    
 print(r1.data_buffer)
 ```
 
@@ -222,7 +227,7 @@ True
 
 ### ParameterRecorder
 
-`ParameterRecorder` is used to record the intermediate parameter of ``` nn.``Module ```. Its usage is similar to `ModuleOutputsRecorder`'s and `ModuleInputsRecorder`'s, but it instantiates with parameter name instead of module name.
+`ParameterRecorder` is used to record the intermediate parameter of `nn.``Module`. Its usage is similar to `ModuleOutputsRecorder`'s and `ModuleInputsRecorder`'s, but it instantiates with parameter name instead of module name.
 
 #### Example
 
@@ -242,9 +247,9 @@ class ToyModel(nn.Module):
         return self.toy_conv(x)
 
 model = ToyModel()
-# instantiate with specifying parameter name.
+# instantiate with specifing parameter name.
 r1 = ParameterRecorder('toy_conv.weight')
-# initialize is to make specified module can be recorded by
+# initialize is to make specified module can be recorded by 
 # registering customized forward hook.
 r1.initialize(model)
 
@@ -310,14 +315,14 @@ manager = RecorderManager(
      'func_rec': func_rec})
 
 model = ToyModel()
-# initialize is to make specified module can be recorded by
+# initialize is to make specified module can be recorded by 
 # registering customized forward hook.
 manager.initialize(model)
 
 x = torch.rand(1, 1, 1, 1)
 with manager:
     out = model(x)
-
+    
 conv2_out = manager.get_recorder('conv2_rec').get_record_data()
 print(conv2_out)
 ```
