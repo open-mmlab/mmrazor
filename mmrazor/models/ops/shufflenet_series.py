@@ -2,11 +2,16 @@
 import torch
 import torch.nn as nn
 import torch.utils.checkpoint as cp
-from mmcls.models.utils import channel_shuffle
 from mmcv.cnn import ConvModule, DepthwiseSeparableConvModule
 
 from mmrazor.registry import MODELS
 from .base import BaseOP
+
+try:
+    from mmcls.models.utils import channel_shuffle
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    channel_shuffle = get_placeholder('mmcls')
 
 
 @MODELS.register_module()
