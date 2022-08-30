@@ -93,7 +93,7 @@ class SingleTeacherDistillValLoop(ValLoop):
             # outputs should be sequence of BaseDataElement
             outputs = self.teacher.val_step(data_batch)
 
-        self.evaluator.process(data_batch, outputs)
+        self.evaluator.process(data_samples=outputs, data_batch=data_batch)
         self.runner.call_hook(
             'after_val_iter',
             batch_idx=idx,

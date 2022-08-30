@@ -1,8 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
-from mmcls.models import ImageClassifier
 
 from mmrazor.registry import TASK_UTILS
+
+try:
+    from mmcls.models import ImageClassifier
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    ImageClassifier = get_placeholder('mmcls')
 
 
 @TASK_UTILS.register_module()

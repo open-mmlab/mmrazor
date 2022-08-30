@@ -1,12 +1,17 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch.nn as nn
 import torch.utils.checkpoint as cp
-from mmcls.models.utils import SELayer
 from mmcv.cnn import ConvModule
 from mmcv.cnn.bricks import DropPath
 
 from mmrazor.registry import MODELS
 from .base import BaseOP
+
+try:
+    from mmcls.models.utils import SELayer
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    SELayer = get_placeholder('mmcls')
 
 
 @MODELS.register_module()
