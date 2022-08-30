@@ -4,16 +4,17 @@ _base_ = [
     'mmdet::_base_/default_runtime.py'
 ]
 
+teacher_ckpt = 'https://download.openmmlab.com/mmdetection/v2.0/faster_rcnn/faster_rcnn_r101_fpn_1x_coco/faster_rcnn_r101_fpn_1x_coco_20200130-f513f705.pth'  # noqa: E501
 model = dict(
     _scope_='mmrazor',
     type='SingleTeacherDistill',
     architecture=dict(
-        cfg_path='mmdet::faster_rcnn/faster_rcnn_r50_fpn_1x_coco.py',
+        cfg_path='mmdet::faster_rcnn/faster-rcnn_r50_fpn_1x_coco.py',
         pretrained=True),
     teacher=dict(
-        cfg_path='mmdet::faster_rcnn/faster_rcnn_r101_fpn_1x_coco.py',
+        cfg_path='mmdet::faster_rcnn/faster-rcnn_r101_fpn_1x_coco.py',
         pretrained=False),
-    teacher_ckpt='faster_rcnn_r101_fpn_1x_coco_20200130-f513f705.pth',
+    teacher_ckpt=teacher_ckpt,
     distiller=dict(
         type='ConfigurableDistiller',
         student_recorders=dict(

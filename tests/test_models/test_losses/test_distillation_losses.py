@@ -107,7 +107,6 @@ class TestLosses(TestCase):
         ie_loss = InformationEntropyLoss(**dafl_loss_cfg, gather=True)
         ie_loss.world_size = 2
 
-        # TODO: configure circle CI to test UT under multi torch versions.
         if digit_version(torch.__version__) >= digit_version('1.8.0'):
             with self.assertRaisesRegex(
                     RuntimeError,
