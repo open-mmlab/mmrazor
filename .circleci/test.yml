@@ -121,9 +121,9 @@ jobs:
           command: |
             docker exec mmrazor pip install -e /mmengine
             docker exec mmrazor pip install << parameters.mmcv >>
-            docker exec mmocr pip install -e /mmdetection
-            docker exec mmocr pip install -e /mmclassification
-            docker exec mmocr pip install -e /mmsegmentation
+            docker exec mmrazor pip install -e /mmdetection
+            docker exec mmrazor pip install -e /mmclassification
+            docker exec mmrazor pip install -e /mmsegmentation
             pip install -r requirements.txt
             python -c 'import mmcv; print(mmcv.__version__)'
       - run:
