@@ -78,12 +78,12 @@ class DataFreeDistillation(BaseAlgorithm):
         """Alias for ``architecture``."""
         return self.architecture
 
-    def train_step(self, data: List[dict],
+    def train_step(self, data: Dict[str, List[dict]],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
         """Train step for DataFreeDistillation.
 
         Args:
-            data (List[dict]): Data sampled by dataloader.
+            data (Dict[str, List[dict]]): Data sampled by dataloader.
             optim_wrapper (OptimWrapper): A wrapper of optimizer to
                 update parameters.
         """
@@ -107,16 +107,16 @@ class DataFreeDistillation(BaseAlgorithm):
         return log_vars
 
     def train_student(
-            self, data: List[dict], optimizer: OPTIMIZERS
+            self, data: Dict[str, List[dict]], optimizer: OPTIMIZERS
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         """Train step for the student model.
 
         Args:
-            data (List[dict]): Data sampled by dataloader.
+            data (Dict[str, List[dict]]): Data sampled by dataloader.
             optimizer (OPTIMIZERS): The optimizer to update student.
         """
         log_vars = dict()
-        batch_size = len(data)
+        batch_size = len(data['inputs'])
 
         for _ in range(self.student_iter):
             fakeimg_init = torch.randn(
@@ -140,15 +140,15 @@ class DataFreeDistillation(BaseAlgorithm):
         return distill_loss, log_vars
 
     def train_generator(
-            self, data: List[dict], optimizer: OPTIMIZERS
+            self, data: Dict[str, List[dict]], optimizer: OPTIMIZERS
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         """Train step for the generator.
 
         Args:
-            data (List[dict]): Data sampled by dataloader.
+            data (Dict[str, List[dict]]): Data sampled by dataloader.
             optimizer (OPTIMIZERS): The optimizer to update generator.
         """
-        batch_size = len(data)
+        batch_size = len(data['inputs'])
         fakeimg_init = torch.randn(
             (batch_size, self.generator.module.latent_dim))
         fakeimg = self.generator(fakeimg_init, batch_size)
@@ -174,17 +174,17 @@ class DataFreeDistillation(BaseAlgorithm):
 @MODELS.register_module()
 class DAFLDataFreeDistillation(DataFreeDistillation):
 
-    def train_step(self, data: List[dict],
+    def train_step(self, data: Dict[str, List[dict]],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
         """DAFL train step.
 
         Args:
-            data (List[dict]): Data sampled by dataloader.
+            data (Dict[str, List[dict]): Data sampled by dataloader.
             optim_wrapper (OptimWrapper): A wrapper of optimizer to
                 update parameters.
         """
         log_vars = dict()
-        batch_size = len(data)
+        batch_size = len(data['inputs'])
 
         for _, teacher in self.teachers.items():
             teacher.eval()
