@@ -1,6 +1,5 @@
 # Mutator
 
-
 ## Introduction
 
 ### What is Mutator
@@ -11,7 +10,6 @@
 
 ![1280X1280](https://user-images.githubusercontent.com/88702197/187410115-a5cd158c-aa0b-44ee-af96-7b14bb4972ad.PNG)
 
-
 In a word, Mutator is the manager of Mutable. Each different type of mutable is commonly managed by their one correlative mutator, respectively.
 
 As shown in the figure, Mutable is a component of supernet, therefore Mutator can implement some functions about subnet from supernet by handling Mutable.
@@ -21,7 +19,6 @@ As shown in the figure, Mutable is a component of supernet, therefore Mutator ca
 In MMRazor, we have implemented some mutators, their relationship is as below.
 
 ![UML 图 (9)](https://user-images.githubusercontent.com/88702197/187413945-7e960973-d90b-4ac8-9e38-15095302ebb4.jpg)
-
 
 `BaseMutator`: Base class for all mutators. It has appointed some abstract methods supported by all mutators.
 
@@ -41,7 +38,7 @@ You just use them directly in configs as below
 supernet = dict(
     ...
     )
-    
+
 model = dict(
     type='mmrazor.SPOS',
     architecture=supernet,
@@ -55,12 +52,14 @@ If existing mutators do not meet your needs, you can also customize your needed 
 All mutators need to implement at least two of the following interfaces
 
 - `prepare_from_supernet()`
-  -  Make some necessary preparations according to the given supernet. These preparations may include, but are not limited to, grouping the search space, and initializing mutator with the parameters needed for itself.
+
+  - Make some necessary preparations according to the given supernet. These preparations may include, but are not limited to, grouping the search space, and initializing mutator with the parameters needed for itself.
 
 - `search_groups`
-  -  Group of search space. 
 
-  -  Note that **search groups** and **search space** are two different concepts. The latter defines what choices can be used for searching. The former groups the search space, and searchable blocks that are grouped into the same group will share the same search space and the same sample result.
+  - Group of search space.
+
+  - Note that **search groups** and **search space** are two different concepts. The latter defines what choices can be used for searching. The former groups the search space, and searchable blocks that are grouped into the same group will share the same search space and the same sample result.
 
   - ```Python
     # Example
@@ -98,6 +97,7 @@ class OneShotModuleMutator(ModuleMutator):
 ```
 
 ### 2. Implement abstract methods
+
 2.1. Rewrite the `mutable_class_type` property
 
 ```Python
@@ -119,7 +119,7 @@ As the `prepare_from_supernet()` method and the `search_groups` property are alr
 
 If you need to implement them by yourself, you can refer to these as follows.
 
-2.3. **Understand** **`search_groups`****(optional)**
+2.3. **Understand** **`search_groups`** **(optional)**
 
 Let's take an example to see what default `search_groups` do.
 
@@ -133,14 +133,14 @@ class SearchableModel(nn.Module):
         self.choice_block1 = OneShotMutableModule(**one_shot_op_cfg)
         self.choice_block2 = OneShotMutableModule(**one_shot_op_cfg)
         self.choice_block3 = OneShotMutableModule(**one_shot_op_cfg)
-    
+
     def forward(self, x: Tensor) -> Tensor:
         x = self.choice_block1(x)
         x = self.choice_block2(x)
         x = self.choice_block3(x)
 
         return x
- 
+
 supernet = SearchableModel(one_shot_op_cfg)
 mutator1 = OneShotModuleMutator()
 # build mutator1 from supernet.
@@ -178,7 +178,7 @@ from typing import Any, Dict
 
 from mmrazor.registry import MODELS
 from ...mutables import OneShotMutableModule
-from .module_mutator import 
+from .module_mutator import ModuleMutator
 
 @MODELS.register_module()
 class OneShotModuleMutator(ModuleMutator):
