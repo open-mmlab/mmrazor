@@ -34,10 +34,8 @@ model_wrapper_cfg = dict(
 
 # TRAINING
 optim_wrapper = dict(
-    _delete_=True,
     constructor='mmrazor.SeparateOptimWrapperConstructor',
     architecture=dict(
-        type='mmrazor.DsnasOptimWrapper',
         optimizer=dict(type='SGD', lr=0.5, momentum=0.9, weight_decay=4e-5)),
     mutator=dict(optimizer=dict(type='Adam', lr=0.001, weight_decay=0.0)))
 

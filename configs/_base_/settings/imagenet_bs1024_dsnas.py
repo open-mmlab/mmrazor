@@ -53,18 +53,6 @@ val_evaluator = dict(type='mmcls.Accuracy', topk=(1, 5))
 test_dataloader = val_dataloader
 test_evaluator = val_evaluator
 
-# optimizer
-paramwise_cfg = dict(
-    bias_decay_mult=0.0, norm_decay_mult=0.0, dwconv_decay_mult=0.0)
-
-# optimizer
-optim_wrapper = dict(
-    architecture=dict(
-        type='mmcls.SGD', lr=0.5, momentum=0.9, weight_decay=4e-5),
-    mutator=dict(type='mmcls.Adam', lr=2e-3, weight_decay=0.0),
-    # clip_grad=dict(max_norm=5, norm_type=2),
-)
-
 # leanring policy
 param_scheduler = dict(
     architecture=[

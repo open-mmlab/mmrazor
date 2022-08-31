@@ -171,9 +171,11 @@ class Dsnas(BaseAlgorithm):
 
             supernet_losses, supernet_log_vars = self.parse_losses(
                 supernet_loss)
-            optim_wrapper['architecture'].update_params(  # type: ignore
+            optim_wrapper['architecture'].backward(
                 supernet_losses,
-                retain_graph=self.update_mutator(cur_epoch))
+                retain_graph=self.module.update_mutator(cur_epoch))
+            optim_wrapper['architecture'].step()
+            optim_wrapper['architecture'].zero_grad()
             log_vars.update(add_prefix(supernet_log_vars, 'supernet'))
 
             # 2. update mutator
@@ -311,9 +313,11 @@ class DsnasDDP(MMDistributedDataParallel):
 
             supernet_losses, supernet_log_vars = self.module.parse_losses(
                 supernet_loss)
-            optim_wrapper['architecture'].update_params(  # type: ignore
+            optim_wrapper['architecture'].backward(
                 supernet_losses,
                 retain_graph=self.module.update_mutator(cur_epoch))
+            optim_wrapper['architecture'].step()
+            optim_wrapper['architecture'].zero_grad()
             log_vars.update(add_prefix(supernet_log_vars, 'supernet'))
 
             # 2. update mutator
