@@ -23,8 +23,8 @@ model = dict(
         'mmrazor::vanilla/mmcls/wide-resnet/wrn28_4_b16x8_cifar10.py',
         pretrained=False),
     teacher_ckpt='work_dirs/wrn28_4_b16x8_cifar10/epoch_173.pth',  # TODO
-    calculate_student_loss=False,
-    student_trainable=False,
+    calculate_student_loss=True,
+    student_trainable=True,
     distiller=dict(
         type='OFDDistiller',
         student_recorders=dict(
