@@ -6,7 +6,7 @@ Convolutional neural networks have been widely deployed in various application s
 
 ## Pipeline
 
-![pipeline](https://user-images.githubusercontent.com/31244134/187422724-7f48d489-aabc-413c-ac12-4c3aaf19b173.png)
+![byot](https://user-images.githubusercontent.com/88702197/187422992-e7bd692d-b6d4-44d8-8b36-741e0cf1c4f6.png)
 
 ## Results and models
 

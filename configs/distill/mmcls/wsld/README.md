@@ -21,7 +21,7 @@ empirically find that completely filtering out regularization samples also deter
 weighted soft labels to help the network adaptively handle the sample-wise biasvariance tradeoff. Experiments on standard evaluation benchmarks validate the
 effectiveness of our method.
 
-![pipeline](/docs/en/imgs/model_zoo/wsld/pipeline.png)
+<img width="1032" alt="pipeline" src="https://user-images.githubusercontent.com/88702197/187424195-a3ea3d72-5ee7-4ffc-b562-65677076c18e.png">
 
 ## Results and models
 
