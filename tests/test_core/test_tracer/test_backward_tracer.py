@@ -56,6 +56,31 @@ class MultiConcatModel2(Module):
         return output
 
 
+class MultiConcatModel3(Module):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.op1 = nn.Conv2d(3, 8, 1)
+        self.op2 = nn.Conv2d(3, 8, 1)
+        self.op3 = nn.Conv2d(3, 8, 1)
+        self.op4 = nn.Conv2d(24, 8, 1)
+        self.op5 = nn.Conv2d(24, 8, 1)
+        self.op6 = nn.Conv2d(24, 8, 1)
+        self.op7 = nn.Conv2d(24, 8, 1)
+
+    def forward(self, x: Tensor) -> Tensor:
+        x1 = self.op1(x)
+        x2 = self.op2(x)
+        x3 = self.op3(x)
+        cat1 = torch.cat([x1, x2, x3], dim=1)
+        x4 = self.op4(cat1)
+        x5 = self.op5(cat1)
+        x6 = self.op6(cat1)
+        x7 = self.op7(cat1)
+        return torch.cat([x4, x5, x6, x7], dim=1)
+
+
 class ResBlock(Module):
 
     def __init__(self) -> None:
@@ -76,8 +101,11 @@ class ResBlock(Module):
 
 class ToyCNNPseudoLoss:
 
+    def __init__(self, input_shape=(2, 3, 16, 16)):
+        self.input_shape = input_shape
+
     def __call__(self, model):
-        pseudo_img = torch.rand(2, 3, 16, 16)
+        pseudo_img = torch.rand(self.input_shape)
         pseudo_output = model(pseudo_img)
         return pseudo_output.sum()
 
@@ -156,6 +184,18 @@ class TestBackwardTracer(TestCase):
         assert nonpass2parents['op4'][0].get_module_names() == [
             'op1', 'op2', 'op3'
         ]
+
+        model = MultiConcatModel3()
+        tracer = BackwardTracer(loss_calculator=loss_calculator)
+        path_list = tracer.trace(model)
+        assert len(path_list) == 1
+
+        nonpass2parents = path_list.find_nodes_parents(NONPASS_NODES)
+        assert nonpass2parents['op1'] == list()
+        assert nonpass2parents['op2'] == list()
+        assert nonpass2parents['op3'] == list()
+        assert nonpass2parents['op4'] == nonpass2parents['op5'] == \
+               nonpass2parents['op6'] == nonpass2parents['op7']
 
     def test_repr(self):
         toy_node = PathConvNode('op1')
