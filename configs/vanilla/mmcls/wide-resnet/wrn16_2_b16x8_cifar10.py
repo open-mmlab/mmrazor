@@ -4,3 +4,4 @@ _base_ = [
     'mmcls::_base_/schedules/cifar10_bs128.py',
     'mmcls::_base_/default_runtime.py',
 ]
+test_evaluator = dict(topk=(1, 5))

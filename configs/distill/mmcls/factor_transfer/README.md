@@ -8,31 +8,31 @@ Many researchers have sought ways of model compression to reduce the size of a d
 
 | Dataset | Model     | Teacher   | Top-1 (%) | Top-5 (%) | Configs                                                                                                                                                            | Download          |
 | ------- | --------- | --------- | --------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
-| CIFAR10 | ResNet-18 | ResNet-50 | 94.86     | 99.88     | [pretrain](./factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain.py) \| [train](./factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py) | [model & log](<>) |
+| CIFAR10 | ResNet-18 | ResNet-50 | 94.86     | 99.88     | [pretrain](./factor-transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain.py) \| [train](./factor-transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py) | [model & log](<>) |
 
 ## Getting Started
 
 ### Connectors pre-training.
 
 ```bash
-sh tools/slurm_train.sh $PARTITION $JOB_NAME \
-  configs/distill/mmcls/factor_transfer/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain.py \
+sh tools/dist_train.sh $PARTITION $JOB_NAME \
+  configs/distill/mmcls/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain.py \
   $PRETRAIN_WORK_DIR
 ```
 
 ### Distillation training.
 
 ```bash
-sh tools/slurm_train.sh $PARTITION $JOB_NAME \
-  configs/distill/mmcls/factor_transfer/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py \
+sh tools/dist_train.sh $PARTITION $JOB_NAME \
+  configs/distill/mmcls/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py \
   $DISTILLATION_WORK_DIR
 ```
 
 ### Test
 
 ```bash
-sh tools/slurm_test.sh $PARTITION $JOB_NAME \
-  configs/distill/mmcls/factor_transfer/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py \
+sh tools/dist_test.sh $PARTITION $JOB_NAME \
+  configs/distill/mmcls/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py \
   $DISTILLATION_WORK_DIR/latest.sh --eval $EVAL_SETTING
 ```
 

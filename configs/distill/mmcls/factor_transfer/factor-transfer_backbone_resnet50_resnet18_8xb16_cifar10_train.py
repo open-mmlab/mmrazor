@@ -1,5 +1,5 @@
 _base_ = [
-    './factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain.py'
+    './factor-transfer_backbone_resnet50_resnet18_8xb16_cifar10_pretrain.py'
 ]
 
 train_cfg = dict(by_epoch=True, max_epochs=200, val_interval=1)
@@ -25,5 +25,5 @@ model = dict(
     init_cfg=dict(
         type='Pretrained',
         checkpoint=  # noqa: E251
-        'work_dirs/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain/epoch_20.pth'  # noqa: E501
+        'work_dirs/factor-transfer_backbone_resnet50_resnet18_8xb16_cifar10_pretrain/epoch_20.pth'  # noqa: E501
     ))

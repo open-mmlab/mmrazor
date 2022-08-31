@@ -22,7 +22,7 @@ model = dict(
         cfg_path=  # noqa: E251
         'mmrazor::vanilla/mmcls/wide-resnet/wrn28_4_b16x8_cifar10.py',
         pretrained=False),
-    teacher_ckpt='work_dirs/wrn28_4_b16x8_cifar10/epoch_200.pth',
+    teacher_ckpt='work_dirs/wrn28_4_b16x8_cifar10/epoch_173.pth',  # TODO
     calculate_student_loss=False,
     student_trainable=False,
     distiller=dict(
