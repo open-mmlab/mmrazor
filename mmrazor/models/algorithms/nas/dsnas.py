@@ -108,6 +108,7 @@ class Dsnas(BaseAlgorithm):
                              f'{finetune_epochs}.')
 
         self.flops_constraints = flops_constraints
+        self.flops_loss_coef = 1e-6
 
     def search_subnet(self):
         """Search subnet by mutator."""
@@ -251,7 +252,7 @@ class Dsnas(BaseAlgorithm):
 
         subnet_flops = self.estimator.estimate(copied_model)['flops']
         if subnet_flops >= self.flops_constraints:
-            mutator_loss['flops_loss'] = flops_loss
+            mutator_loss['flops_loss'] = flops_loss * self.flops_loss_coef
 
         return mutator_loss
 
