@@ -4,6 +4,8 @@ _base_ = [
     'mmcls::_base_/default_runtime.py'
 ]
 
+# Modify pretrain_checkpoint before training.
+pretrain_checkpoint = 'work_dir_of_abloss_pretrain/last_epoch.pth'
 model = dict(
     _scope_='mmrazor',
     type='SingleTeacherDistill',
@@ -18,8 +20,7 @@ model = dict(
         cfg_path='mmcls::resnet/resnet18_8xb32_in1k.py', pretrained=False),
     teacher=dict(
         cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False),
-    init_cfg=dict(
-        type='Pretrained', checkpoint='pretrain_work_dir/last_chechpoint.pth'),
+    init_cfg=dict(type='Pretrained', checkpoint=pretrain_checkpoint),
     distiller=dict(
         type='ConfigurableDistiller',
         student_recorders=dict(
@@ -28,7 +29,7 @@ model = dict(
             fc=dict(type='ModuleOutputs', source='head.fc')),
         distill_losses=dict(
             loss_kl=dict(
-                type='KLDivergence', loss_weight=200, reduction='mean')),
+                type='KLDivergence', loss_weight=6.25, reduction='mean')),
         loss_forward_mappings=dict(
             loss_kl=dict(
                 preds_S=dict(from_student=True, recorder='fc'),

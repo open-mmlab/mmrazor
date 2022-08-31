@@ -14,9 +14,10 @@ An activation boundary for a neuron refers to a separating hyperplane that deter
 
 ### Classification
 
-|               Location               | Dataset  |                                                   Teacher                                                    |                                                   Student                                                    |  Acc  | Acc(T) | Acc(S) |                                                              Config                                                              | Download                                                                                                                                  |
-| :----------------------------------: | :------: | :----------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------: | :---: | :----: | :----: | :------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------- |
-| backbone (pretrain) & logits (train) | ImageNet | [resnet50](https://github.com/open-mmlab/mmclassification/blob/master/configs/resnet/resnet50_8xb32_in1k.py) | [resnet18](https://github.com/open-mmlab/mmclassification/blob/master/configs/resnet/resnet18_8xb32_in1k.py) | 70.58 | 76.55  | 69.90  | [pretrain_config](./abloss_pretrain_backbone_r50_r18_8xb32_in1k) [train_config](./abloss_logits_resnet50_resnet18_8xb32_in1k.py) | [teacher](https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth) \|[model](<>) \| [log](<>) |
+|      Location       | Dataset  |                                                   Teacher                                                    |                                                   Student                                                    |  Acc  | Acc(T) | Acc(S) |                                   Config                                   | Download                                                                                                                                                                                                                                                                                                                                                                                                     |
+| :-----------------: | :------: | :----------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------: | :---: | :----: | :----: | :------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| backbone (pretrain) | ImageNet | [resnet50](https://github.com/open-mmlab/mmclassification/blob/master/configs/resnet/resnet50_8xb32_in1k.py) | [resnet18](https://github.com/open-mmlab/mmclassification/blob/master/configs/resnet/resnet18_8xb32_in1k.py) |       | 76.55  | 69.90  | [pretrain_config](./abloss_pretrain_backbone_resnet50_resnet18_8xb32_in1k) | [teacher](https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth) \|[model](https://download.openmmlab.com/mmrazor/v1/ABLoss/abloss_pretrain_backbone_resnet50_resnet18_8xb32_in1k_20220830_165724-a6284e9f.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/ABLoss/abloss_pretrain_backbone_resnet50_resnet18_8xb32_in1k_20220830_165724-a6284e9f.json) |
+|   logits (train)    | ImageNet | [resnet50](https://github.com/open-mmlab/mmclassification/blob/master/configs/resnet/resnet50_8xb32_in1k.py) | [resnet18](https://github.com/open-mmlab/mmclassification/blob/master/configs/resnet/resnet18_8xb32_in1k.py) | 69.94 | 76.55  | 69.90  |      [train_config](./abloss_logits_resnet50_resnet18_8xb32_in1k.py)       | [teacher](https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth) \|[model](https://download.openmmlab.com/mmrazor/v1/ABLoss/abloss_logits_resnet50_resnet18_8xb32_in1k_20220830_202129-f35edde8.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/ABLoss/abloss_logits_resnet50_resnet18_8xb32_in1k_20220830_202129-f35edde8.json)                       |
 
 ## Citation
 
@@ -43,7 +44,7 @@ An activation boundary for a neuron refers to a separating hyperplane that deter
 
 ## Getting Started
 
-### ABConnectors and Student pre-training.
+### Pre-training.
 
 ```bash
 sh tools/dist_train.sh configs/distill/mmcls/abloss/abloss_pretrain_backbone_resnet50_resnet18_8xb32_in1k.py 8
@@ -54,10 +55,11 @@ sh tools/dist_train.sh configs/distill/mmcls/abloss/abloss_pretrain_backbone_res
 open file 'configs/distill/mmcls/abloss/abloss_logits_resnet50_resnet18_8xb32_in1k.py'
 
 ```python
-# modify init_cfg in model settings
-# pretrain_work_dir is same as the PRETRAIN_WORK_DIR in pre-training.
+# Modify init_cfg in model settings.
+# 'pretrain_work_dir' is same as the 'work_dir of pre-training'.
+# 'last_epoch' defaults to 'epoch_20' in ABLoss.
 init_cfg=dict(
-    type='Pretrained', checkpoint='pretrain_work_dir/last_chechpoint.pth'),
+    type='Pretrained', checkpoint='pretrain_work_dir/last_epoch.pth'),
 ```
 
 ### Distillation training.
