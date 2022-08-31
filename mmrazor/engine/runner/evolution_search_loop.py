@@ -167,6 +167,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                     self.candidates.append(candidate)
         else:
             self.candidates = Candidates([None] * self.num_candidates)
+        # import pdb
+        # pdb.set_trace()
         # broadcast candidates to val with multi-GPUs.
         broadcast_object_list(self.candidates.data)
 
@@ -178,7 +180,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             metrics = self._val_candidate()
             score = metrics[self.score_key] \
                 if len(metrics) != 0 else 0.
-            # score = 0.
             self.candidates.set_score(i, score)
             self.runner.logger.info(
                 f'Epoch:[{self._epoch}/{self._max_epochs}] '
