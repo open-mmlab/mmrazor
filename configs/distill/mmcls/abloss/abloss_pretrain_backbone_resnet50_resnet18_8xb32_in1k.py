@@ -4,8 +4,7 @@ _base_ = [
     'mmcls::_base_/default_runtime.py'
 ]
 
-train_cfg = dict(by_epoch=True, max_epochs=20, val_interval=1)
-
+teacher_ckpt = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth'  # noqa: E501
 model = dict(
     _scope_='mmrazor',
     type='SingleTeacherDistill',
@@ -20,7 +19,7 @@ model = dict(
         cfg_path='mmcls::resnet/resnet18_8xb32_in1k.py', pretrained=False),
     teacher=dict(
         cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=True),
-    teacher_ckpt='resnet50_8xb32_in1k_20210831-ea4938fc.pth',
+    teacher_ckpt=teacher_ckpt,
     calculate_student_loss=False,
     distiller=dict(
         type='ConfigurableDistiller',
@@ -94,4 +93,5 @@ model = dict(
 
 find_unused_parameters = True
 
+train_cfg = dict(by_epoch=True, max_epochs=20, val_interval=1)
 val_cfg = dict(_delete_=True, type='mmrazor.SingleTeacherDistillValLoop')
