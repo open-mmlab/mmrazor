@@ -162,8 +162,9 @@ class Dsnas(BaseAlgorithm):
 
             # 1. update architecture
             with optim_wrapper['architecture'].optim_context(self):
-                supernet_batch_inputs, supernet_data_samples = \
-                    self.data_preprocessor(data, True)
+                pseudo_data = self.data_preprocessor(data, True)
+                supernet_batch_inputs = pseudo_data['inputs']
+                supernet_data_samples = pseudo_data['data_samples']
                 supernet_loss = self(
                     supernet_batch_inputs, supernet_data_samples, mode='loss')
 
@@ -188,7 +189,9 @@ class Dsnas(BaseAlgorithm):
         else:
             # Enable automatic mixed precision training context.
             with optim_wrapper.optim_context(self):
-                batch_inputs, data_samples = self.data_preprocessor(data, True)
+                pseudo_data = self.module.data_preprocessor(data, True)
+                batch_inputs = pseudo_data['inputs']
+                data_samples = pseudo_data['data_samples']
                 losses = self(batch_inputs, data_samples, mode='loss')
             parsed_losses, log_vars = self.parse_losses(losses)
             optim_wrapper.update_params(parsed_losses)
@@ -299,8 +302,9 @@ class DsnasDDP(MMDistributedDataParallel):
 
             # 1. update architecture
             with optim_wrapper['architecture'].optim_context(self):
-                supernet_batch_inputs, supernet_data_samples = \
-                    self.module.data_preprocessor(data, True)
+                pseudo_data = self.module.data_preprocessor(data, True)
+                supernet_batch_inputs = pseudo_data['inputs']
+                supernet_data_samples = pseudo_data['data_samples']
                 supernet_loss = self(
                     supernet_batch_inputs, supernet_data_samples, mode='loss')
 
@@ -325,8 +329,9 @@ class DsnasDDP(MMDistributedDataParallel):
         else:
             # Enable automatic mixed precision training context.
             with optim_wrapper.optim_context(self):
-                batch_inputs, data_samples = self.module.data_preprocessor(
-                    data, True)
+                pseudo_data = self.module.data_preprocessor(data, True)
+                batch_inputs = pseudo_data['inputs']
+                data_samples = pseudo_data['data_samples']
                 losses = self(batch_inputs, data_samples, mode='loss')
             parsed_losses, log_vars = self.module.parse_losses(losses)
             optim_wrapper.update_params(parsed_losses)
