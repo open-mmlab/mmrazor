@@ -14,6 +14,7 @@
 | ditill  |      DFAD       |      [README.md](https://github.com/open-mmlab/mmrazor/tree/dev-1.x/configs/distill/mmcls/dfad)       |
 | ditill  |       DKD       |       [README.md](https://github.com/open-mmlab/mmrazor/tree/dev-1.x/configs/distill/mmcls/dkd)       |
 | ditill  | Factor Transfer | [README.md](https://github.com/open-mmlab/mmrazor/tree/dev-1.x/configs/distill/mmcls/factor_transfer) |
+| ditill  | FitNets | [README.md](https://github.com/open-mmlab/mmrazor/tree/dev-1.x/configs/distill/mmcls/fitnets) |
 | ditill  |       KD        |       [README.md](https://github.com/open-mmlab/mmrazor/tree/dev-1.x/configs/distill/mmcls/kd)        |
 | ditill  |       OFD       |       [README.md](https://github.com/open-mmlab/mmrazor/tree/dev-1.x/configs/distill/mmcls/ofd)       |
 | ditill  |       RKD       |       [README.md](https://github.com/open-mmlab/mmrazor/tree/dev-1.x/configs/distill/mmcls/rkd)       |
