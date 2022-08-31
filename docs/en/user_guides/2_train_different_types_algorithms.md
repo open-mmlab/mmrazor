@@ -31,7 +31,7 @@ python ./tools/train.py \
 #### Search for Subnet on The Trained Supernet
 
 ```Python
-python tools/train.py ${CONFIG_FILE} ${CHECKPOINT_PATH} [optional arguments]
+python tools/train.py ${CONFIG_FILE} --cfg-options load_from=${CHECKPOINT_PATH} [optional arguments]
 ```
 
 For example,
@@ -39,7 +39,7 @@ For example,
 ```Python
 python ./tools/train.py \
   configs/nas/mmcls/spos/spos_shufflenet_search_8xb128_in1k.py \
-  $STEP1_CKPT \
+  --cfg-options load_from=$STEP1_CKPT \
   --work-dir $WORK_DIR
 ```
 
