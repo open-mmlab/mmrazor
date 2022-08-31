@@ -1,4 +1,4 @@
-_base_ = ['./spos_shufflenet_supernet_8xb128_in1k.py']
+_base_ = ['./detnas_frcnn_shufflenet_supernet_coco_1x.py']
 
 model = dict(norm_training=True)
 
@@ -10,8 +10,8 @@ train_cfg = dict(
     max_epochs=20,
     num_candidates=50,
     top_k=10,
-    num_mutation=25,
-    num_crossover=25,
+    num_mutation=20,
+    num_crossover=20,
     mutate_prob=0.1,
-    flops_range=(0., 330 * 1e6),
-    score_key='accuracy/top1')
+    flops_range=None,
+    score_key='bbox_mAP')
