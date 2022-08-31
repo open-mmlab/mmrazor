@@ -15,7 +15,7 @@ Models:
     In Collection: DKD
     Metadata:
       inference time (ms/im):
-        - value: 0.62
+        - value: 0.75
           hardware: V100
           backend: PyTorch
           batch size: 16
