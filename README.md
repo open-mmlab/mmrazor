@@ -81,11 +81,12 @@ Below is an overview of MMRazor's design and implementation, please refer to [tu
 
 ## What's new
 
-MMRazor v0.3.1 was released in 5/4/2022.
+MMRazor v1.0.0rc0 was released in 1/9/2022.
 
+Please refer to [changelog.md](/docs/en/notes/changelog.md) for more details and other release history.
 ## Benchmark and model zoo
 
-Results and models are available in the [model zoo](/docs/en/model_zoo.md).
+Results and models are available in the [model zoo](/docs/en/get_started/model_zoo.md).
 
 Supported algorithms:
 
