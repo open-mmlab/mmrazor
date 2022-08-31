@@ -6,4 +6,13 @@ Import:
   # - configs/nas/darts/metafile.yml
   - configs/nas/mmdet/detnas/metafile.yml
   - configs/nas/mmcls/spos/metafile.yml
+  - configs/distill/mmcls/abloss/metafile.yml
+  - configs/distill/mmcls/byot/metafile.yml
+  - configs/distill/mmcls/dafl/metafile.yml
+  - configs/distill/mmcls/dfad/metafile.yml
+  - configs/distill/mmcls/dkd/metafile.yml
+  - configs/distill/mmcls/fitnets/metafile.yml
+  - configs/distill/mmcls/kd/metafile.yml
+  - configs/distill/mmcls/zskt/metafile.yml
+  - configs/distill/mmdet/fbkd/metafile.yml
   # - configs/pruning/autoslim/metafile.yml
