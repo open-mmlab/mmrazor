@@ -1,3 +1,3 @@
-## <a href='https://mmrazor.readthedocs.io/en/latest/'>English</a>
+## <a href='https://mmrazor.readthedocs.io/en/dev-1.x/'>English</a>
 
-## <a href='https://mmrazor.readthedocs.io/zh_CN/latest/'>简体中文</a>
+## <a href='https://mmrazor.readthedocs.io/zh_CN/dev-1.x/'>简体中文</a>
