@@ -4,7 +4,7 @@ import os
 import os.path as osp
 import random
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 from mmengine import fileio
@@ -14,7 +14,7 @@ from mmengine.runner import EpochBasedTrainLoop
 from mmengine.utils import is_list_of
 from torch.utils.data import DataLoader
 
-from mmrazor.models.task_modules import ResourceEstimator
+from mmrazor.models.task_modules.estimators import get_model_complexity_info
 from mmrazor.registry import LOOPS
 from mmrazor.structures import Candidates, export_fix_subnet, load_fix_subnet
 from mmrazor.utils import SupportRandomSubnet
@@ -44,8 +44,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         mutate_prob (float): The probability of mutation. Defaults to 0.1.
         flops_range (tuple, optional): flops_range to be used for screening
             candidates.
-        estimator_cfg (Dict[str, Any]): Used for building a resource estimator.
-            Default to dict().
+        spec_modules (list): Used for specify modules need to counter.
+            Defaults to list().
         score_key (str): Specify one metric in evaluation results to score
             candidates. Defaults to 'accuracy_top-1'.
         init_candidates (str, optional): The candidates file path, which is
@@ -66,7 +66,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                  num_crossover: int = 25,
                  mutate_prob: float = 0.1,
                  flops_range: Optional[Tuple[float, float]] = (0., 330 * 1e6),
-                 estimator_cfg: Dict[str, Any] = dict(),
+                 spec_modules: List = [],
                  score_key: str = 'accuracy/top1',
                  init_candidates: Optional[str] = None) -> None:
         super().__init__(runner, dataloader, max_epochs)
@@ -85,7 +85,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         self.num_candidates = num_candidates
         self.top_k = top_k
         self.flops_range = flops_range
-        self.estimator_cfg = estimator_cfg
+        self.spec_modules = spec_modules
         self.score_key = score_key
         self.num_mutation = num_mutation
         self.num_crossover = num_crossover
@@ -167,8 +167,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                     self.candidates.append(candidate)
         else:
             self.candidates = Candidates([None] * self.num_candidates)
-        # import pdb
-        # pdb.set_trace()
         # broadcast candidates to val with multi-GPUs.
         broadcast_object_list(self.candidates.data)
 
@@ -308,12 +306,10 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         fix_mutable = export_fix_subnet(self.model)
         copied_model = copy.deepcopy(self.model)
         load_fix_subnet(copied_model, fix_mutable)
+        flops, _ = get_model_complexity_info(
+            copied_model, spec_modules=self.spec_modules)
 
-        estimator = ResourceEstimator(**self.estimator_cfg)
-        results = estimator.estimate(copied_model)
-        flops = results['flops']
-
-        if self.flops_range[0] < flops < self.flops_range[1]:
+        if self.flops_range[0] <= flops <= self.flops_range[1]:
             return True
         else:
             return False

@@ -9,7 +9,7 @@ from mmrazor.registry import TASK_UTILS
 
 
 def get_model_complexity_info(model,
-                              input_shape,
+                              input_shape=(1, 3, 224, 224),
                               spec_modules=[],
                               disabled_counters=[],
                               print_per_layer_stat=False,
@@ -39,7 +39,7 @@ def get_model_complexity_info(model,
     Args:
         model (nn.Module): The model for complexity calculation.
         input_shape (tuple): Input shape (including batchsize) used for
-            calculation.
+            calculation. Default to (1, 3, 224, 224)
         spec_modules (list): A list that contains the names of several spec
             modules, which users want to get resources infos of them.
             e.g., ['backbone', 'head'], ['backbone.layer1']. Default to [].
