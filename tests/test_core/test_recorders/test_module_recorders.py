@@ -4,7 +4,8 @@ from unittest import TestCase
 import torch
 from torch import nn
 
-from mmrazor.structures import ModuleInputsRecorder, ModuleOutputsRecorder
+from mmrazor.models.task_modules import (ModuleInputsRecorder,
+                                         ModuleOutputsRecorder)
 
 
 class ToyModel(nn.Module):
