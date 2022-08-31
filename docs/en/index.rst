@@ -30,6 +30,7 @@ Welcome to mmrazor's documentation!
    :maxdepth: 1
    :caption: Notes
 
+   notes/changelog.md
    notes/contribution_guide.md
    notes/faq.md
 

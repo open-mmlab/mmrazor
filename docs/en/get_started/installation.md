@@ -86,8 +86,8 @@ If you would like to install MMRazor in `dev` mode, run following:
 git clone https://github.com/open-mmlab/mmrazor.git
 cd mmrazor
 git fetch origin
-git checkout -b 1.0.0rc0 origin/1.0.0rc0
-# The new version is released in branch ``1.0.0rc0``
+git checkout -b dev-1.x origin/dev-1.x
+# The new version is released in branch ``dev-1.x``
 pip install -v -e .
 # "-v" means verbose, or more output
 # "-e" means installing a project in editable mode,
@@ -111,7 +111,7 @@ pip install 'mmcv>=2.0.0rc1' -f https://download.openmmlab.com/mmcv/dist/cu102/t
 git clone https://github.com/open-mmlab/mmrazor.git
 cd mmrazor
 git fetch origin
-git checkout -b 1.0.0rc0 origin/1.0.0rc0
+git checkout -b dev-1.x origin/dev-1.x
 pip install -v -e .
 ```
 
