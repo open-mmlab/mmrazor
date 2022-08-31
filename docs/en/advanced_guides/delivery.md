@@ -13,7 +13,7 @@ In general, the delivery mechanism allows us to deliver intermediate results bet
 
 ## Usage of Delivery
 
-Currently, we support two deliveries: ``` FunctionOutputs``Delivery ``` and ``` MethodOutputs``Delivery ```, both of which inherit from `DistillDiliver`. And these deliveries can be managed by ``` Distill``Delivery``Manager ``` or just be used on their own.
+Currently, we support two deliveries:  `FunctionOutputsDelivery` and `MethodOutputsDelivery`, both of which inherit from `DistillDiliver`. And these deliveries can be managed by `DistillDeliveryManager` or just be used on their own.
 
 Their relationship is shown below.
 
@@ -21,15 +21,17 @@ Their relationship is shown below.
 
 ### FunctionOutputsDelivery
 
-``` FunctionOutputs``Delivery ``` is used to align the **function's** intermediate results between the teacher model and the student model.
+`FunctionOutputsDelivery` is used to align the **function's** intermediate results between the teacher model and the student model.
 
-> When initializing ``` FunctionOutputs``Delivery ```, you need to pass `func_path` argument, which requires extra attention. For example,
-> `anchor_inside_flags` is a function in mmdetection to check whether the
-> anchors are inside the border. This function is in
-> `mmdet/core/anchor/utils.py` and used in
-> `mmdet/models/dense_heads/anchor_head`. Then the `func_path` should be
-> `mmdet.models.dense_heads.anchor_head.anchor_inside_flags` but not
-> `mmdet.core.anchor.utils.anchor_inside_flags`.
+```{note}
+When initializing `FunctionOutputsDelivery`, you need to pass `func_path` argument, which requires extra attention. For example,
+`anchor_inside_flags` is a function in mmdetection to check whether the
+anchors are inside the border. This function is in
+`mmdet/core/anchor/utils.py` and used in
+`mmdet/models/dense_heads/anchor_head`. Then the `func_path` should be
+`mmdet.models.dense_heads.anchor_head.anchor_inside_flags` but not
+`mmdet.core.anchor.utils.anchor_inside_flags`.
+```
 
 #### Case 1: Delivery single function's output from the teacher to the student.
 
@@ -69,7 +71,9 @@ True
 
 If a function is executed more than once during the forward of the teacher model, all the outputs of this function will be used to override function outputs from the student model
 
-> Delivery order is first-in first-out.
+```{note}
+Delivery order is first-in first-out.
+```
 
 ```Python
 delivery = FunctionOutputsDelivery(
@@ -96,9 +100,9 @@ True
 
 ### MethodOutputsDelivery
 
-``` MethodOutputs``Delivery ``` is used to align the **method's** intermediate results between the teacher model and the student model.
+`MethodOutputsDelivery` is used to align the **method's** intermediate results between the teacher model and the student model.
 
-#### Case: **Align the inputs of the teacher model and the student model**
+#### Case: Align the inputs of the teacher model and the student model
 
 Here we use mixup as an example to show how to align the inputs of the teacher model and the student model.
 
@@ -162,9 +166,9 @@ The randomness is eliminated by using `MethodOutputsDelivery`.
 
 ### 2.3 DistillDeliveryManager
 
-``` Distill``Delivery``Manager ``` is actually a context manager, used to manage delivers. When entering the ``` Distill``Delivery``Manager ```, all delivers managed will be started.
+`DistillDeliveryManager` is actually a context manager, used to manage delivers. When entering the ` DistillDeliveryManager`, all delivers managed will be started.
 
-With the help of ``` Distill``Delivery``Manager ```, we are able to manage several different DistillDeliveries with as little code as possible, thereby reducing the possibility of errors.
+With the help of `DistillDeliveryManager`, we are able to manage several different DistillDeliveries with as little code as possible, thereby reducing the possibility of errors.
 
 #### Case: Manager deliveries with DistillDeliveryManager
 

@@ -24,8 +24,9 @@ In MMRazor, we have implemented some mutators, their relationship is as below.
 
 `ModuleMuator`/ `ChannelMutator`: Two different types mutators are for handling mutable module and mutable channel respectively.
 
-> Please refer to [Mutable 用户文档 ](https://aicarrier.feishu.cn/docs/doccnc6HAhAsilBXGGR9kzeeK8d)for more details about different types of mutable.
-
+```{note}
+Please refer to [Mutable](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/mutable.html) for more details about different types of mutable.
+```
 `OneShotModuleMutator` / `DiffModuleMutator`: Inherit from `ModuleMuator`, they are for implementing different types algorithms, such as [SPOS](https://arxiv.org/abs/1904.00420), [Darts](https://arxiv.org/abs/1806.09055) and so on.
 
 `OneShotChannelMutator` / `SlimmableChannelMutator`: Inherit from `ChannelMutator`, they are also for meeting the needs of different types algorithms, such as [AotuSlim](https://arxiv.org/abs/1903.11728).

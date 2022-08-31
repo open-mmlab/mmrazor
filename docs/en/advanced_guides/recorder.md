@@ -11,12 +11,12 @@ In general, `Recorder` will help us expand more functions in implementing algori
 ## Usage of Recorder
 
 Currently, we support five `Recorder`, as shown in the following table
-
-| FunctionOutputsRecorder | Record output results of some functions     |
-| ----------------------- | ------------------------------------------- |
-| MethodOutputsRecorder   | Record output results of some methods       |
-| ModuleInputsRecorder    | Record input results of nn.Module           |
-| ModuleOutputsRecorder   | Record output results of nn.Module          |
+|Recorder name|Description|
+| ----------------------- | ----------------------------------------- |
+| FunctionOutputsRecorder |   Record output results of some functions   |
+| MethodOutputsRecorder   |    Record output results of some methods    |
+| ModuleInputsRecorder    |      Record input results of nn.Module      |
+| ModuleOutputsRecorder   |     Record output results of nn.Module      |
 | ParameterRecorder       | Record intermediate parameters of nn.Module |
 
 All of the recorders inherit from `BaseRecorder`. And these recorders can be managed by `RecorderManager` or just be used on their own.
@@ -29,13 +29,15 @@ Their relationship is shown below.
 
 `FunctionOutputsRecorder` is used to record the output results of intermediate **function**.
 
-> When instantiating `FunctionOutputsRecorder`, you need to pass `source` argument, which requires extra attention. For example,
-> `anchor_inside_flags` is a function in mmdetection to check whether the
-> anchors are inside the border. This function is in
-> `mmdet/core/anchor/utils.py` and used in
-> `mmdet/models/dense_heads/anchor_head`. Then the `source` argument should be
-> `mmdet.models.dense_heads.anchor_head.anchor_inside_flags` but not
-> `mmdet.core.anchor.utils.anchor_inside_flags`.
+```{note}
+When instantiating `FunctionOutputsRecorder`, you need to pass `source` argument, which requires extra attention. For example,
+`anchor_inside_flags` is a function in mmdetection to check whether the
+anchors are inside the border. This function is in
+`mmdet/core/anchor/utils.py` and used in
+`mmdet/models/dense_heads/anchor_head`. Then the `source` argument should be
+`mmdet.models.dense_heads.anchor_head.anchor_inside_flags` but not
+`mmdet.core.anchor.utils.anchor_inside_flags`.
+```
 
 #### Example
 
@@ -165,7 +167,9 @@ Out:
 
 #### Example
 
+```{note}
 > Different `MethodOutputsRecorder` and `FunctionOutputsRecorder`, `ModuleOutputsRecorder` and `ModuleInputsRecorder` are instantiated with module name rather than used path, and executing `initialize` need arg: `model`. Thus, they can know actually the module needs to be recorded.
+```
 
 Suppose there is a toy Module `ToyModule` in toy_module.py.
 
@@ -222,7 +226,7 @@ True
 
 ### ParameterRecorder
 
-`ParameterRecorder` is used to record the intermediate parameter of ``` nn.``Module ```. Its usage is similar to `ModuleOutputsRecorder`'s and `ModuleInputsRecorder`'s, but it instantiates with parameter name instead of module name.
+`ParameterRecorder` is used to record the intermediate parameter of `nn.Module`. Its usage is similar to `ModuleOutputsRecorder`'s and `ModuleInputsRecorder`'s, but it instantiates with parameter name instead of module name.
 
 #### Example
 

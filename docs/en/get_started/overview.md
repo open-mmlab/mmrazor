@@ -9,7 +9,7 @@ MMRazor is a model compression toolkit for model slimming, which includes 4 main
 - Knowledge Distillation (KD)
 - Quantization (come soon)
 
-It is a part of the [OpenMMLab](https://openmmlab.com/) project. If you want to use it now, please refer to [Get Started](https://mmrazor.readthedocs.io/en/latest/get_started.html).
+It is a part of the [OpenMMLab](https://openmmlab.com/) project. If you want to use it now, please refer to [Installation](https://mmrazor.readthedocs.io/en/dev-1.x/get_started/installation.html).
 
 ### Major features:
 
@@ -45,11 +45,13 @@ In OpenMMLab, implementing vision tasks commonly includes 3 parts (model / datas
 
 `Architecture` is similar to `model` of the upstream repos. You can chose to directly use the original `model` or customize the new `model` as your architecture according to different tasks. For example,  you can directly use ResNet-34 and ResNet-18 of MMClassification to implement some KD algorithms, but in NAS, you may need to customize a searchable model.
 
-``` Compone``n``ts ``` consist of various special functions for supporting different lightweight algorithms. They can be directly used in config because of  registered into MMEngine. Thus, you can pick some components you need to quickly implement your algorithm. For example, you may need `mutator` / `mutable` / `searchle backbone` if you want to implement a NAS algorithm, and you can pick from `distill loss` / `recorder` / `delivery` / `connector` if you need a KD algorithm.
+`Components` consist of various special functions for supporting different lightweight algorithms. They can be directly used in config because of  registered into MMEngine. Thus, you can pick some components you need to quickly implement your algorithm. For example, you may need `mutator` / `mutable` / `searchle backbone` if you want to implement a NAS algorithm, and you can pick from `distill loss` / `recorder` / `delivery` / `connector` if you need a KD algorithm.
 
 Please refer to the next section for more details about **Implement**.
 
-> The arg name of `algorithm` in config is **model** rather than **algorithm** in order to get better supports of MMCV and MMEngine.
+```{note}
+The arg name of `algorithm` in config is **model** rather than **algorithm** in order to get better supports of MMCV and MMEngine.
+```
 
 ## Key concepts
 
@@ -57,29 +59,26 @@ For better understanding and using MMRazor, it is highly recommended to read the
 
 **Global**
 
-- [Algorithm](https://aicarrier.feishu.cn/docs/doccnw4XX4zCRJ3FHhZpjkWS4gf)
+- [Algorithm](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/algorithm.html)
 
 **NAS & Pruning**
 
-- [Mutator](https://aicarrier.feishu.cn/docs/doccnYzs6QOjIiIB3BFB6R0Gaqh)
-- [Mutable](https://aicarrier.feishu.cn/docs/doccnc6HAhAsilBXGGR9kzeeK8d)
-- [Pruning graph](https://aicarrier.feishu.cn/docs/doccns6ziFFUvJDvhctTjwX6BBh)
-- [Dynamic op](https://aicarrier.feishu.cn/docx/doxcnbp4n4HeDkJI1fHlWfVklke)
+- [Mutator](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/mutator.html)
+- [Mutable](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/mutable.html)
 
 **KD**
 
-- [Delivery](https://aicarrier.feishu.cn/docs/doccnCEBuZPaLMTsMS83OoYJt4f)
-- [Recorder](https://aicarrier.feishu.cn/docs/doccnFzxHCSUxzohWHo5fgbI9Pc)
-- [Connector](https://aicarrier.feishu.cn/docx/doxcnvJG0VHZLqF82MkCHyr9B8b)
+- [Delivery](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/delivery.html)
+- [Recorder](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/recorder.html)
 
 ## User guide
 
-We provide more complete and systematic guide documents for different technical directions. It is highly recommended to read them if you want to use and customize lightweight algorithms better.
+If you want to run mmrazor quickly, you can refer to as the follows.
 
-- Neural Architecture Search (to add link)
-- Pruning (to add link)
-- Knowledge Distillation (to add link)
-- Quantization (to add link)
+- [Learn about Configs](https://mmrazor.readthedocs.io/en/dev-1.x/user_guides/1_learn_about_config.html)
+- [Train different types algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/user_guides/2_train_different_types_algorithms.html)
+- [Train with different devices](https://mmrazor.readthedocs.io/en/dev-1.x/user_guides/3_train_with_different_devices.html)
+- [Test a model](https://mmrazor.readthedocs.io/en/dev-1.x/user_guides/4_test_a_model.html)
 
 ## Tutorials
 
@@ -87,22 +86,20 @@ We provide the following general tutorials according to some typical requirement
 
 **Tutorial list**
 
-- [Tutorial 1: Overview](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_1_overview.html)
-- [Tutorial 2: Learn about Configs](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_2_learn_about_configs.html)
-- [Toturial 3: Customize Architectures](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_3_customize_architectures.html)
-- [Toturial 4: Customize NAS algorithms](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_4_customize_nas_algorithms.html)
-- [Tutorial 5: Customize Pruning algorithms](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_5_customize_pruning_algorithms.html)
-- [Toturial 6: Customize KD algorithms](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_6_customize_kd_algorithms.html)
-- [Tutorial 7: Customize mixed algorithms](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_7_customize_mixed_algorithms_with_out_algorithms_components.html)
-- [Tutorial 8: Apply existing algorithms to new tasks](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_8_apply_existing_algorithms_to_new_tasks.html)
+- [Customize Architectures](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_architectures.html)
+- [Customize NAS algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_nas_algorithms.html)
+- [Customize Pruning algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_pruning_algorithms.html)
+- [Customize KD algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_kd_algorithms.html)
+- [Customize mixed algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_mixed_algorithms.html)
+- [Apply existing algorithms to new tasks](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/apply_existing_algorithms_to_new_tasks.html)
 
 ## F&Q
 
-If you encounter some trouble using MMRazor, you can find whether your question has existed in **F&Q（to add link）**. If not existed, welcome to open a [Github issue](https://github.com/open-mmlab/mmrazor/issues) for getting support, we will reply it as soon.
+If you encounter some trouble using MMRazor, you can find whether your question has existed in [F&Q](https://mmrazor.readthedocs.io/en/dev-1.x/notes/faq.html). If not existed, welcome to open a [Github issue](https://github.com/open-mmlab/mmrazor/issues) for getting support, we will reply it as soon.
 
 ## Get support and contribute back
 
 MMRazor is maintained on the [MMRazor Github repository](https://github.com/open-mmlab/mmrazor). We collect feedback and new proposals/ideas on Github. You can:
 
 - Open a [GitHub issue](https://github.com/open-mmlab/mmrazor/issues) for bugs and feature requests.
-- Open a [pull request](https://github.com/open-mmlab/mmrazor/pulls) to contribute code (make sure to read the [contribution guide](https://github.com/open-mmlab/mmcv/blob/master/CONTRIBUTING.md) before doing this).
+- Open a [pull request](https://github.com/open-mmlab/mmrazor/pulls) to contribute code (make sure to read the [contribution guide](https://mmrazor.readthedocs.io/en/dev-1.x/notes/contribution_guide.html) before doing this).
