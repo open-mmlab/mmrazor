@@ -14,6 +14,13 @@ Models:
   - Name: abloss_pretrain_backbone_resnet50_resnet18_8xb32_in1k
     In Collection: ABLoss
     Metadata:
+      inference time (ms/im):
+        - value: 0.21
+          hardware: NVIDIA A100-SXM4-80GB
+          backend: PyTorch
+          batch size: 32
+          mode: FP32
+          resolution: (224, 224)
       Location: backbone
       Student:
         Config: mmcls::resnet/resnet18_8xb32_in1k.py

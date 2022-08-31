@@ -14,6 +14,13 @@ Models:
   - Name: dfad_logits_resnet34_resnet18_8xb32_cifar10
     In Collection: DFAD
     Metadata:
+      inference time (ms/im):
+        - value: 0.38
+          hardware: NVIDIA A100-SXM4-80GB
+          backend: PyTorch
+          batch size: 32
+          mode: FP32
+          resolution: (32, 32)
       Location: logits
       Student:
         Config: mmcls::resnet/resnet18_8xb16_cifar10.py

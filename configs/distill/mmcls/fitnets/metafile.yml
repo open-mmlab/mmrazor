@@ -11,6 +11,13 @@ Models:
   - Name: fitnets_backbone_logits_resnet50_resnet18_8xb32_in1k
     In Collection: FitNets
     Metadata:
+      inference time (ms/im):
+        - value: 0.18
+          hardware: NVIDIA A100-SXM4-80GB
+          backend: PyTorch
+          batch size: 32
+          mode: FP32
+          resolution: (224, 224)
       Location: backbone & logits
       Student:
         Config: mmcls::resnet/resnet18_8xb32_in1k.py

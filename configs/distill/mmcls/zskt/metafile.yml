@@ -14,6 +14,13 @@ Models:
   - Name: zskt_backbone_logits_resnet34_resnet18_8xb16_cifar10
     In Collection: ZSKT
     Metadata:
+      inference time (ms/im):
+        - value: 0.12
+          hardware: NVIDIA A100-SXM4-80GB
+          backend: PyTorch
+          batch size: 16
+          mode: FP32
+          resolution: (32, 32)
       Location: backbone & logits
       Student:
         Config: mmcls::resnet/resnet18_8xb16_cifar10.py

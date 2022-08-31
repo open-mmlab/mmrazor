@@ -14,6 +14,13 @@ Models:
   - Name: fbkd_fpn_faster-rcnn_resnet101_faster-rcnn_resnet50_1x_coco
     In Collection: FBKD
     Metadata:
+      inference time (ms/im):
+        - value: 0.32
+          hardware: NVIDIA A100-SXM4-80GB
+          backend: PyTorch
+          batch size: 2
+          mode: FP32
+          resolution: (1333, 800)
       Location: fpn
       Student:
         Metrics:
