@@ -84,6 +84,7 @@ class DynamicConv2d(nn.Conv2d, ChannelDynamicOP):
         return weight, bias
 
     def to_static_op(self) -> nn.Conv2d:
+        """Convert dynamic Conv2d to static Conv2d."""
         assert self.mutable_in.is_fixed and self.mutable_out.is_fixed
 
         weight, bias, = self._get_dynamic_params()
@@ -156,6 +157,7 @@ class DynamicLinear(nn.Linear, ChannelDynamicOP):
 
     # TODO
     def to_static_op(self) -> nn.Module:
+        """Convert dynamic OP to static OP."""
         return self
 
 
@@ -232,6 +234,7 @@ class DynamicBatchNorm(_BatchNorm, ChannelDynamicOP):
 
     # TODO
     def to_static_op(self) -> nn.Module:
+        """Convert dynamic OP to static OP."""
         return self
 
 
@@ -286,6 +289,7 @@ class DynamicInstanceNorm(_InstanceNorm, ChannelDynamicOP):
 
     # TODO
     def to_static_op(self) -> nn.Module:
+        """Convert dynamic OP to static OP."""
         return self
 
 
@@ -330,4 +334,5 @@ class DynamicGroupNorm(GroupNorm, ChannelDynamicOP):
 
     # TODO
     def to_static_op(self) -> nn.Module:
+        """Convert dynamic OP to static OP."""
         return self

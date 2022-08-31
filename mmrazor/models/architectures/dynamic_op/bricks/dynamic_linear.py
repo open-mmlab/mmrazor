@@ -31,6 +31,7 @@ class DynamicLinear(nn.Linear, DynamicLinearMixin):
 
     @property
     def static_op_factory(self):
+        """Corresponding static PyTorch OP."""
         return nn.Linear
 
     @classmethod

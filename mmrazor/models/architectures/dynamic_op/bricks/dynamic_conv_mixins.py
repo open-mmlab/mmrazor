@@ -65,7 +65,7 @@ class DynamicConvMixin(DynamicChannelMixin):
         pass
 
     def register_mutable_attr(self, attr, mutable):
-
+        """Register attribute of mutable."""
         if attr == 'in_channels':
             self._register_mutable_in_channels(mutable)
         elif attr == 'out_channels':
@@ -231,7 +231,7 @@ class BigNasConvMixin(DynamicConvMixin):
     ``out_channels`` and ``kernel_size``."""
 
     def register_mutable_attr(self, attr, mutable):
-
+        """Register attribute of mutable."""
         if attr == 'in_channels':
             self._register_mutable_in_channels(mutable)
         elif attr == 'out_channels':

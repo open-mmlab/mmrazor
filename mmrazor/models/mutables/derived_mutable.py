@@ -50,16 +50,22 @@ def _expand_choice_fn(mutable: MutableProtocol, expand_ratio: int) -> Callable:
     return fn
 
 
-def _expand_mask_fn(mutable: MutableProtocol,
-                    expand_ratio: int) -> Callable:  # pragma: no cover
+def _expand_mask_fn(
+        mutable: MutableProtocol,
+        expand_ratio: Union[int, float]) -> Callable:  # pragma: no cover
     """Helper function to build `mask_fn` for expand derived mutable."""
     if not hasattr(mutable, 'current_mask'):
         raise ValueError('mutable must have attribute `currnet_mask`')
 
     def fn():
         mask = mutable.current_mask
-        expand_num_channels = mask.size(0) * expand_ratio
-        expand_choice = mutable.current_choice * expand_ratio
+        if isinstance(expand_ratio, int):
+            expand_num_channels = mask.size(0) * expand_ratio
+            expand_choice = mutable.current_choice * expand_ratio
+        elif isinstance(expand_ratio, float):
+            expand_num_channels = int(mask.size(0) * expand_ratio)
+            expand_choice = int(mutable.current_choice * expand_ratio)
+
         expand_mask = torch.zeros(expand_num_channels).bool()
         expand_mask[:expand_choice] = True
 
@@ -131,25 +137,54 @@ class DerivedMethodMixin:
         """Derive same mutable as the source."""
         return self.derive_expand_mutable(expand_ratio=1)
 
-    def derive_expand_mutable(self: MutableProtocol,
-                              expand_ratio: int) -> 'DerivedMutable':
+    def derive_expand_mutable(
+            self: MutableProtocol,
+            expand_ratio: Union[int, BaseMutable, float]) -> 'DerivedMutable':
         """Derive expand mutable, usually used with `expand_ratio`."""
-        choice_fn = _expand_choice_fn(self, expand_ratio=expand_ratio)
+        from .mutable_value import MutableValue
+
+        # avoid circular import
+
+        if isinstance(expand_ratio, int):
+            choice_fn = _expand_choice_fn(self, expand_ratio=expand_ratio)
+        elif isinstance(expand_ratio, MutableValue):
+            current_ratio: int = expand_ratio.current_choice
+            choice_fn = _expand_choice_fn(self, expand_ratio=current_ratio)
+        else:
+            raise NotImplementedError(
+                f'Not support type of ratio: {type(expand_ratio)}')
 
         mask_fn: Optional[Callable] = None
         if hasattr(self, 'current_mask'):
-            mask_fn = _expand_mask_fn(self, expand_ratio=expand_ratio)
+
+            if isinstance(expand_ratio, int):
+                mask_fn = _expand_mask_fn(self, expand_ratio=expand_ratio)
+            elif isinstance(expand_ratio, BaseMutable):
+                mask_fn = _expand_mask_fn(self, expand_ratio=current_ratio)
+            else:
+                raise NotImplementedError(
+                    f'Not support type of ratio: {type(expand_ratio)}')
 
         return DerivedMutable(choice_fn=choice_fn, mask_fn=mask_fn)
 
     def derive_divide_mutable(self: MutableProtocol,
-                              ratio: int,
+                              ratio: Union[int, BaseMutable],
                               divisor: int = 8) -> 'DerivedMutable':
         """Derive divide mutable, usually used with `make_divisable`."""
-        choice_fn = _divide_choice_fn(self, ratio=ratio, divisor=divisor)
+        from .mutable_value import MutableValue
+
+        # avoid circular import
+        if isinstance(ratio, int):
+            choice_fn = _divide_choice_fn(self, ratio=ratio, divisor=divisor)
+        elif isinstance(ratio, MutableValue):
+            current_ratio = ratio.current_choice
+            choice_fn = _divide_choice_fn(self, ratio=current_ratio, divisor=1)
+        else:
+            raise NotImplementedError(
+                f'Not support type of ratio: {type(ratio)}')
 
         mask_fn: Optional[Callable] = None
-        if hasattr(self, 'current_mask'):
+        if getattr(self, 'mask_fn', None):  # OneShotMutableChannel
             mask_fn = _divide_mask_fn(self, ratio=ratio, divisor=divisor)
 
         return DerivedMutable(choice_fn=choice_fn, mask_fn=mask_fn)
@@ -370,7 +405,6 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, CHOICE_TYPE],
 
         noncolcal_pars = inspect.getclosurevars(closure).nonlocals
         add_mutables_dfs(noncolcal_pars.values())
-
         return source_mutables
 
     def _trace_source_mutables(self) -> Set[BaseMutable]:
