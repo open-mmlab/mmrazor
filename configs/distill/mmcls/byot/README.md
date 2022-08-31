@@ -48,7 +48,6 @@ sh tools/dist_train.sh \
 ### Test
 
 ```bash
-sh tools/slurm_test.sh $PARTITION $JOB_NAME \
-  configs/distill/mmcls/byot/byot_logits_resnet18_cifar100_8xb16_in1k.py\
-  $WORK_DIR/latest.sh --eval $EVAL_SETTING
+sh tools/dist_train.sh \
+  configs/distill/mmcls/byot/byot_logits_resnet18_cifar100_8xb16_in1k.py 8
 ```
