@@ -150,7 +150,6 @@ Please refer to [installation.md](/docs/en/get_started/installation.md) for more
 
 Please refer to [user guides](https://mmrazor.readthedocs.io/en/dev-1.x/user_guides/index.html) for the basic usage of MMRazor. There are also [advanced guides](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/index.html):
 
-
 ## Contributing
 
 We appreciate all contributions to improve MMRazor.
