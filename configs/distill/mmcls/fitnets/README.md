@@ -22,7 +22,6 @@ almost 10.4 times less parameters outperforms a larger, state-of-the-art teacher
 
 <img width="743" alt="pipeline" src="https://user-images.githubusercontent.com/88702197/187423686-68719140-a978-4a19-a684-42b1d793d1fb.png">
 
-
 ## Results and models
 
 ### Classification
