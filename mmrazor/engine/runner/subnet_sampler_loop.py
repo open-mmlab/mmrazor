@@ -137,7 +137,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
                  max_iters: int,
                  val_begin: int = 1,
                  val_interval: int = 1000,
-                 score_key: str = 'accuracy_top-1',
+                 score_key: str = 'accuracy/top1',
                  flops_range: Optional[Tuple[float, float]] = (0., 330 * 1e6),
                  estimator_cfg: Dict[str, Any] = dict(),
                  num_candidates: int = 1000,
@@ -296,7 +296,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         self.runner.model.eval()
         for data_batch in self.dataloader_val:
             outputs = self.runner.model.val_step(data_batch)
-            self.evaluator.process(data_batch, outputs)
+            self.evaluator.process(data_samples=outputs, data_batch=data_batch)
         metrics = self.evaluator.evaluate(len(self.dataloader_val.dataset))
         return metrics
 

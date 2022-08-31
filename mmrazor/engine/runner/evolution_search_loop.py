@@ -67,7 +67,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                  mutate_prob: float = 0.1,
                  flops_range: Optional[Tuple[float, float]] = (0., 330 * 1e6),
                  estimator_cfg: Dict[str, Any] = dict(),
-                 score_key: str = 'accuracy_top-1',
+                 score_key: str = 'accuracy/top1',
                  init_candidates: Optional[str] = None) -> None:
         super().__init__(runner, dataloader, max_epochs)
         if isinstance(evaluator, dict) or is_list_of(evaluator, dict):
@@ -114,7 +114,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         if self.resume_from:
             self._resume()
 
-        while self.runner.epoch < self.max_epochs:
+        while self._epoch < self._max_epochs:
             self.run_epoch()
             self._save_searcher_ckpt()
 
@@ -156,7 +156,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             crossover should be no more than the number of candidates.'
 
         self.candidates = Candidates(candidates)
-        self.runner.epoch += 1
+        self._epoch += 1
 
     def sample_candidates(self) -> None:
         """Update candidate pool contains specified number of candicates."""
@@ -181,7 +181,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             # score = 0.
             self.candidates.set_score(i, score)
             self.runner.logger.info(
-                f'Epoch:[{self.runner.epoch}/{self.max_epochs}] '
+                f'Epoch:[{self._epoch}/{self._max_epochs}] '
                 f'Candidate:[{i + 1}/{self.num_candidates}] '
                 f'Score:{score}')
 
@@ -238,7 +238,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             for k in searcher_resume.keys():
                 setattr(self, k, searcher_resume[k])
             epoch_start = int(searcher_resume['_epoch'])
-            self._max_epochs = self.max_epochs - epoch_start
+            self._max_epochs = self._max_epochs - epoch_start
             self.runner.logger.info('#' * 100)
             self.runner.logger.info(f'Resume from epoch: {epoch_start}')
             self.runner.logger.info('#' * 100)
@@ -262,7 +262,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         self.runner.model.eval()
         for data_batch in self.dataloader:
             outputs = self.runner.model.val_step(data_batch)
-            self.evaluator.process(data_batch, outputs)
+            self.evaluator.process(data_samples=outputs, data_batch=data_batch)
         metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
         return metrics
 
@@ -274,19 +274,19 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         """
         if self.runner.rank == 0:
             save_for_resume = dict()
-            save_for_resume['_epoch'] = self.runner.epoch
+            save_for_resume['_epoch'] = self._epoch
             for k in ['candidates', 'top_k_candidates']:
                 save_for_resume[k] = getattr(self, k)
             fileio.dump(
                 save_for_resume,
                 osp.join(self.runner.work_dir,
-                         f'search_epoch_{self.runner.epoch}.pkl'))
+                         f'search_epoch_{self._epoch}.pkl'))
             self.runner.logger.info(
-                f'Epoch:[{self.runner.epoch}/{self.max_epochs}], top1_score: '
+                f'Epoch:[{self._epoch}/{self._max_epochs}], top1_score: '
                 f'{self.top_k_candidates.scores[0]}')
 
             if self.max_keep_ckpts > 0:
-                cur_ckpt = self.runner.epoch + 1
+                cur_ckpt = self._epoch + 1
                 redundant_ckpts = range(1, cur_ckpt - self.max_keep_ckpts)
                 for _step in redundant_ckpts:
                     ckpt_path = osp.join(self.runner.work_dir,
