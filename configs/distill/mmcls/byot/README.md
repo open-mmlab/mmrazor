@@ -6,15 +6,15 @@ Convolutional neural networks have been widely deployed in various application s
 
 ## Pipeline
 
-![pipeline](../../../../docs/en/imgs/model_zoo/byot/byot.png)
+![pipeline](https://user-images.githubusercontent.com/31244134/187422724-7f48d489-aabc-413c-ac12-4c3aaf19b173.png)
 
 ## Results and models
 
 #### Classification
 
-| Location | Dataset  |                           Model                           | Params(M) | Flops(G) | Top-1 (%) | Top-5 (%) |                                               Download                                               |
-| :------: | :------: | :-------------------------------------------------------: | :-------: | :------: | :-------: | :-------: | :--------------------------------------------------------------------------------------------------: |
-|  logits  | CIFAR100 | [R18_BYOT](./byot_logits_resnet18_cifar100_8xb16_in1k.py) |   11.22   |   0.56   |   80.66   |   95.76   | [model & log](https://autolink.sensetime.com/pages/model/share/08ad706f-b3d4-4854-8019-e0b43607f001) |
+| Location | Dataset  |                     Model                     | Params(M) | Flops(G) | Top-1 (%) | Top-5 (%) |                                                                                            Download                                                                                            |
+| :------: | :------: | :-------------------------------------------: | :-------: | :------: | :-------: | :-------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+|  logits  | CIFAR100 | [R18_BYOT](./byot_resnet18_8xb16_cifar100.py) |   11.22   |   0.56   |   80.66   |   95.76   | [model](https://autolink.sensetime.com/pages/model/share/08ad706f-b3d4-4854-8019-e0b43607f001) \| [log](https://autolink.sensetime.com/pages/model/share/08ad706f-b3d4-4854-8019-e0b43607f001) |
 
 ## Citation
 
