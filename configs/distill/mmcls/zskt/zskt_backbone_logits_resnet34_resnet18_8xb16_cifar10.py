@@ -4,6 +4,7 @@ _base_ = [
     'mmcls::_base_/default_runtime.py'
 ]
 
+res34_ckpt_path = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet34_b16x8_cifar10_20210528-a8aa36a6.pth'  # noqa: E501
 model = dict(
     _scope_='mmrazor',
     type='DataFreeDistillation',
@@ -17,11 +18,11 @@ model = dict(
     architecture=dict(
         cfg_path='mmcls::resnet/resnet18_8xb16_cifar10.py', pretrained=False),
     teachers=dict(
-        r34=dict(
+        res34=dict(
             build_cfg=dict(
                 cfg_path='mmcls::resnet/resnet34_8xb16_cifar10.py',
                 pretrained=True),
-            ckpt_path='resnet34_b16x8_cifar10_20210528-a8aa36a6.pth')),
+            ckpt_path=res34_ckpt_path)),
     generator=dict(
         type='ZSKTGenerator', img_size=32, latent_dim=256,
         hidden_channels=128),
@@ -34,15 +35,15 @@ model = dict(
             bb_s4=dict(type='ModuleOutputs', source='backbone.layer4.1.relu'),
             fc=dict(type='ModuleOutputs', source='head.fc')),
         teacher_recorders=dict(
-            r34_bb_s1=dict(
-                type='ModuleOutputs', source='r34.backbone.layer1.2.relu'),
-            r34_bb_s2=dict(
-                type='ModuleOutputs', source='r34.backbone.layer2.3.relu'),
-            r34_bb_s3=dict(
-                type='ModuleOutputs', source='r34.backbone.layer3.5.relu'),
-            r34_bb_s4=dict(
-                type='ModuleOutputs', source='r34.backbone.layer4.2.relu'),
-            r34_fc=dict(type='ModuleOutputs', source='r34.head.fc')),
+            res34_bb_s1=dict(
+                type='ModuleOutputs', source='res34.backbone.layer1.2.relu'),
+            res34_bb_s2=dict(
+                type='ModuleOutputs', source='res34.backbone.layer2.3.relu'),
+            res34_bb_s3=dict(
+                type='ModuleOutputs', source='res34.backbone.layer3.5.relu'),
+            res34_bb_s4=dict(
+                type='ModuleOutputs', source='res34.backbone.layer4.2.relu'),
+            res34_fc=dict(type='ModuleOutputs', source='res34.head.fc')),
         distill_losses=dict(
             loss_s1=dict(type='ATLoss', loss_weight=250.0),
             loss_s2=dict(type='ATLoss', loss_weight=250.0),
@@ -55,31 +56,31 @@ model = dict(
                 s_feature=dict(
                     from_student=True, recorder='bb_s1', record_idx=1),
                 t_feature=dict(
-                    from_student=False, recorder='r34_bb_s1', record_idx=1)),
+                    from_student=False, recorder='res34_bb_s1', record_idx=1)),
             loss_s2=dict(
                 s_feature=dict(
                     from_student=True, recorder='bb_s2', record_idx=1),
                 t_feature=dict(
-                    from_student=False, recorder='r34_bb_s2', record_idx=1)),
+                    from_student=False, recorder='res34_bb_s2', record_idx=1)),
             loss_s3=dict(
                 s_feature=dict(
                     from_student=True, recorder='bb_s3', record_idx=1),
                 t_feature=dict(
-                    from_student=False, recorder='r34_bb_s3', record_idx=1)),
+                    from_student=False, recorder='res34_bb_s3', record_idx=1)),
             loss_s4=dict(
                 s_feature=dict(
                     from_student=True, recorder='bb_s4', record_idx=1),
                 t_feature=dict(
-                    from_student=False, recorder='r34_bb_s4', record_idx=1)),
+                    from_student=False, recorder='res34_bb_s4', record_idx=1)),
             loss_kl=dict(
                 preds_S=dict(from_student=True, recorder='fc'),
-                preds_T=dict(from_student=False, recorder='r34_fc')))),
+                preds_T=dict(from_student=False, recorder='res34_fc')))),
     generator_distiller=dict(
         type='ConfigurableDistiller',
         student_recorders=dict(
             fc=dict(type='ModuleOutputs', source='head.fc')),
         teacher_recorders=dict(
-            r34_fc=dict(type='ModuleOutputs', source='r34.head.fc')),
+            res34_fc=dict(type='ModuleOutputs', source='res34.head.fc')),
         distill_losses=dict(
             loss_kl=dict(
                 type='KLDivergence',
@@ -89,7 +90,7 @@ model = dict(
         loss_forward_mappings=dict(
             loss_kl=dict(
                 preds_S=dict(from_student=True, recorder='fc'),
-                preds_T=dict(from_student=False, recorder='r34_fc')))),
+                preds_T=dict(from_student=False, recorder='res34_fc')))),
     student_iter=10)
 
 # model wrapper
