@@ -124,13 +124,14 @@ class DataFreeDistillation(BaseAlgorithm):
             fakeimg = self.generator(fakeimg_init, batch_size).detach()
 
             with optimizer.optim_context(self.student):
-                _, data_samples = self.data_preprocessor(data, True)
+                pseudo_data = self.data_preprocessor(data, True)
+                pseudo_data_samples = pseudo_data['data_samples']
                 # recorde the needed information
                 with self.distiller.student_recorders:
-                    _ = self.student(fakeimg, data_samples, mode='loss')
+                    _ = self.student(fakeimg, pseudo_data_samples, mode='loss')
                 with self.distiller.teacher_recorders, torch.no_grad():
                     for _, teacher in self.teachers.items():
-                        _ = teacher(fakeimg, data_samples, mode='loss')
+                        _ = teacher(fakeimg, pseudo_data_samples, mode='loss')
                 loss_distill = self.distiller.compute_distill_losses()
 
             distill_loss, distill_log_vars = self.parse_losses(loss_distill)

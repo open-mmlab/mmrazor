@@ -29,6 +29,6 @@ Models:
       - Task: Object Detection
         Dataset: COCO
         Metrics:
-          box AP: 39.1
+          box AP: 39.3
     Config: configs/distill/mmdet/fbkd/fbkd_fpn_faster-rcnn_resnet101_faster-rcnn_resnet50_1x_coco.py
-    Weights:
+    Weights: https://download.openmmlab.com/mmrazor/v1/FBKD/fbkd_fpn_frcnn_resnet101_frcnn_resnet50_1x_coco_20220830_121522-8d7e11df.pth
