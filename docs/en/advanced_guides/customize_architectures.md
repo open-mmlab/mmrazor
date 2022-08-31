@@ -1,16 +1,6 @@
 # Customize Architectures
 
 Different from other tasks, architectures in MMRazor may consist of some special model components, such as **searchable backbones, connectors, dynamic ops**. In MMRazor, you can not only develop some common model components like other codebases of OpenMMLab, but also develop some special model components. Here is how to develop searchable model components and common model components.
-\<\<\<\<\<\<\< HEAD
-
-> Please refer to these documents as follows if you want to know about **connectors** and **dynamic ops**.
->
-> [Connector 用户文档](https://aicarrier.feishu.cn/docx/doxcnvJG0VHZLqF82MkCHyr9B8b)
->
-> [Dynamic op 用户文档](https://aicarrier.feishu.cn/docx/doxcnbp4n4HeDkJI1fHlWfVklke)
-> \=======
->
-> > > > > > > dev-1.x
 
 ## Develop searchable model components
 

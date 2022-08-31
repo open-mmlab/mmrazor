@@ -12,16 +12,9 @@ To understand it better, we take the mutable module as an example to explain as 
 
 As shown in the figure above,  `Mutable` is a container that holds some candidate operations, thus it can sample candidates to constitute the subnet. `Supernet` usually consists of multiple `Mutable`, therefore, `Supernet` will be searchable with the help of `Mutable`. And all candidate operations in `Mutable` constitute the search space of `SuperNet`.
 
-\<\<\<\<\<\<\< HEAD
-
-> If you want to know more about the relationship between Mutable and Mutator, please refer to [Mutator 用户文档](https://aicarrier.feishu.cn/docx/doxcnmcie75HcbqkfBGaEoemBKg)
-> \=======
-
 ```{note}
 If you want to know more about the relationship between Mutable and Mutator, please refer to [Mutator](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/mutator.html)
 ```
-
-> > > > > > > dev-1.x
 
 ### Features
 
@@ -39,17 +32,6 @@ What is more, we can implement **dynamic op** by using mutable parameters.
 
 Because of the restriction of defined architecture, there may be correlations between some mutable parameters, **such as concat and expand ratio.**
 
-\<\<\<\<\<\<\< HEAD
-
-> If conv3 = concat (conv1, conv2)
->
-> When out_channel (conv1) = 3, out_channel (conv2) = 4
->
-> Then in_channel (conv3) must be 7 rather than mutable.
->
-> So use derived mutable from conv1 and conv2 to generate in_channel (conv3)
-> \=======
-
 ```{note}
 If conv3 = concat (conv1, conv2)
 
@@ -59,8 +41,6 @@ Then in_channel (conv3) must be 7 rather than mutable.
 
 So use derived mutable from conv1 and conv2 to generate in_channel (conv3)
 ```
-
-> > > > > > > dev-1.x
 
 With the help of derived mutable, we can meet these special requirements in some NAS algorithms and pruning algorithms. What is more, it can be used to deal with different granularity between search spaces.
 
@@ -74,22 +54,13 @@ As shown in the figure above.
 
 - **Gray blocks** stand different types of base mutables.
 
-\<\<\<\<\<\<\< HEAD
+  ```{note}
+  Because there are correlations between channels of some layers, we divide mutable parameters into `MutableChannel` and `MutableValue`, so you can also think `MutableChannel` is a special `MutableValue`.
+  ```
 
-> Because there are correlations between channels of some layers, we divide mutable parameters into `MutableChannel` and `MutableValue`, so you can also think `MutableChannel` is a special `MutableValue`.
+  For supporting module and parameters mutable, we provide `MutableModule`, `MutableChannel` and `MutableValue` these base classes to implement required basic functions. And we also add `OneshotMutableModule` and `DiffMutableModule` two types  based on `MutableModule` to meet different types of algorithms' requirements.
 
-For supporting module and parameters mutable, we provide `MutableModule`, `MutableChannel` and `MutableValue` these base classes to implement required basic functions. And we also add `OneshotMutableModule` and `DiffMutableModule` two types  based on `MutableModule` to meet different types of algorithms' requirements.
-
-\=======
-
-```{note}
-Because there are correlations between channels of some layers, we divide mutable parameters into `MutableChannel` and `MutableValue`, so you can also think `MutableChannel` is a special `MutableValue`.
-```
-
-For supporting module and parameters mutable, we provide `MutableModule`, `MutableChannel` and `MutableValue` these base classes to implement required basic functions. And we also add `OneshotMutableModule` and `DiffMutableModule` two types  based on `MutableModule` to meet different types of algorithms' requirements.
-
-> > > > > > > dev-1.x
-> > > > > > > For supporting deriving from mutable parameters, we make `MutableChannel` and `MutableValue` inherit from `BaseMutable` and `DerivedMethodMixin`, thus they can get derived functions provided by `DerivedMethodMixin`.
+  For supporting deriving from mutable parameters, we make `MutableChannel` and `MutableValue` inherit from `BaseMutable` and `DerivedMethodMixin`, thus they can get derived functions provided by `DerivedMethodMixin`.
 
 - **Red blocks** and **green blocks** stand registered classes for implementing some specific algorithms, which means that you can use them directly in configs. If they do not meet your requirements, you can also customize your mutable based on our base classes. If you are interested in their realization, please refer to their docstring.
 
@@ -256,11 +227,7 @@ Let's use `OneShotMutableOP` as an example for customizing mutable.
 
 First, you need to determine which type mutable to implement. Thus, you can implement your mutable faster by inheriting from correlative base mutable.
 
-# \<\<\<\<\<\<\< HEAD Then create a new file ``` mmrazor/models/mutables/mutable_module/``one_shot_mutable_module ```, class `OneShotMutableOP` inherits from `OneShotMutableModule`.
-
 Then create a new file `mmrazor/models/mutables/mutable_module/one_shot_mutable_module`, class `OneShotMutableOP` inherits from `OneShotMutableModule`.
-
-> > > > > > > dev-1.x
 
 ```Python
 # Copyright (c) OpenMMLab. All rights reserved.
