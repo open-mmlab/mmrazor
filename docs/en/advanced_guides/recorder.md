@@ -11,12 +11,13 @@ In general, `Recorder` will help us expand more functions in implementing algori
 ## Usage of Recorder
 
 Currently, we support five `Recorder`, as shown in the following table
-|Recorder name|Description|
-| ----------------------- | ----------------------------------------- |
-| FunctionOutputsRecorder |   Record output results of some functions   |
-| MethodOutputsRecorder   |    Record output results of some methods    |
-| ModuleInputsRecorder    |      Record input results of nn.Module      |
-| ModuleOutputsRecorder   |     Record output results of nn.Module      |
+
+| Recorder name           | Description                                 |
+| ----------------------- | ------------------------------------------- |
+| FunctionOutputsRecorder | Record output results of some functions     |
+| MethodOutputsRecorder   | Record output results of some methods       |
+| ModuleInputsRecorder    | Record input results of nn.Module           |
+| ModuleOutputsRecorder   | Record output results of nn.Module          |
 | ParameterRecorder       | Record intermediate parameters of nn.Module |
 
 All of the recorders inherit from `BaseRecorder`. And these recorders can be managed by `RecorderManager` or just be used on their own.
