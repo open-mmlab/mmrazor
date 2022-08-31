@@ -1,25 +1,30 @@
 # Customize mixed algorithms
+
 Here we show how to customize mixed algorithms with our algorithm components. We take [AutoSlim ](https://github.com/open-mmlab/mmrazor/tree/dev-1.x/configs/pruning/mmcls/autoslim)as an example.
 
-> **Why is AutoSlim a mixed algorithm?**
->
-> In [AutoSlim](https://github.com/open-mmlab/mmrazor/tree/dev-1.x/configs/pruning/mmcls/autoslim), the sandwich rule and the inplace distillation will be introduced to enhance the training process, which is called as the slimmable training. The sandwich rule means that we train the model at smallest width, largest width and (n − 2) random widths, instead of n random widths. And the inplace distillation means that we use the predicted label of the model at the largest width as the training label for other widths, while for the largest width we use ground truth. So both the KD algorithm and the pruning algorithm are used in [AutoSlim](https://github.com/open-mmlab/mmrazor/tree/dev-1.x/configs/pruning/mmcls/autoslim).
+```{note}
+**Why is AutoSlim a mixed algorithm?**
+
+In [AutoSlim](https://github.com/open-mmlab/mmrazor/tree/dev-1.x/configs/pruning/mmcls/autoslim), the sandwich rule and the inplace distillation will be introduced to enhance the training process, which is called as the slimmable training. The sandwich rule means that we train the model at smallest width, largest width and (n − 2) random widths, instead of n random widths. And the inplace distillation means that we use the predicted label of the model at the largest width as the training label for other widths, while for the largest width we use ground truth. So both the KD algorithm and the pruning algorithm are used in [AutoSlim](https://github.com/open-mmlab/mmrazor/tree/dev-1.x/configs/pruning/mmcls/autoslim).
+```
 
 1. Register a new algorithm
 
-Create a new file `mmrazor/models/algorithms/nas/autoslim.py`, class `AutoSlim` inherits from class `BaseAlgorithm`. You need to build the KD algorithm component (distiller) and the pruning algorithm component (mutator) because AutoSlim is a mixed algorithm. 
+Create a new file `mmrazor/models/algorithms/nas/autoslim.py`, class `AutoSlim` inherits from class `BaseAlgorithm`. You need to build the KD algorithm component (distiller) and the pruning algorithm component (mutator) because AutoSlim is a mixed algorithm.
 
->  You can also inherit from the existing algorithm instead of `BaseAlgorithm` if your algorithm is similar to the existing algorithm.
+```{note}
+You can also inherit from the existing algorithm instead of `BaseAlgorithm` if your algorithm is similar to the existing algorithm.
+```
 
-> You can choose existing algorithm components in MMRazor, such as `OneShotChannelMutator` and `ConfigurableDistiller` in AutoSlim.
->
-> If these in MMRazor don't meet your needs, you can customize new algorithm components for your algorithm. Reference is as follows:
->
-> [Tutorials: Customize KD algorithms](https://aicarrier.feishu.cn/docx/doxcnFWOTLQYJ8FIlUGsYrEjisd) 
->
-> [Tutorials: Customize Pruning algorithms](https://aicarrier.feishu.cn/docx/doxcnzXlPv0cDdmd0wNrq0SEqsh) 
->
-> [Tutorials: Customize KD algorithms](https://aicarrier.feishu.cn/docx/doxcnFWOTLQYJ8FIlUGsYrEjisd) 
+```{note}
+You can choose existing algorithm components in MMRazor, such as `OneShotChannelMutator` and `ConfigurableDistiller` in AutoSlim.
+
+If these in MMRazor don't meet your needs, you can customize new algorithm components for your algorithm. Reference is as follows:
+
+[Customize NAS algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_nas_algorithms.html)
+[Customize Pruning algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_pruning_algorithms.html)
+[Customize KD algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_kd_algorithms.html)
+```
 
 ```Python
 # Copyright (c) OpenMMLab. All rights reserved.
@@ -52,9 +57,9 @@ class AutoSlim(BaseAlgorithm):
         self.distiller = self._build_distiller(distiller)
         self.distiller.prepare_from_teacher(self.architecture)
         self.distiller.prepare_from_student(self.architecture)
-        
+
         ......
-        
+
     def _build_mutator(self,
                        mutator: VALID_MUTATOR_TYPE) -> OneShotChannelMutator:
         """build mutator."""
@@ -86,12 +91,12 @@ In `train_step`, both the `mutator` and the `distiller` play an important role. 
 ```Python
 @MODELS.register_module()
 class AutoSlim(BaseAlgorithm):
-     
+
      ......
-     
+
      def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
-        
+
         def distill_step(
                 batch_inputs: torch.Tensor, data_samples: List[BaseDataElement]
         ) -> Dict[str, torch.Tensor]:
@@ -106,12 +111,12 @@ class AutoSlim(BaseAlgorithm):
         self.set_max_subnet()
         ......
         total_losses.update(add_prefix(max_subnet_losses, 'max_subnet'))
-        
+
         # update the min subnet loss.
         self.set_min_subnet()
         min_subnet_losses = distill_step(batch_inputs, data_samples)
         total_losses.update(add_prefix(min_subnet_losses, 'min_subnet'))
-        
+
         # update the random subnet loss.
         for sample_idx in range(self.num_samples):
             self.set_subnet(self.sample_subnet())
