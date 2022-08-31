@@ -12,19 +12,4 @@ Train & Test
 
 Useful Tools
 ************
-
-.. toctree::
-   :maxdepth: 1
-
-   visualization.md
-   analysis_tools.md
-
-Introductions
-*************
-
-.. toctree::
-   :maxdepth: 1
-
-   nas.md
-   pruning.md
-   kd.md
+   please refer to upstream applied repositories' docs

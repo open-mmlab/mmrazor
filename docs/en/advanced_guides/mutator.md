@@ -24,7 +24,9 @@ In MMRazor, we have implemented some mutators, their relationship is as below.
 
 `ModuleMuator`/ `ChannelMutator`: Two different types mutators are for handling mutable module and mutable channel respectively.
 
-> Please refer to [Mutable 用户文档 ](https://aicarrier.feishu.cn/docs/doccnc6HAhAsilBXGGR9kzeeK8d)for more details about different types of mutable.
+```{note}
+Please refer to [Mutable](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/mutable.html) for more details about different types of mutable.
+```
 
 `OneShotModuleMutator` / `DiffModuleMutator`: Inherit from `ModuleMuator`, they are for implementing different types algorithms, such as [SPOS](https://arxiv.org/abs/1904.00420), [Darts](https://arxiv.org/abs/1806.09055) and so on.
 
@@ -119,7 +121,7 @@ As the `prepare_from_supernet()` method and the `search_groups` property are alr
 
 If you need to implement them by yourself, you can refer to these as follows.
 
-2.3. **Understand** **`search_groups`\*\*\*\*(optional)**
+2.3. **Understand** **`search_groups`** **(optional)**
 
 Let's take an example to see what default `search_groups` do.
 
@@ -178,7 +180,7 @@ from typing import Any, Dict
 
 from mmrazor.registry import MODELS
 from ...mutables import OneShotMutableModule
-from .module_mutator import
+from .module_mutator import ModuleMutator
 
 @MODELS.register_module()
 class OneShotModuleMutator(ModuleMutator):

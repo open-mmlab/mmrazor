@@ -6,7 +6,7 @@ Here we show how to apply existing algorithms to other tasks with an example of 
 >
 > DetNAS: Single Path One-Shot NAS for detection
 
-**You just need to configure the existing algorithms in your config only by replacing** **the architecture of** **mmcls** **with** **mmdet**\*\*'s\*\*
+**You just need to configure the existing algorithms in your config only by replacing** **the architecture of** **mmcls** **with** **mmdet** **'s**
 
 You can implement a new algorithm by inheriting from the existing algorithm quickly if the new task's specificity leads to the failure of applying directly.
 

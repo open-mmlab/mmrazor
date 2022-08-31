@@ -19,7 +19,7 @@ And in MMRazor, `algorithm` is a general item for these technologies. For exampl
 
 ### About base algorithm
 
-In the directory of ``` models/algorith``ms ```, all model compression algorithms are divided into 4 subdirectories: nas / pruning / distill / quantization. These algorithms must inherit from `BaseAlgorithm`, whose definition is as below.
+In the directory of `models/algorithms`, all model compression algorithms are divided into 4 subdirectories: nas / pruning / distill / quantization. These algorithms must inherit from `BaseAlgorithm`, whose definition is as below.
 
 ```Python
 from typing import Dict, List, Optional, Tuple, Union
@@ -107,7 +107,9 @@ architecture = _base_.model
 
 - Use your customized model as below, which is an example of defining a VGG model as our architecture.
 
-> How to customize architectures can refer to our tutorial: [Customize Architectures](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_3_customize_architectures.html).
+```{note}
+How to customize architectures can refer to our tutorial: [Customize Architectures](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_architectures.html).
+```
 
 ```Python
 default_scope='mmcls'
@@ -124,7 +126,9 @@ architecture = dict(
 
 2. Apply the registered algorithm to your architecture.
 
-> The arg name of `algorithm` in config is **model** rather than **algorithm** in order to get better supports of MMCV and MMEngine.
+```{note}
+The arg name of `algorithm` in config is **model** rather than **algorithm** in order to get better supports of MMCV and MMEngine.
+```
 
 Maybe more args in model need to set according to the used algorithm.
 
@@ -134,7 +138,9 @@ model = dict(
     architecture=architecture)
 ```
 
-> About the usage of `Config`, refer to [Config ‒ mmcv 1.5.3 documentation](https://mmcv.readthedocs.io/en/latest/understand_mmcv/config.html) please.
+```{note}
+About the usage of `Config`, refer to [config.md](https://github.com/open-mmlab/mmengine/blob/main/docs/zh_cn/tutorials/config.md) please.
+```
 
 3. Apply some custom hooks or loops to your algorithm. (optional)
 
@@ -203,7 +209,9 @@ class XXX(BaseAlgorithm):
 
 3. Add the remaining functions of the algorithm
 
-> This step is special because of the diversity of algorithms. Some functions of the algorithm may also be implemented in other files.
+```{note}
+This step is special because of the diversity of algorithms. Some functions of the algorithm may also be implemented in other files.
+```
 
 ```Python
 from mmrazor.models.algorithms import BaseAlgorithm
@@ -228,7 +236,7 @@ class XXX(BaseAlgorithm):
 
 4. Import the class
 
-You can add the following line to ``` mmrazor/models/algorithms/``{subdirectory}/``__init__.py ```
+You can add the following line to `mmrazor/models/algorithms/{subdirectory}/__init__.py`
 
 ```CoffeeScript
 from .xxx import XXX
@@ -254,12 +262,12 @@ Please refer to our tutorials about how to customize different algorithms for mo
 
 1. NAS
 
-[Customize NAS algorithms](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_4_customize_nas_algorithms.html)
+[Customize NAS algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_nas_algorithms.html)
 
 2. Pruning
 
-[Customize Pruning algorithms](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_5_customize_pruning_algorithms.html)
+[Customize Pruning algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_pruning_algorithms.html)
 
 3. Distill
 
-[Customize KD algorithms](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_6_customize_kd_algorithms.html)
+[Customize KD algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_kd_algorithms.html)
