@@ -1,10 +1,15 @@
+norm_cfg = dict(type='BN', eps=0.01)
+
 _STAGE_MUTABLE = dict(
     type='mmrazor.OneHotMutableOP',
     candidates=dict(
-        shuffle_3x3=dict(type='ShuffleBlock', kernel_size=3),
-        shuffle_5x5=dict(type='ShuffleBlock', kernel_size=5),
-        shuffle_7x7=dict(type='ShuffleBlock', kernel_size=7),
-        shuffle_xception=dict(type='ShuffleXception')))
+        shuffle_3x3=dict(
+            type='ShuffleBlock', kernel_size=3, norm_cfg=norm_cfg),
+        shuffle_5x5=dict(
+            type='ShuffleBlock', kernel_size=5, norm_cfg=norm_cfg),
+        shuffle_7x7=dict(
+            type='ShuffleBlock', kernel_size=7, norm_cfg=norm_cfg),
+        shuffle_xception=dict(type='ShuffleXception', norm_cfg=norm_cfg)))
 
 arch_setting = [
     # Parameters to build layers. 3 parameters are needed to construct a
@@ -19,4 +24,5 @@ nas_backbone = dict(
     type='mmrazor.SearchableShuffleNetV2',
     widen_factor=1.0,
     arch_setting=arch_setting,
+    norm_cfg=norm_cfg,
     adjust_channels=True)

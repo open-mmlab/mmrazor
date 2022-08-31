@@ -9,6 +9,7 @@ model = dict(
     type='mmrazor.Dsnas',
     architecture=dict(
         type='ImageClassifier',
+        data_preprocessor=_base_.data_preprocessor,
         backbone=_base_.nas_backbone,
         neck=dict(type='GlobalAveragePooling'),
         head=dict(

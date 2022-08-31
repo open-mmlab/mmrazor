@@ -1,6 +1,7 @@
 # dataset settings
 dataset_type = 'mmcls.ImageNet'
-preprocess_cfg = dict(
+data_preprocessor = dict(
+    type='mmcls.ClsDataPreprocessor',
     # RGB format normalization parameters
     mean=[123.675, 116.28, 103.53],
     std=[58.395, 57.12, 57.375],
@@ -23,7 +24,7 @@ test_pipeline = [
 ]
 
 train_dataloader = dict(
-    batch_size=512,
+    batch_size=1024,
     num_workers=15,
     dataset=dict(
         type=dataset_type,
