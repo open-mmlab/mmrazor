@@ -6,33 +6,33 @@ Many researchers have sought ways of model compression to reduce the size of a d
 
 ## Results and models
 
-| Dataset | Model     | Teacher   | Top-1 (%) | Top-5 (%) | Configs                                                                                                                                                            | Download          |
-| ------- | --------- | --------- | --------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
-| CIFAR10 | ResNet-18 | ResNet-50 | 94.86     | 99.88     | [pretrain](./factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain.py) \| [train](./factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py) | [model & log](<>) |
+| Dataset | Model     | Teacher   | Top-1 (%) | Top-5 (%) | Configs                                                                                                                                                            | Download                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------- | --------- | --------- | --------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| CIFAR10 | ResNet-18 | ResNet-50 | 94.86     | 99.88     | [pretrain](./factor-transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain.py) \| [train](./factor-transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py) | [pretrain model](https://download.openmmlab.com/mmrazor/v1/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb16_cifar10_pretrain_20220831_173259-ebdb09e2.pth) \| [pretrain log](https://download.openmmlab.com/mmrazor/v1/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb16_cifar10_pretrain_20220831_173259-ebdb09e2.json) \| [train model](https://download.openmmlab.com/mmrazor/v1/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb16_cifar10_train_20220831_201322-943df33f.pth) \| [train log](https://download.openmmlab.com/mmrazor/v1/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb16_cifar10_train_20220831_201322-943df33f.json) |
 
 ## Getting Started
 
 ### Connectors pre-training.
 
 ```bash
-sh tools/slurm_train.sh $PARTITION $JOB_NAME \
-  configs/distill/mmcls/factor_transfer/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain.py \
+sh tools/dist_train.sh $PARTITION $JOB_NAME \
+  configs/distill/mmcls/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb32_cifar10_pretrain.py \
   $PRETRAIN_WORK_DIR
 ```
 
 ### Distillation training.
 
 ```bash
-sh tools/slurm_train.sh $PARTITION $JOB_NAME \
-  configs/distill/mmcls/factor_transfer/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py \
+sh tools/dist_train.sh $PARTITION $JOB_NAME \
+  configs/distill/mmcls/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py \
   $DISTILLATION_WORK_DIR
 ```
 
 ### Test
 
 ```bash
-sh tools/slurm_test.sh $PARTITION $JOB_NAME \
-  configs/distill/mmcls/factor_transfer/factor_transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py \
+sh tools/dist_test.sh $PARTITION $JOB_NAME \
+  configs/distill/mmcls/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb32_cifar10_train.py \
   $DISTILLATION_WORK_DIR/latest.sh --eval $EVAL_SETTING
 ```
 

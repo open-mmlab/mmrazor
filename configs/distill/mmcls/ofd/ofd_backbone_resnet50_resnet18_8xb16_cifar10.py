@@ -16,15 +16,15 @@ model = dict(
         bgr_to_rgb=True),
     architecture=dict(
         cfg_path=  # noqa: E251
-        'mmrazor::vanilla/mmcls/wide-resnet/wrn16_2_b16x8_cifar10.py',
+        'mmrazor::vanilla/mmcls/wide-resnet/wrn16-w2_b16x8_cifar10.py',
         pretrained=False),
     teacher=dict(
         cfg_path=  # noqa: E251
-        'mmrazor::vanilla/mmcls/wide-resnet/wrn28_4_b16x8_cifar10.py',
+        'mmrazor::vanilla/mmcls/wide-resnet/wrn28-w4_b16x8_cifar10.py',
         pretrained=False),
-    teacher_ckpt='work_dirs/wrn28_4_b16x8_cifar10/epoch_200.pth',
-    calculate_student_loss=False,
-    student_trainable=False,
+    teacher_ckpt='work_dirs/wrn28_4_b16x8_cifar10/epoch_173.pth',  # TODO
+    calculate_student_loss=True,
+    student_trainable=True,
     distiller=dict(
         type='OFDDistiller',
         student_recorders=dict(
