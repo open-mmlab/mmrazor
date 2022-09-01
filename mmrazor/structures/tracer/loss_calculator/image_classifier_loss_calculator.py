@@ -13,7 +13,12 @@ except ImportError:
 @TASK_UTILS.register_module()
 class ImageClassifierPseudoLoss:
     """Calculate the pseudo loss to trace the topology of a `ImageClassifier`
-    in MMClassification with `BackwardTracer`."""
+    in MMClassification with `BackwardTracer`.
+
+    Args:
+        input_shape (Tuple): The shape of the pseudo input. Defaults to
+            (2, 3, 224, 224).
+    """
 
     def __init__(self, input_shape=(2, 3, 224, 224)):
         self.input_shape = input_shape
