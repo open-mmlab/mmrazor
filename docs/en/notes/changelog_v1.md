@@ -3,7 +3,7 @@
 ## v1.0.0rc0 (31/8/2022)
 
 We are excited to announce the release of MMRazor 1.0.0rc0.
-MMRazor 1.0.0rc0 is the first version of MMRazor 1.x, a part of the OpenMMLab 2.x projects.
+MMRazor 1.0.0rc0 is the first version of MMRazor 1.x, a part of the OpenMMLab 2.0 projects.
 Built upon the new [training engine](https://github.com/open-mmlab/mmengine),
 MMRazor 1.x simplified the interaction with other OpenMMLab repos, and upgraded the basic APIs of KD / Pruning / NAS.
 It also provides a series of knowledge distillation algorithms.
@@ -12,7 +12,7 @@ It also provides a series of knowledge distillation algorithms.
 
 - **New engines**. MMRazor 1.x is based on [MMEngine](https://github.com/open-mmlab/mmengine), which provides a general and powerful runner that allows more flexible customizations and significantly simplifies the entrypoints of high-level interfaces.
 
-- **Unified interfaces**. As a part of the OpenMMLab 2.x projects, MMRazor 1.x unifies and refactors the interfaces and internal logic of train, testing, datasets, models, evaluation, and visualization. All the OpenMMLab 2.x projects share the same design in those interfaces and logic to allow the emergence of multi-task/modality algorithms.
+- **Unified interfaces**. As a part of the OpenMMLab 2.0 projects, MMRazor 1.x unifies and refactors the interfaces and internal logic of train, testing, datasets, models, evaluation, and visualization. All the OpenMMLab 2.0 projects share the same design in those interfaces and logic to allow the emergence of multi-task/modality algorithms.
 
 - **More configurable KD**.  MMRazor 1.x add [Recorder](../advanced_guides/recorder.md) to get the data needed for KD more automatically，[Delivery ](../advanced_guides/delivery.md) to automatically pass the teacher's intermediate results to the student， and connector to handle feature dimension mismatches between teacher and student.
 
@@ -67,12 +67,13 @@ It also provides a series of knowledge distillation algorithms.
 ### Ongoing changes
 
 - Quantization:  We are developing the basic interface of PTQ and QAT. RFC(Request for Comments) will be released soon.
+- AutoSlim: AutoSlim is not yet available and is being refactored.
 - Fx Pruning Tracer: Currently, the model topology can only be resolved through the backward tracer. In the future, both backward tracer and fx tracer will be supported.
 - More Algorithms: BigNAS、AutoFormer、GreedyNAS and Resrep will be released in the next few versions.
 - Documentation: we will add more design docs, tutorials, and migration guidance so that the community can deep dive into our new design, participate the future development, and smoothly migrate downstream libraries to MMRazor 1.x.
 
 ### Contributors
 
-A total of 11 developers contributed to this release.
-Thanks @FreakieHuang @gaoyang07 @HIT-cwh @humu789 @LKJacky @pppppM @pprp @spynccat @sunnyxiaohu @wilxy @wutongshenqiu
+A total of 13 developers contributed to this release.
+Thanks @FreakieHuang @gaoyang07 @HIT-cwh @humu789 @LKJacky @pppppM @pprp @spynccat @sunnyxiaohu @wilxy @wutongshenqiu @NickYangMin @Hiwyl
 Special thanks to @Davidgzx for his contribution to the data-free distillation algorithms
