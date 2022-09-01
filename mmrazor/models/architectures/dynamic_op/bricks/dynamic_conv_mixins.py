@@ -404,3 +404,123 @@ class OFAConvMixin(BigNasConvMixin):
             current_weight = target_weight
 
         return current_weight, current_padding
+
+
+class FuseConvMixin(DynamicConvMixin):
+    """A mixin class for Pytorch conv, which can mutate ``in_channels``,
+    ``out_channels`` .
+    """
+
+    def get_dynamic_params(
+            self: _ConvNd) -> Tuple[Tensor, Optional[Tensor], Tuple[int]]:
+        """Get dynamic parameters that will be used in forward process.
+
+        Returns:
+            Tuple[Tensor, Optional[Tensor], Tuple[int]]: Sliced weight, bias
+                and padding.
+        """
+        # slice in/out channel of weight according to mutable in_channels
+        # and mutable out channels.
+        weight, bias = self._get_dynamic_params_by_mutable_channels(
+            self.weight, self.bias)
+        return weight, bias
+
+    def _get_dynamic_params_by_mutable_channels(
+            self: _ConvNd, weight: Tensor,
+            bias: Optional[Tensor]) -> Tuple[Tensor, Optional[Tensor]]:
+        """Get sliced weight and bias according to ``mutable_in_channels`` and
+        ``mutable_out_channels``.
+
+        Returns:
+            Tuple[Tensor, Optional[Tensor]]: Sliced weight and bias.
+        """
+        if 'in_channels' not in self.mutable_attrs and \
+                'out_channels' not in self.mutable_attrs:
+            return weight, bias
+
+        if 'in_channels' in self.mutable_attrs:
+            mutable_in_channels = self.mutable_attrs['in_channels']
+        else:
+            mutable_in_channels = self.in_channels
+
+        if 'out_channels' in self.mutable_attrs:
+            mutable_out_channels = self.mutable_attrs['out_channels']
+        else:
+            mutable_out_channels = self.out_channels
+
+        mutable_in_channels = mutable_in_channels.activated_channels
+        mutable_out_channels = mutable_out_channels.activated_channels
+        # print("mutable_in_channels:", mutable_in_channels)
+        # print("mutable_out_channels:", mutable_out_channels)
+        if not hasattr(self, 'layeri_softmaxp'):
+            layeri_softmaxp = torch.zeros(mutable_out_channels, self.out_channels, requires_grad=False)
+            self.register_buffer('layeri_softmaxp', layeri_softmaxp)
+
+        if self.groups == 1:
+            _, _, k, _ = self.weight.shape
+            fused_weight = torch.mm(self.layeri_softmaxp,
+                                    self.weight.reshape(mutable_out_channels, -1)).reshape(
+                                        -1, mutable_in_channels, k, k)
+        elif self.groups == self.in_channels == self.out_channels:
+            # depth-wise conv
+            _, _, k, _ = self.weight.shape
+            fused_weight = torch.mm(self.layeri_softmaxp,
+                                    self.weight.reshape(mutable_out_channels, -1)).reshape(
+                                        -1, mutable_in_channels, k, k)
+        else:
+            raise NotImplementedError(
+                'Current `ChannelMutator` only support pruning the depth-wise '
+                '`nn.Conv2d` or `nn.Conv2d` module whose group number equals '
+                f'to one, but got {self.groups}.')
+        if (self.bias is not None):
+            fused_bias = torch.mm(self.layeri_softmaxp,
+                                  self.bias.unsqueeze(1)).squeeze(1)
+        else:
+            fused_bias = self.bias
+        return fused_weight, fused_bias
+
+    def forward_mixin(self: _ConvNd, x: Tensor) -> Tensor:
+        """Forward of dynamic conv2d OP."""
+        groups = self.groups
+        if self.groups == self.in_channels == self.out_channels:
+            groups = x.size(1)
+        weight, bias = self.get_dynamic_params()
+
+        return self.conv_func(x, weight, bias, self.stride, self.padding,
+                              self.dilation, groups)
+
+    def to_static_op(self: _ConvNd) -> nn.Conv2d:
+        """Convert dynamic conv2d to :obj:`torch.nn.Conv2d`.
+
+        Returns:
+            torch.nn.Conv2d: :obj:`torch.nn.Conv2d` with sliced parameters.
+        """
+        self.check_if_mutables_fixed()
+
+        weight, bias = self.get_dynamic_params()
+        groups = self.groups
+        if groups == self.in_channels == self.out_channels and \
+                self.mutable_in_channels is not None:
+            mutable_in_channels = self.mutable_attrs['in_channels']
+            groups = mutable_in_channels.current_mask.sum().item()
+        out_channels = weight.size(0)
+        in_channels = weight.size(1) * groups
+
+        kernel_size = tuple(weight.shape[2:])
+
+        static_conv = self.static_op_factory(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=self.stride,
+            padding=self.padding,
+            padding_mode=self.padding_mode,
+            dilation=self.dilation,
+            groups=groups,
+            bias=True if bias is not None else False)
+
+        static_conv.weight = nn.Parameter(weight)
+        if bias is not None:
+            static_conv.bias = nn.Parameter(bias)
+
+        return static_conv

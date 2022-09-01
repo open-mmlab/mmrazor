@@ -52,7 +52,7 @@ class BackwardTracer:
             # digit numbers to build the corresponding parser.
             name = re.sub(r'[0-1]+', '', name)
             parse_module = self.backward_parser.get(name)
-
+            print("parse_name:", name)
             if parse_module is not None:
                 parse_module(self, grad_fn, module2name, param2module,
                              cur_path, result_paths, visited, shared_module)
