@@ -124,8 +124,7 @@ jobs:
             docker exec mmrazor pip install -e /mmdetection
             docker exec mmrazor pip install -e /mmclassification
             docker exec mmrazor pip install -e /mmsegmentation
-            pip install -r requirements.txt
-            python -c 'import mmcv; print(mmcv.__version__)'
+            docker exec mmrazor pip install -r requirements.txt
       - run:
           name: Build and install
           command: |

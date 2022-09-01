@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from mmengine.dist import get_dist_info
 
 from mmrazor.registry import MODELS
-from ..ops import GatherTensors
+from ..architectures.ops import GatherTensors
 
 
 class DAFLLoss(nn.Module):

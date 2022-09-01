@@ -34,5 +34,5 @@ Models:
         Dataset: CIFAR-10
         Metrics:
           Top 1 Accuracy: 94.8800
-    Config: configs/distill/mmcls/ofd/ofd_backbone_resnet50_resnet18_8xb16_cifar10.py
+    Config: configs/distill/mmcls/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb16_cifar10_train.py
     Weights: https://download.openmmlab.com/mmrazor/v1/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb16_cifar10_train_20220831_201322-943df33f.pth

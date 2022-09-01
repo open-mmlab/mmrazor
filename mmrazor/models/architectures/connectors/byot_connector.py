@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 from mmrazor.registry import MODELS
-from ...ops.darts_series import DartsSepConv
+from ..ops.darts_series import DartsSepConv
 from .base_connector import BaseConnector
 
 
