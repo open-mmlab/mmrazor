@@ -18,10 +18,10 @@ def repeat_measure_inference_speed(model: torch.nn.Module,
     Args:
         model (torch.nn.Module): The measured model.
         resource_args (Dict[str, float]): resources information.
-        max_iter (int): Max iteration num for inference speed test.
-        num_warmup (int): Iteration num for warm-up stage.
-        log_interval (int): Interval num for logging the results.
-        repeat_num (int): Num of times to repeat the speed measurement.
+        max_iter (Optional[int]): Max iteration num for inference speed test.
+        num_warmup (Optional[int]): Iteration num for warm-up stage.
+        log_interval (Optional[int]): Interval num for logging the results.
+        repeat_num (Optional[int]): Num of times to repeat the measurement.
 
     Returns:
         fps (float): The measured inference speed of the model.
@@ -63,15 +63,14 @@ def measure_inference_speed(model: torch.nn.Module,
     Args:
         model (torch.nn.Module): The measured model.
         resource_args (Dict[str, float]): resources information.
-        max_iter (int): Max iteration num for inference speed test.
-        num_warmup (int): Iteration num for warm-up stage.
-        log_interval (int): Interval num for logging the results.
+        max_iter (Optional[int]): Max iteration num for inference speed test.
+        num_warmup (Optional[int]): Iteration num for warm-up stage.
+        log_interval (Optional[int]): Interval num for logging the results.
 
     Returns:
         fps (float): The measured inference speed of the model.
     """
     # the first several iterations may be very slow so skip them
-    num_warmup = 5
     pure_inf_time = 0.0
     fps = 0.0
     data = dict()
