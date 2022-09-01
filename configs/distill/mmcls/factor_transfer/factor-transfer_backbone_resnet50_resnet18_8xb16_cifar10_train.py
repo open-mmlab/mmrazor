@@ -25,5 +25,5 @@ model = dict(
     init_cfg=dict(
         type='Pretrained',
         checkpoint=  # noqa: E251
-        'work_dirs/factor-transfer_backbone_resnet50_resnet18_8xb16_cifar10_pretrain/epoch_20.pth'  # noqa: E501
+        'https://download.openmmlab.com/mmrazor/v1/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb16_cifar10_pretrain_20220831_173259-ebdb09e2.pth'  # noqa: E501
     ))

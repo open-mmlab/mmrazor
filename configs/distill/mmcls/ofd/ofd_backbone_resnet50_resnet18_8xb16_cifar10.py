@@ -22,7 +22,8 @@ model = dict(
         cfg_path=  # noqa: E251
         'mmrazor::vanilla/mmcls/wide-resnet/wrn28-w4_b16x8_cifar10.py',
         pretrained=False),
-    teacher_ckpt='work_dirs/wrn28_4_b16x8_cifar10/epoch_173.pth',  # TODO
+    teacher_ckpt=  # noqa: E251
+    'https://download.openmmlab.com/mmrazor/v1/wide_resnet/wrn28_4_b16x8_cifar10_20220831_173536-d6f8725c.pth',  # noqa: E501
     calculate_student_loss=True,
     student_trainable=True,
     distiller=dict(

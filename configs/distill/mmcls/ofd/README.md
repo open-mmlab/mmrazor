@@ -1,6 +1,8 @@
-# A Comprehensive Overhaul of Feature Distillation
+# Overhaul
 
-> [A Comprehensive Overhaul of Feature Distillation](https://sites.google.com/view/byeongho-heo/overhaul)
+> [A Comprehensive Overhaul of Feature Distillation](https://arxiv.org/abs/1904.01866)
+
+<!-- [ALGORITHM] -->
 
 ## Abstract
 
