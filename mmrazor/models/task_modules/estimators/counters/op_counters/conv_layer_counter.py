@@ -10,7 +10,6 @@ class ConvCounter(BaseCounter):
 
     @staticmethod
     def add_count_hook(module, input, output):
-        """Calculate FLOPs and params based on the size of input & output."""
         # Can have multiple inputs, getting the first one
         input = input[0]
 
@@ -45,17 +44,14 @@ class ConvCounter(BaseCounter):
 
 @TASK_UTILS.register_module()
 class Conv1dCounter(ConvCounter):
-    """FLOPs/params counter for Conv1d module."""
     pass
 
 
 @TASK_UTILS.register_module()
 class Conv2dCounter(ConvCounter):
-    """FLOPs/params counter for Conv2d module."""
     pass
 
 
 @TASK_UTILS.register_module()
 class Conv3dCounter(ConvCounter):
-    """FLOPs/params counter for Conv3d module."""
     pass

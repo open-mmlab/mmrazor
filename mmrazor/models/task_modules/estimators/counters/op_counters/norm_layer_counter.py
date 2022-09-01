@@ -11,7 +11,6 @@ class BNCounter(BaseCounter):
 
     @staticmethod
     def add_count_hook(module, input, output):
-        """Calculate FLOPs and params based on the size of input & output."""
         input = input[0]
         batch_flops = np.prod(input.shape)
         if getattr(module, 'affine', False):
@@ -22,47 +21,39 @@ class BNCounter(BaseCounter):
 
 @TASK_UTILS.register_module()
 class BatchNorm1dCounter(BNCounter):
-    """FLOPs/params counter for BatchNorm1d module."""
     pass
 
 
 @TASK_UTILS.register_module()
 class BatchNorm2dCounter(BNCounter):
-    """FLOPs/params counter for BatchNorm2d module."""
     pass
 
 
 @TASK_UTILS.register_module()
 class BatchNorm3dCounter(BNCounter):
-    """FLOPs/params counter for BatchNorm3d module."""
     pass
 
 
 @TASK_UTILS.register_module()
 class InstanceNorm1dCounter(BNCounter):
-    """FLOPs/params counter for InstanceNorm1d module."""
     pass
 
 
 @TASK_UTILS.register_module()
 class InstanceNorm2dCounter(BNCounter):
-    """FLOPs/params counter for InstanceNorm2d module."""
     pass
 
 
 @TASK_UTILS.register_module()
 class InstanceNorm3dCounter(BNCounter):
-    """FLOPs/params counter for InstanceNorm3d module."""
     pass
 
 
 @TASK_UTILS.register_module()
 class LayerNormCounter(BNCounter):
-    """FLOPs/params counter for LayerNorm module."""
     pass
 
 
 @TASK_UTILS.register_module()
 class GroupNormCounter(BNCounter):
-    """FLOPs/params counter for GroupNorm module."""
     pass
