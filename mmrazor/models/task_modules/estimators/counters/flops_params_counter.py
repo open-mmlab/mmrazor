@@ -216,6 +216,7 @@ def print_model_with_flops_params(model,
     """
 
     def accumulate_params(self):
+        """Accumulate params by recursion."""
         if is_supported_instance(self):
             return self.__params__
         else:
@@ -225,6 +226,7 @@ def print_model_with_flops_params(model,
             return sum
 
     def accumulate_flops(self):
+        """Accumulate flops by recursion."""
         if is_supported_instance(self):
             return self.__flops__ / model.__batch_counter__
         else:
@@ -234,6 +236,7 @@ def print_model_with_flops_params(model,
             return sum
 
     def flops_repr(self):
+        """A new extra_repr method of the input module."""
         accumulated_num_params = self.accumulate_params()
         accumulated_flops_cost = self.accumulate_flops()
         flops_string = str(
@@ -252,6 +255,7 @@ def print_model_with_flops_params(model,
         ])
 
     def add_extra_repr(m):
+        """Reload extra_repr method."""
         m.accumulate_flops = accumulate_flops.__get__(m)
         m.accumulate_params = accumulate_params.__get__(m)
         flops_extra_repr = flops_repr.__get__(m)
@@ -261,6 +265,7 @@ def print_model_with_flops_params(model,
             assert m.extra_repr != m.original_extra_repr
 
     def del_extra_repr(m):
+        """Recover origin extra_repr method."""
         if hasattr(m, 'original_extra_repr'):
             m.extra_repr = m.original_extra_repr
             del m.original_extra_repr
@@ -281,6 +286,7 @@ def accumulate_sub_module_flops_params(model):
     """
 
     def accumulate_params(module):
+        """Accumulate params by recursion."""
         if is_supported_instance(module):
             return module.__params__
         else:
@@ -290,6 +296,7 @@ def accumulate_sub_module_flops_params(model):
             return sum
 
     def accumulate_flops(module):
+        """Accumulate flops by recursion."""
         if is_supported_instance(module):
             return module.__flops__ / model.__batch_counter__
         else:
@@ -310,6 +317,7 @@ def get_model_parameters_number(model):
 
     Args:
         model (nn.module): The model for parameter number calculation.
+
     Returns:
         float: Parameter number of the model.
     """
@@ -318,8 +326,10 @@ def get_model_parameters_number(model):
 
 
 def add_flops_params_counting_methods(net_main_module):
-    # adding additional methods to the existing module object,
-    # this is done this way so that each function has access to self object
+    """Add additional methods to the existing module object.
+
+    This is done this way so that each function has access to self object.
+    """
     net_main_module.start_flops_params_count = start_flops_params_count.__get__(  # noqa: E501
         net_main_module)
     net_main_module.stop_flops_params_count = stop_flops_params_count.__get__(
@@ -339,6 +349,7 @@ def compute_average_flops_params_cost(self):
 
     A method to compute average FLOPs cost, which will be available after
     `add_flops_params_counting_methods()` is called on a desired net object.
+
     Returns:
         float: Current mean flops consumption per image.
     """
@@ -406,16 +417,18 @@ def reset_flops_params_count(self):
 
 # ---- Internal functions
 def empty_flops_params_counter_hook(module, input, output):
+    """Empty flops and params variables of the module."""
     module.__flops__ += 0
     module.__params__ += 0
 
 
 def add_batch_counter_variables_or_reset(module):
-
+    """Add or reset the batch counter variable."""
     module.__batch_counter__ = 0
 
 
 def add_batch_counter_hook_function(module):
+    """Register the batch counter hook for the module."""
     if hasattr(module, '__batch_counter_handle__'):
         return
 
@@ -424,6 +437,7 @@ def add_batch_counter_hook_function(module):
 
 
 def batch_counter_hook(module, input, output):
+    """Add batch counter variable based on the input size."""
     batch_size = 1
     if len(input) > 0:
         # Can have multiple inputs, getting the first one
@@ -437,12 +451,14 @@ def batch_counter_hook(module, input, output):
 
 
 def remove_batch_counter_hook_function(module):
+    """Remove batch counter handle variable."""
     if hasattr(module, '__batch_counter_handle__'):
         module.__batch_counter_handle__.remove()
         del module.__batch_counter_handle__
 
 
 def add_flops_params_counter_variable_or_reset(module):
+    """Add or reset flops and params variable of the module."""
     if is_supported_instance(module):
         if hasattr(module, '__flops__') or hasattr(module, '__params__'):
             print('Warning: variables __flops__ or __params__ are already '
@@ -453,16 +469,19 @@ def add_flops_params_counter_variable_or_reset(module):
 
 
 def get_counter_type(module):
+    """Get counter type of the module based on the module class name."""
     return module.__class__.__name__ + 'Counter'
 
 
 def is_supported_instance(module):
+    """Judge whether the module is in TASK_UTILS registry or not."""
     if get_counter_type(module) in TASK_UTILS._module_dict.keys():
         return True
     return False
 
 
 def remove_flops_params_counter_hook_function(module):
+    """Remove counter related variables after resource estimation."""
     if hasattr(module, '__flops_params_handle__'):
         module.__flops_params_handle__.remove()
         del module.__flops_params_handle__
