@@ -1,0 +1,43 @@
+Collections:
+  - Name: DFAD
+    Metadata:
+      Training Data:
+        - CIFAR-10
+    Paper:
+      URL: https://arxiv.org/pdf/1912.11006.pdf
+      Title: Data-Free Adversarial Distillation
+    README: configs/distill/mmcls/dfad/README.md
+    Converted From:
+      Code:
+        URL: https://github.com/VainF/Data-Free-Adversarial-Distillation
+Models:
+  - Name: dfad_logits_resnet34_resnet18_8xb32_cifar10
+    In Collection: DFAD
+    Metadata:
+      inference time (ms/im):
+        - value: 0.38
+          hardware: NVIDIA A100-SXM4-80GB
+          backend: PyTorch
+          batch size: 32
+          mode: FP32
+          resolution: (32, 32)
+      Location: logits
+      Student:
+        Config: mmcls::resnet/resnet18_8xb16_cifar10.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_b16x8_cifar10_20210528-bd6371c8.pth
+        Metrics:
+          Top 1 Accuracy: 94.82
+          Top 5 Accuracy: 99.87
+      Teacher:
+        Config: mmcls::resnet/resnet34_8xb16_cifar10.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet34_b16x8_cifar10_20210528-a8aa36a6.pth
+        Metrics:
+          Top 1 Accuracy: 95.34
+          Top 5 Accuracy: 99.87
+    Results:
+      - Task: Image Classification
+        Dataset: CIFAR-10
+        Metrics:
+          Top 1 Accuracy: 92.80
+    Config: configs/distill/mmcls/dfad/dfad_logits_resnet34_resnet18_8xb32_cifar10.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/DFAD/dfad_logits_resnet34_resnet18_8xb32_cifar10_20220819_051141-961a5b09.pth

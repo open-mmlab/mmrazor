@@ -1,101 +1,104 @@
-mmrazor.apis
-------------
-
-mmcls
-^^^^^
-.. automodule:: mmrazor.apis.mmcls
-    :members:
-
-mmdet
-^^^^^
-.. automodule:: mmrazor.apis.mmdet
-    :members:
-
-mmseg
-^^^^^
-.. automodule:: mmrazor.apis.mmseg
-    :members:
-
-mmrazor.core
---------------
+mmrazor.engine
+------------------
 
 hooks
-^^^^^
-.. automodule:: mmrazor.core.hooks
+^^^^^^^^^^^^^^^^^^
+.. automodule:: mmrazor.engine.hooks
     :members:
 
-optimizer
-^^^^^^^^^
-.. automodule:: mmrazor.core.optimizer
+optimizers
+^^^^^^^^^^^^^^^^^^
+.. automodule:: mmrazor.engine.optimizers
     :members:
 
-runners
-^^^^^^^
-.. automodule:: mmrazor.core.runners
-    :members:
-
-searcher
-^^^^^^^^
-.. automodule:: mmrazor.core.searcher
-    :members:
-
-utils
-^^^^^
-.. automodule:: mmrazor.core.utils
-    :members:
-
-mmrazor.datasets
-----------------
-
-datasets
-^^^^^^^^
-.. automodule:: mmrazor.datasets
+runner
+^^^^^^^^^^^^^^^^^^
+.. automodule:: mmrazor.engine.runner
     :members:
 
 mmrazor.models
---------------
+------------------
 
 algorithms
-^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 .. automodule:: mmrazor.models.algorithms
     :members:
 
 architectures
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 .. automodule:: mmrazor.models.architectures
     :members:
 
 distillers
-^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 .. automodule:: mmrazor.models.distillers
     :members:
 
 losses
-^^^^^^
+^^^^^^^^^^^^^^^^^^
 .. automodule:: mmrazor.models.losses
     :members:
 
 mutables
-^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 .. automodule:: mmrazor.models.mutables
     :members:
 
 mutators
-^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 .. automodule:: mmrazor.models.mutators
     :members:
 
 ops
-^^^
+^^^^^^^^^^^^^^^^^^
 .. automodule:: mmrazor.models.ops
     :members:
 
-pruners
-^^^^^^^
-.. automodule:: mmrazor.models.pruners
+task_modules
+^^^^^^^^^^^^^^^^^^
+.. automodule:: mmrazor.models.task_modules
+    :members:
+
+utils
+^^^^^^^^^^^^^^^^^^
+.. automodule:: mmrazor.models.utils
+    :members:
+
+mmrazor.registry
+------------------
+
+.. automodule:: mmrazor.registry
+    :members:
+
+mmrazor.structures
+------------------
+
+delivery
+^^^^^^^^^^^^^^^^^^
+.. automodule:: mmrazor.structures.delivery
+    :members:
+
+graph
+^^^^^^^^^^^^^^^^^^
+.. automodule:: mmrazor.structures.graph
+    :members:
+
+recorder
+^^^^^^^^^^^^^^^^^^
+.. automodule:: mmrazor.structures.recorder
+    :members:
+
+subnet
+^^^^^^^^^^^^^^^^^^
+.. automodule:: mmrazor.structures.subnet
+    :members:
+
+tracer
+^^^^^^^^^^^^^^^^^^
+.. automodule:: mmrazor.structures.tracer
     :members:
 
 mmrazor.utils
--------------
+------------------
 .. automodule:: mmrazor.utils
     :members:

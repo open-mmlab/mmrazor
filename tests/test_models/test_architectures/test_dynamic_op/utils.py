@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict, Optional
 
-from mmrazor.models.architectures.dynamic_op import DynamicOP
+from mmrazor.models.architectures.dynamic_ops import DynamicOP
 
 
 def fix_dynamic_op(op: DynamicOP, fix_mutables: Optional[Dict] = None) -> None:

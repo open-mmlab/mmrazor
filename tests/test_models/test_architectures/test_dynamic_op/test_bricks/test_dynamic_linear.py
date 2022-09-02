@@ -6,8 +6,8 @@ import pytest
 import torch
 from torch import nn
 
-from mmrazor.models.architectures.dynamic_op.bricks import (DynamicLinear,
-                                                            DynamicLinearMixin)
+from mmrazor.models.architectures.dynamic_ops.bricks import (  # noqa
+    DynamicLinear, DynamicLinearMixin)
 from mmrazor.models.mutables import OneShotMutableChannel
 from mmrazor.structures.subnet import export_fix_subnet, load_fix_subnet
 from ..utils import fix_dynamic_op

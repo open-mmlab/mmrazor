@@ -3,7 +3,18 @@ Import:
   - configs/distill/mmdet/cwd/metafile.yml
   - configs/distill/mmcls/wsld/metafile.yml
   - configs/distill/mmcls/rkd/metafile.yml
-  # - configs/nas/darts/metafile.yml
-  - configs/nas/mmdet/detnas/metafile.yml
   - configs/nas/mmcls/spos/metafile.yml
-  # - configs/pruning/autoslim/metafile.yml
+  - configs/distill/mmcls/abloss/metafile.yml
+  - configs/distill/mmcls/byot/metafile.yml
+  - configs/distill/mmcls/dafl/metafile.yml
+  - configs/distill/mmcls/dfad/metafile.yml
+  - configs/distill/mmcls/dkd/metafile.yml
+  - configs/distill/mmcls/fitnets/metafile.yml
+  - configs/distill/mmcls/kd/metafile.yml
+  - configs/distill/mmcls/zskt/metafile.yml
+  - configs/distill/mmdet/fbkd/metafile.yml
+  - configs/distill/mmcls/factor_transfer/metafile.yml
+  - configs/distill/mmcls/ofd/metafile.yml
+  - configs/pruning/mmcls/autoslim/metafile.yml
+  - configs/nas/mmcls/darts/metafile.yml
+  - configs/nas/mmdet/detnas/metafile.yml

@@ -6,8 +6,8 @@ from mmengine.data import BaseDataElement
 
 from mmrazor import digit_version
 from mmrazor.models import (ABLoss, ActivationLoss, ATLoss, CRDLoss, DKDLoss,
-                            FTLoss, InformationEntropyLoss, KDSoftCELoss,
-                            OnehotLikeLoss)
+                            FBKDLoss, FTLoss, InformationEntropyLoss,
+                            KDSoftCELoss, OFDLoss, OnehotLikeLoss)
 
 
 class TestLosses(TestCase):
@@ -20,6 +20,27 @@ class TestLosses(TestCase):
 
         num_classes = 6
         cls.labels = torch.randint(0, num_classes, [5])
+
+    def test_ofd_loss(self):
+        ofd_loss = OFDLoss()
+        self.normal_test_1d(ofd_loss)
+        self.normal_test_3d(ofd_loss)
+
+        # test the calculation
+        s_feat_0 = torch.Tensor([[1, 1], [2, 2], [3, 3]])
+        t_feat_0 = torch.Tensor([[0, 0], [1, 1], [2, 2]])
+        ofd_loss_num_0 = ofd_loss.forward(s_feat_0, t_feat_0)
+        assert ofd_loss_num_0 != torch.tensor(0.0)
+
+        s_feat_1 = torch.Tensor([[1, 1], [2, 2], [3, 3]])
+        t_feat_1 = torch.Tensor([[2, 2], [3, 3], [4, 4]])
+        ofd_loss_num_1 = ofd_loss.forward(s_feat_1, t_feat_1)
+        assert ofd_loss_num_1 != torch.tensor(0.0)
+
+        s_feat_2 = torch.Tensor([[-3, -3], [-2, -2], [-1, -1]])
+        t_feat_2 = torch.Tensor([[-2, -2], [-1, -1], [0, 0]])
+        ofd_loss_num_2 = ofd_loss.forward(s_feat_2, t_feat_2)
+        assert ofd_loss_num_2 == torch.tensor(0.0)
 
     def normal_test_1d(self, loss_instance, labels=False):
         args = tuple([self.feats_1d, self.feats_1d])
@@ -115,7 +136,6 @@ class TestLosses(TestCase):
         ie_loss = InformationEntropyLoss(**dafl_loss_cfg, gather=True)
         ie_loss.world_size = 2
 
-        # TODO: configure circle CI to test UT under multi torch versions.
         if digit_version(torch.__version__) >= digit_version('1.8.0'):
             with self.assertRaisesRegex(
                     RuntimeError,
@@ -142,3 +162,20 @@ class TestLosses(TestCase):
         self.normal_test_1d(at_loss)
         self.normal_test_2d(at_loss)
         self.normal_test_3d(at_loss)
+
+    def test_fbkdloss(self):
+        fbkdloss_cfg = dict(loss_weight=1.0)
+        fbkdloss = FBKDLoss(**fbkdloss_cfg)
+
+        spatial_mask = torch.randn(1, 1, 3, 3)
+        channel_mask = torch.randn(1, 4, 1, 1)
+        channel_pool_adapt = torch.randn(1, 4)
+        relation_adpt = torch.randn(1, 4, 3, 3)
+
+        s_input = (spatial_mask, channel_mask, channel_pool_adapt,
+                   spatial_mask, channel_mask, relation_adpt)
+        t_input = (spatial_mask, channel_mask, spatial_mask, channel_mask,
+                   relation_adpt)
+
+        fbkd_loss = fbkdloss(s_input, t_input)
+        self.assertTrue(fbkd_loss.numel() == 1)
