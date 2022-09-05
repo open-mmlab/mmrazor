@@ -1,9 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import argparse
+import logging
 import os
 import os.path as osp
 
 from mmengine.config import Config, DictAction
+from mmengine.logging import print_log
 from mmengine.runner import Runner
 
 from mmrazor.utils import register_all_modules
@@ -14,13 +16,18 @@ def parse_args():
     parser.add_argument('config', help='train config file path')
     parser.add_argument('--work-dir', help='the dir to save logs and models')
     parser.add_argument(
-        '--resume',
+        '--amp',
         action='store_true',
-        help='resume from the latest checkpoint in the work_dir automatically')
+        default=False,
+        help='enable automatic-mixed-precision training')
     parser.add_argument(
         '--auto-scale-lr',
         action='store_true',
         help='enable automatically scaling LR.')
+    parser.add_argument(
+        '--resume',
+        action='store_true',
+        help='resume from the latest checkpoint in the work_dir automatically')
     parser.add_argument(
         '--cfg-options',
         nargs='+',
@@ -62,6 +69,21 @@ def main():
         # use config filename as default work_dir if cfg.work_dir is None
         cfg.work_dir = osp.join('./work_dirs',
                                 osp.splitext(osp.basename(args.config))[0])
+
+    # enable automatic-mixed-precision training
+    if args.amp is True:
+        optim_wrapper = cfg.optim_wrapper.type
+        if optim_wrapper == 'AmpOptimWrapper':
+            print_log(
+                'AMP training is already enabled in your config.',
+                logger='current',
+                level=logging.WARNING)
+        else:
+            assert optim_wrapper == 'OptimWrapper', (
+                '`--amp` is only supported when the optimizer wrapper type is '
+                f'`OptimWrapper` but got {optim_wrapper}.')
+            cfg.optim_wrapper.type = 'AmpOptimWrapper'
+            cfg.optim_wrapper.loss_scale = 'dynamic'
 
     # enable automatically scaling LR
     if args.auto_scale_lr:
