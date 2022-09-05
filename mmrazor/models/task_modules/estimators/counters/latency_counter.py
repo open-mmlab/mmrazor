@@ -1,42 +1,49 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import logging
 import time
-from typing import Any, Dict
+from typing import Tuple
 
 import torch
 from mmengine.logging import print_log
 
 
 def repeat_measure_inference_speed(model: torch.nn.Module,
-                                   resource_args: Dict[str, Any],
-                                   max_iter: int = 100,
-                                   num_warmup: int = 5,
-                                   log_interval: int = 100,
-                                   repeat_num: int = 1) -> float:
+                                   input_shape: Tuple = (1, 3, 224, 224),
+                                   latency_max_iter: int = 100,
+                                   latency_num_warmup: int = 5,
+                                   latency_log_interval: int = 100,
+                                   latency_repeat_num: int = 1,
+                                   unit: str = 'ms',
+                                   as_strings: bool = False) -> float:
     """Repeat speed measure for multi-times to get more precise results.
 
     Args:
         model (torch.nn.Module): The measured model.
-        resource_args (Dict[str, float]): resources information.
-        max_iter (Optional[int]): Max iteration num for inference speed test.
-        num_warmup (Optional[int]): Iteration num for warm-up stage.
-        log_interval (Optional[int]): Interval num for logging the results.
-        repeat_num (Optional[int]): Num of times to repeat the measurement.
+        input_shape (tuple): Input shape (including batchsize) used for
+            calculation. Default to (1, 3, 224, 224).
+        latency_max_iter (Optional[int]): Max iteration num for the
+            measurement. Default to 100.
+        latency_num_warmup (Optional[int]): Iteration num for warm-up stage.
+            Default to 5.
+        latency_log_interval (Optional[int]): Interval num for logging the
+            results. Default to 100.
+        latency_repeat_num (Optional[int]): Num of times to repeat the
+            measurement. Default to 1.
 
     Returns:
         fps (float): The measured inference speed of the model.
     """
-    assert repeat_num >= 1
+    assert latency_repeat_num >= 1
 
     fps_list = []
 
-    for _ in range(repeat_num):
+    for _ in range(latency_repeat_num):
 
         fps_list.append(
-            measure_inference_speed(model, resource_args, max_iter, num_warmup,
-                                    log_interval))
+            measure_inference_speed(model, input_shape, latency_max_iter,
+                                    latency_num_warmup, latency_log_interval))
 
-    if repeat_num > 1:
+    if latency_repeat_num > 1:
         fps_list_ = [round(fps, 1) for fps in fps_list]
         times_per_img_list = [round(1000 / fps, 1) for fps in fps_list]
         mean_fps_ = sum(fps_list_) / len(fps_list_)
@@ -54,18 +61,22 @@ def repeat_measure_inference_speed(model: torch.nn.Module,
 
 
 def measure_inference_speed(model: torch.nn.Module,
-                            resource_args: Dict[str, Any],
-                            max_iter: int = 100,
-                            num_warmup: int = 5,
-                            log_interval: int = 100) -> float:
+                            input_shape: Tuple = (1, 3, 224, 224),
+                            latency_max_iter: int = 100,
+                            latency_num_warmup: int = 5,
+                            latency_log_interval: int = 100) -> float:
     """Measure inference speed on GPU devices.
 
     Args:
         model (torch.nn.Module): The measured model.
-        resource_args (Dict[str, float]): resources information.
-        max_iter (Optional[int]): Max iteration num for inference speed test.
-        num_warmup (Optional[int]): Iteration num for warm-up stage.
-        log_interval (Optional[int]): Interval num for logging the results.
+        input_shape (tuple): Input shape (including batchsize) used for
+            calculation. Default to (1, 3, 224, 224).
+        latency_max_iter (Optional[int]): Max iteration num for the
+            measurement. Default to 100.
+        latency_num_warmup (Optional[int]): Iteration num for warm-up stage.
+            Default to 5.
+        latency_log_interval (Optional[int]): Interval num for logging the
+            results. Default to 100.
 
     Returns:
         fps (float): The measured inference speed of the model.
@@ -78,10 +89,10 @@ def measure_inference_speed(model: torch.nn.Module,
         device = 'cuda'
     else:
         raise NotImplementedError('To use cpu to test latency not supported.')
-    # benchmark with {max_iter} image and take the average
-    for i in range(1, max_iter):
+    # benchmark with {latency_max_iter} image and take the average
+    for i in range(1, latency_max_iter):
         if device == 'cuda':
-            data = torch.rand(resource_args['input_shape']).cuda()
+            data = torch.rand(input_shape).cuda()
         torch.cuda.synchronize()
         start_time = time.perf_counter()
 
@@ -91,19 +102,19 @@ def measure_inference_speed(model: torch.nn.Module,
         torch.cuda.synchronize()
         elapsed = time.perf_counter() - start_time
 
-        if i >= num_warmup:
+        if i >= latency_num_warmup:
             pure_inf_time += elapsed
-            if (i + 1) % log_interval == 0:
-                fps = (i + 1 - num_warmup) / pure_inf_time
+            if (i + 1) % latency_log_interval == 0:
+                fps = (i + 1 - latency_num_warmup) / pure_inf_time
                 print_log(
-                    f'Done image [{i + 1:<3}/ {max_iter}], '
+                    f'Done image [{i + 1:<3}/ {latency_max_iter}], '
                     f'fps: {fps:.1f} img / s, '
                     f'times per image: {1000 / fps:.1f} ms / img',
                     logger='current',
                     level=logging.DEBUG)
 
-        if (i + 1) == max_iter:
-            fps = (i + 1 - num_warmup) / pure_inf_time
+        if (i + 1) == latency_max_iter:
+            fps = (i + 1 - latency_num_warmup) / pure_inf_time
             print_log(
                 f'Overall fps: {fps:.1f} img / s, '
                 f'times per image: {1000 / fps:.1f} ms / img',

@@ -1,13 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import torch.nn
-from mmengine.dist import broadcast_object_list, is_main_process
 
 from mmrazor.registry import TASK_UTILS
 from .base_estimator import BaseEstimator
-from .counters import (get_model_complexity_info, params_units_convert,
-                       repeat_measure_inference_speed)
+from .counters import get_model_complexity_info, repeat_measure_inference_speed
 
 
 @TASK_UTILS.register_module()
@@ -15,14 +13,28 @@ class ResourceEstimator(BaseEstimator):
     """Estimator for calculating the resources consume.
 
     Args:
-        default_shape (tuple): Input data's default shape, for calculating
-            resources consume. Defaults to (1, 3, 224, 224)
-        units (str): Resource units. Defaults to 'M'.
+        input_shape (tuple): Input data's default shape, for calculating
+            resources consume. Defaults to (1, 3, 224, 224).
+        units (dict): Dict that contains converted FLOPs/params/latency units.
+            Default to dict(flops='M', params='M', latency='ms').
+        as_strings (bool): Output FLOPs/params/latency counts in a string
+            form. Default to False.
+        spec_modules (list): List of spec modules that needed to count.
+            e.g., ['backbone', 'head'], ['backbone.layer1']. Default to [].
         disabled_counters (list): List of disabled spec op counters.
-            Defaults to None.
-        NOTE: disabled_counters contains the op counter class names
-              in estimator.op_counters that require to be disabled,
-              such as 'ConvCounter', 'BatchNorm2dCounter', ...
+            It contains the op counter names in estimator.op_counters that
+            are required to be disabled, e.g., ['BatchNorm2dCounter'].
+            Defaults to [].
+        measure_latency (bool): whether to measure inference speed or not.
+            Default to False.
+        latency_max_iter (Optional[int]): Max iteration num for the
+            measurement. Default to 100.
+        latency_num_warmup (Optional[int]): Iteration num for warm-up stage.
+            Default to 5.
+        latency_log_interval (Optional[int]): Interval num for logging the
+            results. Default to 100.
+        latency_repeat_num (Optional[int]): Num of times to repeat the
+            measurement. Default to 1.
 
     Examples:
         >>> # direct calculate resource consume of nn.Conv2d
@@ -30,7 +42,7 @@ class ResourceEstimator(BaseEstimator):
         >>> estimator = ResourceEstimator()
         >>> estimator.estimate(
         ...     model=conv2d,
-        ...     resource_args=dict(input_shape=(1, 3, 64, 64)))
+        ...     input_shape=(1, 3, 64, 64))
         {'flops': 3.444, 'params': 0.001, 'latency': 0.0}
 
         >>> # calculate resources of custom modules
@@ -53,15 +65,14 @@ class ResourceEstimator(BaseEstimator):
         >>> model = CustomModule()
         >>> estimator.estimate(
         ...     model=model,
-        ...     resource_args=dict(input_shape=(1, 3, 64, 64)))
+        ...     input_shape=(1, 3, 64, 64))
         {'flops': 1.0, 'params': 0.7, 'latency': 0.0}
         ...
         >>> # calculate resources of custom modules with disable_counters
         >>> estimator.estimate(
         ...     model=model,
-        ...     resource_args=dict(
-        ...         input_shape=(1, 3, 64, 64),
-        ...         disabled_counters=['CustomModuleCounter']))
+        ...     input_shape=(1, 3, 64, 64),
+        ...     disabled_counters=['CustomModuleCounter'])
         {'flops': 0.0, 'params': 0.0, 'latency': 0.0}
 
         >>> # calculate resources of mmrazor.models
@@ -69,87 +80,87 @@ class ResourceEstimator(BaseEstimator):
               mmrazor.engine.hooks.estimate_resources_hook for details.
     """
 
-    def __init__(self,
-                 default_shape: Tuple = (1, 3, 224, 224),
-                 units: str = 'M',
-                 disabled_counters: List[str] = [],
-                 as_strings: bool = False,
-                 measure_inference: bool = False):
-        super().__init__(default_shape, units, disabled_counters, as_strings,
-                         measure_inference)
+    def __init__(
+        self,
+        input_shape: Tuple = (1, 3, 224, 224),
+        units: Dict = dict(flops='M', params='M', latency='ms'),
+        as_strings: bool = False,
+        spec_modules: List[str] = [],
+        disabled_counters: List[str] = [],
+        measure_latency: bool = False,
+        latency_max_iter: int = 100,
+        latency_num_warmup: int = 5,
+        latency_log_interval: int = 100,
+        latency_repeat_num: int = 1,
+    ):
+        super().__init__(input_shape, units, as_strings)
+        self.spec_modules = spec_modules
+        self.disabled_counters = disabled_counters
 
-    def estimate(
-        self, model: torch.nn.Module, resource_args: Dict[str, Any] = dict()
-    ) -> Dict[str, Any]:
+        self.measure_latency = measure_latency
+        self.latency_max_iter = latency_max_iter
+        self.latency_num_warmup = latency_num_warmup
+        self.latency_log_interval = latency_log_interval
+        self.latency_repeat_num = latency_repeat_num
+
+    def estimate(self, model: torch.nn.Module,
+                 **kwargs) -> Dict[str, Union[float, str]]:
         """Estimate the resources(flops/params/latency) of the given model.
 
         Args:
             model: The measured model.
-            resource_args (Dict[str, float]): Args for resources estimation.
-            NOTE: resource_args have the same items() as the init cfgs.
 
         Returns:
             Dict[str, str]): A dict that containing resource results(flops,
                 params and latency).
         """
+        latency_cfg = dict()
         resource_metrics = dict()
-        if is_main_process():
-            measure_inference = resource_args.pop('measure_inference', False)
-            if 'input_shape' not in resource_args.keys():
-                resource_args['input_shape'] = self.default_shape
-            if 'disabled_counters' not in resource_args.keys():
-                resource_args['disabled_counters'] = self.disabled_counters
-            model.eval()
-            flops, params = get_model_complexity_info(model, **resource_args)
-            if measure_inference:
-                latency = repeat_measure_inference_speed(
-                    model, resource_args, max_iter=100, repeat_num=2)
-            else:
-                latency = 0.0
-            as_strings = resource_args.get('as_strings', self.as_strings)
-            if as_strings and self.units is not None:
-                raise ValueError('Set units to None, when as_trings=True.')
-            if self.units is not None:
-                flops = params_units_convert(flops, self.units)
-                params = params_units_convert(params, self.units)
-            resource_metrics.update({
-                'flops': flops,
-                'params': params,
-                'latency': latency
-            })
-            results = [resource_metrics]
+        for key in self.__init__.__code__.co_varnames[1:]:  # type: ignore
+            kwargs.setdefault(key, getattr(self, key))
+            if 'latency' in key:
+                latency_cfg[key] = kwargs.pop(key)
+        latency_cfg['unit'] = kwargs['units'].get('latency')
+        latency_cfg['as_strings'] = kwargs['as_strings']
+        latency_cfg['input_shape'] = kwargs['input_shape']
+
+        model.eval()
+        flops, params = get_model_complexity_info(model, **kwargs)
+
+        if latency_cfg['measure_latency']:
+            latency = repeat_measure_inference_speed(model, **latency_cfg)
         else:
-            results = [None]  # type: ignore
+            latency = '0.0 ms' if kwargs['as_strings'] else 0.0  # type: ignore
 
-        broadcast_object_list(results)
+        resource_metrics.update({
+            'flops': flops,
+            'params': params,
+            'latency': latency
+        })
+        return resource_metrics
 
-        return results[0]
-
-    def estimate_spec_modules(
-        self, model: torch.nn.Module, resource_args: Dict[str, Any] = dict()
-    ) -> Dict[str, float]:
+    def estimate_separation_modules(self, model: torch.nn.Module,
+                                    **kwargs) -> Dict[str, Union[float, str]]:
         """Estimate the resources(flops/params/latency) of the spec modules.
 
         Args:
             model: The measured model.
-            resource_args (Dict[str, float]): Args for resources estimation.
-            NOTE: resource_args have the same items() as the init cfgs.
 
         Returns:
             Dict[str, float]): A dict that containing resource results(flops,
-                params) of each modules in resource_args['spec_modules'].
+                params) of each modules in kwargs['spec_modules'].
         """
-        assert 'spec_modules' in resource_args, \
-            'spec_modules is required when calling estimate_spec_modules().'
+        for key in self.__init__.__code__.co_varnames[1:]:  # type: ignore
+            kwargs.setdefault(key, getattr(self, key))
+            # TODO: support speed estimation for separation modules.
+            if 'latency' in key:
+                kwargs.pop(key)
 
-        resource_args.pop('measure_inference', False)
-        if 'input_shape' not in resource_args.keys():
-            resource_args['input_shape'] = self.default_shape
-        if 'disabled_counters' not in resource_args.keys():
-            resource_args['disabled_counters'] = self.disabled_counters
+        assert len(kwargs['spec_modules']), (
+            f'spec_modules can not be empty when calling '
+            f'{self.__class__.__name__}.estimate_separation_modules().')
+        kwargs['seperate_return'] = True
 
         model.eval()
-        spec_modules_resources = get_model_complexity_info(
-            model, **resource_args)
-
+        spec_modules_resources = get_model_complexity_info(model, **kwargs)
         return spec_modules_resources
