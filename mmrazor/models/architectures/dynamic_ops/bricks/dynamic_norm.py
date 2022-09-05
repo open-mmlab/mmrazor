@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -128,3 +128,77 @@ class DynamicBatchNorm3d(_DynamicBatchNorm):
         if input.dim() != 5:
             raise ValueError('expected 5D input (got {}D input)'.format(
                 input.dim()))
+
+
+class SwitchableBatchNorm2d(DynamicBatchNorm2d):
+    """Employs independent batch normalization for different switches in a
+    slimmable network.
+
+    To train slimmable networks, ``SwitchableBatchNorm2d`` privatizes all
+    batch normalization layers for each switch in a slimmable network.
+    Compared with the naive training approach, it solves the problem of feature
+    aggregation inconsistency between different switches by independently
+    normalizing the feature mean and variance during testing.
+
+    Args:
+        module_name (str): Name of this `SwitchableBatchNorm2d`.
+        num_features_cfg (Dict): Config related to `num_features`.
+        eps (float): A value added to the denominator for numerical stability.
+            Same as that in :obj:`torch.nn._BatchNorm`. Default: 1e-5
+        momentum (float): The value used for the running_mean and running_var
+            computation. Can be set to None for cumulative moving average
+            (i.e. simple average). Same as that in :obj:`torch.nn._BatchNorm`.
+            Default: 0.1
+        affine (bool): A boolean value that when set to True, this module has
+            learnable affine parameters. Same as that in
+            :obj:`torch.nn._BatchNorm`. Default: True
+        track_running_stats (bool): A boolean value that when set to True, this
+            module tracks the running mean and variance, and when set to False,
+            this module does not track such statistics, and initializes
+            statistics buffers running_mean and running_var as None. When these
+            buffers are None, this module always uses batch statistics. in both
+            training and eval modes. Same as that in
+            :obj:`torch.nn._BatchNorm`. Default: True
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.candidate_bn = nn.ModuleDict()
+
+    def init_candidates(self, candidates: List):
+        assert len(self.candidate_bn) == 0
+        self._check_candidates(candidates)
+        for num in candidates:
+            self.candidate_bn[str(num)] = nn.BatchNorm2d(num)
+
+    def forward(self, input: Tensor) -> Tensor:
+        choice_num = self.activated_channel_num()
+        if choice_num == self.num_features:
+            return super().forward(input)
+        else:
+            assert str(choice_num) in self.candidate_bn
+            return self.candidate_bn[str(choice_num)](input)
+
+    def to_static_op(self: _BatchNorm) -> nn.Module:
+        choice_num = self.activated_channel_num()
+        if choice_num == self.num_features:
+            return super().to_static_op()
+        else:
+            assert str(choice_num) in self.candidate_bn
+            return self.candidate_bn[str(choice_num)]
+
+    # private methods
+
+    def activated_channel_num(self):
+        mask = self._get_num_features_mask()
+        choice_num = (mask == 1).sum().item()
+        return choice_num
+
+    def _check_candidates(self, candidates: List):
+        for value in candidates:
+            assert isinstance(value, int)
+            assert 0 < value <= self.num_features
+
+    @property
+    def static_op_factory(self):
+        return nn.BatchNorm2d

@@ -1,150 +1,96 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
-from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
-import torch.nn as nn
 from torch.nn import Module
-from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.architectures.dynamic_ops import DynamicBatchNorm
-from mmrazor.models.mutables import SlimmableMutableChannel
+from mmrazor.models.mutables import SlimmableChannelGroup
 from mmrazor.registry import MODELS
-from ...task_modules import PathList
-from ..utils import switchable_bn_converter
-from .channel_mutator import ChannelMutator
-
-NONPASS_MODULES = (nn.Conv2d, nn.Linear)
-PASS_MODULES = (_BatchNorm, )
-
-VALID_PATH_TYPE = Union[str, Path]
+from .base_channel_mutator import MUTABLECHANNELGROUP, BaseChannelMutator
 
 
 @MODELS.register_module()
-class SlimmableChannelMutator(ChannelMutator):
-    """Slimmable channel mutable based channel mutator.
-
-    Args:
-        channel_cfgs (list[Dict]): A list of candidate channel configs.
-        mutable_cfg (dict): The config for the channel mutable.
-        skip_prefixes (List[str] | Optional): The module whose name start with
-            a string in skip_prefixes will not be pruned.
-        init_cfg (dict, optional): The config to control the initialization.
-    """
+class SlimmableChannelMutator(BaseChannelMutator[SlimmableChannelGroup]):
 
     def __init__(self,
                  channel_cfgs: Dict,
-                 mutable_cfg: Dict,
-                 tracer_cfg: Dict,
+                 channl_group_cfg=dict(type='SlimmableChannelGroup'),
+                 tracer_cfg=dict(
+                     type='BackwardTracer',
+                     loss_calculator=dict(type='ImageClassifierPseudoLoss')),
                  skip_prefixes: Optional[List[str]] = None,
-                 init_cfg: Optional[Dict] = None):
-        super(SlimmableChannelMutator, self).__init__(
-            mutable_cfg=mutable_cfg,
-            tracer_cfg=tracer_cfg,
-            skip_prefixes=skip_prefixes,
-            init_cfg=init_cfg)
+                 init_cfg: Optional[Dict] = None) -> None:
+        super().__init__(channl_group_cfg, tracer_cfg, skip_prefixes, init_cfg)
+        self._channel_cfgs = channel_cfgs
+        self._subnets = self._prepare_subnets(channel_cfgs)
 
-        self.channel_cfgs = channel_cfgs
+    def set_choices(self, config):
+        config = self._convert_subnet(config)
+        return super().set_choices(config)
+
+    @property
+    def subnets(self):
+        return self._subnets
+
+    # prepare model
 
     def prepare_from_supernet(self, supernet: Module) -> None:
-        """Do some necessary preparations with supernet.
+        super().prepare_from_supernet(supernet)
+        self.module2group = self._get_module2group()
+        self._reset_group_candidates()
 
-        Note:
-            Different from `ChannelMutator`, we only support Case 1 in
-            `ChannelMutator`. The input supernet should be made up of original
-            nn.Module. And we replace the conv/linear/bn modules in the input
-            supernet with dynamic ops first. Then we trace the topology of
-            the supernet to get the `concat_parent_mutables` of a certain
-            mutable, if the input of a module is a concatenation of several
-            modules' outputs. Then we convert the ``DynamicBatchNorm`` in
-            supernet with ``SwitchableBatchNorm2d``, and set the candidate
-            channel numbers to the corresponding `SlimmableChannelMutable`.
-            Finally, we establish the relationship between the current nodes
-            and their parents.
+    # private methods
 
-        Args:
-            supernet (:obj:`torch.nn.Module`): The supernet to be searched
-                in your algorithm.
-        """
-        self.convert_dynamic_module(supernet, self.module_converters)
+    def _reset_group_candidates(self):
+        for key in self._channel_cfgs:
+            group: SlimmableChannelGroup = self._name2group[key]
+            group.alter_candidates_after_init(
+                self._channel_cfgs[key]['candidates'])
 
-        module_path_list: PathList = self.tracer.trace(supernet)
+    def _prepare_subnets(self, channel_cfg: Dict[str, Dict]):
+        subnets: List[Dict[str, int]] = []
+        num_subnets = 0
+        for key in channel_cfg:
+            num_subnets = len(channel_cfg[key]['candidates'])
+            break
+        for _ in range(num_subnets):
+            subnets.append({})
+        for key in channel_cfg:
+            assert num_subnets == len(channel_cfg[key]['candidates'])
+            for i, value in enumerate(channel_cfg[key]['candidates']):
+                subnets[i][key] = value
 
-        self.convert_switchable_bn(supernet)
-        self.set_candidate_choices(supernet)
+        return subnets
 
-        # The mapping from a module name to the module
-        self._name2module = dict(supernet.named_modules())
-        self.add_link(module_path_list)
-        self.bind_mutable_name(supernet)
+    def _candidates_of(self, subnets, key):
+        return [subnet[key] for subnet in subnets]
 
-    def set_candidate_choices(self, supernet):
-        """Set the ``candidate_choices`` of each ``SlimmableChannelMutable``.
+    def _get_module2group(self):
+        module2group = dict()
+        for group in self.groups:
+            group: MUTABLECHANNELGROUP
+            for channel in group.output_related:
+                module2group[channel.name] = group
 
-        Notes:
-            Different from other ``OneShotChannelMutable``,
-            ``candidate_choices`` is optional when instantiating a
-            ``SlimmableChannelMutable``
-        """
-        for name, module in supernet.named_modules():
-            if isinstance(module, SlimmableMutableChannel):
-                candidate_choices = self.channel_cfgs[name]['current_choice']
-                module.candidate_choices = candidate_choices
+        return module2group
 
-    def convert_switchable_bn(self, supernet):
-        """Replace ``DynamicBatchNorm`` in supernet with
-        ``SwitchableBatchNorm2d``.
+    def _convert_subnet(self, subnet: Dict[str, int]):
+        group_subnets = {}
+        for key in subnet:
+            origin_key = key
 
-        Args:
-            supernet (:obj:`torch.nn.Module`): The architecture to be converted
-                in your algorithm.
-        """
+            if 'mutable_out_channels' in key:
+                key = key.replace('.mutable_out_channels', '')
+            elif 'mutable_num_features' in key:
+                key = key.replace('.mutable_num_features', '')
+            else:
+                continue
 
-        def traverse(module, prefix):
-            for name, child in module.named_children():
-                module_name = prefix + name
-                if isinstance(child, DynamicBatchNorm):
-                    mutable_cfg = copy.deepcopy(self.mutable_cfg)
-                    key = module_name + '.mutable_num_features'
-                    candidate_choices = self.channel_cfgs[key][
-                        'current_choice']
-                    mutable_cfg.update(
-                        dict(candidate_choices=candidate_choices))
-                    sbn = switchable_bn_converter(child, mutable_cfg,
-                                                  mutable_cfg)
-                    # TODO
-                    # bind twice?
-                    sbn.mutable_out.bind_mutable_name(module_name)
-                    setattr(module, name, sbn)
+            if key in self.module2group:
+                group = self.module2group[key]
+                if group.name not in group_subnets:
+                    group_subnets[group.name] = subnet[origin_key]
                 else:
-                    traverse(child, module_name + '.')
-
-        traverse(supernet, '')
-
-    def switch_choices(self, idx: int) -> None:
-        """Switch the channel config of the supernet according to input `idx`.
-
-        If we train more than one subnet together, we need to switch the
-        channel_cfg from one to another during one training iteration.
-
-        Args:
-            idx (int): The index of the current subnet.
-        """
-        for name, module in self.name2module.items():
-            if isinstance(module, SlimmableMutableChannel):
-                module.current_choice = idx
-
-    def build_search_groups(self, supernet: Module):
-        """Build `search_groups`.
-
-        The mutables in the same group should be pruned together.
-        """
-        pass
-
-    def mutable_class_type(self):
-        """One-shot channel mutable class type.
-
-        Returns:
-            Type[OneShotMutableModule]: Class type of one-shot mutable.
-        """
-        return SlimmableMutableChannel
+                    assert group_subnets[group.name] == subnet[origin_key]
+            else:
+                raise KeyError(f'{key} can not be found in module2group')
+        return group_subnets

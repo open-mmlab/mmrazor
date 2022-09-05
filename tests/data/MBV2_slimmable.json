@@ -1,0 +1,184 @@
+{
+    "backbone.conv1.conv_(0, 48)_out_4_in_4": {
+        "candidates": [
+            8,
+            8,
+            32
+        ]
+    },
+    "backbone.layer1.0.conv.1.conv_(0, 24)_out_2_in_2": {
+        "candidates": [
+            8,
+            8,
+            16
+        ]
+    },
+    "backbone.layer2.0.conv.0.conv_(0, 144)_out_4_in_4": {
+        "candidates": [
+            96,
+            96,
+            144
+        ]
+    },
+    "backbone.layer2.0.conv.2.conv_(0, 40)_out_5_in_4": {
+        "candidates": [
+            16,
+            16,
+            24
+        ]
+    },
+    "backbone.layer2.1.conv.0.conv_(0, 240)_out_4_in_4": {
+        "candidates": [
+            96,
+            96,
+            176
+        ]
+    },
+    "backbone.layer3.0.conv.0.conv_(0, 240)_out_4_in_4": {
+        "candidates": [
+            96,
+            96,
+            192
+        ]
+    },
+    "backbone.layer3.0.conv.2.conv_(0, 48)_out_8_in_6": {
+        "candidates": [
+            24,
+            24,
+            48
+        ]
+    },
+    "backbone.layer3.1.conv.0.conv_(0, 288)_out_4_in_4": {
+        "candidates": [
+            144,
+            144,
+            240
+        ]
+    },
+    "backbone.layer3.2.conv.0.conv_(0, 288)_out_4_in_4": {
+        "candidates": [
+            144,
+            144,
+            144
+        ]
+    },
+    "backbone.layer4.0.conv.0.conv_(0, 288)_out_4_in_4": {
+        "candidates": [
+            144,
+            144,
+            264
+        ]
+    },
+    "backbone.layer4.0.conv.2.conv_(0, 96)_out_11_in_8": {
+        "candidates": [
+            48,
+            56,
+            88
+        ]
+    },
+    "backbone.layer4.1.conv.0.conv_(0, 576)_out_4_in_4": {
+        "candidates": [
+            288,
+            288,
+            288
+        ]
+    },
+    "backbone.layer4.2.conv.0.conv_(0, 576)_out_4_in_4": {
+        "candidates": [
+            288,
+            288,
+            336
+        ]
+    },
+    "backbone.layer4.3.conv.0.conv_(0, 576)_out_4_in_4": {
+        "candidates": [
+            288,
+            288,
+            432
+        ]
+    },
+    "backbone.layer5.0.conv.0.conv_(0, 576)_out_4_in_4": {
+        "candidates": [
+            288,
+            288,
+            576
+        ]
+    },
+    "backbone.layer5.0.conv.2.conv_(0, 144)_out_8_in_6": {
+        "candidates": [
+            64,
+            96,
+            144
+        ]
+    },
+    "backbone.layer5.1.conv.0.conv_(0, 864)_out_4_in_4": {
+        "candidates": [
+            432,
+            432,
+            576
+        ]
+    },
+    "backbone.layer5.2.conv.0.conv_(0, 864)_out_4_in_4": {
+        "candidates": [
+            432,
+            432,
+            648
+        ]
+    },
+    "backbone.layer6.0.conv.0.conv_(0, 864)_out_4_in_4": {
+        "candidates": [
+            648,
+            864,
+            864
+        ]
+    },
+    "backbone.layer6.0.conv.2.conv_(0, 240)_out_8_in_6": {
+        "candidates": [
+            176,
+            240,
+            240
+        ]
+    },
+    "backbone.layer6.1.conv.0.conv_(0, 1440)_out_4_in_4": {
+        "candidates": [
+            720,
+            1440,
+            1440
+        ]
+    },
+    "backbone.layer6.2.conv.0.conv_(0, 1440)_out_4_in_4": {
+        "candidates": [
+            720,
+            960,
+            1440
+        ]
+    },
+    "backbone.layer7.0.conv.0.conv_(0, 1440)_out_4_in_4": {
+        "candidates": [
+            1440,
+            1440,
+            1440
+        ]
+    },
+    "backbone.layer7.0.conv.2.conv_(0, 480)_out_2_in_2": {
+        "candidates": [
+            280,
+            480,
+            480
+        ]
+    },
+    "backbone.conv2.conv_(0, 1920)_out_2_in_2": {
+        "candidates": [
+            1920,
+            1920,
+            1920
+        ]
+    },
+    "head.fc_(0, 1000)_out_1_in_0": {
+        "candidates": [
+            1000,
+            1000,
+            1000
+        ]
+    }
+}

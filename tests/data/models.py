@@ -7,6 +7,18 @@ import torch
 # this file includes models for tesing.
 
 
+class LinearHead(Module):
+
+    def __init__(self, in_channel, num_class=1000) -> None:
+        super().__init__()
+        self.pool = nn.AdaptiveAvgPool2d(1)
+        self.linear = nn.Linear(in_channel, num_class)
+
+    def forward(self, x):
+        pool = self.pool(x).flatten(1)
+        return self.linear(pool)
+
+
 class MultiConcatModel(Module):
     """
         x----------------
@@ -127,7 +139,7 @@ class ConcatModel(Module):
         output = self.fc(x_pool)
 
         return output
-  
+
 
 class ResBlock(Module):
     """
@@ -233,6 +245,20 @@ class AddCatModel(Module):
 
 
 class GroupWiseConvModel(nn.Module):
+    """
+        x
+        |op1,bn1
+        x1
+        |op2,bn2
+        x2
+        |op3
+        x3
+        |avg_pool
+        x_pool
+        |fc
+        y
+    """
+
     def __init__(self) -> None:
         super().__init__()
         self.op1 = nn.Conv2d(3, 8, 3, 1, 1)
@@ -240,6 +266,8 @@ class GroupWiseConvModel(nn.Module):
         self.op2 = nn.Conv2d(8, 16, 3, 1, 1, groups=2)
         self.bn2 = nn.BatchNorm2d(16)
         self.op3 = nn.Conv2d(16, 32, 3, 1, 1)
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Linear(32, 1000)
 
     def forward(self, x):
         x1 = self.op1(x)
@@ -291,6 +319,23 @@ class Xmodel(nn.Module):
 
 
 class MultipleUseModel(nn.Module):
+    """
+        x------------------------
+        |conv0  |conv1  |conv2  |conv3
+        xs.0    xs.1    xs.2    xs.3
+        |convm  |convm  |convm  |convm
+        xs_.0   xs_.1   xs_.2   xs_.3
+        |       |       |       |
+        +------------------------
+        |
+        x_sum
+        |conv_last
+        feature
+        |avg_pool
+        pool
+        |linear
+        output
+    """
 
     def __init__(self) -> None:
         super().__init__()
@@ -299,7 +344,7 @@ class MultipleUseModel(nn.Module):
         self.conv2 = nn.Conv2d(3, 8, 3, 1, 1)
         self.conv3 = nn.Conv2d(3, 8, 3, 1, 1)
         self.conv_multiple_use = nn.Conv2d(8, 16, 3, 1, 1)
-        self.conv_last = nn.Conv2d(16, 32, 3, 1, 1)
+        self.conv_last = nn.Conv2d(16*4, 32, 3, 1, 1)
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.linear = nn.Linear(32, 1000)
 
@@ -309,17 +354,133 @@ class MultipleUseModel(nn.Module):
             for conv in [self.conv0, self.conv1, self.conv2, self.conv3]
         ]
         xs_ = [self.conv_multiple_use(x_) for x_ in xs]
-        x_sum = 0
-        for x_ in xs_:
-            x_sum = x_sum + x_
-        feature = self.conv_last(x_sum)
+        x_cat = torch.cat(xs_, dim=1)
+        feature = self.conv_last(x_cat)
         pool = self.avg_pool(feature).flatten(1)
         return self.linear(pool)
 
 
+class IcepBlock(nn.Module):
+    """
+        x------------------------
+        |op1    |op2    |op3    |op4
+        x1      x2      x3      x4
+        |       |       |       |
+        cat----------------------
+        |
+        y_
+    """
+
+    def __init__(self, in_c=3, out_c=32) -> None:
+        super().__init__()
+        self.op1 = nn.Conv2d(in_c, out_c, 3, 1, 1)
+        self.op２ = nn.Conv2d(in_c, out_c, 3, 1, 1)
+        self.op３ = nn.Conv2d(in_c, out_c, 3, 1, 1)
+        self.op4 = nn.Conv2d(in_c, out_c, 3, 1, 1)
+        # self.op5 = nn.Conv2d(out_c*4, out_c, 3)
+
+    def forward(self, x):
+        x1 = self.op1(x)
+        x2 = self.op2(x)
+        x3 = self.op3(x)
+        x4 = self.op4(x)
+        y_ = [x1, x2, x3, x4]
+        y_ = torch.cat(y_, 1)
+        return y_
+
+
+class Icep(nn.Module):
+
+    def __init__(self, num_icep_blocks=2) -> None:
+        super().__init__()
+        self.icps = nn.Sequential(*[
+            IcepBlock(32 * 4 if i != 0 else 3, 32)
+            for i in range(num_icep_blocks)
+        ])
+        self.op = nn.Conv2d(32 * 4, 32, 1)
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Linear(32, 1000)
+
+    def forward(self, x):
+        y_ = self.icps(x)
+        y = self.op(y_)
+        pool = self.avg_pool(y).flatten(1)
+        return self.fc(pool)
+
+
+class ExpandLineModel(Module):
+    """
+        x
+        |net0,net1
+        |net2
+        |net3
+        x1
+        |fc
+        output
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Conv2d(3, 8, 3, 1, 1), nn.BatchNorm2d(8), nn.ReLU(),
+            nn.Conv2d(8, 16, 3, 1, 1), nn.BatchNorm2d(16),
+            nn.AdaptiveAvgPool2d(2))
+        self.linear = nn.Linear(64, 1000)
+
+    def forward(self, x):
+        x1 = self.net(x)
+        x1 = x1.reshape([x1.shape[0], -1])
+        return self.linear(x1)
+
+
+class MultiBindModel(Module):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(3, 8, 3, 1, 1)
+        self.conv2 = nn.Conv2d(3, 8, 3, 1, 1)
+        self.conv3 = nn.Conv2d(8, 8, 3, 1, 1)
+        self.head = LinearHead(8, 1000)
+
+    def forward(self, x):
+        x1 = self.conv1(x)
+        x2 = self.conv2(x)
+        x12 = x1 + x2
+        x3 = self.conv3(x12)
+        x123 = x12 + x3
+        return self.head(x123)
+
+
+class DwConvModel(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Conv2d(3, 48, 3, 1, 1),
+            nn.BatchNorm2d(48),
+            nn.ReLU(),
+            nn.Conv2d(48, 48, 3, 1, 1, groups=48),
+            nn.BatchNorm2d(48),
+            nn.ReLU()
+        )
+        self.head = LinearHead(48, 1000)
+
+    def forward(self, x):
+        return self.head(self.net(x))
+
+
 default_models = [
-    LineModel, ResBlock, AddCatModel, ConcatModel, MultiConcatModel,
-    MultiConcatModel2, GroupWiseConvModel, Xmodel, MultipleUseModel
+    LineModel,
+    ResBlock,
+    AddCatModel,
+    ConcatModel,
+    MultiConcatModel,
+    MultiConcatModel2,
+    GroupWiseConvModel,
+    Xmodel,
+    MultipleUseModel,
+    Icep,
+    ExpandLineModel,
+    DwConvModel,
 ]
 
 

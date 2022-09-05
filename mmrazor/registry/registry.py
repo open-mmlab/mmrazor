@@ -43,7 +43,7 @@ def build_razor_model_from_cfg(
         model = get_model(**cfg)  # type: ignore
         return model
 
-    from mmrazor.structures import load_fix_subnet
+    from mmrazor.structures.subnet import load_fix_subnet
 
     if cfg.get('_fix_subnet_', None):
         fix_subnet = cfg.pop('_fix_subnet_')

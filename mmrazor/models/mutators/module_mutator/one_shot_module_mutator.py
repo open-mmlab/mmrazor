@@ -1,8 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Any, Dict
 
+from mmrazor.models.mutables import OneShotMutableModule
 from mmrazor.registry import MODELS
-from ...mutables import OneShotMutableModule
 from .module_mutator import ModuleMutator
 
 
