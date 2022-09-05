@@ -14,6 +14,10 @@ def parse_args():
     parser.add_argument('config', help='train config file path')
     parser.add_argument('--work-dir', help='the dir to save logs and models')
     parser.add_argument(
+        '--resume',
+        action='store_true',
+        help='resume from the latest checkpoint in the work_dir automatically')
+    parser.add_argument(
         '--cfg-options',
         nargs='+',
         action=DictAction,
@@ -54,6 +58,8 @@ def main():
         # use config filename as default work_dir if cfg.work_dir is None
         cfg.work_dir = osp.join('./work_dirs',
                                 osp.splitext(osp.basename(args.config))[0])
+
+    cfg.resume = args.resume
 
     # build the runner from config
     runner = Runner.from_cfg(cfg)
