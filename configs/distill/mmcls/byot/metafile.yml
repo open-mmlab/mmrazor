@@ -1,0 +1,31 @@
+Collections:
+  - Name: BYOT
+    Metadata:
+      Training Data:
+        - CIFAR100
+    Paper:
+      URL: https://arxiv.org/pdf/2107.06916.pdf
+      Title: Training Compact CNNs for Image Classification using Dynamic-coded Filter Fusion
+    README: configs/distill/mmcls/byot/README.md
+    Converted From:
+      Code:
+        URL: https://github.com/luanyunteng/pytorch-be-your-own-teacher
+Models:
+  - Name: byot_resnet18_8xb16_cifar100
+    In Collection: BYOT
+    Metadata:
+      inference time (ms/im):
+        - value: 0.62
+          hardware: V100
+          backend: PyTorch
+          batch size: 16
+          mode: FP32
+          resolution: (32, 32)
+    Results:
+      - Task: Classification
+        Dataset: CIFAR100
+        Metrics:
+          Top 1 Accuracy: 80.66
+          Top 5 Accuracy: 95.76
+    Weights: https://download.openmmlab.com/mmrazor/v1/byot/byot_resnet18_8xb16_cifar100_20220817_191217-0251084e.pth
+    Config: configs/distill/mmcls/byot/byot_resnet18_8xb16_cifar100.py

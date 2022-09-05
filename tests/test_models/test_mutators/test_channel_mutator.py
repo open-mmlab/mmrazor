@@ -6,7 +6,8 @@ from typing import Union
 import torch
 
 # from mmrazor.models.mutables import MutableChannelGroup
-from mmrazor.models.mutables.mutable_channel import SimpleChannelGroup
+from mmrazor.models.mutables.mutable_channel import (L1ChannelGroup,
+                                                     SequentialChannelGroup)
 from mmrazor.models.mutators.channel_mutator import BaseChannelMutator
 from mmrazor.registry import MODELS
 from ...test_core.test_graph.test_graph import TestGraph
@@ -15,7 +16,7 @@ sys.setrecursionlimit(2000)
 
 
 @MODELS.register_module()
-class RandomChannelGroup(SimpleChannelGroup):
+class RandomChannelGroup(SequentialChannelGroup):
 
     def generate_mask(self, choice: Union[int, float]) -> torch.Tensor:
         if isinstance(choice, float):
@@ -28,7 +29,7 @@ class RandomChannelGroup(SimpleChannelGroup):
         return mask
 
 
-DATA_GROUPSS = [SimpleChannelGroup, RandomChannelGroup]
+DATA_GROUPSS = [SequentialChannelGroup, RandomChannelGroup, L1ChannelGroup]
 
 
 class TestChannelMutator(unittest.TestCase):

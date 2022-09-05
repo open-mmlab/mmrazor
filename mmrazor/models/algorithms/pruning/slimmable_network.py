@@ -5,9 +5,10 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 import torch
-from mmengine import BaseDataElement, fileio
+from mmengine import fileio
 from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper
+from mmengine.structures import BaseDataElement
 from torch import nn
 
 from mmrazor.models.mutables import BaseMutable
@@ -35,9 +36,7 @@ class SlimmableNetwork(BaseAlgorithm):
             :class:`SlimmableChannelMutator` or built mutator.
         architecture (dict | :obj:`BaseModel`): The config of
             :class:`BaseModel` or built model.
-        channel_cfg_paths (str | :obj:`Path` | list): Config of list of configs
-            for channel of subnet(s) searched out. If there is only one
-            channel_cfg, the supernet will be fixed.
+        channel_cfg (str | Dict): config file path or a dict
         data_preprocessor (dict | :obj:`torch.nn.Module` | None): The
             pre-process config of :class:`BaseDataPreprocessor`.
             Defaults to None.
@@ -48,22 +47,22 @@ class SlimmableNetwork(BaseAlgorithm):
     def __init__(self,
                  mutator: VALID_MUTATOR_TYPE,
                  architecture: Union[BaseModel, Dict],
-                 channel_cfg_paths: VALID_CHANNEL_CFG_PATH_TYPE,
+                 channel_cfgs: Union[str, Dict],
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
+                 deply_index=-1,
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
 
-        if not isinstance(channel_cfg_paths, list):
-            channel_cfg_paths = [channel_cfg_paths]
-        self.num_subnet = len(channel_cfg_paths)
+        if isinstance(channel_cfgs, str):
+            channel_cfgs = fileio.load(channel_cfgs)
 
-        channel_cfgs = self._load_and_merge_channel_cfgs(channel_cfg_paths)
         self.mutator = self._build_mutator(copy.copy(mutator), channel_cfgs)
         self.mutator.prepare_from_supernet(self.architecture)
+        self.num_subnet = len(self.mutator.subnets)
 
         # must after `prepare_from_supernet`
-        if len(channel_cfg_paths) == 1:
-            self.mutator.set_choices(self.mutator.subnets[0])
+        if deply_index != -1:
+            self.mutator.set_choices(self.mutator.subnets[deply_index])
             self.mutator.fix_channel_mutables()
             self._fix_archtecture()
             _dynamic_to_static(self.architecture)

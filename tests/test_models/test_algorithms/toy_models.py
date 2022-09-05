@@ -34,6 +34,33 @@ class ToyTeacher(ToyStudent):
         super().__init__()
 
 
+@MODELS.register_module()
+class ToyOFDStudent(BaseModel):
+
+    def __init__(self, data_preprocessor=None):
+        super().__init__(data_preprocessor=data_preprocessor, init_cfg=None)
+        self.conv = nn.Conv2d(3, 1, 1)
+        self.bn = nn.BatchNorm2d(100)
+
+    def forward(self, batch_inputs, data_samples=None, mode='tensor'):
+        if mode == 'loss':
+            out = self.bn(self.conv(batch_inputs))
+            return dict(loss=out)
+        elif mode == 'predict':
+            out = self.bn(self.conv(batch_inputs) + 1)
+            return out
+        elif mode == 'tensor':
+            out = self.bn(self.conv(batch_inputs) + 2)
+            return out
+
+
+@MODELS.register_module()
+class ToyOFDTeacher(ToyOFDStudent):
+
+    def __init__(self):
+        super().__init__()
+
+
 @dataclass(frozen=True)
 class Data:
     latent_dim: int = 1

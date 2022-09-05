@@ -5,12 +5,16 @@ from typing import Dict, Generic, List, Optional, Set, Type, Union
 from torch import Tensor
 from torch.nn import Module
 
-from mmrazor.models.architectures.dynamic_op.bricks import DynamicChannelMixin
+from mmrazor.models.architectures.dynamic_ops.bricks import DynamicChannelMixin
 from mmrazor.models.mutables import (MUTABLECHANNELGROUP, MutableChannelGroup,
-                                     SimpleChannelGroup)
+                                     SequentialChannelGroup)
 from mmrazor.registry import MODELS
 from mmrazor.structures.graph import ModuleGraph
 from ..base_mutator import BaseMutator
+
+
+def is_dynamic_op_for_fx_tracer(module, name):
+    return isinstance(module, DynamicChannelMixin)
 
 
 @MODELS.register_module()
@@ -21,8 +25,8 @@ class BaseChannelMutator(BaseMutator, Generic[MUTABLECHANNELGROUP]):
     def __init__(
             self,
             channl_group_cfg: Union[
-                dict, Type[MutableChannelGroup]] = SimpleChannelGroup,
-            # tracer_cfg=dict(type='fx'),
+                dict, Type[MutableChannelGroup]] = SequentialChannelGroup,
+            # tracer_cfg=dict(type='RazorFxTracer'),
             tracer_cfg=dict(
                 type='BackwardTracer',
                 loss_calculator=dict(type='ImageClassifierPseudoLoss')),
@@ -32,7 +36,9 @@ class BaseChannelMutator(BaseMutator, Generic[MUTABLECHANNELGROUP]):
         super().__init__(init_cfg)
 
         self.tracer_cfg = tracer_cfg
-        assert self.tracer_cfg['type'] in ['fx', 'BackwardTracer', 'model']
+        assert self.tracer_cfg['type'] in [
+            'RazorFxTracer', 'BackwardTracer', 'model'
+        ]
 
         # only record prunable group
         self._name2group: Dict[str, MUTABLECHANNELGROUP] = {}
@@ -48,20 +54,14 @@ class BaseChannelMutator(BaseMutator, Generic[MUTABLECHANNELGROUP]):
         # self.convert_dynamic_module(supernet, self.module_converters)
         supernet.eval()
 
-        self.group_class.prepare_model(supernet)
         self._name2module = dict(supernet.named_modules())
 
         if self.tracer_cfg['type'] == 'BackwardTracer':
             graph = ModuleGraph.init_using_backward_tracer(
                 supernet, self.tracer_cfg)
-        elif self.tracer_cfg['type'] == 'fx':
-
-            def is_dynamic_op_for_fx_tracer(module, module_name):
-                """determine if a module is a dynamic op for fx tracer."""
-                return isinstance(module, DynamicChannelMixin)
-
+        elif self.tracer_cfg['type'] == 'RazorFxTracer':
             graph = ModuleGraph.init_using_fx_tracer(
-                supernet, is_dynamic_op_for_fx_tracer)
+                supernet, fx_tracer=self.tracer_cfg)
         else:
             raise NotImplementedError()
 
@@ -69,7 +69,7 @@ class BaseChannelMutator(BaseMutator, Generic[MUTABLECHANNELGROUP]):
         self.groups = self.group_class.parse_channel_groups(
             graph, self.group_args)
         for group in self.groups:
-            group.prepare_for_pruning()
+            group.prepare_for_pruning(supernet)
             self._name2group[group.name] = group
 
     # pruning structure manage
@@ -107,6 +107,12 @@ class BaseChannelMutator(BaseMutator, Generic[MUTABLECHANNELGROUP]):
         for group in self.prunable_groups:
             config[group.name] = group.current_choice
         return config
+
+    def config_template(self, with_info=False):
+        template = {}
+        for group in self.groups:
+            template[group.name] = group.config_template(with_info=with_info)
+        return template
 
     # group manage
 

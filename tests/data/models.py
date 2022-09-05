@@ -344,7 +344,7 @@ class MultipleUseModel(nn.Module):
         self.conv2 = nn.Conv2d(3, 8, 3, 1, 1)
         self.conv3 = nn.Conv2d(3, 8, 3, 1, 1)
         self.conv_multiple_use = nn.Conv2d(8, 16, 3, 1, 1)
-        self.conv_last = nn.Conv2d(16, 32, 3, 1, 1)
+        self.conv_last = nn.Conv2d(16*4, 32, 3, 1, 1)
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.linear = nn.Linear(32, 1000)
 
@@ -354,10 +354,8 @@ class MultipleUseModel(nn.Module):
             for conv in [self.conv0, self.conv1, self.conv2, self.conv3]
         ]
         xs_ = [self.conv_multiple_use(x_) for x_ in xs]
-        x_sum = 0
-        for x_ in xs_:
-            x_sum = x_sum + x_
-        feature = self.conv_last(x_sum)
+        x_cat = torch.cat(xs_, dim=1)
+        feature = self.conv_last(x_cat)
         pool = self.avg_pool(feature).flatten(1)
         return self.linear(pool)
 
@@ -400,7 +398,7 @@ class Icep(nn.Module):
             for i in range(num_icep_blocks)
         ])
         self.op = nn.Conv2d(32 * 4, 32, 1)
-        self.avg_pool = nn.AvgPool2d(1)
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Linear(32, 1000)
 
     def forward(self, x):
@@ -453,6 +451,23 @@ class MultiBindModel(Module):
         return self.head(x123)
 
 
+class DwConvModel(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Conv2d(3, 48, 3, 1, 1),
+            nn.BatchNorm2d(48),
+            nn.ReLU(),
+            nn.Conv2d(48, 48, 3, 1, 1, groups=48),
+            nn.BatchNorm2d(48),
+            nn.ReLU()
+        )
+        self.head = LinearHead(48, 1000)
+
+    def forward(self, x):
+        return self.head(self.net(x))
+
+
 default_models = [
     LineModel,
     ResBlock,
@@ -465,6 +480,7 @@ default_models = [
     MultipleUseModel,
     Icep,
     ExpandLineModel,
+    DwConvModel,
 ]
 
 

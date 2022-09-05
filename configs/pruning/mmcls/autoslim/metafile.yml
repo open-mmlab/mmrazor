@@ -6,7 +6,7 @@ Collections:
     Paper:
       URL: https://arxiv.org/abs/1903.11728
       Title: AutoSlim:Towards One-Shot Architecture Search for Channel Numbers
-    README: configs/nas/spos/README.md
+    README: configs/pruning/mmcls/autoslim/README.md
     Code:
       URL: https://github.com/open-mmlab/mmrazor/blob/v0.1.0/mmrazor/models/algorithms/autoslim.py
       Version: v0.1.0

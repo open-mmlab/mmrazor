@@ -25,8 +25,8 @@ class ToyDataPreprocessor(BaseDataPreprocessor):
         batch_data_samples = []
         # Model can get predictions without any data samples.
         for _data in data:
-            if 'data_sample' in _data:
-                batch_data_samples.append(_data['data_sample'])
+            if 'data_samples' in _data:
+                batch_data_samples.append(_data['data_samples'])
         # Move data from CPU to corresponding device.
         batch_data_samples = [
             data_sample.to(self._device) for data_sample in batch_data_samples
@@ -41,13 +41,22 @@ class ToyDataPreprocessor(BaseDataPreprocessor):
 @MODELS.register_module()
 class ToyModel_DartsLoop(BaseModel):
 
-    def __init__(self, data_preprocessor=ToyDataPreprocessor()):
-        super().__init__(data_preprocessor=data_preprocessor)
+    def __init__(self):
+        super().__init__()
         self.linear1 = nn.Linear(2, 2)
         self.linear2 = nn.Linear(2, 1)
 
-    def forward(self, batch_inputs, labels, mode='tensor'):
-        labels = torch.stack(labels)
+    def train_step(self, data, optim_wrapper=None):
+
+        data1, data2 = data
+        _ = self._run_forward(data1, mode='loss')
+        losses = self._run_forward(data2, mode='loss')
+        parsed_losses, log_vars = self.parse_losses(losses)
+        return log_vars
+
+    def forward(self, inputs, data_samples, mode='tensor'):
+        batch_inputs = torch.stack(inputs).to(self.linear1.weight.device)
+        labels = torch.stack(data_samples).to(self.linear1.weight.device)
         outputs = self.linear1(batch_inputs)
         outputs = self.linear2(outputs)
 
@@ -76,7 +85,7 @@ class ToyDataset_DartsLoop(Dataset):
         return self.data.size(0)
 
     def __getitem__(self, index):
-        return dict(inputs=self.data[index], data_sample=self.label[index])
+        return dict(inputs=self.data[index], data_samples=self.label[index])
 
 
 class TestDartsLoop(TestCase):

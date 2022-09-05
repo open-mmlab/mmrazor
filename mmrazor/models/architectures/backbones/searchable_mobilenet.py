@@ -2,14 +2,20 @@
 import copy
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
-from mmcls.models.backbones.base_backbone import BaseBackbone
-from mmcls.models.utils import make_divisible
 from mmcv.cnn import ConvModule
 from mmengine.model import Sequential
 from torch import Tensor
 from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.registry import MODELS
+
+try:
+    from mmcls.models.backbones.base_backbone import BaseBackbone
+    from mmcls.models.utils import make_divisible
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    BaseBackbone = get_placeholder('mmcls')
+    make_divisible = get_placeholder('mmcls')
 
 
 @MODELS.register_module()

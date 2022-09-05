@@ -1,0 +1,40 @@
+Collections:
+  - Name: FitNets
+    Metadata:
+      Training Data:
+        - ImageNet-1k
+    Paper:
+      URL: https://arxiv.org/abs/1412.6550
+      Title: FitNets- Hints for Thin Deep Nets
+    README: configs/distill/mmcls/fitnets/README.md
+Models:
+  - Name: fitnets_backbone_logits_resnet50_resnet18_8xb32_in1k
+    In Collection: FitNets
+    Metadata:
+      inference time (ms/im):
+        - value: 0.18
+          hardware: NVIDIA A100-SXM4-80GB
+          backend: PyTorch
+          batch size: 32
+          mode: FP32
+          resolution: (224, 224)
+      Location: backbone & logits
+      Student:
+        Config: mmcls::resnet/resnet18_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_8xb32_in1k_20210831-fbbb1da6.pth
+        Metrics:
+          Top 1 Accuracy: 69.90
+          Top 5 Accuracy: 89.43
+      Teacher:
+        Config: mmcls::resnet/resnet50_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth
+        Metrics:
+          Top 1 Accuracy: 76.55
+          Top 5 Accuracy: 93.06
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 70.58
+    Config: configs/distill/mmcls/fitnets/fitnets_backbone_logits_resnet50_resnet18_8xb32_in1k.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/FieNets/fitnets_backbone_logits_resnet50_resnet18_8xb32_in1k_20220830_155608-00ccdbe2.pth

@@ -12,6 +12,7 @@ class LinearCounter(BaseCounter):
 
     @staticmethod
     def add_count_hook(module, input, output):
+        """Calculate FLOPs and params based on the size of input & output."""
         input = input[0]
         output_last_dim = output.shape[
             -1]  # pytorch checks dimensions, so here we don't care much

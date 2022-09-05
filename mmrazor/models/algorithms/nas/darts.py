@@ -89,7 +89,7 @@ class Darts(BaseAlgorithm):
         """Search subnet by mutator."""
 
         # Avoid circular import
-        from mmrazor.structures import export_fix_subnet
+        from mmrazor.models.task_modules import export_fix_subnet
 
         subnet = self.mutator.sample_choices()
         self.mutator.set_choices(subnet)

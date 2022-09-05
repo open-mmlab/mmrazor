@@ -6,9 +6,10 @@ import torch
 from torch import Tensor, nn
 from torch.nn import Module
 
-from mmrazor.structures import (BackwardTracer, Path, PathConcatNode,
-                                PathConvNode, PathDepthWiseConvNode,
-                                PathLinearNode, PathList, PathNormNode)
+from mmrazor.models.task_modules import (BackwardTracer, Path, PathConcatNode,
+                                         PathConvNode, PathDepthWiseConvNode,
+                                         PathLinearNode, PathList,
+                                         PathNormNode)
 
 NONPASS_NODES = (PathConvNode, PathLinearNode, PathConcatNode)
 PASS_NODES = (PathNormNode, PathDepthWiseConvNode)

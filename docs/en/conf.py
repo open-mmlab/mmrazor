@@ -11,7 +11,6 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import subprocess  # noqa: F401
 import sys
 
 import pytorch_sphinx_theme
@@ -20,10 +19,10 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'MMRazor'
-copyright = '2021-2030, OpenMMLab'
-author = 'MMRazor Authors'
-version_file = '../../mmrazor/version.py'
+project = 'mmrazor'
+copyright = '2018-2022, OpenMMLab'
+author = 'MMRazor Author'
+version_file = '../../mmflow/version.py'
 
 
 def get_version():
@@ -32,23 +31,21 @@ def get_version():
     return locals()['__version__']
 
 
-# The full version, including alpha/beta/rc tags
-release = get_version()
-
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'sphinx.ext.viewcode',
-    'sphinx_markdown_tables', 'sphinx_copybutton', 'myst_parser'
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
+    'myst_parser',
+    'sphinx.ext.autosectionlabel',
+    'sphinx_copybutton',
 ]
 
-autodoc_mock_imports = [
-    'matplotlib', 'pycocotools', 'terminaltables', 'mmrazor.version',
-    'mmcv.ops'
-]
+autodoc_mock_imports = ['matplotlib', 'mmrazor.version', 'mmcv.ops']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -74,54 +71,21 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = 'sphinx_rtd_theme'
 html_theme = 'pytorch_sphinx_theme'
 html_theme_path = [pytorch_sphinx_theme.get_html_theme_path()]
-
+# Theme options are theme-specific and customize the look and feel of a theme
+# further.  For a list of options available for each theme, see the
+# documentation.
+#
 html_theme_options = {
-    'logo_url':
-    'https://mmrazor.readthedocs.io/en/latest/',
     'menu': [
         {
             'name': 'GitHub',
             'url': 'https://github.com/open-mmlab/mmrazor'
         },
-        {
-            'name':
-            'Upstream',
-            'children': [{
-                'name':
-                'MMCV',
-                'url':
-                'https://github.com/open-mmlab/mmcv',
-                'description':
-                'Foundational library for computer vision'
-            }, {
-                'name':
-                'MMDetection',
-                'url':
-                'https://github.com/open-mmlab/mmdetection',
-                'description':
-                'Object detection toolbox and benchmark'
-            }, {
-                'name':
-                'MMClassification',
-                'url':
-                'https://github.com/open-mmlab/mmclassification',
-                'description':
-                'Image classification toolbox and benchmark'
-            }, {
-                'name':
-                'MMSegmentation',
-                'url':
-                'https://github.com/open-mmlab/mmsegmentation',
-                'description':
-                'Semantic segmentation toolbox and benchmark'
-            }]
-        },
     ],
-    'menu_lang':
-    'en'
+    # Specify the language of shared menu
+    'menu_lang': 'en',
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -130,13 +94,7 @@ html_theme_options = {
 html_static_path = ['_static']
 html_css_files = ['css/readthedocs.css']
 
-language = 'en'
-
 # -- Extension configuration -------------------------------------------------
 # Ignore >>> when copying code
 copybutton_prompt_text = r'>>> |\.\.\. '
 copybutton_prompt_is_regexp = True
-
-# Enable ::: for my_st
-myst_enable_extensions = ['colon_fence']
-myst_heading_anchors = 4

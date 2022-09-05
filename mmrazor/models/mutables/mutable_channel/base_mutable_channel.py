@@ -1,22 +1,28 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+""""""
 from abc import abstractproperty
+
+import torch
 
 from ..base_mutable import BaseMutable
 from ..derived_mutable import DerivedMethodMixin
 
 
 class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
-    """A type of ``MUTABLES`` for single path supernet such as AutoSlim. In
-    single path supernet, each module only has one choice invoked at the same
-    time. A path is obtained by sampling all the available choices. It is the
-    base class for one shot channel mutables.
+    """BaseMutableChannel works as a channel mask for DynamicOps to select
+    channels.
 
-    Args:
-        num_channels (int): The raw number of channels.
-        init_cfg (dict, optional): initialization configuration dict for
-            ``BaseModule``. OpenMMLab has implement 5 initializer including
-            `Constant`, `Xavier`, `Normal`, `Uniform`, `Kaiming`,
-            and `Pretrained`.
+    |---------------------------------------|
+    |in_channel_mutable(BaseMutableChannel) |
+    |---------------------------------------|
+    |             DynamicOp                 |
+    |---------------------------------------|
+    |out_channel_mutable(BaseMutableChannel)|
+    |---------------------------------------|
+
+    Important interfaces:
+        current_choice: used to get/set mask.
+        current_mask: get mask(used in DynamicOps to get mask).
     """
 
     def __init__(self, num_channels: int, **kwargs):
@@ -28,30 +34,28 @@ class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
 
     @abstractproperty
     def current_choice(self):
+        """get current choice."""
         raise NotImplementedError()
 
     @current_choice.setter
     def current_choice(self):
+        """set current choice."""
         raise NotImplementedError()
 
     @abstractproperty
-    def current_mask(self):
+    def current_mask(self) -> torch.Tensor:
+        """Return a mask indicating the channel selection."""
         raise NotImplementedError()
 
     @property
-    def activated_channels(self):
+    def activated_channels(self) -> int:
+        """Number of activated channels."""
         return (self.current_mask == 1).sum().item()
 
     # implementation of abstract methods
 
     def fix_chosen(self, chosen=None):
-        """Fix mutable with subnet config. This operation would convert
-        `unfixed` mode to `fixed` mode. The :attr:`is_fixed` will be set to
-        True and only the selected operations can be retained.
-
-        Args:
-            chosen (str): The chosen key in ``MUTABLE``. Defaults to None.
-        """
+        """Fix the mutable  with chosen."""
         if chosen is not None:
             self.current_choice = chosen
 
@@ -63,9 +67,11 @@ class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
         self.is_fixed = True
 
     def dump_chosen(self):
+        """dump current choice to a dict."""
         raise NotImplementedError()
 
     def num_choices(self) -> int:
+        """Number of available choices."""
         raise NotImplementedError()
 
     # others

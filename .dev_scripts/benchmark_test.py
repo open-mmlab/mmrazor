@@ -41,6 +41,8 @@ def parse_args():
         default='work_dirs/benchmark_test',
         help='the dir to save metric')
     parser.add_argument(
+        '--replace-ceph', action='store_true', help='load data from ceph')
+    parser.add_argument(
         '--run', action='store_true', help='run script directly')
     parser.add_argument(
         '--summary', action='store_true', help='collect results')
@@ -66,12 +68,70 @@ def parse_args():
     return args
 
 
+def replace_to_ceph(cfg):
+
+    file_client_args = dict(
+        backend='petrel',
+        path_mapping=dict({
+            './data/coco':
+            's3://openmmlab/datasets/detection/coco',
+            'data/coco':
+            's3://openmmlab/datasets/detection/coco',
+            './data/cityscapes':
+            's3://openmmlab/datasets/segmentation/cityscapes',
+            'data/cityscapes':
+            's3://openmmlab/datasets/segmentation/cityscapes',
+            './data/imagenet':
+            's3://openmmlab/datasets/classification/imagenet',
+            'data/imagenet':
+            's3://openmmlab/datasets/classification/imagenet',
+        }))
+
+    def _process_pipeline(dataset, name):
+
+        def replace_img(pipeline):
+            if pipeline['type'] == 'LoadImageFromFile':
+                pipeline['file_client_args'] = file_client_args
+
+        def replace_ann(pipeline):
+            if pipeline['type'] == 'LoadAnnotations' or pipeline[
+                    'type'] == 'LoadPanopticAnnotations':
+                pipeline['file_client_args'] = file_client_args
+
+        if 'pipeline' in dataset:
+            replace_img(dataset.pipeline[0])
+            replace_ann(dataset.pipeline[1])
+            if 'dataset' in dataset:
+                # dataset wrapper
+                replace_img(dataset.dataset.pipeline[0])
+                replace_ann(dataset.dataset.pipeline[1])
+        else:
+            # dataset wrapper
+            replace_img(dataset.dataset.pipeline[0])
+            replace_ann(dataset.dataset.pipeline[1])
+
+    def _process_evaluator(evaluator, name):
+        if evaluator['type'] == 'CocoPanopticMetric':
+            evaluator['file_client_args'] = file_client_args
+
+    # half ceph
+    _process_pipeline(cfg.train_dataloader.dataset, cfg.filename)
+    _process_pipeline(cfg.val_dataloader.dataset, cfg.filename)
+    _process_pipeline(cfg.test_dataloader.dataset, cfg.filename)
+    _process_evaluator(cfg.val_evaluator, cfg.filename)
+    _process_evaluator(cfg.test_evaluator, cfg.filename)
+
+
 def create_test_job_batch(commands, model_info, args, port):
 
     fname = model_info.name
 
-    config = Path(model_info.config)
-    # assert config.exists(), f'{fname}: {config} not found.'
+    cfg_path = Path(model_info.config)
+
+    cfg = mmengine.Config.fromfile(cfg_path)
+
+    if args.replace_ceph:
+        replace_to_ceph(cfg)
 
     http_prefix = 'https://download.openmmlab.com/mmrazor/'
     if 's3://' in args.checkpoint_root:
@@ -99,6 +159,8 @@ def create_test_job_batch(commands, model_info, args, port):
     job_name = f'{args.job_name}_{fname}'
     work_dir = Path(args.work_dir) / fname
     work_dir.mkdir(parents=True, exist_ok=True)
+    test_cfg_path = work_dir / 'config.py'
+    cfg.dump(test_cfg_path)
 
     if args.quotatype is not None:
         quota_cfg = f'#SBATCH --quotatype {args.quotatype}\n'
@@ -110,24 +172,24 @@ def create_test_job_batch(commands, model_info, args, port):
     master_port = f'NASTER_PORT={port}'
 
     script_name = osp.join('tools', 'test.py')
-    job_script = (
-        f'#!/bin/bash\n'
-        f'#SBATCH --output {work_dir}/job.%j.out\n'
-        f'#SBATCH --partition={args.partition}\n'
-        f'#SBATCH --job-name {job_name}\n'
-        f'#SBATCH --gres=gpu:{args.gpus}\n'
-        f'{quota_cfg}'
-        f'#SBATCH --ntasks-per-node={args.gpus}\n'
-        f'#SBATCH --ntasks={args.gpus}\n'
-        f'#SBATCH --cpus-per-task=5\n\n'
-        f'{master_port} {runner} -u {script_name} {config} {checkpoint} '
-        f'--work-dir {work_dir} '
-        f'--launcher={launcher}\n')
+    job_script = (f'#!/bin/bash\n'
+                  f'#SBATCH --output {work_dir}/job.%j.out\n'
+                  f'#SBATCH --partition={args.partition}\n'
+                  f'#SBATCH --job-name {job_name}\n'
+                  f'#SBATCH --gres=gpu:{args.gpus}\n'
+                  f'{quota_cfg}'
+                  f'#SBATCH --ntasks-per-node={args.gpus}\n'
+                  f'#SBATCH --ntasks={args.gpus}\n'
+                  f'#SBATCH --cpus-per-task=5\n\n'
+                  f'{master_port} {runner} -u {script_name} '
+                  f'{test_cfg_path} {checkpoint} '
+                  f'--work-dir {work_dir} '
+                  f'--launcher={launcher}\n')
 
     with open(work_dir / 'job.sh', 'w') as f:
         f.write(job_script)
 
-    commands.append(f'echo "{config}"')
+    commands.append(f'echo "{test_cfg_path}"')
     if args.local:
         commands.append(f'bash {work_dir}/job.sh')
     else:
@@ -176,9 +238,8 @@ def summary(args):
         expect_result = model_info.results[0].metrics
         summary_result = {
             'expect': expect_result,
-            'actual':
-            {METRIC_MAPPINGS[k]: v
-             for k, v in latest_result.items()}
+            'actual': {k: v
+                       for k, v in latest_result.items()}
         }
         model_results[model_name] = summary_result
 
