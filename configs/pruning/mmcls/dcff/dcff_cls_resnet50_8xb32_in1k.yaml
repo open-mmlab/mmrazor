@@ -1,0 +1,532 @@
+# cprate = [0.0] + [0.35, 0.4, 0.1] * 10 + [0.3, 0.3, 0.1] * 6
+# First conv1
+backbone.conv1.mutable_in_channels:
+  current_choice: 3
+  origin_channels: 3
+backbone.conv1.mutable_out_channels:
+  current_choice: 64
+  origin_channels: 64
+backbone.bn1.mutable_num_features:
+  current_choice: 64
+  origin_channels: 64
+
+# Layer 1
+# cprate = [0.35, 0.4, 0.1]
+# block 0
+backbone.layer1.0.conv1.mutable_in_channels:
+  current_choice: 64
+  origin_channels: 64
+backbone.layer1.0.conv1.mutable_out_channels:
+  current_choice: 41
+  origin_channels: 64
+backbone.layer1.0.bn1.mutable_num_features:
+  current_choice: 41
+  origin_channels: 64
+backbone.layer1.0.conv2.mutable_in_channels:
+  current_choice: 41
+  origin_channels: 64
+backbone.layer1.0.conv2.mutable_out_channels:
+  current_choice: 38
+  origin_channels: 64
+backbone.layer1.0.bn2.mutable_num_features:
+  current_choice: 38
+  origin_channels: 64
+backbone.layer1.0.conv3.mutable_in_channels:
+  current_choice: 38
+  origin_channels: 64
+backbone.layer1.0.conv3.mutable_out_channels:
+  current_choice: 230
+  origin_channels: 256
+backbone.layer1.0.bn3.mutable_num_features:
+  current_choice: 230
+  origin_channels: 256
+backbone.layer1.0.downsample.0.mutable_in_channels:
+  current_choice: 64
+  origin_channels: 64
+backbone.layer1.0.downsample.0.mutable_out_channels:
+  current_choice: 230
+  origin_channels: 256
+backbone.layer1.0.downsample.1.mutable_num_features:
+  current_choice: 230
+  origin_channels: 256
+
+# block 1
+backbone.layer1.1.conv1.mutable_in_channels:
+  current_choice: 230
+  origin_channels: 256
+backbone.layer1.1.conv1.mutable_out_channels:
+  current_choice: 41
+  origin_channels: 64
+backbone.layer1.1.bn1.mutable_num_features:
+  current_choice: 41
+  origin_channels: 64
+backbone.layer1.1.conv2.mutable_in_channels:
+  current_choice: 41
+  origin_channels: 64
+backbone.layer1.1.conv2.mutable_out_channels:
+  current_choice: 38
+  origin_channels: 64
+backbone.layer1.1.bn2.mutable_num_features:
+  current_choice: 38
+  origin_channels: 64
+backbone.layer1.1.conv3.mutable_in_channels:
+  current_choice: 38
+  origin_channels: 64
+backbone.layer1.1.conv3.mutable_out_channels:
+  current_choice: 230
+  origin_channels: 256
+backbone.layer1.1.bn3.mutable_num_features:
+  current_choice: 230
+  origin_channels: 256
+
+# block 2
+backbone.layer1.2.conv1.mutable_in_channels:
+  current_choice: 230
+  origin_channels: 256
+backbone.layer1.2.conv1.mutable_out_channels:
+  current_choice: 41
+  origin_channels: 64
+backbone.layer1.2.bn1.mutable_num_features:
+  current_choice: 41
+  origin_channels: 64
+backbone.layer1.2.conv2.mutable_in_channels:
+  current_choice: 41
+  origin_channels: 64
+backbone.layer1.2.conv2.mutable_out_channels:
+  current_choice: 38
+  origin_channels: 64
+backbone.layer1.2.bn2.mutable_num_features:
+  current_choice: 38
+  origin_channels: 64
+backbone.layer1.2.conv3.mutable_in_channels:
+  current_choice: 38
+  origin_channels: 64
+backbone.layer1.2.conv3.mutable_out_channels:
+  current_choice: 230
+  origin_channels: 256
+backbone.layer1.2.bn3.mutable_num_features:
+  current_choice: 230
+  origin_channels: 256
+
+# Layer 2
+# cprate = [0.35, 0.4, 0.1]
+# block 0
+backbone.layer2.0.conv1.mutable_in_channels:
+  current_choice: 230
+  origin_channels: 256
+backbone.layer2.0.conv1.mutable_out_channels:
+  current_choice: 83
+  origin_channels: 128
+backbone.layer2.0.bn1.mutable_num_features:
+  current_choice: 83
+  origin_channels: 128
+backbone.layer2.0.conv2.mutable_in_channels:
+  current_choice: 83
+  origin_channels: 128
+backbone.layer2.0.conv2.mutable_out_channels:
+  current_choice: 76
+  origin_channels: 128
+backbone.layer2.0.bn2.mutable_num_features:
+  current_choice: 76
+  origin_channels: 128
+backbone.layer2.0.conv3.mutable_in_channels:
+  current_choice: 76
+  origin_channels: 128
+backbone.layer2.0.conv3.mutable_out_channels:
+  current_choice: 460
+  origin_channels: 512
+backbone.layer2.0.bn3.mutable_num_features:
+  current_choice: 460
+  origin_channels: 512
+backbone.layer2.0.downsample.0.mutable_in_channels:
+  current_choice: 230
+  origin_channels: 256
+backbone.layer2.0.downsample.0.mutable_out_channels:
+  current_choice: 460
+  origin_channels: 512
+backbone.layer2.0.downsample.1.mutable_num_features:
+  current_choice: 460
+  origin_channels: 512
+
+# block 1
+backbone.layer2.1.conv1.mutable_in_channels:
+  current_choice: 460
+  origin_channels: 512
+backbone.layer2.1.conv1.mutable_out_channels:
+  current_choice: 83
+  origin_channels: 128
+backbone.layer2.1.bn1.mutable_num_features:
+  current_choice: 83
+  origin_channels: 128
+backbone.layer2.1.conv2.mutable_in_channels:
+  current_choice: 83
+  origin_channels: 128
+backbone.layer2.1.conv2.mutable_out_channels:
+  current_choice: 76
+  origin_channels: 128
+backbone.layer2.1.bn2.mutable_num_features:
+  current_choice: 76
+  origin_channels: 128
+backbone.layer2.1.conv3.mutable_in_channels:
+  current_choice: 76
+  origin_channels: 128
+backbone.layer2.1.conv3.mutable_out_channels:
+  current_choice: 460
+  origin_channels: 512
+backbone.layer2.1.bn3.mutable_num_features:
+  current_choice: 460
+  origin_channels: 512
+
+# block 2
+backbone.layer2.2.conv1.mutable_in_channels:
+  current_choice: 460
+  origin_channels: 512
+backbone.layer2.2.conv1.mutable_out_channels:
+  current_choice: 83
+  origin_channels: 128
+backbone.layer2.2.bn1.mutable_num_features:
+  current_choice: 83
+  origin_channels: 128
+backbone.layer2.2.conv2.mutable_in_channels:
+  current_choice: 83
+  origin_channels: 128
+backbone.layer2.2.conv2.mutable_out_channels:
+  current_choice: 76
+  origin_channels: 128
+backbone.layer2.2.bn2.mutable_num_features:
+  current_choice: 76
+  origin_channels: 128
+backbone.layer2.2.conv3.mutable_in_channels:
+  current_choice: 76
+  origin_channels: 128
+backbone.layer2.2.conv3.mutable_out_channels:
+  current_choice: 460
+  origin_channels: 512
+backbone.layer2.2.bn3.mutable_num_features:
+  current_choice: 460
+  origin_channels: 512
+
+# block 3
+backbone.layer2.3.conv1.mutable_in_channels:
+  current_choice: 460
+  origin_channels: 512
+backbone.layer2.3.conv1.mutable_out_channels:
+  current_choice: 83
+  origin_channels: 128
+backbone.layer2.3.bn1.mutable_num_features:
+  current_choice: 83
+  origin_channels: 128
+backbone.layer2.3.conv2.mutable_in_channels:
+  current_choice: 83
+  origin_channels: 128
+backbone.layer2.3.conv2.mutable_out_channels:
+  current_choice: 76
+  origin_channels: 128
+backbone.layer2.3.bn2.mutable_num_features:
+  current_choice: 76
+  origin_channels: 128
+backbone.layer2.3.conv3.mutable_in_channels:
+  current_choice: 76
+  origin_channels: 128
+backbone.layer2.3.conv3.mutable_out_channels:
+  current_choice: 460
+  origin_channels: 512
+backbone.layer2.3.bn3.mutable_num_features:
+  current_choice: 460
+  origin_channels: 512
+
+# Layer 3
+# cprate = [0.35, 0.4, 0.1]
+# block 0
+backbone.layer3.0.conv1.mutable_in_channels:
+  current_choice: 460
+  origin_channels: 512
+backbone.layer3.0.conv1.mutable_out_channels:
+  current_choice: 166
+  origin_channels: 256
+backbone.layer3.0.bn1.mutable_num_features:
+  current_choice: 166
+  origin_channels: 256
+backbone.layer3.0.conv2.mutable_in_channels:
+  current_choice: 166
+  origin_channels: 256
+backbone.layer3.0.conv2.mutable_out_channels:
+  current_choice: 153
+  origin_channels: 256
+backbone.layer3.0.bn2.mutable_num_features:
+  current_choice: 153
+  origin_channels: 256
+backbone.layer3.0.conv3.mutable_in_channels:
+  current_choice: 153
+  origin_channels: 256
+backbone.layer3.0.conv3.mutable_out_channels:
+  current_choice: 921
+  origin_channels: 1024
+backbone.layer3.0.bn3.mutable_num_features:
+  current_choice: 921
+  origin_channels: 1024
+backbone.layer3.0.downsample.0.mutable_in_channels:
+  current_choice: 460
+  origin_channels: 512
+backbone.layer3.0.downsample.0.mutable_out_channels:
+  current_choice: 921
+  origin_channels: 1024
+backbone.layer3.0.downsample.1.mutable_num_features:
+  current_choice: 921
+  origin_channels: 1024
+
+# block 1
+backbone.layer3.1.conv1.mutable_in_channels:
+  current_choice: 921
+  origin_channels: 1024
+backbone.layer3.1.conv1.mutable_out_channels:
+  current_choice: 166
+  origin_channels: 256
+backbone.layer3.1.bn1.mutable_num_features:
+  current_choice: 166
+  origin_channels: 256
+backbone.layer3.1.conv2.mutable_in_channels:
+  current_choice: 166
+  origin_channels: 256
+backbone.layer3.1.conv2.mutable_out_channels:
+  current_choice: 153
+  origin_channels: 256
+backbone.layer3.1.bn2.mutable_num_features:
+  current_choice: 153
+  origin_channels: 256
+backbone.layer3.1.conv3.mutable_in_channels:
+  current_choice: 153
+  origin_channels: 256
+backbone.layer3.1.conv3.mutable_out_channels:
+  current_choice: 921
+  origin_channels: 1024
+backbone.layer3.1.bn3.mutable_num_features:
+  current_choice: 921
+  origin_channels: 1024
+
+# block 2
+backbone.layer3.2.conv1.mutable_in_channels:
+  current_choice: 921
+  origin_channels: 1024
+backbone.layer3.2.conv1.mutable_out_channels:
+  current_choice: 166
+  origin_channels: 256
+backbone.layer3.2.bn1.mutable_num_features:
+  current_choice: 166
+  origin_channels: 256
+backbone.layer3.2.conv2.mutable_in_channels:
+  current_choice: 166
+  origin_channels: 256
+backbone.layer3.2.conv2.mutable_out_channels:
+  current_choice: 153
+  origin_channels: 256
+backbone.layer3.2.bn2.mutable_num_features:
+  current_choice: 153
+  origin_channels: 256
+backbone.layer3.2.conv3.mutable_in_channels:
+  current_choice: 153
+  origin_channels: 256
+backbone.layer3.2.conv3.mutable_out_channels:
+  current_choice: 921
+  origin_channels: 1024
+backbone.layer3.2.bn3.mutable_num_features:
+  current_choice: 921
+  origin_channels: 1024
+
+# block 3
+# cprate = [0.3, 0.3, 0.1]
+backbone.layer3.3.conv1.mutable_in_channels:
+  current_choice: 921
+  origin_channels: 1024
+backbone.layer3.3.conv1.mutable_out_channels:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.3.bn1.mutable_num_features:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.3.conv2.mutable_in_channels:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.3.conv2.mutable_out_channels:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.3.bn2.mutable_num_features:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.3.conv3.mutable_in_channels:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.3.conv3.mutable_out_channels:
+  current_choice: 921
+  origin_channels: 1024
+backbone.layer3.3.bn3.mutable_num_features:
+  current_choice: 921
+  origin_channels: 1024
+
+# block 4
+# cprate = [0.3, 0.3, 0.1]
+backbone.layer3.4.conv1.mutable_in_channels:
+  current_choice: 921
+  origin_channels: 1024
+backbone.layer3.4.conv1.mutable_out_channels:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.4.bn1.mutable_num_features:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.4.conv2.mutable_in_channels:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.4.conv2.mutable_out_channels:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.4.bn2.mutable_num_features:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.4.conv3.mutable_in_channels:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.4.conv3.mutable_out_channels:
+  current_choice: 921
+  origin_channels: 1024
+backbone.layer3.4.bn3.mutable_num_features:
+  current_choice: 921
+  origin_channels: 1024
+
+# block 5
+# cprate = [0.3, 0.3, 0.1]
+backbone.layer3.5.conv1.mutable_in_channels:
+  current_choice: 921
+  origin_channels: 1024
+backbone.layer3.5.conv1.mutable_out_channels:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.5.bn1.mutable_num_features:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.5.conv2.mutable_in_channels:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.5.conv2.mutable_out_channels:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.5.bn2.mutable_num_features:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.5.conv3.mutable_in_channels:
+  current_choice: 179
+  origin_channels: 256
+backbone.layer3.5.conv3.mutable_out_channels:
+  current_choice: 921
+  origin_channels: 1024
+backbone.layer3.5.bn3.mutable_num_features:
+  current_choice: 921
+  origin_channels: 1024
+
+# Layer 4
+# cprate = [0.3, 0.3, 0.1]
+# block 0
+backbone.layer4.0.conv1.mutable_in_channels:
+  current_choice: 921
+  origin_channels: 1024
+backbone.layer4.0.conv1.mutable_out_channels:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.0.bn1.mutable_num_features:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.0.conv2.mutable_in_channels:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.0.conv2.mutable_out_channels:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.0.bn2.mutable_num_features:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.0.conv3.mutable_in_channels:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.0.conv3.mutable_out_channels:
+  current_choice: 1843
+  origin_channels: 2048
+backbone.layer4.0.bn3.mutable_num_features:
+  current_choice: 1843
+  origin_channels: 2048
+backbone.layer4.0.downsample.0.mutable_in_channels:
+  current_choice: 921
+  origin_channels: 1024
+backbone.layer4.0.downsample.0.mutable_out_channels:
+  current_choice: 1843
+  origin_channels: 2048
+backbone.layer4.0.downsample.1.mutable_num_features:
+  current_choice: 1843
+  origin_channels: 2048
+
+# block 1
+# cprate = [0.3, 0.3, 0.1]
+backbone.layel4.1.conv1.mutable_in_channels:
+  current_choice: 1843
+  origin_channels: 2048
+backbone.layer4.1.conv1.mutable_out_channels:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.1.bn1.mutable_num_features:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.1.conv2.mutable_in_channels:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.1.conv2.mutable_out_channels:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.1.bn2.mutable_num_features:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.1.conv3.mutable_in_channels:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.1.conv3.mutable_out_channels:
+  current_choice: 1843
+  origin_channels: 2048
+backbone.layer4.1.bn3.mutable_num_features:
+  current_choice: 1843
+  origin_channels: 2048
+
+# block 2
+# cprate = [0.3, 0.3, 0.1]
+backbone.layel4.2.conv1.mutable_in_channels:
+  current_choice: 1843
+  origin_channels: 2048
+backbone.layer4.2.conv1.mutable_out_channels:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.2.bn1.mutable_num_features:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.2.conv2.mutable_in_channels:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.2.conv2.mutable_out_channels:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.2.bn2.mutable_num_features:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.2.conv3.mutable_in_channels:
+  current_choice: 358
+  origin_channels: 512
+backbone.layer4.2.conv3.mutable_out_channels:
+  current_choice: 1843
+  origin_channels: 2048
+backbone.layer4.2.bn3.mutable_num_features:
+  current_choice: 1843
+  origin_channels: 2048
+
+
+head.fc.mutable_in_features:
+  current_choice: 1843
+  origin_channels: 1920
+head.fc.mutable_out_features:
+  current_choice: 1000
+  origin_channels: 1000

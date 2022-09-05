@@ -62,6 +62,7 @@ class OneShotChannelGroup(SimpleChannelGroup):
     # private methods
     def _prepare_choices(self):
         for choice in self.candidate_choices:
+            print("choice:", choice, self.choice_type)
             assert isinstance(choice, self.choice_type)
         self.candidate_choices = sorted(self.candidate_choices)
 

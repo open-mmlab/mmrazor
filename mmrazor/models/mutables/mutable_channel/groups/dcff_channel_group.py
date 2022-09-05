@@ -5,7 +5,9 @@ import torch.nn as nn
 
 from mmrazor.models.architectures.dynamic_op.bricks import (DynamicBatchNorm2d,
                                                             DynamicLinear,
-                                                            FuseConv2d)
+                                                            FuseConv2d,
+                                                            DynamicConv2d,
+                                                            SwitchableBatchNorm2d)
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
 from .one_shot_channel_group import OneShotChannelGroup
@@ -16,8 +18,8 @@ class DCFFChannelGroup(OneShotChannelGroup):
 
     def __init__(self,
                  num_channels,
-                 candidate_choices: List[Union[int, float]] = [0.5, 1.0],
-                 candidate_mode: str = 'ratio') -> None:
+                 candidate_choices: List[Union[int, float]] = [32],
+                 candidate_mode: str = 'number') -> None:
         super().__init__(num_channels, candidate_choices, candidate_mode)
 
     @classmethod
@@ -25,7 +27,7 @@ class DCFFChannelGroup(OneShotChannelGroup):
         cls._replace_with_dynamic_ops(
             model, {
                 nn.Conv2d: FuseConv2d,
-                nn.BatchNorm2d: DynamicBatchNorm2d,
+                nn.BatchNorm2d: SwitchableBatchNorm2d,
                 nn.Linear: DynamicLinear
             })
 
@@ -39,6 +41,10 @@ class DCFFChannelGroup(OneShotChannelGroup):
         self.candidate_choices = candidates
         self._prepare_choices()  # TODO refactor
         for channel in self.output_related:
-            if isinstance(channel.module, DynamicBatchNorm2d) and \
+            print("every channel output related", channel, candidates)
+            if isinstance(channel.module, SwitchableBatchNorm2d) and \
+                    len(channel.module.candidate_bn) == 0:
+                channel.module.init_candidates(candidates)
+            if isinstance(channel.module, FuseConv2d) and \
                     len(channel.module.candidate_bn) == 0:
                 channel.module.init_candidates(candidates)

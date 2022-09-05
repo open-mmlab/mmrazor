@@ -22,19 +22,22 @@ data_preprocessor = dict(
     bgr_to_rgb=True,
 )
 
+channel_cfg_paths='/mnt/lustre/zengyi.vendor/mmrazor/group_pr/mmrazor/configs/pruning/mmcls/dcff/dcff_cls_resnet50_8xb32_in1k.yaml'
+
 # !autoslim algorithm config
 model = dict(
     _scope_='mmrazor',
     type='DCFF',
     data_preprocessor=data_preprocessor,
+    channel_cfg_paths=channel_cfg_paths,
     architecture=dict(
         cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False),
     mutator=dict(
         type='DCFFChannelMutator',
         channl_group_cfg=dict(
             type='DCFFChannelGroup',
-            candidate_choices=[0.5],
-            candidate_mode='ratio'),
+            candidate_choices=[32],
+            candidate_mode='number'),
         tracer_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss'))))

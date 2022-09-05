@@ -92,16 +92,20 @@ class BackwardTracer:
         def traverse(module, prefix=''):
             for name, child in module.named_children():
                 full_name = f'{prefix}.{name}' if prefix else name
-
+                print("traverse model:",name, child.__class__.__name__)
                 if isinstance(child, SUPPORT_MODULES):
+                    print("add model")
                     module2name[child] = full_name
                     for param in child.parameters():
+                        print("child:",id(param),param.shape)
                         param2module[id(param)] = child
                     visited[full_name] = False
                 else:
                     traverse(child, full_name)
 
         traverse(model)
+
+        # print("module2name:", module2name)
 
         return module2name, param2module, visited
 

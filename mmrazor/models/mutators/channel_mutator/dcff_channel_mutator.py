@@ -1,60 +1,102 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Type, Union
+from typing import Dict, List, Type, Union
 
 import torch
 import torch.nn as nn
 from torch.nn import Module
 
 from mmrazor.models.architectures.dynamic_op.bricks import DynamicChannelMixin
-from mmrazor.models.mutables import OneShotChannelGroup
+from mmrazor.models.mutables import DCFFChannelGroup
 from mmrazor.registry import MODELS
 from mmrazor.structures.graph import ModuleGraph
 from .base_channel_mutator import MUTABLECHANNELGROUP, BaseChannelMutator
 
 
 @MODELS.register_module()
-class DCFFChannelMutator(BaseChannelMutator[OneShotChannelGroup]):
+class DCFFChannelMutator(BaseChannelMutator[DCFFChannelGroup]):
 
     def __init__(self,
+                 channel_cfgs: Dict,
                  channl_group_cfg: Union[dict,
                                          Type[MUTABLECHANNELGROUP]] = dict(
-                                             type='DCFFChannelGroup',
-                                             num_blocks=8,
-                                             min_blocks=2),
+                                             type='DCFFChannelGroup'),
                  **kwargs) -> None:
         super().__init__(channl_group_cfg, **kwargs)
+        self._subnets = self._prepare_subnets(channel_cfgs)
+
+    def set_choices(self, config):
+        config = self._convert_subnet(config)
+        return super().set_choices(config)
+
+    @property
+    def subnets(self):
+        return self._subnets
 
     def prepare_from_supernet(self, supernet: Module) -> None:
-        """Convert modules to dynamicops and parse channel groups."""
+        super().prepare_from_supernet(supernet)
+        self.module2group = self._get_module2group()
+        self._reset_group_candidates()
 
-        # self.convert_dynamic_module(supernet, self.module_converters)
-        supernet.eval()
+    def _reset_group_candidates(self):
+        group_subnets = [
+            self._convert_subnet(subnet) for subnet in self.subnets
+        ]
+        print("len group_subnets:", group_subnets)
+        for key in group_subnets[0]:
+            candidates = self._candidates_of(group_subnets, key)
+            group: DCFFChannelGroup = self._name2group[key]
+            group.alter_candidates_after_init(candidates)
 
-        self.group_class.prepare_model(supernet)
-        self._name2module = dict(supernet.named_modules())
-        print(supernet)
+    def _prepare_subnets(self, channel_cfg: Dict[str, Dict[str, List[int]]]):
+        subnets: List[Dict[str, int]] = []
+        for key in channel_cfg:
+            num_subnets = len(channel_cfg[key]['current_choice'])
+            break
+        for _ in range(num_subnets):
+            subnets.append({})
+        for key in channel_cfg:
+            assert num_subnets == len(channel_cfg[key]['current_choice'])
+            for i, value in enumerate(channel_cfg[key]['current_choice']):
+                subnets[i][key] = value
 
-        if self.tracer_cfg['type'] == 'BackwardTracer':
-            graph = ModuleGraph.init_using_backward_tracer(
-                supernet, self.tracer_cfg)
-        elif self.tracer_cfg['type'] == 'fx':
+        return subnets
 
-            def is_dynamic_op_for_fx_tracer(module, module_name):
-                """determine if a module is a dynamic op for fx tracer."""
-                return isinstance(module, DynamicChannelMixin)
+    def _candidates_of(self, subnets, key):
+        return [subnet[key] for subnet in subnets]
 
-            graph = ModuleGraph.init_using_fx_tracer(
-                supernet, is_dynamic_op_for_fx_tracer)
-        else:
-            raise NotImplementedError()
-
-        print(graph)
-        self._graph = graph
-        self.groups = self.group_class.parse_channel_groups(
-            graph, self.group_args)
+    def _get_module2group(self):
+        module2group = dict()
         for group in self.groups:
-            group.prepare_for_pruning()
-            self._name2group[group.name] = group
+            print("group:", group.name, group)
+            group: MUTABLECHANNELGROUP
+            for channel in group.output_related:
+                module2group[channel.name] = group
+
+        return module2group
+
+    def _convert_subnet(self, subnet: Dict[str, int]):
+        group_subnets = {}
+        print('module2group len:', len(self.module2group))
+        for key in subnet:
+            origin_key = key
+            print(key)
+            if 'mutable_out_channels' in key:
+                key = key.replace('.mutable_out_channels', '')
+            elif 'mutable_num_features' in key:
+                key = key.replace('.mutable_num_features', '')
+            else:
+                continue
+
+            if key in self.module2group:
+                group = self.module2group[key]
+                if group.name not in group_subnets:
+                    group_subnets[group.name] = subnet[origin_key]
+                else:
+                    assert group_subnets[group.name] == subnet[origin_key]
+            else:
+                raise KeyError(f'{key} can not be found in module2group')
+        print("group_subnets:", group_subnets)
+        return group_subnets
 
     def calc_information(
         self,

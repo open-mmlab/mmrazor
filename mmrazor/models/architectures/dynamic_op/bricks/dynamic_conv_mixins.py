@@ -452,9 +452,14 @@ class FuseConvMixin(DynamicConvMixin):
         mutable_out_channels = mutable_out_channels.activated_channels
         # print("mutable_in_channels:", mutable_in_channels)
         # print("mutable_out_channels:", mutable_out_channels)
-        if not hasattr(self, 'layeri_softmaxp'):
-            layeri_softmaxp = torch.zeros(mutable_out_channels, self.out_channels, requires_grad=False)
-            self.register_buffer('layeri_softmaxp', layeri_softmaxp)
+        #if not hasattr(self, 'layeri_softmaxp'):
+        if self.layeri_softmaxp.shape[0] != mutable_out_channels:
+            print("reset layeri")
+            self.layeri_softmaxp = nn.parameter.Parameter(torch.zeros(mutable_out_channels, self.out_channels, requires_grad=False))
+            self.layeri_softmaxp = self.layeri_softmaxp.to(self.weight.device)
+        # self.register_buffer('layeri_softmaxp', layeri_softmaxp)
+        #self.layeri_softmaxp = nn.parameter.Parameter(self.layeri_softmaxp)
+        
 
         if self.groups == 1:
             _, _, k, _ = self.weight.shape
