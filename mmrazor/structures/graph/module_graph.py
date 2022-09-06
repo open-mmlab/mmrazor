@@ -10,13 +10,10 @@ from typing import Dict, List, TypeVar, Union
 import torch.nn as nn
 from torch.nn import Module
 
-from ..tracer.backward_tracer import BackwardTracer
-# from ..tracer.fx_tracer import FxBaseNode, FxTracer
-from ..tracer.loss_calculator import ImageClassifierPseudoLoss
-from ..tracer.path import Path, PathConcatNode, PathList, PathNode
+from mmrazor.models.task_modules import (BackwardTracer, Path, PathConcatNode,
+                                         PathList, PathNode)
+from mmrazor.models.task_modules.tracer import ImageClassifierPseudoLoss
 from .base_graph import BaseGraph, BaseNode
-
-# ModuleNode && ModuleGraph
 
 
 class ModuleNode(BaseNode):

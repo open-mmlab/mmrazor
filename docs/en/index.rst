@@ -31,8 +31,8 @@ Welcome to mmrazor's documentation!
    :caption: Notes
 
    notes/changelog.md
-   notes/faq.md
    notes/contribution_guide.md
+   notes/faq.md
 
 .. toctree::
    :maxdepth: 1

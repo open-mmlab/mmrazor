@@ -20,7 +20,8 @@ model = dict(
         cfg_path='mmcls::resnet/resnet18_8xb16_cifar10.py', pretrained=False),
     teacher=dict(
         cfg_path='mmcls::resnet/resnet50_8xb16_cifar10.py', pretrained=True),
-    teacher_ckpt='resnet50_b16x8_cifar10_20210528-f54bfad9.pth',
+    teacher_ckpt=  # noqa: E251
+    'https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_b16x8_cifar10_20210528-f54bfad9.pth',  # noqa: E501
     calculate_student_loss=False,
     student_trainable=False,
     distiller=dict(

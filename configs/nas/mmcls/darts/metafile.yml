@@ -6,7 +6,7 @@ Collections:
     Paper:
       URL: https://arxiv.org/abs/1806.09055
       Title: DARTS:Differentiable Architecture Search
-    README: configs/nas/darts/README.md
+    README: configs/nas/mmcls/darts/README.md
     Code:
       URL: https://github.com/open-mmlab/mmrazor/blob/v0.1.0/mmrazor/models/algorithms/darts.py
       Version: v0.1.0

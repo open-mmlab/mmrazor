@@ -1,4 +1,8 @@
-# Be Your Own Teacher: Improve the Performance of Convolutional Neural Networks via Self Distillation
+# BYOT
+
+> [Be Your Own Teacher: Improve the Performance of Convolutional Neural Networks via Self Distillation](https://arxiv.org/abs/1905.08094)
+
+<!-- [ALGORITHM] -->
 
 ## Abstract
 
@@ -6,15 +10,15 @@ Convolutional neural networks have been widely deployed in various application s
 
 ## Pipeline
 
-![pipeline](../../../../docs/en/imgs/model_zoo/byot/byot.png)
+![byot](https://user-images.githubusercontent.com/88702197/187422992-e7bd692d-b6d4-44d8-8b36-741e0cf1c4f6.png)
 
 ## Results and models
 
 #### Classification
 
-| Location | Dataset  |                           Model                           | Params(M) | Flops(G) | Top-1 (%) | Top-5 (%) |                                               Download                                               |
-| :------: | :------: | :-------------------------------------------------------: | :-------: | :------: | :-------: | :-------: | :--------------------------------------------------------------------------------------------------: |
-|  logits  | CIFAR100 | [R18_BYOT](./byot_logits_resnet18_cifar100_8xb16_in1k.py) |   11.22   |   0.56   |   80.66   |   95.76   | [model & log](https://autolink.sensetime.com/pages/model/share/08ad706f-b3d4-4854-8019-e0b43607f001) |
+| Location | Dataset  |                     Model                     | Params(M) | Flops(G) | Top-1 (%) | Top-5 (%) |                                                                                                               Download                                                                                                                |
+| :------: | :------: | :-------------------------------------------: | :-------: | :------: | :-------: | :-------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+|  logits  | CIFAR100 | [R18_BYOT](./byot_resnet18_8xb16_cifar100.py) |   11.22   |   0.56   |   80.66   |   95.76   | [model](https://download.openmmlab.com/mmrazor/v1/byot/byot_resnet18_8xb16_cifar100_20220817_191217-0251084e.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/byot/byot_resnet18_8xb16_cifar100_20220817_191217-0251084e.json) |
 
 ## Citation
 
@@ -41,15 +45,13 @@ archivePrefix = {arXiv},
 ### Distillation training.
 
 ```bash
-sh tools/slurm_train.sh $PARTITION $JOB_NAME \
-  configs/distill/mmcls/byot/byot_logits_resnet18_cifar100_8xb16_in1k.py\
-  $WORK_DIR
+sh tools/dist_train.sh \
+  configs/distill/mmcls/byot/byot_logits_resnet18_cifar100_8xb16_in1k.py 8
 ```
 
 ### Test
 
 ```bash
-sh tools/slurm_test.sh $PARTITION $JOB_NAME \
-  configs/distill/mmcls/byot/byot_logits_resnet18_cifar100_8xb16_in1k.py\
-  $WORK_DIR/latest.sh --eval $EVAL_SETTING
+sh tools/dist_train.sh \
+  configs/distill/mmcls/byot/byot_logits_resnet18_cifar100_8xb16_in1k.py 8
 ```

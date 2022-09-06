@@ -4,9 +4,10 @@ _base_ = [
     'mmcls::_base_/default_runtime.py'
 ]
 
+res34_ckpt_path = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet34_b16x8_cifar10_20210528-a8aa36a6.pth'  # noqa: E501
 model = dict(
     _scope_='mmrazor',
-    type='DAFLDataFreeDistillation',
+    type='DataFreeDistillation',
     data_preprocessor=dict(
         type='ImgDataPreprocessor',
         # RGB format normalization parameters
@@ -21,83 +22,78 @@ model = dict(
             build_cfg=dict(
                 cfg_path='mmcls::resnet/resnet34_8xb16_cifar10.py',
                 pretrained=True),
-            ckpt_path='resnet34_b16x8_cifar10_20210528-a8aa36a6.pth')),
+            ckpt_path=res34_ckpt_path)),
     generator=dict(
         type='DAFLGenerator',
         img_size=32,
-        latent_dim=1000,
-        hidden_channels=128),
+        latent_dim=256,
+        hidden_channels=128,
+        bn_eps=1e-5),
     distiller=dict(
         type='ConfigurableDistiller',
         student_recorders=dict(
             fc=dict(type='ModuleOutputs', source='head.fc')),
         teacher_recorders=dict(
             res34_fc=dict(type='ModuleOutputs', source='res34.head.fc')),
-        distill_losses=dict(
-            loss_kl=dict(type='KLDivergence', tau=6, loss_weight=1)),
+        distill_losses=dict(loss_kl=dict(type='L1Loss', loss_weight=1.0)),
         loss_forward_mappings=dict(
             loss_kl=dict(
-                preds_S=dict(from_student=True, recorder='fc'),
-                preds_T=dict(from_student=False, recorder='res34_fc')))),
+                s_feature=dict(from_student=True, recorder='fc'),
+                t_feature=dict(from_student=False, recorder='res34_fc')))),
     generator_distiller=dict(
         type='ConfigurableDistiller',
+        student_recorders=dict(
+            fc=dict(type='ModuleOutputs', source='head.fc')),
         teacher_recorders=dict(
-            res34_neck_gap=dict(type='ModuleOutputs', source='res34.neck.gap'),
             res34_fc=dict(type='ModuleOutputs', source='res34.head.fc')),
-        distill_losses=dict(
-            loss_res34_oh=dict(type='OnehotLikeLoss', loss_weight=0.05),
-            loss_res34_ie=dict(type='InformationEntropyLoss', loss_weight=5),
-            loss_res34_ac=dict(type='ActivationLoss', loss_weight=0.01)),
+        distill_losses=dict(loss_l1=dict(type='L1Loss', loss_weight=-1.0)),
         loss_forward_mappings=dict(
-            loss_res34_oh=dict(
-                preds_T=dict(from_student=False, recorder='res34_fc')),
-            loss_res34_ie=dict(
-                preds_T=dict(from_student=False, recorder='res34_fc')),
-            loss_res34_ac=dict(
-                feat_T=dict(from_student=False, recorder='res34_neck_gap')))))
+            loss_l1=dict(
+                s_feature=dict(from_student=True, recorder='fc'),
+                t_feature=dict(from_student=False, recorder='res34_fc')))),
+    student_iter=5,
+    student_train_first=True)
 
 # model wrapper
 model_wrapper_cfg = dict(
     type='mmengine.MMSeparateDistributedDataParallel',
     broadcast_buffers=False,
-    find_unused_parameters=False)
-
-find_unused_parameters = True
+    find_unused_parameters=True)
 
 # optimizer wrapper
 optim_wrapper = dict(
     _delete_=True,
     constructor='mmrazor.SeparateOptimWrapperConstructor',
-    architecture=dict(optimizer=dict(type='AdamW', lr=1e-1)),
+    architecture=dict(
+        optimizer=dict(type='SGD', lr=0.1, weight_decay=5e-4, momentum=0.9)),
     generator=dict(optimizer=dict(type='AdamW', lr=1e-3)))
 
-auto_scale_lr = dict(base_batch_size=256)
+auto_scale_lr = dict(base_batch_size=32)
 
+iter_size = 50
 param_scheduler = dict(
     _delete_=True,
-    architecture=[
-        dict(type='LinearLR', end=500, by_epoch=False, start_factor=0.0001),
-        dict(
-            type='MultiStepLR',
-            begin=500,
-            milestones=[100 * 120, 200 * 120],
-            by_epoch=False)
-    ],
+    architecture=dict(
+        type='MultiStepLR',
+        milestones=[100 * iter_size, 200 * iter_size],
+        by_epoch=False),
     generator=dict(
-        type='LinearLR', end=500, by_epoch=False, start_factor=0.0001))
+        type='MultiStepLR',
+        milestones=[100 * iter_size, 200 * iter_size],
+        by_epoch=False))
 
 train_cfg = dict(
-    _delete_=True, by_epoch=False, max_iters=250 * 120, val_interval=150)
+    _delete_=True, by_epoch=False, max_iters=500 * iter_size, val_interval=250)
 
 train_dataloader = dict(
-    batch_size=256, sampler=dict(type='InfiniteSampler', shuffle=True))
-val_dataloader = dict(batch_size=256)
+    batch_size=32, sampler=dict(type='InfiniteSampler', shuffle=True))
+val_dataloader = dict(batch_size=32)
 val_evaluator = dict(type='Accuracy', topk=(1, 5))
 
 default_hooks = dict(
-    logger=dict(type='LoggerHook', interval=75, log_metric_by_epoch=False),
+    logger=dict(type='LoggerHook', interval=50, log_metric_by_epoch=False),
     checkpoint=dict(
-        type='CheckpointHook', by_epoch=False, interval=150, max_keep_ckpts=2))
+        type='CheckpointHook', by_epoch=False, interval=100, max_keep_ckpts=2))
 
 log_processor = dict(by_epoch=False)
 # Must set diff_rank_seed to True!
