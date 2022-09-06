@@ -49,7 +49,7 @@ _base_.default_hooks.checkpoint = dict(
     type='CheckpointHook',
     interval=2,
     by_epoch=True,
-    save_best='acc',
-    max_keep_ckpts=2)
+    save_best='accuracy/top1',
+    max_keep_ckpts=3)
 
 find_unused_parameters = True

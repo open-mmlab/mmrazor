@@ -13,43 +13,43 @@ bgr_std = preprocess_cfg['std'][::-1]
 
 # Refers to `_RAND_INCREASING_TRANSFORMS` in pytorch-image-models
 rand_increasing_policies = [
-    dict(type='AutoContrast'),
-    dict(type='Equalize'),
-    dict(type='Invert'),
-    dict(type='Rotate', magnitude_key='angle', magnitude_range=(0, 30)),
-    dict(type='Posterize', magnitude_key='bits', magnitude_range=(4, 0)),
-    dict(type='Solarize', magnitude_key='thr', magnitude_range=(256, 0)),
+    dict(type='mmcls.AutoContrast'),
+    dict(type='mmcls.Equalize'),
+    dict(type='mmcls.Invert'),
+    dict(type='mmcls.Rotate', magnitude_key='angle', magnitude_range=(0, 30)),
+    dict(type='mmcls.Posterize', magnitude_key='bits', magnitude_range=(4, 0)),
+    dict(type='mmcls.Solarize', magnitude_key='thr', magnitude_range=(256, 0)),
     dict(
-        type='SolarizeAdd',
+        type='mmcls.SolarizeAdd',
         magnitude_key='magnitude',
         magnitude_range=(0, 110)),
     dict(
-        type='ColorTransform',
+        type='mmcls.ColorTransform',
         magnitude_key='magnitude',
         magnitude_range=(0, 0.9)),
-    dict(type='Contrast', magnitude_key='magnitude', magnitude_range=(0, 0.9)),
+    dict(type='mmcls.Contrast', magnitude_key='magnitude', magnitude_range=(0, 0.9)),
     dict(
-        type='Brightness', magnitude_key='magnitude',
+        type='mmcls.Brightness', magnitude_key='magnitude',
         magnitude_range=(0, 0.9)),
     dict(
-        type='Sharpness', magnitude_key='magnitude', magnitude_range=(0, 0.9)),
+        type='mmcls.Sharpness', magnitude_key='magnitude', magnitude_range=(0, 0.9)),
     dict(
-        type='Shear',
+        type='mmcls.Shear',
         magnitude_key='magnitude',
         magnitude_range=(0, 0.3),
         direction='horizontal'),
     dict(
-        type='Shear',
+        type='mmcls.Shear',
         magnitude_key='magnitude',
         magnitude_range=(0, 0.3),
         direction='vertical'),
     dict(
-        type='Translate',
+        type='mmcls.Translate',
         magnitude_key='magnitude',
         magnitude_range=(0, 0.45),
         direction='horizontal'),
     dict(
-        type='Translate',
+        type='mmcls.Translate',
         magnitude_key='magnitude',
         magnitude_range=(0, 0.45),
         direction='vertical')
@@ -68,12 +68,12 @@ train_pipeline = [
         policies=rand_increasing_policies,
         num_policies=2,
         total_level=10,
-        magnitude_level=7,
+        magnitude_level=9,
         magnitude_std=0.5,
         hparams=dict(
             pad_val=[round(x) for x in bgr_mean], interpolation='bicubic')),
     dict(
-        type='RandomErasing',
+        type='mmcls.RandomErasing',
         erase_prob=0.25,
         mode='rand',
         min_area_ratio=0.02,
@@ -104,12 +104,12 @@ train_dataloader = dict(
         ann_file='meta/train.txt',
         data_prefix='train',
         pipeline=train_pipeline),
-    sampler=dict(type='mmcls.DefaultSampler', shuffle=True),
+    sampler=dict(type='mmcls.RepeatAugSampler'),
     persistent_workers=True,
 )
 
 val_dataloader = dict(
-    batch_size=64,
+    batch_size=256,
     num_workers=6,
     dataset=dict(
         type=dataset_type,
@@ -130,11 +130,6 @@ test_evaluator = val_evaluator
 paramwise_cfg = dict(
     bias_decay_mult=0.0, norm_decay_mult=0.0, dwconv_decay_mult=0.0)
 
-# optim_wrapper = dict(
-#     optimizer=dict(type='SGD', lr=0.5, momentum=0.9, weight_decay=4e-5),
-#     paramwise_cfg=paramwise_cfg,
-#     clip_grad=None)
-
 optim_wrapper = dict(
     optimizer=dict(
         type='AdamW',
@@ -147,7 +142,7 @@ optim_wrapper = dict(
         '.cls_token': dict(decay_mult=0.0),
         '.pos_embed': dict(decay_mult=0.0)
     }),
-    clip_grad=dict(max_norm=1.0),
+    clip_grad=dict(max_norm=5.0),
 )
 
 # leanring policy
@@ -165,11 +160,12 @@ param_scheduler = [
     # main learning rate scheduler
     dict(
         type='CosineAnnealingLR',
-        T_max=295,
+        T_max=500,
         eta_min=1e-5,
         by_epoch=True,
         begin=20,
-        end=500)
+        end=500,
+        convert_to_iter_based=True),
 ]
 
 # train, val, test setting
@@ -177,7 +173,4 @@ train_cfg = dict(by_epoch=True, max_epochs=500)
 val_cfg = dict()
 test_cfg = dict()
 
-# NOTE: `auto_scale_lr` is for automatically scaling LR,
-# based on the actual training batch size.
-# for 8 gpus
-auto_scale_lr = dict(base_batch_size=512)
+auto_scale_lr = dict(base_batch_size=2048)
