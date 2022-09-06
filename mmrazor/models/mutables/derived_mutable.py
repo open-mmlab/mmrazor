@@ -1,28 +1,48 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Any, Callable, Dict, Iterable, Optional, Protocol
+import sys
+
+if sys.version_info < (3, 8):
+    from typing_extensions import Protocol
+else:
+    from typing import Protocol
+
+import inspect
+import logging
+from itertools import product
+from typing import Any, Callable, Dict, Iterable, Optional, Set, Union
 
 import torch
-from mmcls.models.utils import make_divisible
+from mmengine.logging import print_log
 from torch import Tensor
 
+from ..utils import make_divisible
 from .base_mutable import CHOICE_TYPE, BaseMutable
 
 
-class MutableProtocol(Protocol):
+class MutableProtocol(Protocol):  # pragma: no cover
+    """Protocol for Mutable."""
 
     @property
     def current_choice(self) -> Any:
-        ...
+        """Current choice."""
+
+    def derive_expand_mutable(self, expand_ratio: int) -> Any:
+        """Derive expand mutable."""
+
+    def derive_divide_mutable(self, ratio: int, divisor: int) -> Any:
+        """Derive divide mutable."""
 
 
-class ChannelMutableProtocol(MutableProtocol):
+class MutableChannelProtocol(MutableProtocol):  # pragma: no cover
+    """Protocol for MutableChannel."""
 
     @property
     def current_mask(self) -> Tensor:
-        ...
+        """Current mask."""
 
 
 def _expand_choice_fn(mutable: MutableProtocol, expand_ratio: int) -> Callable:
+    """Helper function to build `choice_fn` for expand derived mutable."""
 
     def fn():
         return mutable.current_choice * expand_ratio
@@ -97,6 +117,7 @@ def _concat_choice_fn(mutables: Iterable[MutableChannelProtocol]) -> Callable:
 
 def _concat_mask_fn(mutables: Iterable[MutableChannelProtocol]) -> Callable:
     """Helper function to build `mask_fn` for concat derived mutable."""
+
     def fn():
         return torch.cat([m.current_mask for m in mutables])
 

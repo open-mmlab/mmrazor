@@ -72,24 +72,6 @@ class DynamicOP(ABC):
 
         return current_choice
 
-    def check_if_mutables_fixed(self) -> None:
-
-        def check_fixed(mutable: Optional[BaseMutable]) -> None:
-            if mutable is not None and not mutable.is_fixed:
-                raise RuntimeError(f'Mutable {type(mutable)} is not fixed.')
-
-        for mutable in self.accpeted_mutables:
-            check_fixed(getattr(self, f'{mutable}'))
-
-    @staticmethod
-    def get_current_choice(mutable: BaseMutable) -> Any:
-        current_choice = mutable.current_choice
-        if current_choice is None:
-            raise RuntimeError(f'current choice of mutable {type(mutable)} '
-                               'can not be None at runtime')
-
-        return current_choice
-
 
 class ChannelDynamicOP(DynamicOP):
     """Base class for dynamic OP with mutable channels.

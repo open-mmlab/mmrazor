@@ -3,12 +3,17 @@
 from typing import Optional, Tuple
 
 import torch
-from mmcls.models import ClsHead
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.registry import MODELS
-from ..dynamic_linear import DynamicLinear
+from ..bricks import DynamicLinear
 from .base import DynamicHead
+
+try:
+    from mmcls.models import ClsHead
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    ClsHead = get_placeholder('mmcls')
 
 
 @MODELS.register_module()
@@ -51,5 +56,4 @@ class DynamicLinearClsHead(ClsHead, DynamicHead):
 
     def connect_with_backbone(self,
                               backbone_output_mutable: BaseMutable) -> None:
-        self.fc.mutate_in_features(
-            backbone_output_mutable.derive_same_mutable())
+        self.fc.register_mutable_attr('in_features', backbone_output_mutable)

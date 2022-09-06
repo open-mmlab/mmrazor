@@ -8,7 +8,7 @@ from mmcls.models import *  # noqa: F401,F403
 from mmcls.structures import ClsDataSample
 
 from mmrazor import digit_version
-from mmrazor.models.mutables import OneShotMutableChannel
+from mmrazor.models.mutables import SlimmableMutableChannel
 from mmrazor.models.mutators import (OneShotChannelMutator,
                                      SlimmableChannelMutator)
 from mmrazor.registry import MODELS
@@ -25,24 +25,18 @@ MODEL_CFG = dict(
         loss=dict(type='CrossEntropyLoss', loss_weight=1.0),
         topk=(1, 5)))
 
-ONESHOT_MUTABLE_CFG = dict(
-    type='OneShotMutableChannel',
-    candidate_choices=[1 / 8, 2 / 8, 3 / 8, 4 / 8, 5 / 8, 6 / 8, 7 / 8, 1.0],
-    candidate_mode='ratio')
-ONESHOT_MUTABLE_CFGS = dict(
-    in_features=ONESHOT_MUTABLE_CFG,
-    out_features=ONESHOT_MUTABLE_CFG,
-    in_channels=ONESHOT_MUTABLE_CFG,
-    out_channels=ONESHOT_MUTABLE_CFG,
-    num_features=ONESHOT_MUTABLE_CFG)
-
 ONESHOT_MUTATOR_CFG = dict(
     type='OneShotChannelMutator',
     skip_prefixes=['head.fc'],
     tracer_cfg=dict(
         type='BackwardTracer',
         loss_calculator=dict(type='ImageClassifierPseudoLoss')),
-    global_mutable_cfgs=ONESHOT_MUTABLE_CFGS)
+    mutable_cfg=dict(
+        type='OneShotMutableChannel',
+        candidate_choices=[
+            1 / 8, 2 / 8, 3 / 8, 4 / 8, 5 / 8, 6 / 8, 7 / 8, 1.0
+        ],
+        candidate_mode='ratio'))
 
 
 @unittest.skipIf(
@@ -91,17 +85,11 @@ def test_slimmable_channel_mutator() -> None:
     root_path = dirname(dirname(dirname(dirname(__file__))))
     channel_cfg_paths = [
         os.path.join(root_path, 'data/MBV2_320M.yaml'),
-        os.path.join(root_path, 'data/MBV2_220M.yaml'),
-        os.path.join(root_path, 'data/MBV2_530M.yaml')
+        os.path.join(root_path, 'data/MBV2_220M.yaml')
     ]
 
     mutator = SlimmableChannelMutator(
-        global_mutable_cfgs=dict(
-            in_features=dict(type='OneShotMutableChannel'),
-            out_features=dict(type='OneShotMutableChannel'),
-            in_channels=dict(type='OneShotMutableChannel'),
-            out_channels=dict(type='OneShotMutableChannel'),
-            num_features=dict(type='OneShotMutableChannel')),
+        mutable_cfg=dict(type='SlimmableMutableChannel'),
         channel_cfgs=load_and_merge_channel_cfgs(channel_cfg_paths),
         tracer_cfg=dict(
             type='BackwardTracer',
@@ -111,14 +99,12 @@ def test_slimmable_channel_mutator() -> None:
     mutator.prepare_from_supernet(model)
     mutator.switch_choices(0)
     for name, module in model.named_modules():
-        if isinstance(module, OneShotMutableChannel):
-            if len(module.concat_parent_mutables) == 0:
-                assert module.current_choice == module.choices[0]
+        if isinstance(module, SlimmableMutableChannel):
+            assert module.current_choice == 0
     model(imgs, data_samples=data_samples, mode='loss')
 
     mutator.switch_choices(1)
     for name, module in model.named_modules():
-        if isinstance(module, OneShotMutableChannel):
-            if len(module.concat_parent_mutables) == 0:
-                assert module.current_choice == module.choices[1]
+        if isinstance(module, SlimmableMutableChannel):
+            assert module.current_choice == 1
     model(imgs, data_samples=data_samples, mode='loss')

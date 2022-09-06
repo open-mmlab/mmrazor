@@ -3,8 +3,7 @@ from typing import Any
 
 import torch
 import torch.distributed as dist
-from mmengine import autocast
-from mmengine.runner import Runner
+from mmengine.runner import Runner, autocast
 from torch import Tensor
 from torch.nn.modules.batchnorm import _BatchNorm
 from torch.utils.data import DataLoader

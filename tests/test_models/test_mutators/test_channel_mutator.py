@@ -10,32 +10,34 @@ from torch import Tensor, nn
 from torch.nn import Module
 
 from mmrazor import digit_version
-from mmrazor.models.mutables import OneShotMutableChannel
+from mmrazor.models.mutables import SlimmableMutableChannel
 from mmrazor.models.mutators import (OneShotChannelMutator,
                                      SlimmableChannelMutator)
-from mmrazor.models.mutators.utils import (dynamic_batch_norm_2d_converter,
+from mmrazor.models.mutators.utils import (dynamic_bn_converter,
                                            dynamic_conv2d_converter)
 from mmrazor.registry import MODELS
 from .utils import load_and_merge_channel_cfgs
-
-MUTABLE_CFG = dict(
-    type='OneShotMutableChannel',
-    candidate_choices=[1 / 8, 2 / 8, 3 / 8, 4 / 8, 5 / 8, 6 / 8, 7 / 8, 1.0],
-    candidate_mode='ratio')
-MUTABLE_CFGS = dict(
-    in_channels=MUTABLE_CFG,
-    out_channels=MUTABLE_CFG,
-    num_features=MUTABLE_CFG)
 
 ONESHOT_MUTATOR_CFG = dict(
     type='OneShotChannelMutator',
     tracer_cfg=dict(
         type='BackwardTracer',
         loss_calculator=dict(type='ImageClassifierPseudoLoss')),
-    global_mutable_cfgs=MUTABLE_CFGS)
+    mutable_cfg=dict(
+        type='OneShotMutableChannel',
+        candidate_choices=[
+            1 / 8, 2 / 8, 3 / 8, 4 / 8, 5 / 8, 6 / 8, 7 / 8, 1.0
+        ],
+        candidate_mode='ratio'))
 
 ONESHOT_MUTATOR_CFG_WITHOUT_TRACER = dict(
-    type='OneShotChannelMutator', global_mutable_cfgs=MUTABLE_CFGS)
+    type='OneShotChannelMutator',
+    mutable_cfg=dict(
+        type='OneShotMutableChannel',
+        candidate_choices=[
+            1 / 8, 2 / 8, 3 / 8, 4 / 8, 5 / 8, 6 / 8, 7 / 8, 1.0
+        ],
+        candidate_mode='ratio'))
 
 
 class MultiConcatModel(Module):
@@ -120,19 +122,19 @@ class ResBlock(Module):
 
 class DynamicResBlock(Module):
 
-    def __init__(self, mutable_cfgs) -> None:
+    def __init__(self, mutable_cfg) -> None:
         super().__init__()
 
         self.dynamic_op1 = dynamic_conv2d_converter(
-            nn.Conv2d(3, 8, 1), mutable_cfgs)
-        self.dynamic_bn1 = dynamic_batch_norm_2d_converter(
-            nn.BatchNorm2d(8), mutable_cfgs)
+            nn.Conv2d(3, 8, 1), mutable_cfg, mutable_cfg)
+        self.dynamic_bn1 = dynamic_bn_converter(
+            nn.BatchNorm2d(8), mutable_cfg, mutable_cfg)
         self.dynamic_op2 = dynamic_conv2d_converter(
-            nn.Conv2d(8, 8, 1), mutable_cfgs)
-        self.dynamic_bn2 = dynamic_batch_norm_2d_converter(
-            nn.BatchNorm2d(8), mutable_cfgs)
+            nn.Conv2d(8, 8, 1), mutable_cfg, mutable_cfg)
+        self.dynamic_bn2 = dynamic_bn_converter(
+            nn.BatchNorm2d(8), mutable_cfg, mutable_cfg)
         self.dynamic_op3 = dynamic_conv2d_converter(
-            nn.Conv2d(8, 8, 1), mutable_cfgs)
+            nn.Conv2d(8, 8, 1), mutable_cfg, mutable_cfg)
         self._add_link()
 
     def _add_link(self):
@@ -213,7 +215,7 @@ def test_oneshot_channel_mutator() -> None:
     mutator: OneShotChannelMutator = MODELS.build(
         ONESHOT_MUTATOR_CFG_WITHOUT_TRACER)
     dynamic_model = DynamicResBlock(
-        ONESHOT_MUTATOR_CFG_WITHOUT_TRACER['global_mutable_cfgs'])
+        ONESHOT_MUTATOR_CFG_WITHOUT_TRACER['mutable_cfg'])
     _test(dynamic_model)
 
 
@@ -227,10 +229,7 @@ def test_slimmable_channel_mutator() -> None:
     ]
 
     mutator = SlimmableChannelMutator(
-        global_mutable_cfgs=dict(
-            in_channels=dict(type='OneShotMutableChannel'),
-            out_channels=dict(type='OneShotMutableChannel'),
-            num_features=dict(type='OneShotMutableChannel')),
+        mutable_cfg=dict(type='SlimmableMutableChannel'),
         channel_cfgs=load_and_merge_channel_cfgs(channel_cfg_paths),
         tracer_cfg=dict(
             type='BackwardTracer',
@@ -240,16 +239,14 @@ def test_slimmable_channel_mutator() -> None:
     mutator.prepare_from_supernet(model)
     mutator.switch_choices(0)
     for name, module in model.named_modules():
-        if isinstance(module, OneShotMutableChannel):
-            if len(module.concat_parent_mutables) == 0:
-                assert module.current_choice == module.choices[0]
+        if isinstance(module, SlimmableMutableChannel):
+            assert module.current_choice == 0
     _ = model(imgs)
 
     mutator.switch_choices(1)
     for name, module in model.named_modules():
-        if isinstance(module, OneShotMutableChannel):
-            if len(module.concat_parent_mutables) == 0:
-                assert module.current_choice == module.choices[1]
+        if isinstance(module, SlimmableMutableChannel):
+            assert module.current_choice == 1
     _ = model(imgs)
 
     channel_cfg_paths = [
@@ -258,10 +255,7 @@ def test_slimmable_channel_mutator() -> None:
     ]
 
     mutator = SlimmableChannelMutator(
-        global_mutable_cfgs=dict(
-            in_channels=dict(type='OneShotMutableChannel'),
-            out_channels=dict(type='OneShotMutableChannel'),
-            num_features=dict(type='OneShotMutableChannel')),
+        mutable_cfg=dict(type='SlimmableMutableChannel'),
         channel_cfgs=load_and_merge_channel_cfgs(channel_cfg_paths),
         tracer_cfg=dict(
             type='BackwardTracer',
@@ -270,21 +264,19 @@ def test_slimmable_channel_mutator() -> None:
     model = ConcatModel()
 
     mutator.prepare_from_supernet(model)
+
     for name, module in model.named_modules():
-        if isinstance(module, OneShotMutableChannel):
-            if len(module.concat_parent_mutables) == 0:
-                assert len(module.choices) == 2
+        if isinstance(module, SlimmableMutableChannel):
+            assert module.choices == [0, 1]
 
     mutator.switch_choices(0)
     for name, module in model.named_modules():
-        if isinstance(module, OneShotMutableChannel):
-            if len(module.concat_parent_mutables) == 0:
-                assert module.current_choice == module.choices[0]
+        if isinstance(module, SlimmableMutableChannel):
+            assert module.current_choice == 0
     _ = model(imgs)
 
     mutator.switch_choices(1)
     for name, module in model.named_modules():
-        if isinstance(module, OneShotMutableChannel):
-            if len(module.concat_parent_mutables) == 0:
-                assert module.current_choice == module.choices[1]
+        if isinstance(module, SlimmableMutableChannel):
+            assert module.current_choice == 1
     _ = model(imgs)

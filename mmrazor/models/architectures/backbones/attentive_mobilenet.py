@@ -5,12 +5,12 @@ from typing import List, Optional, Sequence, Tuple
 import torch.nn as nn
 from mmcls.models.backbones.base_backbone import BaseBackbone
 from mmcls.models.utils import make_divisible
-from mmcv.cnn import ConvModule, constant_init
+from mmcv.cnn import ConvModule
 from mmengine.logging import MMLogger
-from mmengine.model import Sequential
+from mmengine.model import Sequential, constant_init
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.architectures.dynamic_op import DynamicSequential
+from mmrazor.models.architectures.dynamic_op.bricks import DynamicSequential
 from mmrazor.models.mutables import OneShotMutableChannel, OneShotMutableValue
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.ops.gml_mobilenet_series import GMLMBBlock, GMLSELayer
@@ -27,41 +27,77 @@ def _range_to_list(range_: List[int]) -> List[int]:
 
 
 def _mutate_conv_module(
-    conv_module: ConvModule,
-    derived_in_channels: Optional[BaseMutable] = None,
-    derived_out_channels: Optional[BaseMutable] = None,
-    kernel_size_derive_cfg: Optional[Tuple[BaseMutable,
-                                           Sequence[int]]] = None):
-    if derived_in_channels is not None:
-        conv_module.conv.mutate_in_channels(derived_in_channels)
-    if derived_out_channels is not None:
-        conv_module.conv.mutate_out_channels(derived_out_channels)
+        conv_module: ConvModule,
+        mutable_in_channels: Optional[BaseMutable] = None,
+        mutable_out_channels: Optional[BaseMutable] = None,
+        mutable_kernel_size: Optional[Tuple[BaseMutable,
+                                            Sequence[int]]] = None):
+    if mutable_in_channels is not None:
+        conv_module.conv.register_mutable_attr('in_channels',
+                                               mutable_in_channels)
+    if mutable_out_channels is not None:
+        conv_module.conv.register_mutable_attr('out_channels',
+                                               mutable_out_channels)
         if conv_module.with_norm:
-            conv_module.bn.mutate_num_features(derived_out_channels)
+            conv_module.bn.register_mutable_attr('num_features',
+                                                 mutable_out_channels)
+    if mutable_kernel_size is not None:
+        conv_module.conv.register_mutable_attr('kernel_size',
+                                               mutable_kernel_size)
 
-    if kernel_size_derive_cfg is not None:
-        mutable_kernel_size, kernel_size_list = kernel_size_derive_cfg
-        conv_module.conv.mutate_kernel_size(
-            mutable_kernel_size.derive_same_mutable(), kernel_size_list)
+
+def _mutate_se_layer(se_layer: GMLSELayer, mutable_in_channels: BaseMutable,
+                     se_cfg: dict):
+    # TODO: make divisiable
+    ratio = se_cfg.get('ratio', 16)
+    divisor = se_cfg.get('divisor', 8)
+    derived_mid_channels = mutable_in_channels.derive_divide_mutable(
+        ratio, divisor)
+    _mutate_conv_module(
+        se_layer.conv1,
+        mutable_in_channels=mutable_in_channels,
+        mutable_out_channels=derived_mid_channels)
+    _mutate_conv_module(
+        se_layer.conv2,
+        mutable_in_channels=derived_mid_channels,
+        mutable_out_channels=mutable_in_channels)
 
 
-def _mutate_se_layer(se_layer: GMLSELayer, in_channels_mutable: BaseMutable,
-                     divisor: int):
-    se_layer.conv1.conv.mutate_in_channels(
-        in_channels_mutable.derive_same_mutable())
-    se_layer.conv1.conv.mutate_out_channels(
-        in_channels_mutable.derive_divide_mutable(divisor))
-    if se_layer.conv1.with_norm:
-        se_layer.conv1.bn.mutate_num_features(
-            in_channels_mutable.derive_divide_mutable(divisor))
+def _mutate_mb_layer(mb_layer: GMLMBBlock, mutable_in_channels,
+                     mutable_out_channels, mutable_expand_value,
+                     mutable_kernel_size, se_cfg):
+    # mutate in_channels, out_channels, kernel_size for mb_layer
+    derived_expand_channels = mutable_in_channels * mutable_expand_value
 
-    se_layer.conv2.conv.mutate_in_channels(
-        in_channels_mutable.derive_divide_mutable(divisor))
-    se_layer.conv2.conv.mutate_out_channels(
-        in_channels_mutable.derive_same_mutable())
-    if se_layer.conv2.with_norm:
-        se_layer.conv2.bn.mutate_num_features(
-            in_channels_mutable.derive_same_mutable())
+    if mb_layer.with_expand_conv:
+        _mutate_conv_module(
+            mb_layer.expand_conv,
+            mutable_in_channels=mutable_in_channels,
+            mutable_out_channels=derived_expand_channels)
+
+    _mutate_conv_module(
+        mb_layer.depthwise_conv,
+        mutable_in_channels=derived_expand_channels,
+        mutable_out_channels=derived_expand_channels,
+        mutable_kernel_size=mutable_kernel_size)
+
+    if mb_layer.with_se:
+        _mutate_se_layer(
+            mb_layer.se,
+            mutable_in_channels=derived_expand_channels,
+            se_cfg=se_cfg)
+
+    if not mb_layer.with_res_shortcut:
+        if mb_layer.with_attentive_shortcut:
+            mb_layer.shortcut.conv.register_mutable_attr(
+                'in_channels', mutable_in_channels)
+            mb_layer.shortcut.conv.register_mutable_attr(
+                'out_channels', mutable_out_channels)
+
+    _mutate_conv_module(
+        mb_layer.linear_conv,
+        mutable_in_channels=derived_expand_channels,
+        mutable_out_channels=mutable_out_channels)
 
 
 @MODELS.register_module()
@@ -92,7 +128,7 @@ class AttentiveMobileNet(BaseBackbone):
                  out_indices=(7, ),
                  frozen_stages=-1,
                  dropout_stages=6,
-                 conv_cfg=dict(type='CenterCropDynamicConv2d'),
+                 conv_cfg=dict(type='BigNasConv2d'),
                  norm_cfg=dict(type='DynamicBatchNorm2d'),
                  act_cfg=dict(type='Swish'),
                  norm_eval=False,
@@ -129,8 +165,6 @@ class AttentiveMobileNet(BaseBackbone):
         self.zero_init_residual = zero_init_residual
         self.with_cp = with_cp
 
-        self.source_mutables = nn.ModuleDict()
-
         first_out_channels = [
             make_divisible(x * widen_factor, 8)
             for x in _range_to_list(first_out_channels_range)
@@ -150,9 +184,8 @@ class AttentiveMobileNet(BaseBackbone):
             num_channels=self.in_channels,
             candidate_choices=first_out_channels,
             candidate_mode='number')
-        self.source_mutables['first_conv'] = mutable_out_channels
         _mutate_conv_module(
-            self.first_conv, derived_out_channels=mutable_out_channels * 1)
+            self.first_conv, mutable_out_channels=mutable_out_channels)
         self.last_mutable = mutable_out_channels
 
         self.layers = []
@@ -184,8 +217,6 @@ class AttentiveMobileNet(BaseBackbone):
             for x in _range_to_list(last_out_channels_range)
         ]
         out_channels = max(last_out_channels)
-
-        last_mutable = self.last_mutable
         # align with gml
         last_layers = OrderedDict([
             ('final_expand_layer',
@@ -209,28 +240,27 @@ class AttentiveMobileNet(BaseBackbone):
                  norm_cfg=None,
                  act_cfg=self.act_cfg))
         ])
-        _mutate_conv_module(
-            last_layers['final_expand_layer'],
-            derived_in_channels=last_mutable * 1,
-            derived_out_channels=last_mutable * last_expand_ratio)
+        derived_expand_channels = self.last_mutable * last_expand_ratio
         mutable_out_channels = OneShotMutableChannel(
             num_channels=out_channels,
             candidate_choices=last_out_channels,
             candidate_mode='number')
-        self.source_mutables['last_conv'] = mutable_out_channels
-        self.last_mutable = mutable_out_channels
+        _mutate_conv_module(
+            last_layers['final_expand_layer'],
+            mutable_in_channels=self.last_mutable,
+            mutable_out_channels=derived_expand_channels)
         _mutate_conv_module(
             last_layers['feature_mix_layer'],
-            derived_in_channels=last_mutable * last_expand_ratio,
-            derived_out_channels=mutable_out_channels * 1)
+            mutable_in_channels=derived_expand_channels,
+            mutable_out_channels=mutable_out_channels)
 
+        self.last_mutable = mutable_out_channels
         self.add_module('last_conv', Sequential(last_layers))
         self.layers.append('last_conv')
         self.blocks = self.layers[:-1]
 
         logger.info(f'layers:\n {self.layers}')
         logger.info(f'blocks:\n {self.blocks}')
-        logger.info(f'source mutables:\n {self.source_mutables}')
 
     def make_layer(self, out_channels_list, num_blocks_list, kernel_size_list,
                    stride, expand_ratio_list, use_se, stage_idx):
@@ -243,27 +273,18 @@ class AttentiveMobileNet(BaseBackbone):
             expand_ratio (int): Expand the number of channels of the
                 hidden layer in InvertedResidual by this ratio. Default: 6.
         """
-        mutable_list = nn.ModuleList()
-        mutable_kernel_size = OneShotMutableValue(
-            value_list=kernel_size_list, default_value=max(kernel_size_list))
-        mutable_list.append(mutable_kernel_size)
-        last_mutable = self.last_mutable
-
         out_channels = max(out_channels_list)
         kernel_size = max(kernel_size_list)
         expand_ratio = max(expand_ratio_list)
-        if len(expand_ratio_list) > 1:
-            mutable_expand_value = OneShotMutableValue(
-                value_list=expand_ratio_list, default_value=expand_ratio)
-            mutable_list.append(mutable_expand_value)
-        else:
-            mutable_expand_value = None
-        expand_fn = lambda x: x[0] * x[1]  # noqa: E731
+
         mutable_out_channels = OneShotMutableChannel(
             num_channels=out_channels,
             candidate_choices=out_channels_list,
             candidate_mode='number')
-        passed_out_channels = False
+        mutable_kernel_size = OneShotMutableValue(
+            value_list=kernel_size_list, default_value=kernel_size)
+        mutable_expand_value = OneShotMutableValue(
+            value_list=expand_ratio_list, default_value=expand_ratio)
 
         layers = []
         for i in range(max(num_blocks_list)):
@@ -290,57 +311,16 @@ class AttentiveMobileNet(BaseBackbone):
                 se_cfg=se_cfg,
                 with_attentive_shortcut=True)
 
-            if mutable_expand_value is not None:
-                channels_derive_cfg = (last_mutable, mutable_expand_value)
-            else:
-                channels_derive_cfg = (last_mutable, expand_ratio)
-
-            if mb_layer.with_expand_conv:
-                _mutate_conv_module(
-                    mb_layer.expand_conv,
-                    derived_in_channels=last_mutable * 1,
-                    derived_out_channels=expand_fn(channels_derive_cfg))
-
-            _mutate_conv_module(
-                mb_layer.depthwise_conv,
-                derived_in_channels=expand_fn(channels_derive_cfg),
-                derived_out_channels=expand_fn(channels_derive_cfg),
-                kernel_size_derive_cfg=(mutable_kernel_size, kernel_size_list))
-
-            if mb_layer.with_se:
-                _mutate_se_layer(
-                    mb_layer.se,
-                    in_channels_mutable=mb_layer.depthwise_conv.conv.
-                    mutable_out_channels,
-                    divisor=4)
-
-            if not mb_layer.with_res_shortcut:
-                if mb_layer.with_attentive_shortcut:
-                    mb_layer.shortcut.conv.mutate_in_channels(last_mutable * 1)
-                    mb_layer.shortcut.conv.mutate_out_channels(
-                        mutable_out_channels * 1)
-
-                if not passed_out_channels:
-                    last_mutable = mutable_out_channels
-                    mutable_list.append(last_mutable)
-                    passed_out_channels = True
-
-            _mutate_conv_module(
-                mb_layer.linear_conv,
-                derived_in_channels=expand_fn(channels_derive_cfg),
-                derived_out_channels=last_mutable * 1)
-
+            _mutate_mb_layer(mb_layer, self.last_mutable, mutable_out_channels,
+                             mutable_expand_value, mutable_kernel_size, se_cfg)
+            self.last_mutable = mutable_out_channels
             layers.append(mb_layer)
             self.in_channels = out_channels
 
         dynamic_seq = DynamicSequential(*layers)
         mutable_depth = OneShotMutableValue(
             value_list=num_blocks_list, default_value=max(num_blocks_list))
-        mutable_list.append(mutable_depth)
-        dynamic_seq.mutate_depth(mutable_depth, depth_seq=num_blocks_list)
-
-        self.source_mutables[f'stage_{stage_idx}'] = mutable_list
-        self.last_mutable = last_mutable
+        dynamic_seq.register_mutable_attr('depth', mutable_depth)
 
         return dynamic_seq
 
@@ -357,34 +337,24 @@ class AttentiveMobileNet(BaseBackbone):
         return tuple(outs)
 
     def set_dropout(self, drop_prob: float) -> None:
-        total_block_nums = self.block_nums
+        total_block_nums = len(self.blocks)
         visited_block_nums = 0
         for idx, layer_name in enumerate(self.blocks, start=1):
             layer = getattr(self, layer_name)
             assert isinstance(layer, DynamicSequential)
-            visited_block_nums += layer.pure_module_nums
+            visited_block_nums += len(layer)
             if idx < self.dropout_stages:
                 continue
 
-            for mb_idx, mb_layer in enumerate(layer.pure_modules()):
+            for mb_idx, mb_layer in enumerate(layer):
                 if isinstance(mb_layer, GMLMBBlock):
-                    ratio = (visited_block_nums - layer.pure_module_nums +
+                    ratio = (visited_block_nums - len(layer) +
                              mb_idx) / total_block_nums
                     mb_drop_prob = drop_prob * ratio
                     mb_layer.drop_prob = mb_drop_prob
 
                     logger.debug(f'set drop prob `{mb_drop_prob}` '
                                  f'to layer: {layer_name}.{mb_idx}')
-
-    @property
-    def block_nums(self) -> int:
-        total_block_nums = 0
-        for layer_name in self.blocks:
-            layer = getattr(self, layer_name)
-            assert isinstance(layer, DynamicSequential)
-            total_block_nums += layer.pure_module_nums
-
-        return total_block_nums
 
     def _freeze_stages(self):
         if self.frozen_stages >= 0:

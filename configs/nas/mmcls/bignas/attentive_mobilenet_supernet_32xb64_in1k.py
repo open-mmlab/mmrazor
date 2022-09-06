@@ -6,6 +6,7 @@ _base_ = [
 default_scope = 'mmrazor'
 
 # !dataset config
+train_dataloader = dict(batch_size=64)
 # ==========================================================================
 # data preprocessor
 data_preprocessor = dict(
@@ -66,11 +67,14 @@ model = dict(
                 preds_S=dict(recorder='fc', from_student=True),
                 preds_T=dict(recorder='fc', from_student=False)))),
     mutators=dict(
-        channel_mutator=dict(type='BigNASChannelMutator'),
+        channel_mutator=dict(
+            type='OneShotChannelMutator', mutable_cfg=None, force_link=False),
         value_mutator=dict(type='DynamicValueMutator')))
 
 model_wrapper_cfg = dict(
-    type='BigNASDDP', broadcast_buffers=False, find_unused_parameters=True)
+    type='mmrazor.BigNASDDP',
+    broadcast_buffers=False,
+    find_unused_parameters=True)
 
 optim_wrapper = dict(accumulative_counts=num_samples + 2)
 

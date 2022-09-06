@@ -8,31 +8,29 @@ from mmrazor.registry import MODELS
 from ...mutables import OneShotMutableChannel
 from .channel_mutator import ChannelMutator
 
-MUTABLE_CFG_TYPE = Dict[str, Any]
-MUTABLE_CFGS_TYPE = Dict[str, MUTABLE_CFG_TYPE]
-
 
 @MODELS.register_module()
 class OneShotChannelMutator(ChannelMutator):
     """One-shot channel mutable based channel mutator.
 
     Args:
-        mutable_cfgs (dict): The config for the channel mutable.
-        tracer_cfg (dict): The config for the model tracer. We Trace the
-            topology of a given model with the tracer.
+        mutable_cfg (dict): The config for the channel mutable.
+        tracer_cfg (dict | Optional): The config for the model tracer.
+            We Trace the topology of a given model with the tracer.
         skip_prefixes (List[str] | Optional): The module whose name start with
             a string in skip_prefixes will not be pruned.
         init_cfg (dict, optional): The config to control the initialization.
     """
 
     def __init__(self,
-                 global_mutable_cfgs: Dict,
-                 custom_mutable_cfgs: Optional[Dict] = None,
+                 mutable_cfg: Dict,
                  tracer_cfg: Optional[Dict] = None,
                  skip_prefixes: Optional[List[str]] = None,
+                 force_link: Optional[bool] = True,
                  init_cfg: Optional[Dict] = None) -> None:
-        super().__init__(global_mutable_cfgs, custom_mutable_cfgs, tracer_cfg,
-                         skip_prefixes, init_cfg)
+        super().__init__(mutable_cfg, tracer_cfg, skip_prefixes, init_cfg)
+        # TODO(shiguang): make mutable_cfg optional?
+        self.force_link = force_link
 
     def sample_choices(self):
         """Sample a choice that records a selection from the search space.
@@ -117,7 +115,7 @@ class OneShotChannelMutator(ChannelMutator):
                  OneShotMutableChannel(name=bn1, ...)] # mutable out
             }
         """
-        groups = self.find_same_mutables(supernet)
+        groups = self.find_same_mutables(supernet, self.force_link)
 
         search_groups = dict()
         group_idx = 0

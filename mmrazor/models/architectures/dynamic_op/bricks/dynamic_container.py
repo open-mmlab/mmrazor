@@ -1,86 +1,56 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Iterator, Optional, Sequence
+from typing import Dict, Optional
 
+import torch.nn as nn
 from mmengine.model import Sequential
 from torch import Tensor
-from torch.nn import Module
 
-from mmrazor.models.mutables import DerivedMutable, MutableValue
 from mmrazor.models.mutables.base_mutable import BaseMutable
-from .dynamic_mixins import DynamicResizeMixin
+from mmrazor.registry import MODELS
+from .dynamic_mixins import DynamicSequentialMixin
 
 
-class DynamicSequential(Sequential, DynamicResizeMixin):
-    accpeted_mutables = {'mutable_depth'}
-    forward_ignored_module = (MutableValue, DerivedMutable)
+@MODELS.register_module()
+class DynamicSequential(Sequential, DynamicSequentialMixin):
+    """Dynamic Sequential OP.
 
-    def __init__(self, *args, init_cfg: Optional[dict] = None):
-        super().__init__(*args, init_cfg=init_cfg)
+    Note:
+        Arguments for ``__init__`` of ``DynamicSequential`` is totally same as
+        :obj:`torch.nn.Sequential`.
 
-        self.mutable_depth: Optional[BaseMutable] = None
+    Attributes:
+        mutable_attrs (ModuleDict[str, BaseMutable]): Mutable attributes,
+            such as `depth`. The key of the dict must in
+            ``accepted_mutable_attrs``.
+    """
 
-    def mutate_depth(self,
-                     mutable_depth: BaseMutable,
-                     depth_seq: Optional[Sequence[int]] = None) -> None:
-        if depth_seq is None:
-            depth_seq = getattr(mutable_depth, 'choices')
-        if depth_seq is None:
-            raise ValueError('depth sequence must be provided')
-        depth_list = list(sorted(depth_seq))
-        if depth_list[-1] != len(self):
-            raise ValueError(f'Expect max depth to be: {len(self)}, '
-                             f'but got: {depth_list[-1]}')
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
-        self.depth_list = depth_list
-        self.mutable_depth = mutable_depth
+        self.mutable_attrs: Dict[str, Optional[BaseMutable]] = nn.ModuleDict()
 
     def forward(self, x: Tensor) -> Tensor:
-        if self.mutable_depth is None:
-            return self(x)
+        current_depth = self.get_dynamic_depth()
 
-        current_depth = self.get_current_choice(self.mutable_depth)
-        passed_module_nums = 0
-        for module in self.pure_modules():
-            passed_module_nums += 1
-            if passed_module_nums > current_depth:
+        for idx, module in enumerate(self):
+            if idx >= current_depth:
                 break
-
             x = module(x)
-
         return x
 
     @property
-    def pure_module_nums(self) -> int:
-        nums = 0
-        for _ in self.pure_modules():
-            nums += 1
+    def static_op_factory(self):
+        """Corresponding Pytorch OP."""
+        return Sequential
 
-        return nums
+    @classmethod
+    def convert_from(cls, module: Sequential):
+        """Convert a Sequential module to a DynamicSequential.
 
-    def pure_modules(self) -> Iterator[Module]:
-        for module in self._modules.values():
-            if isinstance(module, self.forward_ignored_module):
-                continue
-            yield module
+        Args:
+            module (:obj:`torch.nn.Sequential`): The original Sequential
+                module.
+        """
+        dynamic_seq = cls(**module._modules())
 
-    def to_static_op(self) -> Sequential:
-        self.check_if_mutables_fixed()
-
-        if self.mutable_depth is None:
-            fixed_depth = len(self)
-        else:
-            fixed_depth = self.get_current_choice(self.mutable_depth)
-
-        modules = []
-        passed_module_nums = 0
-        for module in self:
-            if isinstance(module, self.forward_ignored_module):
-                continue
-            else:
-                passed_module_nums += 1
-            if passed_module_nums > fixed_depth:
-                break
-
-            modules.append(module)
-
-        return Sequential(*modules)
+        return dynamic_seq

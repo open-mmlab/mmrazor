@@ -7,7 +7,7 @@ from mmcls.models.utils import make_divisible
 from mmcv.cnn import ConvModule
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.architectures.dynamic_op import DynamicSequential
+from mmrazor.models.architectures.dynamic_op.bricks import DynamicSequential
 from mmrazor.models.mutables import OneShotMutableChannel, OneShotMutableValue
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.ops import MBBlock
@@ -22,20 +22,20 @@ def _range_to_list(range_: List[int]) -> List[int]:
 
 
 def _mutate_conv_module(
-    conv_module: ConvModule,
-    derived_in_channels: Optional[BaseMutable] = None,
-    derived_out_channels: Optional[BaseMutable] = None,
-    kernel_size_derive_cfg: Optional[Tuple[BaseMutable,
-                                           Sequence[int]]] = None):
-    if derived_in_channels is not None:
-        conv_module.conv.mutate_in_channels(derived_in_channels)
-    if derived_out_channels is not None:
-        conv_module.conv.mutate_out_channels(derived_out_channels)
+        conv_module: ConvModule,
+        mutable_in_channels: Optional[BaseMutable] = None,
+        mutable_out_channels: Optional[BaseMutable] = None,
+        mutable_kernel_size: Optional[Tuple[BaseMutable,
+                                            Sequence[int]]] = None):
+    if mutable_in_channels is not None:
+        conv_module.conv.mutate_in_channels(mutable_in_channels)
+    if mutable_out_channels is not None:
+        conv_module.conv.mutate_out_channels(mutable_out_channels)
         if conv_module.with_norm:
-            conv_module.bn.mutate_num_features(derived_out_channels)
+            conv_module.bn.mutate_num_features(mutable_out_channels)
 
-    if kernel_size_derive_cfg is not None:
-        mutable_kernel_size, kernel_size_list = kernel_size_derive_cfg
+    if mutable_kernel_size is not None:
+        mutable_kernel_size, kernel_size_list = mutable_kernel_size
         if mutable_kernel_size is not None:
             conv_module.conv.mutate_kernel_size(
                 mutable_kernel_size.derive_same_mutable(), kernel_size_list)
@@ -234,8 +234,8 @@ class BigNASMobileNet(BaseBackbone):
                     last_mutable = last_mutable * 1
                 _mutate_conv_module(
                     layer,
-                    derived_in_channels=derive_in_channels,
-                    derived_out_channels=mutable_channel * 1)
+                    mutable_in_channels=derive_in_channels,
+                    mutable_out_channels=mutable_channel * 1)
                 last_mutable = mutable_channel
             else:
                 if mutable_depth is not None:
@@ -249,22 +249,22 @@ class BigNASMobileNet(BaseBackbone):
                     if mb_layer.with_expand_conv:
                         _mutate_conv_module(
                             mb_layer.expand_conv,
-                            derived_in_channels=last_mutable * 1,
-                            derived_out_channels=last_mutable * expand_ratio)
+                            mutable_in_channels=last_mutable * 1,
+                            mutable_out_channels=last_mutable * expand_ratio)
                     _mutate_conv_module(
                         mb_layer.depthwise_conv,
-                        derived_in_channels=last_mutable * expand_ratio,
-                        derived_out_channels=last_mutable * expand_ratio,
-                        kernel_size_derive_cfg=(mutable_kernel_size,
-                                                kernel_size_list))
+                        mutable_in_channels=last_mutable * expand_ratio,
+                        mutable_out_channels=last_mutable * expand_ratio,
+                        mutable_kernel_size=(mutable_kernel_size,
+                                             kernel_size_list))
                     if mb_layer.with_res_shortcut:
-                        derived_out_channels = last_mutable * 1
+                        mutable_out_channels = last_mutable * 1
                     else:
-                        derived_out_channels = mutable_channel * 1
+                        mutable_out_channels = mutable_channel * 1
                     _mutate_conv_module(
                         mb_layer.linear_conv,
-                        derived_in_channels=last_mutable * expand_ratio,
-                        derived_out_channels=derived_out_channels)
+                        mutable_in_channels=last_mutable * expand_ratio,
+                        mutable_out_channels=mutable_out_channels)
                     if not mb_layer.with_res_shortcut:
                         last_mutable = mutable_channel
 

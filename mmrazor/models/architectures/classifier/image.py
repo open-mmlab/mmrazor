@@ -4,7 +4,7 @@ from typing import Dict, Optional
 from mmcls.models import ImageClassifier
 from torch import Tensor
 
-from mmrazor.models.architectures.dynamic_op import DynamicInputResizer
+from mmrazor.models.architectures.dynamic_op.bricks import DynamicInputResizer
 from mmrazor.models.mutables import OneShotMutableValue
 from mmrazor.registry import MODELS
 
@@ -54,6 +54,6 @@ class SearchableImageClassifier(ImageClassifier):
         if not isinstance(mutable_shape, OneShotMutableValue):
             raise ValueError('`mutable_shape` should be instance of '
                              'OneShotMutableValue')
-        input_resizer.mutate_shape(mutable_shape)
+        input_resizer.register_mutable_attr('shape', mutable_shape)
 
         return input_resizer

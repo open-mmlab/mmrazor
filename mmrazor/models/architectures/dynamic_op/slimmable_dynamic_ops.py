@@ -1,11 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import List
+import copy
+from typing import Dict
 
 import torch.nn as nn
 
 from mmrazor.models.mutables.mutable_channel import MutableChannel
 from mmrazor.registry import MODELS
-from .base import MUTABLES_TYPE, DynamicOP
+from .base import DynamicOP
 
 
 class SwitchableBatchNorm2d(nn.Module, DynamicOP):
@@ -17,7 +18,6 @@ class SwitchableBatchNorm2d(nn.Module, DynamicOP):
     Compared with the naive training approach, it solves the problem of feature
     aggregation inconsistency between different switches by independently
     normalizing the feature mean and variance during testing.
-
     Args:
         module_name (str): Name of this `SwitchableBatchNorm2d`.
         num_features_cfg (Dict): Config related to `num_features`.
@@ -38,24 +38,18 @@ class SwitchableBatchNorm2d(nn.Module, DynamicOP):
             training and eval modes. Same as that in
             :obj:`torch.nn._BatchNorm`. Default: True
     """
-    accepted_mutable_keys = {'num_features'}
 
     def __init__(self,
-                 mutable_cfgs: MUTABLES_TYPE,
-                 candidate_choices: List[int],
+                 num_features_cfg: Dict,
                  eps: float = 1e-5,
                  momentum: float = 0.1,
                  affine: bool = True,
                  track_running_stats: bool = True):
-        super().__init__()
+        super(SwitchableBatchNorm2d, self).__init__()
 
-        mutable_cfgs = self.parse_mutables(mutable_cfgs)
-        num_features = mutable_cfgs['num_features']
-        if isinstance(num_features, dict):
-            num_features.update(dict(num_channels=max(candidate_choices)))
-            num_features = MODELS.build(num_features)
-        assert isinstance(num_features, MutableChannel)
-        self.mutable_num_features = num_features
+        num_features_cfg = copy.deepcopy(num_features_cfg)
+        candidate_choices = num_features_cfg.pop('candidate_choices')
+        num_features_cfg.update(dict(num_channels=max(candidate_choices)))
 
         bns = [
             nn.BatchNorm2d(num_features, eps, momentum, affine,
@@ -63,6 +57,8 @@ class SwitchableBatchNorm2d(nn.Module, DynamicOP):
             for num_features in candidate_choices
         ]
         self.bns = nn.ModuleList(bns)
+
+        self.mutable_num_features = MODELS.build(num_features_cfg)
 
     @property
     def mutable_in(self) -> MutableChannel:
@@ -77,12 +73,10 @@ class SwitchableBatchNorm2d(nn.Module, DynamicOP):
     def forward(self, input):
         """Forward computation according to the current switch of the slimmable
         networks."""
-        current_choice = self.mutable_num_features.current_choice
-        idx = self.mutable_num_features.choices.index(current_choice)
+        idx = self.mutable_num_features.current_choice
         return self.bns[idx](input)
 
     def to_static_op(self) -> nn.Module:
-        current_choice = self.mutable_num_features.current_choice
-        bn_idx = self.mutable_num_features.choices.index(current_choice)
+        bn_idx = self.mutable_num_features.current_choice
 
         return self.bns[bn_idx]

@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import abstractmethod
-from typing import Dict, List
+from typing import List
 
 import torch
 
@@ -88,7 +88,7 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE],
         """
         self.name = name
 
-    def fix_chosen(self, chosen: Dict) -> None:
+    def fix_chosen(self, chosen: CHOSEN_TYPE) -> None:
         """Fix mutable with subnet config. This operation would convert
         `unfixed` mode to `fixed` mode. The :attr:`is_fixed` will be set to
         True and only the selected operations can be retained.
@@ -103,9 +103,6 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE],
 
         self.is_fixed = True
 
-    def dump_chosen(self) -> Dict:
-        return dict(current_choice=self.current_choice)
-
     def __repr__(self):
         concat_mutable_name = [
             mutable.name for mutable in self.concat_parent_mutables
@@ -113,6 +110,5 @@ class MutableChannel(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE],
         repr_str = self.__class__.__name__
         repr_str += f'(name={self.name}, '
         repr_str += f'num_channels={self.num_channels}, '
-        repr_str += f'current_choice={self.current_choice}, '
         repr_str += f'concat_mutable_name={concat_mutable_name})'
         return repr_str

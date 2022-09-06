@@ -4,9 +4,9 @@ from typing import Dict, List, Optional, Union
 
 import mmengine.dist as dist
 import torch
-from mmengine import BaseDataElement
 from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper
+from mmengine.structures import BaseDataElement
 from torch import nn
 
 from mmrazor.models.distillers import ConfigurableDistiller
@@ -93,11 +93,11 @@ class BigNAS(BaseAlgorithm):
 
     def set_max_subnet(self) -> None:
         for mutator in self.mutators.values():
-            mutator.set_choices(mutator.max_choices)
+            mutator.set_max_choices()
 
     def set_min_subnet(self) -> None:
         for mutator in self.mutators.values():
-            mutator.set_choices(mutator.min_choices)
+            mutator.set_min_choices()
 
     @property
     def search_groups(self) -> Dict:
@@ -135,7 +135,8 @@ class BigNAS(BaseAlgorithm):
                 accumulative_counts=self.num_samples + 2)
             self._optim_wrapper_count_status_reinitialized = True
 
-        batch_inputs, data_samples = self.data_preprocessor(data, True)
+        batch_inputs, data_samples = self.data_preprocessor(data,
+                                                            True).values()
 
         total_losses = dict()
         self.set_max_subnet()
@@ -206,7 +207,8 @@ class BigNASDDP(MMDistributedDataParallel):
                 accumulative_counts=self.module.num_samples + 2)
             self._optim_wrapper_count_status_reinitialized = True
 
-        batch_inputs, data_samples = self.module.data_preprocessor(data, True)
+        batch_inputs, data_samples = self.module.data_preprocessor(
+            data, True).values()
 
         total_losses = dict()
         self.module.set_max_subnet()

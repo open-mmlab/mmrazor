@@ -11,7 +11,6 @@ from mmengine import is_tuple_of
 from mmengine.model import BaseModule
 from torch import Tensor, nn
 
-from mmrazor.models.architectures.dynamic_op import DynamicConv2d
 from mmrazor.registry import MODELS
 from .base import BaseOP
 
@@ -125,16 +124,12 @@ class ShortcutLayer(BaseModule):
             x = F.avg_pool2d(x, self.reduction, padding=padding)
 
         # HACK
-        if isinstance(self.conv, DynamicConv2d):
-            mutable_in_channels = self.conv.mutable_in_channels
-            mutable_out_channels = self.conv.mutable_out_channels
-            if mutable_out_channels is not None and \
-                    mutable_in_channels is not None:
-                if mutable_out_channels.current_mask.sum().item() != \
-                        mutable_in_channels.current_mask.sum().item():
-                    x = self.conv(x)
-        else:
-            if self.with_conv:
+        mutable_in_channels = self.conv.mutable_in_channels
+        mutable_out_channels = self.conv.mutable_out_channels
+        if mutable_out_channels is not None and \
+                mutable_in_channels is not None:
+            if mutable_out_channels.current_mask.sum().item() != \
+                    mutable_in_channels.current_mask.sum().item():
                 x = self.conv(x)
 
         return x

@@ -1,8 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Optional
+from typing import Dict, Optional
 
 import torch
-from torch.nn import Module
+import torch.nn as nn
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.ops import InputResizer
@@ -14,35 +14,35 @@ from .dynamic_mixins import DynamicResizeMixin
 # consider use data preprocessor
 @MODELS.register_module()
 class DynamicInputResizer(InputResizer, DynamicResizeMixin):
-    valid_interpolation_type = {
-        'nearest', 'linear', 'bilinear', 'bicubic', 'trilinear', 'area',
-        'nearest-exact'
-    }
-    accpeted_mutables = {'mutable_shape'}
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.mutable_shape: Optional[BaseMutable] = None
-
-    def mutate_shape(self, mutable_shape: BaseMutable) -> None:
-        self.mutable_shape = mutable_shape
+        self.mutable_attrs: Dict[str, Optional[BaseMutable]] = nn.ModuleDict()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if self.mutable_shape is not None:
-            self._size = self.mutable_shape.current_choice
+        self._size = self.get_dynamic_shape()
 
         return super().forward(x)
 
-    def to_static_op(self) -> Module:
-        self.check_if_mutables_fixed()
+    @property
+    def static_op_factory(self):
+        """Corresponding Pytorch OP."""
+        return InputResizer
 
-        size = None
-        if self.mutable_shape is not None:
-            size = self.get_current_choice(self.mutable_shape)
-        return InputResizer(
-            size=size,
-            interpolation_type=self._interpolation_type,
-            align_corners=self._align_corners,
-            scale_factor=self._scale_factor,
-            recompute_scale_factor=self._recompute_scale_factor)
+    @classmethod
+    def convert_from(cls, module: InputResizer):
+        """Convert a Sequential module to a DynamicSequential.
+
+        Args:
+            module (:obj:`torch.nn.Sequential`): The original Sequential
+                module.
+        """
+        dynamic_seq = cls(
+            size=module._size,
+            interpolation_type=module._interpolation_type,
+            align_corners=module._align_corners,
+            scale_factor=module._scale_factor,
+            recompute_scale_factor=module._recompute_scale_factor)
+
+        return dynamic_seq
