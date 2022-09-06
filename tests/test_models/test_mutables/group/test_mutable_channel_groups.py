@@ -63,8 +63,8 @@ class TestMutableChannelGroup(TestCase):
     def test_group_split(self):
         layer = nn.Conv2d(3, 16, 3)
         node = PruneNode('layer', layer)
-        channel1 = Channel(node, (8, 16), True)
-        channel2 = Channel(node, (0, 8), True)
+        channel1 = Channel(node.name, layer, (8, 16), node, True)
+        channel2 = Channel(node.name, layer, (0, 8), node, True)
         group = DefaultChannelGroup(8)
         group.add_ouptut_related(channel1)
         group.add_ouptut_related(channel2)

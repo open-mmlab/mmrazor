@@ -49,16 +49,15 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
         super().__init__(num_channels)
         BaseModule.__init__(self)
 
-    # basic property
+    @classmethod
+    def init_from_channel_group(cls, group: ChannelGroup, args: Dict):
+        args['num_channels'] = group.num_channels
+        mutable_group = cls(**args)
+        mutable_group.input_related = group.input_related
+        mutable_group.output_related = group.output_related
+        return mutable_group
 
-    @property
-    def name(self) -> str:
-        """str: name of the group"""
-        first_module = self.output_related[0] if len(
-            self.output_related) > 0 else self.input_related[0]
-        name = f'{first_module.name}_{first_module.index}_'
-        name += f'out_{len(self.output_related)}_in_{len(self.input_related)}'
-        return name
+    # basic property
 
     @property
     def is_prunable(self) -> bool:
@@ -68,7 +67,7 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
             has_dynamic_op = False
             all_channel_prunable = True
             for channel in channels:
-                if channel.node.is_prunable is False:
+                if channel.is_prunable is False:
                     all_channel_prunable = False
                     break
                 if isinstance(channel.module, DynamicChannelMixin):
@@ -113,12 +112,6 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
         """Randomly sample a valid choice and return."""
         raise NotImplementedError()
 
-    def config_template(self, with_info=False):
-        if with_info:
-            return {'info': self._info_dict}
-        else:
-            return {}
-
     # after pruning
 
     def fix_chosen(self, choice=None):
@@ -128,15 +121,22 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
 
     # tools
 
-    def _info_dict(self):
-        info = {
-            'num_channels': self.num_channels,
-            'choice': self.current_choice,
-            'prunable': self.is_prunable,
-            'input_layers': self.input_related,
-            'out_related': self.output_related
-        }
-        return info
+    def config_template(self,
+                        with_init_args=False,
+                        with_channels=False) -> Dict:
+        """Return the config template of this group. By default, the config
+        template only includes a key 'choice'.
+
+        Args:
+            with_init_args (bool): if the config includes args for
+                initialization.
+            with_channels (bool): if the config includes info about
+                channels. the config with info about channels can used to
+                parse channel groups without tracer.
+        """
+        config = super().config_template(with_init_args, with_channels)
+        config['choice'] = self.current_choice
+        return config
 
     def _get_int_choice(self, choice: Union[int, float]) -> int:
         """Convert ratio of channels to number of channels."""
@@ -165,11 +165,11 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
 
         for channel in self.input_related + self.output_related:
             if isinstance(channel.module, nn.Module):
-                module = get_module(model, channel.module_name)
+                module = get_module(model, channel.name)
                 if type(module) in dynamicop_map:
                     new_module = dynamicop_map[type(module)].convert_from(
                         module)
-                    replace_op(model, channel.module_name, new_module)
+                    replace_op(model, channel.name, new_module)
                     channel.module = new_module
                 else:
                     channel.module = module
