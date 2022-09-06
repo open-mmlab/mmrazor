@@ -31,22 +31,21 @@ class DCFF(BaseAlgorithm):
     def __init__(self,
                  mutator: VALID_MUTATOR_TYPE,
                  architecture: Union[BaseModel, Dict],
-                 channel_cfg_paths: VALID_CHANNEL_CFG_PATH_TYPE,
+                 channel_cfgs: Union[str, Dict],
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
 
-        if not isinstance(channel_cfg_paths, list):
-            channel_cfg_paths = [channel_cfg_paths]
-        self.num_subnet = len(channel_cfg_paths)
+        if isinstance(channel_cfgs, str):
+            channel_cfgs = fileio.load(channel_cfgs)
 
-        channel_cfgs = self._load_and_merge_channel_cfgs(channel_cfg_paths)
+        # channel_cfgs = self._load_and_merge_channel_cfgs(channel_cfg_paths)
         self.mutator = self._build_mutator(copy.copy(mutator), channel_cfgs)
         self.mutator.prepare_from_supernet(self.architecture)
+        self.num_subnet = len(self.mutator.subnets)
 
         # print(channel_cfgs)
-        # print(self.architecture)
-
+        print(self.architecture)
 
         """
         # must after `prepare_from_supernet`

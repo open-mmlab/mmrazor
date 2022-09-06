@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from tokenize import group
 from typing import List, Union
 
 import torch.nn as nn
@@ -33,6 +34,7 @@ class DCFFChannelGroup(OneShotChannelGroup):
         self._register_mask(self.mutable_channel)
 
     def alter_candidates_after_init(self, candidates):
+        print("group:",self,",candidates:",candidates)
         self.candidate_choices = candidates
         self._prepare_choices()  # TODO refactor
         for channel in self.input_related:

@@ -22,6 +22,7 @@ class DCFFChannelMutator(BaseChannelMutator[DCFFChannelGroup]):
                                              type='DCFFChannelGroup'),
                  **kwargs) -> None:
         super().__init__(channl_group_cfg, **kwargs)
+        self._channel_cfgs = channel_cfgs
         self._subnets = self._prepare_subnets(channel_cfgs)
 
     def set_choices(self, config):
@@ -38,24 +39,24 @@ class DCFFChannelMutator(BaseChannelMutator[DCFFChannelGroup]):
         self._reset_group_candidates()
 
     def _reset_group_candidates(self):
-        group_subnets = [
-            self._convert_subnet(subnet) for subnet in self.subnets
-        ]
-        for key in group_subnets[0]:
-            candidates = self._candidates_of(group_subnets, key)
+        print("_name2group:",self._name2group)
+        print("_channel_cfgs:",self._channel_cfgs)
+        for key in self._channel_cfgs:
             group: DCFFChannelGroup = self._name2group[key]
-            group.alter_candidates_after_init(candidates)
+            group.alter_candidates_after_init(
+                self._channel_cfgs[key]['candidates'])
 
     def _prepare_subnets(self, channel_cfg: Dict[str, Dict[str, List[int]]]):
         subnets: List[Dict[str, int]] = []
+        num_subnets = 0
         for key in channel_cfg:
-            num_subnets = len(channel_cfg[key]['current_choice'])
+            num_subnets = len(channel_cfg[key]['candidates'])
             break
         for _ in range(num_subnets):
             subnets.append({})
         for key in channel_cfg:
-            assert num_subnets == len(channel_cfg[key]['current_choice'])
-            for i, value in enumerate(channel_cfg[key]['current_choice']):
+            assert num_subnets == len(channel_cfg[key]['candidates'])
+            for i, value in enumerate(channel_cfg[key]['candidates']):
                 subnets[i][key] = value
 
         return subnets
