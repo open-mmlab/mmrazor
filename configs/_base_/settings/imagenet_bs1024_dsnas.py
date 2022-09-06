@@ -57,7 +57,7 @@ test_evaluator = val_evaluator
 # leanring policy
 param_scheduler = dict(
     architecture=[
-        dict(type='mmcls.LinearLR', end=5, by_epoch=True, start_factor=0.0001),
+        dict(type='mmcls.LinearLR', end=5, by_epoch=True, start_factor=0.2),
         dict(
             type='mmcls.CosineAnnealingLR',
             T_max=240,
