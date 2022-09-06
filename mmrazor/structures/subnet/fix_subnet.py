@@ -13,11 +13,12 @@ def _dynamic_to_static(model: nn.Module) -> None:
     from mmrazor.models.architectures.dynamic_op.bricks import DynamicMixin
 
     def traverse_children(module: nn.Module) -> None:
-        # TODO
-        # dynamicop must have no dynamic child
         for name, child in module.named_children():
             if isinstance(child, DynamicMixin):
                 setattr(module, name, child.to_static_op())
+                if hasattr(child.to_static_op(), '_modules') and len(
+                        child.to_static_op()._modules.items()) > 0:
+                    traverse_children(module)
             else:
                 traverse_children(child)
 
@@ -77,6 +78,7 @@ def export_fix_subnet(model: nn.Module,
         print_log(
             'Trying to dump information of all derived mutables, '
             'this might harm readability of the exported configurations.',
+            logger='silent',
             level=logging.WARNING)
 
     # Avoid circular import

@@ -54,7 +54,8 @@ class TransformerEncoderLayer(BaseBackbone):
         self.num_heads = num_heads
         self.mlp_ratio = mlp_ratio
 
-        self.norm1_name, norm1 = build_norm_layer(norm_cfg, self.embed_dims)
+        self.norm1_name, norm1 = build_norm_layer(
+            norm_cfg, self.embed_dims, postfix=1)
         self.add_module(self.norm1_name, norm1)
         self.attn = DynamicMultiheadAttention(
             embed_dims=embed_dims,
@@ -63,7 +64,8 @@ class TransformerEncoderLayer(BaseBackbone):
             proj_drop=drop_rate,
             qkv_bias=qkv_bias)
 
-        self.norm2_name, norm2 = build_norm_layer(norm_cfg, self.embed_dims)
+        self.norm2_name, norm2 = build_norm_layer(
+            norm_cfg, self.embed_dims, postfix=2)
         self.add_module(self.norm2_name, norm2)
 
         # derived mutable
@@ -299,7 +301,7 @@ class AutoformerBackbone(BaseBackbone):
             self.norm1.register_mutable_attr(
                 'num_features', self.last_mutable.derive_same_mutable())
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor):
         """Forward of Autoformer."""
         B = x.shape[0]
         x = self.patch_embed(x)
@@ -319,8 +321,7 @@ class AutoformerBackbone(BaseBackbone):
         x = F.dropout(x, p=self.dropout)
 
         # dynamic depth
-        for block in self.blocks.pure_modules():
-            x = block(x)
+        x = self.blocks(x)
 
         if self.final_norm:
             x = self.norm1(x)

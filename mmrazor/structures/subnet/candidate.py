@@ -41,6 +41,11 @@ class Candidates(UserList):
     @property
     def scores(self) -> List[float]:
         """The scores of candidates."""
+        return [item[2] for item in self.data]
+
+    @property
+    def resources(self) -> List[float]:
+        """The resources of candidates."""
         return [item[1] for item in self.data]
 
     @property
@@ -88,4 +93,8 @@ class Candidates(UserList):
 
     def set_score(self, i: int, score: float) -> None:
         """Set score to the specified subnet by index."""
-        self.data[i] = (self.data[i][0], float(score))
+        self.data[i] = (self.data[i][0], self.data[i][1], float(score))
+
+    def set_resources(self, i: int, resources: float) -> None:
+        """Set resources to the specified subnet by index."""
+        self.data[i] = (self.data[i][0], float(resources))
