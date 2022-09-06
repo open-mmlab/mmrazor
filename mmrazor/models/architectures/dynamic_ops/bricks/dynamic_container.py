@@ -54,3 +54,7 @@ class DynamicSequential(Sequential, DynamicSequentialMixin):
         dynamic_seq = cls(**module._modules())
 
         return dynamic_seq
+
+    def __len__(self):
+        # subtract mutable_attrs
+        return super().__len__() - 1

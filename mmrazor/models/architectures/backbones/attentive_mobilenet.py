@@ -135,13 +135,7 @@ class AttentiveMobileNet(BaseBackbone):
                  norm_eval=False,
                  zero_init_residual=True,
                  with_cp=False,
-                 init_cfg=[
-                     dict(type='Kaiming', layer=['Conv2d']),
-                     dict(
-                         type='Constant',
-                         val=1,
-                         layer=['_BatchNorm', 'GroupNorm'])
-                 ]):
+                 init_cfg=None):
         super().__init__(init_cfg)
         self.widen_factor = widen_factor
         self.out_indices = out_indices
