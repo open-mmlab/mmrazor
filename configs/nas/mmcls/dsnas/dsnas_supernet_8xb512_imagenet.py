@@ -46,4 +46,4 @@ optim_wrapper = dict(
         optimizer=dict(
             type='Adam', lr=0.001, betas=(0.5, 0.999), weight_decay=0.0)))
 
-randomness = dict(seed=22, diff_rank_seed=False)
+randomness = dict(seed=22, diff_rank_seed=True)
