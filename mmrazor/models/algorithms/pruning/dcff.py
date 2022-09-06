@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 import torch
-from mmengine import BaseDataElement, fileio
-from mmengine.model import BaseModel, MMDistributedDataParallel
+from mmengine import fileio
+from mmengine.model import BaseModel
 from mmengine.optim import OptimWrapper
 from torch import nn
 

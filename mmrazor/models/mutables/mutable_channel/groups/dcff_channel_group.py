@@ -3,7 +3,7 @@ from typing import List, Union
 
 import torch.nn as nn
 
-from mmrazor.models.architectures.dynamic_op.bricks import (DynamicBatchNorm2d,
+from mmrazor.models.architectures.dynamic_ops.bricks import (DynamicBatchNorm2d,
                                                             DynamicLinear,
                                                             FuseConv2d,
                                                             DynamicConv2d,
@@ -22,29 +22,28 @@ class DCFFChannelGroup(OneShotChannelGroup):
                  candidate_mode: str = 'number') -> None:
         super().__init__(num_channels, candidate_choices, candidate_mode)
 
-    @classmethod
-    def prepare_model(cls, model: nn.Module):
-        cls._replace_with_dynamic_ops(
+    def prepare_for_pruning(self, model: nn.Module):
+        self._replace_with_dynamic_ops(
             model, {
                 nn.Conv2d: FuseConv2d,
                 nn.BatchNorm2d: SwitchableBatchNorm2d,
                 nn.Linear: DynamicLinear
             })
-
-        # register MutableMaskContainer
-        cls._register_mask_container(model, MutableChannelContainer)
-
-    def prepare_for_pruning(self):
-        super().prepare_for_pruning()
+        self._register_mask_container(model, MutableChannelContainer)
+        self._register_mask(self.mutable_channel)
 
     def alter_candidates_after_init(self, candidates):
         self.candidate_choices = candidates
         self._prepare_choices()  # TODO refactor
-        for channel in self.output_related:
-            print("every channel output related", channel, candidates)
+        for channel in self.input_related:
             if isinstance(channel.module, SwitchableBatchNorm2d) and \
                     len(channel.module.candidate_bn) == 0:
                 channel.module.init_candidates(candidates)
-            if isinstance(channel.module, FuseConv2d) and \
+            if isinstance(channel.module, FuseConv2d):
+                channel.module.change_mutable_attrs_after_init('in_channels', candidates)
+        for channel in self.output_related:
+            if isinstance(channel.module, SwitchableBatchNorm2d) and \
                     len(channel.module.candidate_bn) == 0:
                 channel.module.init_candidates(candidates)
+            if isinstance(channel.module, FuseConv2d):
+                channel.module.change_mutable_attrs_after_init('out_channels', candidates)

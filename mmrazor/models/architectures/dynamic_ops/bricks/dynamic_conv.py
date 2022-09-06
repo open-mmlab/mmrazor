@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Callable, Dict
+from xmlrpc.client import Boolean
 
 import torch
 import torch.nn as nn
@@ -199,7 +200,8 @@ class FuseConv2d(nn.Conv2d, FuseConvMixin):
         # https://pytorch.org/docs/stable/_modules/torch/nn/modules/conv.html#Conv2d
         assert self.padding_mode == 'zeros'
         self.mutable_attrs: Dict[str, BaseMutable] = nn.ModuleDict()
-        self.layeri_softmaxp = nn.parameter.Parameter(torch.zeros(self.out_channels, self.out_channels, requires_grad=True))
+        # self.layeri_softmaxp = nn.parameter.Parameter(torch.zeros(self.out_channels, self.out_channels, requires_grad=True))
+        self.mutable_attrs_modified: Dict[str, Boolean] = {}
 
     @classmethod
     def convert_from(cls, module: nn.Conv2d) -> 'FuseConv2d':

@@ -32,16 +32,9 @@ def parse_conv(tracer, grad_fn, module2name, param2module, cur_path,
         >>> # module
     """
     leaf_grad_fn = grad_fn.next_functions[1][0]
-    # print(leaf_grad_fn,leaf_grad_fn.next_functions)
     while not _is_leaf_grad_fn(leaf_grad_fn):
-        # REQUIRE REVIEW
-        print("before:", leaf_grad_fn, leaf_grad_fn.next_functions)
-        # if(leaf_grad_fn.next_functions[0][0] is None):
-        #     return
         leaf_grad_fn = leaf_grad_fn.next_functions[0][0]
-    print("leaf:",leaf_grad_fn, leaf_grad_fn.next_functions)
     variable = leaf_grad_fn.variable
-    print(variable.shape)
     param_id = id(variable)
     module = param2module[param_id]
     name = module2name[module]
