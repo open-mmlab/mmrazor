@@ -42,6 +42,8 @@ optim_wrapper = dict(
     architecture=dict(
         optimizer=dict(type='SGD', lr=0.5, momentum=0.9, weight_decay=4e-5),
         paramwise_cfg=paramwise_cfg),
-    mutator=dict(optimizer=dict(type='Adam', lr=0.001, weight_decay=0.0)))
+    mutator=dict(
+        optimizer=dict(
+            type='Adam', lr=0.001, betas=(0.5, 0.999), weight_decay=0.0)))
 
 randomness = dict(seed=22, diff_rank_seed=False)
