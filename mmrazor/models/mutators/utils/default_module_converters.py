@@ -4,10 +4,10 @@ from typing import Callable, Dict
 from torch import nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from ...architectures.dynamic_op.bricks import (DynamicBatchNorm1d,
-                                                DynamicBatchNorm2d,
-                                                DynamicBatchNorm3d,
-                                                DynamicConv2d, DynamicLinear)
+from ...architectures.dynamic_ops.bricks import (DynamicBatchNorm1d,
+                                                 DynamicBatchNorm2d,
+                                                 DynamicBatchNorm3d,
+                                                 DynamicConv2d, DynamicLinear)
 
 
 def dynamic_conv2d_converter(module: nn.Conv2d) -> DynamicConv2d:

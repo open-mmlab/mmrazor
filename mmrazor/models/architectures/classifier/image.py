@@ -4,7 +4,7 @@ from typing import Dict, Optional
 from mmcls.models import ImageClassifier
 from torch import Tensor
 
-from mmrazor.models.architectures.dynamic_op.bricks import DynamicInputResizer
+from mmrazor.models.architectures.dynamic_ops.bricks import DynamicInputResizer
 from mmrazor.models.mutables import OneShotMutableValue
 from mmrazor.registry import MODELS
 

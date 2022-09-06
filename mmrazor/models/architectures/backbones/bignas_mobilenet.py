@@ -7,7 +7,7 @@ from mmcls.models.utils import make_divisible
 from mmcv.cnn import ConvModule
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.architectures.dynamic_op.bricks import DynamicSequential
+from mmrazor.models.architectures.dynamic_ops.bricks import DynamicSequential
 from mmrazor.models.mutables import OneShotMutableChannel, OneShotMutableValue
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.ops import MBBlock

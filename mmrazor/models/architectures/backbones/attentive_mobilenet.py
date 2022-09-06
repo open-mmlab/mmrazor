@@ -10,10 +10,11 @@ from mmengine.logging import MMLogger
 from mmengine.model import Sequential, constant_init
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.architectures.dynamic_op.bricks import DynamicSequential
+from mmrazor.models.architectures.dynamic_ops.bricks import DynamicSequential
+from mmrazor.models.architectures.ops.gml_mobilenet_series import (GMLMBBlock,
+                                                                   GMLSELayer)
 from mmrazor.models.mutables import OneShotMutableChannel, OneShotMutableValue
 from mmrazor.models.mutables.base_mutable import BaseMutable
-from mmrazor.models.ops.gml_mobilenet_series import GMLMBBlock, GMLSELayer
 from mmrazor.registry import MODELS
 
 logger = MMLogger.get_current_instance()
