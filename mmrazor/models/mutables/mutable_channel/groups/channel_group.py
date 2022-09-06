@@ -30,10 +30,26 @@ from ..base_mutable_channel import BaseMutableChannel
 class PruneNode(ModuleNode):
     """Node class for pruning."""
 
+    # init
+
     def __init__(self, name: str, obj: Module, module_name='') -> None:
+        """
+        Args:
+            name (str): node name.
+            obj (Module): Module
+            module_name: the name of the module in the model.
+        """
         super().__init__(name, obj, module_name=module_name)
         self.input_related_groups: IndexDict[ChannelGroup] = IndexDict()
         self.output_related_groups: IndexDict[ChannelGroup] = IndexDict()
+
+    @classmethod
+    def copy_from(cls, node):
+        """Copy from a ModuleNode."""
+        if isinstance(node, ModuleNode):
+            return cls(node.name, node.val, node.module_name)
+        else:
+            raise NotImplementedError()
 
     # groups operation
 
@@ -73,7 +89,7 @@ class PruneNode(ModuleNode):
             groups.append(node.output_related_groups)
         return groups
 
-    # channel
+    # channel properties
 
     @property
     def act_in_channels(self) -> int:
@@ -127,25 +143,20 @@ class PruneNode(ModuleNode):
 
     @property
     def is_parsed(self):
+        """If this node have been parsed."""
         return len(self.input_related_groups) > 0 or len(
             self.output_related_groups) > 0
-
-    # others
-    def __repr__(self) -> str:
-        return (f'{self.name}_{self.act_in_channels}/{self.in_channels}'
-                f'_{self.act_out_channels}/{self.out_channels}')
 
     @property
     def is_prunable(self) -> bool:
         """Bool: if the node prunable"""
         return self.basic_type not in ['gwconv2d']
 
-    @classmethod
-    def copy_from(cls, node):
-        if isinstance(node, ModuleNode):
-            return cls(node.name, node.val, node.module_name)
-        else:
-            raise NotImplementedError()
+    # others
+
+    def __repr__(self) -> str:
+        return (f'{self.name}_{self.act_in_channels}/{self.in_channels}'
+                f'_{self.act_out_channels}/{self.out_channels}')
 
 
 PRUNENODE = TypeVar('PRUNENODE', bound=PruneNode)
@@ -154,12 +165,20 @@ PRUNENODE = TypeVar('PRUNENODE', bound=PruneNode)
 class PruneGraph(ModuleGraph[PRUNENODE]):
     """Graph class for pruning."""
 
-    def __init__(self) -> None:
-        super().__init__()
+    # init
+
+    @classmethod
+    def copy_from(cls, graph, node_converter=PruneNode.copy_from):
+        """Copy from a module graph."""
+        assert isinstance(graph, ModuleGraph)
+        graph = super().copy_from(graph, node_converter)
+        graph._merge_same_module()
+        return graph
 
     # groups_operation
+
     def colloct_groups(self) -> List['ChannelGroup']:
-        """Set['ChannelGroup']: collect all ChannelGroups in the graph"""
+        """List['ChannelGroup']: collect all ChannelGroups in the graph."""
         groups = []
         for node in self.topo_traverse():
             for group in node.input_related_groups.values():
@@ -170,13 +189,11 @@ class PruneGraph(ModuleGraph[PRUNENODE]):
                     groups.append(group)
         return groups
 
-    @classmethod
-    def copy_from(cls, graph, node_converter=PruneNode.copy_from):
-        graph = super().copy_from(graph, node_converter)
-        graph.merge_same_module()
-        return graph
+    # private methods
 
-    def merge_same_module(self):
+    def _merge_same_module(self):
+        """Let all nodes that refer to the same module use the same
+        input_related_groups and output_related_groups."""
         module2node: Dict[Any, List[PruneNode]] = dict()
         for node in self:
             if isinstance(node.val, Module):
@@ -198,6 +215,8 @@ class PruneGraph(ModuleGraph[PRUNENODE]):
 
 class Channel:
     """Channel records information about channels for pruning."""
+
+    # init
 
     def __init__(self,
                  name,
@@ -245,7 +264,7 @@ class Channel:
             out_related=is_output,
             expand_ratio=expand_ratio)
 
-    # config
+    # config template
     def config_template(self):
         """Generate a config template which can be used to initialize a Channel
         by cls.init_using_cfg(**kwargs)"""
@@ -257,6 +276,8 @@ class Channel:
             'is_output_related': self.output_related
         }
 
+    # basic properties
+
     @property
     def num_channels(self) -> int:
         """Int: number of channels in the Channels"""
@@ -264,14 +285,16 @@ class Channel:
 
     @property
     def is_prunable(self) -> bool:
+        """If the channel is prunable."""
         if isinstance(self.module, nn.Conv2d):
+            # group-wise conv
             if self.module.groups != 1 and not (self.module.groups ==
                                                 self.module.in_channels ==
                                                 self.module.out_channels):
                 return False
         return True
 
-    # group related operations
+    # node operations
 
     def slice(self, start: int, end: int) -> 'Channel':
         """Channel: a new Channel who manage a slice of the current Channel."""
@@ -327,6 +350,21 @@ class ChannelGroup:
                     Channel.init_using_cfg(model, channel_config))
         return group
 
+    @classmethod
+    def parse_channel_groups(cls,
+                             graph: ModuleGraph,
+                             group_args={}) -> List['ChannelGroup']:
+        """Parse a module-graph and get ChannelGroups."""
+        group_graph = PruneGraph.copy_from(graph, PruneNode.copy_from)
+
+        cfg = dict(type=cls.__name__, **group_args)
+        groups = Graph2ChannelGroups(group_graph, cfg).groups
+        for group in groups:
+            group._model = graph._model
+        return groups
+
+    # basic property
+
     @property
     def name(self) -> str:
         """str: name of the group"""
@@ -335,6 +373,18 @@ class ChannelGroup:
         name = f'{first_module.name}_{first_module.index}_'
         name += f'out_{len(self.output_related)}_in_{len(self.input_related)}'
         return name
+
+    # config template
+
+    def config_template(self, with_init_args=False, with_channels=False):
+        """Generate a config template which can be used to initialize a
+        ChannelGroup by cls.init_using_cfg(**kwargs)"""
+        config = {}
+        if with_init_args:
+            config['init_args'] = {'num_channels': self.num_channels}
+        if with_channels:
+            config['channels'] = self._channel_dict()
+        return config
 
     # node operations
 
@@ -414,43 +464,7 @@ class ChannelGroup:
             group.add_ouptut_related(module.slice(start, end))
         return group
 
-    # init
-
-    @classmethod
-    def parse_channel_groups(cls,
-                             graph: ModuleGraph,
-                             group_args={}) -> List['ChannelGroup']:
-        """Parse a module-graph and get ChannelGroups."""
-        group_graph = PruneGraph.copy_from(graph, PruneNode.copy_from)
-
-        cfg = dict(type=cls.__name__, **group_args)
-        groups = Graph2ChannelGroups(group_graph, cfg).groups
-        for group in groups:
-            group._model = graph._model
-        return groups
-
-    # config
-    def config_template(self, with_init_args=False, with_channels=False):
-        """Generate a config template which can be used to initialize a
-        ChannelGroup by cls.init_using_cfg(**kwargs)"""
-        config = {}
-        if with_init_args:
-            config['init_args'] = {'num_channels': self.num_channels}
-        if with_channels:
-            config['channels'] = self._channel_dict()
-        return config
-
-    # tools
-    def _channel_dict(self):
-        info = {
-            'input_related':
-            [channel.config_template() for channel in self.input_related],
-            'output_related':
-            [channel.config_template() for channel in self.output_related],
-        }
-        return info
-
-    # to string
+    # others
 
     def __repr__(self):
 
@@ -476,6 +490,18 @@ class ChannelGroup:
         s += '  input_related\n'
         s += add_prefix(list_repr(self.input_related), ' ' * 4)
         return s
+
+    # private methods
+
+    def _channel_dict(self) -> Dict:
+        """Return channel config."""
+        info = {
+            'input_related':
+            [channel.config_template() for channel in self.input_related],
+            'output_related':
+            [channel.config_template() for channel in self.output_related],
+        }
+        return info
 
 
 # Group to ChannelGroup Converter
@@ -516,6 +542,7 @@ class Graph2ChannelGroups:
             self,
             node_groups_list=List[IndexDict[ChannelGroup]]
     ) -> List[ChannelGroup]:
+        """Union groups of nodes."""
         union_groups = []
         for index in copy.copy(node_groups_list[0]):
             groups = [node_groups[index] for node_groups in node_groups_list]
@@ -587,7 +614,7 @@ class Graph2ChannelGroups:
         for group in new_groups:
             group.apply_for_node()
 
-    # operations
+    # node operations
 
     def add_input_related(self,
                           group: ChannelGroup,
