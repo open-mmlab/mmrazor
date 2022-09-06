@@ -172,8 +172,7 @@ class Dsnas(BaseAlgorithm):
             supernet_losses, supernet_log_vars = self.parse_losses(
                 supernet_loss)
             optim_wrapper['architecture'].backward(
-                supernet_losses,
-                retain_graph=self.module.update_mutator(cur_epoch))
+                supernet_losses, retain_graph=self.update_mutator(cur_epoch))
             optim_wrapper['architecture'].step()
             optim_wrapper['architecture'].zero_grad()
             log_vars.update(add_prefix(supernet_log_vars, 'supernet'))
@@ -192,7 +191,7 @@ class Dsnas(BaseAlgorithm):
         else:
             # Enable automatic mixed precision training context.
             with optim_wrapper.optim_context(self):
-                pseudo_data = self.module.data_preprocessor(data, True)
+                pseudo_data = self.data_preprocessor(data, True)
                 batch_inputs = pseudo_data['inputs']
                 data_samples = pseudo_data['data_samples']
                 losses = self(batch_inputs, data_samples, mode='loss')
