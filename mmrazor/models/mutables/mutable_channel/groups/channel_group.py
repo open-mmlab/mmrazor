@@ -12,7 +12,7 @@ Graph2ChannelGroups is used to parse a PruneGraph and get ChannelGroups
 """
 
 import copy
-from typing import Any, Dict, List, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, List, Tuple, TypeVar, Union
 
 import torch.nn as nn
 from torch.nn import Module
@@ -351,14 +351,19 @@ class ChannelGroup:
         return group
 
     @classmethod
+    def init_from_channel_group(cls, group: 'ChannelGroup', args: Dict):
+        return group
+
+    @classmethod
     def parse_channel_groups(cls,
                              graph: ModuleGraph,
                              group_args={}) -> List['ChannelGroup']:
         """Parse a module-graph and get ChannelGroups."""
         group_graph = PruneGraph.copy_from(graph, PruneNode.copy_from)
-
-        cfg = dict(type=cls.__name__, **group_args)
-        groups = Graph2ChannelGroups(group_graph, cfg).groups
+        groups = Graph2ChannelGroups(group_graph).groups
+        groups = [
+            cls.init_from_channel_group(group, group_args) for group in groups
+        ]
         for group in groups:
             group._model = graph._model
         return groups
@@ -510,33 +515,20 @@ class ChannelGroup:
 class Graph2ChannelGroups:
     """A converter which converts a Graph to a list of ChannelGroups."""
 
-    def __init__(
-        self,
-        graph: PruneGraph,
-        channel_group_cfg: Union[Dict,
-                                 Type[ChannelGroup]] = ChannelGroup) -> None:
+    def __init__(self, graph: PruneGraph) -> None:
         """
         Args:
             graph (PruneGraph): input prune-graph
             channel_group_cfg: the config for generating groups
         """
         self.graph = graph
-        if isinstance(channel_group_cfg, dict):
-            self.channel_group_class = MODELS.module_dict[
-                channel_group_cfg['type']]
-            self.channel_group_args = copy.copy(channel_group_cfg)
-            self.channel_group_args.pop('type')
-        else:
-            self.channel_group_class = channel_group_cfg
-            self.channel_group_args = {}
         self.groups = self.parse(self.graph)
 
     # group operations
 
     def new_channel_group(self, num_channels) -> ChannelGroup:
         """Initialize a ChannelGroup."""
-        return self.channel_group_class(num_channels,
-                                        **self.channel_group_args)
+        return ChannelGroup(num_channels)
 
     def union_node_groups(
             self,
@@ -552,7 +544,7 @@ class Graph2ChannelGroups:
 
     def union_groups(self, groups: List[ChannelGroup]) -> ChannelGroup:
         """List[ChannelGroup]: union a list of ChannelGroups"""
-        group = self.channel_group_class.union(groups)
+        group = ChannelGroup.union(groups)
         # avoid removing multiple times
         groups_set = set(groups)
         for old_group in groups_set:
