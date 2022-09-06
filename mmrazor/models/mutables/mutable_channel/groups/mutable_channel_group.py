@@ -51,6 +51,7 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
 
     @classmethod
     def init_from_channel_group(cls, group: ChannelGroup, args: Dict):
+        """Initialize a MutalbeChannelGroup from a ChannelGroup."""
         args['num_channels'] = group.num_channels
         mutable_group = cls(**args)
         mutable_group.input_related = group.input_related
@@ -84,6 +85,25 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
             and input_all_prunable \
             and output_has_dynamic_op \
             and output_all_prunable
+
+    # config template
+
+    def config_template(self,
+                        with_init_args=False,
+                        with_channels=False) -> Dict:
+        """Return the config template of this group. By default, the config
+        template only includes a key 'choice'.
+
+        Args:
+            with_init_args (bool): if the config includes args for
+                initialization.
+            with_channels (bool): if the config includes info about
+                channels. the config with info about channels can used to
+                parse channel groups without tracer.
+        """
+        config = super().config_template(with_init_args, with_channels)
+        config['choice'] = self.current_choice
+        return config
 
     # before pruning: prepare a model
 
@@ -120,23 +140,6 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
             self.current_choice = choice
 
     # tools
-
-    def config_template(self,
-                        with_init_args=False,
-                        with_channels=False) -> Dict:
-        """Return the config template of this group. By default, the config
-        template only includes a key 'choice'.
-
-        Args:
-            with_init_args (bool): if the config includes args for
-                initialization.
-            with_channels (bool): if the config includes info about
-                channels. the config with info about channels can used to
-                parse channel groups without tracer.
-        """
-        config = super().config_template(with_init_args, with_channels)
-        config['choice'] = self.current_choice
-        return config
 
     def _get_int_choice(self, choice: Union[int, float]) -> int:
         """Convert ratio of channels to number of channels."""
@@ -175,7 +178,7 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
                     channel.module = module
 
     @staticmethod
-    def _register_mask_container(
+    def _register_channel_container(
             model: nn.Module, container_class: Type[MutableChannelContainer]):
         """register channel container for dynamic ops."""
         for module in model.modules():
@@ -205,7 +208,7 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
                     module.register_mutable_attr('out_channels',
                                                  container_class(out_channels))
 
-    def _register_mask(self, mutable_channel: BaseMutableChannel):
+    def _register_mutable_channel(self, mutable_channel: BaseMutableChannel):
 
         # register mutable_channel
         for channel in self.input_related + self.output_related:

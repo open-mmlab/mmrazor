@@ -36,8 +36,8 @@ class SequentialChannelGroup(MutableChannelGroup):
                 nn.BatchNorm2d: DynamicBatchNorm2d,
                 nn.Linear: DynamicLinear
             })
-        self._register_mask_container(model, MutableChannelContainer)
-        self._register_mask(self.mutable_channel)
+        self._register_channel_container(model, MutableChannelContainer)
+        self._register_mutable_channel(self.mutable_channel)
 
     # choice
 
