@@ -10,6 +10,6 @@ __all__ = [
     'SingleTeacherDistill', 'BaseAlgorithm', 'FpnTeacherDistill', 'SPOS',
     'SlimmableNetwork', 'SlimmableNetworkDDP', 'AutoSlim', 'AutoSlimDDP',
     'Darts', 'DartsDDP', 'SelfDistill', 'DataFreeDistillation',
-    'DAFLDataFreeDistillation', 'OverhaulFeatureDistillation',
-    'Dsnas', 'DsnasDDP'
+    'DAFLDataFreeDistillation', 'OverhaulFeatureDistillation', 'Dsnas',
+    'DsnasDDP'
 ]

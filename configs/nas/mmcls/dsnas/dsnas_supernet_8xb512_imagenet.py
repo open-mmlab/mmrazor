@@ -11,7 +11,10 @@ model = dict(
         type='ImageClassifier',
         data_preprocessor=_base_.data_preprocessor,
         backbone=_base_.nas_backbone,
-        neck=dict(type='GlobalAveragePooling'),
+        neck=dict(
+            type='mmrazor.GlobalAveragePoolingWithDropout',
+            kernel_size=7,
+            dropout=0.1),
         head=dict(
             type='LinearClsHead',
             num_classes=1000,

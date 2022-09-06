@@ -2,6 +2,7 @@ norm_cfg = dict(type='BN', eps=0.01)
 
 _STAGE_MUTABLE = dict(
     type='mmrazor.OneHotMutableOP',
+    fix_threshold=0.3,
     candidates=dict(
         shuffle_3x3=dict(
             type='ShuffleBlock', kernel_size=3, norm_cfg=norm_cfg),
