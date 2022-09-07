@@ -148,25 +148,27 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                                 f'{scores_before}')
 
         self.candidates.extend(self.top_k_candidates)
-        self.candidates.sort(key=lambda x: x[1], reverse=True)
+        self.candidates.sort(key=lambda x: x[2], reverse=True)
         self.top_k_candidates = Candidates(self.candidates[:self.top_k])
 
         scores_after = self.top_k_candidates.scores
         self.runner.logger.info(f'top k scores after update: '
                                 f'{scores_after}')
 
-        mutation_candidates = self.gen_mutation_candidates()
-        crossover_candidates = self.gen_crossover_candidates()
-        candidates = mutation_candidates + crossover_candidates
-        assert len(candidates) <= self.num_candidates, 'Total of mutation and \
+        self.mutation_candidates = self.gen_mutation_candidates()
+        self.crossover_candidates = self.gen_crossover_candidates()
+        self.mutation_candidates.extend(self.crossover_candidates)
+        assert len(self.mutation_candidates
+                   ) <= self.num_candidates, 'Total of mutation and \
             crossover should be no more than the number of candidates.'
 
-        self.candidates = Candidates(candidates)
+        self.candidates = self.mutation_candidates
         self._epoch += 1
 
     def sample_candidates(self) -> None:
         """Update candidate pool contains specified number of candicates."""
         candidates_resources = []
+        init_candidates = len(self.candidates)
         if self.runner.rank == 0:
             while len(self.candidates) < self.num_candidates:
                 flag = False
@@ -179,12 +181,12 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             self.candidates = Candidates([None] * self.num_candidates)
         # broadcast candidates to val with multi-GPUs.
         broadcast_object_list(self.candidates.data)
-
-        assert len(candidates_resources) == self.num_candidates
-        for i in range(self.num_candidates):
+        assert init_candidates + len(
+            candidates_resources) == self.num_candidates
+        for i in range(len(candidates_resources)):
             resources = candidates_resources[i][self.key_resource] \
                 if len(candidates_resources[i]) != 0 else 0.
-            self.candidates.set_resources(i, resources)
+            self.candidates.set_resources(i + init_candidates, resources)
 
     def update_candidates_scores(self) -> None:
         """Validate candicate one by one from the candicate pool, and update
@@ -195,15 +197,15 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             score = metrics[self.score_key] \
                 if len(metrics) != 0 else 0.
             self.candidates.set_score(i, score)
-
             self.runner.logger.info(
                 f'Epoch:[{self.runner.epoch}/{self.max_epochs}] '
                 f'Candidate:[{i + 1}/{self.num_candidates}] '
                 f'{self.key_resource}: {self.candidates.resources[i]} '
                 f'Score:{score}')
 
-    def gen_mutation_candidates(self) -> List:
+    def gen_mutation_candidates(self):
         """Generate specified number of mutation candicates."""
+        mutation_resources = []
         mutation_candidates: List = []
         max_mutate_iters = self.num_mutation * 10
         mutate_iter = 0
@@ -211,17 +213,26 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             mutate_iter += 1
             if mutate_iter > max_mutate_iters:
                 break
-
             mutation_candidate = self._mutation()
             flag = False
             flag, result = self._check_constraints(
                 random_subnet=mutation_candidate)
             if flag:
                 mutation_candidates.append(mutation_candidate)
+                mutation_resources.append(result)
+
+        mutation_candidates = Candidates(mutation_candidates)
+
+        for i in range(self.num_mutation):
+            resources = mutation_resources[i][self.key_resource] \
+                if len(mutation_resources[i]) != 0 else 0.
+            mutation_candidates.set_resources(i, resources)
+
         return mutation_candidates
 
-    def gen_crossover_candidates(self) -> List:
+    def gen_crossover_candidates(self):
         """Generate specofied number of crossover candicates."""
+        crossover_resources = []
         crossover_candidates: List = []
         crossover_iter = 0
         max_crossover_iters = self.num_crossover * 10
@@ -229,13 +240,20 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             crossover_iter += 1
             if crossover_iter > max_crossover_iters:
                 break
-
             crossover_candidate = self._crossover()
             flag = False
             flag, result = self._check_constraints(
                 random_subnet=crossover_candidate)
             if flag:
                 crossover_candidates.append(crossover_candidate)
+                crossover_resources.append(result)
+        crossover_candidates = Candidates(crossover_candidates)
+
+        for i in range(self.num_crossover):
+            resources = crossover_resources[i][self.key_resource] \
+                if len(crossover_resources[i]) != 0 else 0.
+            crossover_candidates.set_resources(i, resources)
+
         return crossover_candidates
 
     def _mutation(self) -> SupportRandomSubnet:
