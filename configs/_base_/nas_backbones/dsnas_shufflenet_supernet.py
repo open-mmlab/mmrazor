@@ -25,5 +25,4 @@ nas_backbone = dict(
     type='mmrazor.SearchableShuffleNetV2',
     widen_factor=1.0,
     arch_setting=arch_setting,
-    norm_cfg=norm_cfg,
-    adjust_channels=True)
+    norm_cfg=norm_cfg)
