@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 try:
-    from mmcls.datasets.transforms import PackClsInputs, to_tensor
+    from mmcls.datasets.transforms.formatting import PackClsInputs, to_tensor
     from mmcls.structures import ClsDataSample
 except ImportError:
     from mmrazor.utils import get_placeholder
@@ -68,6 +68,6 @@ class PackCRDClsInputs(PackClsInputs):
 
         img_meta = {k: results[k] for k in self.meta_keys if k in results}
         data_sample.set_metainfo(img_meta)
-        packed_results['data_sample'] = data_sample
+        packed_results['data_samples'] = data_sample
 
         return packed_results
