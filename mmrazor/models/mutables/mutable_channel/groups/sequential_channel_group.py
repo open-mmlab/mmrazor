@@ -16,8 +16,8 @@ from .mutable_channel_group import MutableChannelGroup
 class SequentialChannelGroup(MutableChannelGroup):
     """SimpleChannelGroup defines a simple pruning algorithhm.
 
-    The type of choice of SimpleChannelGroup is float. It indicates what ratio
-    of channels are remained from left to right.
+    The type of choice of SimpleChannelGroup is int. It indicates what ratio of
+    channels are remained from left to right.
     """
 
     def __init__(self, num_channels: int) -> None:
@@ -42,21 +42,20 @@ class SequentialChannelGroup(MutableChannelGroup):
     # choice
 
     @property
-    def current_choice(self) -> float:
+    def current_choice(self) -> int:
         """return current choice."""
-        return self.mutable_channel.activated_channels / self.num_channels
+        return self.mutable_channel.activated_channels
 
     @current_choice.setter
-    def current_choice(self, choice: float):
+    def current_choice(self, choice: int):
         """set choice."""
-        int_choice = self._get_int_choice(choice)
-        mask = self._generate_mask(int_choice)
+        assert 0 < choice <= self.num_channels
+        mask = self._generate_mask(choice)
         self.mutable_channel.current_choice = mask
 
-    def sample_choice(self) -> float:
+    def sample_choice(self) -> int:
         """Sample a choice in (0,1]"""
-        return max(1, int(
-            random.random() * self.num_channels)) / self.num_channels
+        return random.randint(1, self.num_channels)
 
     # private methods
 
@@ -66,7 +65,6 @@ class SequentialChannelGroup(MutableChannelGroup):
         mask[0:choice] = 1
         return mask
 
-    # interface
     def fix_chosen(self, choice=None):
         """fix chosen."""
         super().fix_chosen(choice)
