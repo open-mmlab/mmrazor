@@ -34,7 +34,7 @@ class TestMutableChannelGroup(TestCase):
             groups = DefaultChannelGroup.parse_channel_groups(graph)
             for group in groups:
                 group.prepare_for_pruning(model)
-            prunable_groups = [group for group in groups if group.is_prunable]
+            prunable_groups = [group for group in groups if group.is_mutable]
 
             for group in prunable_groups:
                 choice = group.sample_choice()

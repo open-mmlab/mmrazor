@@ -24,7 +24,7 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
     Basic Property
 
         name
-        is_prunable
+        is_mutable
 
     Important interfaces during different stages:
 
@@ -61,14 +61,14 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
     # basic property
 
     @property
-    def is_prunable(self) -> bool:
+    def is_mutable(self) -> bool:
         """If the channel-group is prunable."""
 
         def traverse(channels: List[Channel]):
             has_dynamic_op = False
             all_channel_prunable = True
             for channel in channels:
-                if channel.is_prunable is False:
+                if channel.is_mutable is False:
                     all_channel_prunable = False
                     break
                 if isinstance(channel.module, DynamicChannelMixin):

@@ -160,8 +160,8 @@ class PruneNode(ModuleNode):
             self.output_related_groups) > 0
 
     @property
-    def is_prunable(self) -> bool:
-        """Bool: if the node prunable"""
+    def is_mutable(self) -> bool:
+        """Bool: if the the channels of the node is mutable(prunable)"""
         return self.basic_type not in ['gwconv2d']
 
     # others
@@ -175,8 +175,7 @@ PRUNENODE = TypeVar('PRUNENODE', bound=PruneNode)
 
 
 class PruneGraph(ModuleGraph[PRUNENODE]):
-    """Graph class for pruning."""
-
+    """Subclass of ModuleGraph for pruning."""
     # init
 
     @classmethod
@@ -297,7 +296,7 @@ class Channel:
         return self.index[1] - self.index[0]
 
     @property
-    def is_prunable(self) -> bool:
+    def is_mutable(self) -> bool:
         """If the channel is prunable."""
         if isinstance(self.module, nn.Conv2d):
             # group-wise conv
@@ -514,7 +513,7 @@ class ChannelGroup:
 
         s = (f'{self.name}_'
              f'\t{len(self.output_related)},{len(self.input_related)}'
-             f'\t{self.is_prunable}\n')
+             f'\t{self.is_mutable}\n')
         s += '  output_related:\n'
         s += add_prefix(list_repr(self.output_related), ' ' * 4)
         s += '  input_related\n'
