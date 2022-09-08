@@ -10,6 +10,8 @@ from mmrazor.registry import MODELS
 from .dynamic_conv_mixins import (BigNasConvMixin, DynamicConvMixin,
                                   OFAConvMixin)
 
+GroupWiseConvWarned = False
+
 
 @MODELS.register_module()
 class DynamicConv2d(nn.Conv2d, DynamicConvMixin):
@@ -40,6 +42,17 @@ class DynamicConv2d(nn.Conv2d, DynamicConvMixin):
         # a group-wise conv will not be converted to dynamic conv
         if module.groups > 1 and not (module.groups == module.out_channels ==
                                       module.in_channels):
+            global GroupWiseConvWarned
+            if GroupWiseConvWarned is False:
+                from mmengine import MMLogger
+                logger = MMLogger.get_instance(
+                    'mmrazor', logger_name='mmrazor')
+                logger.warning(
+                    ('Group-wise convolutional layers are not supported to be'
+                     'pruned now, so they are not converted to new'
+                     'DynamicConvs.'))
+                GroupWiseConvWarned = True
+
             return module
         else:
             return cls(
