@@ -15,37 +15,23 @@ class CRDDataset:
 
     Suitable for image classification datasets like CIFAR. Following
     the sampling strategy in the `paper <https://arxiv.org/abs/1908.03195>`_,
-    in each epoch, an image may appear multiple times based on its
-    "repeat factor".
-    The repeat factor for an image is a function of the frequency the rarest
-    category labeled in that image. The "frequency of category c" in [0, 1]
-    is defined by the fraction of images in the training set (without repeats)
-    in which category c appears.
-    The dataset needs to instantiate :meth:`get_cat_ids` to support
-    ClassBalancedDataset.
-    The repeat factor is computed as followed.
-    1. For each category c, compute the fraction # of images
-       that contain it: :math:`f(c)`
-    2. For each category c, compute the category-level repeat factor:
-       :math:`r(c) = max(1, sqrt(t/f(c)))`
-    3. For each image I, compute the image-level repeat factor:
-       :math:`r(I) = max_{c in I} r(c)`
+    in each epoch, each data sample has contrast information.
+    Contrast information for an image is indices of negetive data samples.
     Note:
-        ``ClassBalancedDataset`` should not inherit from ``BaseDataset``
+        ``CRDDataset`` should not inherit from ``BaseDataset``
         since ``get_subset`` and ``get_subset_`` could  produce ambiguous
         meaning sub-dataset which conflicts with original dataset. If you
-        want to use a sub-dataset of ``ClassBalancedDataset``, you should set
+        want to use a sub-dataset of ``CRDDataset``, you should set
         ``indices`` arguments for wrapped dataset which inherit from
         ``BaseDataset``.
     Args:
         dataset (BaseDataset or dict): The dataset to be repeated.
-        oversample_thr (float): frequency threshold below which data is
-            repeated. For categories with ``f_c >= oversample_thr``, there is
-            no oversampling. For categories with ``f_c < oversample_thr``, the
-            degree of oversampling following the square-root inverse frequency
-            heuristic above.
+        neg_num (int): number of negetive data samples.
+        percent (float): sampling percentage.
         lazy_init (bool, optional): whether to load annotation during
             instantiation. Defaults to False
+        num_classes (int, optional): Number of classes. Defaults to None.
+        sample_mode (str, optional): Data sampling mode. Defaults to 'exact'.
     """
 
     def __init__(self,
@@ -77,13 +63,7 @@ class CRDDataset:
             self.full_init()
 
     def _parse_fullset_contrast_info(self) -> None:
-        """parse contrast information of the whole dataset.
-
-        Args:
-            neg_num (int): negative sample number.
-            sample_mode (str): sample mode.
-            percent (float): sampling percentage.
-        """
+        """parse contrast information of the whole dataset."""
         assert self.sample_mode in [
             'exact', 'random'
         ], ('`sample_mode` must in [`exact`, `random`], '
