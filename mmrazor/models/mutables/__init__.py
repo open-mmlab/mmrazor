@@ -4,7 +4,7 @@ from .derived_mutable import DerivedMutable
 from .mutable_channel import (BaseMutableChannel, MutableChannel,
                               MutableChannelContainer, OneShotMutableChannel,
                               SimpleMutableChannel, SlimmableMutableChannel)
-from .mutable_channel.groups import (MUTABLECHANNELGROUP, MutableChannelGroup,
+from .mutable_channel.groups import (ChannelGroupType, MutableChannelGroup,
                                      SequentialChannelGroup)
 from .mutable_module import (DiffChoiceRoute, DiffMutableModule, DiffMutableOP,
                              OneShotMutableModule, OneShotMutableOP)
@@ -14,7 +14,7 @@ __all__ = [
     'OneShotMutableOP', 'OneShotMutableModule', 'DiffMutableOP',
     'DiffChoiceRoute', 'DiffMutableModule', 'DerivedMutable', 'MutableValue',
     'OneShotMutableValue', 'SimpleMutableChannel', 'MutableChannelGroup',
-    'BaseMutableChannel', 'MutableChannelContainer', 'MUTABLECHANNELGROUP',
+    'BaseMutableChannel', 'MutableChannelContainer', 'ChannelGroupType',
     'BaseMutable', 'MutableChannel', 'SlimmableMutableChannel',
     'OneShotMutableChannel', 'SequentialChannelGroup'
 ]

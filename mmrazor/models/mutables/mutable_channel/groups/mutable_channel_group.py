@@ -245,4 +245,4 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
                     container.register_mutable(mutable_channel_, start, end)
 
 
-MUTABLECHANNELGROUP = TypeVar('MUTABLECHANNELGROUP', bound=MutableChannelGroup)
+ChannelGroupType = TypeVar('ChannelGroupType', bound=MutableChannelGroup)

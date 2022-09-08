@@ -13,7 +13,7 @@ MutableChannel are mainly used in DynamicOps. It helps DynamicOps to deal
 with mutable number of channels.
 """
 from .base_mutable_channel import BaseMutableChannel
-from .groups import (MUTABLECHANNELGROUP, MutableChannelGroup,
+from .groups import (ChannelGroupType, MutableChannelGroup,
                      SequentialChannelGroup)
 from .mutable_channel import MutableChannel
 from .mutable_channel_container import MutableChannelContainer
@@ -25,7 +25,7 @@ from .slimmable_mutable_channel import SlimmableMutableChannel
 __all__ = [
     'SimpleMutableChannel', 'MutableChannelGroup', 'OneShotChannelGroup',
     'BaseMutableChannel', 'MutableChannelContainer', 'StackMutableChannel',
-    'MUTABLECHANNELGROUP', 'MutableChannel', 'OneShotMutableChannel',
+    'ChannelGroupType', 'MutableChannel', 'OneShotMutableChannel',
     'SlimmableMutableChannel', 'SquentialMutableChannel',
     'SequentialChannelGroup'
 ]

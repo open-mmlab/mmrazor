@@ -13,9 +13,7 @@ MutableChannelGroup
 ----------------------------------------------------------other files
 Subclasses of MutableChannelGroup
 """
-from .mutable_channel_group import MUTABLECHANNELGROUP, MutableChannelGroup
+from .mutable_channel_group import ChannelGroupType, MutableChannelGroup
 from .sequential_channel_group import SequentialChannelGroup
 
-__all__ = [
-    'MutableChannelGroup', 'SequentialChannelGroup', 'MUTABLECHANNELGROUP'
-]
+__all__ = ['MutableChannelGroup', 'SequentialChannelGroup', 'ChannelGroupType']
