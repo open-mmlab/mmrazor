@@ -27,24 +27,35 @@ from ..base_mutable_channel import BaseMutableChannel
 
 
 class PruneNode(ModuleNode):
-    """Node class for pruning."""
+    """Node class for pruning.
+
+    Args:
+        name (str): node name.
+        obj (Module): module.
+        module_name (str, optional): the name of the module in the model.
+            Defaults to ''.
+    """
 
     # init
 
     def __init__(self, name: str, obj: Module, module_name='') -> None:
-        """
-        Args:
-            name (str): node name.
-            obj (Module): Module
-            module_name: the name of the module in the model.
-        """
         super().__init__(name, obj, module_name=module_name)
         self.input_related_groups: IndexDict[ChannelGroup] = IndexDict()
         self.output_related_groups: IndexDict[ChannelGroup] = IndexDict()
 
     @classmethod
     def copy_from(cls, node):
-        """Copy from a ModuleNode."""
+        """Copy from a ModuleNode.
+
+        Args:
+            node (ModuleNode): node to be copied.
+
+        Raises:
+            NotImplementedError: _description_
+
+        Returns:
+            PruneNode : Prunenode copied from the ModuleNode.
+        """
         if isinstance(node, ModuleNode):
             return cls(node.name, node.val, node.module_name)
         else:
@@ -56,7 +67,7 @@ class PruneNode(ModuleNode):
                      index: Union[None, Tuple[int, int]] = None,
                      out_related=True,
                      expand_ratio: int = 1) -> 'Channel':
-        """PruneChannels: get the channels in the node between a range
+        """Get the channels in the module of the node between a range.
 
         Args:
             index (Union[None, Tuple[int, int]]): the channel range for pruning
@@ -64,6 +75,8 @@ class PruneNode(ModuleNode):
             otherwise input channels.
             expand_ratio (Bool): expand_ratio of the number of channels
             compared with pruning mask.
+        Returns:
+            Channel
         """
         if index is None:
             index = (0, self.out_channels
@@ -174,7 +187,7 @@ class PruneGraph(ModuleGraph[PRUNENODE]):
         graph._merge_same_module()
         return graph
 
-    # groups_operation
+    # group operations
 
     def colloct_groups(self) -> List['ChannelGroup']:
         """List['ChannelGroup']: collect all ChannelGroups in the graph."""
@@ -264,6 +277,7 @@ class Channel:
             expand_ratio=expand_ratio)
 
     # config template
+
     def config_template(self):
         """Generate a config template which can be used to initialize a Channel
         by cls.init_using_cfg(**kwargs)"""
@@ -315,13 +329,17 @@ class Channel:
 
 
 class ChannelGroup:
-    """A manager for Channels."""
+    """A group of Channels.
+
+    A ChannelGroup has two list, input_related and output_related, to store
+    the Channels. These Channels are dependent on each other, and have to
+    have the same number of activated number of channels.
+
+    Args:
+        num_channels (int): the number of channels of Channel object.
+    """
 
     def __init__(self, num_channels: int) -> None:
-        """
-        Args:
-            num_channels (int): the dimension of Channels.
-        """
 
         self.num_channels = num_channels
         self.output_related: List[Channel] = []
@@ -350,6 +368,15 @@ class ChannelGroup:
 
     @classmethod
     def init_from_channel_group(cls, group: 'ChannelGroup', args: Dict):
+        """Initial a object of current class from a ChannelGroup object.
+
+        Args:
+            group (ChannelGroup)
+            args (Dict): arguments to initial the object of current class.
+
+        Returns:
+            Type(cls)
+        """
         return group
 
     @classmethod
@@ -511,14 +538,14 @@ class ChannelGroup:
 
 
 class Graph2ChannelGroups:
-    """A converter which converts a Graph to a list of ChannelGroups."""
+    """Graph2ChannelGroups parses a PruneGraph and return ChannelGroups.
+
+    Args:
+        graph (PruneGraph): input prune-graph.
+    """
 
     def __init__(self, graph: PruneGraph) -> None:
-        """
-        Args:
-            graph (PruneGraph): input prune-graph
-            channel_group_cfg: the config for generating groups
-        """
+
         self.graph = graph
         self.groups = self.parse(self.graph)
 

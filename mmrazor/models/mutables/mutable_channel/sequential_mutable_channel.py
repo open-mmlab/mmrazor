@@ -12,9 +12,13 @@ class SquentialMutableChannel(BaseMutableChannel):
 
     A choice of SquentialMutableChannel is an integer, which indicates how many
     channel are activated from left to right.
+
+    Args:
+        num_channels (int): number of channels.
     """
 
     def __init__(self, num_channels: int, **kwargs):
+
         super().__init__(num_channels, **kwargs)
         self.mask = torch.ones([self.num_channels]).bool()
 
