@@ -5,10 +5,17 @@ VT = TypeVar('VT')  # Value type
 
 
 class IndexDict(OrderedDict[Tuple[int, int], VT]):
-    """IndexDict inherents from OrderedDict[Tuple[int, int], VT].
+    """IndexDict inherents from OrderedDict[Tuple[int, int], VT]. Each
+    IndexDict object is a OrderDict object which using index(Tuple[int,int]) as
+    key and Any as value.
 
-    The type of the key is a Tuple[a: int,b: int]. It indicates a index range
-    [a,b). IndexDict can sort index and checkout if indexes overlap
+    The key type is Tuple[a: int,b: int]. It indicates a range in
+    the [a,b).
+
+    IndexDict has three features:
+    1. ensure a key always is a index(Tuple[int,int]).
+    1. ensure the the indexes are sorted by ascending order.
+    2. ensure there is no overlap among indexes.
     """
 
     def __setitem__(self, __k: Tuple[int, int], __v):
