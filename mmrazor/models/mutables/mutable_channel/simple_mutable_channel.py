@@ -11,9 +11,13 @@ from .base_mutable_channel import BaseMutableChannel
 @MODELS.register_module()
 class SimpleMutableChannel(BaseMutableChannel):
     """SimpleMutableChannel is a simple BaseMutableChannel, it directly take a
-    mask as a choice."""
+    mask as a choice.
 
-    def __init__(self, num_channels, **kwargs) -> None:
+    Args:
+        num_channels (int): number of channels.
+    """
+
+    def __init__(self, num_channels: int, **kwargs) -> None:
         super().__init__(num_channels, **kwargs)
         self.num_channels = num_channels
         self.mask = torch.ones(num_channels).bool()

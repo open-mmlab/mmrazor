@@ -20,9 +20,13 @@ class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
     |mutable_out_channel(BaseMutableChannel)|
     |---------------------------------------|
 
-    Important interfaces:
-        current_choice: used to get/set mask.
-        current_mask: get mask(used in DynamicOps to get mask).
+    All subclasses should implement the following APIs:
+
+    - ``current_choice``
+    - ``current_mask``
+
+    Args:
+        num_channels (int): number(dimension) of channels(mask).
     """
 
     def __init__(self, num_channels: int, **kwargs):

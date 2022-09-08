@@ -1,17 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-r"""This module defines MutableChannels.
-
-----------------------------------------------------------base_mutable_channel.py
-BaseMutableChannel
-|                            \
-----------------------------------------------------------mutable_channel_container.py
-MutableChannelContainer        \
-----------------------------------------------------------other files
-                                 \   other MutableChannels
-
-MutableChannel are mainly used in DynamicOps. It helps DynamicOps to deal
-with mutable number of channels.
-"""
 from .base_mutable_channel import BaseMutableChannel
 from .groups import (ChannelGroupType, MutableChannelGroup,
                      SequentialChannelGroup)
