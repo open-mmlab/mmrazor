@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """"""
-from abc import abstractproperty
+from abc import abstractmethod
 
 import torch
 
@@ -32,17 +32,20 @@ class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
 
     # choice
 
-    @abstractproperty
+    @property  # type: ignore
+    @abstractmethod
     def current_choice(self):
         """get current choice."""
         raise NotImplementedError()
 
-    @current_choice.setter
+    @current_choice.setter  # type: ignore
+    @abstractmethod
     def current_choice(self):
         """set current choice."""
         raise NotImplementedError()
 
-    @abstractproperty
+    @property  # type: ignore
+    @abstractmethod
     def current_mask(self) -> torch.Tensor:
         """Return a mask indicating the channel selection."""
         raise NotImplementedError()
