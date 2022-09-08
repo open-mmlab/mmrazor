@@ -19,7 +19,6 @@ from torch.nn import Module
 
 from mmrazor.models.architectures.dynamic_ops.bricks.dynamic_mixins import \
     DynamicChannelMixin
-from mmrazor.registry import MODELS
 from mmrazor.structures.graph import ModuleGraph, ModuleNode
 from mmrazor.utils import IndexDict
 from ..base_mutable_channel import BaseMutableChannel
@@ -315,7 +314,6 @@ class Channel:
         expand:{self.expand_ratio}'
 
 
-@MODELS.register_module()
 class ChannelGroup:
     """A manager for Channels."""
 
