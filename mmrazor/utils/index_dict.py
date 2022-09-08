@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import OrderedDict, Tuple, TypeVar
 
-VT = TypeVar('VT')
+VT = TypeVar('VT')  # Value type
 
 
 class IndexDict(OrderedDict[Tuple[int, int], VT]):
