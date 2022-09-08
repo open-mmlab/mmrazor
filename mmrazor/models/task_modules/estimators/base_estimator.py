@@ -23,22 +23,29 @@ class BaseEstimator(metaclass=ABCMeta):
                  input_shape: Tuple = (1, 3, 224, 224),
                  units: Dict = dict(),
                  as_strings: bool = False):
-        assert len(input_shape) == 4, (
-            f'The length of input_shape must be 4. Got {len(input_shape)}.')
+        assert len(input_shape) in [
+            3, 4, 5
+        ], ('The length of input_shape must be in [3, 4, 5]. '
+            f'Got `{len(input_shape)}`.')
         self.input_shape = input_shape
         self.units = units
         self.as_strings = as_strings
 
     @abstractmethod
-    def estimate(self, model: torch.nn.Module,
-                 **kwargs) -> Dict[str, Union[float, str]]:
+    def estimate(self,
+                 model: torch.nn.Module,
+                 flops_params_cfg: dict = None,
+                 latency_cfg: dict = None) -> Dict[str, Union[float, str]]:
         """Estimate the resources(flops/params/latency) of the given model.
 
         Args:
             model: The measured model.
+            flops_params_cfg (dict): Cfg for estimating FLOPs and parameters.
+                Default to None.
+            latency_cfg (dict): Cfg for estimating latency. Default to None.
 
         Returns:
-            Dict[str, float]): A dict that contains resource results(flops,
-                params and latency).
+            Dict[str, Union[float, str]]): A dict that contains the resource
+                results(FLOPs, params and latency).
         """
         pass

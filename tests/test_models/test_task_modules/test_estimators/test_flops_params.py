@@ -118,8 +118,9 @@ class TestResourceEstimator(TestCase):
 
     def test_estimate(self) -> None:
         fool_conv2d = FoolConv2d()
+        flops_params_cfg = dict(input_shape=(1, 3, 224, 224))
         results = estimator.estimate(
-            model=fool_conv2d, input_shape=(1, 3, 224, 224))
+            model=fool_conv2d, flops_params_cfg=flops_params_cfg)
         flops_count = results['flops']
         params_count = results['params']
 
@@ -128,8 +129,9 @@ class TestResourceEstimator(TestCase):
 
     def test_register_module(self) -> None:
         fool_add_constant = FoolConvModule()
+        flops_params_cfg = dict(input_shape=(1, 3, 224, 224))
         results = estimator.estimate(
-            model=fool_add_constant, input_shape=(1, 3, 224, 224))
+            model=fool_add_constant, flops_params_cfg=flops_params_cfg)
         flops_count = results['flops']
         params_count = results['params']
 
@@ -138,10 +140,11 @@ class TestResourceEstimator(TestCase):
 
     def test_disable_sepc_counter(self) -> None:
         fool_add_constant = FoolConvModule()
-        rest_results = estimator.estimate(
-            model=fool_add_constant,
+        flops_params_cfg = dict(
             input_shape=(1, 3, 224, 224),
             disabled_counters=['FoolAddConstantCounter'])
+        rest_results = estimator.estimate(
+            model=fool_add_constant, flops_params_cfg=flops_params_cfg)
         rest_flops_count = rest_results['flops']
         rest_params_count = rest_results['params']
 
@@ -150,10 +153,11 @@ class TestResourceEstimator(TestCase):
 
     def test_estimate_spec_module(self) -> None:
         fool_add_constant = FoolConvModule()
-        results = estimator.estimate(
-            model=fool_add_constant,
+        flops_params_cfg = dict(
             input_shape=(1, 3, 224, 224),
             spec_modules=['add_constant', 'conv2d'])
+        results = estimator.estimate(
+            model=fool_add_constant, flops_params_cfg=flops_params_cfg)
         flops_count = results['flops']
         params_count = results['params']
 
@@ -162,39 +166,39 @@ class TestResourceEstimator(TestCase):
 
     def test_estimate_separation_modules(self) -> None:
         fool_add_constant = FoolConvModule()
+        flops_params_cfg = dict(
+            input_shape=(1, 3, 224, 224), spec_modules=['add_constant'])
         results = estimator.estimate_separation_modules(
-            model=fool_add_constant,
-            input_shape=(1, 3, 224, 224),
-            spec_modules=['add_constant'])
+            model=fool_add_constant, flops_params_cfg=flops_params_cfg)
         self.assertGreater(results['add_constant']['flops'], 0)
 
         with pytest.raises(AssertionError):
+            flops_params_cfg = dict(
+                input_shape=(1, 3, 224, 224), spec_modules=['backbone'])
             results = estimator.estimate_separation_modules(
-                model=fool_add_constant,
-                input_shape=(1, 3, 224, 224),
-                spec_modules=['backbone'])
+                model=fool_add_constant, flops_params_cfg=flops_params_cfg)
 
         with pytest.raises(AssertionError):
+            flops_params_cfg = dict(
+                input_shape=(1, 3, 224, 224), spec_modules=[])
             results = estimator.estimate_separation_modules(
-                model=fool_add_constant,
-                input_shape=(1, 3, 224, 224),
-                spec_modules=[])
+                model=fool_add_constant, flops_params_cfg=flops_params_cfg)
 
     def test_estimate_subnet(self) -> None:
-        input_shape = (1, 3, 224, 224)
+        flops_params_cfg = dict(input_shape=(1, 3, 224, 224))
         model = MODELS.build(BACKBONE_CFG)
         self.sample_choice(model)
         copied_model = copy.deepcopy(model)
 
         results = estimator.estimate(
-            model=copied_model, input_shape=input_shape)
+            model=copied_model, flops_params_cfg=flops_params_cfg)
         flops_count = results['flops']
         params_count = results['params']
 
         fix_subnet = export_fix_subnet(model)
         load_fix_subnet(copied_model, fix_subnet)
         subnet_results = estimator.estimate(
-            model=copied_model, input_shape=input_shape)
+            model=copied_model, flops_params_cfg=flops_params_cfg)
         subnet_flops_count = subnet_results['flops']
         subnet_params_count = subnet_results['params']
 
@@ -203,8 +207,8 @@ class TestResourceEstimator(TestCase):
 
         # test whether subnet estimate will affect original model
         copied_model = copy.deepcopy(model)
-        results_after_estimate = \
-            estimator.estimate(model=copied_model, input_shape=input_shape)
+        results_after_estimate = estimator.estimate(
+            model=copied_model, flops_params_cfg=flops_params_cfg)
         flops_count_after_estimate = results_after_estimate['flops']
         params_count_after_estimate = results_after_estimate['params']
 

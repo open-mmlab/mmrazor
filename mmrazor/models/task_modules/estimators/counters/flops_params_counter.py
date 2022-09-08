@@ -9,21 +9,21 @@ import torch.nn as nn
 from mmrazor.registry import TASK_UTILS
 
 
-def get_model_complexity_info(model,
-                              input_shape=(1, 3, 224, 224),
-                              spec_modules=[],
-                              disabled_counters=[],
-                              print_per_layer_stat=False,
-                              units=dict(flops='M', params='M'),
-                              as_strings=False,
-                              seperate_return: bool = False,
-                              input_constructor=None,
-                              flush=False,
-                              ost=sys.stdout):
-    """Get complexity information of a model. This method can calculate FLOPs
-    and parameter counts of a model with corresponding input shape. It can also
-    print complexity information for each layer in a model. Supported layers
-    are listed as below:
+def get_model_flops_params(model,
+                           input_shape=(1, 3, 224, 224),
+                           spec_modules=[],
+                           disabled_counters=[],
+                           print_per_layer_stat=False,
+                           units=dict(flops='M', params='M'),
+                           as_strings=False,
+                           seperate_return: bool = False,
+                           input_constructor=None,
+                           flush=False,
+                           ost=sys.stdout):
+    """Get FLOPs and parameters of a model. This method can calculate FLOPs and
+    parameter counts of a model with corresponding input shape. It can also
+    print FLOPs and params for each layer in a model. Supported layers are
+    listed as below:
 
         - Convolutions: ``nn.Conv1d``, ``nn.Conv2d``, ``nn.Conv3d``.
         - Activations: ``nn.ReLU``, ``nn.PReLU``, ``nn.ELU``, ``nn.LeakyReLU``,
@@ -48,7 +48,7 @@ def get_model_complexity_info(model,
             e.g., ['backbone', 'head'], ['backbone.layer1']. Default to [].
         disabled_counters (list): One can limit which ops' spec would be
             calculated. Default to [].
-        print_per_layer_stat (bool): Whether to print complexity information
+        print_per_layer_stat (bool): Whether to print FLOPs and params
             for each layer in a model. Default to True.
         units (dict): A dict including converted FLOPs and params units.
             Default to dict(flops='M', params='M').
@@ -72,12 +72,8 @@ def get_model_complexity_info(model,
     assert len(input_shape) >= 1
     assert isinstance(model, nn.Module)
     if seperate_return and not len(spec_modules):
-        raise AssertionError(f'seperate_return can only be set to True when '
-                             f'spec_modules are not empty. Got spec_modules='
-                             f'{spec_modules}.')
-    if as_strings:
-        flops_suffix = ' ' + units['flops'] + 'FLOPs' if units else ' FLOPs'
-        params_suffix = ' ' + units['params'] if units else ''
+        raise AssertionError('`seperate_return` can only be set to True when '
+                             '`spec_modules` are not empty.')
 
     flops_params_model = add_flops_params_counting_methods(model)
     flops_params_model.eval()
@@ -113,13 +109,17 @@ def get_model_complexity_info(model,
         flops_count = params_units_convert(flops_count, units['flops'])
         params_count = params_units_convert(params_count, units['params'])
 
+    if as_strings:
+        flops_suffix = ' ' + units['flops'] + 'FLOPs' if units else ' FLOPs'
+        params_suffix = ' ' + units['params'] if units else ''
+
     if len(spec_modules):
         flops_count, params_count = 0.0, 0.0
         module_names = [name for name, _ in flops_params_model.named_modules()]
         for module in spec_modules:
             assert module in module_names, \
                 f'All modules in spec_modules should be in the measured ' \
-                f'flops_params_model. Got module {module} in spec_modules.'
+                f'flops_params_model. Got module `{module}` in spec_modules.'
         spec_modules_resources: Dict[str, dict] = dict()
         accumulate_sub_module_flops_params(flops_params_model, units=units)
         for name, module in flops_params_model.named_modules():
@@ -221,8 +221,8 @@ def print_model_with_flops_params(model,
         >>>     return x
         >>> model = ExampleModel()
         >>> x = (3, 16, 16)
-        to print the complexity information state for each layer, you can use
-        >>> get_model_complexity_info(model, x)
+        to print the FLOPs and params state for each layer, you can use
+        >>> get_model_flops_params(model, x)
         or directly use
         >>> print_model_with_flops_params(model, 4579784.0, 37361)
         ExampleModel(

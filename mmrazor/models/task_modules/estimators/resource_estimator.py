@@ -1,11 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, List, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import torch.nn
 
 from mmrazor.registry import TASK_UTILS
 from .base_estimator import BaseEstimator
-from .counters import get_model_complexity_info, repeat_measure_inference_speed
+from .counters import get_model_flops_params, get_model_latency
 
 
 @TASK_UTILS.register_module()
@@ -39,11 +39,16 @@ class ResourceEstimator(BaseEstimator):
     Examples:
         >>> # direct calculate resource consume of nn.Conv2d
         >>> conv2d = nn.Conv2d(3, 32, 3)
-        >>> estimator = ResourceEstimator()
-        >>> estimator.estimate(
-        ...     model=conv2d,
-        ...     input_shape=(1, 3, 64, 64))
+        >>> estimator = ResourceEstimator(input_shape=(1, 3, 64, 64))
+        >>> estimator.estimate(model=conv2d)
         {'flops': 3.444, 'params': 0.001, 'latency': 0.0}
+
+        >>> # direct calculate resource consume of nn.Conv2d
+        >>> conv2d = nn.Conv2d(3, 32, 3)
+        >>> estimator = ResourceEstimator()
+        >>> flops_params_cfg = dict(input_shape=(1, 3, 32, 32))
+        >>> estimator.estimate(model=conv2d, flops_params_cfg)
+        {'flops': 0.806, 'params': 0.001, 'latency': 0.0}
 
         >>> # calculate resources of custom modules
         >>> class CustomModule(nn.Module):
@@ -63,16 +68,14 @@ class ResourceEstimator(BaseEstimator):
         ...        module.__params__ += 700000
         ...
         >>> model = CustomModule()
-        >>> estimator.estimate(
-        ...     model=model,
-        ...     input_shape=(1, 3, 64, 64))
+        >>> flops_params_cfg = dict(input_shape=(1, 3, 64, 64))
+        >>> estimator.estimate(model=model, flops_params_cfg)
         {'flops': 1.0, 'params': 0.7, 'latency': 0.0}
         ...
         >>> # calculate resources of custom modules with disable_counters
-        >>> estimator.estimate(
-        ...     model=model,
-        ...     input_shape=(1, 3, 64, 64),
-        ...     disabled_counters=['CustomModuleCounter'])
+        >>> flops_params_cfg = dict(input_shape=(1, 3, 64, 64),
+        ...                         disabled_counters=['CustomModuleCounter'])
+        >>> estimator.estimate(model=model, flops_params_cfg)
         {'flops': 0.0, 'params': 0.0, 'latency': 0.0}
 
         >>> # calculate resources of mmrazor.models
@@ -85,52 +88,69 @@ class ResourceEstimator(BaseEstimator):
         input_shape: Tuple = (1, 3, 224, 224),
         units: Dict = dict(flops='M', params='M', latency='ms'),
         as_strings: bool = False,
-        spec_modules: List[str] = [],
-        disabled_counters: List[str] = [],
-        measure_latency: bool = False,
-        latency_max_iter: int = 100,
-        latency_num_warmup: int = 5,
-        latency_log_interval: int = 100,
-        latency_repeat_num: int = 1,
+        flops_params_cfg: Optional[dict] = None,
+        latency_cfg: Optional[dict] = None,
     ):
         super().__init__(input_shape, units, as_strings)
-        self.spec_modules = spec_modules
-        self.disabled_counters = disabled_counters
+        if not isinstance(units, dict):
+            raise TypeError('units for estimator should be a dict',
+                            f'but got `{type(units)}`')
+        for unit_key in units:
+            if unit_key not in ['flops', 'params', 'latency']:
+                raise KeyError(f'Got invalid key `{unit_key}` in units. ',
+                               'Should be flops, params or latency.')
+        if flops_params_cfg:
+            self.flops_params_cfg = flops_params_cfg
+        else:
+            self.flops_params_cfg = dict()
+        self.latency_cfg = latency_cfg if latency_cfg else dict()
 
-        self.measure_latency = measure_latency
-        self.latency_max_iter = latency_max_iter
-        self.latency_num_warmup = latency_num_warmup
-        self.latency_log_interval = latency_log_interval
-        self.latency_repeat_num = latency_repeat_num
-
-    def estimate(self, model: torch.nn.Module,
-                 **kwargs) -> Dict[str, Union[float, str]]:
+    def estimate(self,
+                 model: torch.nn.Module,
+                 flops_params_cfg: dict = None,
+                 latency_cfg: dict = None) -> Dict[str, Union[float, str]]:
         """Estimate the resources(flops/params/latency) of the given model.
+
+        This method will first parse the merged :attr:`self.flops_params_cfg`
+        and the :attr:`self.latency_cfg` to check whether the keys are valid.
 
         Args:
             model: The measured model.
+            flops_params_cfg (dict): Cfg for estimating FLOPs and parameters.
+                Default to None.
+            latency_cfg (dict): Cfg for estimating latency. Default to None.
+
+            NOTE: If the `flops_params_cfg` and `latency_cfg` are both None,
+            this method will only estimate FLOPs/params with default settings.
 
         Returns:
-            Dict[str, str]): A dict that containing resource results(flops,
-                params and latency).
+            Dict[str, Union[float, str]]): A dict that contains the resource
+                results(FLOPs, params and latency).
         """
-        latency_cfg = dict()
         resource_metrics = dict()
-        for key in self.__init__.__code__.co_varnames[1:]:  # type: ignore
-            kwargs.setdefault(key, getattr(self, key))
-            if 'latency' in key:
-                latency_cfg[key] = kwargs.pop(key)
-        latency_cfg['unit'] = kwargs['units'].get('latency')
-        latency_cfg['as_strings'] = kwargs['as_strings']
-        latency_cfg['input_shape'] = kwargs['input_shape']
+        measure_latency = True if latency_cfg else False
+
+        if flops_params_cfg:
+            flops_params_cfg = {**self.flops_params_cfg, **flops_params_cfg}
+            self._check_flops_params_cfg(flops_params_cfg)
+            flops_params_cfg = self._set_default_resource_params(
+                flops_params_cfg)
+        else:
+            flops_params_cfg = self.flops_params_cfg
+
+        if latency_cfg:
+            latency_cfg = {**self.latency_cfg, **latency_cfg}
+            self._check_latency_cfg(latency_cfg)
+            latency_cfg = self._set_default_resource_params(latency_cfg)
+        else:
+            latency_cfg = self.latency_cfg
 
         model.eval()
-        flops, params = get_model_complexity_info(model, **kwargs)
-
-        if latency_cfg['measure_latency']:
-            latency = repeat_measure_inference_speed(model, **latency_cfg)
+        flops, params = get_model_flops_params(model, **flops_params_cfg)
+        if measure_latency:
+            latency = get_model_latency(model, **latency_cfg)
         else:
-            latency = '0.0 ms' if kwargs['as_strings'] else 0.0  # type: ignore
+            latency = '0.0 ms' if self.as_strings else 0.0  # type: ignore
 
         resource_metrics.update({
             'flops': flops,
@@ -139,28 +159,70 @@ class ResourceEstimator(BaseEstimator):
         })
         return resource_metrics
 
-    def estimate_separation_modules(self, model: torch.nn.Module,
-                                    **kwargs) -> Dict[str, Union[float, str]]:
-        """Estimate the resources(flops/params/latency) of the spec modules.
+    def estimate_separation_modules(
+            self,
+            model: torch.nn.Module,
+            flops_params_cfg: dict = None) -> Dict[str, Union[float, str]]:
+        """Estimate FLOPs and params of the spec modules with separate return.
 
         Args:
             model: The measured model.
+            flops_params_cfg (dict): Cfg for estimating FLOPs and parameters.
+                Default to None.
 
         Returns:
-            Dict[str, float]): A dict that containing resource results(flops,
-                params) of each modules in kwargs['spec_modules'].
+            Dict[str, Union[float, str]]): A dict that contains the FLOPs and
+                params results (string | float format) of each modules in the
+                ``flops_params_cfg['spec_modules']``.
         """
-        for key in self.__init__.__code__.co_varnames[1:]:  # type: ignore
-            kwargs.setdefault(key, getattr(self, key))
-            # TODO: support speed estimation for separation modules.
-            if 'latency' in key:
-                kwargs.pop(key)
+        if flops_params_cfg:
+            flops_params_cfg = {**self.flops_params_cfg, **flops_params_cfg}
+            self._check_flops_params_cfg(flops_params_cfg)
+            flops_params_cfg = self._set_default_resource_params(
+                flops_params_cfg)
+        else:
+            flops_params_cfg = self.flops_params_cfg
+        flops_params_cfg['seperate_return'] = True
 
-        assert len(kwargs['spec_modules']), (
-            f'spec_modules can not be empty when calling '
-            f'{self.__class__.__name__}.estimate_separation_modules().')
-        kwargs['seperate_return'] = True
+        assert len(flops_params_cfg['spec_modules']), (
+            'spec_modules can not be empty when calling '
+            f'`estimate_separation_modules` of {self.__class__.__name__} ')
 
         model.eval()
-        spec_modules_resources = get_model_complexity_info(model, **kwargs)
+        spec_modules_resources = get_model_flops_params(
+            model, **flops_params_cfg)
         return spec_modules_resources
+
+    def _check_flops_params_cfg(self, flops_params_cfg: dict) -> None:
+        """Check the legality of ``flops_params_cfg``.
+
+        Args:
+            flops_params_cfg (dict): Cfg for estimating FLOPs and parameters.
+        """
+        for key in flops_params_cfg:
+            if key not in get_model_flops_params.__code__.co_varnames[
+                    1:]:  # type: ignore
+                raise KeyError(f'Got invalid key `{key}` in flops_params_cfg.')
+
+    def _check_latency_cfg(self, latency_cfg: dict) -> None:
+        """Check the legality of ``latency_cfg``.
+
+        Args:
+            latency_cfg (dict): Cfg for estimating latency.
+        """
+        for key in latency_cfg:
+            if key not in get_model_latency.__code__.co_varnames[
+                    1:]:  # type: ignore
+                raise KeyError(f'Got invalid key `{key}` in latency_cfg.')
+
+    def _set_default_resource_params(self, cfg: dict) -> dict:
+        """Set default attributes for the input cfgs.
+
+        Args:
+            cfg (dict): flops_params_cfg or latency_cfg.
+        """
+        default_common_settings = ['input_shape', 'units', 'as_strings']
+        for key in default_common_settings:
+            if key not in cfg:
+                cfg[key] = getattr(self, key)
+        return cfg

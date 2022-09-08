@@ -105,7 +105,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         flops_range (dict): Constraints to be used for screening candidates.
         resource_input_shape (Tuple): Input shape when measuring flops.
             Default to (1, 3, 224, 224).
-        spec_modules (list): Used for specify modules need to counter.
+        resource_spec_modules (list): Used for specify modules need to counter.
             Defaults to list().
         num_candidates (int): The number of the candidates consist of samples
             from supernet and itself. Defaults to 1000.
@@ -142,7 +142,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
                  score_key: str = 'accuracy/top1',
                  flops_range: Optional[Tuple[float, float]] = (0., 330),
                  resource_input_shape: Tuple = (1, 3, 224, 224),
-                 spec_modules: List = [],
+                 resource_spec_modules: List = [],
                  num_candidates: int = 1000,
                  num_samples: int = 10,
                  top_k: int = 5,
@@ -166,7 +166,6 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
 
         self.score_key = score_key
         self.flops_range = flops_range
-        self.spec_modules = spec_modules
         self.num_candidates = num_candidates
         self.num_samples = num_samples
         self.top_k = top_k
@@ -180,7 +179,9 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
 
         self.candidates = Candidates()
         self.top_k_candidates = Candidates()
-        self.estimator = ResourceEstimator(input_shape=resource_input_shape)
+        self.estimator = ResourceEstimator(
+            input_shape=resource_input_shape,
+            flops_params_cfg=dict(spec_modules=resource_spec_modules))
 
     def run(self) -> None:
         """Launch training."""
@@ -328,8 +329,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         fix_mutable = export_fix_subnet(self.model)
         copied_model = copy.deepcopy(self.model)
         load_fix_subnet(copied_model, fix_mutable)
-        results = self.estimator.estimate(
-            copied_model, spec_modules=self.spec_modules, as_strings=False)
+        results = self.estimator.estimate(copied_model)
         flops = results['flops']
 
         if self.flops_range[0] <= flops <= self.flops_range[1]:  # type: ignore

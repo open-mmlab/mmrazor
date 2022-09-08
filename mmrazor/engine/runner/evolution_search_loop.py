@@ -46,7 +46,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             candidates.
         resource_input_shape (Tuple): Input shape when measuring flops.
             Default to (1, 3, 224, 224).
-        spec_modules (list): Used for specify modules need to counter.
+        resource_spec_modules (list): Used for specify modules need to counter.
             Defaults to list().
         score_key (str): Specify one metric in evaluation results to score
             candidates. Defaults to 'accuracy_top-1'.
@@ -69,7 +69,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                  mutate_prob: float = 0.1,
                  flops_range: Optional[Tuple[float, float]] = (0., 330),
                  resource_input_shape: Tuple = (1, 3, 224, 224),
-                 spec_modules: List = [],
+                 resource_spec_modules: List = [],
                  score_key: str = 'accuracy/top1',
                  init_candidates: Optional[str] = None) -> None:
         super().__init__(runner, dataloader, max_epochs)
@@ -88,7 +88,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         self.num_candidates = num_candidates
         self.top_k = top_k
         self.flops_range = flops_range
-        self.spec_modules = spec_modules
         self.score_key = score_key
         self.num_mutation = num_mutation
         self.num_crossover = num_crossover
@@ -104,7 +103,9 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                 correct init candidates file'
 
         self.top_k_candidates = Candidates()
-        self.estimator = ResourceEstimator(input_shape=resource_input_shape)
+        self.estimator = ResourceEstimator(
+            input_shape=resource_input_shape,
+            flops_params_cfg=dict(spec_modules=resource_spec_modules))
 
         if self.runner.distributed:
             self.model = runner.model.module
@@ -310,8 +311,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         fix_mutable = export_fix_subnet(self.model)
         copied_model = copy.deepcopy(self.model)
         load_fix_subnet(copied_model, fix_mutable)
-        results = self.estimator.estimate(
-            copied_model, spec_modules=self.spec_modules, as_strings=False)
+        results = self.estimator.estimate(copied_model)
         flops = results['flops']
 
         if self.flops_range[0] <= flops <= self.flops_range[1]:  # type: ignore
