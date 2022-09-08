@@ -18,14 +18,15 @@ class SequentialChannelGroup(MutableChannelGroup):
 
     The type of choice of SimpleChannelGroup is int. It indicates what ratio of
     channels are remained from left to right.
+
+    Args:
+        num_channels (int): number of channels.
     """
 
     def __init__(self, num_channels: int) -> None:
         super().__init__(num_channels)
         self.mutable_channel: SimpleMutableChannel = SimpleMutableChannel(
             self.num_channels)
-
-    # prepare model
 
     def prepare_for_pruning(self, model: nn.Module):
         """Prepare for pruning, including register mutable channels."""

@@ -14,38 +14,33 @@ from .channel_group import Channel, ChannelGroup
 
 
 class MutableChannelGroup(ChannelGroup, BaseModule):
-    """MutableChannelGroup inherits from ChannelGroup, which manages channels
-    with channel-dependency.
 
-    Compared with ChannelGroup, MutableChannelGroup defines the core
-    interfaces for pruning. By inheriting MutableChannelGroup, we can implement
-    a variant pruning algorithm.
-
-    Basic Property
-
-        name
-        is_mutable
-
-    Important interfaces during different stages:
-
-    # Before pruning
-        prepare_model
-        prepare_for_pruning
-
-    # Pruning stage
-        current_choice
-        sample_choice
-
-    # After pruning
-        fix_chosen
-    """
-
+    # init methods
     def __init__(self, num_channels: int) -> None:
-        """
+        """MutableChannelGroup inherits from ChannelGroup, which manages
+        channels with channel-dependency.
+
+        Compared with ChannelGroup, MutableChannelGroup defines the core
+        interfaces for pruning. By inheriting MutableChannelGroup,
+        we can implement a variant pruning and nas algorithm.
+
+        These apis includes
+            - basic property
+                - name
+                - is_mutable
+            - before pruning
+                - prepare_for_pruning
+            - pruning stage
+                - current_choice
+                - sample_choice
+            - after pruning
+                - fix_chosen
+
         Args:
-            num_channels (int): dimension of the channels that this
-            MutableChannelGroup manages.
+            num_channels (int): dimension of the channels of the Channel
+            objects in the group.
         """
+
         super().__init__(num_channels)
         BaseModule.__init__(self)
 
@@ -58,7 +53,7 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
         mutable_group.output_related = group.output_related
         return mutable_group
 
-    # basic property
+    # properties
 
     @property
     def is_mutable(self) -> bool:
@@ -85,8 +80,6 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
             and input_all_prunable \
             and output_has_dynamic_op \
             and output_all_prunable
-
-    # config template
 
     def config_template(self,
                         with_init_args=False,
@@ -139,7 +132,7 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
         if choice is not None:
             self.current_choice = choice
 
-    # tools
+    # private methods
 
     def _get_int_choice(self, choice: Union[int, float]) -> int:
         """Convert ratio of channels to number of channels."""

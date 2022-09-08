@@ -225,7 +225,16 @@ class PruneGraph(ModuleGraph[PRUNENODE]):
 
 
 class Channel:
-    """Channel records information about channels for pruning."""
+    """Channel records information about channels for pruning.
+
+    Args:
+        node: (PruneNode): prune-node to be recorded
+        index (Union[None, Tuple[int, int]]): the channel range for pruning
+        out_related (Bool): represents if the channels are output channels,
+        otherwise input channels
+        expand_ratio (Bool): expand_ratio of the number of channels
+        compared with pruning mask
+    """
 
     # init
 
@@ -236,15 +245,6 @@ class Channel:
                  node: PruneNode = None,
                  out_related=True,
                  expand_ratio=1) -> None:
-        """
-        Args:
-            node: (PruneNode): prune-node to be recorded
-            index (Union[None, Tuple[int, int]]): the channel range for pruning
-            out_related (Bool): represents if the channels are output channels,
-            otherwise input channels
-            expand_ratio (Bool): expand_ratio of the number of channels
-            compared with pruning mask
-        """
         self.name = name
         self.module: DynamicChannelMixin = module
         self.index = index
@@ -338,6 +338,8 @@ class ChannelGroup:
         num_channels (int): the number of channels of Channel object.
     """
 
+    # init methods
+
     def __init__(self, num_channels: int) -> None:
 
         self.num_channels = num_channels
@@ -392,7 +394,7 @@ class ChannelGroup:
             group._model = graph._model
         return groups
 
-    # basic property
+    # tools
 
     @property
     def name(self) -> str:
@@ -402,8 +404,6 @@ class ChannelGroup:
         name = f'{first_module.name}_{first_module.index}_'
         name += f'out_{len(self.output_related)}_in_{len(self.input_related)}'
         return name
-
-    # config template
 
     def config_template(self, with_init_args=False, with_channels=False):
         """Generate a config template which can be used to initialize a
