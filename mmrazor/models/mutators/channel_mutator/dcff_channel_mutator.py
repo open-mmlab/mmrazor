@@ -8,7 +8,6 @@ from torch.nn import Module
 from mmrazor.models.architectures.dynamic_ops.bricks import FuseConv2d
 from mmrazor.models.mutables import DCFFChannelGroup
 from mmrazor.registry import MODELS
-from mmrazor.structures.graph import ModuleGraph
 from .base_channel_mutator import MUTABLECHANNELGROUP, BaseChannelMutator
 
 

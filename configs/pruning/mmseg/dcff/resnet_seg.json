@@ -1,0 +1,218 @@
+{
+    "backbone.layer1.0.conv1_(0, 64)_out_2_in_2": {
+      "candidates": [
+        41
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer1.0.conv2_(0, 64)_out_2_in_2": {
+      "candidates": [
+        38
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer1.2.conv3_(0, 256)_out_13_in_9": {
+      "candidates": [
+        230
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer1.1.conv1_(0, 64)_out_2_in_2": {
+      "candidates": [
+        41
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer1.1.conv2_(0, 64)_out_2_in_2": {
+      "candidates": [
+        38
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer1.2.conv1_(0, 64)_out_2_in_2": {
+      "candidates": [
+        41
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer1.2.conv2_(0, 64)_out_2_in_2": {
+      "candidates": [
+        38
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer2.0.conv1_(0, 128)_out_2_in_2": {
+      "candidates": [
+        83
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer2.0.conv2_(0, 128)_out_2_in_2": {
+      "candidates": [
+        76
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer2.3.conv3_(0, 512)_out_16_in_11": {
+      "candidates": [
+        460
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer2.1.conv1_(0, 128)_out_2_in_2": {
+      "candidates": [
+        83
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer2.1.conv2_(0, 128)_out_2_in_2": {
+      "candidates": [
+        76
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer2.2.conv1_(0, 128)_out_2_in_2": {
+      "candidates": [
+        83
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer2.2.conv2_(0, 128)_out_2_in_2": {
+      "candidates": [
+        76
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer2.3.conv1_(0, 128)_out_2_in_2": {
+      "candidates": [
+        83
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer2.3.conv2_(0, 128)_out_2_in_2": {
+      "candidates": [
+        76
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer3.0.conv1_(0, 256)_out_2_in_2": {
+      "candidates": [
+        166
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer3.0.conv2_(0, 256)_out_2_in_2": {
+      "candidates": [
+        153
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer3.5.conv3_(0, 1024)_out_22_in_15": {
+      "candidates": [
+        921
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer3.1.conv1_(0, 256)_out_2_in_2": {
+      "candidates": [
+        166
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer3.1.conv2_(0, 256)_out_2_in_2": {
+      "candidates": [
+        153
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer3.2.conv1_(0, 256)_out_2_in_2": {
+      "candidates": [
+        166
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer3.2.conv2_(0, 256)_out_2_in_2": {
+      "candidates": [
+        153
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer3.3.conv1_(0, 256)_out_2_in_2": {
+      "candidates": [
+        179
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer3.3.conv2_(0, 256)_out_2_in_2": {
+      "candidates": [
+        179
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer3.4.conv1_(0, 256)_out_2_in_2": {
+      "candidates": [
+        179
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer3.4.conv2_(0, 256)_out_2_in_2": {
+      "candidates": [
+        179
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer3.5.conv1_(0, 256)_out_2_in_2": {
+      "candidates": [
+        179
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer3.5.conv2_(0, 256)_out_2_in_2": {
+      "candidates": [
+        179
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer4.0.conv1_(0, 512)_out_2_in_2": {
+      "candidates": [
+        358
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer4.0.conv2_(0, 512)_out_2_in_2": {
+      "candidates": [
+        358
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer4.2.conv3_(0, 2048)_out_11_in_7": {
+      "candidates": [
+        1843
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer4.1.conv1_(0, 512)_out_2_in_2": {
+      "candidates": [
+        358
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer4.1.conv2_(0, 512)_out_2_in_2": {
+      "candidates": [
+        358
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer4.2.conv1_(0, 512)_out_2_in_2": {
+      "candidates": [
+        358
+      ],
+      "candidate_mode": "number"
+    },
+    "backbone.layer4.2.conv2_(0, 512)_out_2_in_2": {
+      "candidates": [
+        358
+      ],
+      "candidate_mode": "number"
+    }
+  }

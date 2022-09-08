@@ -35,6 +35,7 @@ class DCFF(BaseAlgorithm):
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
+        # print(data_preprocessor)
 
         if isinstance(channel_cfgs, str):
             channel_cfgs = fileio.load(channel_cfgs)
@@ -45,7 +46,7 @@ class DCFF(BaseAlgorithm):
         self.num_subnet = len(self.mutator.subnets)
 
         # print(channel_cfgs)
-        print(self.architecture)
+        # print(self.architecture)
 
         """
         # must after `prepare_from_supernet`

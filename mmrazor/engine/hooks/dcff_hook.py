@@ -63,10 +63,8 @@ class DCFFHook(Hook):
             runner.logger.info(
                 f"Computing epoch {runner.epoch+1}'s all fused layer...")
             stime = time.time()
-            # print("before kl clac")
             t = self._calc_temperature(runner.epoch, runner.max_epochs)
             self.mutator.calc_information(t, runner.epoch, self.start_epoch)
-            # print("after kl clac")
             # no runner.meta, so calculate kl layer in calc_information()
             runner.logger.info(
                 f'Epoch {runner.epoch+1}' +
