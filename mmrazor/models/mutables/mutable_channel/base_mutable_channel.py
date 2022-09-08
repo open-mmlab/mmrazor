@@ -13,11 +13,11 @@ class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
     channels.
 
     |---------------------------------------|
-    |in_channel_mutable(BaseMutableChannel) |
+    |mutable_in_channel(BaseMutableChannel) |
     |---------------------------------------|
     |             DynamicOp                 |
     |---------------------------------------|
-    |out_channel_mutable(BaseMutableChannel)|
+    |mutable_out_channel(BaseMutableChannel)|
     |---------------------------------------|
 
     Important interfaces:
