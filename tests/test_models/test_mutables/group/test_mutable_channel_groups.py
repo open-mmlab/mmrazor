@@ -31,7 +31,7 @@ class TestMutableChannelGroup(TestCase):
 
     def _test_a_graph(self, model, graph):
         try:
-            groups = DefaultChannelGroup.parse_channel_groups(graph)
+            groups = DefaultChannelGroup.init_from_graph(graph)
             for group in groups:
                 group.prepare_for_pruning(model)
             prunable_groups = [group for group in groups if group.is_mutable]
@@ -83,7 +83,7 @@ class TestMutableChannelGroup(TestCase):
                     model: nn.Module = model_data()
                     graph = ModuleGraph.init_using_backward_tracer(model)
                     groups: List[
-                        MutableChannelGroup] = group_type.parse_channel_groups(
+                        MutableChannelGroup] = group_type.init_from_graph(
                             graph)
 
                     for group in groups:
