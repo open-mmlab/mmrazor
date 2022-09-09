@@ -45,8 +45,9 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
         BaseModule.__init__(self)
 
     @classmethod
-    def init_from_channel_group(cls, group: ChannelGroup,
-                                args: Dict) -> 'MutableChannelGroup':
+    def init_from_channel_group(cls,
+                                group: ChannelGroup,
+                                args: Dict = {}) -> 'MutableChannelGroup':
         """Initialize a MutalbeChannelGroup from a ChannelGroup."""
         args['num_channels'] = group.num_channels
         mutable_group = cls(**args)

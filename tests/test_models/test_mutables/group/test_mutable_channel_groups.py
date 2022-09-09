@@ -10,8 +10,9 @@ from mmrazor.models.architectures.dynamic_ops.bricks.dynamic_mixins import \
 from mmrazor.models.mutables.mutable_channel import (MutableChannelGroup,
                                                      SequentialChannelGroup)
 from mmrazor.models.mutables.mutable_channel.groups.channel_group import (  # noqa
-    Channel, PruneNode)
+    Channel, ChannelGroup, PruneNode)
 from mmrazor.structures.graph import ModuleGraph as ModuleGraph
+from ....data.models import LineModel
 from ....test_core.test_graph.test_graph import TestGraph
 
 MUTABLE_CFG = dict(type='SimpleMutableChannl')
@@ -29,23 +30,74 @@ DefaultChannelGroup = SequentialChannelGroup
 
 class TestMutableChannelGroup(TestCase):
 
-    def _test_a_graph(self, model, graph):
-        try:
-            groups = DefaultChannelGroup.init_from_graph(graph)
-            for group in groups:
-                group.prepare_for_pruning(model)
-            prunable_groups = [group for group in groups if group.is_mutable]
+    def test_init_from_graph(self):
+        model = LineModel()
+        # init using tracer
+        graph = ModuleGraph.init_using_backward_tracer(model)
+        groups = DefaultChannelGroup.init_from_graph(graph)
+        self._test_groups(groups, model)
 
-            for group in prunable_groups:
-                choice = group.sample_choice()
-                group.current_choice = choice
-                self.assertAlmostEqual(group.current_choice, choice, delta=0.1)
-            x = torch.rand([2, 3, 224, 224]).to(DEVICE)
-            y = model(x)
-            self.assertSequenceEqual(y.shape, [2, 1000])
+    def test_init_from_cfg(self):
+        model = LineModel()
+        # init using tracer
 
-        except Exception as e:
-            self.fail(f'{e}')
+        config = {
+            'init_args': {
+                'num_channels': 8
+            },
+            'channels': {
+                'input_related': [{
+                    'name': 'net.1',
+                    'start': 0,
+                    'end': 8,
+                    'expand_ratio': 1,
+                    'is_output_related': False
+                }, {
+                    'name': 'net.3',
+                    'start': 0,
+                    'end': 8,
+                    'expand_ratio': 1,
+                    'is_output_related': False
+                }],
+                'output_related': [{
+                    'name': 'net.0',
+                    'start': 0,
+                    'end': 8,
+                    'expand_ratio': 1,
+                    'is_output_related': True
+                }, {
+                    'name': 'net.1',
+                    'start': 0,
+                    'end': 8,
+                    'expand_ratio': 1,
+                    'is_output_related': True
+                }]
+            }
+        }
+        groups = [DefaultChannelGroup.init_from_cfg(model, config)]
+        self._test_groups(groups, model)
+
+    def test_init_from_channel_group(self):
+        model = LineModel()
+        # init using tracer
+        graph = ModuleGraph.init_using_backward_tracer(model)
+        groups: List[ChannelGroup] = ChannelGroup.init_from_graph(graph)
+        mutable_groups = [
+            DefaultChannelGroup.init_from_channel_group(group)
+            for group in groups
+        ]
+        self._test_groups(mutable_groups, model)
+
+    def _test_groups(self, groups: List[MutableChannelGroup], model):
+        prunable_groups = [group for group in groups if group.is_mutable]
+
+        for group in prunable_groups:
+            choice = group.sample_choice()
+            group.current_choice = choice
+            self.assertAlmostEqual(group.current_choice, choice, delta=0.1)
+        x = torch.rand([2, 3, 224, 224]).to(DEVICE)
+        y = model(x)
+        self.assertSequenceEqual(y.shape, [2, 1000])
 
     def _test_a_model_using_backward_tracer(self, model):
         model.eval()
@@ -101,3 +153,12 @@ class TestMutableChannelGroup(TestCase):
                         if isinstance(module, nn.BatchNorm2d):
                             self.assertTrue(
                                 isinstance(module, DynamicChannelMixin))
+
+    def _test_a_graph(self, model, graph):
+        try:
+            groups = DefaultChannelGroup.init_from_graph(graph)
+            for group in groups:
+                group.prepare_for_pruning(model)
+            self._test_groups(groups, model)
+        except Exception as e:
+            self.fail(f'{e}')
