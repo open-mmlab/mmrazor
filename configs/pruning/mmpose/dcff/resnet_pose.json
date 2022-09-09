@@ -1,10 +1,4 @@
 {
-    "backbone.conv1_(0, 64)_out_2_in_3": {
-      "candidates": [
-        64
-      ],
-      "candidate_mode": "number"
-    },
     "backbone.layer1.0.conv1_(0, 64)_out_2_in_2": {
       "candidates": [
         51

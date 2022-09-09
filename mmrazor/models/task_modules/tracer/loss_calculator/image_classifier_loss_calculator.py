@@ -1,6 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
-from statistics import mode
 import torch
 
 from mmrazor.registry import TASK_UTILS

@@ -1,12 +1,9 @@
 _base_ = [
-    'mmpose::_base_/datasets/coco.py',
     'mmpose::_base_/default_runtime.py',
 ]
 train_cfg = dict(max_epochs=300, val_interval=10)
 
-optim_wrapper = dict(
-    optimizer=dict(type='Adam', lr=5e-4),
-    clip_grad=None)
+optim_wrapper = dict(optimizer=dict(type='Adam', lr=5e-4), clip_grad=None)
 
 # learning policy
 param_scheduler = [
@@ -16,8 +13,8 @@ param_scheduler = [
     dict(
         type='MultiStepLR',
         begin=0,
-        end=210,
-        milestones=[170, 200],
+        end=300,
+        milestones=[170, 220, 280],
         gamma=0.1,
         by_epoch=True)
 ]
@@ -61,7 +58,7 @@ architecture = dict(
 model = dict(
     _scope_='mmrazor',
     type='DCFF',
-    channel_cfgs='/mnt/lustre/zengyi.vendor/mmrazor/group_pr/mmrazor/configs/pruning/mmpose/dcff/resnet_pose.json',
+    channel_cfgs='./resnet_pose.json',
     architecture=architecture,
     mutator=dict(
         type='DCFFChannelMutator',
@@ -71,7 +68,7 @@ model = dict(
             candidate_mode='number'),
         tracer_cfg=dict(
             type='BackwardTracer',
-            loss_calculator=dict(type='PosePseudoLoss'))))
+            loss_calculator=dict(type='TopdownPoseEstimatorPseudoLoss'))))
 
 dataset_type = 'CocoDataset'
 data_mode = 'topdown'
@@ -98,7 +95,7 @@ test_pipeline = [
 ]
 
 train_dataloader = dict(
-    batch_size=64,
+    batch_size=32,
     num_workers=2,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
@@ -131,12 +128,7 @@ test_dataloader = val_dataloader
 
 find_unused_parameters = True
 
-custom_hooks = [
-    dict(
-        type='DCFFHook',
-        by_epoch=True,
-        dcff_count=1)
-]
+custom_hooks = [dict(type='DCFFHook', by_epoch=True, dcff_count=1)]
 
 val_evaluator = dict(
     type='mmpose.CocoMetric',
