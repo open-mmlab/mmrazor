@@ -34,7 +34,7 @@ class MutableChannelContainer(BaseMutableChannel):
     # choice
 
     @property
-    def current_choice(self):
+    def current_choice(self) -> torch.Tensor:
         """Get current choices."""
         if len(self.mutable_channels) == 0:
             return torch.ones([self.num_channels]).bool()
