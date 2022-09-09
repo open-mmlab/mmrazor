@@ -6,8 +6,8 @@ from typing import Callable
 import torch
 import torch.fx as fx
 import torch.nn as nn
-from torch.fx.symbolic_trace import Tracer
 from torch.fx.node import Node as FxNode
+from torch.fx.symbolic_trace import Tracer
 
 from mmrazor.registry import TASK_UTILS
 from mmrazor.structures.graph.base_graph import BaseGraph, BaseNode

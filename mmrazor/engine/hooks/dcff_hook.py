@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import math
 import time
-from typing import Dict, Optional, Sequence
+from typing import Optional, Sequence
 
 import torch
 from mmengine.hooks import Hook

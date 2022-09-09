@@ -23,7 +23,7 @@ test_pipeline = [
         # img_ratios=[0.5, 0.75, 1.0, 1.25, 1.5, 1.75],
         allow_flip=False,
         transforms=[
-            dict(type='Resize', scale=(2048, 1024),  keep_ratio=True),
+            dict(type='Resize', scale=(2048, 1024), keep_ratio=True),
             dict(type='RandomFlip'),
         ]),
     dict(type='LoadAnnotations'),

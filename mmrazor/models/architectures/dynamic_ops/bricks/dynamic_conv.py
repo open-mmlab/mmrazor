@@ -2,7 +2,6 @@
 from typing import Callable, Dict
 from xmlrpc.client import Boolean
 
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
@@ -179,6 +178,7 @@ class OFAConv2d(nn.Conv2d, OFAConvMixin):
         """Forward of OFA's conv2d."""
         return self.forward_mixin(x)
 
+
 @MODELS.register_module()
 class FuseConv2d(nn.Conv2d, FuseConvMixin):
     """FuseConv2d used in DCFF.
@@ -200,7 +200,6 @@ class FuseConv2d(nn.Conv2d, FuseConvMixin):
         # https://pytorch.org/docs/stable/_modules/torch/nn/modules/conv.html#Conv2d
         assert self.padding_mode == 'zeros'
         self.mutable_attrs: Dict[str, BaseMutable] = nn.ModuleDict()
-        # self.layeri_softmaxp = nn.parameter.Parameter(torch.zeros(self.out_channels, self.out_channels, requires_grad=True))
         self.mutable_attrs_modified: Dict[str, Boolean] = {}
 
     @classmethod

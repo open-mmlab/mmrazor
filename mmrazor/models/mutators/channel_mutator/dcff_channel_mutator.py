@@ -38,8 +38,8 @@ class DCFFChannelMutator(BaseChannelMutator[DCFFChannelGroup]):
         self._reset_group_candidates()
 
     def _reset_group_candidates(self):
-        print("_name2group:",self._name2group)
-        print("_channel_cfgs:",self._channel_cfgs)
+        print('_name2group:', self._name2group)
+        print('_channel_cfgs:', self._channel_cfgs)
         for key in self._channel_cfgs:
             group: DCFFChannelGroup = self._name2group[key]
             group.alter_candidates_after_init(
@@ -93,11 +93,7 @@ class DCFFChannelMutator(BaseChannelMutator[DCFFChannelGroup]):
                 raise KeyError(f'{key} can not be found in module2group')
         return group_subnets
 
-    def calc_information(
-        self,
-        tau: float,
-        cur_num: int,
-        start_num: int):
+    def calc_information(self, tau: float, cur_num: int, start_num: int):
         """calculate channel's kl and apply softmax pooling on channel solve
         CUDA out of memory.
 
@@ -113,8 +109,10 @@ class DCFFChannelMutator(BaseChannelMutator[DCFFChannelGroup]):
                     param = channel.module.weight
 
                     # Compute layeri_param.
-                    layeri_param = torch.reshape(param.detach(), (param.shape[0], -1))
-                    layeri_Eudist = torch.cdist(layeri_param, layeri_param, p=2)
+                    layeri_param = torch.reshape(param.detach(),
+                                                 (param.shape[0], -1))
+                    layeri_Eudist = torch.cdist(
+                        layeri_param, layeri_param, p=2)
                     layeri_negaEudist = -layeri_Eudist
                     softmax = nn.Softmax(dim=1)
                     layeri_softmaxp = softmax(layeri_negaEudist / tau)
@@ -133,34 +131,15 @@ class DCFFChannelMutator(BaseChannelMutator[DCFFChannelGroup]):
 
                     layeri_kl = torch.mean((log_p - log_q), dim=2)
                     del log_p, log_q
-                    real_out = channel.module.mutable_attrs['out_channels'].activated_channels
+                    real_out = channel.module.mutable_attrs[
+                        'out_channels'].activated_channels
 
                     layeri_iscore_kl = torch.sum(layeri_kl, dim=1)
                     _, topm_ids_order = torch.topk(
                         layeri_iscore_kl, int(real_out), sorted=False)
                     softmaxp = layeri_softmaxp[topm_ids_order, :]
-                    # softmaxp = self._clac_softmaxp(layeri_kl, layeri_softmaxp,
-                    #                             cur_num, start_num, real_out)
-                    # store updated state softmaxp to mutator's dict
-                    if(not hasattr(channel.module, 'layeri_softmaxp')):
+                    if (not hasattr(channel.module, 'layeri_softmaxp')):
                         setattr(channel.module, 'layeri_softmaxp', softmaxp)
                     else:
                         channel.module.layeri_softmaxp.data = softmaxp
                     del param, layeri_param, layeri_negaEudist, layeri_kl
-
-    def _clac_softmaxp(
-        self,
-        layeri_kl: torch.Tensor,
-        layeri_softmaxp: torch.Tensor,
-        # layerid: int,
-        cur_num: int,
-        start_num: int,
-        real_cout: int):
-        layeri_iscore_kl = torch.sum(layeri_kl, dim=1)
-        # Gets the index value of the max k scores
-        # in the layerid fusecov2d layer.
-        _, topm_ids_order = torch.topk(
-            layeri_iscore_kl, int(real_cout), sorted=False)
-
-        softmaxp = layeri_softmaxp[topm_ids_order, :]
-        return softmaxp
