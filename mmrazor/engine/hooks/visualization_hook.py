@@ -120,6 +120,11 @@ class RazorVisualizationHook(Hook):
         if runner.epoch % self.interval != 0:
             return
 
+        if self.out_dir is not None:
+            self.out_dir = osp.join(runner.work_dir, runner.timestamp,
+                                         self.out_dir)
+            mkdir_or_exist(self.out_dir)
+
         if self.file_client is None:
             self.file_client = FileClient(**self.file_client_args)
 
@@ -166,9 +171,15 @@ class RazorVisualizationHook(Hook):
                     drawn_img = self._visualizer.draw_featmap(
                         feat[0], overlaid_image, self.channel_reduction, self.topk, self.arrangement, self.resize_shape,
                         self.alpha)
+
+                    out_file = None
+                    if self.out_dir is not None:
+                        out_file = f'data_idx{idx}_epoch{runner.epoch}_{name}_{i}.jpg'
+                        out_file = osp.join(self.out_dir, out_file)
+
                     self._visualizer.add_datasample(
                         f'data_idx{idx}_epoch{runner.epoch}_{name}_{i}',
                         drawn_img,
-                        show=self.out_file is None,
+                        show=self.show,
                         wait_time=0.1,
-                        out_file=self.out_file)
+                        out_file=out_file)
