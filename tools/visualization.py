@@ -8,10 +8,10 @@ import cv2
 
 from mmengine.config import Config, DictAction, ConfigDict
 from mmengine.utils import import_modules_from_strings
-from mmengine.registry import VISUALIZERS
 
 from mmrazor.models.task_modules import RecorderManager
 from mmrazor.utils import register_all_modules
+from mmrazor.visualization import RazorLocalVisualizer
 
 
 def parse_args():
@@ -23,6 +23,7 @@ def parse_args():
     parser.add_argument(
         '--device', default='cpu', help='Device used for inference')
     parser.add_argument('--repo', help='the corresponding repo name')
+    parser.add_argument('--use-norm', action='store_true', help='normalize the featmap before visualization')
     parser.add_argument('--overlaid', action='store_true', help='overlaid image')
     parser.add_argument(
         '--channel-reduction',
@@ -129,21 +130,20 @@ def convert_overlay_heatmap(feat_map, img, alpha = 0.5, mmin=None, mmax=None):
 #     h, w = round(fh * rh), round(fw * rw)
 #     feat = feat[..., :h, :w]
 #     return F.interpolate(feat, ori_size[:2], mode='bilinear')
-gfl_cfg = r'G:\projects\openmmlab\mmdetection\configs\gfl\gfl_r101_fpn_ms-2x_coco.py'
-gfl_ckpt = r'G:\projects\research\checkpoint\gfl_r101_fpn_mstrain_2x_coco.pth'
+gfl_cfg = r'D:\projects\openmmlab\mmdetection\configs\gfl\gfl_r101_fpn_ms-2x_coco.py'
+gfl_ckpt = r'D:\projects\checkpoints\gfl_r101_fpn_mstrain_2x_coco_20200629_200126-dd12f847.pth'
 retina_cfg = r'G:\projects\openmmlab\mmdetection\configs\retinanet\retinanet_r101_fpn_2x_coco.py'
 retina_ckpt = r'G:\projects\research\checkpoint\retinanet_r101_fpn_2x_coco.pth'
 
 def main(args):
-    args.config = retina_cfg
+    args.config = gfl_cfg
     args.repo = 'mmdet'
-    args.checkpoint = retina_ckpt
-    args.img = r'G:\projects\openmmlab\mmdetection\demo\demo.jpg'
+    args.checkpoint = gfl_ckpt
+    args.img = r'D:\projects\openmmlab\mmdetection\demo\demo.jpg'
     args.overlaid = True
     args.channel_reduction = 'squeeze_mean'
-    use_norm = True
+    use_norm = False
     register_all_modules(False)
-    cfg = Config.fromfile(args.config)
     mod = import_modules_from_strings(f'{args.repo}.utils')
     mod.register_all_modules()
 
@@ -158,10 +158,7 @@ def main(args):
 
     model = init_model(args.config, args.checkpoint, device=args.device)
     # init visualizer
-    visualizer = VISUALIZERS.build(model.cfg.visualizer)
-    # the dataset_meta is loaded from the checkpoint and
-    # then pass to the model in init_detector
-    visualizer.dataset_meta = model.dataset_meta
+    visualizer = RazorLocalVisualizer()
 
     recorders = ConfigDict(neck=dict(_scope_='mmrazor', type='ModuleOutputs', source='neck'))
     mapping = ConfigDict(p3=dict(recorder='neck', data_idx=0),
@@ -175,9 +172,7 @@ def main(args):
         # test a single image
         _ = inference_model(model, args.img)
 
-    # todo
     overlaid_image = mmcv.imread(args.img, channel_order='rgb') if args.overlaid else None
-    img_shape = overlaid_image.shape[:2]
 
     for name, record in mapping.items():
         recorder = recorder_manager.get_recorder(record.recorder)
@@ -188,17 +183,9 @@ def main(args):
             feats = (feats,)
 
         for i, feat in enumerate(feats):
-            # if use_norm:
-            #     feat = norm(feat)
-            feat = resize(img_shape, feat)
-            # act_max = torch.max(feat, dim=1)[0]
-            # drawn_img = convert_overlay_heatmap(act_max[0], overlaid_image, alpha=0.6,
-            #                                   mmin=act_max.min().item(),
-            #                                   mmax=act_max.max().item())
-            feat = feat[0]  # nchw->chw
-            drawn_img = visualizer.draw_featmap(
-                feat, overlaid_image, args.channel_reduction, args.topk, args.arrangement,
-                args.resize_shape, args.alpha)
+            if use_norm:
+                feat = norm(feat)
+            drawn_img = visualizer.draw_featmap(feat[0], overlaid_image, 'pixel_wise_max')
             visualizer.add_datasample(
                 f'{name}_{i}',
                 drawn_img,
