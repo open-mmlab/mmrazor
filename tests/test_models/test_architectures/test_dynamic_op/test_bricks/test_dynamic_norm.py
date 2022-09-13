@@ -1,13 +1,16 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Tuple, Type
+from unittest import TestCase
 from unittest.mock import MagicMock
 
 import pytest
 import torch
 from torch import nn
+from torch.nn import LayerNorm
 
 from mmrazor.models.architectures.dynamic_ops.bricks import (
-    DynamicBatchNorm1d, DynamicBatchNorm2d, DynamicBatchNorm3d, DynamicMixin)
+    DynamicBatchNorm1d, DynamicBatchNorm2d, DynamicBatchNorm3d,
+    DynamicLayerNorm, DynamicMixin)
 from mmrazor.models.mutables import OneShotMutableChannel
 from mmrazor.structures.subnet import export_fix_subnet, load_fix_subnet
 from ..utils import fix_dynamic_op
@@ -115,3 +118,40 @@ def test_bn_track_running_stats(
     x = torch.rand(*input_shape)
 
     assert torch.equal(d_bn(x), s_bn(x))
+
+
+class TestDynamicLayerNorm(TestCase):
+
+    def setUp(self) -> None:
+        self.dynamic_m = DynamicLayerNorm(100)
+        mutable_num_features = OneShotMutableChannel(
+            100, [10, 50, 100], candidate_mode='number')
+        mutable_num_features.current_choice = 50
+
+        self.dynamic_m.register_mutable_attr('num_features',
+                                             mutable_num_features)
+
+    def test_init(self) -> None:
+        mutable = OneShotMutableChannel(
+            100, [10, 50, 100], candidate_mode='number')
+        self.dynamic_m.register_mutable_attr('in_channels', mutable)
+        self.dynamic_m.register_mutable_attr('out_channels', mutable)
+
+        self.assertEqual(
+            self.dynamic_m.get_mutable_attr('num_features').current_choice, 50)
+
+    def test_to_static_op(self):
+        with pytest.raises(RuntimeError):
+            self.dynamic_m.to_static_op()
+
+        current_mutable = self.dynamic_m.get_mutable_attr('num_features')
+        current_mutable.fix_chosen(current_mutable.dump_chosen())
+        static_op = self.dynamic_m.to_static_op()
+
+        self.assertIsNotNone(static_op)
+
+    def test_convert(self) -> None:
+        static_m = LayerNorm(100)
+        dynamic_m = DynamicLayerNorm.convert_from(static_m)
+
+        self.assertIsNotNone(dynamic_m)

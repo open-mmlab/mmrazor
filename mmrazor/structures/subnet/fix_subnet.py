@@ -18,6 +18,9 @@ def _dynamic_to_static(model: nn.Module) -> None:
         for name, child in module.named_children():
             if isinstance(child, DynamicMixin):
                 setattr(module, name, child.to_static_op())
+                if hasattr(child.to_static_op(), '_modules') and len(
+                        child.to_static_op()._modules.items()) > 0:
+                    traverse_children(module)
             else:
                 traverse_children(child)
 
