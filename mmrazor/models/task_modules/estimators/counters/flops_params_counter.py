@@ -54,6 +54,8 @@ def get_model_flops_params(model,
             Default to dict(flops='M', params='M').
         as_strings (bool): Output FLOPs and params counts in a string form.
             Default to True.
+        seperate_return (bool): Whether to return the resource information
+            separately. Default to False.
         input_constructor (None | callable): If specified, it takes a callable
             method that generates input. otherwise, it will generate a random
             tensor with input shape to calculate FLOPs. Default to None.

@@ -19,22 +19,9 @@ class ResourceEstimator(BaseEstimator):
             Default to dict(flops='M', params='M', latency='ms').
         as_strings (bool): Output FLOPs/params/latency counts in a string
             form. Default to False.
-        spec_modules (list): List of spec modules that needed to count.
-            e.g., ['backbone', 'head'], ['backbone.layer1']. Default to [].
-        disabled_counters (list): List of disabled spec op counters.
-            It contains the op counter names in estimator.op_counters that
-            are required to be disabled, e.g., ['BatchNorm2dCounter'].
-            Defaults to [].
-        measure_latency (bool): whether to measure inference speed or not.
-            Default to False.
-        latency_max_iter (Optional[int]): Max iteration num for the
-            measurement. Default to 100.
-        latency_num_warmup (Optional[int]): Iteration num for warm-up stage.
-            Default to 5.
-        latency_log_interval (Optional[int]): Interval num for logging the
-            results. Default to 100.
-        latency_repeat_num (Optional[int]): Num of times to repeat the
-            measurement. Default to 1.
+        flops_params_cfg (dict): Cfg for estimating FLOPs and parameters.
+            Default to None.
+        latency_cfg (dict): Cfg for estimating latency. Default to None.
 
     Examples:
         >>> # direct calculate resource consume of nn.Conv2d
@@ -98,7 +85,7 @@ class ResourceEstimator(BaseEstimator):
         for unit_key in units:
             if unit_key not in ['flops', 'params', 'latency']:
                 raise KeyError(f'Got invalid key `{unit_key}` in units. ',
-                               'Should be flops, params or latency.')
+                               'Should be `flops`, `params` or `latency`.')
         if flops_params_cfg:
             self.flops_params_cfg = flops_params_cfg
         else:

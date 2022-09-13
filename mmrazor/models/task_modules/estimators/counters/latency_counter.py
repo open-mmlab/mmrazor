@@ -21,6 +21,9 @@ def get_model_latency(model: torch.nn.Module,
         model (torch.nn.Module): The measured model.
         input_shape (tuple): Input shape (including batchsize) used for
             calculation. Default to (1, 3, 224, 224).
+        unit (str): Unit of latency in string format. Default to 'ms'.
+        as_strings (bool): Output latency counts in a string form.
+            Default to False.
         max_iter (Optional[int]): Max iteration num for the measurement.
             Default to 100.
         num_warmup (Optional[int]): Iteration num for warm-up stage.
@@ -75,12 +78,12 @@ def _get_model_latency(model: torch.nn.Module,
         model (torch.nn.Module): The measured model.
         input_shape (tuple): Input shape (including batchsize) used for
             calculation. Default to (1, 3, 224, 224).
-        latency_max_iter (Optional[int]): Max iteration num for the
-            measurement. Default to 100.
-        latency_num_warmup (Optional[int]): Iteration num for warm-up stage.
+        max_iter (Optional[int]): Max iteration num for the measurement.
+            Default to 100.
+        num_warmup (Optional[int]): Iteration num for warm-up stage.
             Default to 5.
-        latency_log_interval (Optional[int]): Interval num for logging the
-            results. Default to 100.
+        log_interval (Optional[int]): Interval num for logging the results.
+            Default to 100.
 
     Returns:
         fps (float): The measured inference speed of the model.
