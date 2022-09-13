@@ -39,7 +39,7 @@ class MutableChannelContainer(BaseMutableChannel):
         if len(self.mutable_channels) == 0:
             return torch.ones([self.num_channels]).bool()
         else:
-            self._full_empty_range()
+            self._fill_unregistered_range()
             self._assert_mutables_valid()
             mutable_channels = list(self.mutable_channels.values())
             masks = [mutable.current_mask for mutable in mutable_channels]
@@ -82,9 +82,14 @@ class MutableChannelContainer(BaseMutableChannel):
             last_end = end
         assert last_end == self.num_channels
 
-    def _full_empty_range(self):
-        """Add SimpleMutableChannels in the range without any stored
-        BaseMutableChannel."""
+    def _fill_unregistered_range(self):
+        """Fill with SimpleMutableChannels in the range without any stored
+        BaseMutableChannel.
+
+        For example, if a MutableChannelContainer has 10 channels, and only the
+        [0,5) is registered with BaseMutableChannels, this method will
+        automatically register BaseMutableChannels in the range [5,10).
+        """
         last_end = 0
         for start, end in copy.copy(self.mutable_channels):
             if last_end < start:
@@ -95,12 +100,3 @@ class MutableChannelContainer(BaseMutableChannel):
             self.register_mutable(
                 SimpleMutableChannel(self.num_channels - last_end), last_end,
                 self.num_channels)
-
-    # others
-
-    def __repr__(self):
-        repr_str = self.__class__.__name__
-        repr_str += f'(name={self.name}, '
-        repr_str += f'num_channels={self.num_channels}, '
-        repr_str += f'activated_channels: {self.activated_channels}'
-        return repr_str

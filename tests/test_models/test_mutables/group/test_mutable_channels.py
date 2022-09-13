@@ -19,8 +19,9 @@ class TestMutableChannels(unittest.TestCase):
             (mutable_channel.current_mask == torch.tensor([1, 1, 1,
                                                            0]).bool()).all())
         channel_str = mutable_channel.__repr__()
-        self.assertEqual(channel_str,
-                         'SquentialMutableChannel(name=, num_channels=4, ')
+        self.assertEqual(
+            channel_str,
+            'SquentialMutableChannel(num_channels=4, activated_channels=3)')
 
         mutable_channel.fix_chosen()
         mutable_channel.dump_chosen()

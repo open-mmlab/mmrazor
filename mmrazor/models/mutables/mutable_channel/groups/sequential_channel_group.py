@@ -12,12 +12,12 @@ from ..simple_mutable_channel import SimpleMutableChannel
 from .mutable_channel_group import MutableChannelGroup
 
 
+# TODO change the name of SequentialMutableChannelGroup
 @MODELS.register_module()
-class SequentialChannelGroup(MutableChannelGroup):
-    """SimpleChannelGroup defines a simple pruning algorithhm.
-
-    The type of choice of SimpleChannelGroup is int. It indicates what ratio of
-    channels are remained from left to right.
+class SequentialMutableChannelGroup(MutableChannelGroup):
+    """SequentialMutableChannelGroup accepts a intger as the choice, which
+    indicates the number of the channels are remained from left to right, like
+    11110000.
 
     Args:
         num_channels (int): number of channels.

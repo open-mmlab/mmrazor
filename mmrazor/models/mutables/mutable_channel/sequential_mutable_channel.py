@@ -4,6 +4,8 @@ import torch
 from mmrazor.registry import MODELS
 from .base_mutable_channel import BaseMutableChannel
 
+# TODO discuss later
+
 
 @MODELS.register_module()
 class SquentialMutableChannel(BaseMutableChannel):

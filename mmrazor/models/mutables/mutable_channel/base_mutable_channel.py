@@ -85,6 +85,8 @@ class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
 
     def __repr__(self):
         repr_str = self.__class__.__name__
-        repr_str += f'(name={self.name}, '
+        repr_str += '('
         repr_str += f'num_channels={self.num_channels}, '
+        repr_str += f'activated_channels={self.activated_channels}'
+        repr_str += ')'
         return repr_str

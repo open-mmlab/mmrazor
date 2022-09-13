@@ -7,8 +7,8 @@ import torch.nn as nn
 
 from mmrazor.models.architectures.dynamic_ops.bricks.dynamic_mixins import \
     DynamicChannelMixin
-from mmrazor.models.mutables.mutable_channel import (MutableChannelGroup,
-                                                     SequentialChannelGroup)
+from mmrazor.models.mutables.mutable_channel import (
+    MutableChannelGroup, SequentialMutableChannelGroup)
 from mmrazor.models.mutables.mutable_channel.groups.channel_group import (  # noqa
     Channel, ChannelGroup, PruneNode)
 from mmrazor.structures.graph import ModuleGraph as ModuleGraph
@@ -23,9 +23,9 @@ TRACER_CFG = dict(
 # DEVICE = torch.device('cuda:0') if torch.cuda.is_available() \
 #     else torch.device('cpu')
 DEVICE = torch.device('cpu')
-GROUPS: List[MutableChannelGroup] = [SequentialChannelGroup]
+GROUPS: List[MutableChannelGroup] = [SequentialMutableChannelGroup]
 
-DefaultChannelGroup = SequentialChannelGroup
+DefaultChannelGroup = SequentialMutableChannelGroup
 
 
 class TestMutableChannelGroup(TestCase):

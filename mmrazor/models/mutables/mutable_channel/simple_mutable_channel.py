@@ -19,7 +19,6 @@ class SimpleMutableChannel(BaseMutableChannel):
 
     def __init__(self, num_channels: int, **kwargs) -> None:
         super().__init__(num_channels, **kwargs)
-        self.num_channels = num_channels
         self.mask = torch.ones(num_channels).bool()
 
     # choice
@@ -53,13 +52,3 @@ class SimpleMutableChannel(BaseMutableChannel):
         derive_fun = partial(
             _expand_mask, mutable_channel=self, expand_ratio=expand_ratio)
         return DerivedMutable(derive_fun, derive_fun, [self])
-
-    # others
-
-    def __repr__(self):
-        repr_str = self.__class__.__name__
-        repr_str += '('
-        repr_str += f'num_channels={self.num_channels}, '
-        repr_str += f'activated_channels: {self.activated_channels}'
-        repr_str += ')'
-        return repr_str
