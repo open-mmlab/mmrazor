@@ -14,6 +14,7 @@ from .dynamic_mixins import DynamicBatchNormMixin, DynamicLayerNormMixin
 
 class _DynamicBatchNorm(_BatchNorm, DynamicBatchNormMixin):
     """Dynamic BatchNormxd OP.
+
     Note:
         Arguments for ``__init__`` of ``DynamicBatchNormxd`` is totally same as
         :obj:`torch.nn.BatchNormxd`.
@@ -27,11 +28,12 @@ class _DynamicBatchNorm(_BatchNorm, DynamicBatchNormMixin):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.mutable_attrs: Dict[str, Optional[BaseMutable]] = nn.ModuleDict()
+        self.mutable_attrs = nn.ModuleDict()
 
     @classmethod
     def convert_from(cls, module: _BatchNorm):
         """Convert a _BatchNorm module to a DynamicBatchNorm.
+
         Args:
             module (:obj:`torch.nn._BatchNorm`): The original BatchNorm module.
         """
@@ -135,6 +137,7 @@ class DynamicBatchNorm3d(_DynamicBatchNorm):
 class DynamicLayerNorm(LayerNorm, DynamicLayerNormMixin):
     """Applies Layer Normalization over a mini-batch of inputs according to the
     `mutable_num_channels` dynamically.
+
     Note:
         Arguments for ``__init__`` of ``DynamicLayerNorm`` is totally same as
         :obj:`torch.nn.LayerNorm`.
@@ -153,6 +156,7 @@ class DynamicLayerNorm(LayerNorm, DynamicLayerNormMixin):
     @classmethod
     def convert_from(cls, module: LayerNorm):
         """Convert a _BatchNorm module to a DynamicBatchNorm.
+
         Args:
             module (:obj:`torch.nn._BatchNorm`): The original BatchNorm module.
         """
