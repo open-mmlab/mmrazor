@@ -80,6 +80,7 @@ def export_fix_subnet(model: nn.Module,
         print_log(
             'Trying to dump information of all derived mutables, '
             'this might harm readability of the exported configurations.',
+            logger='silent',
             level=logging.WARNING)
 
     # Avoid circular import

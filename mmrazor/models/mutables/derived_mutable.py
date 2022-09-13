@@ -282,6 +282,7 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, CHOICE_TYPE],
         print_log(
             'Trying to fix chosen for derived mutable, '
             'which will have no effect.',
+            logger='silent',
             level=logging.WARNING)
 
     def dump_chosen(self) -> CHOICE_TYPE:
@@ -293,6 +294,7 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, CHOICE_TYPE],
         print_log(
             'Trying to dump chosen for derived mutable, '
             'but its value depend on the source mutables.',
+            logger='silent',
             level=logging.WARNING)
         return self.current_choice
 

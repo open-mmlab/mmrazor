@@ -4,7 +4,7 @@ import os
 import os.path as osp
 import random
 import warnings
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import torch
 from mmengine import fileio
@@ -14,7 +14,7 @@ from mmengine.runner import EpochBasedTrainLoop
 from mmengine.utils import is_list_of
 from torch.utils.data import DataLoader
 
-from mmrazor.models.task_modules.estimators import get_model_complexity_info
+from mmrazor.models.task_modules import ResourceEstimator
 from mmrazor.registry import LOOPS
 from mmrazor.structures import Candidates, export_fix_subnet, load_fix_subnet
 from mmrazor.utils import SupportRandomSubnet
@@ -42,10 +42,12 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         num_crossover (int): The number of candidates got by crossover.
             Defaults to 25.
         mutate_prob (float): The probability of mutation. Defaults to 0.1.
-        flops_range (tuple, optional): flops_range to be used for screening
-            candidates.
-        spec_modules (list): Used for specify modules need to counter.
-            Defaults to list().
+        constraints_range (Dict[str, Any]): Constraints to be used for
+            screening candidates. Defaults to dict(flops=330 * 1e6).
+        estimator_cfg (Dict[str, Any]): Used for building a resource estimator.
+            Default to dict().
+        dump_derived_mutable (bool): Whether to dump derived information.
+            Defaults to False.
         score_key (str): Specify one metric in evaluation results to score
             candidates. Defaults to 'accuracy_top-1'.
         init_candidates (str, optional): The candidates file path, which is
@@ -65,9 +67,11 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                  num_mutation: int = 25,
                  num_crossover: int = 25,
                  mutate_prob: float = 0.1,
-                 flops_range: Optional[Tuple[float, float]] = (0., 330 * 1e6),
-                 spec_modules: List = [],
-                 score_key: str = 'accuracy/top1',
+                 constraints_range: Dict[str,
+                                         Any] = dict(flops=(0, 330 * 1e6)),
+                 estimator_cfg: Dict[str, Any] = dict(),
+                 dump_derived_mutable: bool = False,
+                 score_key: str = 'accuracy_top-1',
                  init_candidates: Optional[str] = None) -> None:
         super().__init__(runner, dataloader, max_epochs)
         if isinstance(evaluator, dict) or is_list_of(evaluator, dict):
@@ -84,14 +88,16 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
 
         self.num_candidates = num_candidates
         self.top_k = top_k
-        self.flops_range = flops_range
-        self.spec_modules = spec_modules
+        self.constraints_range = constraints_range
+        self.key_resource = list(self.constraints_range.keys())[0]
+        self.estimator_cfg = estimator_cfg
         self.score_key = score_key
         self.num_mutation = num_mutation
         self.num_crossover = num_crossover
         self.mutate_prob = mutate_prob
         self.max_keep_ckpts = max_keep_ckpts
         self.resume_from = resume_from
+        self.dump_derived = dump_derived_mutable
 
         if init_candidates is None:
             self.candidates = Candidates()
@@ -114,7 +120,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         if self.resume_from:
             self._resume()
 
-        while self._epoch < self._max_epochs:
+        while self.runner.epoch < self.max_epochs:
             self.run_epoch()
             self._save_searcher_ckpt()
 
@@ -142,33 +148,45 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                                 f'{scores_before}')
 
         self.candidates.extend(self.top_k_candidates)
-        self.candidates.sort(key=lambda x: x[1], reverse=True)
+        self.candidates.sort(key=lambda x: x[2], reverse=True)
         self.top_k_candidates = Candidates(self.candidates[:self.top_k])
 
         scores_after = self.top_k_candidates.scores
         self.runner.logger.info(f'top k scores after update: '
                                 f'{scores_after}')
 
-        mutation_candidates = self.gen_mutation_candidates()
-        crossover_candidates = self.gen_crossover_candidates()
-        candidates = mutation_candidates + crossover_candidates
-        assert len(candidates) <= self.num_candidates, 'Total of mutation and \
+        self.mutation_candidates = self.gen_mutation_candidates()
+        self.crossover_candidates = self.gen_crossover_candidates()
+        self.mutation_candidates.extend(self.crossover_candidates)
+        assert len(self.mutation_candidates
+                   ) <= self.num_candidates, 'Total of mutation and \
             crossover should be no more than the number of candidates.'
 
-        self.candidates = Candidates(candidates)
+        self.candidates = self.mutation_candidates
         self._epoch += 1
 
     def sample_candidates(self) -> None:
         """Update candidate pool contains specified number of candicates."""
+        candidates_resources = []
+        init_candidates = len(self.candidates)
         if self.runner.rank == 0:
             while len(self.candidates) < self.num_candidates:
+                flag = False
                 candidate = self.model.sample_subnet()
-                if self._check_constraints(random_subnet=candidate):
+                flag, result = self._check_constraints(random_subnet=candidate)
+                if flag:
                     self.candidates.append(candidate)
+                    candidates_resources.append(result)
         else:
             self.candidates = Candidates([None] * self.num_candidates)
         # broadcast candidates to val with multi-GPUs.
         broadcast_object_list(self.candidates.data)
+        assert init_candidates + len(
+            candidates_resources) == self.num_candidates
+        for i in range(len(candidates_resources)):
+            resources = candidates_resources[i][self.key_resource] \
+                if len(candidates_resources[i]) != 0 else 0.
+            self.candidates.set_resources(i + init_candidates, resources)
 
     def update_candidates_scores(self) -> None:
         """Validate candicate one by one from the candicate pool, and update
@@ -180,12 +198,14 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                 if len(metrics) != 0 else 0.
             self.candidates.set_score(i, score)
             self.runner.logger.info(
-                f'Epoch:[{self._epoch}/{self._max_epochs}] '
+                f'Epoch:[{self.runner.epoch}/{self.max_epochs}] '
                 f'Candidate:[{i + 1}/{self.num_candidates}] '
+                f'{self.key_resource}: {self.candidates.resources[i]} '
                 f'Score:{score}')
 
-    def gen_mutation_candidates(self) -> List:
+    def gen_mutation_candidates(self):
         """Generate specified number of mutation candicates."""
+        mutation_resources = []
         mutation_candidates: List = []
         max_mutate_iters = self.num_mutation * 10
         mutate_iter = 0
@@ -193,15 +213,26 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             mutate_iter += 1
             if mutate_iter > max_mutate_iters:
                 break
-
             mutation_candidate = self._mutation()
-
-            if self._check_constraints(random_subnet=mutation_candidate):
+            flag = False
+            flag, result = self._check_constraints(
+                random_subnet=mutation_candidate)
+            if flag:
                 mutation_candidates.append(mutation_candidate)
+                mutation_resources.append(result)
+
+        mutation_candidates = Candidates(mutation_candidates)
+
+        for i in range(self.num_mutation):
+            resources = mutation_resources[i][self.key_resource] \
+                if len(mutation_resources[i]) != 0 else 0.
+            mutation_candidates.set_resources(i, resources)
+
         return mutation_candidates
 
-    def gen_crossover_candidates(self) -> List:
+    def gen_crossover_candidates(self):
         """Generate specofied number of crossover candicates."""
+        crossover_resources = []
         crossover_candidates: List = []
         crossover_iter = 0
         max_crossover_iters = self.num_crossover * 10
@@ -209,11 +240,20 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             crossover_iter += 1
             if crossover_iter > max_crossover_iters:
                 break
-
             crossover_candidate = self._crossover()
-
-            if self._check_constraints(random_subnet=crossover_candidate):
+            flag = False
+            flag, result = self._check_constraints(
+                random_subnet=crossover_candidate)
+            if flag:
                 crossover_candidates.append(crossover_candidate)
+                crossover_resources.append(result)
+        crossover_candidates = Candidates(crossover_candidates)
+
+        for i in range(self.num_crossover):
+            resources = crossover_resources[i][self.key_resource] \
+                if len(crossover_resources[i]) != 0 else 0.
+            crossover_candidates.set_resources(i, resources)
+
         return crossover_candidates
 
     def _mutation(self) -> SupportRandomSubnet:
@@ -237,7 +277,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             for k in searcher_resume.keys():
                 setattr(self, k, searcher_resume[k])
             epoch_start = int(searcher_resume['_epoch'])
-            self._max_epochs = self._max_epochs - epoch_start
+            self._max_epochs = self.max_epochs - epoch_start
             self.runner.logger.info('#' * 100)
             self.runner.logger.info(f'Resume from epoch: {epoch_start}')
             self.runner.logger.info('#' * 100)
@@ -261,7 +301,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         self.runner.model.eval()
         for data_batch in self.dataloader:
             outputs = self.runner.model.val_step(data_batch)
-            self.evaluator.process(data_samples=outputs, data_batch=data_batch)
+            self.evaluator.process(outputs, data_batch)
         metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
         return metrics
 
@@ -273,19 +313,19 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         """
         if self.runner.rank == 0:
             save_for_resume = dict()
-            save_for_resume['_epoch'] = self._epoch
+            save_for_resume['_epoch'] = self.runner.epoch
             for k in ['candidates', 'top_k_candidates']:
                 save_for_resume[k] = getattr(self, k)
             fileio.dump(
                 save_for_resume,
                 osp.join(self.runner.work_dir,
-                         f'search_epoch_{self._epoch}.pkl'))
+                         f'search_epoch_{self.runner.epoch}.pkl'))
             self.runner.logger.info(
-                f'Epoch:[{self._epoch}/{self._max_epochs}], top1_score: '
+                f'Epoch:[{self.runner.epoch}/{self.max_epochs}], top1_score: '
                 f'{self.top_k_candidates.scores[0]}')
 
             if self.max_keep_ckpts > 0:
-                cur_ckpt = self._epoch + 1
+                cur_ckpt = self.runner.epoch + 1
                 redundant_ckpts = range(1, cur_ckpt - self.max_keep_ckpts)
                 for _step in redundant_ckpts:
                     ckpt_path = osp.join(self.runner.work_dir,
@@ -293,23 +333,26 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                     if osp.isfile(ckpt_path):
                         os.remove(ckpt_path)
 
-    def _check_constraints(self, random_subnet: SupportRandomSubnet) -> bool:
+    def _check_constraints(self, random_subnet: SupportRandomSubnet):
         """Check whether is beyond constraints.
 
         Returns:
             bool: The result of checking.
         """
-        if self.flops_range is None:
+        if self.constraints_range is None:
             return True
 
         self.model.set_subnet(random_subnet)
-        fix_mutable = export_fix_subnet(self.model)
+        fix_mutable = export_fix_subnet(self.model, self.dump_derived)
         copied_model = copy.deepcopy(self.model)
         load_fix_subnet(copied_model, fix_mutable)
-        flops, _ = get_model_complexity_info(
-            copied_model, spec_modules=self.spec_modules)
 
-        if self.flops_range[0] <= flops <= self.flops_range[1]:
-            return True
-        else:
-            return False
+        estimator = ResourceEstimator(**self.estimator_cfg)
+        results = estimator.estimate(copied_model)
+
+        for k, v in self.constraints_range.items():
+            if not isinstance(v, (list, tuple)):
+                v = (0, v)
+            if results[k] < v[0] or results[k] > v[1]:
+                return False, results
+        return True, results
