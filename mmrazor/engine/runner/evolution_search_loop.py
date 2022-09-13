@@ -17,7 +17,7 @@ from mmrazor.models.task_modules import ResourceEstimator
 from mmrazor.registry import LOOPS
 from mmrazor.structures import Candidates, export_fix_subnet
 from mmrazor.utils import SupportRandomSubnet
-from .utils import crossover, check_subnet_flops
+from .utils import check_subnet_flops, crossover
 
 
 @LOOPS.register_module()
@@ -43,7 +43,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         mutate_prob (float): The probability of mutation. Defaults to 0.1.
         flops_range (tuple, optional): It is used for screening candidates.
         resource_estimator_cfg (dict): The config for building estimator, which
-            is be used to estimate the flops of sampled subnet. Defaults to 
+            is be used to estimate the flops of sampled subnet. Defaults to
             None, which means default config is used.
         score_key (str): Specify one metric in evaluation results to score
             candidates. Defaults to 'accuracy_top-1'.
@@ -306,5 +306,5 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             subnet=random_subnet,
             estimator=self.estimator,
             flops_range=self.flops_range)
-        
+
         return is_pass

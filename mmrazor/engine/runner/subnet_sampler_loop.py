@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
 import math
 import os
 import random
@@ -15,7 +14,7 @@ from torch.utils.data import DataLoader
 
 from mmrazor.models.task_modules import ResourceEstimator
 from mmrazor.registry import LOOPS
-from mmrazor.structures import Candidates, export_fix_subnet
+from mmrazor.structures import Candidates
 from mmrazor.utils import SupportRandomSubnet
 from .utils import check_subnet_flops
 
@@ -105,7 +104,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
             candidates. Defaults to 'accuracy_top-1'.
         flops_range (dict): Constraints to be used for screening candidates.
         resource_estimator_cfg (dict): The config for building estimator, which
-            is be used to estimate the flops of sampled subnet. Defaults to 
+            is be used to estimate the flops of sampled subnet. Defaults to
             None, which means default config is used.
         num_candidates (int): The number of the candidates consist of samples
             from supernet and itself. Defaults to 1000.
@@ -327,7 +326,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
             subnet=random_subnet,
             estimator=self.estimator,
             flops_range=self.flops_range)
-        
+
         return is_pass
 
     def _save_candidates(self) -> None:
