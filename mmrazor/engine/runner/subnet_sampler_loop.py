@@ -15,8 +15,9 @@ from torch.utils.data import DataLoader
 
 from mmrazor.models.task_modules import ResourceEstimator
 from mmrazor.registry import LOOPS
-from mmrazor.structures import Candidates, export_fix_subnet, load_fix_subnet
+from mmrazor.structures import Candidates, export_fix_subnet
 from mmrazor.utils import SupportRandomSubnet
+from .utils import check_subnet_flops
 
 
 class BaseSamplerTrainLoop(IterBasedTrainLoop):
@@ -103,10 +104,9 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         score_key (str): Specify one metric in evaluation results to score
             candidates. Defaults to 'accuracy_top-1'.
         flops_range (dict): Constraints to be used for screening candidates.
-        resource_input_shape (Tuple): Input shape when measuring flops.
-            Default to (1, 3, 224, 224).
-        resource_spec_modules (list): Used for specify modules need to counter.
-            Defaults to list().
+        resource_estimator_cfg (dict): The config for building estimator, which
+            is be used to estimate the flops of sampled subnet. Defaults to 
+            None, which means default config is used.
         num_candidates (int): The number of the candidates consist of samples
             from supernet and itself. Defaults to 1000.
         num_samples (int): The number of sample in each sampling subnet.
@@ -141,8 +141,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
                  val_interval: int = 1000,
                  score_key: str = 'accuracy/top1',
                  flops_range: Optional[Tuple[float, float]] = (0., 330),
-                 resource_input_shape: Tuple = (1, 3, 224, 224),
-                 resource_spec_modules: List = [],
+                 resource_estimator_cfg: Optional[dict] = None,
                  num_candidates: int = 1000,
                  num_samples: int = 10,
                  top_k: int = 5,
@@ -179,9 +178,10 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
 
         self.candidates = Candidates()
         self.top_k_candidates = Candidates()
-        self.estimator = ResourceEstimator(
-            input_shape=resource_input_shape,
-            flops_params_cfg=dict(spec_modules=resource_spec_modules))
+        if resource_estimator_cfg is None:
+            self.estimator = ResourceEstimator()
+        else:
+            self.estimator = ResourceEstimator(**resource_estimator_cfg)
 
     def run(self) -> None:
         """Launch training."""
@@ -322,20 +322,13 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         Returns:
             bool: The result of checking.
         """
-        if self.flops_range is None:
-            return True
-
-        self.model.set_subnet(random_subnet)
-        fix_mutable = export_fix_subnet(self.model)
-        copied_model = copy.deepcopy(self.model)
-        load_fix_subnet(copied_model, fix_mutable)
-        results = self.estimator.estimate(copied_model)
-        flops = results['flops']
-
-        if self.flops_range[0] <= flops <= self.flops_range[1]:  # type: ignore
-            return True
-        else:
-            return False
+        is_pass = check_subnet_flops(
+            model=self.model,
+            subnet=random_subnet,
+            estimator=self.estimator,
+            flops_range=self.flops_range)
+        
+        return is_pass
 
     def _save_candidates(self) -> None:
         """Save the candidates to init the next searching."""

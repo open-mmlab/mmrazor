@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
 import os
 import os.path as osp
 import random
@@ -16,9 +15,9 @@ from torch.utils.data import DataLoader
 
 from mmrazor.models.task_modules import ResourceEstimator
 from mmrazor.registry import LOOPS
-from mmrazor.structures import Candidates, export_fix_subnet, load_fix_subnet
+from mmrazor.structures import Candidates, export_fix_subnet
 from mmrazor.utils import SupportRandomSubnet
-from .utils import crossover
+from .utils import crossover, check_subnet_flops
 
 
 @LOOPS.register_module()
@@ -42,12 +41,10 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         num_crossover (int): The number of candidates got by crossover.
             Defaults to 25.
         mutate_prob (float): The probability of mutation. Defaults to 0.1.
-        flops_range (tuple, optional): flops_range to be used for screening
-            candidates.
-        resource_input_shape (Tuple): Input shape when measuring flops.
-            Default to (1, 3, 224, 224).
-        resource_spec_modules (list): Used for specify modules need to counter.
-            Defaults to list().
+        flops_range (tuple, optional): It is used for screening candidates.
+        resource_estimator_cfg (dict): The config for building estimator, which
+            is be used to estimate the flops of sampled subnet. Defaults to 
+            None, which means default config is used.
         score_key (str): Specify one metric in evaluation results to score
             candidates. Defaults to 'accuracy_top-1'.
         init_candidates (str, optional): The candidates file path, which is
@@ -67,9 +64,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                  num_mutation: int = 25,
                  num_crossover: int = 25,
                  mutate_prob: float = 0.1,
-                 flops_range: Optional[Tuple[float, float]] = (0., 330),
-                 resource_input_shape: Tuple = (1, 3, 224, 224),
-                 resource_spec_modules: List = [],
+                 flops_range: Optional[Tuple[float, float]] = (0., 330.),
+                 resource_estimator_cfg: Optional[dict] = None,
                  score_key: str = 'accuracy/top1',
                  init_candidates: Optional[str] = None) -> None:
         super().__init__(runner, dataloader, max_epochs)
@@ -103,9 +99,10 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                 correct init candidates file'
 
         self.top_k_candidates = Candidates()
-        self.estimator = ResourceEstimator(
-            input_shape=resource_input_shape,
-            flops_params_cfg=dict(spec_modules=resource_spec_modules))
+        if resource_estimator_cfg is None:
+            self.estimator = ResourceEstimator()
+        else:
+            self.estimator = ResourceEstimator(**resource_estimator_cfg)
 
         if self.runner.distributed:
             self.model = runner.model.module
@@ -304,17 +301,10 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         Returns:
             bool: The result of checking.
         """
-        if self.flops_range is None:
-            return True
-
-        self.model.set_subnet(random_subnet)
-        fix_mutable = export_fix_subnet(self.model)
-        copied_model = copy.deepcopy(self.model)
-        load_fix_subnet(copied_model, fix_mutable)
-        results = self.estimator.estimate(copied_model)
-        flops = results['flops']
-
-        if self.flops_range[0] <= flops <= self.flops_range[1]:  # type: ignore
-            return True
-        else:
-            return False
+        is_pass = check_subnet_flops(
+            model=self.model,
+            subnet=random_subnet,
+            estimator=self.estimator,
+            flops_range=self.flops_range)
+        
+        return is_pass
