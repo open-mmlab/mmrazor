@@ -6,8 +6,8 @@ from typing import Dict, List, Optional
 from torch.nn import Module
 
 from mmrazor.registry import MODELS, TASK_UTILS
-from mmrazor.structures import PathConcatNode, PathDepthWiseConvNode, PathList
 from ...mutables import MutableChannel
+from ...task_modules import PathConcatNode, PathDepthWiseConvNode, PathList
 from ..base_mutator import BaseMutator
 from ..utils import DEFAULT_MODULE_CONVERTERS
 

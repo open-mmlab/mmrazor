@@ -14,9 +14,9 @@ State-of-the-art distillation methods are mainly based on distilling deep featur
 
 ### Classification
 
-| Dataset  | Model     | Teacher   | Top-1 (%) | Top-5 (%) | Configs                                    | Download                                                                                             |
-| -------- | --------- | --------- | --------- | --------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| ImageNet | ResNet-18 | ResNet-34 | 71.368    | 90.256    | [config](dkd_logits_r34_r18_8xb32_in1k.py) | [model & log](https://autolink.sensetime.com/pages/model/share/afc68955-e25d-4488-b044-5e801b3ff62f) |
+| Dataset  | Model     | Teacher   | Top-1 (%) | Top-5 (%) | Configs                                       | Download                                                                                                                                                                                                                                    |
+| -------- | --------- | --------- | --------- | --------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ImageNet | ResNet-18 | ResNet-34 | 71.368    | 90.256    | [config](dkd_resnet34_resnet18_8xb32_in1k.py) | [model](https://download.openmmlab.com/mmrazor/v1/dkd/dkd_resnet34_resnet18_8xb32_in1k_20220804_202619-f9519768.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/dkd/dkd_resnet34_resnet18_8xb32_in1k_20220804_202619-f9519768.json) |
 
 ## Citation
 
@@ -38,9 +38,8 @@ https://mmclassification.readthedocs.io/en/latest/papers/resnet.html
 ### Distillation training.
 
 ```bash
-sh tools/slurm_train.sh $PARTITION $JOB_NAME \
-  configs/distill/mmcls/dkd/dkd_logits_r34_r18_8xb32_in1k.py \
-  $DISTILLATION_WORK_DIR
+sh tools/dist_train.sh \
+  configs/distill/mmcls/dkd/dkd_logits_r34_r18_8xb32_in1k.py 8
 ```
 
 ## Acknowledgement

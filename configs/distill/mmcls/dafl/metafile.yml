@@ -1,0 +1,43 @@
+Collections:
+  - Name: DAFL
+    Metadata:
+      Training Data:
+        - CIFAR-10
+    Paper:
+      URL: https://doi.org/10.1109/ICCV.2019.00361
+      Title: Data-Free Learning of Student Networks
+    README: configs/distill/mmcls/dafl/README.md
+    Converted From:
+      Code:
+        URL: https://github.com/huawei-noah/Efficient-Computing/tree/master/Data-Efficient-Model-Compression/DAFL
+Models:
+  - Name: dafl_logits_resnet34_resnet18_8xb256_cifar10
+    In Collection: DAFL
+    Metadata:
+      inference time (ms/im):
+        - value: 0.34
+          hardware: NVIDIA A100-SXM4-80GB
+          backend: PyTorch
+          batch size: 256
+          mode: FP32
+          resolution: (32, 32)
+      Location: logits
+      Student:
+        Config: mmcls::resnet/resnet18_8xb16_cifar10.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_b16x8_cifar10_20210528-bd6371c8.pth
+        Metrics:
+          Top 1 Accuracy: 94.82
+          Top 5 Accuracy: 99.87
+      Teacher:
+        Config: mmcls::resnet/resnet34_8xb16_cifar10.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet34_b16x8_cifar10_20210528-a8aa36a6.pth
+        Metrics:
+          Top 1 Accuracy: 95.34
+          Top 5 Accuracy: 99.87
+    Results:
+      - Task: Image Classification
+        Dataset: CIFAR-10
+        Metrics:
+          Top 1 Accuracy: 93.27
+    Config: configs/distill/mmcls/dafl/dafl_logits_resnet34_resnet18_8xb256_cifar10.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/DAFL/dafl_logits_resnet34_resnet18_8xb256_cifar10_20220815_202654-67142167.pth

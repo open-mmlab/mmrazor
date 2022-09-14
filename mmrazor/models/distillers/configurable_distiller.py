@@ -7,8 +7,8 @@ from mmengine.model import BaseModel
 from torch import nn
 
 from mmrazor.registry import MODELS
-from mmrazor.structures import DistillDeliveryManager, RecorderManager
 from ..algorithms.base import LossResults
+from ..task_modules import DistillDeliveryManager, RecorderManager
 from .base_distiller import BaseDistiller
 
 

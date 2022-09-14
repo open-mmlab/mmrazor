@@ -193,8 +193,9 @@ class TestGreedySamplerTrainLoop(TestCase):
         self.assertEqual(len(loop.top_k_candidates), loop.top_k - 1)
 
     @patch('mmrazor.engine.runner.subnet_sampler_loop.export_fix_subnet')
-    @patch('mmrazor.models.task_modules.ResourceEstimator.estimate')
-    def test_run(self, mock_estimate, mock_export_fix_mutable):
+    @patch(
+        'mmrazor.engine.runner.subnet_sampler_loop.get_model_complexity_info')
+    def test_run(self, mock_flops, mock_export_fix_subnet):
         # test run with flops_range=None
         cfg = copy.deepcopy(self.iter_based_cfg)
         cfg.experiment_name = 'test_run1'
@@ -213,8 +214,8 @@ class TestGreedySamplerTrainLoop(TestCase):
         runner = Runner.from_cfg(cfg)
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
         runner.model.sample_subnet = MagicMock(return_value=fake_subnet)
-        mock_estimate.return_value = {'flops': 50.}
-        mock_export_fix_mutable.return_value = fake_subnet
+        mock_flops.return_value = (50., 1)
+        mock_export_fix_subnet.return_value = fake_subnet
         runner.train()
 
         self.assertEqual(runner.iter, runner.max_iters)

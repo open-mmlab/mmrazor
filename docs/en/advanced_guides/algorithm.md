@@ -1,4 +1,5 @@
 # Algorithm
+
 ## Introduction
 
 ### What is algorithm in MMRazor
@@ -10,15 +11,15 @@ MMRazor is a model compression toolkit, which includes 4 mianstream technologies
 - Knowledge Distillation (KD)
 - Quantization (come soon)
 
-And in MMRazor, `algorithm` is a general item for these technologies. For example, in NAS,  
+And in MMRazor, `algorithm` is a general item for these technologies. For example, in NAS,
 
-[SPOS](https://github.com/open-mmlab/mmrazor/blob/master/configs/nas/spos)[ ](https://arxiv.org/abs/1904.00420)is an `algorithm`,  [CWD](https://github.com/open-mmlab/mmrazor/blob/master/configs/distill/cwd) is also an `algorithm` of knowledge distillation. 
+[SPOS](https://github.com/open-mmlab/mmrazor/blob/master/configs/nas/spos)[ ](https://arxiv.org/abs/1904.00420)is an `algorithm`,  [CWD](https://github.com/open-mmlab/mmrazor/blob/master/configs/distill/cwd) is also an `algorithm` of knowledge distillation.
 
-`algorithm`  is the entrance of `mmrazor/models` . Its role in MMRazor is the same as both `classifier` in [MMClassification](https://github.com/open-mmlab/mmclassification) and `detector` in [MMDetection](https://github.com/open-mmlab/mmdetection). 
+`algorithm`  is the entrance of `mmrazor/models` . Its role in MMRazor is the same as both `classifier` in [MMClassification](https://github.com/open-mmlab/mmclassification) and `detector` in [MMDetection](https://github.com/open-mmlab/mmdetection).
 
 ### About base algorithm
 
-In the directory of `models/algorith``ms`, all model compression algorithms are divided into 4 subdirectories: nas / pruning / distill / quantization. These algorithms must inherit from `BaseAlgorithm`, whose definition is as below.
+In the directory of `models/algorithms`, all model compression algorithms are divided into 4 subdirectories: nas / pruning / distill / quantization. These algorithms must inherit from `BaseAlgorithm`, whose definition is as below.
 
 ```Python
 from typing import Dict, List, Optional, Tuple, Union
@@ -37,9 +38,9 @@ class BaseAlgorithm(BaseModel):
                  architecture: Union[BaseModel, Dict],
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  init_cfg: Optional[Dict] = None):
-        
+
         ......
-        
+
         super().__init__(data_preprocessor, init_cfg)
         self.architecture = architecture
 
@@ -47,7 +48,7 @@ class BaseAlgorithm(BaseModel):
                 batch_inputs: torch.Tensor,
                 data_samples: Optional[List[BaseDataElement]] = None,
                 mode: str = 'tensor') -> ForwardResults:
-        
+
         if mode == 'loss':
             return self.loss(batch_inputs, data_samples)
         elif mode == 'tensor':
@@ -86,11 +87,9 @@ class BaseAlgorithm(BaseModel):
 
 As you can see from above, `BaseAlgorithm` is inherited from `BaseModel` of MMEngine. `BaseModel` implements the basic functions of the algorithmic model, such as weights initialize,
 
-batch inputs preprocess (see more information in `BaseDataPreprocessor` class of MMEngine), parse losses, and update model parameters. For more details of `BaseModel` , you can see docs for `BaseModel`. 
+batch inputs preprocess (see more information in `BaseDataPreprocessor` class of MMEngine), parse losses, and update model parameters. For more details of `BaseModel` , you can see docs for `BaseModel`.
 
 `BaseAlgorithm`'s forward is just a wrapper of `BaseModel`'s forward. Sub-classes inherited from BaseAlgorithm only need to override the `loss` method, which implements the logic to calculate loss, thus various algorithms can be trained in the runner.
-
-
 
 ## How to use existing algorithms in MMRazor
 
@@ -108,7 +107,9 @@ architecture = _base_.model
 
 - Use your customized model as below, which is an example of defining a VGG model as our architecture.
 
-> How to customize architectures can refer to our tutorial: [Customize Architectures](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_3_customize_architectures.html#).
+```{note}
+How to customize architectures can refer to our tutorial: [Customize Architectures](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_architectures.html).
+```
 
 ```Python
 default_scope='mmcls'
@@ -123,9 +124,11 @@ architecture = dict(
     ))
 ```
 
-2. Apply the registered algorithm to your architecture. 
+2. Apply the registered algorithm to your architecture.
 
-> The arg name of `algorithm` in config is **model** rather than **algorithm** in order to get better supports of MMCV and MMEngine.
+```{note}
+The arg name of `algorithm` in config is **model** rather than **algorithm** in order to get better supports of MMCV and MMEngine.
+```
 
 Maybe more args in model need to set according to the used algorithm.
 
@@ -135,7 +138,9 @@ model = dict(
     architecture=architecture)
 ```
 
-> About the usage of `Config`, refer to [Config ‒ mmcv 1.5.3 documentation](https://mmcv.readthedocs.io/en/latest/understand_mmcv/config.html) please.
+```{note}
+About the usage of `Config`, refer to [config.md](https://github.com/open-mmlab/mmengine/blob/main/docs/zh_cn/tutorials/config.md) please.
+```
 
 3. Apply some custom hooks or loops to your algorithm. (optional)
 
@@ -196,15 +201,17 @@ class XXX(BaseAlgorithm):
     def __init__(self, architecture):
         super().__init__(architecture)
         ......
-        
-    def loss(self, batch_inputs): 
+
+    def loss(self, batch_inputs):
         ......
         return LossResults
 ```
 
 3. Add the remaining functions of the algorithm
 
-> This step is special because of the diversity of algorithms. Some functions of the algorithm may also be implemented in other files.
+```{note}
+This step is special because of the diversity of algorithms. Some functions of the algorithm may also be implemented in other files.
+```
 
 ```Python
 from mmrazor.models.algorithms import BaseAlgorithm
@@ -219,17 +226,17 @@ class XXX(BaseAlgorithm):
     def loss(self, batch_inputs):
         ......
         return LossResults
-    
+
     def aaa(self):
         ......
-        
+
     def bbb(self):
         ......
 ```
 
 4. Import the class
 
-You can add the following line to `mmrazor/models/algorithms/``{subdirectory}/``__init__.py`
+You can add the following line to `mmrazor/models/algorithms/{subdirectory}/__init__.py`
 
 ```CoffeeScript
 from .xxx import XXX
@@ -255,12 +262,12 @@ Please refer to our tutorials about how to customize different algorithms for mo
 
 1. NAS
 
-[Customize NAS algorithms](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_4_customize_nas_algorithms.html#)
+[Customize NAS algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_nas_algorithms.html)
 
 2. Pruning
 
-[Customize Pruning algorithms](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_5_customize_pruning_algorithms.html)
+[Customize Pruning algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_pruning_algorithms.html)
 
-3. Distill 
+3. Distill
 
-[Customize KD algorithms](https://mmrazor.readthedocs.io/en/latest/tutorials/Tutorial_6_customize_kd_algorithms.html)
+[Customize KD algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_kd_algorithms.html)

@@ -1,6 +1,8 @@
-# A Comprehensive Overhaul of Feature Distillation
+# Overhaul
 
-> [A Comprehensive Overhaul of Feature Distillation](https://sites.google.com/view/byeongho-heo/overhaul)
+> [A Comprehensive Overhaul of Feature Distillation](https://arxiv.org/abs/1904.01866)
+
+<!-- [ALGORITHM] -->
 
 ## Abstract
 
@@ -20,16 +22,16 @@ We investigate the design aspects of feature distillation methods achieving netw
 
 #### Vanilla
 
-| Dataset | Model                                                                  | Top-1 (%) | Top-5 (%) | Download          |
-| ------- | ---------------------------------------------------------------------- | --------- | --------- | ----------------- |
-| CIFAR10 | [WRN16-2](../../../vanilla/mmcls/wide-resnet/wrn16_2_b16x8_cifar10.py) | 93.43     | 99.75     | [model & log](<>) |
-| CIFAR10 | [WRN28-4](../../../vanilla/mmcls/wide-resnet/wrn28_4_b16x8_cifar10.py) | 95.49     | 99.81     | [model & log](<>) |
+| Dataset | Model                                                                   | Top-1 (%) | Top-5 (%) | Download                                                                                                                                                                                                                              |
+| ------- | ----------------------------------------------------------------------- | --------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CIFAR10 | [WRN16-2](../../../vanilla/mmcls/wide-resnet/wrn16-w2_b16x8_cifar10.py) | 93.43     | 99.75     | [model](https://download.openmmlab.com/mmrazor/v1/wide_resnet/wrn16_2_b16x8_cifar10_20220831_204709-446b466e.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/wide_resnet/wrn16_2_b16x8_cifar10_20220831_204709-446b466e.json) |
+| CIFAR10 | [WRN28-4](../../../vanilla/mmcls/wide-resnet/wrn28-w4_b16x8_cifar10.py) | 95.49     | 99.81     | [model](https://download.openmmlab.com/mmrazor/v1/wide_resnet/wrn28_4_b16x8_cifar10_20220831_173536-d6f8725c.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/wide_resnet/wrn28_4_b16x8_cifar10_20220831_173536-d6f8725c.json) |
 
 #### Distillation
 
-| Dataset | Model   | Flops(M) | Teacher | Top-1 (%) | Top-5 (%) | Configs                                                     | Download          |
-| ------- | ------- | -------- | ------- | --------- | --------- | ----------------------------------------------------------- | ----------------- |
-| CIFAR10 | WRN16-2 | 101      | WRN28-4 | 95.23     | 99.79     | [config](./ofd_backbone_resnet50_resnet18_8xb16_cifar10.py) | [model & log](<>) |
+| Dataset | Model   | Flops(M) | Teacher | Top-1 (%) | Top-5 (%) | Configs                                                     | Download                                                                                                                                                                                                                                                                                                                        |
+| ------- | ------- | -------- | ------- | --------- | --------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CIFAR10 | WRN16-2 | 101      | WRN28-4 | 95.23     | 99.79     | [config](./ofd_backbone_resnet50_resnet18_8xb16_cifar10.py) | [model](https://download.openmmlab.com/mmrazor/v1/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb16_cifar10_train_20220831_201322-943df33f.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb16_cifar10_train_20220831_201322-943df33f.json) |
 
 ## Getting Started
 

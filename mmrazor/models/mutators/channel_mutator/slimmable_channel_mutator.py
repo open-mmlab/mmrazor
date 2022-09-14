@@ -7,10 +7,10 @@ import torch.nn as nn
 from torch.nn import Module
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.architectures.dynamic_op import DynamicBatchNorm
+from mmrazor.models.architectures.dynamic_ops import DynamicBatchNorm
 from mmrazor.models.mutables import SlimmableMutableChannel
 from mmrazor.registry import MODELS
-from mmrazor.structures import PathList
+from ...task_modules import PathList
 from ..utils import switchable_bn_converter
 from .channel_mutator import ChannelMutator
 
