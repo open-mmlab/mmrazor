@@ -4,14 +4,15 @@ from typing import Dict
 import torch.nn as nn
 from torch import Tensor
 
+from mmrazor.models.architectures.ops import RelativePosition2D
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from .dynamic_mixins import DynamicRelativePosition2DMixin
-from mmrazor.models.architectures.ops import RelativePosition2D
 
 
 class DynamicRelativePosition2D(RelativePosition2D,
                                 DynamicRelativePosition2DMixin):
     """Searchable RelativePosition module.
+
     Args:
         head_dims (int/Int): Parallel attention heads.
         head_dims ([int/Int]): embedding dims of relative position.

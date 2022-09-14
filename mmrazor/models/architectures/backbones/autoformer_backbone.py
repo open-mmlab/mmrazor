@@ -95,7 +95,7 @@ class TransformerEncoderLayer(BaseBackbone):
             value_list=[64], default_value=64)
 
         # handle the mutable of the first dynamic LN
-        self.norm1.register_mutable_attr('num_fe[atures', mutable_embed_dims)
+        self.norm1.register_mutable_attr('num_features', mutable_embed_dims)
 
         # handle the mutable in multihead attention
         mutable_q_embed_dims: OneShotMutableValue = mutable_num_heads.derive_expand_mutable(  # noqa: E501

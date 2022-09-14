@@ -1,12 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from unittest import TestCase
-import torch
-import torch.nn as nn
+
 import pytest
+import torch
 
 from mmrazor.models.architectures.dynamic_ops import DynamicRelativePosition2D
 from mmrazor.models.architectures.ops import RelativePosition2D
 from mmrazor.models.mutables import OneShotMutableChannel
+
 
 class TestDynamicRP(TestCase):
 
@@ -58,5 +59,5 @@ class TestDynamicRP(TestCase):
         self.assertIsNotNone(static_m)
 
         dynamic_output = self.dynamic_rp.forward(14, 14)
-        static_output =  static_m.forward(14, 14)
+        static_output = static_m.forward(14, 14)
         assert torch.equal(dynamic_output, static_output)

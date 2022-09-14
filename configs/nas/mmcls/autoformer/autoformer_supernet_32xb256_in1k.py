@@ -22,7 +22,7 @@ supernet = dict(
     _scope_='mmrazor',
     type='SearchableImageClassifier',
     data_preprocessor=data_preprocessor,
-    backbone=dict(type='AutoformerBackbone'),
+    backbone=dict(_scope_='mmrazor', type='AutoformerBackbone'),
     neck=None,
     head=dict(
         type='DynamicLinearClsHead',

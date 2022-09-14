@@ -9,8 +9,8 @@ else:
 
 import torch.nn as nn
 
-from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.architectures.ops import RelativePosition2D
+from mmrazor.models.mutables.base_mutable import BaseMutable
 
 
 class DynamicMHAProtocol(Protocol):
