@@ -130,8 +130,8 @@ def convert_overlay_heatmap(feat_map, img, alpha = 0.5, mmin=None, mmax=None):
 #     h, w = round(fh * rh), round(fw * rw)
 #     feat = feat[..., :h, :w]
 #     return F.interpolate(feat, ori_size[:2], mode='bilinear')
-gfl_cfg = r'D:\projects\openmmlab\mmdetection\configs\gfl\gfl_r101_fpn_ms-2x_coco.py'
-gfl_ckpt = r'D:\projects\checkpoints\gfl_r101_fpn_mstrain_2x_coco_20200629_200126-dd12f847.pth'
+gfl_cfg = r'G:\projects\openmmlab\mmdetection\configs\gfl\gfl_r101_fpn_ms-2x_coco.py'
+gfl_ckpt = r'G:\projects\research\checkpoint\gfl_r101_fpn_mstrain_2x_coco.pth'
 retina_cfg = r'G:\projects\openmmlab\mmdetection\configs\retinanet\retinanet_r101_fpn_2x_coco.py'
 retina_ckpt = r'G:\projects\research\checkpoint\retinanet_r101_fpn_2x_coco.pth'
 
@@ -139,7 +139,7 @@ def main(args):
     args.config = gfl_cfg
     args.repo = 'mmdet'
     args.checkpoint = gfl_ckpt
-    args.img = r'D:\projects\openmmlab\mmdetection\demo\demo.jpg'
+    args.img = r'G:\projects\openmmlab\mmdetection\demo\demo.jpg'
     args.overlaid = True
     args.channel_reduction = 'squeeze_mean'
     use_norm = False
