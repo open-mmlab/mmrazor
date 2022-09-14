@@ -126,7 +126,7 @@ class AutoSlim(BaseAlgorithm):
         total_losses.update(add_prefix(min_subnet_losses, 'min_subnet'))
 
         for sample_idx in range(self.num_samples):
-            self.set_sampled_subnet()
+            self.set_subnet(self.sample_subnet())
             random_subnet_losses = distill_step(batch_inputs, data_samples)
             total_losses.update(
                 add_prefix(random_subnet_losses,
@@ -195,7 +195,7 @@ class AutoSlimDDP(MMDistributedDataParallel):
         total_losses.update(add_prefix(min_subnet_losses, 'min_subnet'))
 
         for sample_idx in range(self.module.num_samples):
-            self.module.set_sampled_subnet()
+            self.module.set_subnet(self.module.sample_subnet())
             random_subnet_losses = distill_step(batch_inputs, data_samples)
             total_losses.update(
                 add_prefix(random_subnet_losses,
