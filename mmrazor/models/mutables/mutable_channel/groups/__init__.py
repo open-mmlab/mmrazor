@@ -14,7 +14,7 @@ MutableChannelGroup
 Subclasses of MutableChannelGroup
 """
 from .mutable_channel_group import ChannelGroupType, MutableChannelGroup
-from .sequential_channel_group import SequentialMutableChannelGroup
+from .sequential_mutable_channel_group import SequentialMutableChannelGroup
 
 __all__ = [
     'MutableChannelGroup', 'SequentialMutableChannelGroup', 'ChannelGroupType'
