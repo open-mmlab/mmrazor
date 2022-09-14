@@ -3,11 +3,16 @@ import copy
 from typing import Optional, Tuple
 
 import torch.nn as nn
-from mmdet.models.detectors import BaseDetector
 
 from mmrazor.models import ResourceEstimator
 from mmrazor.structures import export_fix_subnet, load_fix_subnet
 from mmrazor.utils import SupportRandomSubnet
+
+try:
+    from mmdet.models.detectors import BaseDetector
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    BaseDetector = get_placeholder('mmdet')
 
 
 def check_subnet_flops(

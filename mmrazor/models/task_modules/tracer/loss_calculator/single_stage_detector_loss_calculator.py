@@ -1,8 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
-from mmdet.models import BaseDetector
 
 from mmrazor.registry import TASK_UTILS
+
+try:
+    from mmdet.models.detectors import BaseDetector
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    BaseDetector = get_placeholder('mmdet')
 
 
 # todo: adapt to mmdet 2.0
