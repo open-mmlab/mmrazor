@@ -10,6 +10,8 @@ from mmrazor.registry import MODELS
 from .dynamic_conv_mixins import (BigNasConvMixin, DynamicConvMixin,
                                   OFAConvMixin)
 
+GroupWiseConvWarned = False
+
 
 @MODELS.register_module()
 class DynamicConv2d(nn.Conv2d, DynamicConvMixin):
@@ -37,16 +39,32 @@ class DynamicConv2d(nn.Conv2d, DynamicConvMixin):
     def convert_from(cls, module: nn.Conv2d) -> 'DynamicConv2d':
         """Convert an instance of nn.Conv2d to a new instance of
         DynamicConv2d."""
-        return cls(
-            in_channels=module.in_channels,
-            out_channels=module.out_channels,
-            kernel_size=module.kernel_size,
-            stride=module.stride,
-            padding=module.padding,
-            dilation=module.dilation,
-            groups=module.groups,
-            bias=True if module.bias is not None else False,
-            padding_mode=module.padding_mode)
+        # a group-wise conv will not be converted to dynamic conv
+        if module.groups > 1 and not (module.groups == module.out_channels ==
+                                      module.in_channels):
+            global GroupWiseConvWarned
+            if GroupWiseConvWarned is False:
+                from mmengine import MMLogger
+                logger = MMLogger.get_instance(
+                    'mmrazor', logger_name='mmrazor')
+                logger.warning(
+                    ('Group-wise convolutional layers are not supported to be'
+                     'pruned now, so they are not converted to new'
+                     'DynamicConvs.'))
+                GroupWiseConvWarned = True
+
+            return module
+        else:
+            return cls(
+                in_channels=module.in_channels,
+                out_channels=module.out_channels,
+                kernel_size=module.kernel_size,
+                stride=module.stride,
+                padding=module.padding,
+                dilation=module.dilation,
+                groups=module.groups,
+                bias=True if module.bias is not None else False,
+                padding_mode=module.padding_mode)
 
     @property
     def conv_func(self) -> Callable:
@@ -146,6 +164,7 @@ class OFAConv2d(nn.Conv2d, OFAConvMixin):
     def convert_from(cls, module: nn.Conv2d) -> 'OFAConv2d':
         """Convert an instance of `nn.Conv2d` to a new instance of
         `OFAConv2d`."""
+
         return cls(
             in_channels=module.in_channels,
             out_channels=module.out_channels,
