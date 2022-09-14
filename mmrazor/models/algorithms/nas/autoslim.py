@@ -35,6 +35,7 @@ class AutoSlim(BaseAlgorithm):
         super().__init__(architecture, data_preprocessor, init_cfg)
 
         self.mutator: OneShotChannelMutator = MODELS.build(mutator)
+        # prepare_from_supernet` must be called before distiller initialized
         self.mutator.prepare_from_supernet(self.architecture)
 
         self.distiller = self._build_distiller(distiller)
@@ -68,14 +69,11 @@ class AutoSlim(BaseAlgorithm):
 
         return distiller
 
-    def sample_subnet(self):
+    def sample_subnet(self) -> Dict:
         return self.mutator.sample_choices()
 
     def set_subnet(self, subnet) -> None:
         self.mutator.set_choices(subnet)
-
-    def set_sampled_subnet(self):
-        self.mutator.set_choices(self.mutator.sample_choices())
 
     def set_max_subnet(self) -> None:
         self.mutator.set_choices(self.mutator.max_choices())

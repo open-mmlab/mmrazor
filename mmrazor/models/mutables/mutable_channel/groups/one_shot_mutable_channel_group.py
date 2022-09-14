@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import random
-from typing import List, Union
+from typing import Dict, List, Union
 
 import torch.nn as nn
 
@@ -48,7 +48,9 @@ class OneShotMutableChannelGroup(SequentialMutableChannelGroup):
 
     # ~
 
-    def config_template(self, with_init_args=False, with_channels=False):
+    def config_template(self,
+                        with_init_args=False,
+                        with_channels=False) -> Dict:
         """Config template of the OneShotMutableChannelGroup."""
         config = super().config_template(with_init_args, with_channels)
         if with_init_args:
@@ -62,7 +64,7 @@ class OneShotMutableChannelGroup(SequentialMutableChannelGroup):
     # choice
 
     @property
-    def current_choice(self):
+    def current_choice(self) -> Union[int, float]:
         """Get current choice."""
         return self._choice
 
@@ -77,7 +79,7 @@ class OneShotMutableChannelGroup(SequentialMutableChannelGroup):
             self,  # type: ignore
             choice_int)  # type: ignore
 
-    def sample_choice(self):
+    def sample_choice(self) -> Union[int, float]:
         """Sample a valid choice."""
         rand_idx = random.randint(0, len(self.candidate_choices) - 1)
         return self.candidate_choices[rand_idx]
@@ -95,7 +97,7 @@ class OneShotMutableChannelGroup(SequentialMutableChannelGroup):
     # private methods
 
     def _prepare_candidate_choices(self, candidate_choices: List,
-                                   candidate_mode):
+                                   candidate_mode) -> List:
         """Process candidate_choices."""
         choice_type = int if candidate_mode == 'number' else float
         for choice in candidate_choices:

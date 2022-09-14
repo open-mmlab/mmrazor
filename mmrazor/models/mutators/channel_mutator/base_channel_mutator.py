@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import Dict, Generic, List, Optional, Type, Union
+from typing import Dict, Generic, List, Optional, Tuple, Type, Union
 
 from mmengine import fileio
 from torch.nn import Module
@@ -199,7 +199,7 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
     # choice manage
 
     @property
-    def current_choices(self):
+    def current_choices(self) -> Dict:
         """Get current choices."""
         config = self.choice_template
         for group in self.mutable_groups:
@@ -239,7 +239,7 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
     def search_groups(self) -> Dict:
         return self._name2group
 
-    def mutable_class_type(self):
+    def mutable_class_type(self) -> Type[ChannelGroupType]:
         return self.group_class
 
     # private methods
@@ -265,7 +265,9 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
             mutable_groups.append(mutable_group)
         return mutable_groups
 
-    def _parse_channl_group_cfg(self, channl_group_cfg):
+    def _parse_channl_group_cfg(
+            self,
+            channl_group_cfg) -> Tuple[Type[ChannelGroupType], Dict, Dict]:
         """Parse channl_group_cfg."""
         if isinstance(channl_group_cfg, dict):
             group_class = MODELS.module_dict[channl_group_cfg['type']]

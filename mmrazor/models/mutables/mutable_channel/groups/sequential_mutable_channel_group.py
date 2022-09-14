@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import random
+from typing import Union
 
 import torch
 import torch.nn as nn
@@ -43,12 +44,12 @@ class SequentialMutableChannelGroup(MutableChannelGroup):
     # choice
 
     @property
-    def current_choice(self) -> int:
+    def current_choice(self) -> Union[int, float]:
         """return current choice."""
         return self.mutable_channel.activated_channels
 
     @current_choice.setter
-    def current_choice(self, choice: int):
+    def current_choice(self, choice: Union[int, float]):
         """set choice."""
         assert 0 < choice <= self.num_channels
         mask = self._generate_mask(choice)

@@ -33,7 +33,7 @@ class OneShotChannelMutator(BaseChannelMutator[OneShotMutableChannelGroup]):
             template[key] = self._name2group[key].min_choice
         return template
 
-    def max_choices(self):
+    def max_choices(self) -> Dict:
         """Return the maximal pruning subnet(structure)."""
         template = self.choice_template
         for key in template:
