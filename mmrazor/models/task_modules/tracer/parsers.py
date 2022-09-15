@@ -123,13 +123,13 @@ def parse_cat(tracer, grad_fn, module2name, param2module, cur_path,
     concat_id_list.sort()
     concat_id = '_'.join(concat_id_list)
     name = f'concat_{concat_id}'
-    
+
     visited[name] = True
     sub_path_lists = list()
     for _, parent in enumerate(parents):
         sub_path_list = PathList()
         tracer.backward_trace(parent, module2name, param2module, Path(),
-                                sub_path_list, visited, shared_module)
+                              sub_path_list, visited, shared_module)
         sub_path_lists.append(sub_path_list)
     cur_path.append(PathConcatNode(name, sub_path_lists))
 
