@@ -23,19 +23,15 @@ class OneShotMutableChannelGroup(SequentialMutableChannelGroup):
             Defaults to [0.5, 1.0](candidate_mode='ratio').
         candidate_mode (str, optional): Mode of candidates.
             One of "ratio" or "number". Defaults to 'ratio'.
+        divisor (int): Used to make choice divisible.
     """
 
-    def __init__(
-        self,
-        num_channels,
-        candidate_choices: List[Union[int, float]] = [0.5, 1.0],
-        candidate_mode: str = 'ratio',
-    ) -> None:
-
-        super().__init__(num_channels)
-
-        assert candidate_mode in ['ratio', 'number']
-        self.candidate_mode = candidate_mode
+    def __init__(self,
+                 num_channels: int,
+                 candidate_choices: List[Union[int, float]] = [0.5, 1.0],
+                 candidate_mode='number',
+                 divisor=1) -> None:
+        super().__init__(num_channels, candidate_mode, divisor)
         self.candidate_choices = self._prepare_candidate_choices(
             candidate_choices, candidate_mode)
 
@@ -55,9 +51,10 @@ class OneShotMutableChannelGroup(SequentialMutableChannelGroup):
         config = super().config_template(with_init_args, with_channels)
         if with_init_args:
             init_cfg = config['init_args']
+            init_cfg.pop('choice_mode')
             init_cfg.update({
                 'candidate_choices': self.candidate_choices,
-                'candidate_mode': self.candidate_mode
+                'candidate_mode': self.choice_mode
             })
         return config
 
@@ -66,18 +63,15 @@ class OneShotMutableChannelGroup(SequentialMutableChannelGroup):
     @property
     def current_choice(self) -> Union[int, float]:
         """Get current choice."""
-        return self._choice
+        return super().current_choice
 
     @current_choice.setter
     def current_choice(self, choice: Union[int, float]):
         """Set current choice."""
         assert choice in self.candidate_choices
-        self._choice = choice
-        choice_int = self._get_int_choice(choice)
-
         SequentialMutableChannelGroup.current_choice.fset(  # type: ignore
             self,  # type: ignore
-            choice_int)  # type: ignore
+            choice)  # type: ignore
 
     def sample_choice(self) -> Union[int, float]:
         """Sample a valid choice."""
@@ -102,5 +96,17 @@ class OneShotMutableChannelGroup(SequentialMutableChannelGroup):
         choice_type = int if candidate_mode == 'number' else float
         for choice in candidate_choices:
             assert isinstance(choice, choice_type)
-        candidate_choices = sorted(candidate_choices)
-        return candidate_choices
+        if self.is_num_mode:
+            candidate_choices_ = [
+                self._make_divisible(choice) for choice in candidate_choices
+            ]
+        else:
+            candidate_choices_ = [
+                self._num2ratio(self._make_divisible(self._ratio2num(choice)))
+                for choice in candidate_choices
+            ]
+        if candidate_choices_ != candidate_choices:
+            self._make_divisible_info(candidate_choices, candidate_choices_)
+
+        candidate_choices_ = sorted(candidate_choices_)
+        return candidate_choices_

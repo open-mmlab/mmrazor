@@ -24,6 +24,7 @@ class SequentialMutableChannelGroup(MutableChannelGroup):
     Args:
         num_channels (int): number of channels.
         choice_mode (str): mode of choice, which is one of 'number' or 'ratio'.
+        divisor (int): Used to make choice divisible.
     """
 
     def __init__(self,
@@ -90,10 +91,7 @@ class SequentialMutableChannelGroup(MutableChannelGroup):
         mask = self._generate_mask(choice_num_)
         self.mutable_channel.current_choice = mask
         if choice_num != choice_num_:
-            logger = MMLogger.get_current_instance()
-            logger.info(
-                f'The choice={choice}, which is set to {self.name}, '
-                f'is changed to {self.current_choice} for a divisible choice.')
+            self._make_divisible_info(choice, self.current_choice)
 
     def sample_choice(self) -> Union[int, float]:
         """Sample a choice in (0,1]"""
@@ -140,3 +138,8 @@ class SequentialMutableChannelGroup(MutableChannelGroup):
         mask = torch.zeros([self.num_channels])
         mask[0:choice] = 1
         return mask
+
+    def _make_divisible_info(self, choice, new_choice):
+        logger = MMLogger.get_current_instance()
+        logger.info(f'The choice={choice}, which is set to {self.name}, '
+                    f'is changed to {new_choice} for a divisible choice.')

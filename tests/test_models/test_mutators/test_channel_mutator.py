@@ -30,27 +30,6 @@ class RandomChannelGroup(SequentialMutableChannelGroup):
         return mask
 
 
-@MODELS.register_module()
-class MuiltArgsChannelGroup(SequentialMutableChannelGroup):
-
-    def __init__(self, num_channels: int, candidates=[]) -> None:
-        super().__init__(num_channels)
-        if len(candidates) == 0:
-            candidates = [self.num_channels]
-        self.candidates = candidates
-
-    def prepare_for_pruning(self, model):
-        super().prepare_for_pruning(model)
-        self.current_choice = self.candidates[-1]
-
-    def config_template(self, with_init_args=False, with_channels=False):
-        config = super().config_template(with_init_args, with_channels)
-        if with_init_args:
-            init_args = config['init_args']
-            init_args['candidates'] = self.candidates
-        return config
-
-
 DATA_GROUPSS = [SequentialMutableChannelGroup, RandomChannelGroup]
 
 
@@ -126,53 +105,14 @@ class TestChannelMutator(unittest.TestCase):
         model = TestGraph.backward_tracer_passed_models()[0]()
 
         model0 = copy.deepcopy(model)
-        mutator0 = BaseChannelMutator({'type': 'MuiltArgsChannelGroup'})
+        mutator0 = BaseChannelMutator()
         mutator0.prepare_from_supernet(model0)
         config = mutator0.config_template(with_group_init_args=True)
-        import json
-        config = json.dumps(config, indent=4)
-
-        mutator_config = {
-            'type': 'BaseChannelMutator',
-            'channl_group_cfg': {
-                'type': 'MuiltArgsChannelGroup',
-                'default_args': {},
-                'groups': {
-                    'net.0_(0, 8)_8': {
-                        'init_args': {
-                            'num_channels': 8,
-                            'candidates': [4, 8]
-                        },
-                        'choice': 8
-                    },
-                    'net.3_(0, 16)_16': {
-                        'init_args': {
-                            'num_channels': 16,
-                            'candidates': [8, 16]
-                        },
-                        'choice': 16
-                    },
-                    'linear_(0, 1000)_1000': {
-                        'init_args': {
-                            'num_channels': 1000,
-                            'candidates': [1000, 1000]
-                        },
-                        'choice': 1000
-                    }
-                }
-            },
-            'tracer_cfg': {
-                'type': 'BackwardTracer',
-                'loss_calculator': {
-                    'type': 'ImageClassifierPseudoLoss'
-                }
-            }
-        }
 
         model1 = copy.deepcopy(model)
-        mutator1 = MODELS.build(mutator_config)
+        mutator1 = MODELS.build(config)
         mutator1.prepare_from_supernet(model1)
         config1 = mutator1.config_template(with_group_init_args=True)
 
-        self.assertDictEqual(config1, mutator_config)
+        self.assertDictEqual(config1, config)
         self._test_a_mutator(mutator1, model1)
