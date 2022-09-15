@@ -171,7 +171,7 @@ class MultiheadAttention(BaseOP):
 
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
-        x = (attn @ v).transpose(1, 2).reshape(B, N, self.embed_dims)
+        x = (attn @ v).transpose(1, 2).reshape(B, N, -1)
 
         if self.relative_position:
             r_p_v = self.rel_pos_embed_v(N, N)

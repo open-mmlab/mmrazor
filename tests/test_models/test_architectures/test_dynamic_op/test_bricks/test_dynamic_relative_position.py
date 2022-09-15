@@ -29,9 +29,9 @@ class TestDynamicRP(TestCase):
 
         self.assertIsNotNone(embed)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             mutable = OneShotMutableChannel(
-                10, candidate_choices=[6, 8, 10], candidate_mode='number')
+                8, candidate_choices=[6, 8, 10], candidate_mode='number')
             self.dynamic_rp.register_mutable_attr('head_dims', mutable)
 
     def test_convert(self):
@@ -60,4 +60,4 @@ class TestDynamicRP(TestCase):
 
         dynamic_output = self.dynamic_rp.forward(14, 14)
         static_output = static_m.forward(14, 14)
-        assert torch.equal(dynamic_output, static_output)
+        self.assertTrue(torch.equal(dynamic_output, static_output))

@@ -82,7 +82,7 @@ class TestEvolutionSearchLoop(TestCase):
             num_mutation=2,
             num_crossover=2,
             mutate_prob=0.1,
-            flops_range=None,
+            constraints_range=dict(flops=(0, 330 * 1e6)),
             score_key='coco/bbox_mAP')
         self.train_cfg = Config(train_cfg)
         self.runner = MagicMock(spec=ToyRunner)
@@ -112,31 +112,32 @@ class TestEvolutionSearchLoop(TestCase):
         self.assertEqual(loop.candidates, fake_candidates)
 
     @patch('mmrazor.engine.runner.evolution_search_loop.export_fix_subnet')
-    @patch(
-        'mmrazor.engine.runner.evolution_search_loop.get_model_complexity_info'
-    )
-    def test_run_epoch(self, mock_flops, mock_export_fix_subnet):
+    @patch('mmrazor.engine.runner.evolution_search_loop.load_fix_subnet')
+    @patch('mmrazor.models.task_modules.estimators. \
+            resource_estimator.get_model_complexity_info')
+    def test_run_epoch(self, flops_params, mock_flops, mock_export_fix_subnet):
         # test_run_epoch: distributed == False
         loop_cfg = copy.deepcopy(self.train_cfg)
         loop_cfg.runner = self.runner
         loop_cfg.dataloader = self.dataloader
         loop_cfg.evaluator = self.evaluator
+        loop_cfg.runner.epoch = 1
         loop = LOOPS.build(loop_cfg)
         self.runner.rank = 0
-        loop._epoch = 1
         self.runner.distributed = False
         self.runner.work_dir = self.temp_dir
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
         self.runner.model.sample_subnet = MagicMock(return_value=fake_subnet)
+        mock_flops.return_value = False
+        flops_params.return_value = 0, 0
         loop.run_epoch()
         self.assertEqual(len(loop.candidates), 4)
         self.assertEqual(len(loop.top_k_candidates), 2)
-        self.assertEqual(loop._epoch, 2)
+        self.assertEqual(loop.runner.epoch, 2)
 
         # test_run_epoch: distributed == True
         loop = LOOPS.build(loop_cfg)
         self.runner.rank = 0
-        loop._epoch = 1
         self.runner.distributed = True
         self.runner.work_dir = self.temp_dir
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
@@ -144,13 +145,12 @@ class TestEvolutionSearchLoop(TestCase):
         loop.run_epoch()
         self.assertEqual(len(loop.candidates), 4)
         self.assertEqual(len(loop.top_k_candidates), 2)
-        self.assertEqual(loop._epoch, 2)
+        self.assertEqual(loop.runner.epoch, 3)
 
         # test_check_constraints
-        loop_cfg.flops_range = (0, 100)
+        loop_cfg.constraints_range = dict(params=(0, 100))
         loop = LOOPS.build(loop_cfg)
         self.runner.rank = 0
-        loop._epoch = 1
         self.runner.distributed = True
         self.runner.work_dir = self.temp_dir
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
@@ -160,10 +160,12 @@ class TestEvolutionSearchLoop(TestCase):
         loop.run_epoch()
         self.assertEqual(len(loop.candidates), 4)
         self.assertEqual(len(loop.top_k_candidates), 2)
-        self.assertEqual(loop._epoch, 2)
+        self.assertEqual(loop.runner.epoch, 4)
 
     @patch('mmrazor.engine.runner.evolution_search_loop.export_fix_subnet')
-    def test_run(self, mock_export_fix_subnet):
+    @patch('mmrazor.models.task_modules.estimators. \
+            resource_estimator.get_model_complexity_info')
+    def test_run(self, mock_flops, mock_export_fix_subnet):
         # test a new search: resume == None
         loop_cfg = copy.deepcopy(self.train_cfg)
         loop_cfg.runner = self.runner
@@ -171,22 +173,32 @@ class TestEvolutionSearchLoop(TestCase):
         loop_cfg.evaluator = self.evaluator
         loop = LOOPS.build(loop_cfg)
         self.runner.rank = 0
-        loop._epoch = 1
+        loop_cfg.runner.epoch = 1
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
         self.runner.work_dir = self.temp_dir
         loop.update_candidate_pool = MagicMock()
         loop.val_candidate_pool = MagicMock()
+
+        mutation_candidates = Candidates([fake_subnet] * loop.num_mutation)
+        for i in range(loop.num_mutation):
+            mutation_candidates.set_resources(i, 0.1 + 0.1 * i)
+            mutation_candidates.set_score(i, 99 + i)
+        crossover_candidates = Candidates([fake_subnet] * loop.num_crossover)
+        for i in range(loop.num_crossover):
+            crossover_candidates.set_resources(i, 0.1 + 0.1 * i)
+            crossover_candidates.set_score(i, 99 + i)
         loop.gen_mutation_candidates = \
-            MagicMock(return_value=[fake_subnet]*loop.num_mutation)
+            MagicMock(return_value=mutation_candidates)
         loop.gen_crossover_candidates = \
-            MagicMock(return_value=[fake_subnet]*loop.num_crossover)
-        loop.top_k_candidates = Candidates([(fake_subnet, 1.0),
-                                            (fake_subnet, 0.9)])
+            MagicMock(return_value=crossover_candidates)
+        loop.candidates = Candidates([(fake_subnet, 1.0, 99.)])
+        loop.candidates.extend([(fake_subnet, 0.9, 98.)])
+        mock_flops.return_value = (0.5, 101)
         mock_export_fix_subnet.return_value = fake_subnet
         loop.run()
         assert os.path.exists(
             os.path.join(self.temp_dir, 'best_fix_subnet.yaml'))
-        self.assertEqual(loop._epoch, loop._max_epochs)
+        self.assertEqual(loop.runner.epoch, loop._max_epochs)
         assert os.path.exists(
             os.path.join(self.temp_dir,
                          f'search_epoch_{loop._max_epochs-1}.pkl'))

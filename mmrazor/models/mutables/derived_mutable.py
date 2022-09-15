@@ -171,6 +171,7 @@ class DerivedMethodMixin:
                               ratio: Union[int, BaseMutable],
                               divisor: int = 8) -> 'DerivedMutable':
         """Derive divide mutable, usually used with `make_divisable`."""
+        from .mutable_channel import MutableChannel
         from .mutable_value import MutableValue
 
         # avoid circular import
@@ -184,7 +185,9 @@ class DerivedMethodMixin:
                 f'Not support type of ratio: {type(ratio)}')
 
         mask_fn: Optional[Callable] = None
-        if getattr(self, 'mask_fn', None):  # OneShotMutableChannel
+        if isinstance(self, MutableChannel) and hasattr(self, 'current_mask'):
+            mask_fn = _divide_mask_fn(self, ratio=ratio, divisor=divisor)
+        elif getattr(self, 'mask_fn', None):  # OneShotMutableChannel
             mask_fn = _divide_mask_fn(self, ratio=ratio, divisor=divisor)
 
         return DerivedMutable(choice_fn=choice_fn, mask_fn=mask_fn)

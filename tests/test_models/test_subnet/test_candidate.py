@@ -35,7 +35,7 @@ class TestCandidates(TestCase):
         # test property: resources
         data = [self.fake_subnet_with_resource] * 2
         candidates = Candidates(data)
-        self.assertEqual(candidates.scores, [50., 50.])
+        self.assertEqual(candidates.resources, [50., 50.])
 
     def test_subnets(self):
         # test property: subnets

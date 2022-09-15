@@ -155,14 +155,18 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         self.runner.logger.info(f'top k scores after update: '
                                 f'{scores_after}')
 
-        self.mutation_candidates = self.gen_mutation_candidates()
-        self.crossover_candidates = self.gen_crossover_candidates()
-        self.mutation_candidates.extend(self.crossover_candidates)
-        assert len(self.mutation_candidates
+        self.candidates_mutator_crossover = Candidates()
+
+        mutation_candidates = self.gen_mutation_candidates()
+        self.candidates_mutator_crossover.extend(mutation_candidates)
+        crossover_candidates = self.gen_crossover_candidates()
+        self.candidates_mutator_crossover.extend(crossover_candidates)
+
+        assert len(self.candidates_mutator_crossover
                    ) <= self.num_candidates, 'Total of mutation and \
             crossover should be no more than the number of candidates.'
 
-        self.candidates = self.mutation_candidates
+        self.candidates = self.candidates_mutator_crossover
         self._epoch += 1
 
     def sample_candidates(self) -> None:

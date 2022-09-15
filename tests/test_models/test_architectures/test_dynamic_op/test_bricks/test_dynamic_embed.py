@@ -58,4 +58,4 @@ class TestPatchEmbed(TestCase):
         x = torch.randn(8, 3, 224, 224)
         dynamic_output = self.dynamic_embed.forward(x)
         static_output = static_op.forward(x)
-        assert torch.equal(dynamic_output, static_output)
+        self.assertTrue(torch.equal(dynamic_output, static_output))
