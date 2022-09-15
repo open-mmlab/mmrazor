@@ -45,8 +45,7 @@ class DynamicConv2d(nn.Conv2d, DynamicConvMixin):
             global GroupWiseConvWarned
             if GroupWiseConvWarned is False:
                 from mmengine import MMLogger
-                logger = MMLogger.get_instance(
-                    'mmrazor', logger_name='mmrazor')
+                logger = MMLogger.get_current_instance()
                 logger.warning(
                     ('Group-wise convolutional layers are not supported to be'
                      'pruned now, so they are not converted to new'
