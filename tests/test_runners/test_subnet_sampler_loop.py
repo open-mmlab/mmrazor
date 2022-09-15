@@ -192,30 +192,15 @@ class TestGreedySamplerTrainLoop(TestCase):
         self.assertEqual(subnet, fake_subnet)
         self.assertEqual(len(loop.top_k_candidates), loop.top_k - 1)
 
-    @patch('mmrazor.engine.runner.subnet_sampler_loop.export_fix_subnet')
-    @patch(
-        'mmrazor.engine.runner.subnet_sampler_loop.get_model_complexity_info')
-    def test_run(self, mock_flops, mock_export_fix_subnet):
-        # test run with flops_range=None
+    def test_run(self):
+        # test run with _check_constraints
         cfg = copy.deepcopy(self.iter_based_cfg)
         cfg.experiment_name = 'test_run1'
         runner = Runner.from_cfg(cfg)
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
         runner.model.sample_subnet = MagicMock(return_value=fake_subnet)
-        runner.train()
-
-        self.assertEqual(runner.iter, runner.max_iters)
-        assert os.path.exists(os.path.join(self.temp_dir, 'candidates.pkl'))
-
-        # test run with _check_constraints
-        cfg = copy.deepcopy(self.iter_based_cfg)
-        cfg.experiment_name = 'test_run2'
-        cfg.train_cfg.flops_range = (0, 100)
-        runner = Runner.from_cfg(cfg)
-        fake_subnet = {'1': 'choice1', '2': 'choice2'}
-        runner.model.sample_subnet = MagicMock(return_value=fake_subnet)
-        mock_flops.return_value = (50., 1)
-        mock_export_fix_subnet.return_value = fake_subnet
+        loop = runner.build_train_loop(cfg.train_cfg)
+        loop._check_constraints = MagicMock(return_value=True)
         runner.train()
 
         self.assertEqual(runner.iter, runner.max_iters)
