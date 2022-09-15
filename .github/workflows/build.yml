@@ -1,6 +1,15 @@
 name: build
 
 on:
+  push:
+    paths-ignore:
+      - "README.md"
+      - "README_zh-CN.md"
+      - "model-index.yml"
+      - "configs/**"
+      - "docs/**"
+      - ".dev_scripts/**"
+
   pull_request:
     paths-ignore:
       - "README.md"
@@ -15,7 +24,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build_cpu:
+  test_linux:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
@@ -112,7 +121,7 @@ jobs:
 
 
 
-  build_cu102:
+  test_cuda:
     runs-on: ubuntu-18.04
     container:
       image: pytorch/pytorch:1.8.1-cuda10.2-cudnn7-devel
@@ -152,7 +161,7 @@ jobs:
           python setup.py check -m -s
           TORCH_CUDA_ARCH_LIST=7.0 pip install -e .
 
-  build_windows:
+  test_windows:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
