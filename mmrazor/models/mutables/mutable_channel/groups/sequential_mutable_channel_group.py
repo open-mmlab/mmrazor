@@ -8,6 +8,7 @@ from mmengine import MMLogger
 
 from mmrazor.models.architectures.dynamic_ops.bricks import (
     DynamicBatchNorm2d, DynamicConv2d, DynamicLinear)
+from mmrazor.models.utils import make_divisible
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
 from ..simple_mutable_channel import SimpleMutableChannel
@@ -27,16 +28,23 @@ class SequentialMutableChannelGroup(MutableChannelGroup):
         divisor (int): Used to make choice divisible.
     """
 
-    def __init__(self,
-                 num_channels: int,
-                 choice_mode='number',
-                 divisor=1) -> None:
+    def __init__(
+            self,
+            num_channels: int,
+            choice_mode='number',
+            # args for make divisible
+            divisor=1,
+            min_value=1,
+            min_ratio=0.9) -> None:
         super().__init__(num_channels)
         self.mutable_channel: SimpleMutableChannel = SimpleMutableChannel(
             self.num_channels)
         assert choice_mode in ['ratio', 'number']
         self.choice_mode = choice_mode
+        # for make_divisible
         self.divisor = divisor
+        self.min_value = min_value
+        self.min_ratio = min_ratio
 
     def prepare_for_pruning(self, model: nn.Module):
         """Prepare for pruning, including register mutable channels."""
@@ -105,19 +113,9 @@ class SequentialMutableChannelGroup(MutableChannelGroup):
     # private methods
 
     def _make_divisible(self, choice_int: int):
-        """forked from slim:
-
-        https://github.com/tensorflow/models/blob/\
-        0344c5503ee55e24f0de7f37336a6e08f10976fd/\
-        research/slim/nets/mobilenet/mobilenet.py#L62-L69
-        """
-        new_choice = max(
-            self.divisor,
-            int(choice_int + self.divisor / 2) // self.divisor * self.divisor)
-        # Make sure that round down does not go down by more than 10%.
-        if new_choice < 0.9 * choice_int:
-            new_choice += self.divisor
-        return new_choice
+        """Make the choice divisible."""
+        return make_divisible(choice_int, self.divisor, self.min_value,
+                              self.min_ratio)
 
     def _num2ratio(self, choice: Union[int, float]) -> float:
         """Convert the a number choice to a ratio choice."""
