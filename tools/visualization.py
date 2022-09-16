@@ -8,10 +8,12 @@ import cv2
 
 from mmengine.config import Config, DictAction, ConfigDict
 from mmengine.utils import import_modules_from_strings
+from mmengine.registry import VISUALIZERS
 
 from mmrazor.models.task_modules import RecorderManager
 from mmrazor.utils import register_all_modules
 from mmrazor.visualization import RazorLocalVisualizer
+from mmrazor.visualization.local_visualizer import modify_draw_featmap
 
 
 def parse_args():
@@ -68,7 +70,7 @@ def norm(feat):
     feat = feat.permute(1, 0, 2, 3).reshape(C, -1)
     mean = feat.mean(dim=-1, keepdim=True)
     std = feat.std(dim=-1, keepdim=True)
-    centered = (feat - mean) / std
+    centered = (feat - mean) / (std + 1e-6)
     centered = centered.reshape(C, N, H, W).permute(1, 0, 2, 3)
     return centered
 
@@ -142,7 +144,7 @@ def main(args):
     args.img = r'G:\projects\openmmlab\mmdetection\demo\demo.jpg'
     args.overlaid = True
     args.channel_reduction = 'squeeze_mean'
-    use_norm = False
+    use_norm = True
     register_all_modules(False)
     mod = import_modules_from_strings(f'{args.repo}.utils')
     mod.register_all_modules()
@@ -158,13 +160,23 @@ def main(args):
 
     model = init_model(args.config, args.checkpoint, device=args.device)
     # init visualizer
-    visualizer = RazorLocalVisualizer()
+    # visualizer = RazorLocalVisualizer()
+    visualizer = VISUALIZERS.build(model.cfg.visualizer)
+    visualizer.draw_featmap = modify_draw_featmap(visualizer)
+    use_fpn = True
 
-    recorders = ConfigDict(neck=dict(_scope_='mmrazor', type='ModuleOutputs', source='neck'))
-    mapping = ConfigDict(p3=dict(recorder='neck', data_idx=0),
-                         p4=dict(recorder='neck', data_idx=1),
-                         p5=dict(recorder='neck', data_idx=2),
-                         p6=dict(recorder='neck', data_idx=3))
+    if use_fpn:
+        recorders = ConfigDict(
+            neck=dict(_scope_='mmrazor', type='ModuleOutputs',
+                          source='neck'))
+        mapping = ConfigDict(p3=dict(recorder='neck', data_idx=0),
+                             p4=dict(recorder='neck', data_idx=1),
+                             p5=dict(recorder='neck', data_idx=2),
+                             p6=dict(recorder='neck', data_idx=3))
+    else:
+        recorders = ConfigDict(backbone=dict(_scope_='mmrazor', type='ModuleOutputs', source='backbone'))
+        mapping = ConfigDict(p3=dict(recorder='backbone', data_idx=0), p4=dict(recorder='backbone', data_idx=1),
+                             p5=dict(recorder='backbone', data_idx=2), p6=dict(recorder='backbone', data_idx=3))
     recorder_manager = RecorderManager(recorders)
     recorder_manager.initialize(model)
 
@@ -185,7 +197,10 @@ def main(args):
         for i, feat in enumerate(feats):
             if use_norm:
                 feat = norm(feat)
-            drawn_img = visualizer.draw_featmap(feat[0], overlaid_image, 'pixel_wise_max')
+            # drawn_img = visualizer.draw_featmap(feat[0], overlaid_image, 'pixel_wise_max')
+            # drawn_img = visualizer.draw_featmap(feat[0], overlaid_image, topk=6, arrangement=(2, 3))
+            drawn_img = visualizer.draw_featmap(feat[0], overlaid_image,
+                                                topk=6, arrangement=(2, 3))
             visualizer.add_datasample(
                 f'{name}_{i}',
                 drawn_img,
