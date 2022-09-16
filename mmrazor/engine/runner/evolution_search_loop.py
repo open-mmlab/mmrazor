@@ -120,7 +120,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         if self.resume_from:
             self._resume()
 
-        while self.runner.epoch < self.max_epochs:
+        while self._epoch < self.max_epochs:
             self.run_epoch()
             self._save_searcher_ckpt()
 
@@ -317,15 +317,15 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         """
         if self.runner.rank == 0:
             save_for_resume = dict()
-            save_for_resume['_epoch'] = self.runner.epoch
+            save_for_resume['_epoch'] = self._epoch
             for k in ['candidates', 'top_k_candidates']:
                 save_for_resume[k] = getattr(self, k)
             fileio.dump(
                 save_for_resume,
                 osp.join(self.runner.work_dir,
-                         f'search_epoch_{self.runner.epoch}.pkl'))
+                         f'search_epoch_{self._epoch}.pkl'))
             self.runner.logger.info(
-                f'Epoch:[{self.runner.epoch}/{self.max_epochs}], top1_score: '
+                f'Epoch:[{self._epoch}/{self.max_epochs}], top1_score: '
                 f'{self.top_k_candidates.scores[0]}')
 
             if self.max_keep_ckpts > 0:

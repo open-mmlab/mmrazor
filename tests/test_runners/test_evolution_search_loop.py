@@ -113,8 +113,10 @@ class TestEvolutionSearchLoop(TestCase):
 
     @patch('mmrazor.engine.runner.evolution_search_loop.export_fix_subnet')
     @patch('mmrazor.engine.runner.evolution_search_loop.load_fix_subnet')
-    @patch('mmrazor.models.task_modules.estimators. \
-            resource_estimator.get_model_complexity_info')
+    @patch(
+        'mmrazor.models.task_modules.estimators.resource_estimator.'
+        'get_model_complexity_info'
+    )
     def test_run_epoch(self, flops_params, mock_flops, mock_export_fix_subnet):
         # test_run_epoch: distributed == False
         loop_cfg = copy.deepcopy(self.train_cfg)
@@ -133,7 +135,7 @@ class TestEvolutionSearchLoop(TestCase):
         loop.run_epoch()
         self.assertEqual(len(loop.candidates), 4)
         self.assertEqual(len(loop.top_k_candidates), 2)
-        self.assertEqual(loop.runner.epoch, 2)
+        self.assertEqual(loop._epoch, 1)
 
         # test_run_epoch: distributed == True
         loop = LOOPS.build(loop_cfg)
@@ -145,7 +147,7 @@ class TestEvolutionSearchLoop(TestCase):
         loop.run_epoch()
         self.assertEqual(len(loop.candidates), 4)
         self.assertEqual(len(loop.top_k_candidates), 2)
-        self.assertEqual(loop.runner.epoch, 3)
+        self.assertEqual(loop._epoch, 1)
 
         # test_check_constraints
         loop_cfg.constraints_range = dict(params=(0, 100))
@@ -160,12 +162,14 @@ class TestEvolutionSearchLoop(TestCase):
         loop.run_epoch()
         self.assertEqual(len(loop.candidates), 4)
         self.assertEqual(len(loop.top_k_candidates), 2)
-        self.assertEqual(loop.runner.epoch, 4)
+        self.assertEqual(loop._epoch, 1)
 
     @patch('mmrazor.engine.runner.evolution_search_loop.export_fix_subnet')
-    @patch('mmrazor.models.task_modules.estimators. \
-            resource_estimator.get_model_complexity_info')
-    def test_run(self, mock_flops, mock_export_fix_subnet):
+    @patch(
+        'mmrazor.models.task_modules.estimators.resource_estimator.'
+        'get_model_complexity_info'
+    )
+    def test_run_loop(self, mock_flops, mock_export_fix_subnet):
         # test a new search: resume == None
         loop_cfg = copy.deepcopy(self.train_cfg)
         loop_cfg.runner = self.runner
@@ -173,7 +177,8 @@ class TestEvolutionSearchLoop(TestCase):
         loop_cfg.evaluator = self.evaluator
         loop = LOOPS.build(loop_cfg)
         self.runner.rank = 0
-        loop_cfg.runner.epoch = 1
+        loop._epoch = 1
+
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
         self.runner.work_dir = self.temp_dir
         loop.update_candidate_pool = MagicMock()
@@ -193,12 +198,14 @@ class TestEvolutionSearchLoop(TestCase):
             MagicMock(return_value=crossover_candidates)
         loop.candidates = Candidates([(fake_subnet, 1.0, 99.)])
         loop.candidates.extend([(fake_subnet, 0.9, 98.)])
+        loop.candidates.extend([(fake_subnet, 0.9, 97.)])
+        loop.candidates.extend([(fake_subnet, 0.9, 96.)])
         mock_flops.return_value = (0.5, 101)
         mock_export_fix_subnet.return_value = fake_subnet
         loop.run()
         assert os.path.exists(
             os.path.join(self.temp_dir, 'best_fix_subnet.yaml'))
-        self.assertEqual(loop.runner.epoch, loop._max_epochs)
+        self.assertEqual(loop._epoch, loop._max_epochs)
         assert os.path.exists(
             os.path.join(self.temp_dir,
                          f'search_epoch_{loop._max_epochs-1}.pkl'))
