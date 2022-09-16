@@ -181,11 +181,10 @@ class OFAConv2d(nn.Conv2d, OFAConvMixin):
 
 @MODELS.register_module()
 class FuseConv2d(nn.Conv2d, FuseConvMixin):
-    """FuseConv2d used in DCFF.
+    """FuseConv2d used in `DCFF`.
 
-    Note:
-        Arguments for ``__init__`` of ``DynamicConv2d`` is totally same as
-        :obj:`torch.nn.Conv2d`.
+    Refers to `Training Compact CNNs for Image Classification
+    using Dynamic-coded Filter Fusion <https://arxiv.org/abs/2107.06916>`_.
 
     Attributes:
         mutable_attrs (ModuleDict[str, BaseMutable]): Mutable attributes,
@@ -196,9 +195,6 @@ class FuseConv2d(nn.Conv2d, FuseConvMixin):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        # TODO
-        # https://pytorch.org/docs/stable/_modules/torch/nn/modules/conv.html#Conv2d
-        assert self.padding_mode == 'zeros'
         self.mutable_attrs: Dict[str, BaseMutable] = nn.ModuleDict()
         self.mutable_attrs_modified: Dict[str, Boolean] = {}
 

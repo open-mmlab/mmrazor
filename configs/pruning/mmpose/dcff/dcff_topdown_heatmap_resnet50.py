@@ -60,6 +60,7 @@ model = dict(
     type='DCFF',
     channel_cfgs='./resnet_pose.json',
     architecture=architecture,
+    fuse_count=1,
     mutator=dict(
         type='DCFFChannelMutator',
         channl_group_cfg=dict(
@@ -127,8 +128,6 @@ val_dataloader = dict(
 test_dataloader = val_dataloader
 
 find_unused_parameters = True
-
-custom_hooks = [dict(type='DCFFHook', by_epoch=True, dcff_count=1)]
 
 val_evaluator = dict(
     type='mmpose.CocoMetric',

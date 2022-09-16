@@ -18,7 +18,7 @@ The mainstream approach for filter pruning is usually either to force a hard-cod
 
 | Dataset |   Method    |   Backbone   |  Style  | Lr schd | Params(M) | FLOPs(M) | bbox AP |                     CPrate                      |                       Config                       |         Download          |
 | :-----: | :---------: | :----------: | :-----: | :-----: | :-------: | :------: | :-----: | :---------------------------------------------: | :------------------------------------------------: | :-----------------------: |
-|  COCO   | Faster_RCNN | DCFFResNet50 | pytorch |  step   |   33.31   |  168320  |         | \[0.0\]+\[0.35,0.4,0.1\]\*10+\[0.3,0.3,0.1\]\*6 | [config](./dcff_faster_rcnn_resnet50_8xb4_coco.py) | [model](<>) \| \[log\] () |
+|  COCO   | Faster_RCNN | DCFFResNet50 | pytorch |  step   |   33.31   |  168320  |  35.8   | \[0.0\]+\[0.35,0.4,0.1\]\*10+\[0.3,0.3,0.1\]\*6 | [config](./dcff_faster_rcnn_resnet50_8xb4_coco.py) | [model](<>) \| \[log\] () |
 
 ### 3. Segmentation
 

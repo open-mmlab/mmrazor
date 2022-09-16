@@ -93,16 +93,15 @@ class DCFFChannelMutator(BaseChannelMutator[DCFFChannelGroup]):
                 raise KeyError(f'{key} can not be found in module2group')
         return group_subnets
 
-    def calc_information(self, tau: float, cur_num: int, start_num: int):
+    def calc_information(self, tau: float):
         """calculate channel's kl and apply softmax pooling on channel solve
         CUDA out of memory.
 
         Args:
             t (float): temporature calculated by iter or epoch
-            cur_num (int): current iter or epoch, used for resume
-            start_num (int): start iter or epoch, used for resume
         """
         # Calculate the filter importance of the current epoch.
+
         for layerid, group in enumerate(self.groups):
             for channel in group.output_related:
                 if isinstance(channel.module, FuseConv2d):

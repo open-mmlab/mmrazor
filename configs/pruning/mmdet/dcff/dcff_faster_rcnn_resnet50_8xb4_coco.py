@@ -24,6 +24,7 @@ model = dict(
     type='DCFF',
     channel_cfgs='./resnet_det.json',
     architecture=_base_.architecture,
+    fuse_count=1,
     mutator=dict(
         type='DCFFChannelMutator',
         channl_group_cfg=dict(
@@ -38,7 +39,5 @@ find_unused_parameters = True
 
 model_wrapper = dict(
     type='mmcv.MMDistributedDataParallel', find_unused_parameters=True)
-
-custom_hooks = [dict(type='DCFFHook', by_epoch=True)]
 
 val_cfg = dict(_delete_=True)
