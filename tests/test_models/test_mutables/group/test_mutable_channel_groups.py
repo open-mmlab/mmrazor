@@ -15,7 +15,7 @@ from mmrazor.structures.graph import ModuleGraph as ModuleGraph
 from ....data.models import LineModel
 from ....test_core.test_graph.test_graph import TestGraph
 
-MUTABLE_CFG = dict(type='SimpleMutableChannl')
+MUTABLE_CFG = dict(type='SimpleMutablechannel')
 TRACER_CFG = dict(
     type='BackwardTracer',
     loss_calculator=dict(type='ImageClassifierPseudoLoss'))

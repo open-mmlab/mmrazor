@@ -12,19 +12,19 @@ class OneShotChannelMutator(BaseChannelMutator[OneShotMutableChannelGroup]):
     OneShotMutableChannelGroup by default.
 
     Args:
-        channl_group_cfg (Union[dict, Type[ChannelGroupType]], optional):
+        channel_group_cfg (Union[dict, Type[ChannelGroupType]], optional):
             Config of MutableChannelGroups. Defaults to
             dict( type='OneShotMutableChannelGroup',
             default_args=dict( num_blocks=8, min_blocks=2 ) ).
     """
 
     def __init__(self,
-                 channl_group_cfg: Union[dict, Type[ChannelGroupType]] = dict(
+                 channel_group_cfg: Union[dict, Type[ChannelGroupType]] = dict(
                      type='OneShotMutableChannelGroup',
                      default_args=dict(num_blocks=8, min_blocks=2)),
                  **kwargs) -> None:
 
-        super().__init__(channl_group_cfg, **kwargs)
+        super().__init__(channel_group_cfg, **kwargs)
 
     def min_choices(self) -> Dict:
         """Return the minimal pruning subnet(structure)."""

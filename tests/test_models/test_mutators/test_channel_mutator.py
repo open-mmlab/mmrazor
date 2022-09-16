@@ -65,7 +65,7 @@ class TestChannelMutator(unittest.TestCase):
 
                     model = data_model()
 
-                    mutator = BaseChannelMutator(channl_group_cfg=group_type)
+                    mutator = BaseChannelMutator(channel_group_cfg=group_type)
                     mutator.prepare_from_supernet(model)
                     mutator.groups
 

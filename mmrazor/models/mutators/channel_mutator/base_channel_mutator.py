@@ -24,10 +24,10 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
     """BaseChannelMutator manages the pruning structure of a model.
 
     Args:
-        channl_group_cfg (Union[ dict, Type[MutableChannelGroup]], optional):
+        channel_group_cfg (Union[ dict, Type[MutableChannelGroup]], optional):
             The config of ChannelGroups. When the channel_group_cfg
             is a dict, it should follow the template below:
-                channl_group_cfg = dict(
+                channel_group_cfg = dict(
                     # type of used MutableChannelGroup
                     type ='XxxMutableChannelGroup',
                     # default args for MutableChananelGroup
@@ -54,14 +54,14 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
         1. Using tracer. It needs tracer_cfg is configured.
         2. Using config. When tracer_cfg is  None, BaseChannelMutator tries
         to use this way. It needs that
-        channl_group_cfg['group']['xxx_group_name] has a key 'channels'.
+        channel_group_cfg['group']['xxx_group_name] has a key 'channels'.
     """
 
     # init
 
     def __init__(
             self,
-            channl_group_cfg: Union[
+            channel_group_cfg: Union[
                 dict,
                 Type[MutableChannelGroup]] = SequentialMutableChannelGroup,
             tracer_cfg: Union[Dict, None] = dict(
@@ -81,10 +81,10 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
         self.groups: List[ChannelGroupType] = []
 
         # group config
-        self.channel_group_cfg = channl_group_cfg
+        self.channel_group_cfg = channel_group_cfg
         self.group_class, self.group_default_args, self.groups_cfg = \
-            self._parse_channl_group_cfg(
-                channl_group_cfg)
+            self._parse_channel_group_cfg(
+                channel_group_cfg)
 
     def prepare_from_supernet(self, supernet: Module) -> None:
         """Prepare from a model for pruning.
@@ -149,7 +149,7 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
 
         Example:
             dict(
-                channl_group_cfg = dict(
+                channel_group_cfg = dict(
                     # type of used MutableChannelGroup
                     type ='XxxMutableChannelGroup',
                     # default args for MutableChananelGroup
@@ -183,7 +183,7 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
         # template of mutator
         template = dict(
             type=str(self.__class__.__name__),
-            channl_group_cfg=dict(
+            channel_group_cfg=dict(
                 type=str(self.group_class.__name__),
                 default_args=self.group_default_args,
                 groups=groups_template),
@@ -265,23 +265,23 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
             mutable_groups.append(mutable_group)
         return mutable_groups
 
-    def _parse_channl_group_cfg(
+    def _parse_channel_group_cfg(
             self,
-            channl_group_cfg) -> Tuple[Type[ChannelGroupType], Dict, Dict]:
-        """Parse channl_group_cfg."""
-        if isinstance(channl_group_cfg, dict):
-            group_class = MODELS.module_dict[channl_group_cfg['type']]
+            channel_group_cfg) -> Tuple[Type[ChannelGroupType], Dict, Dict]:
+        """Parse channel_group_cfg."""
+        if isinstance(channel_group_cfg, dict):
+            group_class = MODELS.module_dict[channel_group_cfg['type']]
 
-            default_group_args = channl_group_cfg[
-                'default_args'] if 'default_args' in channl_group_cfg else {}
+            default_group_args = channel_group_cfg[
+                'default_args'] if 'default_args' in channel_group_cfg else {}
 
-            group_init_cfg = channl_group_cfg[
-                'groups'] if 'groups' in channl_group_cfg else {}
+            group_init_cfg = channel_group_cfg[
+                'groups'] if 'groups' in channel_group_cfg else {}
             if isinstance(group_init_cfg, str):
                 # load config file
                 group_init_cfg = fileio.load(group_init_cfg)
-        elif issubclass(channl_group_cfg, MutableChannelGroup):
-            group_class = channl_group_cfg
+        elif issubclass(channel_group_cfg, MutableChannelGroup):
+            group_class = channel_group_cfg
             default_group_args = {}
             group_init_cfg = {}
         else:
