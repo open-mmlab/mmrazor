@@ -33,7 +33,7 @@ class TestMutableChannelGroup(TestCase):
     def test_init_from_graph(self):
         model = LineModel()
         # init using tracer
-        graph = ModuleGraph.init_using_backward_tracer(model)
+        graph = ModuleGraph.init_from_backward_tracer(model)
         groups = DefaultChannelGroup.init_from_graph(graph)
         self._test_groups(groups, model)
 
@@ -80,7 +80,7 @@ class TestMutableChannelGroup(TestCase):
     def test_init_from_channel_group(self):
         model = LineModel()
         # init using tracer
-        graph = ModuleGraph.init_using_backward_tracer(model)
+        graph = ModuleGraph.init_from_backward_tracer(model)
         groups: List[ChannelGroup] = ChannelGroup.init_from_graph(graph)
         mutable_groups = [
             DefaultChannelGroup.init_from_channel_group(group)
@@ -102,7 +102,7 @@ class TestMutableChannelGroup(TestCase):
     def _test_a_model_using_backward_tracer(self, model):
         model.eval()
         model = model.to(DEVICE)
-        graph = ModuleGraph.init_using_backward_tracer(model)
+        graph = ModuleGraph.init_from_backward_tracer(model)
         self._test_a_graph(model, graph)
 
     def test_with_backward_tracer(self):
@@ -133,7 +133,7 @@ class TestMutableChannelGroup(TestCase):
             for group_type in GROUPS:
                 with self.subTest(model=model_data, group=group_type):
                     model: nn.Module = model_data()
-                    graph = ModuleGraph.init_using_backward_tracer(model)
+                    graph = ModuleGraph.init_from_backward_tracer(model)
                     groups: List[
                         MutableChannelGroup] = group_type.init_from_graph(
                             graph)

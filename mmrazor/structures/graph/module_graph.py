@@ -218,7 +218,7 @@ class ModuleGraph(BaseGraph[MODULENODE]):
     # functions to generate module graph.
 
     @staticmethod
-    def init_using_backward_tracer(
+    def init_from_backward_tracer(
         model: Module,
         backward_tracer=BackwardTracer(
             loss_calculator=ImageClassifierPseudoLoss()),
@@ -232,8 +232,8 @@ class ModuleGraph(BaseGraph[MODULENODE]):
         return converter.graph
 
     @staticmethod
-    def init_using_fx_tracer(model: Module,
-                             fx_tracer={'type': 'RazorFxTracer'}):
+    def init_from_fx_tracer(model: Module,
+                            fx_tracer={'type': 'RazorFxTracer'}):
         """init module graph using torch fx tracer."""
         pass
 

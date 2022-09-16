@@ -98,10 +98,10 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
 
         if isinstance(self.tracer_cfg, dict):
             if self.tracer_cfg['type'] == 'BackwardTracer':
-                graph = ModuleGraph.init_using_backward_tracer(
+                graph = ModuleGraph.init_from_backward_tracer(
                     supernet, self.tracer_cfg)
             elif self.tracer_cfg['type'] == 'RazorFxTracer':
-                graph = ModuleGraph.init_using_fx_tracer(
+                graph = ModuleGraph.init_from_fx_tracer(
                     supernet, fx_tracer=self.tracer_cfg)
             else:
                 raise NotImplementedError()
