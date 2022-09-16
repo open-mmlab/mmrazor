@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models import (BYOTConnector, ConvModuleConncetor,
+from mmrazor.models import (BYOTConnector, ConvModuleConncetor, CRDConnector,
                             FBKDStudentConnector, FBKDTeacherConnector,
                             Paraphraser, TorchFunctionalConnector,
                             TorchNNConnector, Translator)
@@ -39,6 +39,23 @@ class TestConnector(TestCase):
         convmodule_connector_cfg['conv_cfg'] = 'conv2d'
         with self.assertRaises(AssertionError):
             _ = ConvModuleConncetor(**convmodule_connector_cfg)
+
+    def test_crd_connector(self):
+        dim_out = 128
+        crd_stu_connector = CRDConnector(
+            **dict(dim_in=1 * 5 * 5, dim_out=dim_out))
+
+        crd_tea_connector = CRDConnector(
+            **dict(dim_in=3 * 5 * 5, dim_out=dim_out))
+
+        assert crd_stu_connector.linear.in_features == 1 * 5 * 5
+        assert crd_stu_connector.linear.out_features == dim_out
+        assert crd_tea_connector.linear.in_features == 3 * 5 * 5
+        assert crd_tea_connector.linear.out_features == dim_out
+
+        s_output = crd_stu_connector.forward_train(self.s_feat)
+        t_output = crd_tea_connector.forward_train(self.t_feat)
+        assert s_output.size() == t_output.size()
 
     def test_ft_connector(self):
         stu_connector = Translator(**dict(in_channel=1, out_channel=2))
