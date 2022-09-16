@@ -29,9 +29,12 @@ class OneShotMutableChannelGroup(SequentialMutableChannelGroup):
     def __init__(self,
                  num_channels: int,
                  candidate_choices: List[Union[int, float]] = [0.5, 1.0],
-                 candidate_mode='number',
+                 candidate_mode='ratio',
                  divisor=1) -> None:
         super().__init__(num_channels, candidate_mode, divisor)
+        if candidate_choices == []:
+            candidate_choices.append(
+                self.num_channels if self.is_num_mode else 1.0)
         self.candidate_choices = self._prepare_candidate_choices(
             candidate_choices, candidate_mode)
 
