@@ -11,6 +11,7 @@ from mmrazor.models.mutables.mutable_channel import \
     SequentialMutableChannelGroup
 from mmrazor.models.mutators.channel_mutator import BaseChannelMutator
 from mmrazor.registry import MODELS
+from ...data.models import DynamicLinearModel
 from ...test_core.test_graph.test_graph import TestGraph
 
 sys.setrecursionlimit(2000)
@@ -36,7 +37,9 @@ DATA_GROUPSS = [SequentialMutableChannelGroup, RandomChannelGroup]
 class TestChannelMutator(unittest.TestCase):
 
     def _test_a_mutator(self, mutator: BaseChannelMutator, model):
-        mutator.set_choices(mutator.sample_choices())
+        choices = mutator.sample_choices()
+        print(choices)
+        mutator.set_choices(choices)
         self.assertGreater(len(mutator.mutable_groups), 0)
         x = torch.rand([2, 3, 224, 224])
         y = model(x)
@@ -94,7 +97,7 @@ class TestChannelMutator(unittest.TestCase):
         # test passing config
         model2 = copy.deepcopy(model)
         config2 = copy.deepcopy(config)
-        config2['tracer_cfg'] = None
+        config2['tracer_cfg'] = {'type': 'Config'}
         mutator2 = MODELS.build(config2)
         mutator2.prepare_from_supernet(model2)
         self.assertEqual(
@@ -116,3 +119,21 @@ class TestChannelMutator(unittest.TestCase):
 
         self.assertDictEqual(config1, config)
         self._test_a_mutator(mutator1, model1)
+
+    def test_pre_defined_dynamic_op(self):
+        for Model in [
+                DynamicLinearModel,  #
+                # DynamicConcatModel
+        ]:
+            with self.subTest(model=Model):
+                model = Model()
+                mutator = BaseChannelMutator(
+                    channel_group_cfg={
+                        'type': 'OneShotMutableChannelGroup',
+                        'default_args': {
+                            'candidate_choices': [0.5, 1.0]
+                        }
+                    },
+                    tracer_cfg={'type': 'Predefined'})
+                mutator.prepare_from_supernet(model)
+                self._test_a_mutator(mutator, model)

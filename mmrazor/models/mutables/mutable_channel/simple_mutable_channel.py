@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from functools import partial
 
 import torch
 
@@ -40,15 +39,13 @@ class SimpleMutableChannel(BaseMutableChannel):
 
     # basic extension
 
-    def expand_mutable_channel(self, expand_ratio) -> DerivedMutable:
+    def expand_mutable_channel(self, expand_ratio: int) -> DerivedMutable:
         """Get a derived SimpleMutableChannel with expanded mask."""
 
-        def _expand_mask(mutable_channel, expand_ratio):
-            mask = mutable_channel.current_mask
+        def _expand_mask():
+            mask = self.current_mask
             mask = torch.unsqueeze(
                 mask, -1).expand(list(mask.shape) + [expand_ratio]).flatten(-2)
             return mask
 
-        derive_fun = partial(
-            _expand_mask, mutable_channel=self, expand_ratio=expand_ratio)
-        return DerivedMutable(derive_fun, derive_fun, [self])
+        return DerivedMutable(_expand_mask, _expand_mask, [self])

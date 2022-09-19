@@ -1,15 +1,17 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import Dict, Generic, List, Optional, Tuple, Type, Union
+from typing import Dict, Generic, List, Optional, Set, Tuple, Type, Union
 
 from mmengine import fileio
 from torch.nn import Module
 
 from mmrazor.models.architectures.dynamic_ops.bricks import DynamicChannelMixin
-from mmrazor.models.mutables import (ChannelGroupType, MutableChannelGroup,
+from mmrazor.models.mutables import (BaseMutableChannel, ChannelGroupType,
+                                     DerivedMutable, MutableChannelContainer,
+                                     MutableChannelGroup,
                                      SequentialMutableChannelGroup)
-from mmrazor.models.mutables.mutable_channel.groups.channel_group import \
-    ChannelGroup
+from mmrazor.models.mutables.mutable_channel.groups.channel_group import (
+    Channel, ChannelGroup)
 from mmrazor.registry import MODELS
 from mmrazor.structures.graph import ModuleGraph
 from ..base_mutator import BaseMutator
@@ -67,7 +69,7 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
             channel_group_cfg: Union[
                 dict,
                 Type[MutableChannelGroup]] = SequentialMutableChannelGroup,
-            tracer_cfg: Union[Dict, None] = dict(
+            tracer_cfg: Dict = dict(
                 type='BackwardTracer',
                 loss_calculator=dict(type='ImageClassifierPseudoLoss')),
             init_cfg: Optional[Dict] = None) -> None:
@@ -76,7 +78,9 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
 
         # tracer
         if isinstance(tracer_cfg, dict):
-            assert tracer_cfg['type'] in ['RazorFxTracer', 'BackwardTracer']
+            assert tracer_cfg['type'] in [
+                'RazorFxTracer', 'BackwardTracer', 'Config', 'Predefined'
+            ]
         self.tracer_cfg = tracer_cfg
 
         # groups
@@ -99,35 +103,19 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
 
         self._name2module = dict(supernet.named_modules())
 
-        if isinstance(self.tracer_cfg, dict):
-            if self.tracer_cfg['type'] == 'BackwardTracer':
-                graph = ModuleGraph.init_from_backward_tracer(
-                    supernet, self.tracer_cfg)
-            elif self.tracer_cfg['type'] == 'RazorFxTracer':
-                graph = ModuleGraph.init_from_fx_tracer(
-                    supernet, fx_tracer=self.tracer_cfg)
-            else:
-                raise NotImplementedError()
-            self._graph = graph
-            # get ChannelGroups
-            groups = ChannelGroup.init_from_graph(graph)
-            # convert to MutableChannelGroups
-            self.groups = self._convert_channel_group_to_mutable(groups)
-
-        elif self.tracer_cfg is None:
-            assert isinstance(self.channel_group_cfg, dict)
-            assert 'groups' in self.channel_group_cfg
-            config = self.channel_group_cfg['groups']
-            if isinstance(config, str):
-                config = fileio.load(config)
-            assert isinstance(config, dict)
-            self.groups = self._init_groups_from_cfg(supernet, config)
+        if 'Tracer' in self.tracer_cfg['type']:
+            groups = self._prepare_using_tracer(supernet, self.tracer_cfg)
+        elif self.tracer_cfg['type'] == 'Config':
+            groups = self._prepare_using_cfg(supernet, self.groups_cfg)
+        elif self.tracer_cfg['type'] == 'Predefined':
+            groups = self._prepare_using_predefined_model(supernet)
         else:
             raise NotImplementedError()
 
-        for group in self.groups:
+        for group in groups:
             group.prepare_for_pruning(supernet)
             self._name2group[group.name] = group
+        self.groups = groups
 
     # ~
 
@@ -247,14 +235,6 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
 
     # private methods
 
-    def _init_groups_from_cfg(self, model: Module, config: Dict):
-        """Initialize groups using config dict."""
-        groups = []
-        for group_key in config:
-            group = self.group_class.init_from_cfg(model, config[group_key])
-            groups.append(group)
-        return groups
-
     def _convert_channel_group_to_mutable(self, groups: List[ChannelGroup]):
         """Convert ChannelGroups to MutableChannelGroups."""
         mutable_groups = []
@@ -290,3 +270,90 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
         else:
             raise NotImplementedError()
         return group_class, default_group_args, group_init_cfg
+
+    def _prepare_using_tracer(self, model: Module, tracer_cfg: Dict):
+        if self.tracer_cfg['type'] == 'BackwardTracer':
+            graph = ModuleGraph.init_from_backward_tracer(model, tracer_cfg)
+        elif self.tracer_cfg['type'] == 'RazorFxTracer':
+            graph = ModuleGraph.init_from_fx_tracer(
+                model, fx_tracer=tracer_cfg)
+        else:
+            raise NotImplementedError()
+        self._graph = graph
+        # get ChannelGroups
+        groups = ChannelGroup.init_from_graph(graph)
+        # convert to MutableChannelGroups
+        groups = self._convert_channel_group_to_mutable(groups)
+        return groups
+
+    def _prepare_using_cfg(self, model, config: Dict):
+        """Initialize groups using config dict."""
+        assert isinstance(self.channel_group_cfg, dict)
+        assert 'groups' in self.channel_group_cfg
+        config = self.channel_group_cfg['groups']
+        if isinstance(config, str):
+            config = fileio.load(config)
+        assert isinstance(config, dict)
+        groups = []
+        for group_key in config:
+            group = self.group_class.init_from_cfg(model, config[group_key])
+            groups.append(group)
+        return groups
+
+    def _prepare_using_predefined_model(self, model: Module):
+
+        def process_container(contanier: MutableChannelContainer,
+                              module,
+                              module_name,
+                              mutable2groups,
+                              is_output=True):
+            for index, mutable in contanier.mutable_channels.items():
+                if isinstance(mutable, DerivedMutable):
+                    source_mutables: Set = \
+                        mutable._trace_source_mutables()
+                    source_channel_mutables = [
+                        mutable for mutable in source_mutables
+                        if isinstance(mutable, BaseMutableChannel)
+                    ]
+                    assert len(source_channel_mutables) == 1, (
+                        'only support one mutable channel '
+                        'used in DerivedMutable')
+                    mutable = list(source_channel_mutables)[0]
+
+                if mutable not in mutable2groups:
+
+                    mutable2groups[mutable] = self.group_class(
+                        mutable.num_channels, **self.group_default_args)
+
+                group: MutableChannelGroup = mutable2groups[mutable]
+                if is_output:
+                    group.add_ouptut_related(
+                        Channel(
+                            module_name, module, index, out_related=is_output))
+                else:
+                    group.add_input_related(
+                        Channel(
+                            module_name, module, index, out_related=is_output))
+
+        mutable2groups: Dict = {}
+        for name, module in model.named_modules():
+            if isinstance(module, DynamicChannelMixin):
+                in_container: MutableChannelContainer = \
+                    module.get_mutable_attr(
+                        'in_channels')
+                out_container: MutableChannelContainer = \
+                    module.get_mutable_attr(
+                        'out_channels')
+                process_container(in_container, module, name, mutable2groups,
+                                  False)
+                process_container(out_container, module, name, mutable2groups,
+                                  True)
+        for mutable, group in mutable2groups.items():
+            if isinstance(mutable, DerivedMutable):
+                continue
+            else:
+                group.mutable_channel = mutable
+        groups = list(mutable2groups.values())
+        for group in groups:
+            self._name2group[group.name] = group
+        return groups
