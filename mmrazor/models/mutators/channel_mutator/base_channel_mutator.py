@@ -321,9 +321,14 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
                     mutable = list(source_channel_mutables)[0]
 
                 if mutable not in mutable2groups:
-
-                    mutable2groups[mutable] = self.group_class(
-                        mutable.num_channels, **self.group_default_args)
+                    if hasattr(self.group_class, 'init_from_mutable_channel'):
+                        mutable2groups[
+                            mutable] = \
+                                self.group_class.init_from_mutable_channel(
+                                mutable)
+                    else:
+                        mutable2groups[mutable] = self.group_class(
+                            mutable.num_channels, **self.group_default_args)
 
                 group: MutableChannelGroup = mutable2groups[mutable]
                 if is_output:

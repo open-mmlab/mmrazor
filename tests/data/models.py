@@ -8,6 +8,8 @@ from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
 from mmrazor.models.mutables import MutableChannelGroup
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables import BaseMutable
+from mmrazor.models.mutables import OneShotMutableChannelGroup, SquentialMutableChannel, SimpleMutableChannel
+from mmrazor.registry import MODELS
 # this file includes models for tesing.
 
 
@@ -470,11 +472,10 @@ class DwConvModel(nn.Module):
 
 
 # models with dynamicop
-from mmrazor.models.mutables import SimpleMutableChannel
 
 
 def register_mutable(module: DynamicChannelMixin,
-                     mutable: SimpleMutableChannel,
+                     mutable: OneShotMutableChannelGroup,
                      is_out=True,
                      start=0,
                      end=-1):
@@ -496,7 +497,7 @@ class SampleExpandDerivedMutable(BaseMutable):
         self.ratio = expand_ratio
 
     def __mul__(self, other):
-        if isinstance(other, SimpleMutableChannel):
+        if isinstance(other, SampleOneshotMutableChannel):
 
             def _expand_mask():
                 mask = other.current_mask
@@ -517,6 +518,26 @@ class SampleExpandDerivedMutable(BaseMutable):
 
     def num_choices(self) -> int:
         return super().num_choices
+
+
+class SampleOneshotMutableChannel(SimpleMutableChannel):
+
+    def __init__(self, num_channels: int, choices=[2, 4], **kwargs):
+        super().__init__(num_channels, **kwargs)
+        self.choices = choices
+
+
+@MODELS.register_module()
+class SampleOneshotMutableChannelGroup(OneShotMutableChannelGroup):
+
+    @classmethod
+    def init_from_mutable_channel(
+            cls, mutable_channel: SampleOneshotMutableChannel):
+        return cls(
+            mutable_channel.num_channels,
+            candidate_choices=mutable_channel.choices,
+            candidate_mode='ratio'
+            if isinstance(mutable_channel.choices[0], float) else 'number')
 
 
 class DynamicLinearModel(nn.Module):
@@ -548,8 +569,8 @@ class DynamicLinearModel(nn.Module):
         return self.linear(x1)
 
     def _register_mutable(self):
-        mutable1 = SimpleMutableChannel(8)
-        mutable2 = SimpleMutableChannel(16)
+        mutable1 = SampleOneshotMutableChannel(8, choices=[1, 4, 8])
+        mutable2 = SampleOneshotMutableChannel(16, choices=[2, 8, 16])
         mutable_value = SampleExpandDerivedMutable(1)
 
         register_mutable(self.net[0], mutable1, True)
@@ -560,6 +581,7 @@ class DynamicLinearModel(nn.Module):
         register_mutable(self.net[3], mutable2, True)
         register_mutable(self.net[4], mutable2, True)
         register_mutable(self.linear, mutable2, False)
+
 
 default_models = [
     LineModel,

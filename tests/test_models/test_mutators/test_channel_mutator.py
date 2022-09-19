@@ -38,7 +38,6 @@ class TestChannelMutator(unittest.TestCase):
 
     def _test_a_mutator(self, mutator: BaseChannelMutator, model):
         choices = mutator.sample_choices()
-        print(choices)
         mutator.set_choices(choices)
         self.assertGreater(len(mutator.mutable_groups), 0)
         x = torch.rand([2, 3, 224, 224])
@@ -120,19 +119,16 @@ class TestChannelMutator(unittest.TestCase):
         self.assertDictEqual(config1, config)
         self._test_a_mutator(mutator1, model1)
 
-    def test_pre_defined_dynamic_op(self):
+    def test_models_with_predefined_dynamic_op(self):
         for Model in [
-                DynamicLinearModel,  #
-                # DynamicConcatModel
+                DynamicLinearModel,
         ]:
             with self.subTest(model=Model):
                 model = Model()
                 mutator = BaseChannelMutator(
                     channel_group_cfg={
-                        'type': 'OneShotMutableChannelGroup',
-                        'default_args': {
-                            'candidate_choices': [0.5, 1.0]
-                        }
+                        'type': 'SampleOneshotMutableChannelGroup',
+                        'default_args': {}
                     },
                     tracer_cfg={'type': 'Predefined'})
                 mutator.prepare_from_supernet(model)
