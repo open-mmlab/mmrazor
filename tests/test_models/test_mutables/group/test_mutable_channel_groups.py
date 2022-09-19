@@ -16,7 +16,7 @@ from ....data.models import LineModel
 from ....test_core.test_graph.test_graph import TestGraph
 
 MUTABLE_CFG = dict(type='SimpleMutablechannel')
-parse_cfg = dict(
+PARSE_CFG = dict(
     type='BackwardTracer',
     loss_calculator=dict(type='ImageClassifierPseudoLoss'))
 
