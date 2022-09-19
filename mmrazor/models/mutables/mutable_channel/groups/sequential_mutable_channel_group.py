@@ -26,6 +26,8 @@ class SequentialMutableChannelGroup(MutableChannelGroup):
         num_channels (int): number of channels.
         choice_mode (str): mode of choice, which is one of 'number' or 'ratio'.
         divisor (int): Used to make choice divisible.
+        min_value (int): the minimal value used when make divisible.
+        min_ratio (float): the minimal ratio used when make divisible.
     """
 
     def __init__(

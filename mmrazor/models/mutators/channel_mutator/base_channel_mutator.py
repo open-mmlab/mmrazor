@@ -48,6 +48,9 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
                 dict( type='BackwardTracer',
                 loss_calculator=dict(type='ImageClassifierPseudoLoss')).
 
+        init_cfg (dict, optional): initialization configuration dict for
+            BaseModule.
+
     Note:
         There are two ways used in BaseChannelMutator to parse a model and
         get MutableChannelGroups.

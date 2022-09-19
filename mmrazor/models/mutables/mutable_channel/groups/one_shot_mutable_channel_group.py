@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import copy
 import random
 from typing import Dict, List, Union
 
@@ -24,14 +25,20 @@ class OneShotMutableChannelGroup(SequentialMutableChannelGroup):
         candidate_mode (str, optional): Mode of candidates.
             One of "ratio" or "number". Defaults to 'ratio'.
         divisor (int): Used to make choice divisible.
+        min_value (int): the minimal value used when make divisible.
+        min_ratio (float): the minimal ratio used when make divisible.
     """
 
     def __init__(self,
                  num_channels: int,
                  candidate_choices: List[Union[int, float]] = [0.5, 1.0],
                  candidate_mode='ratio',
-                 divisor=1) -> None:
-        super().__init__(num_channels, candidate_mode, divisor)
+                 divisor=1,
+                 min_value=1,
+                 min_ratio=0.9) -> None:
+        super().__init__(num_channels, candidate_mode, divisor, min_value,
+                         min_ratio)
+        candidate_choices = copy.copy(candidate_choices)
         if candidate_choices == []:
             candidate_choices.append(
                 self.num_channels if self.is_num_mode else 1.0)
