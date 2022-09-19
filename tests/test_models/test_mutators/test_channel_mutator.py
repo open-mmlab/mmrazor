@@ -96,7 +96,7 @@ class TestChannelMutator(unittest.TestCase):
         # test passing config
         model2 = copy.deepcopy(model)
         config2 = copy.deepcopy(config)
-        config2['tracer_cfg'] = {'type': 'Config'}
+        config2['parse_cfg'] = {'type': 'Config'}
         mutator2 = MODELS.build(config2)
         mutator2.prepare_from_supernet(model2)
         self.assertEqual(
@@ -130,6 +130,6 @@ class TestChannelMutator(unittest.TestCase):
                         'type': 'SampleOneshotMutableChannelGroup',
                         'default_args': {}
                     },
-                    tracer_cfg={'type': 'Predefined'})
+                    parse_cfg={'type': 'Predefined'})
                 mutator.prepare_from_supernet(model)
                 self._test_a_mutator(mutator, model)

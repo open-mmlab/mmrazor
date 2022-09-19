@@ -49,7 +49,7 @@ model = dict(
                 candidate_choices=list(i / 12 for i in range(2, 13)),
                 candidate_mode='ratio',
                 divisor=8)),
-        tracer_cfg=dict(
+        parse_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss'))))
 

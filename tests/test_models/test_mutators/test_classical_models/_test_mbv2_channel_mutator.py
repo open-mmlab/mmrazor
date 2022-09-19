@@ -28,7 +28,7 @@ MODEL_CFG = dict(
 ONESHOT_MUTATOR_CFG = dict(
     type='OneShotChannelMutator',
     skip_prefixes=['head.fc'],
-    tracer_cfg=dict(
+    parse_cfg=dict(
         type='BackwardTracer',
         loss_calculator=dict(type='ImageClassifierPseudoLoss')),
     mutable_cfg=dict(
@@ -91,7 +91,7 @@ def test_slimmable_channel_mutator() -> None:
     mutator = SlimmableChannelMutator(
         mutable_cfg=dict(type='SlimmableMutableChannel'),
         channel_cfgs=load_and_merge_channel_cfgs(channel_cfg_paths),
-        tracer_cfg=dict(
+        parse_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss')))
 

@@ -44,8 +44,8 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
             MutableChannelGroup.config_template()
             Defaults to SequentialMutableChannelGroup.
 
-        tracer_cfg (Dict, optional):
-            The config of the tracer to parse the model.
+        parse_cfg (Dict, optional):
+            The config to parse the model.
             Defaults to
                 dict( type='BackwardTracer',
                 loss_calculator=dict(type='ImageClassifierPseudoLoss')).
@@ -54,12 +54,13 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
             BaseModule.
 
     Note:
-        There are two ways used in BaseChannelMutator to parse a model and
+        There are three ways used in BaseChannelMutator to parse a model and
         get MutableChannelGroups.
-        1. Using tracer. It needs tracer_cfg is configured.
-        2. Using config. When tracer_cfg is  None, BaseChannelMutator tries
-        to use this way. It needs that
+        1. Using tracer. It needs parse_cfg to be the config of a tracer.
+        2. Using config. When parse_cfg['type']='Config'. It needs that
         channel_group_cfg['group']['xxx_group_name] has a key 'channels'.
+        3. Using the model with pre-defined dynamic-ops and mutablechannels:
+        When parse_cfg['type']='Predefined'.
     """
 
     # init
@@ -69,7 +70,7 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
             channel_group_cfg: Union[
                 dict,
                 Type[MutableChannelGroup]] = SequentialMutableChannelGroup,
-            tracer_cfg: Dict = dict(
+            parse_cfg: Dict = dict(
                 type='BackwardTracer',
                 loss_calculator=dict(type='ImageClassifierPseudoLoss')),
             init_cfg: Optional[Dict] = None) -> None:
@@ -77,11 +78,11 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
         super().__init__(init_cfg)
 
         # tracer
-        if isinstance(tracer_cfg, dict):
-            assert tracer_cfg['type'] in [
+        if isinstance(parse_cfg, dict):
+            assert parse_cfg['type'] in [
                 'RazorFxTracer', 'BackwardTracer', 'Config', 'Predefined'
             ]
-        self.tracer_cfg = tracer_cfg
+        self.parse_cfg = parse_cfg
 
         # groups
         self._name2group: Dict[str, ChannelGroupType] = {}
@@ -103,11 +104,11 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
 
         self._name2module = dict(supernet.named_modules())
 
-        if 'Tracer' in self.tracer_cfg['type']:
-            groups = self._prepare_using_tracer(supernet, self.tracer_cfg)
-        elif self.tracer_cfg['type'] == 'Config':
+        if 'Tracer' in self.parse_cfg['type']:
+            groups = self._prepare_using_tracer(supernet, self.parse_cfg)
+        elif self.parse_cfg['type'] == 'Config':
             groups = self._prepare_using_cfg(supernet, self.groups_cfg)
-        elif self.tracer_cfg['type'] == 'Predefined':
+        elif self.parse_cfg['type'] == 'Predefined':
             groups = self._prepare_using_predefined_model(supernet)
         else:
             raise NotImplementedError()
@@ -156,7 +157,7 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
                     }
                 ),
                 # config of tracer
-                tracer_cfg={}
+                parse_cfg={}
             )
 
 
@@ -178,7 +179,7 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
                 type=str(self.group_class.__name__),
                 default_args=self.group_default_args,
                 groups=groups_template),
-            tracer_cfg=self.tracer_cfg)
+            parse_cfg=self.parse_cfg)
 
         return template
 
@@ -271,12 +272,12 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
             raise NotImplementedError()
         return group_class, default_group_args, group_init_cfg
 
-    def _prepare_using_tracer(self, model: Module, tracer_cfg: Dict):
-        if self.tracer_cfg['type'] == 'BackwardTracer':
-            graph = ModuleGraph.init_from_backward_tracer(model, tracer_cfg)
-        elif self.tracer_cfg['type'] == 'RazorFxTracer':
-            graph = ModuleGraph.init_from_fx_tracer(
-                model, fx_tracer=tracer_cfg)
+    def _prepare_using_tracer(self, model: Module, parse_cfg: Dict):
+        """Initialize groups using a tracer."""
+        if self.parse_cfg['type'] == 'BackwardTracer':
+            graph = ModuleGraph.init_from_backward_tracer(model, parse_cfg)
+        elif self.parse_cfg['type'] == 'RazorFxTracer':
+            graph = ModuleGraph.init_from_fx_tracer(model, fx_tracer=parse_cfg)
         else:
             raise NotImplementedError()
         self._graph = graph
@@ -301,6 +302,8 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
         return groups
 
     def _prepare_using_predefined_model(self, model: Module):
+        """Initialize groups using the model with pre-defined dynamicops and
+        mutable-channels."""
 
         def process_container(contanier: MutableChannelContainer,
                               module,
