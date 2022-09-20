@@ -5,7 +5,7 @@ from .distill_val_loop import SelfDistillValLoop, SingleTeacherDistillValLoop
 from .evolution_search_loop import EvolutionSearchLoop
 from .slimmable_val_loop import SlimmableValLoop
 from .subnet_sampler_loop import GreedySamplerTrainLoop
-from .quantization_loop import QATEpochBasedLoop
+from .quantization_loops import QATEpochBasedLoop
 
 __all__ = [
     'SingleTeacherDistillValLoop', 'DartsEpochBasedTrainLoop',

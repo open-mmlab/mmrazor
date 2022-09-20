@@ -10,6 +10,14 @@ train_cfg = dict(
 )
 
 model = dict(
+    type='QAT',
+    architecture=_base_.resnet,
+    quantizer=dict(
+        type='TensorRTQuantizer',
+        is_qat=True)
+)
+
+model = dict(
     _delete_=True,
     type='mmrazor.QAT',
     architecture=_base_.model,
