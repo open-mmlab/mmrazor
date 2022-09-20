@@ -1,8 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .base_mutable import BaseMutable
 from .derived_mutable import DerivedMutable
-from .mutable_channel import (BaseMutableChannel, MutableChannel,
-                              MutableChannelContainer, OneShotMutableChannel,
+from .mutable_channel import (BaseMutableChannel, DCFFChannelGroup,
+                              MutableChannel, MutableChannelContainer,
+                              OneShotMutableChannel,
                               OneShotMutableChannelGroup, SimpleMutableChannel,
                               SlimmableMutableChannel, SquentialMutableChannel)
 from .mutable_channel.groups import (ChannelGroupType, MutableChannelGroup,
@@ -18,5 +19,5 @@ __all__ = [
     'BaseMutableChannel', 'MutableChannelContainer', 'ChannelGroupType',
     'BaseMutable', 'MutableChannel', 'SlimmableMutableChannel',
     'OneShotMutableChannel', 'SequentialMutableChannelGroup',
-    'SquentialMutableChannel', 'OneShotMutableChannelGroup'
+    'SquentialMutableChannel', 'OneShotMutableChannelGroup', 'DCFFChannelGroup'
 ]
