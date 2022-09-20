@@ -29,6 +29,11 @@ class DCFFChannelGroup(OneShotChannelGroup):
         self._register_mask_container(model, MutableChannelContainer)
         self._register_mask(self.mutable_channel)
 
+    def _prepare_choices(self):
+        for choice in self.candidate_choices:
+            assert isinstance(choice, self.choice_type)
+        self.candidate_choices = sorted(self.candidate_choices)
+
     def alter_candidates_after_init(self, candidates):
         self.candidate_choices = candidates
         self._prepare_choices()  # TODO refactor

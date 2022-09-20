@@ -5,7 +5,6 @@ from typing import Dict, List, Optional, Union
 
 import torch
 from mmengine import fileio
-from mmengine.logging import MessageHub
 from mmengine.model import BaseModel
 from mmengine.optim import OptimWrapper
 from torch import nn
@@ -66,7 +65,8 @@ class DCFF(BaseAlgorithm):
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
         """Train step."""
 
-        self.message_hub = MessageHub.get_current_instance()
+        # self.message_hub = MessageHub.get_current_instance()
+        self.message_hub = optim_wrapper.message_hub.get_current_instance()
         self.max_num = self.message_hub._runtime_info['max_epochs']
         # buffer not available in __init__()
         self.by_epoch = (self.max_num != 0)

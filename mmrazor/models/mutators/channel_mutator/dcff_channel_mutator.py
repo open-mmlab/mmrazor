@@ -38,8 +38,6 @@ class DCFFChannelMutator(BaseChannelMutator[DCFFChannelGroup]):
         self._reset_group_candidates()
 
     def _reset_group_candidates(self):
-        print('_name2group:', self._name2group)
-        print('_channel_cfgs:', self._channel_cfgs)
         for key in self._channel_cfgs:
             group: DCFFChannelGroup = self._name2group[key]
             group.alter_candidates_after_init(

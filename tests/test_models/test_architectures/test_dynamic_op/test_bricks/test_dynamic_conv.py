@@ -10,6 +10,7 @@ from torch import nn
 
 from mmrazor.models.architectures.dynamic_ops.bricks import (BigNasConv2d,
                                                              DynamicConv2d,
+                                                             FuseConv2d,
                                                              OFAConv2d)
 from mmrazor.models.mutables import (OneShotMutableValue,
                                      SquentialMutableChannel)
@@ -73,11 +74,12 @@ class TestDynamicConv2d(TestCase):
         assert torch.equal(out1, out2)
 
 
+@pytest.mark.parametrize('dynamic_class',
+                         [BigNasConv2d, DynamicConv2d, FuseConv2d, OFAConv2d])
 @pytest.mark.parametrize('bias', [True, False])
-def test_dynamic_conv2d(bias: bool) -> None:
-    d_conv2d = DynamicConv2d(
+def test_dynamic_conv2d(bias: bool, dynamic_class: Type[nn.Conv2d]) -> None:
+    d_conv2d = dynamic_class(
         in_channels=4, out_channels=10, kernel_size=3, stride=1, bias=bias)
-
     x_max = torch.rand(10, 4, 224, 224)
     out_before_mutate = d_conv2d(x_max)
 
@@ -117,13 +119,15 @@ def test_dynamic_conv2d(bias: bool) -> None:
     assert torch.equal(out1, out2)
 
 
+@pytest.mark.parametrize('dynamic_class',
+                         [BigNasConv2d, DynamicConv2d, FuseConv2d, OFAConv2d])
 @pytest.mark.parametrize(
     ['is_mutate_in_channels', 'in_channels', 'out_channels'], [(True, 6, 10),
                                                                (False, 10, 4)])
-def test_dynamic_conv2d_mutable_single_channels(is_mutate_in_channels: bool,
-                                                in_channels: int,
-                                                out_channels: int) -> None:
-    d_conv2d = DynamicConv2d(
+def test_dynamic_conv2d_mutable_single_channels(
+        is_mutate_in_channels: bool, in_channels: int, out_channels: int,
+        dynamic_class: Type[nn.Conv2d]) -> None:
+    d_conv2d = dynamic_class(
         in_channels=10, out_channels=10, kernel_size=3, stride=1, bias=True)
     mutable_channels = SquentialMutableChannel(10)
 

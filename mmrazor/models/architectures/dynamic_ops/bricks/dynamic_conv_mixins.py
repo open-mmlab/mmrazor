@@ -410,6 +410,15 @@ class FuseConvMixin(DynamicConvMixin):
     """A mixin class for Pytorch conv, which can mutate ``in_channels``,
     ``out_channels`` ."""
 
+    def forward_mixin(self: _ConvNd, x: Tensor) -> Tensor:
+        """Forward of dynamic conv2d OP."""
+        groups = self.groups
+        if self.groups == self.in_channels == self.out_channels:
+            groups = x.size(1)
+        weight, bias, padding = self.get_dynamic_params()
+        return self.conv_func(x, weight, bias, self.stride, padding,
+                              self.dilation, groups)
+
     def change_mutable_attrs_after_init(self: _ConvNd, key: str,
                                         value: Any) -> None:
         self.mutable_attrs_modified = {}
@@ -455,30 +464,34 @@ class FuseConvMixin(DynamicConvMixin):
         Returns:
             Tuple[Tensor, Optional[Tensor]]: Sliced weight and bias.
         """
-        if 'in_channels' not in self.mutable_attrs and \
-                'out_channels' not in self.mutable_attrs:
-            return weight, bias
+
+        mutable_in_channels = 0
+        mutable_out_channels = 0
 
         if 'in_channels' in self.mutable_attrs:
             mutable_in_channels = self.mutable_attrs[
                 'in_channels'].activated_channels
-        else:
-            mutable_in_channels = self.in_channels
 
         if 'out_channels' in self.mutable_attrs:
             mutable_out_channels = self.mutable_attrs[
                 'out_channels'].activated_channels
-        else:
+
+        if mutable_in_channels == 0:
+            mutable_in_channels = self.in_channels
+        if mutable_out_channels == 0:
             mutable_out_channels = self.out_channels
 
-        # mutable_in_channels = mutable_in_channels.activated_channels
-        # mutable_out_channels = mutable_out_channels.activated_channels
+        # if channel not in mutable_attrs or unchanged
+        if mutable_in_channels == self.in_channels and \
+                mutable_out_channels == self.out_channels:
+            return weight, bias
+
         if not hasattr(self, 'layeri_softmaxp'):
-            self.layeri_softmaxp = torch.zeros(
+            self.layeri_softmaxp = torch.ones(
                 mutable_out_channels, self.out_channels,
                 requires_grad=False).to(self.weight.device)
         if self.layeri_softmaxp.shape[0] != mutable_out_channels:
-            self.layeri_softmaxp = torch.zeros(
+            self.layeri_softmaxp = torch.ones(
                 mutable_out_channels, self.out_channels,
                 requires_grad=False).to(self.weight.device)
         weight = self.weight[:, 0:mutable_in_channels, :, :]
@@ -489,7 +502,7 @@ class FuseConvMixin(DynamicConvMixin):
                                                    -1)).reshape(-1, cin, k, k)
         elif self.groups == self.in_channels == self.out_channels:
             # depth-wise conv
-            cout, cin, k, _ = self.weight.shape
+            cout, cin, k, _ = weight.shape
             fused_weight = torch.mm(self.layeri_softmaxp,
                                     weight.reshape(cout,
                                                    -1)).reshape(-1, cin, k, k)
@@ -505,16 +518,6 @@ class FuseConvMixin(DynamicConvMixin):
             fused_bias = self.bias
         return fused_weight, fused_bias
 
-    def forward_mixin(self: _ConvNd, x: Tensor) -> Tensor:
-        """Forward of dynamic conv2d OP."""
-        groups = self.groups
-        if self.groups == self.in_channels == self.out_channels:
-            groups = x.size(1)
-        weight, bias, _ = self.get_dynamic_params()
-
-        return self.conv_func(x, weight, bias, self.stride, self.padding,
-                              self.dilation, groups)
-
     def to_static_op(self: _ConvNd) -> nn.Conv2d:
         """Convert dynamic conv2d to :obj:`torch.nn.Conv2d`.
 
@@ -523,7 +526,7 @@ class FuseConvMixin(DynamicConvMixin):
         """
         self.check_if_mutables_fixed()
 
-        weight, bias = self.get_dynamic_params()
+        weight, bias, padding = self.get_dynamic_params()
         groups = self.groups
         if groups == self.in_channels == self.out_channels and \
                 self.mutable_in_channels is not None:
@@ -539,7 +542,7 @@ class FuseConvMixin(DynamicConvMixin):
             out_channels=out_channels,
             kernel_size=kernel_size,
             stride=self.stride,
-            padding=self.padding,
+            padding=padding,
             padding_mode=self.padding_mode,
             dilation=self.dilation,
             groups=groups,

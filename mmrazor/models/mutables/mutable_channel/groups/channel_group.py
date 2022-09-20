@@ -303,8 +303,7 @@ class ChannelGroup:
     @classmethod
     def union(cls, groups: List['ChannelGroup']) -> 'ChannelGroup':
         """ChannelGroup: Union ChannelGroups and return."""
-        group = cls(groups[0].num_channels,
-                    **groups[0].init_args)  # type: ignore
+        group = cls(groups[0].num_channels)
         for old_group in groups:
             for group_module in old_group.input_related:
                 group.add_input_related(group_module)

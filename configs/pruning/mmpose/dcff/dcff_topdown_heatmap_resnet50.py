@@ -65,8 +65,8 @@ model = dict(
         type='DCFFChannelMutator',
         channl_group_cfg=dict(
             type='DCFFChannelGroup',
-            candidate_choices=[32],
-            candidate_mode='number'),
+            candidate_choices=0.5,
+            candidate_mode='ratio'),
         tracer_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='TopdownPoseEstimatorPseudoLoss'))))

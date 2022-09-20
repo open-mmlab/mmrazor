@@ -1,0 +1,14 @@
+{
+    "op2_(0, 8)_out_5_in_4": {
+        "candidates": [
+          6
+        ],
+        "candidate_mode": "number"
+    },
+    "op3_(0, 8)_out_1_in_0": {
+        "candidates": [
+          2
+        ],
+        "candidate_mode": "number"
+    }
+}
