@@ -3,7 +3,13 @@ from torch.nn import Module
 from torch import Tensor
 import torch.nn as nn
 import torch
-
+from mmrazor.models.architectures.dynamic_ops.bricks import DynamicBatchNorm2d, DynamicConv2d, DynamicLinear, DynamicChannelMixin
+from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
+from mmrazor.models.mutables import MutableChannelGroup
+from mmrazor.models.mutables import DerivedMutable
+from mmrazor.models.mutables import BaseMutable
+from mmrazor.models.mutables import OneShotMutableChannelGroup, SquentialMutableChannel, SimpleMutableChannel
+from mmrazor.registry import MODELS
 # this file includes models for tesing.
 
 
@@ -344,7 +350,7 @@ class MultipleUseModel(nn.Module):
         self.conv2 = nn.Conv2d(3, 8, 3, 1, 1)
         self.conv3 = nn.Conv2d(3, 8, 3, 1, 1)
         self.conv_multiple_use = nn.Conv2d(8, 16, 3, 1, 1)
-        self.conv_last = nn.Conv2d(16*4, 32, 3, 1, 1)
+        self.conv_last = nn.Conv2d(16 * 4, 32, 3, 1, 1)
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.linear = nn.Linear(32, 1000)
 
@@ -452,20 +458,129 @@ class MultiBindModel(Module):
 
 
 class DwConvModel(nn.Module):
+
     def __init__(self) -> None:
         super().__init__()
         self.net = nn.Sequential(
-            nn.Conv2d(3, 48, 3, 1, 1),
-            nn.BatchNorm2d(48),
-            nn.ReLU(),
-            nn.Conv2d(48, 48, 3, 1, 1, groups=48),
-            nn.BatchNorm2d(48),
-            nn.ReLU()
-        )
+            nn.Conv2d(3, 48, 3, 1, 1), nn.BatchNorm2d(48), nn.ReLU(),
+            nn.Conv2d(48, 48, 3, 1, 1, groups=48), nn.BatchNorm2d(48),
+            nn.ReLU())
         self.head = LinearHead(48, 1000)
 
     def forward(self, x):
         return self.head(self.net(x))
+
+
+# models with dynamicop
+
+
+def register_mutable(module: DynamicChannelMixin,
+                     mutable: OneShotMutableChannelGroup,
+                     is_out=True,
+                     start=0,
+                     end=-1):
+    if end == -1:
+        end = mutable.num_channels + start
+    if is_out:
+        container: MutableChannelContainer = module.get_mutable_attr(
+            'out_channels')
+    else:
+        container: MutableChannelContainer = module.get_mutable_attr(
+            'in_channels')
+    container.register_mutable(mutable, start, end)
+
+
+class SampleExpandDerivedMutable(BaseMutable):
+
+    def __init__(self, expand_ratio=1) -> None:
+        super().__init__()
+        self.ratio = expand_ratio
+
+    def __mul__(self, other):
+        if isinstance(other, SampleOneshotMutableChannel):
+
+            def _expand_mask():
+                mask = other.current_mask
+                mask = torch.unsqueeze(
+                    mask,
+                    -1).expand(list(mask.shape) + [self.ratio]).flatten(-2)
+                return mask
+
+            return DerivedMutable(_expand_mask, _expand_mask, [self, other])
+        else:
+            raise NotImplementedError()
+
+    def dump_chosen(self):
+        return super().dump_chosen()
+
+    def fix_chosen(self, chosen):
+        return super().fix_chosen(chosen)
+
+    def num_choices(self) -> int:
+        return super().num_choices
+
+
+class SampleOneshotMutableChannel(SimpleMutableChannel):
+
+    def __init__(self, num_channels: int, choices=[2, 4], **kwargs):
+        super().__init__(num_channels, **kwargs)
+        self.choices = choices
+
+
+@MODELS.register_module()
+class SampleOneshotMutableChannelGroup(OneShotMutableChannelGroup):
+
+    @classmethod
+    def init_from_mutable_channel(
+            cls, mutable_channel: SampleOneshotMutableChannel):
+        return cls(
+            mutable_channel.num_channels,
+            candidate_choices=mutable_channel.choices,
+            candidate_mode='ratio'
+            if isinstance(mutable_channel.choices[0], float) else 'number')
+
+
+class DynamicLinearModel(nn.Module):
+    """
+        x
+        |net0,net1
+        |net2
+        |net3
+        x1
+        |fc
+        output
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            DynamicConv2d(3, 8, 3, 1, 1), DynamicBatchNorm2d(8), nn.ReLU(),
+            DynamicConv2d(8, 16, 3, 1, 1), DynamicBatchNorm2d(16),
+            nn.AdaptiveAvgPool2d(1))
+        self.linear = DynamicLinear(16, 1000)
+
+        MutableChannelGroup._register_channel_container(
+            self, MutableChannelContainer)
+        self._register_mutable()
+
+    def forward(self, x):
+        x1 = self.net(x)
+        x1 = x1.reshape([x1.shape[0], -1])
+        return self.linear(x1)
+
+    def _register_mutable(self):
+        mutable1 = SampleOneshotMutableChannel(8, choices=[1, 4, 8])
+        mutable2 = SampleOneshotMutableChannel(16, choices=[2, 8, 16])
+        mutable_value = SampleExpandDerivedMutable(1)
+
+        register_mutable(self.net[0], mutable1, True)
+        register_mutable(self.net[1], mutable1.expand_mutable_channel(1), True,
+                         0, 8)
+        register_mutable(self.net[3], mutable_value * mutable1, False, 0, 8)
+
+        register_mutable(self.net[3], mutable2, True)
+        register_mutable(self.net[4], mutable2, True)
+        register_mutable(self.linear, mutable2, False)
 
 
 default_models = [

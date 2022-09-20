@@ -400,10 +400,12 @@ class ChannelGroup:
     @property
     def name(self) -> str:
         """str: name of the group"""
-        first_module = self.output_related[0] if len(
-            self.output_related) > 0 else self.input_related[0]
-        name = f'{first_module.name}_{first_module.index}_'
-        name += f'out_{len(self.output_related)}_in_{len(self.input_related)}'
+        if len(self.output_related) + len(self.input_related) > 0:
+            first_module = (self.output_related + self.input_related)[0]
+            first_module_name = f'{first_module.name}_{first_module.index}'
+        else:
+            first_module_name = 'groupx'
+        name = f'{first_module_name}_{self.num_channels}'
         return name
 
     def config_template(self,

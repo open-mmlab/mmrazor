@@ -7,6 +7,7 @@ import torch.nn as nn
 from mmengine.model import BaseModule
 
 from mmrazor.models.architectures.dynamic_ops.bricks import DynamicChannelMixin
+from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables.mutable_channel.base_mutable_channel import \
     BaseMutableChannel
 from ..mutable_channel_container import MutableChannelContainer
@@ -16,7 +17,7 @@ from .channel_group import Channel, ChannelGroup
 class MutableChannelGroup(ChannelGroup, BaseModule):
 
     # init methods
-    def __init__(self, num_channels: int) -> None:
+    def __init__(self, num_channels: int, **kwargs) -> None:
         """MutableChannelGroup inherits from ChannelGroup, which manages
         channels with channel-dependency.
 
@@ -230,12 +231,18 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
                     end = channel.start + (
                         channel.end - channel.start) * channel.expand_ratio
                 if (start, end) in container.mutable_channels:
-                    # TODO refine assert
                     existed = container.mutable_channels[(start, end)]
+                    if not isinstance(existed, DerivedMutable):
+                        assert mutable_channel is existed
+                    else:
+                        source_mutables = list(
+                            existed._trace_source_mutables())
+                        is_same = [
+                            mutable_channel is mutable
+                            for mutable in source_mutables
+                        ]
+                        assert any(is_same)
 
-                    assert mutable_channel is existed \
-                        or mutable_channel_ is list(
-                            existed._trace_source_mutables)[0]
                 else:
                     container.register_mutable(mutable_channel_, start, end)
 

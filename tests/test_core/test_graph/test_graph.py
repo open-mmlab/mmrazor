@@ -80,14 +80,14 @@ class TestGraph(TestCase):
         ) if FULL_TEST else default_models
         return models
 
-    def test_init_using_backward_tracer(self) -> None:
+    def test_init_from_backward_tracer(self) -> None:
         TestData = self.backward_tracer_passed_models()
 
         for data in TestData:
             with self.subTest(data=data):
                 model = data()
                 model.eval()
-                graph = ModuleGraph.init_using_backward_tracer(model)
+                graph = ModuleGraph.init_from_backward_tracer(model)
 
                 # check channels
                 self._valid_graph(graph)
