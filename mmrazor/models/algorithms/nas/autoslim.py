@@ -32,6 +32,20 @@ class AutoSlim(BaseAlgorithm):
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  init_cfg: Optional[Dict] = None,
                  num_samples: int = 2) -> None:
+        """Implementation of Autoslim algorithm. Please refer to
+        https://arxiv.org/abs/1903.11728 for more details.
+
+        Args:
+            mutator (VALID_MUTATOR_TYPE): config of mutator.
+            distiller (VALID_DISTILLER_TYPE): config of  distiller.
+            architecture (Union[BaseModel, Dict]): the model to be searched.
+            data_preprocessor (Optional[Union[Dict, nn.Module]], optional):
+                data prepocessor. Defaults to None.
+            init_cfg (Optional[Dict], optional): config of initialization.
+                Defaults to None.
+            num_samples (int, optional): number of sample subnets.
+                Defaults to 2.
+        """
         super().__init__(architecture, data_preprocessor, init_cfg)
 
         self.mutator: OneShotChannelMutator = MODELS.build(mutator)
@@ -48,7 +62,7 @@ class AutoSlim(BaseAlgorithm):
 
     def _build_mutator(self,
                        mutator: VALID_MUTATOR_TYPE) -> OneShotChannelMutator:
-        """build mutator."""
+        """Build mutator."""
         if isinstance(mutator, dict):
             mutator = MODELS.build(mutator)
         if not isinstance(mutator, OneShotChannelMutator):
@@ -60,6 +74,7 @@ class AutoSlim(BaseAlgorithm):
 
     def _build_distiller(
             self, distiller: VALID_DISTILLER_TYPE) -> ConfigurableDistiller:
+        """Build distiller."""
         if isinstance(distiller, dict):
             distiller = MODELS.build(distiller)
         if not isinstance(distiller, ConfigurableDistiller):
@@ -70,19 +85,24 @@ class AutoSlim(BaseAlgorithm):
         return distiller
 
     def sample_subnet(self) -> Dict:
+        """Sample a subnet."""
         return self.mutator.sample_choices()
 
     def set_subnet(self, subnet) -> None:
+        """Set a subnet."""
         self.mutator.set_choices(subnet)
 
     def set_max_subnet(self) -> None:
+        """Set max subnet."""
         self.mutator.set_choices(self.mutator.max_choices())
 
     def set_min_subnet(self) -> None:
+        """Set min subnet."""
         self.mutator.set_choices(self.mutator.min_choices())
 
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
+        """Train step."""
 
         def distill_step(
                 batch_inputs: torch.Tensor, data_samples: List[BaseDataElement]
@@ -137,6 +157,7 @@ class AutoSlim(BaseAlgorithm):
 
 @MODEL_WRAPPERS.register_module()
 class AutoSlimDDP(MMDistributedDataParallel):
+    """DDPwapper for autoslim."""
 
     def __init__(self,
                  *,
