@@ -99,7 +99,7 @@ class TestMutableChannelGroup(TestCase):
         y = model(x)
         self.assertSequenceEqual(y.shape, [2, 1000])
 
-    def _test_a_model_using_backward_tracer(self, model):
+    def _test_a_model_from_backward_tracer(self, model):
         model.eval()
         model = model.to(DEVICE)
         graph = ModuleGraph.init_from_backward_tracer(model)
