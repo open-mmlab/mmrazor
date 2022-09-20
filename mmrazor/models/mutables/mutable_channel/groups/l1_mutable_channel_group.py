@@ -36,9 +36,10 @@ class L1MutableChannelGroup(SequentialMutableChannelGroup):
         mask.scatter_(0, idx, 1)
         return mask
 
-    def _get_l1_norm(self, module: Union[nn.Conv2d, nn.Linear], start, end):
+    def _get_l1_norm(self, module: Union[nn.modules.conv._ConvNd, nn.Linear],
+                     start, end):
         """Get l1-norm of a module."""
-        if isinstance(module, nn.Conv2d):
+        if isinstance(module, nn.modules.conv._ConvNd):
             weight = module.weight.flatten(1)  # out_c * in_c * k * k
         elif isinstance(module, nn.Linear):
             weight = module.weight  # out_c * in_c
@@ -52,8 +53,9 @@ class L1MutableChannelGroup(SequentialMutableChannelGroup):
         avg_norm = 0
         module_num = 0
         for channel in self.output_related:
-            if isinstance(channel.module, nn.Conv2d) or isinstance(
-                    channel.module, nn.Linear):
+            if isinstance(channel.module,
+                          nn.modules.conv._ConvNd) or isinstance(
+                              channel.module, nn.Linear):
                 norm = self._get_l1_norm(channel.module, channel.start,
                                          channel.end)
                 avg_norm += norm
