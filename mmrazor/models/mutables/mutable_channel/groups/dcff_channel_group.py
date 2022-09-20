@@ -7,11 +7,11 @@ from mmrazor.models.architectures.dynamic_ops.bricks import (
     DynamicBatchNorm2d, DynamicLinear, FuseConv2d)
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
-from .one_shot_channel_group import OneShotChannelGroup
+from .one_shot_mutable_channel_group import OneShotMutableChannelGroup
 
 
 @MODELS.register_module()
-class DCFFChannelGroup(OneShotChannelGroup):
+class DCFFChannelGroup(OneShotMutableChannelGroup):
 
     def __init__(self,
                  num_channels,
