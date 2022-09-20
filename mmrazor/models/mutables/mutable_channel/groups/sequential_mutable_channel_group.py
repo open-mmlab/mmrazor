@@ -79,7 +79,11 @@ class SequentialMutableChannelGroup(MutableChannelGroup):
         if with_init_args:
             init_args: Dict = config['init_args']
             init_args.update(
-                dict(choice_mode=self.choice_mode, divisor=self.divisor))
+                dict(
+                    choice_mode=self.choice_mode,
+                    divisor=self.divisor,
+                    min_value=self.min_value,
+                    min_ratio=self.min_ratio))
         return config
 
     # choice

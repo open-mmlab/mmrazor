@@ -3,9 +3,9 @@ import copy
 from unittest import TestCase
 
 from mmengine import ConfigDict
-from toy_models import ToyOFDStudent
 
 from mmrazor.models import OverhaulFeatureDistillation
+from .toy_models import ToyOFDStudent
 
 
 class TestSingleTeacherDistill(TestCase):

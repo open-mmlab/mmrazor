@@ -20,6 +20,11 @@ def parse_args():
         action='store_true',
         help='output with channel config')
     parser.add_argument(
+        '-i',
+        '--with-init-args',
+        action='store_true',
+        help='output with init args')
+    parser.add_argument(
         '-o',
         '--output-path',
         default='',
@@ -37,7 +42,8 @@ def main():
         mutator = BaseChannelMutator()
         mutator.prepare_from_supernet(model)
     config = mutator.config_template(
-        with_channels=args.with_channel, with_group_init_args=True)
+        with_channels=args.with_channel,
+        with_group_init_args=args.with_init_args)
     json_config = json.dumps(config, indent=4, separators=(',', ':'))
     if args.output_path == '':
         print('=' * 100)

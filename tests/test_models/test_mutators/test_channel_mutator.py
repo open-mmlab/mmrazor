@@ -7,8 +7,8 @@ from typing import Union
 import torch
 
 # from mmrazor.models.mutables import MutableChannelGroup
-from mmrazor.models.mutables.mutable_channel import \
-    SequentialMutableChannelGroup
+from mmrazor.models.mutables.mutable_channel import (
+    L1MutableChannelGroup, SequentialMutableChannelGroup)
 from mmrazor.models.mutators.channel_mutator import BaseChannelMutator
 from mmrazor.registry import MODELS
 from ...data.models import DynamicLinearModel
@@ -31,7 +31,9 @@ class RandomChannelGroup(SequentialMutableChannelGroup):
         return mask
 
 
-DATA_GROUPSS = [SequentialMutableChannelGroup, RandomChannelGroup]
+DATA_GROUPSS = [
+    SequentialMutableChannelGroup, RandomChannelGroup, L1MutableChannelGroup
+]
 
 
 class TestChannelMutator(unittest.TestCase):

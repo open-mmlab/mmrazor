@@ -10,6 +10,7 @@ from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables import BaseMutable
 from mmrazor.models.mutables import OneShotMutableChannelGroup, SquentialMutableChannel, SimpleMutableChannel
 from mmrazor.registry import MODELS
+from mmengine.model import BaseModel
 # this file includes models for tesing.
 
 
@@ -184,7 +185,7 @@ class ResBlock(Module):
         return output
 
 
-class LineModel(Module):
+class LineModel(BaseModel):
     """
         x
         |net0,net1
