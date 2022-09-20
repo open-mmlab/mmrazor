@@ -110,7 +110,7 @@ class TestMutableChannelGroup(TestCase):
         for model_data in test_models:
             with self.subTest(model=model_data):
                 model = model_data()
-                self._test_a_model_using_backward_tracer(model)
+                self._test_a_model_from_backward_tracer(model)
 
     def test_group_split(self):
         layer = nn.Conv2d(3, 16, 3)

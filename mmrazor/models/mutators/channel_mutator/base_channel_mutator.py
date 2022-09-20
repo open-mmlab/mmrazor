@@ -105,11 +105,11 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
         self._name2module = dict(supernet.named_modules())
 
         if 'Tracer' in self.parse_cfg['type']:
-            groups = self._prepare_using_tracer(supernet, self.parse_cfg)
+            groups = self._prepare_from_tracer(supernet, self.parse_cfg)
         elif self.parse_cfg['type'] == 'Config':
-            groups = self._prepare_using_cfg(supernet, self.groups_cfg)
+            groups = self._prepare_from_cfg(supernet, self.groups_cfg)
         elif self.parse_cfg['type'] == 'Predefined':
-            groups = self._prepare_using_predefined_model(supernet)
+            groups = self._prepare_from_predefined_model(supernet)
         else:
             raise NotImplementedError()
 
@@ -272,7 +272,7 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
             raise NotImplementedError()
         return group_class, default_group_args, group_init_cfg
 
-    def _prepare_using_tracer(self, model: Module, parse_cfg: Dict):
+    def _prepare_from_tracer(self, model: Module, parse_cfg: Dict):
         """Initialize groups using a tracer."""
         if self.parse_cfg['type'] == 'BackwardTracer':
             graph = ModuleGraph.init_from_backward_tracer(model, parse_cfg)
@@ -287,7 +287,7 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
         groups = self._convert_channel_group_to_mutable(groups)
         return groups
 
-    def _prepare_using_cfg(self, model, config: Dict):
+    def _prepare_from_cfg(self, model, config: Dict):
         """Initialize groups using config dict."""
         assert isinstance(self.channel_group_cfg, dict)
         assert 'groups' in self.channel_group_cfg
@@ -301,7 +301,7 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
             groups.append(group)
         return groups
 
-    def _prepare_using_predefined_model(self, model: Module):
+    def _prepare_from_predefined_model(self, model: Module):
         """Initialize groups using the model with pre-defined dynamicops and
         mutable-channels."""
 
