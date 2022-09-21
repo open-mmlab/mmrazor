@@ -1,20 +1,21 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
 import warnings
-from typing import Optional, Sequence, List, Tuple
-import torch
+from typing import List, Optional, Union
 
 import mmcv
+import torch
 from mmcv.transforms import Compose
+from mmengine.dist import master_only
 from mmengine.fileio import FileClient
 from mmengine.hooks import Hook
-from mmengine.runner import Runner
+from mmengine.model import is_model_wrapper
 from mmengine.utils import mkdir_or_exist
 from mmengine.visualization import Visualizer
 
-from mmrazor.registry import HOOKS
-from mmrazor.visualization import RazorLocalVisualizer
 from mmrazor.models.task_modules import RecorderManager
+from mmrazor.registry import HOOKS
+from mmrazor.visualization.local_visualizer import modify
 
 
 def norm(feat):
@@ -30,54 +31,62 @@ def norm(feat):
 
 @HOOKS.register_module()
 class RazorVisualizationHook(Hook):
-    """Detection Visualization Hook. Used to visualize validation and testing
-    process prediction results.
+    """Razor Visualization Hook. Used to visualize training process immediate
+    feature maps.
 
-    In the testing phase:
-
-    1. If ``show`` is True, it means that only the prediction results are
+    1. If ``show`` is True, it means that only the immediate feature maps are
         visualized without storing data, so ``vis_backends`` needs to
         be excluded.
-    2. If ``test_out_dir`` is specified, it means that the prediction results
-        need to be saved to ``test_out_dir``. In order to avoid vis_backends
+    2. If ``out_dir`` is specified, it means that the immediate feature maps
+        need to be saved to ``out_dir``. In order to avoid vis_backends
         also storing data, so ``vis_backends`` needs to be excluded.
     3. ``vis_backends`` takes effect if the user does not specify ``show``
-        and `test_out_dir``. You can set ``vis_backends`` to WandbVisBackend or
-        TensorboardVisBackend to store the prediction result in Wandb or
+        and `out_dir``. You can set ``vis_backends`` to WandbVisBackend or
+        TensorboardVisBackend to store the immediate feature maps in Wandb or
         Tensorboard.
 
     Args:
-        draw (bool): whether to draw prediction results. If it is False,
+        recorders (dict): All recorders' config.
+        mappings: (Dict[str, Dict]): The mapping between feature names and
+            records.
+        enabled (bool): Whether to draw immediate feature maps. If it is False,
             it means that no drawing will be done. Defaults to False.
-        interval (int): The interval of visualization. Defaults to 50.
-        score_thr (float): The threshold to visualize the bboxes
-            and masks. Defaults to 0.3.
+        interval (int): The interval of visualization. Defaults to 1.
         show (bool): Whether to display the drawn image. Default to False.
         wait_time (float): The interval of show (s). Defaults to 0.
-        test_out_dir (str, optional): directory where painted images
+        out_dir (str, optional): directory where painted images
             will be saved in testing process.
         file_client_args (dict): Arguments to instantiate a FileClient.
             See :class:`mmengine.fileio.FileClient` for details.
             Defaults to ``dict(backend='disk')``.
+        is_overlaid (bool): If `is_overlaid` is True, the final output image
+            will be the weighted sum of img and featmap. Defaults to True.
+        visualization_cfg (dict): Configs for visualization.
+        use_norm (bool): Whether to apply Batch Normalization over the
+            feature map. Defaults to False.
     """
 
     def __init__(self,
                  recorders: dict,
                  mappings: dict,
-                 data_idx: Optional[int, List] = 0,
+                 enabled: bool = False,
+                 data_idx: Union[int, List] = 0,
                  interval: int = 1,
                  show: bool = False,
                  wait_time: float = 0.1,
                  out_dir: Optional[str] = None,
                  file_client_args: dict = dict(backend='disk'),
                  is_overlaid: bool = True,
-                 channel_reduction: Optional[str] = 'pixel_wise_max',
-                 topk: int = 20,
-                 arrangement: Tuple[int, int] = (4, 5),
-                 resize_shape: Optional[tuple] = None,
-                 alpha: float = 0.5,
-                 use_norm: bool = True):
-        self._visualizer: RazorLocalVisualizer = RazorLocalVisualizer.get_current_instance()
+                 visualization_cfg=dict(
+                     channel_reduction='pixel_wise_max',
+                     topk=20,
+                     arrangement=(4, 5),
+                     resize_shape=None,
+                     alpha=0.5),
+                 use_norm: bool = False):
+        self.enabled = enabled
+        self._visualizer: Visualizer = Visualizer.get_current_instance()
+        self._visualizer.draw_featmap = modify
         if isinstance(data_idx, int):
             data_idx = [data_idx]
         self.data_idx = data_idx
@@ -94,35 +103,41 @@ class RazorVisualizationHook(Hook):
         self.file_client_args = file_client_args.copy()
         self.file_client = None
         self.out_dir = out_dir
-        self._test_index = 0
         self.interval = interval
 
         self.is_overlaid = is_overlaid
-        self.channel_reduction = channel_reduction
-        if channel_reduction is not None:
-            assert channel_reduction in [
-                'squeeze_mean', 'select_max', 'pixel_wise_max'], \
-                f'Mode only support "squeeze_mean", "select_max", "pixel_wise_max", ' \
-                f'but got {channel_reduction}'
-        self.topk = topk
-        self.arrangement = arrangement
-        self.resize_shape = resize_shape
-        self.alpha = alpha
+        self.visualization_cfg = visualization_cfg
         self.use_norm = use_norm
 
         self.recorder_manager = RecorderManager(recorders)
         self.mappings = mappings
 
+        self._step = 0  # Global step value to record
+
+    @master_only
     def before_run(self, runner) -> None:
-        self.recorder_manager.initialize(runner.model)
+        model = runner.model
+        if is_model_wrapper(model):
+            self.recorder_manager.initialize(model.module)
+        else:
+            self.recorder_manager.initialize(model)
 
-    def after_train_epoch(self, runner) -> None:
-        if runner.epoch % self.interval != 0:
+    @master_only
+    def before_train(self, runner):
+        if not self.enabled or runner.epoch % self.interval != 0:
             return
+        self._visualize(runner, 'before_run')
 
+    @master_only
+    def after_train_epoch(self, runner) -> None:
+        if not self.enabled or runner.epoch % self.interval != 0:
+            return
+        self._visualize(runner, f'epoch_{runner.epoch}')
+
+    def _visualize(self, runner, stage):
         if self.out_dir is not None:
             self.out_dir = osp.join(runner.work_dir, runner.timestamp,
-                                         self.out_dir)
+                                    self.out_dir)
             mkdir_or_exist(self.out_dir)
 
         if self.file_client is None:
@@ -133,7 +148,7 @@ class RazorVisualizationHook(Hook):
         new_test_pipeline = []
         for pipeline in test_pipeline:
             if pipeline['type'] != 'LoadAnnotations' and pipeline[
-                'type'] != 'LoadPanopticAnnotations':
+                    'type'] != 'LoadPanopticAnnotations':
                 new_test_pipeline.append(pipeline)
 
         test_pipeline = Compose(new_test_pipeline)
@@ -151,9 +166,10 @@ class RazorVisualizationHook(Hook):
             with torch.no_grad(), self.recorder_manager:
                 runner.model.test_step(data_)
 
-            if self.overlaid:
+            if self.is_overlaid:
                 img_bytes = self.file_client.get(img_path)
-                overlaid_image = mmcv.imfrombytes(img_bytes, channel_order='rgb')
+                overlaid_image = mmcv.imfrombytes(
+                    img_bytes, channel_order='rgb')
             else:
                 overlaid_image = None
 
@@ -163,23 +179,25 @@ class RazorVisualizationHook(Hook):
                 data_idx = getattr(record, 'data_idx')
                 feats = recorder.get_record_data(record_idx, data_idx)
                 if isinstance(feats, torch.Tensor):
-                    feats = (feats,)
+                    feats = (feats, )
 
                 for i, feat in enumerate(feats):
                     if self.use_norm:
                         feat = norm(feat)
                     drawn_img = self._visualizer.draw_featmap(
-                        feat[0], overlaid_image, self.channel_reduction, self.topk, self.arrangement, self.resize_shape,
-                        self.alpha)
+                        feat[0], overlaid_image, **self.visualization_cfg)
 
                     out_file = None
                     if self.out_dir is not None:
-                        out_file = f'data_idx{idx}_epoch{runner.epoch}_{name}_{i}.jpg'
+                        out_file = f'{stage}_data_idx_{idx}_{name}_{i}.jpg'
                         out_file = osp.join(self.out_dir, out_file)
 
+                    # TODO: Supported in mmengine's Viusalizer.
                     self._visualizer.add_datasample(
-                        f'data_idx{idx}_epoch{runner.epoch}_{name}_{i}',
+                        f'{stage}_data_idx_{idx}_{name}_{i}',
                         drawn_img,
                         show=self.show,
                         wait_time=0.1,
-                        out_file=out_file)
+                        out_file=out_file,
+                        step=self._step)
+                    self._step += 1

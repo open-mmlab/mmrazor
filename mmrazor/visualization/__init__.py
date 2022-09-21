@@ -1,3 +1,4 @@
-from .local_visualizer import RazorLocalVisualizer
+# Copyright (c) OpenMMLab. All rights reserved.
+from .local_visualizer import modify
 
-__all__ = ['RazorLocalVisualizer']
+__all__ = ['modify']
