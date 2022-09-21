@@ -13,6 +13,14 @@ from .base_channel_mutator import BaseChannelMutator, ChannelGroupType
 
 @MODELS.register_module()
 class DCFFChannelMutator(BaseChannelMutator[DCFFChannelGroup]):
+    """DCFF channel mutable based channel mutator. It uses DCFFChannelGroup.
+
+    Args:
+        channel_cfgs (list[Dict]): A list of candidate channel configs.
+        channel_group_cfg (Union[dict, Type[ChannelGroupType]], optional):
+            Config of MutableChannelGroups. Defaults to
+            dict( type='DCFFChannelGroup').
+    """
 
     def __init__(self,
                  channel_cfgs: Dict,
@@ -37,6 +45,7 @@ class DCFFChannelMutator(BaseChannelMutator[DCFFChannelGroup]):
         self._reset_group_candidates()
 
     def _reset_group_candidates(self):
+        # print("name2group:", self._name2group)
         for key in self._channel_cfgs:
             group: DCFFChannelGroup = self._name2group[key]
             group.alter_candidates_after_init(
@@ -95,7 +104,7 @@ class DCFFChannelMutator(BaseChannelMutator[DCFFChannelGroup]):
         CUDA out of memory.
 
         Args:
-            t (float): temporature calculated by iter or epoch
+            tau (float): temporature calculated by iter or epoch
         """
         # Calculate the filter importance of the current epoch.
 

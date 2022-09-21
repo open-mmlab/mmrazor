@@ -96,7 +96,7 @@ def test_DCFF_channel_mutator() -> None:
     root_path = dirname(dirname(dirname(__file__)))
 
     # ResBlock
-    channel_cfgs = os.path.join(root_path, 'data/subnet1_candidate.json')
+    channel_cfgs = os.path.join(root_path, 'data/test_models/test_mutator/subnet1.json')
     channel_cfgs = fileio.load(channel_cfgs)
 
     mutator = DCFFChannelMutator(
@@ -105,7 +105,7 @@ def test_DCFF_channel_mutator() -> None:
             type='DCFFChannelGroup',
             candidate_choices=[8],
             candidate_mode='number'),
-        tracer_cfg=dict(
+        parse_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss')))
 

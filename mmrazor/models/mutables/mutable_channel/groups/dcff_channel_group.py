@@ -12,31 +12,41 @@ from .one_shot_mutable_channel_group import OneShotMutableChannelGroup
 
 @MODELS.register_module()
 class DCFFChannelGroup(OneShotMutableChannelGroup):
+    """``DCFFChannelGroup`` is for supernet DCFF and
+    based on OneShotMutableChannelGroup.
+    In DCFF supernet, each module only has one choice.
+    The channel choice is fixed before training.
+
+    Args:
+        num_channels (int): The raw number of channels.
+        candidate_choices (List[Union[int, float]], optional):
+            A list of candidate width numbers or ratios. Each
+            candidate indicates how many channels to be reserved.
+            Defaults to [32](candidate_mode='number').
+        candidate_mode (str, optional): Mode of candidates.
+            One of "ratio" or "number". Defaults to 'number'.
+    """
 
     def __init__(self,
-                 num_channels,
+                 num_channels: int,
                  candidate_choices: List[Union[int, float]] = [32],
                  candidate_mode: str = 'number') -> None:
         super().__init__(num_channels, candidate_choices, candidate_mode)
 
     def prepare_for_pruning(self, model: nn.Module):
+        """In ``DCFFChannelGroup`` nn.Conv2d is replaced with FuseConv2d.
+        """
         self._replace_with_dynamic_ops(
             model, {
                 nn.Conv2d: FuseConv2d,
                 nn.BatchNorm2d: DynamicBatchNorm2d,
                 nn.Linear: DynamicLinear
             })
-        self._register_mask_container(model, MutableChannelContainer)
-        self._register_mask(self.mutable_channel)
-
-    def _prepare_choices(self):
-        for choice in self.candidate_choices:
-            assert isinstance(choice, self.choice_type)
-        self.candidate_choices = sorted(self.candidate_choices)
+        self._register_channel_container(model, MutableChannelContainer)
+        self._register_mutable_channel(self.mutable_channel)
 
     def alter_candidates_after_init(self, candidates):
         self.candidate_choices = candidates
-        self._prepare_choices()  # TODO refactor
         for channel in self.input_related:
             if isinstance(channel.module, FuseConv2d):
                 channel.module.change_mutable_attrs_after_init(

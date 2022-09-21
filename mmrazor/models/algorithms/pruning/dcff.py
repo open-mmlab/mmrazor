@@ -12,6 +12,7 @@ from torch import nn
 from mmrazor.models.distillers import ConfigurableDistiller
 from mmrazor.models.mutables import BaseMutable
 from mmrazor.models.mutators import DCFFChannelMutator
+from mmrazor.models.utils import reinitialize_optim_wrapper_count_status
 from mmrazor.registry import MODELS
 # from mmrazor.structures.subnet.fix_subnet import _dynamic_to_static
 from ..base import BaseAlgorithm
@@ -66,6 +67,12 @@ class DCFF(BaseAlgorithm):
         """Train step."""
 
         # self.message_hub = MessageHub.get_current_instance()
+        if not self._optim_wrapper_count_status_reinitialized:
+            reinitialize_optim_wrapper_count_status(
+                model=self,
+                optim_wrapper=optim_wrapper,
+                accumulative_counts=self.num_subnet)
+            self._optim_wrapper_count_status_reinitialized = True
         self.message_hub = optim_wrapper.message_hub.get_current_instance()
         self.max_num = self.message_hub._runtime_info['max_epochs']
         # buffer not available in __init__()
@@ -86,7 +93,7 @@ class DCFF(BaseAlgorithm):
         batch_inputs, data_samples = self.data_preprocessor(data, True)
         with optim_wrapper.optim_context(self):
             losses = self(batch_inputs, data_samples, mode='loss')
-        parsed_losses, _ = self.module.parse_losses(losses)
+        parsed_losses, _ = self.parse_losses(losses)
         optim_wrapper.update_params(parsed_losses)
 
         return losses

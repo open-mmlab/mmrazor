@@ -470,11 +470,11 @@ class FuseConvMixin(DynamicConvMixin):
 
         if 'in_channels' in self.mutable_attrs:
             mutable_in_channels = self.mutable_attrs[
-                'in_channels'].activated_channels
+                'in_channels'].current_mask.sum().item()
 
         if 'out_channels' in self.mutable_attrs:
             mutable_out_channels = self.mutable_attrs[
-                'out_channels'].activated_channels
+                'out_channels'].current_mask.sum().item()
 
         if mutable_in_channels == 0:
             mutable_in_channels = self.in_channels

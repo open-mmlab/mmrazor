@@ -13,16 +13,7 @@ from mmengine.optim import build_optim_wrapper
 from mmrazor.models.algorithms import DCFF
 
 MODEL_CFG = dict(
-    _scope_='mmcls',
-    type='mmcls.ImageClassifier',
-    backbone=dict(type='MobileNetV2', widen_factor=1.5),
-    neck=dict(type='GlobalAveragePooling'),
-    head=dict(
-        type='LinearClsHead',
-        num_classes=1000,
-        in_channels=1920,
-        loss=dict(type='CrossEntropyLoss', loss_weight=1.0),
-        topk=(1, 5)))
+        cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False)
 
 MUTATOR_CFG = dict(
     type='DCFFChannelMutator',
@@ -30,14 +21,11 @@ MUTATOR_CFG = dict(
         type='DCFFChannelGroup',
         candidate_choices=[32],
         candidate_mode='number'),
-    tracer_cfg=dict(
+    parse_cfg=dict(
         type='BackwardTracer',
         loss_calculator=dict(type='ImageClassifierPseudoLoss')))
 
-CHANNEL_CFG_PATHS = [
-    'tests/data/MBV2_220M.yaml',
-]
-CHANNEL_CFG_PATH = 'tests/data/MBV2_slimmable.json'
+CHANNEL_CFG_PATH = 'configs/pruning/mmcls/dcff/resnet_cls.json'
 
 OPTIMIZER_CFG = dict(
     type='SGD', lr=0.5, momentum=0.9, nesterov=True, weight_decay=0.0001)
@@ -83,22 +71,18 @@ class TestDCFF(TestCase):
         fake_message_hub = MagicMock()
         fake_message_hub.runtime_info = {
             'iter': 0,
-            'max_iters': 0,
-            'epoch': 0,
-            'max_epochs': 100
+            'max_iters': 100,
         }
         optim_wrapper.message_hub = fake_message_hub
         assert not algo._optim_wrapper_count_status_reinitialized
         losses = algo.train_step(data, optim_wrapper)
 
-        assert len(losses) == 3
-        assert losses['subnet_0.loss'] > 0
-        assert losses['subnet_1.loss'] > 0
-        assert losses['subnet_2.loss'] > 0
+        assert len(losses) == 1
+        assert losses['loss'] > 0
 
         self.assertTrue(algo._optim_wrapper_count_status_reinitialized)
-        self.assertEqual(optim_wrapper._inner_count, 3)
-        self.assertEqual(optim_wrapper._max_counts, 300)
+        self.assertEqual(optim_wrapper._inner_count, 1)
+        self.assertEqual(optim_wrapper._max_counts, 100)
 
         losses = algo.train_step(data, optim_wrapper)
         assert algo._optim_wrapper_count_status_reinitialized
@@ -107,6 +91,12 @@ class TestDCFF(TestCase):
         algo = self.prepare_fixed_model()
         data = self._prepare_fake_data()
         optim_wrapper = build_optim_wrapper(algo, OPTIM_WRAPPER_CFG)
+        fake_message_hub = MagicMock()
+        fake_message_hub.runtime_info = {
+            'iter': 0,
+            'max_iters': 100,
+        }
+        optim_wrapper.message_hub = fake_message_hub
         losses = algo.train_step(data, optim_wrapper)
 
         assert len(losses) == 1
