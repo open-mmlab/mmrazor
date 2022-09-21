@@ -25,6 +25,11 @@ def parse_args():
         action='store_true',
         help='output with init args')
     parser.add_argument(
+        '--choice',
+        action='store_true',
+        help=('output choices template. When this flag is activated, '
+              '-c and -i will be ignored'))
+    parser.add_argument(
         '-o',
         '--output-path',
         default='',
@@ -38,12 +43,15 @@ def main():
     model = MODELS.build(config['model'])
     if isinstance(model, BaseAlgorithm):
         mutator = model.mutator
-    elif isinstance(model, nn.module):
+    elif isinstance(model, nn.Module):
         mutator = BaseChannelMutator()
         mutator.prepare_from_supernet(model)
-    config = mutator.config_template(
-        with_channels=args.with_channel,
-        with_group_init_args=args.with_init_args)
+    if args.choice:
+        config = mutator.choice_template
+    else:
+        config = mutator.config_template(
+            with_channels=args.with_channel,
+            with_group_init_args=args.with_init_args)
     json_config = json.dumps(config, indent=4, separators=(',', ':'))
     if args.output_path == '':
         print('=' * 100)
