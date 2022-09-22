@@ -4,7 +4,7 @@ from unittest import TestCase
 import torch.nn as nn
 
 from mmrazor.models.mutables import L1MutableChannelGroup
-from mmrazor.models.mutators import BaseChannelMutator
+from mmrazor.models.mutators import ChannelMutator
 from ....data.models import LineModel
 
 
@@ -12,7 +12,7 @@ class TestL1MutableChannelGroup(TestCase):
 
     def test_init(self):
         model = LineModel()
-        mutator = BaseChannelMutator(
+        mutator = ChannelMutator(
             channel_group_cfg={
                 'type': 'L1MutableChannelGroup',
                 'default_args': {

@@ -44,7 +44,7 @@ model = dict(
     type='ItePruneAlgorithm',
     architecture=architecture,
     mutator_cfg=dict(
-        type='BaseChannelMutator',
+        type='ChannelMutator',
         channel_group_cfg=dict(
             type='L1MutableChannelGroup',
             default_args=dict(choice_mode='ratio'))),

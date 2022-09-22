@@ -7,7 +7,7 @@ from mmengine import MODELS
 from mmengine.config import Config
 
 from mmrazor.models import BaseAlgorithm
-from mmrazor.models.mutators import BaseChannelMutator
+from mmrazor.models.mutators import ChannelMutator
 
 
 def parse_args():
@@ -44,7 +44,7 @@ def main():
     if isinstance(model, BaseAlgorithm):
         mutator = model.mutator
     elif isinstance(model, nn.Module):
-        mutator = BaseChannelMutator()
+        mutator = ChannelMutator()
         mutator.prepare_from_supernet(model)
     if args.choice:
         config = mutator.choice_template

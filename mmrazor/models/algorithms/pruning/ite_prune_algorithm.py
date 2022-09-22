@@ -7,7 +7,7 @@ from mmengine import MessageHub, MMLogger
 from mmengine.model import BaseModel
 from mmengine.structures import BaseDataElement
 
-from mmrazor.models.mutators import BaseChannelMutator
+from mmrazor.models.mutators import ChannelMutator
 from mmrazor.registry import MODELS
 from ..base import BaseAlgorithm
 
@@ -85,8 +85,8 @@ class ItePruneAlgorithm(BaseAlgorithm):
 
     Args:
         architecture (Union[BaseModel, Dict]): The model to be pruned.
-        mutator_cfg (Union[Dict, BaseChannelMutator], optional): The config
-            of a mutator. Defaults to dict( type='BaseChannelMutator',
+        mutator_cfg (Union[Dict, ChannelMutator], optional): The config
+            of a mutator. Defaults to dict( type='ChannelMutator',
             channel_group_cfg=dict( type='SequentialMutableChannelGroup')).
         data_preprocessor (Optional[Union[Dict, nn.Module]], optional):
             Defaults to None.
@@ -102,8 +102,8 @@ class ItePruneAlgorithm(BaseAlgorithm):
 
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
-                 mutator_cfg: Union[Dict, BaseChannelMutator] = dict(
-                     type='BaseChannelMutator',
+                 mutator_cfg: Union[Dict, ChannelMutator] = dict(
+                     type='ChannelMutator',
                      channel_group_cfg=dict(
                          type='SequentialMutableChannelGroup')),
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
@@ -115,7 +115,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
         super().__init__(architecture, data_preprocessor, init_cfg)
 
         # mutator
-        self.mutator: BaseChannelMutator = MODELS.build(mutator_cfg)
+        self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
         self.mutator.prepare_from_supernet(self.architecture)
 
         # config_manager

@@ -3,12 +3,12 @@ from typing import Dict, Type, Union
 
 from mmrazor.models.mutables import OneShotMutableChannelGroup
 from mmrazor.registry import MODELS
-from .base_channel_mutator import BaseChannelMutator, ChannelGroupType
+from .base_channel_mutator import ChannelGroupType, ChannelMutator
 
 
 @MODELS.register_module()
-class OneShotChannelMutator(BaseChannelMutator[OneShotMutableChannelGroup]):
-    """OneShotChannelMutator based on BaseChannelMutator. It use
+class OneShotChannelMutator(ChannelMutator[OneShotMutableChannelGroup]):
+    """OneShotChannelMutator based on ChannelMutator. It use
     OneShotMutableChannelGroup by default.
 
     Args:

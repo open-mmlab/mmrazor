@@ -22,8 +22,8 @@ def is_dynamic_op_for_fx_tracer(module, name):
 
 
 @MODELS.register_module()
-class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
-    """BaseChannelMutator manages the pruning structure of a model.
+class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
+    """ChannelMutator manages the pruning structure of a model.
 
     Args:
         channel_group_cfg (Union[ dict, Type[MutableChannelGroup]], optional):
@@ -54,7 +54,7 @@ class BaseChannelMutator(BaseMutator, Generic[ChannelGroupType]):
             BaseModule.
 
     Note:
-        There are three ways used in BaseChannelMutator to parse a model and
+        There are three ways used in ChannelMutator to parse a model and
         get MutableChannelGroups.
         1. Using tracer. It needs parse_cfg to be the config of a tracer.
         2. Using config. When parse_cfg['type']='Config'. It needs that

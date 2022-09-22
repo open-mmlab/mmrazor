@@ -3,11 +3,11 @@ from typing import Dict, List, Optional
 
 from mmrazor.models.mutables import SlimmableChannelGroup
 from mmrazor.registry import MODELS
-from .base_channel_mutator import BaseChannelMutator
+from .base_channel_mutator import ChannelMutator
 
 
 @MODELS.register_module()
-class SlimmableChannelMutator(BaseChannelMutator[SlimmableChannelGroup]):
+class SlimmableChannelMutator(ChannelMutator[SlimmableChannelGroup]):
     """__init__ _summary_
 
     Args:
