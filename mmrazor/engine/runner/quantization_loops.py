@@ -1,7 +1,12 @@
 from mmrazor.registry import LOOPS
+from mmrazor.models.task_modules import ModuleInputsRecorder, ModuleOutputsRecorder
 from mmengine.runner import EpochBasedTrainLoop
 from typing import Union, Optional, List, Tuple, Dict
 from torch.utils.data import DataLoader
+from utils import extract_subgraph, extract_blocks
+import numpy as np
+
+_ADAROUND_SUPPORT_TYPE = (torch.nn.Conv2d, torch.nn.Linear)
 
 @LOOPS.register_module()
 class QATEpochBasedLoop(EpochBasedTrainLoop):
@@ -68,7 +73,6 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
         
         self.runner.call_hook('after_train')
 
-·
 @LOOPS.register_module()
 class PTQLoop(TestLoop):
     
@@ -104,23 +108,53 @@ class PTQLoop(TestLoop):
     def calibrate(self, calibrate_dataloader) -> None:
         pass
 
-    def reconstruction(
-        self, 
-        model_graph,
-        calibrate_dataloader, 
-        reconstruction_cfg)
+    def save_inter_result(model, dataloader, slices, store_input=True, store_output=True):
+        recorders = {}
+        for s in slices:
+            node_l, node_r = s[:2]
+            if store_input:
+                recorders[node_l.target + '_input'] = ModuleInputsRecorder(node_l.target)
+            if store_output:
+                recorders[node_r.target + '_output'] = MethodOutputsRecorder(node_r.target)
+        manager = RecorderManager(recorders)
+        manager.initialize(model)
+        
+        with torch.no_grad():
+            with manager:
+                for data in dataloader:
+                    model(data)
+        return manager
 
-        get layers need to reconstructe
-        save fp inputs and outputs of each layers
-        extract subgraph
-        reconstructe subgraph
-            define optim
-            define loss
-            optim process
-            update weight 
-        ......
+    def sub_reconstruction(graphmodule, manager, config):
+        pass
 
-        return quant_model
+    def reconstruction(self, graphmodule, calibrate_dataloader, config):
+        assert isinstance(graphmodule, torch.fx.GraphModule)
+        graphmodule_fp = graphmodule
+        graphmodule_quant = copy.deepcopy(graphmodule)
+
+        # get layers/blocks need to reconstructe
+        slices = []
+        if config['pattern'] == 'layer':
+            slices = extract_layers(graphmodule, layer_types=_ADAROUND_SUPPORT_TYPE)
+        elif config['pattern'] == 'block':
+            slices = extract_blocks(graphmodule)
+        else:
+            # TODO: add remind
+            raise NotImplementedError
+        
+        # save fp inputs and outputs of each layers
+        manager_fp = self.save_inter_result(graphmodule_fp, self.calibrate_dataloader, slices)
+
+        # extract subgraph_module
+        for s in slices:
+            sub_graphmodule = extract_subgraph(graphmodule_quant, s)
+            manager_quant = self.save_inter_result(graphmodule_quant, self.calibrate_dataloader, [s], store_output=False)
+            recorder_index = s[0].target + '_input'
+            cached_inputs = manager_fp[recorder_index] if np.random.random() < config['prob'] else manager_quant[recorder_index]
+            sub_reconstruction(sub_graphmodule, cached_inputs, cached_outputs, config)
+
+        return graphmodule_quant
     
     def run(self) -> None:
         """Launch test."""

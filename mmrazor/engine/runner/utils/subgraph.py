@@ -1,13 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from mmengine.config import Config
-from mmengine.registry import MODELS
-from mmrazor.models.utils import CustomTracer, custom_symbolic_tracer
 import copy
-import torch
 import torch.fx as fx
-
-cfg_path = 'configs/quantization/ptq/demo.py'
-_ADAROUND_SUPPORT_TYPE = (torch.nn.Conv2d, torch.nn.Linear)
 
 def extract_subgraph(graphmodule, block_slice):
     subgraph = copy.deepcopy(graphmodule.graph)
@@ -27,12 +20,12 @@ def extract_subgraph(graphmodule, block_slice):
     subgraph_module.recompile()
     return subgraph_module
 
-def extract_blocks(graphmodule, key_word='layer'):
+def extract_blocks(graph, key_word='layer'):
     block_slices = []
     block_slice = []
     pre_stage_index, pre_block_index = 0, 0
     cur_stage_index, cur_block_index = 0, 0
-    for node in graphmodule.graph.nodes:
+    for node in graph.nodes:
         if key_word not in node.name:
             continue
         else:
@@ -62,21 +55,3 @@ def extract_layers(graphmodule, layer_types):
             if isinstance(m, _ADAROUND_SUPPORT_TYPE):
                 layer_slices.append((node, node))
     return layer_slices
-
-def main():
-    # load config
-    cfg = Config.fromfile(cfg_path)
-    model = MODELS.build(cfg.model)
-    symbolic_traced = custom_symbolic_tracer(model, concrete_args={'mode': 'tensor'})
-    # block_slices = extract_blocks(symbolic_traced)
-    block_slices = extract_layers(symbolic_traced, layer_types=_ADAROUND_SUPPORT_TYPE)
-
-    for b in block_slices:
-        print(b[0].name, b[1].name)
-    
-    print('#'*100)
-    subgraph = extract_subgraph(symbolic_traced, block_slices[0])
-    print(subgraph.code)
-
-if __name__ == '__main__':
-    main()
