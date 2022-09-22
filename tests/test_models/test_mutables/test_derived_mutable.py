@@ -11,26 +11,23 @@ from mmrazor.models.mutables.base_mutable import BaseMutable
 
 class TestDerivedMutable(TestCase):
 
-    # def test_is_fixed(self) -> None:
-    #     mc = OneShotMutableChannel(
-    #         num_channels=10,
-    #         candidate_choices=[2, 8, 10],
-    #         candidate_mode='number')
-    #     mc.current_choice = 2
+    def test_is_fixed(self) -> None:
+        mc = SquentialMutableChannel(num_channels=10)
+        mc.current_choice = 2
 
-    #     mv = OneShotMutableValue(value_list=[2, 3, 4])
-    #     mv.current_choice = 3
+        mv = OneShotMutableValue(value_list=[2, 3, 4])
+        mv.current_choice = 3
 
-    #     derived_mutable = mc * mv
-    #     assert not derived_mutable.is_fixed
+        derived_mutable = mc * mv
+        assert not derived_mutable.is_fixed
 
-    #     with pytest.raises(RuntimeError):
-    #         derived_mutable.is_fixed = True
+        with pytest.raises(RuntimeError):
+            derived_mutable.is_fixed = True
 
-    #     mc.fix_chosen(mc.dump_chosen())
-    #     assert not derived_mutable.is_fixed
-    #     mv.fix_chosen(mv.dump_chosen())
-    #     assert derived_mutable.is_fixed
+        mc.fix_chosen(mc.dump_chosen())
+        assert not derived_mutable.is_fixed
+        mv.fix_chosen(mv.dump_chosen())
+        assert derived_mutable.is_fixed
 
     def test_fix_dump_chosen(self) -> None:
         mv = OneShotMutableValue(value_list=[2, 3, 4])

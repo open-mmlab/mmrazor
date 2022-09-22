@@ -1,7 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Callable
+
 import torch
 
 from mmrazor.registry import MODELS
+from ..derived_mutable import DerivedMutable
 from .base_mutable_channel import BaseMutableChannel
 
 # TODO discuss later
@@ -55,16 +58,66 @@ class SquentialMutableChannel(BaseMutableChannel):
         """Dump chosen."""
         return self.current_choice
 
-    def __mul__(self, other):
-        """multiplication."""
+    # def __mul__(self, other):
+    #     """multiplication."""
+    #     if isinstance(other, int):
+    #         return self.derive_expand_mutable(other)
+    #     else:
+    #         return None
+
+    # def __floordiv__(self, other):
+    #     """division."""
+    #     if isinstance(other, int):
+    #         return self.derive_divide_mutable(other)
+    #     else:
+    #         return None
+
+    def __rmul__(self, other) -> DerivedMutable:
+        return self * other
+
+    def __mul__(self, other) -> DerivedMutable:
         if isinstance(other, int):
             return self.derive_expand_mutable(other)
-        else:
-            return None
 
-    def __floordiv__(self, other):
-        """division."""
+        from ..mutable_value import OneShotMutableValue
+
+        def expand_choice_fn(mutable1: 'SquentialMutableChannel',
+                             mutable2: OneShotMutableValue) -> Callable:
+
+            def fn():
+                return mutable1.current_choice * mutable2.current_choice
+
+            return fn
+
+        def expand_mask_fn(mutable1: 'SquentialMutableChannel',
+                           mutable2: OneShotMutableValue) -> Callable:
+
+            def fn():
+                mask = mutable1.current_mask
+                max_expand_ratio = mutable2.max_choice
+                current_expand_ratio = mutable2.current_choice
+                expand_num_channels = mask.size(0) * max_expand_ratio
+
+                expand_choice = mutable1.current_choice * current_expand_ratio
+                expand_mask = torch.zeros(expand_num_channels).bool()
+                expand_mask[:expand_choice] = True
+
+                return expand_mask
+
+            return fn
+
+        if isinstance(other, OneShotMutableValue):
+            return DerivedMutable(
+                choice_fn=expand_choice_fn(self, other),
+                mask_fn=expand_mask_fn(self, other))
+
+        raise TypeError(f'Unsupported type {type(other)} for mul!')
+
+    def __floordiv__(self, other) -> DerivedMutable:
         if isinstance(other, int):
             return self.derive_divide_mutable(other)
-        else:
-            return None
+        if isinstance(other, tuple):
+            assert len(other) == 2
+            return self.derive_divide_mutable(*other)
+
+        raise TypeError(f'Unsupported type {type(other)} for div!')

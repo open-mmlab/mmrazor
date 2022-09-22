@@ -198,21 +198,18 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, CHOICE_TYPE],
             and `Pretrained`. Defaults to None.
 
     Examples:
-        >>> from mmrazor.models.mutables import OneShotMutableChannel
-        >>> mutable_channel = OneShotMutableChannel(
-        ...     num_channels=3,
-        ...     candidate_choices=[1, 2, 3],
-        ...     candidate_mode='number')
+        >>> from mmrazor.models.mutables import SquentialMutableChannel
+        >>> mutable_channel = SquentialMutableChannel(num_channels=3)
         >>> # derive expand mutable
         >>> derived_mutable_channel = mutable_channel * 2
         >>> # source mutables will be traced automatically
         >>> derived_mutable_channel.source_mutables
-        {OneShotMutableChannel(name=unbind, num_channels=3, current_choice=3, choices=[1, 2, 3], activated_channels=3, concat_mutable_name=[])}  # noqa: E501
+        {SquentialMutableChannel(name=unbind, num_channels=3, current_choice=3)}  # noqa: E501
         >>> # modify `current_choice` of `mutable_channel`
         >>> mutable_channel.current_choice = 2
         >>> # `current_choice` and `current_mask` of derived mutable will be modified automatically  # noqa: E501
         >>> derived_mutable_channel
-        DerivedMutable(current_choice=4, activated_channels=4, source_mutables={OneShotMutableChannel(name=unbind, num_channels=3, current_choice=2, choices=[1, 2, 3], activated_channels=2, concat_mutable_name=[])}, is_fixed=False)  # noqa: E501
+        DerivedMutable(current_choice=4, activated_channels=4, source_mutables={SquentialMutableChannel(name=unbind, num_channels=3, current_choice=2)}, is_fixed=False)  # noqa: E501
     """
 
     def __init__(self,
