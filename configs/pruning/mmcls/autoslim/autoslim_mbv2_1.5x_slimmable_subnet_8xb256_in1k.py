@@ -32,7 +32,7 @@ model = dict(
         type='SlimmableChannelMutator',
         channel_group_cfg=dict(
             type='SlimmableChannelGroup',
-            groups='tests/data/MBV2_slimmable.json'),
+            groups='tests/data/MBV2_slimmable_config.json'),
         parse_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss'))))

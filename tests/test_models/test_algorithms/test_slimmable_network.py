@@ -23,7 +23,7 @@ MODEL_CFG = dict(
         in_channels=1920,
         loss=dict(type='CrossEntropyLoss', loss_weight=1.0),
         topk=(1, 5)))
-CHANNEL_CFG_PATH = 'tests/data/MBV2_slimmable.json'
+CHANNEL_CFG_PATH = 'tests/data/MBV2_slimmable_config.json'
 
 MUTATOR_CFG = dict(
     type='SlimmableChannelMutator',
