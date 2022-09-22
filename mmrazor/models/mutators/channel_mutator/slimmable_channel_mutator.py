@@ -8,7 +8,8 @@ from .base_channel_mutator import ChannelMutator
 
 @MODELS.register_module()
 class SlimmableChannelMutator(ChannelMutator[SlimmableChannelGroup]):
-    """__init__ _summary_
+    """SlimmableChannelMutator is the default ChannelMutator for
+    SlimmableNetwork algorithm.
 
     Args:
         channel_group_cfg (Dict): The config of ChannelGroups. Defaults to

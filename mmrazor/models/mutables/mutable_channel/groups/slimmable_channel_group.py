@@ -16,20 +16,17 @@ class SlimmableChannelGroup(OneShotMutableChannelGroup):
     """A type of ``MutableChannelGroup`` to train several subnets together.
 
     Args:
-        num_channels (_type_): The raw number of channels.
-        candidate_choices (_type_, optional): candidates of choice. Each
-            cboice represents a subnet.
-
-        num_channels (_type_): The raw number of channels.
+        num_channels (int): The raw number of channels.
         candidate_choices (List[Union[int, float]], optional):
             A list of candidate width ratios. Each
             candidate indicates how many channels to be reserved.
             Defaults to [0.5, 1.0](candidate_mode='ratio').
         candidate_mode (str, optional): Mode of candidates.
-            One of "ratio" or "number". Defaults to 'number'.
-        divisor (int): Used to make choice divisible.
-        min_value (int): the minimal value used when make divisible.
-        min_ratio (float): the minimal ratio used when make divisible.
+            One of 'ratio' or 'number'. Defaults to 'number'.
+        divisor (int, optional): Used to make choice divisible.
+        min_value (int, optional): The minimal value used when make divisible.
+        min_ratio (float, optional): The minimal ratio used when make
+            divisible.
     """
 
     def __init__(self,
@@ -39,7 +36,6 @@ class SlimmableChannelGroup(OneShotMutableChannelGroup):
                  divisor=1,
                  min_value=1,
                  min_ratio=0.9) -> None:
-
         super().__init__(num_channels, candidate_choices, candidate_mode,
                          divisor, min_value, min_ratio)
 
