@@ -54,3 +54,17 @@ class SquentialMutableChannel(BaseMutableChannel):
     def dump_chosen(self):
         """Dump chosen."""
         return self.current_choice
+
+    def __mul__(self, other):
+        """multiplication."""
+        if isinstance(other, int):
+            return self.derive_expand_mutable(other)
+        else:
+            return None
+
+    def __floordiv__(self, other):
+        """division."""
+        if isinstance(other, int):
+            return self.derive_divide_mutable(other)
+        else:
+            return None

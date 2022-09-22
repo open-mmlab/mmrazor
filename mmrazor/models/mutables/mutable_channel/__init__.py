@@ -5,7 +5,6 @@ from .groups import (ChannelGroupType, L1MutableChannelGroup,
                      SequentialMutableChannelGroup, SlimmableChannelGroup)
 from .mutable_channel import MutableChannel
 from .mutable_channel_container import MutableChannelContainer
-from .one_shot_mutable_channel import OneShotMutableChannel
 from .sequential_mutable_channel import SquentialMutableChannel
 from .simple_mutable_channel import SimpleMutableChannel
 
@@ -21,5 +20,4 @@ __all__ = [
     'SquentialMutableChannel',
     'ChannelGroupType',
     'MutableChannel',
-    'OneShotMutableChannel',
 ]
