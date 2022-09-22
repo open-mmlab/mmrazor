@@ -14,7 +14,7 @@ from mmrazor.visualization.local_visualizer import modify
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Train an algorithm')
+    parser = argparse.ArgumentParser(description='Feature map visualization')
     parser.add_argument('img', help='Image file')
     parser.add_argument(
         'tea_config', help='train config file path for the teacher model')
