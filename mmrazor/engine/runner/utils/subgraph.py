@@ -1,8 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-
 import torch.fx as fx
-
 
 def extract_subgraph(graphmodule, block_slice):
     subgraph = copy.deepcopy(graphmodule.graph)
@@ -22,7 +20,6 @@ def extract_subgraph(graphmodule, block_slice):
     subgraph_module.recompile()
     return subgraph_module
 
-
 def extract_blocks(graph, key_word='layer'):
     block_slices = []
     block_slice = []
@@ -36,26 +33,25 @@ def extract_blocks(graph, key_word='layer'):
             for i, item in enumerate(items):
                 if key_word in item:
                     cur_stage_index = int(item[5:])
-                    cur_block_index = int(items[i + 1])
+                    cur_block_index = int(items[i+1])
                     break
-            if (cur_block_index != pre_block_index) or (cur_stage_index !=
-                                                        pre_stage_index):
+            if cur_block_index != pre_block_index or cur_stage_index != pre_stage_index:
                 block_slice.append(node.prev)
                 if len(block_slice) == 2:
                     block_slices.append(block_slice)
                 block_slice = []
                 block_slice.append(node)
-
+            
             pre_stage_index, pre_block_index = cur_stage_index, cur_block_index
-
+    
     return block_slices
-
 
 def extract_layers(graphmodule, layer_types):
     layer_slices = []
+    modules = graphmodule.named_children()
     for node in graphmodule.graph.nodes:
         if node.op == 'call_module':
-            m = graphmodule.get_submodule(node.target)
-            if isinstance(m, layer_types):
+            m = node.graph.owning_module.get_submodule(node.target)
+            if isinstance(m, _ADAROUND_SUPPORT_TYPE):
                 layer_slices.append((node, node))
     return layer_slices

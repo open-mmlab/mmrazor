@@ -8,7 +8,6 @@ from torch.ao.quantization.fx import prepare
 from torch.ao.quantization.quantize_fx import _fuse_fx, _convert_fx, QuantizationTracer
 from torch.ao.quantization import QConfig
 from torch.ao.quantization.quantize_fx import prepare_qat_fx, prepare_fx, convert_fx
-from mmrazor.models import BaseObserver, BaseFakeQuantize
 from mmrazor.registry import MODELS
 from mmrazor.models.utils import (
     check_is_valid_convert_custom_config_dict,
