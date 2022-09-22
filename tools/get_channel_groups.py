@@ -7,7 +7,7 @@ from mmengine import MODELS
 from mmengine.config import Config
 
 from mmrazor.models import BaseAlgorithm
-from mmrazor.models.mutators import BaseChannelMutator
+from mmrazor.models.mutators import ChannelMutator
 
 
 def parse_args():
@@ -19,6 +19,16 @@ def parse_args():
         '--with-channel',
         action='store_true',
         help='output with channel config')
+    parser.add_argument(
+        '-i',
+        '--with-init-args',
+        action='store_true',
+        help='output with init args')
+    parser.add_argument(
+        '--choice',
+        action='store_true',
+        help=('output choices template. When this flag is activated, '
+              '-c and -i will be ignored'))
     parser.add_argument(
         '-o',
         '--output-path',
@@ -33,11 +43,15 @@ def main():
     model = MODELS.build(config['model'])
     if isinstance(model, BaseAlgorithm):
         mutator = model.mutator
-    elif isinstance(model, nn.module):
-        mutator = BaseChannelMutator()
+    elif isinstance(model, nn.Module):
+        mutator = ChannelMutator()
         mutator.prepare_from_supernet(model)
-    config = mutator.config_template(
-        with_channels=args.with_channel, with_group_init_args=True)
+    if args.choice:
+        config = mutator.choice_template
+    else:
+        config = mutator.config_template(
+            with_channels=args.with_channel,
+            with_group_init_args=args.with_init_args)
     json_config = json.dumps(config, indent=4, separators=(',', ':'))
     if args.output_path == '':
         print('=' * 100)

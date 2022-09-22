@@ -8,7 +8,7 @@ import torch.nn as nn
 from mmrazor.models.architectures.dynamic_ops.bricks.dynamic_mixins import \
     DynamicChannelMixin
 from mmrazor.models.mutables.mutable_channel import (
-    MutableChannelGroup, SequentialMutableChannelGroup)
+    L1MutableChannelGroup, MutableChannelGroup, SequentialMutableChannelGroup)
 from mmrazor.models.mutables.mutable_channel.groups.channel_group import (  # noqa
     Channel, ChannelGroup, PruneNode)
 from mmrazor.structures.graph import ModuleGraph as ModuleGraph
@@ -23,7 +23,9 @@ PARSE_CFG = dict(
 # DEVICE = torch.device('cuda:0') if torch.cuda.is_available() \
 #     else torch.device('cpu')
 DEVICE = torch.device('cpu')
-GROUPS: List[MutableChannelGroup] = [SequentialMutableChannelGroup]
+GROUPS: List[MutableChannelGroup] = [
+    L1MutableChannelGroup, SequentialMutableChannelGroup
+]
 
 DefaultChannelGroup = SequentialMutableChannelGroup
 
@@ -89,9 +91,9 @@ class TestMutableChannelGroup(TestCase):
         self._test_groups(mutable_groups, model)
 
     def _test_groups(self, groups: List[MutableChannelGroup], model):
-        prunable_groups = [group for group in groups if group.is_mutable]
+        mutable_groups = [group for group in groups if group.is_mutable]
 
-        for group in prunable_groups:
+        for group in mutable_groups:
             choice = group.sample_choice()
             group.current_choice = choice
             self.assertAlmostEqual(group.current_choice, choice, delta=0.1)

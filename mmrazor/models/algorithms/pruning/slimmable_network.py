@@ -1,20 +1,20 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
 import os
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 import torch
-from mmengine import fileio
 from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper
 from mmengine.structures import BaseDataElement
 from torch import nn
 
+from mmrazor.models.mutables import BaseMutable
 from mmrazor.models.mutators import SlimmableChannelMutator
 from mmrazor.models.utils import (add_prefix,
                                   reinitialize_optim_wrapper_count_status)
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
+from mmrazor.structures.subnet.fix_subnet import _dynamic_to_static
 from ..base import BaseAlgorithm
 
 VALID_MUTATOR_TYPE = Union[SlimmableChannelMutator, Dict]
@@ -32,11 +32,11 @@ class SlimmableNetwork(BaseAlgorithm):
     Args:
         mutator (dict | :obj:`SlimmableChannelMutator`): The config of
             :class:`SlimmableChannelMutator` or built mutator.
+            About the config of mutator, please refer to
+            SlimmableChannelMutator
         architecture (dict | :obj:`BaseModel`): The config of
             :class:`BaseModel` or built model.
-        channel_cfg_paths (str | :obj:`Path` | list): Config of list of configs
-            for channel of subnet(s) searched out. If there is only one
-            channel_cfg, the supernet will be fixed.
+        deploy_index (int): index of subnet to be deployed.
         data_preprocessor (dict | :obj:`torch.nn.Module` | None): The
             pre-process config of :class:`BaseDataPreprocessor`.
             Defaults to None.
@@ -47,31 +47,21 @@ class SlimmableNetwork(BaseAlgorithm):
     def __init__(self,
                  mutator: VALID_MUTATOR_TYPE,
                  architecture: Union[BaseModel, Dict],
-                 channel_cfg_paths: VALID_CHANNEL_CFG_PATH_TYPE,
+                 deploy_index=-1,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
 
-        if not isinstance(channel_cfg_paths, list):
-            channel_cfg_paths = [channel_cfg_paths]
-        self.num_subnet = len(channel_cfg_paths)
-
-        channel_cfgs = self._load_and_merge_channel_cfgs(channel_cfg_paths)
         if isinstance(mutator, dict):
-            assert mutator.get('channel_cfgs') is None, \
-                '`channel_cfgs` should not be in channel config'
-            mutator = copy.deepcopy(mutator)
-            mutator['channel_cfgs'] = channel_cfgs
-
-        self.mutator: SlimmableChannelMutator = self._build_mutator(mutator)
+            self.mutator = MODELS.build(mutator)
+        else:
+            self.mutator = mutator
         self.mutator.prepare_from_supernet(self.architecture)
+        self.num_subnet = len(self.mutator.subnets)
 
         # must after `prepare_from_supernet`
-        if len(channel_cfg_paths) == 1:
-            # Avoid circular import
-            from mmrazor.structures import load_fix_subnet
-            load_fix_subnet(self.architecture, channel_cfg_paths[0])
-            self.is_deployed = True
+        if deploy_index != -1:
+            self._deploy(deploy_index)
         else:
             self.is_deployed = False
 
@@ -81,52 +71,12 @@ class SlimmableNetwork(BaseAlgorithm):
         # in our slimmable train step.
         self._optim_wrapper_count_status_reinitialized = False
 
-    def _load_and_merge_channel_cfgs(
-            self, channel_cfg_paths: List[VALID_PATH_TYPE]) -> Dict:
-        """Load and merge channel config."""
-        channel_cfgs = list()
-        for channel_cfg_path in channel_cfg_paths:
-            channel_cfg = fileio.load(channel_cfg_path)
-            channel_cfgs.append(channel_cfg)
-
-        return self.merge_channel_cfgs(channel_cfgs)
-
-    @staticmethod
-    def merge_channel_cfgs(channel_cfgs: List[Dict]) -> Dict:
-        """Merge several channel configs."""
-        merged_channel_cfg = dict()
-        num_subnet = len(channel_cfgs)
-
-        for module_name in channel_cfgs[0].keys():
-            channels_per_layer = [
-                channel_cfgs[idx][module_name] for idx in range(num_subnet)
-            ]
-            merged_channels_per_layer = dict()
-            for key in channels_per_layer[0].keys():
-                merged_channels = [
-                    channels_per_layer[idx][key] for idx in range(num_subnet)
-                ]
-                merged_channels_per_layer[key] = merged_channels
-            merged_channel_cfg[module_name] = merged_channels_per_layer
-
-        return merged_channel_cfg
-
-    def _build_mutator(self,
-                       mutator: VALID_MUTATOR_TYPE) -> SlimmableChannelMutator:
-        """build mutator."""
-        if isinstance(mutator, dict):
-            mutator = MODELS.build(mutator)
-        if not isinstance(mutator, SlimmableChannelMutator):
-            raise TypeError('mutator should be a `dict` or '
-                            '`SlimmableChannelMutator` instance, but got '
-                            f'{type(mutator)}')
-
-        return mutator
-
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
         """Train step."""
-        batch_inputs, data_samples = self.data_preprocessor(data, True)
+        input_data = self.data_preprocessor(data, True)
+        batch_inputs = input_data['inputs']
+        data_samples = input_data['data_samples']
         train_kwargs = dict(
             batch_inputs=batch_inputs,
             data_samples=data_samples,
@@ -151,8 +101,8 @@ class SlimmableNetwork(BaseAlgorithm):
             self._optim_wrapper_count_status_reinitialized = True
         total_losses = dict()
 
-        for subnet_idx in range(self.num_subnet):
-            self.mutator.switch_choices(subnet_idx)
+        for subnet_idx, subnet in enumerate(self.mutator.subnets):
+            self.mutator.set_choices(subnet)
             with optim_wrapper.optim_context(self):
                 losses = self(batch_inputs, data_samples, mode='loss')
             parsed_losses, _ = self.parse_losses(losses)
@@ -176,6 +126,19 @@ class SlimmableNetwork(BaseAlgorithm):
 
         return losses
 
+    def _fix_archtecture(self):
+        for module in self.architecture.modules():
+            if isinstance(module, BaseMutable):
+                if not module.is_fixed:
+                    module.fix_chosen(None)
+
+    def _deploy(self, index: int):
+        self.mutator.set_choices(self.mutator.subnets[index])
+        self.mutator.fix_channel_mutables()
+        self._fix_archtecture()
+        _dynamic_to_static(self.architecture)
+        self.is_deployed = True
+
 
 @MODEL_WRAPPERS.register_module()
 class SlimmableNetworkDDP(MMDistributedDataParallel):
@@ -193,7 +156,9 @@ class SlimmableNetworkDDP(MMDistributedDataParallel):
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
         """Train step."""
-        batch_inputs, data_samples = self.module.data_preprocessor(data, True)
+        input_data = self.module.data_preprocessor(data, True)
+        batch_inputs = input_data['inputs']
+        data_samples = input_data['data_samples']
         train_kwargs = dict(
             batch_inputs=batch_inputs,
             data_samples=data_samples,
@@ -218,8 +183,8 @@ class SlimmableNetworkDDP(MMDistributedDataParallel):
             self._optim_wrapper_count_status_reinitialized = True
         total_losses = dict()
 
-        for subnet_idx in range(self.module.num_subnet):
-            self.module.mutator.switch_choices(subnet_idx)
+        for subnet_idx, subnet in enumerate(self.module.mutator.subnets):
+            self.module.mutator.set_choices(subnet)
             with optim_wrapper.optim_context(self):
                 losses = self(batch_inputs, data_samples, mode='loss')
             parsed_losses, _ = self.module.parse_losses(losses)
