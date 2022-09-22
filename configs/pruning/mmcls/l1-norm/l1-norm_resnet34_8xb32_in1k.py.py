@@ -29,6 +29,14 @@ target_pruning_ratio = {
 }
 data_preprocessor = {'type': 'mmcls.ClsDataPreprocessor'}
 architecture = _base_.model
+architecture.update({
+    'init_cfg': {
+        'type':
+        'Pretrained',
+        'checkpoint':
+        'https://download.openmmlab.com/mmclassification/v0/resnet/resnet34_8xb32_in1k_20210831-f257d4e6.pth'  # noqa
+    }
+})
 
 model = dict(
     _delete_=True,
