@@ -6,7 +6,7 @@ import pytest
 import torch
 from torch import nn
 
-from mmrazor.models.architectures.dynamic_ops.bricks import (
+from mmrazor.models.architectures.dynamic_ops import (
     DynamicBatchNorm1d, DynamicBatchNorm2d, DynamicBatchNorm3d, DynamicMixin)
 from mmrazor.models.mutables import OneShotMutableChannel
 from mmrazor.structures.subnet import export_fix_subnet, load_fix_subnet

@@ -8,7 +8,7 @@ import pytest
 import torch
 from torch import nn
 
-from mmrazor.models.architectures.dynamic_ops.bricks import (BigNasConv2d,
+from mmrazor.models.architectures.dynamic_ops import (BigNasConv2d,
                                                              DynamicConv2d,
                                                              OFAConv2d)
 from mmrazor.models.mutables import OneShotMutableChannel, OneShotMutableValue
@@ -233,8 +233,7 @@ def test_kernel_dynamic_conv2d(dynamic_class: Type[nn.Conv2d],
 @pytest.mark.parametrize('dynamic_class', [OFAConv2d, BigNasConv2d])
 def test_mutable_kernel_dynamic_conv2d_grad(
         dynamic_class: Type[nn.Conv2d]) -> None:
-    from mmrazor.models.architectures.dynamic_ops.bricks import \
-        dynamic_conv_mixins
+    from mmrazor.models.architectures.dynamic_ops import dynamic_conv_mixins
 
     kernel_size_list = [3, 5, 7]
     d_conv2d = dynamic_class(

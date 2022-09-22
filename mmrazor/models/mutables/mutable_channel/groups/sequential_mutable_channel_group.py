@@ -6,8 +6,7 @@ import torch
 import torch.nn as nn
 from mmengine import MMLogger
 
-from mmrazor.models.architectures.dynamic_ops.bricks import (
-    DynamicBatchNorm2d, DynamicConv2d, DynamicLinear)
+import mmrazor.models.architectures.dynamic_ops as dynamic_ops
 from mmrazor.models.utils import make_divisible
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
@@ -53,9 +52,9 @@ class SequentialMutableChannelGroup(MutableChannelGroup):
         # register MutableMask
         self._replace_with_dynamic_ops(
             model, {
-                nn.Conv2d: DynamicConv2d,
-                nn.BatchNorm2d: DynamicBatchNorm2d,
-                nn.Linear: DynamicLinear
+                nn.Conv2d: dynamic_ops.DynamicConv2d,
+                nn.BatchNorm2d: dynamic_ops.DynamicBatchNorm2d,
+                nn.Linear: dynamic_ops.DynamicLinear
             })
         self._register_channel_container(model, MutableChannelContainer)
         self._register_mutable_channel(self.mutable_channel)

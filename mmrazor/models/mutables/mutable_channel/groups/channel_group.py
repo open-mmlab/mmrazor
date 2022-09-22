@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Tuple, TypeVar, Union
 import torch.nn as nn
 from torch.nn import Module
 
-from mmrazor.models.architectures.dynamic_ops.bricks.dynamic_mixins import \
+from mmrazor.models.architectures.dynamic_ops.dynamic_mixins import \
     DynamicChannelMixin
 from mmrazor.structures.graph import ModuleGraph, ModuleNode
 from mmrazor.utils import IndexDict
