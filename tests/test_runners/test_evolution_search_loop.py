@@ -112,10 +112,7 @@ class TestEvolutionSearchLoop(TestCase):
         self.assertEqual(loop.candidates, fake_candidates)
 
     @patch('mmrazor.engine.runner.evolution_search_loop.export_fix_subnet')
-    @patch(
-        'mmrazor.engine.runner.evolution_search_loop.get_model_complexity_info'
-    )
-    def test_run_epoch(self, mock_flops, mock_export_fix_subnet):
+    def test_run_epoch(self, mock_export_fix_subnet):
         # test_run_epoch: distributed == False
         loop_cfg = copy.deepcopy(self.train_cfg)
         loop_cfg.runner = self.runner
@@ -155,7 +152,7 @@ class TestEvolutionSearchLoop(TestCase):
         self.runner.work_dir = self.temp_dir
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
         loop.model.sample_subnet = MagicMock(return_value=fake_subnet)
-        mock_flops.return_value = (50., 1)
+        loop._check_constraints = MagicMock(return_value=True)
         mock_export_fix_subnet.return_value = fake_subnet
         loop.run_epoch()
         self.assertEqual(len(loop.candidates), 4)
