@@ -86,7 +86,7 @@ For example, the default `_channel_cfg_paths` is set in the config below.
 
 ```Python
 python ./tools/train.py \
-  configs/pruning/mmcls/autoslim/autoslim_mbv2_1.5x_subnet_8xb256_in1k_flops-530M \
+  configs/pruning/mmcls/autoslim/autoslim_mbv2_1.5x_subnet_8xb256_in1k_flops-530M.py \
   --work-dir your_work_dir
 ```
 
