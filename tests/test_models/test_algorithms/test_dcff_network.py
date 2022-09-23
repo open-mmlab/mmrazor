@@ -13,7 +13,7 @@ from mmengine.optim import build_optim_wrapper
 from mmrazor.models.algorithms import DCFF
 
 MODEL_CFG = dict(
-        cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False)
+    cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False)
 
 MUTATOR_CFG = dict(
     type='DCFFChannelMutator',

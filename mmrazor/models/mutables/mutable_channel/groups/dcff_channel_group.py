@@ -12,10 +12,9 @@ from .one_shot_mutable_channel_group import OneShotMutableChannelGroup
 
 @MODELS.register_module()
 class DCFFChannelGroup(OneShotMutableChannelGroup):
-    """``DCFFChannelGroup`` is for supernet DCFF and
-    based on OneShotMutableChannelGroup.
-    In DCFF supernet, each module only has one choice.
-    The channel choice is fixed before training.
+    """``DCFFChannelGroup`` is for supernet DCFF and based on
+    OneShotMutableChannelGroup. In DCFF supernet, each module only has one
+    choice. The channel choice is fixed before training.
 
     Args:
         num_channels (int): The raw number of channels.
@@ -34,8 +33,7 @@ class DCFFChannelGroup(OneShotMutableChannelGroup):
         super().__init__(num_channels, candidate_choices, candidate_mode)
 
     def prepare_for_pruning(self, model: nn.Module):
-        """In ``DCFFChannelGroup`` nn.Conv2d is replaced with FuseConv2d.
-        """
+        """In ``DCFFChannelGroup`` nn.Conv2d is replaced with FuseConv2d."""
         self._replace_with_dynamic_ops(
             model, {
                 nn.Conv2d: FuseConv2d,
@@ -45,7 +43,14 @@ class DCFFChannelGroup(OneShotMutableChannelGroup):
         self._register_channel_container(model, MutableChannelContainer)
         self._register_mutable_channel(self.mutable_channel)
 
-    def alter_candidates_after_init(self, candidates):
+    def alter_candidates_after_init(self, candidates: List[int]):
+        """In ``DCFFChannelGroup``, `candidates` is altered after initiation
+        with ``DCFFChannelMutator.channel_configs`` imported from file.
+
+        Args:
+            candidates (List(int)): candidate list of ``dynamic_ops``.
+                In ``DCFFChannelGroup`` list contains one candidate.
+        """
         self.candidate_choices = candidates
         for channel in self.input_related:
             if isinstance(channel.module, FuseConv2d):

@@ -31,20 +31,36 @@ class DCFFChannelMutator(BaseChannelMutator[DCFFChannelGroup]):
         self._channel_cfgs = channel_cfgs
         self._subnets = self._prepare_subnets(channel_cfgs)
 
-    def set_choices(self, config):
-        config = self._convert_subnet(config)
-        return super().set_choices(config)
-
     @property
     def subnets(self):
         return self._subnets
 
     def prepare_from_supernet(self, supernet: Module) -> None:
+        """Do some necessary preparations with supernet.
+
+        Note:
+            Different from `ChannelMutator`, we only support Case 1 in
+            `ChannelMutator`. The input supernet should be made up of original
+            nn.Module. And we replace the conv/linear/bn modules in the input
+            supernet with dynamic ops first. Then we trace the topology of
+            the supernet to get the `concat_parent_mutables` of a certain
+            mutable, if the input of a module is a concatenation of several
+            modules' outputs. Then we convert the ``DynamicBatchNorm`` in
+            supernet with ``SwitchableBatchNorm2d``, and set the candidate
+            channel numbers to the corresponding `SlimmableChannelMutable`.
+            Finally, we establish the relationship between the current nodes
+            and their parents.
+
+        Args:
+            supernet (:obj:`torch.nn.Module`): The supernet to be searched
+                in your algorithm.
+        """
         super().prepare_from_supernet(supernet)
         self.module2group = self._get_module2group()
         self._reset_group_candidates()
 
     def _reset_group_candidates(self):
+        """Alter candidates of DCFFChannelGroup according to channel_cfgs."""
         # print("name2group:", self._name2group)
         for key in self._channel_cfgs:
             group: DCFFChannelGroup = self._name2group[key]
@@ -78,30 +94,9 @@ class DCFFChannelMutator(BaseChannelMutator[DCFFChannelGroup]):
 
         return module2group
 
-    def _convert_subnet(self, subnet: Dict[str, int]):
-        group_subnets = {}
-        for key in subnet:
-            origin_key = key
-            if 'mutable_out_channels' in key:
-                key = key.replace('.mutable_out_channels', '')
-            elif 'mutable_num_features' in key:
-                key = key.replace('.mutable_num_features', '')
-            else:
-                continue
-
-            if key in self.module2group:
-                group = self.module2group[key]
-                if group.name not in group_subnets:
-                    group_subnets[group.name] = subnet[origin_key]
-                else:
-                    assert group_subnets[group.name] == subnet[origin_key]
-            else:
-                raise KeyError(f'{key} can not be found in module2group')
-        return group_subnets
-
     def calc_information(self, tau: float):
-        """calculate channel's kl and apply softmax pooling on channel solve
-        CUDA out of memory.
+        """calculate channel's kl and apply softmax pooling on channel to solve
+        CUDA out of memory problem.
 
         Args:
             tau (float): temporature calculated by iter or epoch

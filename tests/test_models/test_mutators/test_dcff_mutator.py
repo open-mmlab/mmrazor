@@ -96,7 +96,8 @@ def test_DCFF_channel_mutator() -> None:
     root_path = dirname(dirname(dirname(__file__)))
 
     # ResBlock
-    channel_cfgs = os.path.join(root_path, 'data/test_models/test_mutator/subnet1.json')
+    channel_cfgs = \
+        os.path.join(root_path, 'data/test_models/test_mutator/subnet1.json')
     channel_cfgs = fileio.load(channel_cfgs)
 
     mutator = DCFFChannelMutator(

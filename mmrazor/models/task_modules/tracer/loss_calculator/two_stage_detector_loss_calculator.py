@@ -13,6 +13,8 @@ except ImportError:
 # todo: adapt to mmdet 2.0
 @TASK_UTILS.register_module()
 class TwoStageDetectorPseudoLoss:
+    """Calculate the pseudo loss to trace the topology of a `TwoStageDetector`
+    in MMDet with `BackwardTracer`."""
 
     def __call__(self, model: TwoStageDetector) -> torch.Tensor:
         pseudo_img = torch.rand(1, 3, 224, 224)
