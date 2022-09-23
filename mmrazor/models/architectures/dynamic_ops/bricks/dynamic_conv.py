@@ -7,8 +7,8 @@ from torch import Tensor
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.registry import MODELS
-from .dynamic_conv_mixins import (BigNasConvMixin, DynamicConvMixin,
-                                  OFAConvMixin)
+from ..mixins.dynamic_conv_mixins import (BigNasConvMixin, DynamicConvMixin,
+                                          OFAConvMixin)
 
 GroupWiseConvWarned = False
 

@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
-from .dynamic_mixins import DynamicLinearMixin
+from ..mixins import DynamicLinearMixin
 
 
 class DynamicLinear(nn.Linear, DynamicLinearMixin):

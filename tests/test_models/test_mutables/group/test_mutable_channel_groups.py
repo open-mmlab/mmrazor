@@ -5,8 +5,7 @@ from unittest import TestCase
 import torch
 import torch.nn as nn
 
-from mmrazor.models.architectures.dynamic_ops.dynamic_mixins import \
-    DynamicChannelMixin
+from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
 from mmrazor.models.mutables.mutable_channel import (
     L1MutableChannelGroup, MutableChannelGroup, SequentialMutableChannelGroup)
 from mmrazor.models.mutables.mutable_channel.groups.channel_group import (  # noqa
