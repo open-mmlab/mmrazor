@@ -41,25 +41,27 @@ class MutableChannelProtocol(MutableProtocol):  # pragma: no cover
         """Current mask."""
 
 
-def _expand_choice_fn(mutable: MutableProtocol, expand_ratio: int) -> Callable:
+def _expand_choice_fn(mutable: MutableProtocol,
+                      expand_ratio: Union[int, float]) -> Callable:
     """Helper function to build `choice_fn` for expand derived mutable."""
 
     def fn():
-        return mutable.current_choice * expand_ratio
+        return int(mutable.current_choice * expand_ratio)
 
     return fn
 
 
-def _expand_mask_fn(mutable: MutableProtocol,
-                    expand_ratio: int) -> Callable:  # pragma: no cover
+def _expand_mask_fn(
+        mutable: MutableProtocol,
+        expand_ratio: Union[int, float]) -> Callable:  # pragma: no cover
     """Helper function to build `mask_fn` for expand derived mutable."""
     if not hasattr(mutable, 'current_mask'):
         raise ValueError('mutable must have attribute `currnet_mask`')
 
     def fn():
         mask = mutable.current_mask
-        expand_num_channels = mask.size(0) * expand_ratio
-        expand_choice = mutable.current_choice * expand_ratio
+        expand_num_channels = int(mask.size(0) * expand_ratio)
+        expand_choice = int(mutable.current_choice * expand_ratio)
         expand_mask = torch.zeros(expand_num_channels).bool()
         expand_mask[:expand_choice] = True
 
@@ -131,8 +133,9 @@ class DerivedMethodMixin:
         """Derive same mutable as the source."""
         return self.derive_expand_mutable(expand_ratio=1)
 
-    def derive_expand_mutable(self: MutableProtocol,
-                              expand_ratio: int) -> 'DerivedMutable':
+    def derive_expand_mutable(
+            self: MutableProtocol,
+            expand_ratio: Union[int, float]) -> 'DerivedMutable':
         """Derive expand mutable, usually used with `expand_ratio`."""
         choice_fn = _expand_choice_fn(self, expand_ratio=expand_ratio)
 

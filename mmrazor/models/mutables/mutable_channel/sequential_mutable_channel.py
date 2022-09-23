@@ -76,7 +76,7 @@ class SquentialMutableChannel(BaseMutableChannel):
         return self * other
 
     def __mul__(self, other) -> DerivedMutable:
-        if isinstance(other, int):
+        if isinstance(other, int) or isinstance(other, float):
             return self.derive_expand_mutable(other)
 
         from ..mutable_value import OneShotMutableValue
