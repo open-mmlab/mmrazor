@@ -10,27 +10,27 @@ The mainstream approach for filter pruning is usually either to force a hard-cod
 
 ### 1. Classification
 
-| Dataset  |   Backbone   | Params(M) | FLOPs(M) | lr_type | Top-1 (%) | Top-5 (%) |                     CPrate                      |                Config                 |         Download          |
-| :------: | :----------: | :-------: | :------: | :-----: | :-------: | :-------: | :---------------------------------------------: | :-----------------------------------: | :-----------------------: |
-| ImageNet | DCFFResNet50 |   15.16   |   2260   |  step   |   73.96   |   91.66   | \[0.0\]+\[0.35,0.4,0.1\]\*10+\[0.3,0.3,0.1\]\*6 | [config](./dcff_resnet_8xb32_in1k.py) | [model](<>) \| \[log\] () |
+| Dataset  |   Backbone   | Params(M) | FLOPs(M) | lr_type | Top-1 (%) | Top-5 (%) |                     CPrate                      |                Config                 |           Download           |
+| :------: | :----------: | :-------: | :------: | :-----: | :-------: | :-------: | :---------------------------------------------: | :-----------------------------------: | :--------------------------: |
+| ImageNet | DCFFResNet50 |   15.16   |   2260   |  step   |   73.96   |   91.66   | \[0.0\]+\[0.35,0.4,0.1\]\*10+\[0.3,0.3,0.1\]\*6 | [config](./dcff_resnet_8xb32_in1k.py) | [model](<>) \| \[log\] (\<>) |
 
 ### 2. Detection
 
-| Dataset |   Method    |   Backbone   |  Style  | Lr schd | Params(M) | FLOPs(M) | bbox AP |                     CPrate                      |                       Config                       |         Download          |
-| :-----: | :---------: | :----------: | :-----: | :-----: | :-------: | :------: | :-----: | :---------------------------------------------: | :------------------------------------------------: | :-----------------------: |
-|  COCO   | Faster_RCNN | DCFFResNet50 | pytorch |  step   |   33.31   |  168320  |  35.8   | \[0.0\]+\[0.35,0.4,0.1\]\*10+\[0.3,0.3,0.1\]\*6 | [config](./dcff_faster_rcnn_resnet50_8xb4_coco.py) | [model](<>) \| \[log\] () |
+| Dataset |   Method    |   Backbone   |  Style  | Lr schd | Params(M) | FLOPs(M) | bbox AP |                     CPrate                      |                       Config                       |           Download           |
+| :-----: | :---------: | :----------: | :-----: | :-----: | :-------: | :------: | :-----: | :---------------------------------------------: | :------------------------------------------------: | :--------------------------: |
+|  COCO   | Faster_RCNN | DCFFResNet50 | pytorch |  step   |   33.31   |  168320  |  35.8   | \[0.0\]+\[0.35,0.4,0.1\]\*10+\[0.3,0.3,0.1\]\*6 | [config](./dcff_faster_rcnn_resnet50_8xb4_coco.py) | [model](<>) \| \[log\] (\<>) |
 
 ### 3. Segmentation
 
-|  Dataset   |  Method   |    Backbone     | crop size | Lr schd | Params(M) | FLOPs(M) | mIoU  |                               CPrate                                |                         Config                         |         Download          |
-| :--------: | :-------: | :-------------: | :-------: | :-----: | :-------: | :------: | :---: | :-----------------------------------------------------------------: | :----------------------------------------------------: | :-----------------------: |
-| Cityscapes | PointRend | DCFFResNetV1c50 | 512x1024  |  160k   |   18.43   |  74410   | 76.75 | \[0.0, 0.0, 0.0\] + \[0.35, 0.4, 0.1\] * 10 + \[0.3, 0.3, 0.1\] * 6 | [config](./dcff_pointrend_resnet50_8xb2_cityscapes.py) | [model](<>) \| \[log\] () |
+|  Dataset   |  Method   |    Backbone     | crop size | Lr schd | Params(M) | FLOPs(M) | mIoU  |                               CPrate                                |                         Config                         |           Download           |
+| :--------: | :-------: | :-------------: | :-------: | :-----: | :-------: | :------: | :---: | :-----------------------------------------------------------------: | :----------------------------------------------------: | :--------------------------: |
+| Cityscapes | PointRend | DCFFResNetV1c50 | 512x1024  |  160k   |   18.43   |  74410   | 76.75 | \[0.0, 0.0, 0.0\] + \[0.35, 0.4, 0.1\] * 10 + \[0.3, 0.3, 0.1\] * 6 | [config](./dcff_pointrend_resnet50_8xb2_cityscapes.py) | [model](<>) \| \[log\] (\<>) |
 
 ### 4. Pose
 
-| Dataset |     Method      |   Backbone   | crop size | total epochs | Params(M) | FLOPs(M) |  AP  |                           CPrate                           |                    Config                    |         Download          |
-| :-----: | :-------------: | :----------: | :-------: | :----------: | :-------: | :------: | :--: | :--------------------------------------------------------: | :------------------------------------------: | :-----------------------: |
-|  COCO   | TopDown HeatMap | DCFFResNet50 |  256x192  |     300      |   26.95   |   4290   | 68.3 | \[0.0\] + \[0.2, 0.2, 0.1\] * 10 + \[0.15, 0.15, 0.1\] * 6 | [config](./dcff_topdown_heatmap_resnet50.py) | [model](<>) \| \[log\] () |
+| Dataset |     Method      |   Backbone   | crop size | total epochs | Params(M) | FLOPs(M) |  AP  |                           CPrate                           |                    Config                    |           Download           |
+| :-----: | :-------------: | :----------: | :-------: | :----------: | :-------: | :------: | :--: | :--------------------------------------------------------: | :------------------------------------------: | :--------------------------: |
+|  COCO   | TopDown HeatMap | DCFFResNet50 |  256x192  |     300      |   26.95   |   4290   | 68.3 | \[0.0\] + \[0.2, 0.2, 0.1\] * 10 + \[0.15, 0.15, 0.1\] * 6 | [config](./dcff_topdown_heatmap_resnet50.py) | [model](<>) \| \[log\] (\<>) |
 
 ## Citation
 

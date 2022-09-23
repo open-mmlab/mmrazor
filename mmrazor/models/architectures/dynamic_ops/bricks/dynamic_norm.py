@@ -149,10 +149,10 @@ class SwitchableBatchNorm2d(DynamicBatchNorm2d):
         assert len(self.candidate_bn) == 0
         self._check_candidates(candidates)
         for num in candidates:
+            # support pytorch lower than 1.9.1
             self.candidate_bn[str(num)] = nn.BatchNorm2d(
                 num, self.eps, self.momentum, self.affine,
-                self.track_running_stats, self.weight.device,
-                self.weight.dtype)
+                self.track_running_stats)
 
     def forward(self, input: Tensor) -> Tensor:
         choice_num = self.activated_channel_num()
