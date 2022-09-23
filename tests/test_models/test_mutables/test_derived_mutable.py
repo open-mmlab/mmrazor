@@ -4,18 +4,15 @@ from unittest import TestCase
 import pytest
 import torch
 
-from mmrazor.models.mutables import (DerivedMutable, OneShotMutableChannel,
-                                     OneShotMutableValue)
+from mmrazor.models.mutables import (DerivedMutable, OneShotMutableValue,
+                                     SquentialMutableChannel)
 from mmrazor.models.mutables.base_mutable import BaseMutable
 
 
 class TestDerivedMutable(TestCase):
 
     def test_is_fixed(self) -> None:
-        mc = OneShotMutableChannel(
-            num_channels=10,
-            candidate_choices=[2, 8, 10],
-            candidate_mode='number')
+        mc = SquentialMutableChannel(num_channels=10)
         mc.current_choice = 2
 
         mv = OneShotMutableValue(value_list=[2, 3, 4])
@@ -46,10 +43,7 @@ class TestDerivedMutable(TestCase):
         derived_mutable.fix_chosen(derived_mutable.dump_chosen())
 
     def test_derived_same_mutable(self) -> None:
-        mc = OneShotMutableChannel(
-            num_channels=3,
-            candidate_choices=[1, 2, 3],
-            candidate_mode='number')
+        mc = SquentialMutableChannel(num_channels=3)
         mc_derived = mc.derive_same_mutable()
         assert mc_derived.source_mutables == {mc}
 
@@ -59,10 +53,8 @@ class TestDerivedMutable(TestCase):
                            torch.tensor([1, 1, 0], dtype=torch.bool))
 
     def test_mutable_concat_derived(self) -> None:
-        mc1 = OneShotMutableChannel(
-            num_channels=3, candidate_choices=[1, 3], candidate_mode='number')
-        mc2 = OneShotMutableChannel(
-            num_channels=4, candidate_choices=[1, 4], candidate_mode='number')
+        mc1 = SquentialMutableChannel(num_channels=3)
+        mc2 = SquentialMutableChannel(num_channels=4)
         ms = [mc1, mc2]
 
         mc_derived = DerivedMutable.derive_concat_mutable(ms)
@@ -88,10 +80,7 @@ class TestDerivedMutable(TestCase):
             _ = DerivedMutable.derive_concat_mutable(ms)
 
     def test_mutable_channel_derived(self) -> None:
-        mc = OneShotMutableChannel(
-            num_channels=3,
-            candidate_choices=[1, 2, 3],
-            candidate_mode='number')
+        mc = SquentialMutableChannel(num_channels=3)
         mc_derived = mc * 3
         assert mc_derived.source_mutables == {mc}
 
@@ -112,10 +101,7 @@ class TestDerivedMutable(TestCase):
                 mc_derived.current_mask.size())
 
     def test_mutable_divide(self) -> None:
-        mc = OneShotMutableChannel(
-            num_channels=128,
-            candidate_choices=[112, 120, 128],
-            candidate_mode='number')
+        mc = SquentialMutableChannel(num_channels=128)
         mc_derived = mc // 8
         assert mc_derived.source_mutables == {mc}
 
@@ -138,14 +124,15 @@ class TestDerivedMutable(TestCase):
         assert mv_derived.current_choice == 16
 
     def test_source_mutables(self) -> None:
-        useless_fn = lambda x: x  # noqa: E731
+
+        def useless_fn(x):
+            return x  # noqa: E731
+
         with pytest.raises(RuntimeError):
             _ = DerivedMutable(choice_fn=useless_fn)
 
-        mc1 = OneShotMutableChannel(
-            num_channels=3, candidate_choices=[1, 3], candidate_mode='number')
-        mc2 = OneShotMutableChannel(
-            num_channels=4, candidate_choices=[1, 4], candidate_mode='number')
+        mc1 = SquentialMutableChannel(num_channels=3)
+        mc2 = SquentialMutableChannel(num_channels=4)
         ms = [mc1, mc2]
 
         mc_derived1 = DerivedMutable.derive_concat_mutable(ms)
@@ -180,8 +167,7 @@ class TestDerivedMutable(TestCase):
             mask_fn=dict_closure_fn({2: [mc1, mc2]}, {3: dd_mutable}))
         assert ddd_mutable.source_mutables == mc_derived1.source_mutables
 
-        mc3 = OneShotMutableChannel(
-            num_channels=4, candidate_choices=[2, 4], candidate_mode='number')
+        mc3 = SquentialMutableChannel(num_channels=4)
         dddd_mutable = DerivedMutable(
             choice_fn=dict_closure_fn({
                 mc1: [2, 3],
@@ -191,10 +177,8 @@ class TestDerivedMutable(TestCase):
         assert dddd_mutable.source_mutables == {mc1, mc2, mc3}
 
     def test_nested_mutables(self) -> None:
-        source_a = OneShotMutableChannel(
-            num_channels=2, candidate_choices=[1, 2], candidate_mode='number')
-        source_b = OneShotMutableChannel(
-            num_channels=3, candidate_choices=[2, 3], candidate_mode='number')
+        source_a = SquentialMutableChannel(num_channels=2)
+        source_b = SquentialMutableChannel(num_channels=3)
 
         # derive from
         derived_c = source_a * 1
