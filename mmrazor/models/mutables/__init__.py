@@ -2,12 +2,13 @@
 from .base_mutable import BaseMutable
 from .derived_mutable import DerivedMutable
 from .mutable_channel import (BaseMutableChannel, DCFFChannelGroup,
-                              MutableChannel, MutableChannelContainer,
-                              OneShotMutableChannel,
-                              OneShotMutableChannelGroup, SimpleMutableChannel,
-                              SlimmableMutableChannel, SquentialMutableChannel)
-from .mutable_channel.groups import (ChannelGroupType, MutableChannelGroup,
-                                     SequentialMutableChannelGroup)
+                              MutableChannelContainer, OneShotMutableChannel,
+                              SimpleMutableChannel, SquentialMutableChannel)
+from .mutable_channel.groups import (ChannelGroupType, L1MutableChannelGroup,
+                                     MutableChannelGroup,
+                                     OneShotMutableChannelGroup,
+                                     SequentialMutableChannelGroup,
+                                     SlimmableChannelGroup)
 from .mutable_module import (DiffChoiceRoute, DiffMutableModule, DiffMutableOP,
                              OneShotMutableModule, OneShotMutableOP)
 from .mutable_value import MutableValue, OneShotMutableValue
@@ -15,9 +16,10 @@ from .mutable_value import MutableValue, OneShotMutableValue
 __all__ = [
     'OneShotMutableOP', 'OneShotMutableModule', 'DiffMutableOP',
     'DiffChoiceRoute', 'DiffMutableModule', 'DerivedMutable', 'MutableValue',
-    'OneShotMutableValue', 'SimpleMutableChannel', 'MutableChannelGroup',
+    'OneShotMutableValue', 'SequentialMutableChannelGroup',
+    'L1MutableChannelGroup', 'OneShotMutableChannelGroup',
+    'SimpleMutableChannel', 'MutableChannelGroup', 'SlimmableChannelGroup',
     'BaseMutableChannel', 'MutableChannelContainer', 'ChannelGroupType',
-    'BaseMutable', 'MutableChannel', 'SlimmableMutableChannel',
-    'OneShotMutableChannel', 'SequentialMutableChannelGroup',
-    'SquentialMutableChannel', 'OneShotMutableChannelGroup', 'DCFFChannelGroup'
+    'SquentialMutableChannel', 'BaseMutable', 'OneShotMutableChannel',
+    'DCFFChannelGroup'
 ]

@@ -8,11 +8,11 @@ from torch.nn import Module
 from mmrazor.models.architectures.dynamic_ops.bricks import FuseConv2d
 from mmrazor.models.mutables import DCFFChannelGroup
 from mmrazor.registry import MODELS
-from .base_channel_mutator import BaseChannelMutator, ChannelGroupType
+from .base_channel_mutator import ChannelGroupType, ChannelMutator
 
 
 @MODELS.register_module()
-class DCFFChannelMutator(BaseChannelMutator[DCFFChannelGroup]):
+class DCFFChannelMutator(ChannelMutator[DCFFChannelGroup]):
     """DCFF channel mutable based channel mutator. It uses DCFFChannelGroup.
 
     Args:

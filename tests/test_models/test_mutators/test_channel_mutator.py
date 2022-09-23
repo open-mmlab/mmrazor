@@ -7,9 +7,9 @@ from typing import Union
 import torch
 
 # from mmrazor.models.mutables import MutableChannelGroup
-from mmrazor.models.mutables.mutable_channel import \
-    SequentialMutableChannelGroup
-from mmrazor.models.mutators.channel_mutator import BaseChannelMutator
+from mmrazor.models.mutables.mutable_channel import (
+    L1MutableChannelGroup, SequentialMutableChannelGroup)
+from mmrazor.models.mutators.channel_mutator import ChannelMutator
 from mmrazor.registry import MODELS
 from ...data.models import DynamicLinearModel
 from ...test_core.test_graph.test_graph import TestGraph
@@ -31,12 +31,14 @@ class RandomChannelGroup(SequentialMutableChannelGroup):
         return mask
 
 
-DATA_GROUPSS = [SequentialMutableChannelGroup, RandomChannelGroup]
+DATA_GROUPSS = [
+    SequentialMutableChannelGroup, RandomChannelGroup, L1MutableChannelGroup
+]
 
 
 class TestChannelMutator(unittest.TestCase):
 
-    def _test_a_mutator(self, mutator: BaseChannelMutator, model):
+    def _test_a_mutator(self, mutator: ChannelMutator, model):
         choices = mutator.sample_choices()
         mutator.set_choices(choices)
         self.assertGreater(len(mutator.mutable_groups), 0)
@@ -51,7 +53,7 @@ class TestChannelMutator(unittest.TestCase):
             with self.subTest(i=i, data=data):
                 model = data()
 
-                mutator = BaseChannelMutator()
+                mutator = ChannelMutator()
                 mutator.prepare_from_supernet(model)
 
                 self.assertGreaterEqual(len(mutator.mutable_groups), 1)
@@ -67,7 +69,7 @@ class TestChannelMutator(unittest.TestCase):
 
                     model = data_model()
 
-                    mutator = BaseChannelMutator(channel_group_cfg=group_type)
+                    mutator = ChannelMutator(channel_group_cfg=group_type)
                     mutator.prepare_from_supernet(model)
                     mutator.groups
 
@@ -88,7 +90,7 @@ class TestChannelMutator(unittest.TestCase):
 
         # generate config
         model1 = copy.deepcopy(model)
-        mutator = BaseChannelMutator()
+        mutator = ChannelMutator()
         mutator.prepare_from_supernet(model1)
         config = mutator.config_template(
             with_channels=True, with_group_init_args=True)
@@ -107,7 +109,7 @@ class TestChannelMutator(unittest.TestCase):
         model = TestGraph.backward_tracer_passed_models()[0]()
 
         model0 = copy.deepcopy(model)
-        mutator0 = BaseChannelMutator()
+        mutator0 = ChannelMutator()
         mutator0.prepare_from_supernet(model0)
         config = mutator0.config_template(with_group_init_args=True)
 
@@ -125,7 +127,7 @@ class TestChannelMutator(unittest.TestCase):
         ]:
             with self.subTest(model=Model):
                 model = Model()
-                mutator = BaseChannelMutator(
+                mutator = ChannelMutator(
                     channel_group_cfg={
                         'type': 'SampleOneshotMutableChannelGroup',
                         'default_args': {}
