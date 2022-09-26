@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Union
 import torch
 import torch.distributed as dist
 import torch.nn.functional as F
+from mmengine.dist import get_dist_info
 from mmengine.logging import MessageHub
 from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper, OptimWrapperDict
@@ -93,8 +94,7 @@ class Dsnas(BaseAlgorithm):
             # provides some APIs commonly used by NAS.
             # Before using it, you must do some preparations according to
             # the supernet.
-            self.mutator.prepare_from_supernet(
-                self.architecture, is_random=False)
+            self.mutator.prepare_from_supernet(self.architecture)
             self.is_supernet = True
             self.search_space_name_list = list(
                 self.mutator.name2mutable.keys())
@@ -104,11 +104,12 @@ class Dsnas(BaseAlgorithm):
         self.finetune_epochs = finetune_epochs
         if pretrain_epochs >= finetune_epochs:
             raise ValueError(f'Pretrain stage (optional) must be done before '
-                             f'finetuning stage. Got {pretrain_epochs} >= '
-                             f'{finetune_epochs}.')
+                             f'finetuning stage. Got `{pretrain_epochs}` >= '
+                             f'`{finetune_epochs}`.')
 
+        self.flops_loss_coef = 1e-2
         self.flops_constraints = flops_constraints
-        self.flops_loss_coef = 1e-6
+        _, self.world_size = get_dist_info()
 
     def search_subnet(self):
         """Search subnet by mutator."""
@@ -245,7 +246,7 @@ class Dsnas(BaseAlgorithm):
                 flops_loss += probs[index] * \
                     self.mutable_module_resources[_module_key]['flops']
 
-        mutator_loss = dict(arch_loss=arch_loss)
+        mutator_loss = dict(arch_loss=arch_loss / self.world_size)
 
         copied_model = copy.deepcopy(self)
         fix_mutable = copied_model.search_subnet()
@@ -253,7 +254,8 @@ class Dsnas(BaseAlgorithm):
 
         subnet_flops = self.estimator.estimate(copied_model)['flops']
         if subnet_flops >= self.flops_constraints:
-            mutator_loss['flops_loss'] = flops_loss * self.flops_loss_coef
+            mutator_loss['flops_loss'] = \
+                (flops_loss * self.flops_loss_coef) / self.world_size
 
         return mutator_loss
 

@@ -11,14 +11,14 @@ data_preprocessor = dict(
 
 train_pipeline = [
     dict(type='mmcls.LoadImageFromFile'),
-    dict(type='mmcls.RandomResizedCrop', scale=224, backend='pillow'),
+    dict(type='mmcls.RandomResizedCrop', scale=224),
     dict(type='mmcls.RandomFlip', prob=0.5, direction='horizontal'),
     dict(type='mmcls.PackClsInputs'),
 ]
 
 test_pipeline = [
     dict(type='mmcls.LoadImageFromFile'),
-    dict(type='mmcls.ResizeEdge', scale=256, edge='short', backend='pillow'),
+    dict(type='mmcls.ResizeEdge', scale=256, edge='short'),
     dict(type='mmcls.CenterCrop', crop_size=224),
     dict(type='mmcls.PackClsInputs'),
 ]
@@ -68,7 +68,7 @@ optim_wrapper = dict(
             type='mmcls.Adam', lr=0.001, weight_decay=0.0, betas=(0.5,
                                                                   0.999))))
 
-search_epochs = 80
+search_epochs = 85
 # leanring policy
 param_scheduler = dict(
     architecture=[

@@ -29,40 +29,23 @@ class DiffModuleMutator(ModuleMutator):
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(custom_group=custom_group, init_cfg=init_cfg)
 
-    def build_arch_param(self,
-                         num_choices: int,
-                         is_random: bool = True) -> nn.Parameter:
-        """Build learnable architecture parameters.
+    def build_arch_param(self, num_choices) -> nn.Parameter:
+        """Build learnable architecture parameters."""
+        return nn.Parameter(torch.randn(num_choices) * 1e-3)
 
-        Args:
-            is_random (bool): Whether to generate `arch_params` for supernet
-                using torch.randn, else use torch.zeros. Default to True.
-
-        Returns:
-            torch.nn.Parameter: the arch params.
-        """
-        if is_random:
-            return nn.Parameter(torch.randn(num_choices) * 1e-3)
-        else:
-            return nn.Parameter(torch.zeros(num_choices).normal_(1.0, 0.01))
-
-    def prepare_from_supernet(self,
-                              supernet: nn.Module,
-                              is_random: bool = True) -> None:
-        """Inherit from ``BaseMutator``'s, generate `arch_params`.
+    def prepare_from_supernet(self, supernet: nn.Module) -> None:
+        """Inherit from ``BaseMutator``'s, generate `arch_params` in DARTS.
 
         Args:
             supernet (:obj:`torch.nn.Module`): The architecture to be used
                 in your algorithm.
-            is_random (bool): Whether to generate `arch_params` for supernet
-                using torch.randn, else use torch.zeros. Default to True.
         """
 
         super().prepare_from_supernet(supernet)
-        self.arch_params = self.build_arch_params(is_random=is_random)
+        self.arch_params = self.build_arch_params()
         self.modify_supernet_forward(self.arch_params)
 
-    def build_arch_params(self, is_random: bool = True):
+    def build_arch_params(self):
         """This function will build many arch params, which are generally used
         in differentiable search algorithms, such as Darts' series. Each
         group_id corresponds to an arch param, so the Mutables with the same
@@ -75,8 +58,7 @@ class DiffModuleMutator(ModuleMutator):
         arch_params = nn.ParameterDict()
 
         for group_id, modules in self.search_groups.items():
-            group_arch_param = self.build_arch_param(
-                modules[0].num_choices, is_random=is_random)
+            group_arch_param = self.build_arch_param(modules[0].num_choices)
             arch_params[str(group_id)] = group_arch_param
 
         return arch_params
@@ -107,10 +89,7 @@ class DiffModuleMutator(ModuleMutator):
         choices = dict()
         for group_id, mutables in self.search_groups.items():
             arch_param = self.arch_params[str(group_id)]
-            if len(mutables[0].choices) == 1:
-                choice = mutables[0].choices[0]
-            else:
-                choice = mutables[0].sample_choice(arch_param)
+            choice = mutables[0].sample_choice(arch_param)
             choices[group_id] = choice
         return choices
 
