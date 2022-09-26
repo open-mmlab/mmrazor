@@ -89,7 +89,7 @@ class TestAutoSlim(TestCase):
 
         algo = self.prepare_model()
         self.assertSequenceEqual(
-            algo.mutator.groups[0].candidate_choices,
+            algo.mutator.mutable_groups[0].candidate_choices,
             list(i / 12 for i in range(2, 13)),
         )
 

@@ -418,9 +418,8 @@ class Icep(nn.Module):
 class ExpandLineModel(Module):
     """
         x
-        |net0,net1
-        |net2
-        |net3
+        |net0,net1,net2
+        |net3,net4
         x1
         |fc
         output

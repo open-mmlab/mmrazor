@@ -1,12 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """This module defines MutableChannelGroup."""
 import abc
-from typing import Any, Dict, List, Type, TypeVar, Union
+from typing import Dict, List, Type, TypeVar
 
 import torch.nn as nn
-from mmengine.model import BaseModule
 
 import mmrazor.models.architectures.dynamic_ops as dynamic_ops
+from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables.mutable_channel.base_mutable_channel import \
     BaseMutableChannel
@@ -14,7 +14,7 @@ from ..mutable_channel_container import MutableChannelContainer
 from .channel_group import Channel, ChannelGroup
 
 
-class MutableChannelGroup(ChannelGroup, BaseModule):
+class MutableChannelGroup(ChannelGroup):
 
     # init methods
     def __init__(self, num_channels: int, **kwargs) -> None:
@@ -43,18 +43,6 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
         """
 
         super().__init__(num_channels)
-        BaseModule.__init__(self)
-
-    @classmethod
-    def init_from_channel_group(cls,
-                                group: ChannelGroup,
-                                args: Dict = {}) -> 'MutableChannelGroup':
-        """Initialize a MutalbeChannelGroup from a ChannelGroup."""
-        args['num_channels'] = group.num_channels
-        mutable_group = cls(**args)
-        mutable_group.input_related = group.input_related
-        mutable_group.output_related = group.output_related
-        return mutable_group
 
     # properties
 
@@ -137,15 +125,9 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
 
     # private methods
 
-    def _get_int_choice(self, choice: Union[int, float]) -> int:
-        """Convert ratio of channels to number of channels."""
-        if isinstance(choice, float):
-            choice = max(1, int(self.num_channels * choice))
-        assert 0 < choice <= self.num_channels, f'{choice}'
-        return choice
-
-    def _replace_with_dynamic_ops(self, model: nn.Module,
-                                  dynamicop_map: Dict[Type[nn.Module], Any]):
+    def _replace_with_dynamic_ops(
+            self, model: nn.Module,
+            dynamicop_map: Dict[Type[nn.Module], Type[DynamicChannelMixin]]):
         """Replace torch modules with dynamic-ops."""
 
         def replace_op(model: nn.Module, name: str, module: nn.Module):
@@ -204,7 +186,6 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
                                                  container_class(out_channels))
 
     def _register_mutable_channel(self, mutable_channel: BaseMutableChannel):
-
         # register mutable_channel
         for channel in self.input_related + self.output_related:
             module = channel.module
@@ -219,16 +200,22 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
                 else:
                     raise NotImplementedError()
 
-                if channel.expand_ratio == 1:
+                if channel.num_channels == self.num_channels:
                     mutable_channel_ = mutable_channel
                     start = channel.start
                     end = channel.end
+                elif channel.num_channels > self.num_channels:
+                    if channel.num_channels % self.num_channels == 0:
+                        mutable_channel_ = \
+                            mutable_channel.expand_mutable_channel(
+                                channel.num_channels // self.num_channels)
+                        start = channel.start
+                        end = channel.end
+                    else:
+                        raise NotImplementedError()
                 else:
-                    mutable_channel_ = mutable_channel.expand_mutable_channel(
-                        channel.expand_ratio)
-                    start = channel.start
-                    end = channel.start + (
-                        channel.end - channel.start) * channel.expand_ratio
+                    raise NotImplementedError()
+
                 if (start, end) in container.mutable_channels:
                     existed = container.mutable_channels[(start, end)]
                     if not isinstance(existed, DerivedMutable):

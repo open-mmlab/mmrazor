@@ -9,7 +9,7 @@ from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
 from mmrazor.models.mutables.mutable_channel import (
     L1MutableChannelGroup, MutableChannelGroup, SequentialMutableChannelGroup)
 from mmrazor.models.mutables.mutable_channel.groups.channel_group import (  # noqa
-    Channel, ChannelGroup, PruneNode)
+    Channel, ChannelGroup)
 from mmrazor.structures.graph import ModuleGraph as ModuleGraph
 from ....data.models import LineModel
 from ....test_core.test_graph.test_graph import TestGraph
@@ -90,8 +90,10 @@ class TestMutableChannelGroup(TestCase):
         self._test_groups(mutable_groups, model)
 
     def _test_groups(self, groups: List[MutableChannelGroup], model):
+        for group in groups:
+            group.prepare_for_pruning(model)
         mutable_groups = [group for group in groups if group.is_mutable]
-
+        self.assertGreaterEqual(len(mutable_groups), 1)
         for group in mutable_groups:
             choice = group.sample_choice()
             group.current_choice = choice
@@ -112,21 +114,6 @@ class TestMutableChannelGroup(TestCase):
             with self.subTest(model=model_data):
                 model = model_data()
                 self._test_a_model_from_backward_tracer(model)
-
-    def test_group_split(self):
-        layer = nn.Conv2d(3, 16, 3)
-        node = PruneNode('layer', layer)
-        channel1 = Channel(node.name, layer, (8, 16), node, True)
-        channel2 = Channel(node.name, layer, (0, 8), node, True)
-        group = DefaultChannelGroup(8)
-        group.add_ouptut_related(channel1)
-        group.add_ouptut_related(channel2)
-
-        groups = group.split([2, 6])
-        self.assertEqual(groups[0].output_related[0].index, (8, 10))
-        self.assertEqual(groups[0].output_related[1].index, (0, 2))
-        self.assertEqual(groups[1].output_related[0].index, (10, 16))
-        self.assertEqual(groups[1].output_related[1].index, (2, 8))
 
     def test_replace_with_dynamic_ops(self):
         model_datas = TestGraph.backward_tracer_passed_models()
@@ -158,8 +145,6 @@ class TestMutableChannelGroup(TestCase):
     def _test_a_graph(self, model, graph):
         try:
             groups = DefaultChannelGroup.init_from_graph(graph)
-            for group in groups:
-                group.prepare_for_pruning(model)
             self._test_groups(groups, model)
         except Exception as e:
             self.fail(f'{e}')
