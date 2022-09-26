@@ -11,10 +11,7 @@ model = dict(
         type='ImageClassifier',
         data_preprocessor=_base_.data_preprocessor,
         backbone=_base_.nas_backbone,
-        neck=dict(
-            type='mmrazor.GlobalAveragePoolingWithDropout',
-            kernel_size=7,
-            dropout=0.1),
+        neck=dict(type='GlobalAveragePooling'),
         head=dict(
             type='LinearClsHead',
             num_classes=1000,
@@ -27,8 +24,8 @@ model = dict(
                 loss_weight=1.0),
             topk=(1, 5))),
     mutator=dict(type='mmrazor.DiffModuleMutator'),
-    pretrain_epochs=0,
-    finetune_epochs=80,
+    pretrain_epochs=15,
+    finetune_epochs=_base_.search_epochs,
 )
 
 model_wrapper_cfg = dict(
@@ -36,17 +33,4 @@ model_wrapper_cfg = dict(
     broadcast_buffers=False,
     find_unused_parameters=True)
 
-# optimizer settings
-paramwise_cfg = dict(bias_decay_mult=0.0, norm_decay_mult=0.0)
-
-# TRAINING
-optim_wrapper = dict(
-    constructor='mmrazor.SeparateOptimWrapperConstructor',
-    architecture=dict(
-        optimizer=dict(type='SGD', lr=0.5, momentum=0.9, weight_decay=4e-5),
-        paramwise_cfg=paramwise_cfg),
-    mutator=dict(
-        optimizer=dict(
-            type='Adam', lr=0.001, betas=(0.5, 0.999), weight_decay=0.0)))
-
-randomness = dict(seed=22, diff_rank_seed=True)
+randomness = dict(seed=48, diff_rank_seed=True)
