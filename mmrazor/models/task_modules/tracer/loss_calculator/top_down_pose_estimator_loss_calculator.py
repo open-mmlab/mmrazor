@@ -4,7 +4,7 @@ import torch
 from mmrazor.registry import TASK_UTILS
 
 try:
-    from mmpose.model import TopdownPoseEstimator
+    from mmpose.models import TopdownPoseEstimator
 except ImportError:
     from mmrazor.utils import get_placeholder
     TopdownPoseEstimator = get_placeholder('mmpose')
