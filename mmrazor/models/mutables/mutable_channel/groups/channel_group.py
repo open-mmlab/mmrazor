@@ -69,6 +69,7 @@ class Channel(BaseChannel):
 
     @staticmethod
     def init_from_base_channel(base_channel: BaseChannel):
+        """Init from a BaseChannel object."""
         return Channel(
             base_channel.name,
             base_channel.module,
