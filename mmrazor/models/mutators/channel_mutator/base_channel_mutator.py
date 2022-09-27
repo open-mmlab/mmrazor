@@ -5,7 +5,7 @@ from typing import Dict, Generic, List, Optional, Set, Tuple, Type, Union
 from mmengine import fileio
 from torch.nn import Module
 
-from mmrazor.models.architectures.dynamic_ops.bricks import DynamicChannelMixin
+from mmrazor.models.architectures.dynamic_ops import DynamicChannelMixin
 from mmrazor.models.mutables import (BaseMutableChannel, ChannelGroupType,
                                      DerivedMutable, MutableChannelContainer,
                                      MutableChannelGroup,

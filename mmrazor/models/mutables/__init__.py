@@ -2,8 +2,8 @@
 from .base_mutable import BaseMutable
 from .derived_mutable import DerivedMutable
 from .mutable_channel import (BaseMutableChannel, DCFFChannelGroup,
-                              MutableChannelContainer, OneShotMutableChannel,
-                              SimpleMutableChannel, SquentialMutableChannel)
+                              MutableChannelContainer, SimpleMutableChannel,
+                              SquentialMutableChannel)
 from .mutable_channel.groups import (ChannelGroupType, L1MutableChannelGroup,
                                      MutableChannelGroup,
                                      OneShotMutableChannelGroup,
@@ -20,6 +20,5 @@ __all__ = [
     'L1MutableChannelGroup', 'OneShotMutableChannelGroup',
     'SimpleMutableChannel', 'MutableChannelGroup', 'SlimmableChannelGroup',
     'BaseMutableChannel', 'MutableChannelContainer', 'ChannelGroupType',
-    'SquentialMutableChannel', 'BaseMutable', 'OneShotMutableChannel',
-    'DCFFChannelGroup'
+    'SquentialMutableChannel', 'BaseMutable', 'DCFFChannelGroup'
 ]

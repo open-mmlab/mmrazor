@@ -5,7 +5,7 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models.architectures.dynamic_ops.bricks import DynamicChannelMixin
+from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
 from mmrazor.structures.graph import ModuleGraph
 from ...data.models import Icep  # noqa
 from ...data.models import MultipleUseModel  # noqa

@@ -1,10 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict, Optional
 
-from mmrazor.models.architectures.dynamic_ops import DynamicOP
+from mmrazor.models.architectures.dynamic_ops import DynamicMixin
 
 
-def fix_dynamic_op(op: DynamicOP, fix_mutables: Optional[Dict] = None) -> None:
+def fix_dynamic_op(op: DynamicMixin,
+                   fix_mutables: Optional[Dict] = None) -> None:
     for name, mutable in op.mutable_attrs.items():
 
         if fix_mutables is not None:

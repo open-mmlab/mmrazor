@@ -8,7 +8,7 @@ from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.registry import MODELS
-from .dynamic_mixins import DynamicBatchNormMixin
+from ..mixins.dynamic_mixins import DynamicBatchNormMixin
 
 
 class _DynamicBatchNorm(_BatchNorm, DynamicBatchNormMixin):

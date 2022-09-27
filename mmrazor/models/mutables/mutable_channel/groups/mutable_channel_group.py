@@ -1,12 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """This module defines MutableChannelGroup."""
 import abc
-from typing import Dict, List, Type, TypeVar, Union
+from typing import Any, Dict, List, Type, TypeVar, Union
 
 import torch.nn as nn
 from mmengine.model import BaseModule
 
-from mmrazor.models.architectures.dynamic_ops.bricks import DynamicChannelMixin
+import mmrazor.models.architectures.dynamic_ops as dynamic_ops
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables.mutable_channel.base_mutable_channel import \
     BaseMutableChannel
@@ -69,7 +69,7 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
                 if channel.is_mutable is False:
                     all_channel_prunable = False
                     break
-                if isinstance(channel.module, DynamicChannelMixin):
+                if isinstance(channel.module, dynamic_ops.DynamicChannelMixin):
                     has_dynamic_op = True
             return has_dynamic_op, all_channel_prunable
 
@@ -144,9 +144,8 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
         assert 0 < choice <= self.num_channels, f'{choice}'
         return choice
 
-    def _replace_with_dynamic_ops(
-            self, model: nn.Module,
-            dynamicop_map: Dict[Type[nn.Module], Type[DynamicChannelMixin]]):
+    def _replace_with_dynamic_ops(self, model: nn.Module,
+                                  dynamicop_map: Dict[Type[nn.Module], Any]):
         """Replace torch modules with dynamic-ops."""
 
         def replace_op(model: nn.Module, name: str, module: nn.Module):
@@ -178,7 +177,7 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
             model: nn.Module, container_class: Type[MutableChannelContainer]):
         """register channel container for dynamic ops."""
         for module in model.modules():
-            if isinstance(module, DynamicChannelMixin):
+            if isinstance(module, dynamic_ops.DynamicChannelMixin):
                 if module.get_mutable_attr('in_channels') is None:
                     in_channels = 0
                     if isinstance(module, nn.Conv2d):
@@ -209,7 +208,7 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
         # register mutable_channel
         for channel in self.input_related + self.output_related:
             module = channel.module
-            if isinstance(module, DynamicChannelMixin):
+            if isinstance(module, dynamic_ops.DynamicChannelMixin):
                 container: MutableChannelContainer
                 if channel.output_related and module.get_mutable_attr(
                         'out_channels') is not None:
