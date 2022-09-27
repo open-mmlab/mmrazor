@@ -56,10 +56,16 @@ class SingleTeacherDistill(BaseAlgorithm):
                             f'{type(teacher)}')
 
         self.teacher = teacher
-        if teacher_ckpt:
-            # avoid loaded parameters be overwritten
-            self.teacher.init_weights()
+        if teacher_ckpt is not None:
             _ = load_checkpoint(self.teacher, teacher_ckpt)
+            # Hack to use pretrained weights
+            self.teacher._is_init = True
+        else:
+            self.teacher.init_weights()
+        # if teacher_ckpt:
+        #     # avoid loaded parameters be overwritten
+        #     self.teacher.init_weights()
+        #     _ = load_checkpoint(self.teacher, teacher_ckpt)
         self.teacher_trainable = teacher_trainable
         self.teacher_norm_eval = teacher_norm_eval
 
