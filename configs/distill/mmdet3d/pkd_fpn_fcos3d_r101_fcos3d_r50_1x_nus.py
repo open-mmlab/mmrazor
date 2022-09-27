@@ -4,17 +4,9 @@ _base_ = [
     'mmdet3d::_base_/default_runtime.py'
 ]
 
-file_client_args = dict(
-    backend='petrel',
-    path_mapping=dict({
-        './data/nuscenes/':
-        's3://openmmlab/datasets/detection3d/nuscenes/',
-        'data/nuscenes/':
-        's3://openmmlab/datasets/detection3d/nuscenes/'
-    }))
 
 train_pipeline = [
-    dict(type='LoadImageFromFileMono3D', file_client_args=file_client_args),
+    dict(type='LoadImageFromFileMono3D'),
     dict(
         type='LoadAnnotations3D',
         with_bbox=True,
@@ -32,9 +24,8 @@ train_pipeline = [
             'gt_bboxes_3d', 'gt_labels_3d', 'centers_2d', 'depths'
         ]),
 ]
-
 test_pipeline = [
-    dict(type='LoadImageFromFileMono3D', file_client_args=file_client_args),
+    dict(type='LoadImageFromFileMono3D'),
     dict(type='mmdet.Resize', scale_factor=1.0),
     dict(type='Pack3DDetInputs', keys=['img'])
 ]
@@ -186,3 +177,5 @@ param_scheduler = [
         milestones=[8, 11],
         gamma=0.1)
 ]
+
+find_unused_parameters = True
