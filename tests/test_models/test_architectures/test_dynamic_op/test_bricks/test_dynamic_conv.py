@@ -8,10 +8,9 @@ import pytest
 import torch
 from torch import nn
 
-from mmrazor.models.architectures.dynamic_ops.bricks import (BigNasConv2d,
-                                                             DynamicConv2d,
-                                                             FuseConv2d,
-                                                             OFAConv2d)
+from mmrazor.models.architectures.dynamic_ops import (BigNasConv2d,
+                                                      DynamicConv2d,
+                                                      FuseConv2d, OFAConv2d)
 from mmrazor.models.mutables import (OneShotMutableValue,
                                      SquentialMutableChannel)
 from mmrazor.structures.subnet import export_fix_subnet, load_fix_subnet

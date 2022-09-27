@@ -3,8 +3,7 @@ from typing import List, Union
 
 import torch.nn as nn
 
-from mmrazor.models.architectures.dynamic_ops.bricks import (
-    DynamicBatchNorm2d, DynamicLinear, FuseConv2d)
+import mmrazor.models.architectures.dynamic_ops as dynamic_ops
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
 from .one_shot_mutable_channel_group import OneShotMutableChannelGroup
@@ -36,9 +35,9 @@ class DCFFChannelGroup(OneShotMutableChannelGroup):
         """In ``DCFFChannelGroup`` nn.Conv2d is replaced with FuseConv2d."""
         self._replace_with_dynamic_ops(
             model, {
-                nn.Conv2d: FuseConv2d,
-                nn.BatchNorm2d: DynamicBatchNorm2d,
-                nn.Linear: DynamicLinear
+                nn.Conv2d: dynamic_ops.FuseConv2d,
+                nn.BatchNorm2d: dynamic_ops.DynamicBatchNorm2d,
+                nn.Linear: dynamic_ops.DynamicLinear
             })
         self._register_channel_container(model, MutableChannelContainer)
         self._register_mutable_channel(self.mutable_channel)
@@ -53,10 +52,10 @@ class DCFFChannelGroup(OneShotMutableChannelGroup):
         """
         self.candidate_choices = candidates
         for channel in self.input_related:
-            if isinstance(channel.module, FuseConv2d):
+            if isinstance(channel.module, dynamic_ops.FuseConv2d):
                 channel.module.change_mutable_attrs_after_init(
                     'in_channels', candidates)
         for channel in self.output_related:
-            if isinstance(channel.module, FuseConv2d):
+            if isinstance(channel.module, dynamic_ops.FuseConv2d):
                 channel.module.change_mutable_attrs_after_init(
                     'out_channels', candidates)
