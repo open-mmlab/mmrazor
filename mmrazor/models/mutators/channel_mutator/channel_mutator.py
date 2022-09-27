@@ -297,6 +297,10 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
         assert isinstance(config, dict)
         groups = []
         for group_key in config:
+            init_args = copy.deepcopy(self.group_default_args)
+            if 'init_args' in config[group_key]:
+                init_args.update(config[group_key]['init_args'])
+            config[group_key]['init_args'] = init_args
             group = self.group_class.init_from_cfg(model, config[group_key])
             groups.append(group)
         return groups
