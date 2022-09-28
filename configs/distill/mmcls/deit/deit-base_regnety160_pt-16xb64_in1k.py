@@ -75,5 +75,5 @@ default_hooks = dict(
     checkpoint=dict(
         max_keep_ckpts=3,
         out_dir='s3://caoweihan/deit2.0',
-        save_best='acc',
+        save_best='auto',
         rule='greater'))
