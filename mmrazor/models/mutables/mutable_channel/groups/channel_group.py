@@ -22,19 +22,22 @@ from mmrazor.structures.graph.channel_graph import ChannelGraph
 from mmrazor.structures.graph.channel_modules import (BaseChannel,
                                                       BaseChannelGroup)
 from mmrazor.structures.graph.channel_nodes import \
-    defualt_channel_node_converter
+    default_channel_node_converter
 
 
 class Channel(BaseChannel):
     """Channel records information about channels for pruning.
 
     Args:
-        node: (PruneNode): prune-node to be recorded
-        index (Union[None, Tuple[int, int]]): the channel range for pruning
-        out_related (Bool): represents if the channels are output channels,
-        otherwise input channels
-        expand_ratio (Bool): expand_ratio of the number of channels
-        compared with pruning mask
+        name (str): The name of the channel. When the channel is related with
+            a module, the name should be the name of the module in the model.
+        module (Any): Module of the channel.
+        index (Tuple[int,int]): Index(start,end) of the Channel in the Module
+        node (ChannelNode, optional): A ChannelNode corresponding to the
+            Channel. Defaults to None.
+        out_related (bool, optional): Is the channel output channel. Defaults
+            to True.
+        expand_ratio (int, optional): Expand ratio of the mask. Defaults to 1.
     """
 
     # init
@@ -201,7 +204,7 @@ class ChannelGroup(BaseModule):
             return group
 
         group_graph = ChannelGraph.copy_from(graph,
-                                             defualt_channel_node_converter)
+                                             default_channel_node_converter)
         group_graph.forward()
         groups = group_graph.collect_groups()
         groups = [init_from_base_channel_group(group) for group in groups]

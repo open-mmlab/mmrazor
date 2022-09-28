@@ -333,7 +333,7 @@ class NormNode(PassChannelNode):
 # converter
 
 
-def defualt_channel_node_converter(node: ModuleNode) -> ChannelNode:
+def default_channel_node_converter(node: ModuleNode) -> ChannelNode:
     """The default node converter for ChannelNode."""
 
     def warn(default='PassChannelNode'):

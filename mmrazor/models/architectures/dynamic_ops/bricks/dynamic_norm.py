@@ -176,7 +176,7 @@ class SwitchableBatchNorm2d(DynamicBatchNorm2d):
     # private methods
 
     def activated_channel_num(self):
-        """Number to activated channels."""
+        """The number of activated channels."""
         mask = self._get_num_features_mask()
         choice_num = (mask == 1).sum().item()
         return choice_num

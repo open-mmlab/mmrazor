@@ -9,12 +9,15 @@ class BaseChannel:
     """BaseChannel records information about channels for pruning.
 
     Args:
-        node: (PruneNode): prune-node to be recorded
-        index (Union[None, Tuple[int, int]]): the channel range for pruning
-        out_related (Bool): represents if the channels are output channels,
-        otherwise input channels
-        expand_ratio (Bool): expand_ratio of the number of channels
-        compared with pruning mask.
+        name (str): The name of the channel. When the channel is related with
+            a module, the name should be the name of the module in the model.
+        module (Any): Module of the channel.
+        index (Tuple[int,int]): Index(start,end) of the Channel in the Module
+        node (ChannelNode, optional): A ChannelNode corresponding to the
+            Channel. Defaults to None.
+        out_related (bool, optional): Is the channel output channel.
+            Defaults to True.
+        expand_ratio (int, optional): Expand ratio of the mask. Defaults to 1.
     """
 
     # init
@@ -39,7 +42,7 @@ class BaseChannel:
 
     @property
     def num_channels(self) -> int:
-        """Int: number of channels in the Channels"""
+        """The number of channels in the Channels."""
         return self.index[1] - self.index[0]
 
     # others

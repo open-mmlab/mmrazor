@@ -6,7 +6,7 @@ from mmrazor.structures.graph.channel_graph import ChannelGraph
 from mmrazor.structures.graph.channel_modules import (BaseChannelGroup,
                                                       ChannelTensor)
 from mmrazor.structures.graph.channel_nodes import \
-    defualt_channel_node_converter
+    default_channel_node_converter
 from ...data.models import LineModel
 from .test_graph import TestGraph
 
@@ -20,7 +20,7 @@ class TestChannelGraph(unittest.TestCase):
         module_graph = ModuleGraph.init_from_fx_tracer(model)
 
         _ = ChannelGraph.copy_from(module_graph,
-                                   defualt_channel_node_converter)
+                                   default_channel_node_converter)
 
     def test_forward(self):
         for model_data in TestGraph.fx_passed_models():
@@ -29,7 +29,7 @@ class TestChannelGraph(unittest.TestCase):
                 module_graph = ModuleGraph.init_from_fx_tracer(model)
 
                 channel_graph = ChannelGraph.copy_from(
-                    module_graph, defualt_channel_node_converter)
+                    module_graph, default_channel_node_converter)
                 channel_graph.forward()
 
                 _ = channel_graph.collect_groups

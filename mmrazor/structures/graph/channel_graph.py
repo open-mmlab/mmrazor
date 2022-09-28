@@ -1,11 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Any, Callable, Dict, List
+from typing import Callable, Dict, List
 
 from torch.nn import Module
 
 from .base_graph import BaseGraph
 from .channel_modules import BaseChannelGroup, ChannelTensor
-from .channel_nodes import ChannelNode, defualt_channel_node_converter
+from .channel_nodes import ChannelNode, default_channel_node_converter
 from .module_graph import ModuleGraph
 
 
@@ -19,7 +19,7 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
     @classmethod
     def copy_from(cls,
                   graph: 'BaseGraph',
-                  node_converter: Callable = defualt_channel_node_converter):
+                  node_converter: Callable = default_channel_node_converter):
         """Copy from a ModuleGraph."""
         assert isinstance(graph, ModuleGraph)
         return super().copy_from(graph, node_converter)
@@ -51,7 +51,7 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
 
     def _merge_same_module(self):
         """Union all nodes with the same module to the same group."""
-        module2node: Dict[Any, List[ChannelNode]] = dict()
+        module2node: Dict[Module, List[ChannelNode]] = dict()
         for node in self:
             if isinstance(node.val, Module):
                 if node.val not in module2node:
