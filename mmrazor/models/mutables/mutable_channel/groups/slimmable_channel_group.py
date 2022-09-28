@@ -50,7 +50,7 @@ class SlimmableChannelGroup(OneShotMutableChannelGroup):
         self._register_channel_container(model, MutableChannelContainer)
         self._register_mutable_channel(self.mutable_channel)
 
-    def alter_candidates_of_switchbn(self, candidates):
+    def alter_candidates_of_switchbn(self, candidates: List):
         """Change candidates of SwitchableBatchNorm2d."""
         for channel in self.output_related + self.input_related:
             if isinstance(channel.module, dynamic_ops.SwitchableBatchNorm2d) \

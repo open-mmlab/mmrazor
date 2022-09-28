@@ -193,7 +193,7 @@ class ChannelGroup(BaseModule):
         """Parse a module-graph and get ChannelGroups."""
 
         def init_from_base_channel_group(base_channel_group: BaseChannelGroup):
-            group = cls(len(base_channel_group.channels), **group_args)
+            group = cls(len(base_channel_group.channel_elems), **group_args)
             group.input_related = [
                 Channel.init_from_base_channel(channel)
                 for channel in base_channel_group.input_related

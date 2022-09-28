@@ -67,13 +67,13 @@ class BaseChannel:
 class BaseChannelGroup():
     """BaseChannelGroup is a collection of BaseChannel.
 
-    All  BaseChannels are save in two lists: self.input_related and
+    All  BaseChannels are saved in two lists: self.input_related and
     self.output_related.
     """
 
     def __init__(self) -> None:
 
-        self.channels: Dict[int, List[ChannelElement]] = {}
+        self.channel_elems: Dict[int, List[ChannelElement]] = {}
         self.input_related: List[BaseChannel] = []
         self.output_related: List[BaseChannel] = []
 
@@ -129,12 +129,12 @@ class BaseChannelGroup():
         """Clean the info of a ChannelElement."""
         self[index].remove(channel)
 
-    def _add_channel_info(self, chanenl: 'ChannelElement', index):
+    def _add_channel_info(self, channel: 'ChannelElement', index):
         """Add the info of a ChannelElemnt."""
-        assert chanenl.group is not self
-        if index not in self.channels:
-            self.channels[index] = []
-        self.channels[index].append(chanenl)
+        assert channel.group is not self
+        if index not in self.channel_elems:
+            self.channel_elems[index] = []
+        self.channel_elems[index].append(channel)
 
     def _split_a_new_group(self, indexes: List[int]):
         """Split a part of the group to a new group."""
@@ -143,7 +143,7 @@ class BaseChannelGroup():
         for i in indexes:
             for channel in copy.copy(self[i]):
                 new_group.add_channel(channel, j)
-            self.channels.pop(i)
+            self.channel_elems.pop(i)
             j += 1
         self._reindex()
         return new_group
@@ -151,16 +151,16 @@ class BaseChannelGroup():
     def _reindex(self):
         """Re-index the owning ChannelElements."""
         j = 0
-        for i in copy.copy(self.channels):
-            if len(self.channels[i]) == 0:
-                self.channels.pop(i)
+        for i in copy.copy(self.channel_elems):
+            if len(self.channel_elems[i]) == 0:
+                self.channel_elems.pop(i)
             else:
                 if j < i:
-                    for channel in copy.copy(self.channels[i]):
+                    for channel in copy.copy(self.channel_elems[i]):
                         if channel.group is not None:
                             channel.remove_from_group()
                         self.add_channel(channel, j)
-                    self.channels.pop(i)
+                    self.channel_elems.pop(i)
                     j += 1
                 elif j == i:
                     pass
@@ -194,27 +194,28 @@ class BaseChannelGroup():
         return s
 
     def __iter__(self):
-        for i in self.channels:
+        for i in self.channel_elems:
             yield i
 
     def __len__(self):
-        return len(self.channels)
+        return len(self.channel_elems)
 
     def __getitem__(self, key):
-        return self.channels[key]
+        return self.channel_elems[key]
 
 
 class ChannelElement:
+    """Each ChannelElement is the basic element of  a ChannelTensor. It records
+    its owing ChannelTensor and BaseChannelGroup.
+
+    Args:
+        channel_list (ChannelTensor): The ChannelTesor owns the
+            ChannelElement.
+        index (int): The index of the ChannelElement in the ChannelTensor.
+    """
 
     def __init__(self, channel_list: 'ChannelTensor', index: int) -> None:
-        """Each ChannelElement is the basic element of  a ChannelTensor. It
-        records its owing ChannelTensor and BaseChannelGroup.
 
-        Args:
-            channel_list (ChannelTensor): The ChannelTesor owns the
-                ChannelElement.
-            index (int): The index of the ChannelElement in the ChannelTensor.
-        """
         self.channel_list = channel_list
         self.index_in_channel_tensor = index
 
@@ -247,13 +248,13 @@ class ChannelTensor:
         num_channels (int): Number of ChannelElements.
     """
 
-    def __init__(self, num_channels: int) -> None:
+    def __init__(self, num_channel_elems: int) -> None:
 
         group = BaseChannelGroup()
-        self.channels: List[ChannelElement] = [
-            ChannelElement(self, i) for i in range(num_channels)
+        self.channel_elems: List[ChannelElement] = [
+            ChannelElement(self, i) for i in range(num_channel_elems)
         ]
-        for channel in self.channels:
+        for channel in self.channel_elems:
             group.add_channel(channel, channel.index_in_channel_tensor)
 
     # group operations
@@ -320,16 +321,16 @@ class ChannelTensor:
         # align
         ChannelTensor.align_tensors(self, tensor1)
         # union
-        for ch1, ch2 in zip(self.channels, tensor1.channels):
+        for ch1, ch2 in zip(self.channel_elems, tensor1.channel_elems):
             assert ch1.group is not None and ch2.group is not None
-            for ch in copy.copy(ch2.group.channels[ch2.index_in_group]):
+            for ch in copy.copy(ch2.group.channel_elems[ch2.index_in_group]):
                 ch1.group.add_channel(ch, ch1.index_in_group)
 
     def expand(self, ratio) -> 'ChannelTensor':
         """Get a new ChannelTensor which is expanded from this
         ChannelTensor."""
         expanded_tensor = ChannelTensor(len(self) * ratio)
-        for i, ch in enumerate(self.channels):
+        for i, ch in enumerate(self.channel_elems):
             assert ch.group is not None
             group = ch.group
             for j in range(0, ratio):
@@ -341,11 +342,11 @@ class ChannelTensor:
 
     def __getitem__(self, i: int):
         """Get ith ChannelElement in the ChannelTensor."""
-        return self.channels[i]
+        return self.channel_elems[i]
 
     def __len__(self):
         """Get length of the ChannelTensor."""
-        return len(self.channels)
+        return len(self.channel_elems)
 
     @classmethod
     def _index2points(cls, *indexes: List[Tuple[int, int]]):

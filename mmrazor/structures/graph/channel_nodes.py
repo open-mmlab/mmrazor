@@ -13,6 +13,19 @@ from .module_graph import ModuleNode
 
 
 class ChannelNode(ModuleNode):
+    """A ChannelNode is like a torch module. It accepts  a ChannelTensor and
+    output a ChannelTensor. The difference is that the torch module transforms
+    a tensor, while the ChannelNode records the information of channel
+    dependency in the ChannelTensor.
+
+    Args:
+        name (str): The name of the node.
+        val (Union[nn.Module, str]): value of the node.
+        expand_ratio (int, optional): expand_ratio compare with channel
+            mask. Defaults to 1.
+        module_name (str, optional): the module name of the module of the
+            node.
+    """
 
     # init
 
@@ -21,19 +34,6 @@ class ChannelNode(ModuleNode):
                  val: Union[nn.Module, str],
                  expand_ratio: int = 1,
                  module_name='') -> None:
-        """A ChannelNode is like a torch module. It accepts  a ChannelTensor
-        and output a ChannelTensor. The difference is that the torch module
-        transforms a tensor, while the ChannelNode records the information of
-        channel dependency in the ChannelTensor.
-
-        Args:
-            name (str): The name of the node.
-            val (Union[nn.Module, str]): value of the node.
-            expand_ratio (int, optional): expand_ratio compare with channel
-                mask. Defaults to 1.
-            module_name (str, optional): the module name of the module of the
-                node.
-        """
 
         super().__init__(name, val, expand_ratio, module_name)
         self.in_channel_tensor = ChannelTensor(self.in_channels)
