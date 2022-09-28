@@ -60,10 +60,10 @@ class Channel(BaseChannel):
             is_output_channel=is_output_channel,
             expand_ratio=expand_ratio)
 
-    @staticmethod
-    def init_from_base_channel(base_channel: BaseChannel):
+    @classmethod
+    def init_from_base_channel(cls, base_channel: BaseChannel):
         """Init from a BaseChannel object."""
-        return Channel(
+        return cls(
             base_channel.name,
             base_channel.module,
             base_channel.index,

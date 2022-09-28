@@ -64,7 +64,7 @@ class BaseChannel:
             return False
 
 
-class BaseChannelGroup():
+class BaseChannelGroup:
     """BaseChannelGroup is a collection of BaseChannel.
 
     All  BaseChannels are saved in two lists: self.input_related and

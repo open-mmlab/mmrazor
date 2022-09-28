@@ -82,7 +82,7 @@ class ChannelNode(ModuleNode):
 
     # register group
 
-    def register_to_groups(self):
+    def register_channel_to_groups(self):
         """Register the module of this node to corresponding groups."""
         name = self.module_name if isinstance(self.val,
                                               nn.Module) else self.name

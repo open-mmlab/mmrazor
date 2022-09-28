@@ -28,7 +28,7 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
         """Collect channel groups in the graph."""
         groups = list()
         for node in self.topo_traverse():
-            node.register_to_groups()
+            node.register_channel_to_groups()
         for node in self.topo_traverse():
             for group in node.in_channel_tensor.group_list + \
                     node.out_channel_tensor.group_list:
