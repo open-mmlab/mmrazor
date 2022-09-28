@@ -2,7 +2,7 @@ _base_ = ['mmcls::mobilenet_v2/mobilenet-v2_8xb32_in1k.py']
 
 student = _base_.model
 
-teacher_ckpt = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_b16x8_cifar10_20210528-f54bfad9.pth'  # noqa: E501
+teacher_ckpt = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth'  # noqa: E501
 
 model = dict(
     _scope_='mmrazor',
