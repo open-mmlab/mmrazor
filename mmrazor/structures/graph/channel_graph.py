@@ -36,7 +36,7 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
                     groups.append(group)
         return groups
 
-    def forward(self):
+    def forward(self, num_input_channel=3):
         """Generate a ChanneelTensor and let it forwards through the graph."""
         for node in self.topo_traverse():
             node.reset_channel_tensors()
@@ -44,7 +44,7 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
         for i, node in enumerate(self.topo_traverse()):
             node: ChannelNode
             if len(node.prev_nodes) == 0:
-                channel_list = ChannelTensor(3)
+                channel_list = ChannelTensor(num_input_channel)
                 node.forward([channel_list])
             else:
                 node.forward()

@@ -177,7 +177,8 @@ class ChannelGroup(BaseModule):
     @classmethod
     def init_from_graph(cls,
                         graph: ModuleGraph,
-                        group_args={}) -> List['ChannelGroup']:
+                        group_args={},
+                        num_input_channel=3) -> List['ChannelGroup']:
         """Parse a module-graph and get ChannelGroups."""
 
         def init_from_base_channel_group(base_channel_group: BaseChannelGroup):
@@ -194,7 +195,7 @@ class ChannelGroup(BaseModule):
 
         group_graph = ChannelGraph.copy_from(graph,
                                              default_channel_node_converter)
-        group_graph.forward()
+        group_graph.forward(num_input_channel)
         groups = group_graph.collect_groups()
         groups = [init_from_base_channel_group(group) for group in groups]
         return groups
