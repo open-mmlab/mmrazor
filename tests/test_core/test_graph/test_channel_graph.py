@@ -17,16 +17,16 @@ class TestChannelGraph(unittest.TestCase):
 
     def test_init(self):
         model = LineModel()
-        module_graph = ModuleGraph.init_from_fx_tracer(model)
+        module_graph = ModuleGraph.init_from_backward_tracer(model)
 
         _ = ChannelGraph.copy_from(module_graph,
                                    default_channel_node_converter)
 
     def test_forward(self):
-        for model_data in TestGraph.fx_passed_models():
+        for model_data in TestGraph.backward_tracer_passed_models():
             with self.subTest(model=model_data):
                 model = model_data()
-                module_graph = ModuleGraph.init_from_fx_tracer(model)
+                module_graph = ModuleGraph.init_from_backward_tracer(model)
 
                 channel_graph = ChannelGraph.copy_from(
                     module_graph, default_channel_node_converter)
