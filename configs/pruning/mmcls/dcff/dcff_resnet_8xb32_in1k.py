@@ -27,7 +27,7 @@ model = dict(
     _scope_='mmrazor',
     type='DCFF',
     data_preprocessor=data_preprocessor,
-    channel_cfgs='configs/pruning/mmdet/dcff/resnet_cls.json',
+    channel_cfgs='configs/pruning/mmcls/dcff/resnet_cls.json',
     fuse_count=1,
     architecture=dict(
         cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False),

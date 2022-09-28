@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 from mmengine import MMLogger
 
-import mmrazor.models.architectures.dynamic_ops as dynamic_ops
 from mmrazor.models.utils import make_divisible
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
@@ -50,6 +49,8 @@ class SequentialMutableChannelGroup(MutableChannelGroup):
     def prepare_for_pruning(self, model: nn.Module):
         """Prepare for pruning, including register mutable channels."""
         # register MutableMask
+        # avoid circular import for python 3.6.9
+        import mmrazor.models.architectures.dynamic_ops as dynamic_ops
         self._replace_with_dynamic_ops(
             model, {
                 nn.Conv2d: dynamic_ops.DynamicConv2d,
