@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Type, TypeVar, Union
 import torch.nn as nn
 from mmengine.model import BaseModule
 
-import mmrazor.models.architectures.dynamic_ops as dynamic_ops
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables.mutable_channel.base_mutable_channel import \
     BaseMutableChannel
@@ -61,6 +60,8 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
     @property
     def is_mutable(self) -> bool:
         """If the channel-group is prunable."""
+        # fix import for python 3.6.9 and avoid circular import
+        import mmrazor.models.architectures.dynamic_ops as dynamic_ops
 
         def traverse(channels: List[Channel]):
             has_dynamic_op = False
@@ -176,6 +177,8 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
     def _register_channel_container(
             model: nn.Module, container_class: Type[MutableChannelContainer]):
         """register channel container for dynamic ops."""
+        # fix import for python 3.6.9 and avoid circular import
+        import mmrazor.models.architectures.dynamic_ops as dynamic_ops
         for module in model.modules():
             if isinstance(module, dynamic_ops.DynamicChannelMixin):
                 if module.get_mutable_attr('in_channels') is None:
@@ -206,6 +209,8 @@ class MutableChannelGroup(ChannelGroup, BaseModule):
     def _register_mutable_channel(self, mutable_channel: BaseMutableChannel):
 
         # register mutable_channel
+        # fix import for python 3.6.9 and avoid circular import
+        import mmrazor.models.architectures.dynamic_ops as dynamic_ops
         for channel in self.input_related + self.output_related:
             module = channel.module
             if isinstance(module, dynamic_ops.DynamicChannelMixin):
