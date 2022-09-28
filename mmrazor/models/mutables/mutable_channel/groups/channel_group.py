@@ -1,16 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-"""This module defines ChannelGroup with related modules.
-
-PruneNode                               Channel
-                ------------------->
-PruneGraph      Graph2ChannelGroups     ChannelGroup
-
-PruneNode and PruneGraph are used to record the computation graph of a model.
-A Channel records a slice of the input or output channels of a module.
-A ChannelGroup collects all Channels with channel-dependency.
-Graph2ChannelGroups is used to parse a PruneGraph and get ChannelGroups
-"""
-
 import copy
 from typing import Dict, List
 
