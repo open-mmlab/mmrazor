@@ -313,7 +313,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
                               module,
                               module_name,
                               mutable2groups,
-                              is_output=True):
+                              is_output_channel=True):
             for index, mutable in contanier.mutable_channels.items():
                 if isinstance(mutable, DerivedMutable):
                     source_mutables: Set = \
@@ -338,14 +338,20 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
                             mutable.num_channels, **self.group_default_args)
 
                 group: MutableChannelGroup = mutable2groups[mutable]
-                if is_output:
+                if is_output_channel:
                     group.add_ouptut_related(
                         Channel(
-                            module_name, module, index, out_related=is_output))
+                            module_name,
+                            module,
+                            index,
+                            is_output_channel=is_output_channel))
                 else:
                     group.add_input_related(
                         Channel(
-                            module_name, module, index, out_related=is_output))
+                            module_name,
+                            module,
+                            index,
+                            is_output_channel=is_output_channel))
 
         mutable2groups: Dict = {}
         for name, module in model.named_modules():

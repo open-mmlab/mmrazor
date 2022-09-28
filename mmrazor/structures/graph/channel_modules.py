@@ -15,7 +15,7 @@ class BaseChannel:
         index (Tuple[int,int]): Index(start,end) of the Channel in the Module
         node (ChannelNode, optional): A ChannelNode corresponding to the
             Channel. Defaults to None.
-        out_related (bool, optional): Is the channel output channel.
+        is_output_channel (bool, optional): Is the channel output channel.
             Defaults to True.
         expand_ratio (int, optional): Expand ratio of the mask. Defaults to 1.
     """
@@ -27,7 +27,7 @@ class BaseChannel:
                  module,
                  index,
                  node=None,
-                 out_related=True,
+                 is_output_channel=True,
                  expand_ratio=1) -> None:
         self.name = name
         self.module = module
@@ -37,7 +37,7 @@ class BaseChannel:
 
         self.node = node
 
-        self.output_related = out_related
+        self.is_output_channel = is_output_channel
         self.expand_ratio = expand_ratio
 
     @property
@@ -49,7 +49,7 @@ class BaseChannel:
 
     def __repr__(self) -> str:
         return f'{self.name}\t{self.index}\t \
-        {"out" if self.output_related else "in"}\t\
+        {"out" if self.is_output_channel else "in"}\t\
         expand:{self.expand_ratio}'
 
     def __eq__(self, obj: object) -> bool:
@@ -57,7 +57,7 @@ class BaseChannel:
             return self.name == obj.name \
                 and self.module == obj.module \
                 and self.index == obj.index \
-                and self.output_related == obj.output_related \
+                and self.is_output_channel == obj.is_output_channel \
                 and self.expand_ratio == obj.expand_ratio \
                 and self.node == obj.node
         else:

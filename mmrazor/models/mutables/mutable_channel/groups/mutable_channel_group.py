@@ -191,10 +191,10 @@ class MutableChannelGroup(ChannelGroup):
             module = channel.module
             if isinstance(module, dynamic_ops.DynamicChannelMixin):
                 container: MutableChannelContainer
-                if channel.output_related and module.get_mutable_attr(
+                if channel.is_output_channel and module.get_mutable_attr(
                         'out_channels') is not None:
                     container = module.get_mutable_attr('out_channels')
-                elif channel.output_related is False \
+                elif channel.is_output_channel is False \
                         and module.get_mutable_attr('in_channels') is not None:
                     container = module.get_mutable_attr('in_channels')
                 else:

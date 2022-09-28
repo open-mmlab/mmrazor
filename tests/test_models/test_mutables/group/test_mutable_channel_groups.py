@@ -52,26 +52,26 @@ class TestMutableChannelGroup(TestCase):
                     'start': 0,
                     'end': 8,
                     'expand_ratio': 1,
-                    'is_output_related': False
+                    'is_output_channel': False
                 }, {
                     'name': 'net.3',
                     'start': 0,
                     'end': 8,
                     'expand_ratio': 1,
-                    'is_output_related': False
+                    'is_output_channel': False
                 }],
                 'output_related': [{
                     'name': 'net.0',
                     'start': 0,
                     'end': 8,
                     'expand_ratio': 1,
-                    'is_output_related': True
+                    'is_output_channel': True
                 }, {
                     'name': 'net.1',
                     'start': 0,
                     'end': 8,
                     'expand_ratio': 1,
-                    'is_output_related': True
+                    'is_output_channel': True
                 }]
             }
         }

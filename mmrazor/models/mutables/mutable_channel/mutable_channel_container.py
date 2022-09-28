@@ -74,14 +74,14 @@ class MutableChannelContainer(BaseMutableChannel):
     @staticmethod
     def register_mutable_channel_to_module(module: DynamicChannelMixin,
                                            mutable: BaseMutableChannel,
-                                           is_out_related=True,
+                                           is_to_output_channel=True,
                                            start=0,
                                            end=-1):
         """Register a BaseMutableChannel to a module with
         MutableChannelContainers."""
         if end == -1:
             end = mutable.num_channels + start
-        if is_out_related:
+        if is_to_output_channel:
             container: MutableChannelContainer = module.get_mutable_attr(
                 'out_channels')
         else:
