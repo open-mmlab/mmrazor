@@ -3,8 +3,15 @@ _base_ = ['mmcls::deit/deit-base_pt-16xb64_in1k.py']
 # student settings
 student = _base_.model
 student.backbone.type = 'DistilledVisionTransformer'
-student.head.type = 'DeiTClsHead'
-student.head.loss.loss_weight = 0.5
+student.head = dict(
+    type='mmrazor.DeiTClsHead',
+    num_classes=1000,
+    in_channels=768,
+    loss=dict(
+        type='mmcls.LabelSmoothLoss',
+        label_smooth_val=0.1,
+        mode='original',
+        loss_weight=0.5))
 
 data_preprocessor = dict(type='mmcls.ClsDataPreprocessor')
 
@@ -15,9 +22,9 @@ teacher = dict(
     backbone=dict(
         type='TIMMBackbone',
         model_name='regnety_160',
-        # checkpoint_path='/mnt/lustre/caoweihan.p/ckpt/regnety_160-a5fe301d.pth'
-        checkpoint_path=
-        r'G:\projects\research\checkpoint\regnety_160-a5fe301d.pth',
+        checkpoint_path='/mnt/lustre/caoweihan.p/ckpt/regnety_160-a5fe301d.pth'
+        # checkpoint_path=
+        # r'G:\projects\research\checkpoint\regnety_160-a5fe301d.pth',
     ),
     neck=dict(type='GlobalAveragePooling'),
     head=dict(
@@ -32,9 +39,9 @@ teacher = dict(
         topk=(1, 5),
         init_cfg=dict(
             type='Pretrained',
-            # checkpoint='/mnt/lustre/caoweihan.p/ckpt/regnety_160-a5fe301d.pth',
-            checkpoint=
-            r'G:\projects\research\checkpoint\regnety_160-a5fe301d.pth',
+            checkpoint='/mnt/lustre/caoweihan.p/ckpt/regnety_160-a5fe301d.pth',
+            # checkpoint=
+            # r'G:\projects\research\checkpoint\regnety_160-a5fe301d.pth',
             prefix='head.'),
     ))
 
@@ -52,11 +59,9 @@ model = dict(
             fc=dict(type='ModuleOutputs', source='head.fc')),
         distill_losses=dict(
             loss_distill=dict(
-                type='KLDivergence',
-                tau=1.,
+                type='CrossEntropyLoss',
                 loss_weight=0.5,
-                reduction='batchmean',
-                teacher_detach=True)),
+            )),
         loss_forward_mappings=dict(
             loss_distill=dict(
                 preds_S=dict(from_student=True, recorder='fc'),
