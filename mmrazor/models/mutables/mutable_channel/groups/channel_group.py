@@ -39,8 +39,10 @@ class PruneNode(ModuleNode):
 
     def __init__(self, name: str, obj: Module, module_name='') -> None:
         super().__init__(name, obj, module_name=module_name)
-        self.input_related_groups: IndexDict[ChannelGroup] = IndexDict()
-        self.output_related_groups: IndexDict[ChannelGroup] = IndexDict()
+        # support python3.6.9: OrderedDict unsupported in typing
+        # IndexDict[ChannelGroup]
+        self.input_related_groups: IndexDict = IndexDict()
+        self.output_related_groups: IndexDict = IndexDict()
 
     @classmethod
     def copy_from(cls, node) -> 'PruneNode':
@@ -91,8 +93,7 @@ class PruneNode(ModuleNode):
             expand_ratio=expand_ratio)
         return channel
 
-    def output_related_groups_of_prev_nodes(
-            self) -> List[IndexDict['ChannelGroup']]:
+    def output_related_groups_of_prev_nodes(self) -> List[IndexDict]:
         """IndexDict['ChannelGroup']: the output-related
         ChannelGroups of previous nodes."""
         groups = []
@@ -556,10 +557,9 @@ class Graph2ChannelGroups:
         """Initialize a ChannelGroup."""
         return ChannelGroup(num_channels)
 
-    def union_node_groups(
-            self,
-            node_groups_list=List[IndexDict[ChannelGroup]]
-    ) -> List[ChannelGroup]:
+    def union_node_groups(self,
+                          node_groups_list=List[IndexDict]
+                          ) -> List[ChannelGroup]:
         """Union groups of nodes."""
         union_groups = []
         for index in copy.copy(node_groups_list[0]):
@@ -578,7 +578,7 @@ class Graph2ChannelGroups:
         group.apply_for_node()
         return group
 
-    def align_node_groups(self, nodes_groups: List[IndexDict[ChannelGroup]]):
+    def align_node_groups(self, nodes_groups: List[IndexDict]):
         """Align the ChannelGroups in the prev nodes.
 
             Example(pseudocode):
@@ -590,6 +590,9 @@ class Graph2ChannelGroups:
                 >>> align_prev_output_groups(prev_nodes)
                 node1: (0,2):group5, (2,4):group6, (4,8):group7
                 node2: (0,2):group8, (2,4):group9, (4,8):group10
+
+        Args:
+            nodes_groups (List[IndexDict[ChannelGroup]]): input/output related.
         """
 
         def points2nums(points):
