@@ -83,7 +83,7 @@ class MutableChannelUnit(ChannelUnit):
                 initialization.
             with_channels (bool): if the config includes info about
                 channels. the config with info about channels can used to
-                parse channel groups without tracer.
+                parse channel units without tracer.
         """
         config = super().config_template(with_init_args, with_channels)
         config['choice'] = self.current_choice
@@ -93,7 +93,7 @@ class MutableChannelUnit(ChannelUnit):
 
     @abc.abstractmethod
     def prepare_for_pruning(self, model):
-        """Post process after parse groups.
+        """Post process after parse units.
 
         For example, we need to register mutables to dynamic-ops.
         """

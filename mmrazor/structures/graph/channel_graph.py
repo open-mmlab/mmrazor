@@ -24,17 +24,17 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
         assert isinstance(graph, ModuleGraph)
         return super().copy_from(graph, node_converter)
 
-    def collect_groups(self) -> List[BaseChannelUnit]:
-        """Collect channel groups in the graph."""
-        groups = list()
+    def collect_units(self) -> List[BaseChannelUnit]:
+        """Collect channel units in the graph."""
+        units = list()
         for node in self.topo_traverse():
-            node.register_channel_to_groups()
+            node.register_channel_to_units()
         for node in self.topo_traverse():
             for group in node.in_channel_tensor.group_list + \
                     node.out_channel_tensor.group_list:
-                if group not in groups:
-                    groups.append(group)
-        return groups
+                if group not in units:
+                    units.append(group)
+        return units
 
     def forward(self, num_input_channel=3):
         """Generate a ChanneelTensor and let it forwards through the graph."""

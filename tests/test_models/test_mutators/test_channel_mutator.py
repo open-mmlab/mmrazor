@@ -41,7 +41,7 @@ class TestChannelMutator(unittest.TestCase):
     def _test_a_mutator(self, mutator: ChannelMutator, model):
         choices = mutator.sample_choices()
         mutator.set_choices(choices)
-        self.assertGreater(len(mutator.mutable_groups), 0)
+        self.assertGreater(len(mutator.mutable_units), 0)
         x = torch.rand([2, 3, 224, 224])
         y = model(x)
         self.assertEqual(list(y.shape), [2, 1000])
@@ -56,7 +56,7 @@ class TestChannelMutator(unittest.TestCase):
                 mutator = ChannelMutator()
                 mutator.prepare_from_supernet(model)
 
-                self.assertGreaterEqual(len(mutator.mutable_groups), 1)
+                self.assertGreaterEqual(len(mutator.mutable_units), 1)
 
                 self._test_a_mutator(mutator, model)
 
@@ -71,11 +71,11 @@ class TestChannelMutator(unittest.TestCase):
 
                     mutator = ChannelMutator(channel_unit_cfg=group_type)
                     mutator.prepare_from_supernet(model)
-                    mutator.groups
+                    mutator.units
 
                     self._test_a_mutator(mutator, model)
 
-    def test_init_groups_from_cfg(self):
+    def test_init_units_from_cfg(self):
         ARCHITECTURE_CFG = dict(
             type='mmcls.ImageClassifier',
             backbone=dict(type='mmcls.MobileNetV2', widen_factor=1.5),
@@ -102,7 +102,7 @@ class TestChannelMutator(unittest.TestCase):
         mutator2 = MODELS.build(config2)
         mutator2.prepare_from_supernet(model2)
         self.assertEqual(
-            len(mutator.mutable_groups), len(mutator2.mutable_groups))
+            len(mutator.mutable_units), len(mutator2.mutable_units))
         self._test_a_mutator(mutator2, model2)
 
     def test_mix_config_tracer(self):

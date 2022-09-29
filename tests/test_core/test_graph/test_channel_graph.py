@@ -48,7 +48,7 @@ class TestChannelGraph(unittest.TestCase):
                     module_graph, default_channel_node_converter)
                 channel_graph.forward()
 
-                _ = channel_graph.collect_groups
+                _ = channel_graph.collect_units
 
     def test_forward_with_config_num_in_channel(self):
 
@@ -72,7 +72,7 @@ class TestChannelGraph(unittest.TestCase):
                                                default_channel_node_converter)
         channel_graph.forward(num_input_channel=6)
 
-        _ = channel_graph.collect_groups
+        _ = channel_graph.collect_units
 
 
 class TestChannelUnit(unittest.TestCase):
@@ -87,19 +87,19 @@ class TestChannelUnit(unittest.TestCase):
         group3 = channel_tensor3.group_dict[(0, 8)]
         group4 = channel_tensor4.group_dict[(0, 8)]
 
-        group12 = BaseChannelUnit.union_two_groups(group1, group2)
+        group12 = BaseChannelUnit.union_two_units(group1, group2)
         self.assertDictEqual(channel_tensor1.group_dict,
                              channel_tensor2.group_dict)
 
-        group34 = BaseChannelUnit.union_two_groups(group3, group4)
-        BaseChannelUnit.union_two_groups(group12, group34)
+        group34 = BaseChannelUnit.union_two_units(group3, group4)
+        BaseChannelUnit.union_two_units(group12, group34)
         self.assertDictEqual(channel_tensor1.group_dict,
                              channel_tensor4.group_dict)
 
     def test_split(self):
         channel_tensor1 = ChannelTensor(8)
         channel_tensor2 = ChannelTensor(8)
-        BaseChannelUnit.union_two_groups(channel_tensor1.group_dict[(0, 8)],
+        BaseChannelUnit.union_two_units(channel_tensor1.group_dict[(0, 8)],
                                           channel_tensor2.group_dict[(0, 8)])
         group1 = channel_tensor1.group_dict[(0, 8)]
         BaseChannelUnit.split_group(group1, [2, 6])
@@ -116,14 +116,14 @@ class TestChannelTensor(unittest.TestCase):
 
     def test_align_with_nums(self):
         channel_tensor = ChannelTensor(8)
-        channel_tensor.align_groups_with_nums([2, 6])
+        channel_tensor.align_units_with_nums([2, 6])
         self.assertSequenceEqual(
             list(channel_tensor.group_dict.keys()), [(0, 2), (2, 8)])
-        channel_tensor.align_groups_with_nums([2, 2, 4])
+        channel_tensor.align_units_with_nums([2, 2, 4])
         self.assertSequenceEqual(
             list(channel_tensor.group_dict.keys()), [(0, 2), (2, 4), (4, 8)])
 
-    def test_align_groups(self):
+    def test_align_units(self):
         channel_tensor1 = ChannelTensor(8)
         channel_tensor2 = ChannelTensor(8)
         channel_tensor3 = ChannelTensor(8)

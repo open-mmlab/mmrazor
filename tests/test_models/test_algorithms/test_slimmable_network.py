@@ -28,7 +28,7 @@ CHANNEL_CFG_PATH = 'tests/data/MBV2_slimmable_config.json'
 MUTATOR_CFG = dict(
     type='SlimmableChannelMutator',
     channel_unit_cfg=dict(
-        type='SlimmableChannelUnit', groups=CHANNEL_CFG_PATH),
+        type='SlimmableChannelUnit', units=CHANNEL_CFG_PATH),
     parse_cfg=dict(
         type='BackwardTracer',
         loss_calculator=dict(type='ImageClassifierPseudoLoss')))
@@ -66,13 +66,13 @@ class TestSlimmable(TestCase):
         with pytest.raises(AttributeError):
             _ = self.prepare_model(mutator_wrong_type, MODEL_CFG)
 
-        # assert has prunable groups
+        # assert has prunable units
         algo = SlimmableNetwork(MUTATOR_CFG, MODEL_CFG)
-        self.assertGreater(len(algo.mutator.mutable_groups), 0)
+        self.assertGreater(len(algo.mutator.mutable_units), 0)
 
         # assert can generate config template
         mutator_cfg = copy.deepcopy(MUTATOR_CFG)
-        mutator_cfg['channel_unit_cfg']['groups'] = {}
+        mutator_cfg['channel_unit_cfg']['units'] = {}
         algo = SlimmableNetwork(mutator_cfg, MODEL_CFG)
         try:
             algo.mutator.config_template()

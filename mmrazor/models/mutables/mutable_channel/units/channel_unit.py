@@ -222,9 +222,9 @@ class ChannelUnit(BaseModule):
         group_graph = ChannelGraph.copy_from(graph,
                                              default_channel_node_converter)
         group_graph.forward(num_input_channel)
-        groups = group_graph.collect_groups()
-        groups = [init_from_base_channel_unit(group) for group in groups]
-        return groups
+        units = group_graph.collect_units()
+        units = [init_from_base_channel_unit(group) for group in units]
+        return units
 
     # tools
 

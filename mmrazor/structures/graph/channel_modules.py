@@ -89,19 +89,19 @@ class BaseChannelUnit:
     # group operations
 
     @classmethod
-    def union_groups(cls, groups: List['BaseChannelUnit']):
-        """Union groups."""
-        assert len(groups) > 1
-        union_group = groups[0]
+    def union_units(cls, units: List['BaseChannelUnit']):
+        """Union units."""
+        assert len(units) > 1
+        union_group = units[0]
 
-        for group in groups[1:]:
-            union_group = BaseChannelUnit.union_two_groups(union_group, group)
+        for group in units[1:]:
+            union_group = BaseChannelUnit.union_two_units(union_group, group)
         return union_group
 
     @classmethod
-    def union_two_groups(cls, group1: 'BaseChannelUnit',
+    def union_two_units(cls, group1: 'BaseChannelUnit',
                          group2: 'BaseChannelUnit'):
-        """Union two groups."""
+        """Union two units."""
         if group1 is group2:
             return group1
         else:
@@ -113,15 +113,15 @@ class BaseChannelUnit:
 
     @classmethod
     def split_group(cls, group: 'BaseChannelUnit', nums: List[int]):
-        """Split a group to multiple groups."""
-        new_groups = []
+        """Split a group to multiple units."""
+        new_units = []
         if len(nums) == 1:
             return [group]
         assert sum(nums) == len(group)
         for num in nums:
             new_group = group._split_a_new_group(list(range(0, num)))
-            new_groups.append(new_group)
-        return new_groups
+            new_units.append(new_group)
+        return new_units
 
     # private methods
 
@@ -257,8 +257,8 @@ class ChannelTensor:
 
     # group operations
 
-    def align_groups_with_nums(self, nums: List[int]):
-        """Align owning groups to certain lengths."""
+    def align_units_with_nums(self, nums: List[int]):
+        """Align owning units to certain lengths."""
         i = 0
         for start, end in self.group_dict:
             start_ = start
@@ -272,8 +272,8 @@ class ChannelTensor:
 
     @property
     def group_dict(self) -> Dict[Tuple[int, int], BaseChannelUnit]:
-        """Get a dict of owning groups."""
-        groups: Dict[Tuple[int, int], BaseChannelUnit] = {}
+        """Get a dict of owning units."""
+        units: Dict[Tuple[int, int], BaseChannelUnit] = {}
         # current_group = ...
         current_group_idx = -1
         start = 0
@@ -285,24 +285,24 @@ class ChannelTensor:
             else:
                 if current_group is not self[i].group or \
                         current_group_idx > self[i].index_in_group:
-                    groups[(start, i)] = current_group
+                    units[(start, i)] = current_group
                     current_group = self[i].group
                     current_group_idx = self[i].index_in_group
                     start = i
             current_group_idx = self[i].index_in_group
-        groups[(start, len(self))] = current_group
-        return groups
+        units[(start, len(self))] = current_group
+        return units
 
     @property
     def group_list(self) -> List[BaseChannelUnit]:
-        """Get a list of owning groups."""
+        """Get a list of owning units."""
         return list(self.group_dict.values())
 
     # tensor operations
 
     @classmethod
     def align_tensors(cls, *tensors: 'ChannelTensor'):
-        """Align the lengths of the groups of the tensors."""
+        """Align the lengths of the units of the tensors."""
         assert len(tensors) >= 2
         for tensor in tensors:
             assert len(tensor) == len(
@@ -312,10 +312,10 @@ class ChannelTensor:
         nums = cls._points2num(aligned_index)
         if len(nums) > 1:
             for tensor in tensors:
-                tensor.align_groups_with_nums(nums)
+                tensor.align_units_with_nums(nums)
 
     def union(self, tensor1: 'ChannelTensor'):
-        """Union the groups with the tensor1."""
+        """Union the units with the tensor1."""
         # align
         ChannelTensor.align_tensors(self, tensor1)
         # union

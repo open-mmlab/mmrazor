@@ -35,8 +35,8 @@ class TestMutableChannelUnit(TestCase):
         model = LineModel()
         # init using tracer
         graph = ModuleGraph.init_from_backward_tracer(model)
-        groups = DefaultChannelUnit.init_from_graph(graph)
-        self._test_groups(groups, model)
+        units = DefaultChannelUnit.init_from_graph(graph)
+        self._test_units(units, model)
 
     def test_init_from_cfg(self):
         model = LineModel()
@@ -75,26 +75,26 @@ class TestMutableChannelUnit(TestCase):
                 }]
             }
         }
-        groups = [DefaultChannelUnit.init_from_cfg(model, config)]
-        self._test_groups(groups, model)
+        units = [DefaultChannelUnit.init_from_cfg(model, config)]
+        self._test_units(units, model)
 
     def test_init_from_channel_unit(self):
         model = LineModel()
         # init using tracer
         graph = ModuleGraph.init_from_backward_tracer(model)
-        groups: List[ChannelUnit] = ChannelUnit.init_from_graph(graph)
-        mutable_groups = [
+        units: List[ChannelUnit] = ChannelUnit.init_from_graph(graph)
+        mutable_units = [
             DefaultChannelUnit.init_from_channel_unit(group)
-            for group in groups
+            for group in units
         ]
-        self._test_groups(mutable_groups, model)
+        self._test_units(mutable_units, model)
 
-    def _test_groups(self, groups: List[MutableChannelUnit], model):
-        for group in groups:
+    def _test_units(self, units: List[MutableChannelUnit], model):
+        for group in units:
             group.prepare_for_pruning(model)
-        mutable_groups = [group for group in groups if group.is_mutable]
-        self.assertGreaterEqual(len(mutable_groups), 1)
-        for group in mutable_groups:
+        mutable_units = [group for group in units if group.is_mutable]
+        self.assertGreaterEqual(len(mutable_units), 1)
+        for group in mutable_units:
             choice = group.sample_choice()
             group.current_choice = choice
             self.assertAlmostEqual(group.current_choice, choice, delta=0.1)
@@ -121,12 +121,11 @@ class TestMutableChannelUnit(TestCase):
             for group_type in GROUPS:
                 with self.subTest(model=model_data, group=group_type):
                     model: nn.Module = model_data()
-                    graph = ModuleGraph.init_from_backward_tracer(model)
-                    groups: List[
+                    graph = ModuleGraph.init_from_fx_tracer(model)
+                    units: List[
                         MutableChannelUnit] = group_type.init_from_graph(
                             graph)
-
-                    for group in groups:
+                    for group in units:
                         group.prepare_for_pruning(model)
 
                     for module in model.modules():
@@ -144,8 +143,7 @@ class TestMutableChannelUnit(TestCase):
 
     def _test_a_graph(self, model, graph):
         try:
-            groups = DefaultChannelUnit.init_from_graph(graph)
-
-            self._test_groups(groups, model)
+            units = DefaultChannelUnit.init_from_graph(graph)
+            self._test_units(units, model)
         except Exception as e:
             self.fail(f'{e}')

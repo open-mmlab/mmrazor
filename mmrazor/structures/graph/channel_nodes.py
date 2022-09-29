@@ -71,19 +71,19 @@ class ChannelNode(ModuleNode):
     def channel_forward(self, *channel_tensors: ChannelTensor):
         """Forward with ChannelTensors."""
         assert len(channel_tensors) == 1, f'{len(channel_tensors)}'
-        BaseChannelUnit.union_two_groups(
+        BaseChannelUnit.union_two_units(
             list(self.in_channel_tensor.group_dict.values())[0],
             list(channel_tensors[0].group_dict.values())[0])
 
         if self.in_channels == self.out_channels:
-            BaseChannelUnit.union_two_groups(
+            BaseChannelUnit.union_two_units(
                 self.in_channel_tensor.group_list[0],
                 self.out_channel_tensor.group_list[0])
 
     # register group
 
-    def register_channel_to_groups(self):
-        """Register the module of this node to corresponding groups."""
+    def register_channel_to_units(self):
+        """Register the module of this node to corresponding units."""
         name = self.module_name if isinstance(self.val,
                                               nn.Module) else self.name
         for index, group in self.in_channel_tensor.group_dict.items():
@@ -192,12 +192,12 @@ class BindChannelNode(PassChannelNode):
         ChannelTensor.align_tensors(*in_channel_tensor)
 
         # union tensors
-        node_groups = [
+        node_units = [
             channel_lis.group_dict for channel_lis in in_channel_tensor
         ]
-        for key in node_groups[0]:
-            BaseChannelUnit.union_groups(
-                [groups[key] for groups in node_groups])
+        for key in node_units[0]:
+            BaseChannelUnit.union_units(
+                [units[key] for units in node_units])
         super().channel_forward(in_channel_tensor[0])
 
     def __repr__(self) -> str:
@@ -208,7 +208,7 @@ class CatChannelNode(ChannelNode):
     """A CatChannelNode cat all input channels."""
 
     def channel_forward(self, *in_channel_tensors: ChannelTensor):
-        BaseChannelUnit.union_two_groups(
+        BaseChannelUnit.union_two_units(
             self.in_channel_tensor.group_list[0],
             self.out_channel_tensor.group_list[0])
         num_ch = []
@@ -216,13 +216,13 @@ class CatChannelNode(ChannelNode):
             for start, end in in_ch_tensor.group_dict:
                 num_ch.append(end - start)
 
-        split_groups = BaseChannelUnit.split_group(
+        split_units = BaseChannelUnit.split_group(
             self.in_channel_tensor.group_list[0], num_ch)
 
         i = 0
         for in_ch_tensor in in_channel_tensors:
             for in_group in in_ch_tensor.group_dict.values():
-                BaseChannelUnit.union_two_groups(split_groups[i], in_group)
+                BaseChannelUnit.union_two_units(split_units[i], in_group)
                 i += 1
 
     @property

@@ -13,7 +13,7 @@ class SlimmableChannelMutator(ChannelMutator[SlimmableChannelUnit]):
 
     Args:
         channel_unit_cfg (Dict): The config of ChannelUnits. Defaults to
-            dict( type='SlimmableChannelUnit', groups={}).
+            dict( type='SlimmableChannelUnit', units={}).
         parse_cfg (Dict): The config of the tracer to parse the model.
             Defaults to dict( type='BackwardTracer',
                 loss_calculator=dict(type='ImageClassifierPseudoLoss')).
@@ -23,7 +23,7 @@ class SlimmableChannelMutator(ChannelMutator[SlimmableChannelUnit]):
 
     def __init__(self,
                  channel_unit_cfg=dict(
-                     type='SlimmableChannelUnit', groups={}),
+                     type='SlimmableChannelUnit', units={}),
                  parse_cfg=dict(
                      type='BackwardTracer',
                      loss_calculator=dict(type='ImageClassifierPseudoLoss')),
@@ -31,7 +31,7 @@ class SlimmableChannelMutator(ChannelMutator[SlimmableChannelUnit]):
 
         super().__init__(channel_unit_cfg, parse_cfg, init_cfg)
 
-        self.subnets = self._prepare_subnets(self.groups_cfg)
+        self.subnets = self._prepare_subnets(self.units_cfg)
 
     # private methods
 
@@ -39,7 +39,7 @@ class SlimmableChannelMutator(ChannelMutator[SlimmableChannelUnit]):
         """Prepare subnet config.
 
         Args:
-            group_cfg (Dict[str, Dict[str]]): Config of the groups.
+            group_cfg (Dict[str, Dict[str]]): Config of the units.
                 group_cfg follows the below template:
                     {
                         'xx_group_name':{
