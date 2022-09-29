@@ -3,7 +3,7 @@ from .base_mutable import BaseMutable
 from .derived_mutable import DerivedMutable
 from .mutable_channel import (BaseMutableChannel, MutableChannelContainer,
                               SimpleMutableChannel, SquentialMutableChannel)
-from .mutable_channel.groups import (ChannelGroupType, L1MutableChannelGroup,
+from .mutable_channel.units import (ChannelGroupType, L1MutableChannelGroup,
                                      MutableChannelGroup,
                                      OneShotMutableChannelGroup,
                                      SequentialMutableChannelGroup,

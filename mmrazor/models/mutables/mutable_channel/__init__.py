@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .base_mutable_channel import BaseMutableChannel
-from .groups import (ChannelGroupType, L1MutableChannelGroup,
+from .units import (ChannelGroupType, L1MutableChannelGroup,
                      MutableChannelGroup, OneShotMutableChannelGroup,
                      SequentialMutableChannelGroup, SlimmableChannelGroup)
 from .mutable_channel_container import MutableChannelContainer
