@@ -418,9 +418,8 @@ class Icep(nn.Module):
 class ExpandLineModel(Module):
     """
         x
-        |net0,net1
-        |net2
-        |net3
+        |net0,net1,net2
+        |net3,net4
         x1
         |fc
         output
@@ -574,14 +573,19 @@ class DynamicLinearModel(nn.Module):
         mutable2 = SampleOneshotMutableChannel(16, choices=[2, 8, 16])
         mutable_value = SampleExpandDerivedMutable(1)
 
-        register_mutable(self.net[0], mutable1, True)
-        register_mutable(self.net[1], mutable1.expand_mutable_channel(1), True,
-                         0, 8)
-        register_mutable(self.net[3], mutable_value * mutable1, False, 0, 8)
+        MutableChannelContainer.register_mutable_channel_to_module(
+            self.net[0], mutable1, True)
+        MutableChannelContainer.register_mutable_channel_to_module(
+            self.net[1], mutable1.expand_mutable_channel(1), True, 0, 8)
+        MutableChannelContainer.register_mutable_channel_to_module(
+            self.net[3], mutable_value * mutable1, False, 0, 8)
 
-        register_mutable(self.net[3], mutable2, True)
-        register_mutable(self.net[4], mutable2, True)
-        register_mutable(self.linear, mutable2, False)
+        MutableChannelContainer.register_mutable_channel_to_module(
+            self.net[3], mutable2, True)
+        MutableChannelContainer.register_mutable_channel_to_module(
+            self.net[4], mutable2, True)
+        MutableChannelContainer.register_mutable_channel_to_module(
+            self.linear, mutable2, False)
 
 
 default_models = [

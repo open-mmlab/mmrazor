@@ -274,6 +274,10 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
 
     def _prepare_from_tracer(self, model: Module, parse_cfg: Dict):
         """Initialize groups using a tracer."""
+        if 'num_input_channel' in parse_cfg:
+            num_input_channel = parse_cfg.pop('num_input_channel')
+        else:
+            num_input_channel = 3
         if self.parse_cfg['type'] == 'BackwardTracer':
             graph = ModuleGraph.init_from_backward_tracer(model, parse_cfg)
         elif self.parse_cfg['type'] == 'RazorFxTracer':
@@ -282,7 +286,8 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
             raise NotImplementedError()
         self._graph = graph
         # get ChannelGroups
-        groups = ChannelGroup.init_from_graph(graph)
+        groups = ChannelGroup.init_from_graph(
+            graph, num_input_channel=num_input_channel)
         # convert to MutableChannelGroups
         groups = self._convert_channel_group_to_mutable(groups)
         return groups
@@ -297,6 +302,10 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
         assert isinstance(config, dict)
         groups = []
         for group_key in config:
+            init_args = copy.deepcopy(self.group_default_args)
+            if 'init_args' in config[group_key]:
+                init_args.update(config[group_key]['init_args'])
+            config[group_key]['init_args'] = init_args
             group = self.group_class.init_from_cfg(model, config[group_key])
             groups.append(group)
         return groups
@@ -337,11 +346,17 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
                 if is_output:
                     group.add_ouptut_related(
                         Channel(
-                            module_name, module, index, out_related=is_output))
+                            module_name,
+                            module,
+                            index,
+                            is_output_channel=is_output))
                 else:
                     group.add_input_related(
                         Channel(
-                            module_name, module, index, out_related=is_output))
+                            module_name,
+                            module,
+                            index,
+                            is_output_channel=is_output))
 
         mutable2groups: Dict = {}
         for name, module in model.named_modules():

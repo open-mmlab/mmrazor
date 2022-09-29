@@ -51,7 +51,7 @@ class SlimmableChannelGroup(OneShotMutableChannelGroup):
         self._register_channel_container(model, MutableChannelContainer)
         self._register_mutable_channel(self.mutable_channel)
 
-    def alter_candidates_of_switchbn(self, candidates):
+    def alter_candidates_of_switchbn(self, candidates: List):
         """Change candidates of SwitchableBatchNorm2d."""
         # avoid circular import for python 3.6.9
         import mmrazor.models.architectures.dynamic_ops as dynamic_ops
