@@ -155,6 +155,7 @@ class Dsnas(BaseAlgorithm):
             log_vars = dict()
             self.message_hub = MessageHub.get_current_instance()
             cur_epoch = self.message_hub.get_info('epoch')
+            need_update_mutator = self.need_update_mutator(cur_epoch)
 
             # TODO process the input
             if cur_epoch == self.finetune_epochs and self.is_supernet:
@@ -174,13 +175,13 @@ class Dsnas(BaseAlgorithm):
             supernet_losses, supernet_log_vars = self.parse_losses(
                 supernet_loss)
             optim_wrapper['architecture'].backward(
-                supernet_losses, retain_graph=self.update_mutator(cur_epoch))
+                supernet_losses, retain_graph=need_update_mutator)
             optim_wrapper['architecture'].step()
             optim_wrapper['architecture'].zero_grad()
             log_vars.update(add_prefix(supernet_log_vars, 'supernet'))
 
             # 2. update mutator
-            if self.update_mutator(cur_epoch):
+            if need_update_mutator:
                 with optim_wrapper['mutator'].optim_context(self):
                     mutator_loss = self.compute_mutator_loss()
                 mutator_losses, mutator_log_vars = \
@@ -216,7 +217,7 @@ class Dsnas(BaseAlgorithm):
 
         return mutable_module_resources
 
-    def update_mutator(self, cur_epoch: int) -> bool:
+    def need_update_mutator(self, cur_epoch: int) -> bool:
         """Whether to update mutator."""
         if cur_epoch >= self.pretrain_epochs and \
            cur_epoch < self.finetune_epochs:
@@ -296,6 +297,7 @@ class DsnasDDP(MMDistributedDataParallel):
             log_vars = dict()
             self.message_hub = MessageHub.get_current_instance()
             cur_epoch = self.message_hub.get_info('epoch')
+            need_update_mutator = self.module.need_update_mutator(cur_epoch)
 
             # TODO process the input
             if cur_epoch == self.module.finetune_epochs and \
@@ -316,14 +318,13 @@ class DsnasDDP(MMDistributedDataParallel):
             supernet_losses, supernet_log_vars = self.module.parse_losses(
                 supernet_loss)
             optim_wrapper['architecture'].backward(
-                supernet_losses,
-                retain_graph=self.module.update_mutator(cur_epoch))
+                supernet_losses, retain_graph=need_update_mutator)
             optim_wrapper['architecture'].step()
             optim_wrapper['architecture'].zero_grad()
             log_vars.update(add_prefix(supernet_log_vars, 'supernet'))
 
             # 2. update mutator
-            if self.module.update_mutator(cur_epoch):
+            if need_update_mutator:
                 with optim_wrapper['mutator'].optim_context(self):
                     mutator_loss = self.module.compute_mutator_loss()
                 mutator_losses, mutator_log_vars = \
