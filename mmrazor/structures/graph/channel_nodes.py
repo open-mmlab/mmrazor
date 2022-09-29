@@ -188,7 +188,7 @@ class BindChannelNode(PassChannelNode):
     def channel_forward(self, *in_channel_tensor: ChannelTensor):
         """Channel forward."""
         assert len(in_channel_tensor) > 1
-        #  align channel_list
+        #  align channel_tensors
         ChannelTensor.align_tensors(*in_channel_tensor)
 
         # union tensors
