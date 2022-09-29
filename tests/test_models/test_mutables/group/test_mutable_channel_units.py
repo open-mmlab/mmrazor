@@ -84,20 +84,20 @@ class TestMutableChannelUnit(TestCase):
         graph = ModuleGraph.init_from_backward_tracer(model)
         units: List[ChannelUnit] = ChannelUnit.init_from_graph(graph)
         mutable_units = [
-            DefaultChannelUnit.init_from_channel_unit(group)
-            for group in units
+            DefaultChannelUnit.init_from_channel_unit(unit)
+            for unit in units
         ]
         self._test_units(mutable_units, model)
 
     def _test_units(self, units: List[MutableChannelUnit], model):
-        for group in units:
-            group.prepare_for_pruning(model)
-        mutable_units = [group for group in units if group.is_mutable]
+        for unit in units:
+            unit.prepare_for_pruning(model)
+        mutable_units = [unit for unit in units if unit.is_mutable]
         self.assertGreaterEqual(len(mutable_units), 1)
-        for group in mutable_units:
-            choice = group.sample_choice()
-            group.current_choice = choice
-            self.assertAlmostEqual(group.current_choice, choice, delta=0.1)
+        for unit in mutable_units:
+            choice = unit.sample_choice()
+            unit.current_choice = choice
+            self.assertAlmostEqual(unit.current_choice, choice, delta=0.1)
         x = torch.rand([2, 3, 224, 224]).to(DEVICE)
         y = model(x)
         self.assertSequenceEqual(y.shape, [2, 1000])
@@ -118,15 +118,15 @@ class TestMutableChannelUnit(TestCase):
     def test_replace_with_dynamic_ops(self):
         model_datas = TestGraph.backward_tracer_passed_models()
         for model_data in model_datas:
-            for group_type in GROUPS:
-                with self.subTest(model=model_data, group=group_type):
+            for unit_type in GROUPS:
+                with self.subTest(model=model_data, unit=unit_type):
                     model: nn.Module = model_data()
                     graph = ModuleGraph.init_from_fx_tracer(model)
                     units: List[
-                        MutableChannelUnit] = group_type.init_from_graph(
+                        MutableChannelUnit] = unit_type.init_from_graph(
                             graph)
-                    for group in units:
-                        group.prepare_for_pruning(model)
+                    for unit in units:
+                        unit.prepare_for_pruning(model)
 
                     for module in model.modules():
                         if isinstance(module, nn.Conv2d)\

@@ -35,8 +35,8 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
                     # default args for MutableChananelGroup
                     default_args={},
                     units = {
-                        # config of a group
-                        "xxx_group_name": {},
+                        # config of a unit
+                        "xxx_unit_name": {},
                         ...
                     }
                 ),
@@ -58,7 +58,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
         get MutableChannelUnits.
         1. Using tracer. It needs parse_cfg to be the config of a tracer.
         2. Using config. When parse_cfg['type']='Config'. It needs that
-        channel_unit_cfg['group']['xxx_group_name] has a key 'channels'.
+        channel_unit_cfg['unit']['xxx_unit_name] has a key 'channels'.
         3. Using the model with pre-defined dynamic-ops and mutablechannels:
         When parse_cfg['type']='Predefined'.
     """
@@ -85,12 +85,12 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
         self.parse_cfg = parse_cfg
 
         # units
-        self._name2group: Dict[str, ChannelUnitType] = {}
+        self._name2unit: Dict[str, ChannelUnitType] = {}
         self.units: List[ChannelUnitType] = []
 
-        # group config
+        # unit config
         self.channel_unit_cfg = channel_unit_cfg
-        self.group_class, self.group_default_args, self.units_cfg = \
+        self.unit_class, self.unit_default_args, self.units_cfg = \
             self._parse_channel_unit_cfg(
                 channel_unit_cfg)
 
@@ -99,7 +99,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
 
         It includes two steps:
         1. parse the model and get MutableChannelUnits.
-        2. call group.prepare_for_pruning for each group.
+        2. call unit.prepare_for_pruning for each unit.
         """
 
         self._name2module = dict(supernet.named_modules())
@@ -113,9 +113,9 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
         else:
             raise NotImplementedError()
 
-        for group in units:
-            group.prepare_for_pruning(supernet)
-            self._name2group[group.name] = group
+        for unit in units:
+            unit.prepare_for_pruning(supernet)
+            self._name2unit[unit.name] = unit
         self.units = units
 
     # ~
@@ -123,18 +123,18 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
     @property
     def mutable_units(self) -> List[ChannelUnitType]:
         """Prunable units."""
-        return [group for group in self.units if group.is_mutable]
+        return [unit for unit in self.units if unit.is_mutable]
 
     def config_template(self,
                         only_mutable_units=False,
-                        with_group_init_args=False,
+                        with_unit_init_args=False,
                         with_channels=False):
         """Config template of the mutator.
 
         Args:
             only_mutable_units (bool, optional): If only return config of
                 prunable units. Defaults to False.
-            with_group_init_args (bool, optional): If return init_args of
+            with_unit_init_args (bool, optional): If return init_args of
                 units. Defaults to False.
             with_channels (bool, optional): if return channel info.
                 Defaults to False.
@@ -148,9 +148,9 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
                     default_args={},
                     # config of units
                     units = {
-                        # config of a group
-                        "xxx_group_name": {
-                            'init_args':{}, # if with_group_init_args
+                        # config of a unit
+                        "xxx_unit_name": {
+                            'init_args':{}, # if with_unit_init_args
                             'channels':{} # if with_channels
                         },
                         ...
@@ -161,23 +161,23 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
             )
 
 
-        About the detail of the config of each group, please refer to
+        About the detail of the config of each unit, please refer to
         MutableChannelUnit.config_template()
         """
         # template of units
         units = self.mutable_units if only_mutable_units else self.units
         units_template = {}
-        for group in units:
-            units_template[group.name] = group.config_template(
-                with_init_args=with_group_init_args,
+        for unit in units:
+            units_template[unit.name] = unit.config_template(
+                with_init_args=with_unit_init_args,
                 with_channels=with_channels)
 
         # template of mutator
         template = dict(
             type=str(self.__class__.__name__),
             channel_unit_cfg=dict(
-                type=str(self.group_class.__name__),
-                default_args=self.group_default_args,
+                type=str(self.unit_class.__name__),
+                default_args=self.unit_default_args,
                 units=units_template),
             parse_cfg=self.parse_cfg)
 
@@ -185,8 +185,8 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
 
     def fix_channel_mutables(self):
         """Fix ChannelMutables."""
-        for group in self.units:
-            group.fix_chosen()
+        for unit in self.units:
+            unit.fix_chosen()
 
     # choice manage
 
@@ -194,21 +194,21 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
     def current_choices(self) -> Dict:
         """Get current choices."""
         config = self.choice_template
-        for group in self.mutable_units:
-            config[group.name] = group.current_choice
+        for unit in self.mutable_units:
+            config[unit.name] = unit.current_choice
         return config
 
     def set_choices(self, config: Dict[str, Union[int, float]]):
         """Set choices."""
         for name, choice in config.items():
-            group = self._name2group[name]
-            group.current_choice = choice
+            unit = self._name2unit[name]
+            unit.current_choice = choice
 
     def sample_choices(self) -> Dict[str, Union[int, float]]:
         """Sample choices(pruning structure)."""
         template = self.choice_template
         for key in template:
-            template[key] = self._name2group[key].sample_choice()
+            template[key] = self._name2unit[key].sample_choice()
         return template
 
     @property
@@ -217,36 +217,36 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
 
         Example:
             {
-                'xxx_group_name': xx_choice_value,
+                'xxx_unit_name': xx_choice_value,
                 ...
             }
         """
         template = {}
-        for group in self.mutable_units:
-            template[group.name] = group.current_choice
+        for unit in self.mutable_units:
+            template[unit.name] = unit.current_choice
         return template
 
     # implementation of abstract functions
 
     def search_groups(self) -> Dict:
-        return self._name2group
+        return self._name2unit
 
     def mutable_class_type(self) -> Type[ChannelUnitType]:
-        return self.group_class
+        return self.unit_class
 
     # private methods
 
     def _convert_channel_unit_to_mutable(self, units: List[ChannelUnit]):
         """Convert ChannelUnits to MutableChannelUnits."""
         mutable_units = []
-        for group in units:
-            args = copy.copy(self.group_default_args)
-            if group.name in self.units_cfg and \
-                    'init_args' in self.units_cfg[group.name]:
-                args = self.units_cfg[group.name]['init_args']
-            mutable_group = self.group_class.init_from_channel_unit(
-                group, args)
-            mutable_units.append(mutable_group)
+        for unit in units:
+            args = copy.copy(self.unit_default_args)
+            if unit.name in self.units_cfg and \
+                    'init_args' in self.units_cfg[unit.name]:
+                args = self.units_cfg[unit.name]['init_args']
+            mutable_unit = self.unit_class.init_from_channel_unit(
+                unit, args)
+            mutable_units.append(mutable_unit)
         return mutable_units
 
     def _parse_channel_unit_cfg(
@@ -254,23 +254,23 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
             channel_unit_cfg) -> Tuple[Type[ChannelUnitType], Dict, Dict]:
         """Parse channel_unit_cfg."""
         if isinstance(channel_unit_cfg, dict):
-            group_class = MODELS.module_dict[channel_unit_cfg['type']]
+            unit_class = MODELS.module_dict[channel_unit_cfg['type']]
 
-            default_group_args = channel_unit_cfg[
+            default_unit_args = channel_unit_cfg[
                 'default_args'] if 'default_args' in channel_unit_cfg else {}
 
-            group_init_cfg = channel_unit_cfg[
+            unit_init_cfg = channel_unit_cfg[
                 'units'] if 'units' in channel_unit_cfg else {}
-            if isinstance(group_init_cfg, str):
+            if isinstance(unit_init_cfg, str):
                 # load config file
-                group_init_cfg = fileio.load(group_init_cfg)
+                unit_init_cfg = fileio.load(unit_init_cfg)
         elif issubclass(channel_unit_cfg, MutableChannelUnit):
-            group_class = channel_unit_cfg
-            default_group_args = {}
-            group_init_cfg = {}
+            unit_class = channel_unit_cfg
+            default_unit_args = {}
+            unit_init_cfg = {}
         else:
             raise NotImplementedError()
-        return group_class, default_group_args, group_init_cfg
+        return unit_class, default_unit_args, unit_init_cfg
 
     def _prepare_from_tracer(self, model: Module, parse_cfg: Dict):
         """Initialize units using a tracer."""
@@ -301,13 +301,13 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
             config = fileio.load(config)
         assert isinstance(config, dict)
         units = []
-        for group_key in config:
-            init_args = copy.deepcopy(self.group_default_args)
-            if 'init_args' in config[group_key]:
-                init_args.update(config[group_key]['init_args'])
-            config[group_key]['init_args'] = init_args
-            group = self.group_class.init_from_cfg(model, config[group_key])
-            units.append(group)
+        for unit_key in config:
+            init_args = copy.deepcopy(self.unit_default_args)
+            if 'init_args' in config[unit_key]:
+                init_args.update(config[unit_key]['init_args'])
+            config[unit_key]['init_args'] = init_args
+            unit = self.unit_class.init_from_cfg(model, config[unit_key])
+            units.append(unit)
         return units
 
     def _prepare_from_predefined_model(self, model: Module):
@@ -333,25 +333,25 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
                     mutable = list(source_channel_mutables)[0]
 
                 if mutable not in mutable2units:
-                    if hasattr(self.group_class, 'init_from_mutable_channel'):
+                    if hasattr(self.unit_class, 'init_from_mutable_channel'):
                         mutable2units[
                             mutable] = \
-                                self.group_class.init_from_mutable_channel(
+                                self.unit_class.init_from_mutable_channel(
                                 mutable)
                     else:
-                        mutable2units[mutable] = self.group_class(
-                            mutable.num_channels, **self.group_default_args)
+                        mutable2units[mutable] = self.unit_class(
+                            mutable.num_channels, **self.unit_default_args)
 
-                group: MutableChannelUnit = mutable2units[mutable]
+                unit: MutableChannelUnit = mutable2units[mutable]
                 if is_output:
-                    group.add_ouptut_related(
+                    unit.add_ouptut_related(
                         Channel(
                             module_name,
                             module,
                             index,
                             is_output_channel=is_output))
                 else:
-                    group.add_input_related(
+                    unit.add_input_related(
                         Channel(
                             module_name,
                             module,
@@ -371,12 +371,12 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
                                   False)
                 process_container(out_container, module, name, mutable2units,
                                   True)
-        for mutable, group in mutable2units.items():
+        for mutable, unit in mutable2units.items():
             if isinstance(mutable, DerivedMutable):
                 continue
             else:
-                group.mutable_channel = mutable
+                unit.mutable_channel = mutable
         units = list(mutable2units.values())
-        for group in units:
-            self._name2group[group.name] = group
+        for unit in units:
+            self._name2unit[unit.name] = unit
         return units

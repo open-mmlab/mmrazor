@@ -30,10 +30,10 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
         for node in self.topo_traverse():
             node.register_channel_to_units()
         for node in self.topo_traverse():
-            for group in node.in_channel_tensor.group_list + \
-                    node.out_channel_tensor.group_list:
-                if group not in units:
-                    units.append(group)
+            for unit in node.in_channel_tensor.unit_list + \
+                    node.out_channel_tensor.unit_list:
+                if unit not in units:
+                    units.append(unit)
         return units
 
     def forward(self, num_input_channel=3):
@@ -50,7 +50,7 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
                 node.forward()
 
     def _merge_same_module(self):
-        """Union all nodes with the same module to the same group."""
+        """Union all nodes with the same module to the same unit."""
         module2node: Dict[Module, List[ChannelNode]] = dict()
         for node in self:
             if isinstance(node.val, Module):

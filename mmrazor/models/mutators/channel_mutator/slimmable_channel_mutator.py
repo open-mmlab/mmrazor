@@ -35,20 +35,20 @@ class SlimmableChannelMutator(ChannelMutator[SlimmableChannelUnit]):
 
     # private methods
 
-    def _prepare_subnets(self, group_cfg: Dict) -> List[Dict[str, int]]:
+    def _prepare_subnets(self, unit_cfg: Dict) -> List[Dict[str, int]]:
         """Prepare subnet config.
 
         Args:
-            group_cfg (Dict[str, Dict[str]]): Config of the units.
-                group_cfg follows the below template:
+            unit_cfg (Dict[str, Dict[str]]): Config of the units.
+                unit_cfg follows the below template:
                     {
-                        'xx_group_name':{
+                        'xx_unit_name':{
                             'init_args':{
                                 'candidate_choices':[c1,c2,c3...],...
                             },...
                         },...
                     }
-                Every group must have the same number of candidate_choices, and
+                Every unit must have the same number of candidate_choices, and
                 the candidate in the list of candidate_choices with the same
                 position compose a subnet.
 
@@ -58,16 +58,16 @@ class SlimmableChannelMutator(ChannelMutator[SlimmableChannelUnit]):
         """Prepare subnet config."""
         subnets: List[Dict[str, int]] = []
         num_subnets = 0
-        for key in group_cfg:
-            num_subnets = len(group_cfg[key]['init_args']['candidate_choices'])
+        for key in unit_cfg:
+            num_subnets = len(unit_cfg[key]['init_args']['candidate_choices'])
             break
         for _ in range(num_subnets):
             subnets.append({})
-        for key in group_cfg:
+        for key in unit_cfg:
             assert num_subnets == len(
-                group_cfg[key]['init_args']['candidate_choices'])
+                unit_cfg[key]['init_args']['candidate_choices'])
             for i, value in enumerate(
-                    group_cfg[key]['init_args']['candidate_choices']):
+                    unit_cfg[key]['init_args']['candidate_choices']):
                 subnets[i][key] = value
 
         return subnets

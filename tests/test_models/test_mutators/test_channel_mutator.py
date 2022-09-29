@@ -64,12 +64,12 @@ class TestChannelMutator(unittest.TestCase):
         data_models = TestGraph.backward_tracer_passed_models()
 
         for data_model in data_models[:1]:
-            for group_type in DATA_GROUPSS:
-                with self.subTest(model=data_model, unit=group_type):
+            for unit_type in DATA_GROUPSS:
+                with self.subTest(model=data_model, unit=unit_type):
 
                     model = data_model()
 
-                    mutator = ChannelMutator(channel_unit_cfg=group_type)
+                    mutator = ChannelMutator(channel_unit_cfg=unit_type)
                     mutator.prepare_from_supernet(model)
                     mutator.units
 
@@ -93,7 +93,7 @@ class TestChannelMutator(unittest.TestCase):
         mutator = ChannelMutator()
         mutator.prepare_from_supernet(model1)
         config = mutator.config_template(
-            with_channels=True, with_group_init_args=True)
+            with_channels=True, with_unit_init_args=True)
 
         # test passing config
         model2 = copy.deepcopy(model)
@@ -111,12 +111,12 @@ class TestChannelMutator(unittest.TestCase):
         model0 = copy.deepcopy(model)
         mutator0 = ChannelMutator()
         mutator0.prepare_from_supernet(model0)
-        config = mutator0.config_template(with_group_init_args=True)
+        config = mutator0.config_template(with_unit_init_args=True)
 
         model1 = copy.deepcopy(model)
         mutator1 = MODELS.build(config)
         mutator1.prepare_from_supernet(model1)
-        config1 = mutator1.config_template(with_group_init_args=True)
+        config1 = mutator1.config_template(with_unit_init_args=True)
 
         self.assertDictEqual(config1, config)
         self._test_a_mutator(mutator1, model1)

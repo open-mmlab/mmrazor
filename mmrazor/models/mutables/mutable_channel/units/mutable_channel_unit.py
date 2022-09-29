@@ -39,7 +39,7 @@ class MutableChannelUnit(ChannelUnit):
 
         Args:
             num_channels (int): dimension of the channels of the Channel
-            objects in the group.
+            objects in the unit.
         """
 
         super().__init__(num_channels)
@@ -48,7 +48,7 @@ class MutableChannelUnit(ChannelUnit):
 
     @property
     def is_mutable(self) -> bool:
-        """If the channel-group is prunable."""
+        """If the channel-unit is prunable."""
 
         def traverse(channels: List[Channel]):
             has_dynamic_op = False
@@ -75,7 +75,7 @@ class MutableChannelUnit(ChannelUnit):
     def config_template(self,
                         with_init_args=False,
                         with_channels=False) -> Dict:
-        """Return the config template of this group. By default, the config
+        """Return the config template of this unit. By default, the config
         template only includes a key 'choice'.
 
         Args:
@@ -103,7 +103,7 @@ class MutableChannelUnit(ChannelUnit):
 
     @property
     def current_choice(self):
-        """Choice of this group."""
+        """Choice of this unit."""
         raise NotImplementedError()
 
     @current_choice.setter
@@ -119,7 +119,7 @@ class MutableChannelUnit(ChannelUnit):
     # after pruning
 
     def fix_chosen(self, choice=None):
-        """Make the channels in this group fixed."""
+        """Make the channels in this unit fixed."""
         if choice is not None:
             self.current_choice = choice
 

@@ -30,7 +30,7 @@ class L1MutableChannelUnit(SequentialMutableChannelUnit):
 
     def _generate_mask(self, choice: int) -> torch.Tensor:
         """Generate mask using choice."""
-        norm = self._get_group_norm()
+        norm = self._get_unit_norm()
         idx = norm.topk(choice)[1]
         mask = torch.zeros([self.num_channels]).to(idx.device)
         mask.scatter_(0, idx, 1)
@@ -47,9 +47,9 @@ class L1MutableChannelUnit(SequentialMutableChannelUnit):
         norm = weight.abs().mean(dim=[1])
         return norm
 
-    def _get_group_norm(self):
-        """Get l1-norm of the group by averaging the l1-norm of the moduls in
-        the group."""
+    def _get_unit_norm(self):
+        """Get l1-norm of the unit by averaging the l1-norm of the moduls in
+        the unit."""
         avg_norm = 0
         module_num = 0
         for channel in self.output_related:

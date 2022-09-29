@@ -72,30 +72,30 @@ class ChannelNode(ModuleNode):
         """Forward with ChannelTensors."""
         assert len(channel_tensors) == 1, f'{len(channel_tensors)}'
         BaseChannelUnit.union_two_units(
-            list(self.in_channel_tensor.group_dict.values())[0],
-            list(channel_tensors[0].group_dict.values())[0])
+            list(self.in_channel_tensor.unit_dict.values())[0],
+            list(channel_tensors[0].unit_dict.values())[0])
 
         if self.in_channels == self.out_channels:
             BaseChannelUnit.union_two_units(
-                self.in_channel_tensor.group_list[0],
-                self.out_channel_tensor.group_list[0])
+                self.in_channel_tensor.unit_list[0],
+                self.out_channel_tensor.unit_list[0])
 
-    # register group
+    # register unit
 
     def register_channel_to_units(self):
         """Register the module of this node to corresponding units."""
         name = self.module_name if isinstance(self.val,
                                               nn.Module) else self.name
-        for index, group in self.in_channel_tensor.group_dict.items():
+        for index, unit in self.in_channel_tensor.unit_dict.items():
             channel = BaseChannel(name, self.val, index, None, False,
                                   self.expand_ratio)
-            if channel not in group.input_related:
-                group.input_related.append(channel)
-        for index, group in self.out_channel_tensor.group_dict.items():
+            if channel not in unit.input_related:
+                unit.input_related.append(channel)
+        for index, unit in self.out_channel_tensor.unit_dict.items():
             channel = BaseChannel(name, self.val, index, None, True,
                                   self.expand_ratio)
-            if channel not in group.output_related:
-                group.output_related.append(channel)
+            if channel not in unit.output_related:
+                unit.output_related.append(channel)
 
     # channels
 
@@ -120,7 +120,7 @@ class PassChannelNode(ChannelNode):
     channels.
 
     Besides, the corresponding input channels and output channels belong to one
-    channel group. Such as  BatchNorm, Relu.
+    channel unit. Such as  BatchNorm, Relu.
     """
 
     def channel_forward(self, *in_channel_tensor: ChannelTensor):
@@ -183,7 +183,7 @@ class MixChannelNode(ChannelNode):
 
 class BindChannelNode(PassChannelNode):
     """A BindChannelNode has multiple inputs, and all input channels belong to
-    the same channel group."""
+    the same channel unit."""
 
     def channel_forward(self, *in_channel_tensor: ChannelTensor):
         """Channel forward."""
@@ -193,7 +193,7 @@ class BindChannelNode(PassChannelNode):
 
         # union tensors
         node_units = [
-            channel_lis.group_dict for channel_lis in in_channel_tensor
+            channel_lis.unit_dict for channel_lis in in_channel_tensor
         ]
         for key in node_units[0]:
             BaseChannelUnit.union_units(
@@ -209,20 +209,20 @@ class CatChannelNode(ChannelNode):
 
     def channel_forward(self, *in_channel_tensors: ChannelTensor):
         BaseChannelUnit.union_two_units(
-            self.in_channel_tensor.group_list[0],
-            self.out_channel_tensor.group_list[0])
+            self.in_channel_tensor.unit_list[0],
+            self.out_channel_tensor.unit_list[0])
         num_ch = []
         for in_ch_tensor in in_channel_tensors:
-            for start, end in in_ch_tensor.group_dict:
+            for start, end in in_ch_tensor.unit_dict:
                 num_ch.append(end - start)
 
-        split_units = BaseChannelUnit.split_group(
-            self.in_channel_tensor.group_list[0], num_ch)
+        split_units = BaseChannelUnit.split_unit(
+            self.in_channel_tensor.unit_list[0], num_ch)
 
         i = 0
         for in_ch_tensor in in_channel_tensors:
-            for in_group in in_ch_tensor.group_dict.values():
-                BaseChannelUnit.union_two_units(split_units[i], in_group)
+            for in_unit in in_ch_tensor.unit_dict.values():
+                BaseChannelUnit.union_two_units(split_units[i], in_unit)
                 i += 1
 
     @property

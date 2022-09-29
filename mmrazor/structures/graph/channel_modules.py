@@ -82,45 +82,45 @@ class BaseChannelUnit:
     def add_channel_elem(self, channel_elem: 'ChannelElement', index):
         """Add a ChannelElement to the BaseChannelUnit."""
         self._add_channel_info(channel_elem, index)
-        if channel_elem.group is not None:
-            channel_elem.remove_from_group()
-        channel_elem._register_group(self, index)
+        if channel_elem.unit is not None:
+            channel_elem.remove_from_unit()
+        channel_elem._register_unit(self, index)
 
-    # group operations
+    # unit operations
 
     @classmethod
     def union_units(cls, units: List['BaseChannelUnit']):
         """Union units."""
         assert len(units) > 1
-        union_group = units[0]
+        union_unit = units[0]
 
-        for group in units[1:]:
-            union_group = BaseChannelUnit.union_two_units(union_group, group)
-        return union_group
+        for unit in units[1:]:
+            union_unit = BaseChannelUnit.union_two_units(union_unit, unit)
+        return union_unit
 
     @classmethod
-    def union_two_units(cls, group1: 'BaseChannelUnit',
-                         group2: 'BaseChannelUnit'):
+    def union_two_units(cls, unit1: 'BaseChannelUnit',
+                         unit2: 'BaseChannelUnit'):
         """Union two units."""
-        if group1 is group2:
-            return group1
+        if unit1 is unit2:
+            return unit1
         else:
-            assert len(group1) == len(group2)
-            for i in group1:
-                for channel_elem in copy.copy(group2[i]):
-                    group1.add_channel_elem(channel_elem, i)
-            return group1
+            assert len(unit1) == len(unit2)
+            for i in unit1:
+                for channel_elem in copy.copy(unit2[i]):
+                    unit1.add_channel_elem(channel_elem, i)
+            return unit1
 
     @classmethod
-    def split_group(cls, group: 'BaseChannelUnit', nums: List[int]):
-        """Split a group to multiple units."""
+    def split_unit(cls, unit: 'BaseChannelUnit', nums: List[int]):
+        """Split a unit to multiple units."""
         new_units = []
         if len(nums) == 1:
-            return [group]
-        assert sum(nums) == len(group)
+            return [unit]
+        assert sum(nums) == len(unit)
         for num in nums:
-            new_group = group._split_a_new_group(list(range(0, num)))
-            new_units.append(new_group)
+            new_unit = unit._split_a_new_unit(list(range(0, num)))
+            new_units.append(new_unit)
         return new_units
 
     # private methods
@@ -131,22 +131,22 @@ class BaseChannelUnit:
 
     def _add_channel_info(self, channel_elem: 'ChannelElement', index):
         """Add the info of a ChannelElemnt."""
-        assert channel_elem.group is not self
+        assert channel_elem.unit is not self
         if index not in self.channel_elems:
             self.channel_elems[index] = []
         self.channel_elems[index].append(channel_elem)
 
-    def _split_a_new_group(self, indexes: List[int]):
-        """Split a part of the group to a new group."""
-        new_group = BaseChannelUnit()
+    def _split_a_new_unit(self, indexes: List[int]):
+        """Split a part of the unit to a new unit."""
+        new_unit = BaseChannelUnit()
         j = 0
         for i in indexes:
             for channel_elem in copy.copy(self[i]):
-                new_group.add_channel_elem(channel_elem, j)
+                new_unit.add_channel_elem(channel_elem, j)
             self.channel_elems.pop(i)
             j += 1
         self._reindex()
-        return new_group
+        return new_unit
 
     def _reindex(self):
         """Re-index the owning ChannelElements."""
@@ -157,8 +157,8 @@ class BaseChannelUnit:
             else:
                 if j < i:
                     for channel_elem in copy.copy(self.channel_elems[i]):
-                        if channel_elem.group is not None:
-                            channel_elem.remove_from_group()
+                        if channel_elem.unit is not None:
+                            channel_elem.remove_from_unit()
                         self.add_channel_elem(channel_elem, j)
                     self.channel_elems.pop(i)
                     j += 1
@@ -216,25 +216,25 @@ class ChannelElement:
 
         self.index_in_channel_tensor = index_in_tensor
 
-        self.group: Union[BaseChannelUnit, None] = None
-        self.index_in_group = -1
+        self.unit: Union[BaseChannelUnit, None] = None
+        self.index_in_unit = -1
 
-    def remove_from_group(self):
+    def remove_from_unit(self):
         """Remove the ChannelElement from its owning BaseChannelUnit."""
-        self.group._clean_channel_info(self, self.index_in_group)
-        self._clean_group_info()
+        self.unit._clean_channel_info(self, self.index_in_unit)
+        self._clean_unit_info()
 
     # private methods
 
-    def _register_group(self, group, index):
+    def _register_unit(self, unit, index):
         """Register the ChannelElement to a BaseChannelUnit."""
-        self.group = group
-        self.index_in_group = index
+        self.unit = unit
+        self.index_in_unit = index
 
-    def _clean_group_info(self):
-        """Clean the group info in the ChannelElement."""
-        self.group = None
-        self.index_in_group = -1
+    def _clean_unit_info(self):
+        """Clean the unit info in the ChannelElement."""
+        self.unit = None
+        self.index_in_unit = -1
 
 
 class ChannelTensor:
@@ -247,56 +247,56 @@ class ChannelTensor:
 
     def __init__(self, num_channel_elems: int) -> None:
 
-        group = BaseChannelUnit()
+        unit = BaseChannelUnit()
         self.channel_elems: List[ChannelElement] = [
             ChannelElement(i) for i in range(num_channel_elems)
         ]
         for channel_elem in self.channel_elems:
-            group.add_channel_elem(channel_elem,
+            unit.add_channel_elem(channel_elem,
                                    channel_elem.index_in_channel_tensor)
 
-    # group operations
+    # unit operations
 
     def align_units_with_nums(self, nums: List[int]):
         """Align owning units to certain lengths."""
         i = 0
-        for start, end in self.group_dict:
+        for start, end in self.unit_dict:
             start_ = start
             new_nums = []
             while start_ < end:
                 new_nums.append(nums[i])
                 start_ += nums[i]
                 i += 1
-            BaseChannelUnit.split_group(self.group_dict[(start, end)],
+            BaseChannelUnit.split_unit(self.unit_dict[(start, end)],
                                          new_nums)
 
     @property
-    def group_dict(self) -> Dict[Tuple[int, int], BaseChannelUnit]:
+    def unit_dict(self) -> Dict[Tuple[int, int], BaseChannelUnit]:
         """Get a dict of owning units."""
         units: Dict[Tuple[int, int], BaseChannelUnit] = {}
-        # current_group = ...
-        current_group_idx = -1
+        # current_unit = ...
+        current_unit_idx = -1
         start = 0
         for i in range(len(self)):
             if i == 0:
-                current_group = self[i].group
-                current_group_idx = self[i].index_in_group
+                current_unit = self[i].unit
+                current_unit_idx = self[i].index_in_unit
                 start = 0
             else:
-                if current_group is not self[i].group or \
-                        current_group_idx > self[i].index_in_group:
-                    units[(start, i)] = current_group
-                    current_group = self[i].group
-                    current_group_idx = self[i].index_in_group
+                if current_unit is not self[i].unit or \
+                        current_unit_idx > self[i].index_in_unit:
+                    units[(start, i)] = current_unit
+                    current_unit = self[i].unit
+                    current_unit_idx = self[i].index_in_unit
                     start = i
-            current_group_idx = self[i].index_in_group
-        units[(start, len(self))] = current_group
+            current_unit_idx = self[i].index_in_unit
+        units[(start, len(self))] = current_unit
         return units
 
     @property
-    def group_list(self) -> List[BaseChannelUnit]:
+    def unit_list(self) -> List[BaseChannelUnit]:
         """Get a list of owning units."""
-        return list(self.group_dict.values())
+        return list(self.unit_dict.values())
 
     # tensor operations
 
@@ -308,7 +308,7 @@ class ChannelTensor:
             assert len(tensor) == len(
                 tensors[0]), f'{len(tensor)}!={len(tensors[0])}'
         aligned_index = cls._index2points(
-            *[list(tenser.group_dict.keys()) for tenser in tensors])
+            *[list(tenser.unit_dict.keys()) for tenser in tensors])
         nums = cls._points2num(aligned_index)
         if len(nums) > 1:
             for tensor in tensors:
@@ -320,20 +320,20 @@ class ChannelTensor:
         ChannelTensor.align_tensors(self, tensor1)
         # union
         for ch1, ch2 in zip(self.channel_elems, tensor1.channel_elems):
-            assert ch1.group is not None and ch2.group is not None
-            for ch in copy.copy(ch2.group.channel_elems[ch2.index_in_group]):
-                ch1.group.add_channel_elem(ch, ch1.index_in_group)
+            assert ch1.unit is not None and ch2.unit is not None
+            for ch in copy.copy(ch2.unit.channel_elems[ch2.index_in_unit]):
+                ch1.unit.add_channel_elem(ch, ch1.index_in_unit)
 
     def expand(self, ratio) -> 'ChannelTensor':
         """Get a new ChannelTensor which is expanded from this
         ChannelTensor."""
         expanded_tensor = ChannelTensor(len(self) * ratio)
         for i, ch in enumerate(self.channel_elems):
-            assert ch.group is not None
-            group = ch.group
+            assert ch.unit is not None
+            unit = ch.unit
             for j in range(0, ratio):
                 ex_ch = expanded_tensor[i * ratio + j]
-                group.add_channel_elem(ex_ch, ch.index_in_group)
+                unit.add_channel_elem(ex_ch, ch.index_in_unit)
         return expanded_tensor
 
     # others

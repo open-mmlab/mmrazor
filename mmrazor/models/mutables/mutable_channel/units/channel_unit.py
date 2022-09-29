@@ -135,7 +135,7 @@ class Channel(BaseModule):
 
 
 class ChannelUnit(BaseModule):
-    """A group of Channels.
+    """A unit of Channels.
 
     A ChannelUnit has two list, input_related and output_related, to store
     the Channels. These Channels are dependent on each other, and have to
@@ -153,7 +153,7 @@ class ChannelUnit(BaseModule):
         self.output_related: nn.ModuleList = nn.ModuleList()
         self.input_related: nn.ModuleList = nn.ModuleList()
         self.init_args: Dict = {
-        }  # is used to generate new channel group with same args
+        }  # is used to generate new channel unit with same args
 
     @classmethod
     def init_from_cfg(cls, model: nn.Module, config: Dict) -> 'ChannelUnit':
@@ -162,12 +162,12 @@ class ChannelUnit(BaseModule):
 
         def auto_fill_channel_config(channel_config: Dict,
                                      is_output_channel: bool,
-                                     group_config: Dict = config):
+                                     unit_config: Dict = config):
             """Fill channel config with default values."""
             if 'start' not in channel_config:
                 channel_config['start'] = 0
             if 'end' not in channel_config:
-                channel_config['end'] = group_config['init_args'][
+                channel_config['end'] = unit_config['init_args'][
                     'num_channels']
             channel_config['is_output_channel'] = is_output_channel
 
@@ -176,67 +176,67 @@ class ChannelUnit(BaseModule):
             channels = config.pop('channels')
         else:
             channels = None
-        group = cls(**(config['init_args']))
+        unit = cls(**(config['init_args']))
         if channels is not None:
             for channel_config in channels['input_related']:
                 auto_fill_channel_config(channel_config, False)
-                group.add_input_related(
+                unit.add_input_related(
                     Channel.init_from_cfg(model, channel_config))
             for channel_config in channels['output_related']:
                 auto_fill_channel_config(channel_config, True)
-                group.add_ouptut_related(
+                unit.add_ouptut_related(
                     Channel.init_from_cfg(model, channel_config))
-        return group
+        return unit
 
     @classmethod
     def init_from_channel_unit(cls,
-                                group: 'ChannelUnit',
+                                unit: 'ChannelUnit',
                                 args: Dict = {}) -> 'ChannelUnit':
         """Initial a object of current class from a ChannelUnit object."""
         """Initialize a MutalbeChannelUnit from a ChannelUnit."""
-        args['num_channels'] = group.num_channels
-        mutable_group = cls(**args)
-        mutable_group.input_related = group.input_related
-        mutable_group.output_related = group.output_related
-        return mutable_group
+        args['num_channels'] = unit.num_channels
+        mutable_unit = cls(**args)
+        mutable_unit.input_related = unit.input_related
+        mutable_unit.output_related = unit.output_related
+        return mutable_unit
 
     @classmethod
     def init_from_graph(cls,
                         graph: ModuleGraph,
-                        group_args={},
+                        unit_args={},
                         num_input_channel=3) -> List['ChannelUnit']:
         """Parse a module-graph and get ChannelUnits."""
 
         def init_from_base_channel_unit(base_channel_unit: BaseChannelUnit):
-            group = cls(len(base_channel_unit.channel_elems), **group_args)
-            group.input_related = nn.ModuleList([
+            unit = cls(len(base_channel_unit.channel_elems), **unit_args)
+            unit.input_related = nn.ModuleList([
                 Channel.init_from_base_channel(channel)
                 for channel in base_channel_unit.input_related
             ])
-            group.output_related = nn.ModuleList([
+            unit.output_related = nn.ModuleList([
                 Channel.init_from_base_channel(channel)
                 for channel in base_channel_unit.output_related
             ])
-            return group
+            return unit
 
-        group_graph = ChannelGraph.copy_from(graph,
+        unit_graph = ChannelGraph.copy_from(graph,
                                              default_channel_node_converter)
-        group_graph.forward(num_input_channel)
-        units = group_graph.collect_units()
-        units = [init_from_base_channel_unit(group) for group in units]
+        unit_graph.forward(num_input_channel)
+        units = unit_graph.collect_units()
+        units = [init_from_base_channel_unit(unit) for unit in units]
         return units
 
     # tools
 
     @property
     def name(self) -> str:
-        """str: name of the group"""
+        """str: name of the unit"""
         if len(self.output_related) + len(self.input_related) > 0:
             first_module = (list(self.output_related) +
                             list(self.input_related))[0]
             first_module_name = f'{first_module.name}_{first_module.index}'
         else:
-            first_module_name = 'groupx'
+            first_module_name = 'unitx'
         name = f'{first_module_name}_{self.num_channels}'
         return name
 
