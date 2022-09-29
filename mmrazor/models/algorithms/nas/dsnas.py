@@ -15,9 +15,8 @@ from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.mutators import DiffModuleMutator
-from mmrazor.models.task_modules import ResourceEstimator
 from mmrazor.models.utils import add_prefix
-from mmrazor.registry import MODEL_WRAPPERS, MODELS
+from mmrazor.registry import MODEL_WRAPPERS, MODELS, TASK_UTILS
 from mmrazor.structures import load_fix_subnet
 from mmrazor.utils import FixMutable
 from ..base import BaseAlgorithm
@@ -39,7 +38,7 @@ class Dsnas(BaseAlgorithm):
         flops_constraints (float): Flops constraints for judging whether to
             backward flops loss or not. Default to 300.0(M).
         estimator_cfg (Dict[str, Any]): Used for building a resource estimator.
-            Default to dict().
+            Default to None.
         norm_training (bool): Whether to set norm layers to training mode,
             namely, not freeze running stats (mean and var). Note: Effect on
             Batch Norm and its variants only. Defaults to False.
@@ -62,14 +61,16 @@ class Dsnas(BaseAlgorithm):
                  pretrain_epochs: int = 0,
                  finetune_epochs: int = 80,
                  flops_constraints: float = 300.0,
-                 estimator_cfg: Dict[str, Any] = dict(),
+                 estimator_cfg: Dict[str, Any] = None,
                  norm_training: bool = False,
                  data_preprocessor: Optional[Union[dict, nn.Module]] = None,
                  init_cfg: Optional[dict] = None,
                  **kwargs):
         super().__init__(architecture, data_preprocessor, **kwargs)
 
-        self.estimator = ResourceEstimator(**estimator_cfg)
+        if estimator_cfg is None:
+            estimator_cfg = dict(type='mmrazor.ResourceEstimator')
+        self.estimator = TASK_UTILS.build(estimator_cfg)
         if fix_subnet:
             # Avoid circular import
             from mmrazor.structures import load_fix_subnet
@@ -210,7 +211,7 @@ class Dsnas(BaseAlgorithm):
                 for choice in module.choices:
                     spec_modules.append(name + '._candidates.' + choice)
 
-        mutable_module_resources = self.estimator.estimate_spec_modules(
+        mutable_module_resources = self.estimator.estimate_separation_modules(
             self.architecture, dict(spec_modules=spec_modules))
 
         return mutable_module_resources

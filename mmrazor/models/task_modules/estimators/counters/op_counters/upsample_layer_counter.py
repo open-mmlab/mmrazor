@@ -10,6 +10,7 @@ class UpsampleCounter(BaseCounter):
 
     @staticmethod
     def add_count_hook(module, input, output):
+        """Calculate FLOPs and params based on the size of input & output."""
         output_size = output[0]
         batch_size = output_size.shape[0]
         output_elements_count = batch_size

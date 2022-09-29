@@ -1,0 +1,38 @@
+Collections:
+  - Name: FactorTransfer
+    Metadata:
+      Training Data:
+        - CIFAR-10
+    Paper:
+      URL: https://arxiv.org/abs/1802.04977
+      Title: 'Paraphrasing Complex Network: Network Compression via Factor Transfer'
+    README: configs/distill/mmcls/factor_transfer/README.md
+    Code:
+      URL: https://github.com/open-mmlab/mmrazor/blob/dev-1.x/mmrazor/models/losses/factor_transfer_loss.py
+      Version: v2.0.0
+    Converted From:
+      Code: https://github.com/Jangho-Kim/Factor-Transfer-pytorch
+Models:
+  - Name: factor-transfer_backbone_resnet50_resnet18_8xb16_cifar10_train
+    In Collection: FactorTransfer
+    Metadata:
+      Location: backbone
+      Student:
+        Config: mmcls::resnet/resnet18_8xb16_cifar10.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_b16x8_cifar10_20210528-bd6371c8.pth
+        Metrics:
+          Top 1 Accuracy: 94.82
+          Top 5 Accuracy: 99.87
+      Teacher:
+        Config: mmcls::resnet/resnet50_8xb16_cifar10.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_b16x8_cifar10_20210528-f54bfad9.pth
+        Metrics:
+          Top 1 Accuracy: 95.55
+          Top 5 Accuracy: 99.91
+    Results:
+      - Task: Image Classification
+        Dataset: CIFAR-10
+        Metrics:
+          Top 1 Accuracy: 94.8800
+    Config: configs/distill/mmcls/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb16_cifar10_train.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/factor_transfer/factor-transfer_backbone_resnet50_resnet18_8xb16_cifar10_train_20220831_201322-943df33f.pth

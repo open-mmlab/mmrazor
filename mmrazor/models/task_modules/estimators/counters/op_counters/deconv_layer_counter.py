@@ -6,10 +6,11 @@ from .base_counter import BaseCounter
 
 @TASK_UTILS.register_module()
 class ConvTranspose2dCounter(BaseCounter):
-    """FLOPs/params counter for Decov module series."""
+    """FLOPs/params counter for Deconv module series."""
 
     @staticmethod
     def add_count_hook(module, input, output):
+        """Compute FLOPs and params based on the size of input & output."""
         # Can have multiple inputs, getting the first one
         input = input[0]
 

@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from unittest import TestCase
 
-from mmrazor.structures import MethodOutputsDelivery
+from mmrazor.models.task_modules import MethodOutputsDelivery
 
 
 class TestMethodOutputsDeliver(TestCase):

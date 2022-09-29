@@ -1,0 +1,43 @@
+Collections:
+  - Name: DKD
+    Metadata:
+      Training Data:
+        - ImageNet-1k
+    Paper:
+      URL: https://arxiv.org/pdf/2203.08679.pdf
+      Title: Decoupled Knowledge Distillation
+    README: configs/distill/mmcls/dkd/README.md
+    Converted From:
+      Code:
+        URL:  https://github.com/megvii-research/mdistiller
+Models:
+  - Name: dkd_resnet34_resnet18_8xb32_in1k
+    In Collection: DKD
+    Metadata:
+      inference time (ms/im):
+        - value: 0.75
+          hardware: V100
+          backend: PyTorch
+          batch size: 16
+          mode: FP32
+          resolution: (224, 224)
+      Student:
+        Config: mmcls::resnet/resnet18_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_8xb32_in1k_20210831-fbbb1da6.pth
+        Metrics:
+          Top 1 Accuracy: 69.90
+          Top 5 Accuracy: 89.43
+      Teacher:
+        Config: mmcls::resnet/resnet34_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet34_8xb32_in1k_20210831-f257d4e6.pth
+        Metrics:
+          Top 1 Accuracy: 73.62
+          Top 5 Accuracy: 91.59
+    Results:
+      - Task: Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 71.368
+          Top 5 Accuracy: 90.256
+    Weights: https://download.openmmlab.com/mmrazor/v1/dkd/dkd_resnet34_resnet18_8xb32_in1k_20220804_202619-f9519768.pth
+    Config: configs/distill/mmcls/dkd/dkd_resnet34_resnet18_8xb32_in1k.py

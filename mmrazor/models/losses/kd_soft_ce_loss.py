@@ -2,9 +2,14 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcls.models.losses.cross_entropy_loss import soft_cross_entropy
 
 from mmrazor.registry import MODELS
+
+try:
+    from mmcls.models.losses.cross_entropy_loss import soft_cross_entropy
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    soft_cross_entropy = get_placeholder('mmcls')
 
 
 @MODELS.register_module()

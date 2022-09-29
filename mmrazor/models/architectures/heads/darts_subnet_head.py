@@ -2,13 +2,20 @@
 from typing import List, Tuple
 
 import torch
-from mmcls.evaluation import Accuracy
-from mmcls.models.heads import LinearClsHead
-from mmcls.structures import ClsDataSample
 from torch import nn
 
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import MODELS
+
+try:
+    from mmcls.evaluation import Accuracy
+    from mmcls.models.heads import LinearClsHead
+    from mmcls.structures import ClsDataSample
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    Accuracy = get_placeholder('mmcls')
+    LinearClsHead = get_placeholder('mmcls')
+    ClsDataSample = get_placeholder('mmcls')
 
 
 @MODELS.register_module()
