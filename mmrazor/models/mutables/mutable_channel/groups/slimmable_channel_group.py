@@ -52,7 +52,7 @@ class SlimmableChannelGroup(OneShotMutableChannelGroup):
 
     def alter_candidates_of_switchbn(self, candidates: List):
         """Change candidates of SwitchableBatchNorm2d."""
-        for channel in self.output_related + self.input_related:
+        for channel in list(self.output_related) + list(self.input_related):
             if isinstance(channel.module, dynamic_ops.SwitchableBatchNorm2d) \
                     and len(channel.module.candidate_bn) == 0:
                 channel.module.init_candidates(candidates)

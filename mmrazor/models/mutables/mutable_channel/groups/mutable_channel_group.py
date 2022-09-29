@@ -143,7 +143,7 @@ class MutableChannelGroup(ChannelGroup):
                 model = getattr(model, sub_name)
             return model
 
-        for channel in self.input_related + self.output_related:
+        for channel in list(self.input_related) + list(self.output_related):
             if isinstance(channel.module, nn.Module):
                 module = get_module(model, channel.name)
                 if type(module) in dynamicop_map:
@@ -187,7 +187,7 @@ class MutableChannelGroup(ChannelGroup):
 
     def _register_mutable_channel(self, mutable_channel: BaseMutableChannel):
         # register mutable_channel
-        for channel in self.input_related + self.output_related:
+        for channel in list(self.input_related) + list(self.output_related):
             module = channel.module
             if isinstance(module, dynamic_ops.DynamicChannelMixin):
                 container: MutableChannelContainer

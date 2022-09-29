@@ -13,7 +13,7 @@ from mmrazor.structures.graph.channel_nodes import \
     default_channel_node_converter
 
 
-class Channel(BaseChannel):
+class Channel(BaseModule):
     """Channel records information about channels for pruning.
 
     Args:
@@ -37,8 +37,17 @@ class Channel(BaseChannel):
                  node=None,
                  is_output_channel=True,
                  expand_ratio=1) -> None:
-        super().__init__(name, module, index, node, is_output_channel,
-                         expand_ratio)
+        super().__init__()
+        self.name = name
+        self.module = module
+        self.index = index
+        self.start = index[0]
+        self.end = index[1]
+
+        self.node = node
+
+        self.is_output_channel = is_output_channel
+        self.expand_ratio = expand_ratio
 
     @classmethod
     def init_from_cfg(cls, model: nn.Module, config: Dict):
@@ -87,6 +96,11 @@ class Channel(BaseChannel):
     # basic properties
 
     @property
+    def num_channels(self) -> int:
+        """The number of channels in the Channels."""
+        return self.index[1] - self.index[0]
+
+    @property
     def is_mutable(self) -> bool:
         """If the channel is prunable."""
         if isinstance(self.module, nn.Conv2d):
@@ -96,6 +110,25 @@ class Channel(BaseChannel):
                                                 self.module.out_channels):
                 return False
         return True
+
+    def __repr__(self) -> str:
+        return (f'{self.__class__.__name__}('
+                f'{self.name}, index=({self.index}), '
+                f'is_output_channel='
+                f'{"true" if self.is_output_channel else "false"}, '
+                f'expand_ratio={self.expand_ratio}'
+                ')')
+
+    def __eq__(self, obj: object) -> bool:
+        if isinstance(obj, BaseChannel):
+            return self.name == obj.name \
+                and self.module == obj.module \
+                and self.index == obj.index \
+                and self.is_output_channel == obj.is_output_channel \
+                and self.expand_ratio == obj.expand_ratio \
+                and self.node == obj.node
+        else:
+            return False
 
 
 # Channel && ChannelGroup
@@ -117,8 +150,8 @@ class ChannelGroup(BaseModule):
     def __init__(self, num_channels: int, **kwargs):
         super().__init__()
         self.num_channels = num_channels
-        self.output_related: List[Channel] = []
-        self.input_related: List[Channel] = []
+        self.output_related: nn.ModuleList = nn.ModuleList()
+        self.input_related: nn.ModuleList = nn.ModuleList()
         self.init_args: Dict = {
         }  # is used to generate new channel group with same args
 
@@ -176,14 +209,14 @@ class ChannelGroup(BaseModule):
 
         def init_from_base_channel_group(base_channel_group: BaseChannelGroup):
             group = cls(len(base_channel_group.channel_elems), **group_args)
-            group.input_related = [
+            group.input_related = nn.ModuleList([
                 Channel.init_from_base_channel(channel)
                 for channel in base_channel_group.input_related
-            ]
-            group.output_related = [
+            ])
+            group.output_related = nn.ModuleList([
                 Channel.init_from_base_channel(channel)
                 for channel in base_channel_group.output_related
-            ]
+            ])
             return group
 
         group_graph = ChannelGraph.copy_from(graph,
@@ -199,7 +232,8 @@ class ChannelGroup(BaseModule):
     def name(self) -> str:
         """str: name of the group"""
         if len(self.output_related) + len(self.input_related) > 0:
-            first_module = (self.output_related + self.input_related)[0]
+            first_module = (list(self.output_related) +
+                            list(self.input_related))[0]
             first_module_name = f'{first_module.name}_{first_module.index}'
         else:
             first_module_name = 'groupx'
@@ -236,28 +270,9 @@ class ChannelGroup(BaseModule):
 
     # others
 
-    def __repr__(self) -> str:
-
-        def add_prefix(string: str, prefix='  '):
-            str_list = string.split('\n')
-            str_list = [
-                prefix + line if line != '' else line for line in str_list
-            ]
-            return '\n'.join(str_list)
-
-        def list_repr(lit: List):
-            s = '[\n'
-            for item in lit:
-                s += add_prefix(item.__repr__(), '  ') + '\n'
-            s += ']\n'
-            return s
-
-        s = (f'{self.name}_'
-             f'\t{len(self.output_related)},{len(self.input_related)}\n')
-        s += '  output_related:\n'
-        s += add_prefix(list_repr(self.output_related), ' ' * 4)
-        s += '  input_related\n'
-        s += add_prefix(list_repr(self.input_related), ' ' * 4)
+    def extra_repr(self) -> str:
+        s = super().extra_repr()
+        s += f'name={self.name}'
         return s
 
     # private methods
