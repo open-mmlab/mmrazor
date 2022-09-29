@@ -48,7 +48,7 @@ model = dict(
     mutator_cfg=dict(
         type='ChannelMutator',
         channel_group_cfg=dict(
-            type='L1MutableChannelGroup',
+            type='L1MutableChannelUnit',
             default_args=dict(choice_mode='ratio'))),
     target_pruning_ratio=target_pruning_ratio,
     step_epoch=1,

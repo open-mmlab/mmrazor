@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 from mmengine import MMLogger
 
-from .channel_modules import BaseChannel, BaseChannelGroup, ChannelTensor
+from .channel_modules import BaseChannel, BaseChannelUnit, ChannelTensor
 from .module_graph import ModuleNode
 
 
@@ -71,12 +71,12 @@ class ChannelNode(ModuleNode):
     def channel_forward(self, *channel_tensors: ChannelTensor):
         """Forward with ChannelTensors."""
         assert len(channel_tensors) == 1, f'{len(channel_tensors)}'
-        BaseChannelGroup.union_two_groups(
+        BaseChannelUnit.union_two_groups(
             list(self.in_channel_tensor.group_dict.values())[0],
             list(channel_tensors[0].group_dict.values())[0])
 
         if self.in_channels == self.out_channels:
-            BaseChannelGroup.union_two_groups(
+            BaseChannelUnit.union_two_groups(
                 self.in_channel_tensor.group_list[0],
                 self.out_channel_tensor.group_list[0])
 
@@ -196,7 +196,7 @@ class BindChannelNode(PassChannelNode):
             channel_lis.group_dict for channel_lis in in_channel_tensor
         ]
         for key in node_groups[0]:
-            BaseChannelGroup.union_groups(
+            BaseChannelUnit.union_groups(
                 [groups[key] for groups in node_groups])
         super().channel_forward(in_channel_tensor[0])
 
@@ -208,7 +208,7 @@ class CatChannelNode(ChannelNode):
     """A CatChannelNode cat all input channels."""
 
     def channel_forward(self, *in_channel_tensors: ChannelTensor):
-        BaseChannelGroup.union_two_groups(
+        BaseChannelUnit.union_two_groups(
             self.in_channel_tensor.group_list[0],
             self.out_channel_tensor.group_list[0])
         num_ch = []
@@ -216,13 +216,13 @@ class CatChannelNode(ChannelNode):
             for start, end in in_ch_tensor.group_dict:
                 num_ch.append(end - start)
 
-        split_groups = BaseChannelGroup.split_group(
+        split_groups = BaseChannelUnit.split_group(
             self.in_channel_tensor.group_list[0], num_ch)
 
         i = 0
         for in_ch_tensor in in_channel_tensors:
             for in_group in in_ch_tensor.group_dict.values():
-                BaseChannelGroup.union_two_groups(split_groups[i], in_group)
+                BaseChannelUnit.union_two_groups(split_groups[i], in_group)
                 i += 1
 
     @property

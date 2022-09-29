@@ -64,8 +64,8 @@ class BaseChannel:
             return False
 
 
-class BaseChannelGroup:
-    """BaseChannelGroup is a collection of BaseChannel.
+class BaseChannelUnit:
+    """BaseChannelUnit is a collection of BaseChannel.
 
     All  BaseChannels are saved in two lists: self.input_related and
     self.output_related.
@@ -80,7 +80,7 @@ class BaseChannelGroup:
     # ~
 
     def add_channel_elem(self, channel_elem: 'ChannelElement', index):
-        """Add a ChannelElement to the BaseChannelGroup."""
+        """Add a ChannelElement to the BaseChannelUnit."""
         self._add_channel_info(channel_elem, index)
         if channel_elem.group is not None:
             channel_elem.remove_from_group()
@@ -89,18 +89,18 @@ class BaseChannelGroup:
     # group operations
 
     @classmethod
-    def union_groups(cls, groups: List['BaseChannelGroup']):
+    def union_groups(cls, groups: List['BaseChannelUnit']):
         """Union groups."""
         assert len(groups) > 1
         union_group = groups[0]
 
         for group in groups[1:]:
-            union_group = BaseChannelGroup.union_two_groups(union_group, group)
+            union_group = BaseChannelUnit.union_two_groups(union_group, group)
         return union_group
 
     @classmethod
-    def union_two_groups(cls, group1: 'BaseChannelGroup',
-                         group2: 'BaseChannelGroup'):
+    def union_two_groups(cls, group1: 'BaseChannelUnit',
+                         group2: 'BaseChannelUnit'):
         """Union two groups."""
         if group1 is group2:
             return group1
@@ -112,7 +112,7 @@ class BaseChannelGroup:
             return group1
 
     @classmethod
-    def split_group(cls, group: 'BaseChannelGroup', nums: List[int]):
+    def split_group(cls, group: 'BaseChannelUnit', nums: List[int]):
         """Split a group to multiple groups."""
         new_groups = []
         if len(nums) == 1:
@@ -138,7 +138,7 @@ class BaseChannelGroup:
 
     def _split_a_new_group(self, indexes: List[int]):
         """Split a part of the group to a new group."""
-        new_group = BaseChannelGroup()
+        new_group = BaseChannelUnit()
         j = 0
         for i in indexes:
             for channel_elem in copy.copy(self[i]):
@@ -206,7 +206,7 @@ class BaseChannelGroup:
 
 class ChannelElement:
     """Each ChannelElement is the basic element of  a ChannelTensor. It records
-    its owing ChannelTensor and BaseChannelGroup.
+    its owing ChannelTensor and BaseChannelUnit.
 
     Args:
         index (int): The index of the ChannelElement in the ChannelTensor.
@@ -216,18 +216,18 @@ class ChannelElement:
 
         self.index_in_channel_tensor = index_in_tensor
 
-        self.group: Union[BaseChannelGroup, None] = None
+        self.group: Union[BaseChannelUnit, None] = None
         self.index_in_group = -1
 
     def remove_from_group(self):
-        """Remove the ChannelElement from its owning BaseChannelGroup."""
+        """Remove the ChannelElement from its owning BaseChannelUnit."""
         self.group._clean_channel_info(self, self.index_in_group)
         self._clean_group_info()
 
     # private methods
 
     def _register_group(self, group, index):
-        """Register the ChannelElement to a BaseChannelGroup."""
+        """Register the ChannelElement to a BaseChannelUnit."""
         self.group = group
         self.index_in_group = index
 
@@ -247,7 +247,7 @@ class ChannelTensor:
 
     def __init__(self, num_channel_elems: int) -> None:
 
-        group = BaseChannelGroup()
+        group = BaseChannelUnit()
         self.channel_elems: List[ChannelElement] = [
             ChannelElement(i) for i in range(num_channel_elems)
         ]
@@ -267,13 +267,13 @@ class ChannelTensor:
                 new_nums.append(nums[i])
                 start_ += nums[i]
                 i += 1
-            BaseChannelGroup.split_group(self.group_dict[(start, end)],
+            BaseChannelUnit.split_group(self.group_dict[(start, end)],
                                          new_nums)
 
     @property
-    def group_dict(self) -> Dict[Tuple[int, int], BaseChannelGroup]:
+    def group_dict(self) -> Dict[Tuple[int, int], BaseChannelUnit]:
         """Get a dict of owning groups."""
-        groups: Dict[Tuple[int, int], BaseChannelGroup] = {}
+        groups: Dict[Tuple[int, int], BaseChannelUnit] = {}
         # current_group = ...
         current_group_idx = -1
         start = 0
@@ -294,7 +294,7 @@ class ChannelTensor:
         return groups
 
     @property
-    def group_list(self) -> List[BaseChannelGroup]:
+    def group_list(self) -> List[BaseChannelUnit]:
         """Get a list of owning groups."""
         return list(self.group_dict.values())
 

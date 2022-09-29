@@ -7,12 +7,12 @@ import torch.nn as nn
 import mmrazor.models.architectures.dynamic_ops as dynamic_ops
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
-from .one_shot_mutable_channel_group import OneShotMutableChannelGroup
+from .one_shot_mutable_channel_group import OneShotMutableChannelUnit
 
 
 @MODELS.register_module()
-class SlimmableChannelGroup(OneShotMutableChannelGroup):
-    """A type of ``MutableChannelGroup`` to train several subnets together.
+class SlimmableChannelUnit(OneShotMutableChannelUnit):
+    """A type of ``MutableChannelUnit`` to train several subnets together.
 
     Args:
         num_channels (int): The raw number of channels.

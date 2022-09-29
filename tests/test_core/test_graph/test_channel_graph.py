@@ -8,7 +8,7 @@ from mmrazor.models.task_modules import BackwardTracer
 from mmrazor.registry import TASK_UTILS
 from mmrazor.structures.graph import ModuleGraph
 from mmrazor.structures.graph.channel_graph import ChannelGraph
-from mmrazor.structures.graph.channel_modules import (BaseChannelGroup,
+from mmrazor.structures.graph.channel_modules import (BaseChannelUnit,
                                                       ChannelTensor)
 from mmrazor.structures.graph.channel_nodes import \
     default_channel_node_converter
@@ -75,7 +75,7 @@ class TestChannelGraph(unittest.TestCase):
         _ = channel_graph.collect_groups
 
 
-class TestChannelGroup(unittest.TestCase):
+class TestChannelUnit(unittest.TestCase):
 
     def test_union(self):
         channel_tensor1 = ChannelTensor(8)
@@ -87,22 +87,22 @@ class TestChannelGroup(unittest.TestCase):
         group3 = channel_tensor3.group_dict[(0, 8)]
         group4 = channel_tensor4.group_dict[(0, 8)]
 
-        group12 = BaseChannelGroup.union_two_groups(group1, group2)
+        group12 = BaseChannelUnit.union_two_groups(group1, group2)
         self.assertDictEqual(channel_tensor1.group_dict,
                              channel_tensor2.group_dict)
 
-        group34 = BaseChannelGroup.union_two_groups(group3, group4)
-        BaseChannelGroup.union_two_groups(group12, group34)
+        group34 = BaseChannelUnit.union_two_groups(group3, group4)
+        BaseChannelUnit.union_two_groups(group12, group34)
         self.assertDictEqual(channel_tensor1.group_dict,
                              channel_tensor4.group_dict)
 
     def test_split(self):
         channel_tensor1 = ChannelTensor(8)
         channel_tensor2 = ChannelTensor(8)
-        BaseChannelGroup.union_two_groups(channel_tensor1.group_dict[(0, 8)],
+        BaseChannelUnit.union_two_groups(channel_tensor1.group_dict[(0, 8)],
                                           channel_tensor2.group_dict[(0, 8)])
         group1 = channel_tensor1.group_dict[(0, 8)]
-        BaseChannelGroup.split_group(group1, [2, 6])
+        BaseChannelUnit.split_group(group1, [2, 6])
 
         self.assertDictEqual(channel_tensor1.group_dict,
                              channel_tensor2.group_dict)
@@ -128,9 +128,9 @@ class TestChannelTensor(unittest.TestCase):
         channel_tensor2 = ChannelTensor(8)
         channel_tensor3 = ChannelTensor(8)
 
-        BaseChannelGroup.split_group(channel_tensor1.group_list[0], [2, 6])
-        BaseChannelGroup.split_group(channel_tensor2.group_list[0], [4, 4])
-        BaseChannelGroup.split_group(channel_tensor3.group_list[0], [6, 2])
+        BaseChannelUnit.split_group(channel_tensor1.group_list[0], [2, 6])
+        BaseChannelUnit.split_group(channel_tensor2.group_list[0], [4, 4])
+        BaseChannelUnit.split_group(channel_tensor3.group_list[0], [6, 2])
         """
         xxoooooo
         xxxxoooo

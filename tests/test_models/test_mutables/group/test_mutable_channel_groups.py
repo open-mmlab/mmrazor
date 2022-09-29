@@ -7,9 +7,9 @@ import torch.nn as nn
 
 from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
 from mmrazor.models.mutables.mutable_channel import (
-    L1MutableChannelGroup, MutableChannelGroup, SequentialMutableChannelGroup)
+    L1MutableChannelUnit, MutableChannelUnit, SequentialMutableChannelUnit)
 from mmrazor.models.mutables.mutable_channel.units.channel_group import (  # noqa
-    Channel, ChannelGroup)
+    Channel, ChannelUnit)
 from mmrazor.structures.graph import ModuleGraph as ModuleGraph
 from ....data.models import LineModel
 from ....test_core.test_graph.test_graph import TestGraph
@@ -22,20 +22,20 @@ PARSE_CFG = dict(
 # DEVICE = torch.device('cuda:0') if torch.cuda.is_available() \
 #     else torch.device('cpu')
 DEVICE = torch.device('cpu')
-GROUPS: List[MutableChannelGroup] = [
-    L1MutableChannelGroup, SequentialMutableChannelGroup
+GROUPS: List[MutableChannelUnit] = [
+    L1MutableChannelUnit, SequentialMutableChannelUnit
 ]
 
-DefaultChannelGroup = SequentialMutableChannelGroup
+DefaultChannelUnit = SequentialMutableChannelUnit
 
 
-class TestMutableChannelGroup(TestCase):
+class TestMutableChannelUnit(TestCase):
 
     def test_init_from_graph(self):
         model = LineModel()
         # init using tracer
         graph = ModuleGraph.init_from_backward_tracer(model)
-        groups = DefaultChannelGroup.init_from_graph(graph)
+        groups = DefaultChannelUnit.init_from_graph(graph)
         self._test_groups(groups, model)
 
     def test_init_from_cfg(self):
@@ -75,21 +75,21 @@ class TestMutableChannelGroup(TestCase):
                 }]
             }
         }
-        groups = [DefaultChannelGroup.init_from_cfg(model, config)]
+        groups = [DefaultChannelUnit.init_from_cfg(model, config)]
         self._test_groups(groups, model)
 
     def test_init_from_channel_group(self):
         model = LineModel()
         # init using tracer
         graph = ModuleGraph.init_from_backward_tracer(model)
-        groups: List[ChannelGroup] = ChannelGroup.init_from_graph(graph)
+        groups: List[ChannelUnit] = ChannelUnit.init_from_graph(graph)
         mutable_groups = [
-            DefaultChannelGroup.init_from_channel_group(group)
+            DefaultChannelUnit.init_from_channel_group(group)
             for group in groups
         ]
         self._test_groups(mutable_groups, model)
 
-    def _test_groups(self, groups: List[MutableChannelGroup], model):
+    def _test_groups(self, groups: List[MutableChannelUnit], model):
         for group in groups:
             group.prepare_for_pruning(model)
         mutable_groups = [group for group in groups if group.is_mutable]
@@ -123,7 +123,7 @@ class TestMutableChannelGroup(TestCase):
                     model: nn.Module = model_data()
                     graph = ModuleGraph.init_from_backward_tracer(model)
                     groups: List[
-                        MutableChannelGroup] = group_type.init_from_graph(
+                        MutableChannelUnit] = group_type.init_from_graph(
                             graph)
 
                     for group in groups:
@@ -144,7 +144,8 @@ class TestMutableChannelGroup(TestCase):
 
     def _test_a_graph(self, model, graph):
         try:
-            groups = DefaultChannelGroup.init_from_graph(graph)
+            groups = DefaultChannelUnit.init_from_graph(graph)
+
             self._test_groups(groups, model)
         except Exception as e:
             self.fail(f'{e}')

@@ -1,19 +1,19 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict, List, Optional
 
-from mmrazor.models.mutables import SlimmableChannelGroup
+from mmrazor.models.mutables import SlimmableChannelUnit
 from mmrazor.registry import MODELS
 from .channel_mutator import ChannelMutator
 
 
 @MODELS.register_module()
-class SlimmableChannelMutator(ChannelMutator[SlimmableChannelGroup]):
+class SlimmableChannelMutator(ChannelMutator[SlimmableChannelUnit]):
     """SlimmableChannelMutator is the default ChannelMutator for
     SlimmableNetwork algorithm.
 
     Args:
-        channel_group_cfg (Dict): The config of ChannelGroups. Defaults to
-            dict( type='SlimmableChannelGroup', groups={}).
+        channel_group_cfg (Dict): The config of ChannelUnits. Defaults to
+            dict( type='SlimmableChannelUnit', groups={}).
         parse_cfg (Dict): The config of the tracer to parse the model.
             Defaults to dict( type='BackwardTracer',
                 loss_calculator=dict(type='ImageClassifierPseudoLoss')).
@@ -23,7 +23,7 @@ class SlimmableChannelMutator(ChannelMutator[SlimmableChannelGroup]):
 
     def __init__(self,
                  channel_group_cfg=dict(
-                     type='SlimmableChannelGroup', groups={}),
+                     type='SlimmableChannelUnit', groups={}),
                  parse_cfg=dict(
                      type='BackwardTracer',
                      loss_calculator=dict(type='ImageClassifierPseudoLoss')),

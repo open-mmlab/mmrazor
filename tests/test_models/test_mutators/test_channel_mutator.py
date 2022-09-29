@@ -6,9 +6,9 @@ from typing import Union
 
 import torch
 
-# from mmrazor.models.mutables import MutableChannelGroup
+# from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables.mutable_channel import (
-    L1MutableChannelGroup, SequentialMutableChannelGroup)
+    L1MutableChannelUnit, SequentialMutableChannelUnit)
 from mmrazor.models.mutators.channel_mutator import ChannelMutator
 from mmrazor.registry import MODELS
 from ...data.models import DynamicLinearModel
@@ -18,7 +18,7 @@ sys.setrecursionlimit(2000)
 
 
 @MODELS.register_module()
-class RandomChannelGroup(SequentialMutableChannelGroup):
+class RandomChannelUnit(SequentialMutableChannelUnit):
 
     def generate_mask(self, choice: Union[int, float]) -> torch.Tensor:
         if isinstance(choice, float):
@@ -32,7 +32,7 @@ class RandomChannelGroup(SequentialMutableChannelGroup):
 
 
 DATA_GROUPSS = [
-    SequentialMutableChannelGroup, RandomChannelGroup, L1MutableChannelGroup
+    SequentialMutableChannelUnit, RandomChannelUnit, L1MutableChannelUnit
 ]
 
 
@@ -129,7 +129,7 @@ class TestChannelMutator(unittest.TestCase):
                 model = Model()
                 mutator = ChannelMutator(
                     channel_group_cfg={
-                        'type': 'SampleOneshotMutableChannelGroup',
+                        'type': 'SampleOneshotMutableChannelUnit',
                         'default_args': {}
                     },
                     parse_cfg={'type': 'Predefined'})

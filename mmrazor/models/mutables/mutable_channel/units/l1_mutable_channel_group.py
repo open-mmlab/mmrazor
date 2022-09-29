@@ -5,11 +5,11 @@ import torch
 import torch.nn as nn
 
 from mmrazor.registry import MODELS
-from .sequential_mutable_channel_group import SequentialMutableChannelGroup
+from .sequential_mutable_channel_group import SequentialMutableChannelUnit
 
 
 @MODELS.register_module()
-class L1MutableChannelGroup(SequentialMutableChannelGroup):
+class L1MutableChannelUnit(SequentialMutableChannelUnit):
     """Implementation of L1-norm pruning algorithm. It compute the l1-norm of
     modules and preferly prune the modules with less l1-norm.
 

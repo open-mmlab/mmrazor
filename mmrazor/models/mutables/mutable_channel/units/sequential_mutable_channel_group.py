@@ -11,13 +11,13 @@ from mmrazor.models.utils import make_divisible
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
 from ..simple_mutable_channel import SimpleMutableChannel
-from .mutable_channel_group import MutableChannelGroup
+from .mutable_channel_group import MutableChannelUnit
 
 
-# TODO change the name of SequentialMutableChannelGroup
+# TODO change the name of SequentialMutableChannelUnit
 @MODELS.register_module()
-class SequentialMutableChannelGroup(MutableChannelGroup):
-    """SequentialMutableChannelGroup accepts a intger(number) or float(ratio)
+class SequentialMutableChannelUnit(MutableChannelUnit):
+    """SequentialMutableChannelUnit accepts a intger(number) or float(ratio)
     as the choice, which indicates how many of the channels are remained from
     left to right, like 11110000.
 

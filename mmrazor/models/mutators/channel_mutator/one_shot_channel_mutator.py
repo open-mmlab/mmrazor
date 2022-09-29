@@ -1,26 +1,26 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict, Type, Union
 
-from mmrazor.models.mutables import OneShotMutableChannelGroup
+from mmrazor.models.mutables import OneShotMutableChannelUnit
 from mmrazor.registry import MODELS
-from .channel_mutator import ChannelGroupType, ChannelMutator
+from .channel_mutator import ChannelUnitType, ChannelMutator
 
 
 @MODELS.register_module()
-class OneShotChannelMutator(ChannelMutator[OneShotMutableChannelGroup]):
+class OneShotChannelMutator(ChannelMutator[OneShotMutableChannelUnit]):
     """OneShotChannelMutator based on ChannelMutator. It use
-    OneShotMutableChannelGroup by default.
+    OneShotMutableChannelUnit by default.
 
     Args:
-        channel_group_cfg (Union[dict, Type[ChannelGroupType]], optional):
-            Config of MutableChannelGroups. Defaults to
-            dict( type='OneShotMutableChannelGroup',
+        channel_group_cfg (Union[dict, Type[ChannelUnitType]], optional):
+            Config of MutableChannelUnits. Defaults to
+            dict( type='OneShotMutableChannelUnit',
             default_args=dict( num_blocks=8, min_blocks=2 ) ).
     """
 
     def __init__(self,
-                 channel_group_cfg: Union[dict, Type[ChannelGroupType]] = dict(
-                     type='OneShotMutableChannelGroup',
+                 channel_group_cfg: Union[dict, Type[ChannelUnitType]] = dict(
+                     type='OneShotMutableChannelUnit',
                      default_args=dict(num_blocks=8, min_blocks=2)),
                  **kwargs) -> None:
 

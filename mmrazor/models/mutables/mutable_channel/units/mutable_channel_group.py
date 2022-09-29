@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-"""This module defines MutableChannelGroup."""
+"""This module defines MutableChannelUnit."""
 import abc
 from typing import Dict, List, Type, TypeVar
 
@@ -11,18 +11,18 @@ from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables.mutable_channel.base_mutable_channel import \
     BaseMutableChannel
 from ..mutable_channel_container import MutableChannelContainer
-from .channel_group import Channel, ChannelGroup
+from .channel_group import Channel, ChannelUnit
 
 
-class MutableChannelGroup(ChannelGroup):
+class MutableChannelUnit(ChannelUnit):
 
     # init methods
     def __init__(self, num_channels: int, **kwargs) -> None:
-        """MutableChannelGroup inherits from ChannelGroup, which manages
+        """MutableChannelUnit inherits from ChannelUnit, which manages
         channels with channel-dependency.
 
-        Compared with ChannelGroup, MutableChannelGroup defines the core
-        interfaces for pruning. By inheriting MutableChannelGroup,
+        Compared with ChannelUnit, MutableChannelUnit defines the core
+        interfaces for pruning. By inheriting MutableChannelUnit,
         we can implement a variant pruning and nas algorithm.
 
         These apis includes
@@ -233,4 +233,4 @@ class MutableChannelGroup(ChannelGroup):
                     container.register_mutable(mutable_channel_, start, end)
 
 
-ChannelGroupType = TypeVar('ChannelGroupType', bound=MutableChannelGroup)
+ChannelUnitType = TypeVar('ChannelUnitType', bound=MutableChannelUnit)

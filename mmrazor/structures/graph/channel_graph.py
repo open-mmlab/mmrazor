@@ -4,7 +4,7 @@ from typing import Callable, Dict, List
 from torch.nn import Module
 
 from .base_graph import BaseGraph
-from .channel_modules import BaseChannelGroup, ChannelTensor
+from .channel_modules import BaseChannelUnit, ChannelTensor
 from .channel_nodes import ChannelNode, default_channel_node_converter
 from .module_graph import ModuleGraph
 
@@ -24,7 +24,7 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
         assert isinstance(graph, ModuleGraph)
         return super().copy_from(graph, node_converter)
 
-    def collect_groups(self) -> List[BaseChannelGroup]:
+    def collect_groups(self) -> List[BaseChannelUnit]:
         """Collect channel groups in the graph."""
         groups = list()
         for node in self.topo_traverse():

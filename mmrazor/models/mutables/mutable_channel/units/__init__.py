@@ -1,13 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 
-from .l1_mutable_channel_group import L1MutableChannelGroup
-from .mutable_channel_group import ChannelGroupType, MutableChannelGroup
-from .one_shot_mutable_channel_group import OneShotMutableChannelGroup
-from .sequential_mutable_channel_group import SequentialMutableChannelGroup
-from .slimmable_channel_group import SlimmableChannelGroup
+from .l1_mutable_channel_group import L1MutableChannelUnit
+from .mutable_channel_group import ChannelUnitType, MutableChannelUnit
+from .one_shot_mutable_channel_group import OneShotMutableChannelUnit
+from .sequential_mutable_channel_group import SequentialMutableChannelUnit
+from .slimmable_channel_group import SlimmableChannelUnit
 
 __all__ = [
-    'L1MutableChannelGroup', 'MutableChannelGroup',
-    'SequentialMutableChannelGroup', 'OneShotMutableChannelGroup',
-    'SlimmableChannelGroup', 'ChannelGroupType'
+    'L1MutableChannelUnit', 'MutableChannelUnit',
+    'SequentialMutableChannelUnit', 'OneShotMutableChannelUnit',
+    'SlimmableChannelUnit', 'ChannelUnitType'
 ]

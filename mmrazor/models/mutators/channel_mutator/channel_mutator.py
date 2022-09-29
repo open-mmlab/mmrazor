@@ -6,12 +6,12 @@ from mmengine import fileio
 from torch.nn import Module
 
 from mmrazor.models.architectures.dynamic_ops import DynamicChannelMixin
-from mmrazor.models.mutables import (BaseMutableChannel, ChannelGroupType,
+from mmrazor.models.mutables import (BaseMutableChannel, ChannelUnitType,
                                      DerivedMutable, MutableChannelContainer,
-                                     MutableChannelGroup,
-                                     SequentialMutableChannelGroup)
+                                     MutableChannelUnit,
+                                     SequentialMutableChannelUnit)
 from mmrazor.models.mutables.mutable_channel.units.channel_group import (
-    Channel, ChannelGroup)
+    Channel, ChannelUnit)
 from mmrazor.registry import MODELS
 from mmrazor.structures.graph import ModuleGraph
 from ..base_mutator import BaseMutator
@@ -22,16 +22,16 @@ def is_dynamic_op_for_fx_tracer(module, name):
 
 
 @MODELS.register_module()
-class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
+class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
     """ChannelMutator manages the pruning structure of a model.
 
     Args:
-        channel_group_cfg (Union[ dict, Type[MutableChannelGroup]], optional):
-            The config of ChannelGroups. When the channel_group_cfg
+        channel_group_cfg (Union[ dict, Type[MutableChannelUnit]], optional):
+            The config of ChannelUnits. When the channel_group_cfg
             is a dict, it should follow the template below:
                 channel_group_cfg = dict(
-                    # type of used MutableChannelGroup
-                    type ='XxxMutableChannelGroup',
+                    # type of used MutableChannelUnit
+                    type ='XxxMutableChannelUnit',
                     # default args for MutableChananelGroup
                     default_args={},
                     groups = {
@@ -41,8 +41,8 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
                     }
                 ),
             The config template of 'groups' can be got using
-            MutableChannelGroup.config_template()
-            Defaults to SequentialMutableChannelGroup.
+            MutableChannelUnit.config_template()
+            Defaults to SequentialMutableChannelUnit.
 
         parse_cfg (Dict, optional):
             The config to parse the model.
@@ -55,7 +55,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
 
     Note:
         There are three ways used in ChannelMutator to parse a model and
-        get MutableChannelGroups.
+        get MutableChannelUnits.
         1. Using tracer. It needs parse_cfg to be the config of a tracer.
         2. Using config. When parse_cfg['type']='Config'. It needs that
         channel_group_cfg['group']['xxx_group_name] has a key 'channels'.
@@ -69,7 +69,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
             self,
             channel_group_cfg: Union[
                 dict,
-                Type[MutableChannelGroup]] = SequentialMutableChannelGroup,
+                Type[MutableChannelUnit]] = SequentialMutableChannelUnit,
             parse_cfg: Dict = dict(
                 type='BackwardTracer',
                 loss_calculator=dict(type='ImageClassifierPseudoLoss')),
@@ -85,8 +85,8 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
         self.parse_cfg = parse_cfg
 
         # groups
-        self._name2group: Dict[str, ChannelGroupType] = {}
-        self.groups: List[ChannelGroupType] = []
+        self._name2group: Dict[str, ChannelUnitType] = {}
+        self.groups: List[ChannelUnitType] = []
 
         # group config
         self.channel_group_cfg = channel_group_cfg
@@ -98,7 +98,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
         """Prepare from a model for pruning.
 
         It includes two steps:
-        1. parse the model and get MutableChannelGroups.
+        1. parse the model and get MutableChannelUnits.
         2. call group.prepare_for_pruning for each group.
         """
 
@@ -121,7 +121,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
     # ~
 
     @property
-    def mutable_groups(self) -> List[ChannelGroupType]:
+    def mutable_groups(self) -> List[ChannelUnitType]:
         """Prunable groups."""
         return [group for group in self.groups if group.is_mutable]
 
@@ -142,8 +142,8 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
         Example:
             dict(
                 channel_group_cfg = dict(
-                    # type of used MutableChannelGroup
-                    type ='XxxMutableChannelGroup',
+                    # type of used MutableChannelUnit
+                    type ='XxxMutableChannelUnit',
                     # default args for MutableChananelGroup
                     default_args={},
                     # config of groups
@@ -162,7 +162,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
 
 
         About the detail of the config of each group, please refer to
-        MutableChannelGroup.config_template()
+        MutableChannelUnit.config_template()
         """
         # template of groups
         groups = self.mutable_groups if only_mutable_groups else self.groups
@@ -231,13 +231,13 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
     def search_groups(self) -> Dict:
         return self._name2group
 
-    def mutable_class_type(self) -> Type[ChannelGroupType]:
+    def mutable_class_type(self) -> Type[ChannelUnitType]:
         return self.group_class
 
     # private methods
 
-    def _convert_channel_group_to_mutable(self, groups: List[ChannelGroup]):
-        """Convert ChannelGroups to MutableChannelGroups."""
+    def _convert_channel_group_to_mutable(self, groups: List[ChannelUnit]):
+        """Convert ChannelUnits to MutableChannelUnits."""
         mutable_groups = []
         for group in groups:
             args = copy.copy(self.group_default_args)
@@ -251,7 +251,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
 
     def _parse_channel_group_cfg(
             self,
-            channel_group_cfg) -> Tuple[Type[ChannelGroupType], Dict, Dict]:
+            channel_group_cfg) -> Tuple[Type[ChannelUnitType], Dict, Dict]:
         """Parse channel_group_cfg."""
         if isinstance(channel_group_cfg, dict):
             group_class = MODELS.module_dict[channel_group_cfg['type']]
@@ -264,7 +264,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
             if isinstance(group_init_cfg, str):
                 # load config file
                 group_init_cfg = fileio.load(group_init_cfg)
-        elif issubclass(channel_group_cfg, MutableChannelGroup):
+        elif issubclass(channel_group_cfg, MutableChannelUnit):
             group_class = channel_group_cfg
             default_group_args = {}
             group_init_cfg = {}
@@ -285,10 +285,10 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
         else:
             raise NotImplementedError()
         self._graph = graph
-        # get ChannelGroups
-        groups = ChannelGroup.init_from_graph(
+        # get ChannelUnits
+        groups = ChannelUnit.init_from_graph(
             graph, num_input_channel=num_input_channel)
-        # convert to MutableChannelGroups
+        # convert to MutableChannelUnits
         groups = self._convert_channel_group_to_mutable(groups)
         return groups
 
@@ -342,7 +342,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelGroupType]):
                         mutable2groups[mutable] = self.group_class(
                             mutable.num_channels, **self.group_default_args)
 
-                group: MutableChannelGroup = mutable2groups[mutable]
+                group: MutableChannelUnit = mutable2groups[mutable]
                 if is_output:
                     group.add_ouptut_related(
                         Channel(

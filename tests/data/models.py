@@ -5,10 +5,10 @@ import torch.nn as nn
 import torch
 from mmrazor.models.architectures.dynamic_ops import DynamicBatchNorm2d, DynamicConv2d, DynamicLinear, DynamicChannelMixin
 from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
-from mmrazor.models.mutables import MutableChannelGroup
+from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables import BaseMutable
-from mmrazor.models.mutables import OneShotMutableChannelGroup, SimpleMutableChannel
+from mmrazor.models.mutables import OneShotMutableChannelUnit, SimpleMutableChannel
 from mmrazor.registry import MODELS
 from mmengine.model import BaseModel
 # this file includes models for tesing.
@@ -475,7 +475,7 @@ class DwConvModel(nn.Module):
 
 
 def register_mutable(module: DynamicChannelMixin,
-                     mutable: OneShotMutableChannelGroup,
+                     mutable: OneShotMutableChannelUnit,
                      is_out=True,
                      start=0,
                      end=-1):
@@ -528,7 +528,7 @@ class SampleOneshotMutableChannel(SimpleMutableChannel):
 
 
 @MODELS.register_module()
-class SampleOneshotMutableChannelGroup(OneShotMutableChannelGroup):
+class SampleOneshotMutableChannelUnit(OneShotMutableChannelUnit):
 
     @classmethod
     def init_from_mutable_channel(
@@ -559,7 +559,7 @@ class DynamicLinearModel(nn.Module):
             nn.AdaptiveAvgPool2d(1))
         self.linear = DynamicLinear(16, 1000)
 
-        MutableChannelGroup._register_channel_container(
+        MutableChannelUnit._register_channel_container(
             self, MutableChannelContainer)
         self._register_mutable()
 
