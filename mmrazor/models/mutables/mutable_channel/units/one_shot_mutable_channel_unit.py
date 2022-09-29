@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 import torch.nn as nn
 
 from mmrazor.registry import MODELS
-from .sequential_mutable_channel_group import SequentialMutableChannelUnit
+from .sequential_mutable_channel_unit import SequentialMutableChannelUnit
 
 
 @MODELS.register_module()

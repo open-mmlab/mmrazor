@@ -7,7 +7,7 @@ import torch.nn as nn
 import mmrazor.models.architectures.dynamic_ops as dynamic_ops
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
-from .one_shot_mutable_channel_group import OneShotMutableChannelUnit
+from .one_shot_mutable_channel_unit import OneShotMutableChannelUnit
 
 
 @MODELS.register_module()

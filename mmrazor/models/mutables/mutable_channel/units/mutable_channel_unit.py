@@ -11,7 +11,7 @@ from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables.mutable_channel.base_mutable_channel import \
     BaseMutableChannel
 from ..mutable_channel_container import MutableChannelContainer
-from .channel_group import Channel, ChannelUnit
+from .channel_unit import Channel, ChannelUnit
 
 
 class MutableChannelUnit(ChannelUnit):

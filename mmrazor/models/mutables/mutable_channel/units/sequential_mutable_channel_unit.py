@@ -11,7 +11,7 @@ from mmrazor.models.utils import make_divisible
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
 from ..simple_mutable_channel import SimpleMutableChannel
-from .mutable_channel_group import MutableChannelUnit
+from .mutable_channel_unit import MutableChannelUnit
 
 
 # TODO change the name of SequentialMutableChannelUnit

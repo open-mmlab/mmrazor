@@ -10,7 +10,7 @@ from mmrazor.models.mutables import (BaseMutableChannel, ChannelUnitType,
                                      DerivedMutable, MutableChannelContainer,
                                      MutableChannelUnit,
                                      SequentialMutableChannelUnit)
-from mmrazor.models.mutables.mutable_channel.units.channel_group import (
+from mmrazor.models.mutables.mutable_channel.units.channel_unit import (
     Channel, ChannelUnit)
 from mmrazor.registry import MODELS
 from mmrazor.structures.graph import ModuleGraph
