@@ -121,7 +121,7 @@ class TestMutableChannelUnit(TestCase):
             for unit_type in GROUPS:
                 with self.subTest(model=model_data, unit=unit_type):
                     model: nn.Module = model_data()
-                    graph = ModuleGraph.init_from_fx_tracer(model)
+                    graph = ModuleGraph.init_from_backward_tracer(model)
                     units: List[
                         MutableChannelUnit] = unit_type.init_from_graph(
                             graph)
