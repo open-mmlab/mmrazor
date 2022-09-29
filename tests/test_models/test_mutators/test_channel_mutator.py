@@ -78,12 +78,17 @@ class TestChannelMutator(unittest.TestCase):
     def test_init_groups_from_cfg(self):
         ARCHITECTURE_CFG = dict(
             type='mmcls.ImageClassifier',
-            backbone=dict(type='mmcls.MobileNetV2', widen_factor=1.5),
+            backbone=dict(
+                type='ResNet',
+                depth=50,
+                num_stages=4,
+                out_indices=(3, ),
+                style='pytorch'),
             neck=dict(type='mmcls.GlobalAveragePooling'),
             head=dict(
                 type='mmcls.LinearClsHead',
                 num_classes=1000,
-                in_channels=1920,
+                in_channels=2048,
                 loss=dict(type='mmcls.CrossEntropyLoss', loss_weight=1.0),
                 topk=(1, 5)))
         model = MODELS.build(ARCHITECTURE_CFG)

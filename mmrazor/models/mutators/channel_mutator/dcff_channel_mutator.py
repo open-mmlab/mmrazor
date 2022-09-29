@@ -8,7 +8,7 @@ from torch.nn import Module
 from mmrazor.models.architectures.dynamic_ops import FuseConv2d
 from mmrazor.models.mutables import DCFFChannelGroup
 from mmrazor.registry import MODELS
-from .base_channel_mutator import ChannelGroupType, ChannelMutator
+from .channel_mutator import ChannelGroupType, ChannelMutator
 
 
 @MODELS.register_module()
@@ -61,7 +61,6 @@ class DCFFChannelMutator(ChannelMutator[DCFFChannelGroup]):
 
     def _reset_group_candidates(self):
         """Alter candidates of DCFFChannelGroup according to channel_cfgs."""
-        # print("name2group:", self._name2group)
         for key in self._channel_cfgs:
             group: DCFFChannelGroup = self._name2group[key]
             group.alter_candidates_after_init(

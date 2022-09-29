@@ -11,7 +11,7 @@
     ],
     "candidate_mode": "number"
   },
-  "backbone.layer1.2.conv3_(0, 256)_256": {
+  "backbone.layer1.0.conv3_(0, 256)_256": {
     "candidates": [
       230
     ],
@@ -53,7 +53,7 @@
     ],
     "candidate_mode": "number"
   },
-  "backbone.layer2.3.conv3_(0, 512)_512": {
+  "backbone.layer2.0.conv3_(0, 512)_512": {
     "candidates": [
       460
     ],
@@ -107,7 +107,7 @@
     ],
     "candidate_mode": "number"
   },
-  "backbone.layer3.5.conv3_(0, 1024)_1024": {
+  "backbone.layer3.0.conv3_(0, 1024)_1024": {
     "candidates": [
       921
     ],
@@ -185,7 +185,7 @@
     ],
     "candidate_mode": "number"
   },
-  "backbone.layer4.2.conv3_(0, 2048)_2048": {
+  "backbone.layer4.0.conv3_(0, 2048)_2048": {
     "candidates": [
       1843
     ],

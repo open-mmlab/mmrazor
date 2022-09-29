@@ -3,6 +3,7 @@ from typing import List, Union
 
 import torch.nn as nn
 
+import mmrazor.models.architectures.dynamic_ops as dynamic_ops
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
 from .one_shot_mutable_channel_group import OneShotMutableChannelGroup
@@ -32,8 +33,8 @@ class DCFFChannelGroup(OneShotMutableChannelGroup):
 
     def prepare_for_pruning(self, model: nn.Module):
         """In ``DCFFChannelGroup`` nn.Conv2d is replaced with FuseConv2d."""
-        # avoid circular import for python 3.6.9
-        import mmrazor.models.architectures.dynamic_ops as dynamic_ops
+        # fix import for python 3.6.9 and avoid circular import
+        # import mmrazor.models.architectures.dynamic_ops as dynamic_ops
         self._replace_with_dynamic_ops(
             model, {
                 nn.Conv2d: dynamic_ops.FuseConv2d,
@@ -51,8 +52,8 @@ class DCFFChannelGroup(OneShotMutableChannelGroup):
             candidates (List(int)): candidate list of ``dynamic_ops``.
                 In ``DCFFChannelGroup`` list contains one candidate.
         """
-        # avoid circular import for python 3.6.9
-        import mmrazor.models.architectures.dynamic_ops as dynamic_ops
+        # fix import for python 3.6.9 and avoid circular import
+        # import mmrazor.models.architectures.dynamic_ops as dynamic_ops
         self.candidate_choices = candidates
         for channel in self.input_related:
             if isinstance(channel.module, dynamic_ops.FuseConv2d):
