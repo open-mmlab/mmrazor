@@ -146,6 +146,7 @@ class SwitchableBatchNorm2d(DynamicBatchNorm2d):
         self.candidate_bn = nn.ModuleDict()
 
     def init_candidates(self, candidates: List):
+        """Initialize candicates."""
         assert len(self.candidate_bn) == 0
         self._check_candidates(candidates)
         for num in candidates:
@@ -155,6 +156,7 @@ class SwitchableBatchNorm2d(DynamicBatchNorm2d):
                 self.weight.dtype)
 
     def forward(self, input: Tensor) -> Tensor:
+        """Forward."""
         choice_num = self.activated_channel_num()
         if choice_num == self.num_features:
             return super().forward(input)
@@ -163,6 +165,7 @@ class SwitchableBatchNorm2d(DynamicBatchNorm2d):
             return self.candidate_bn[str(choice_num)](input)
 
     def to_static_op(self: _BatchNorm) -> nn.Module:
+        """Convert to a normal BatchNorm."""
         choice_num = self.activated_channel_num()
         if choice_num == self.num_features:
             return super().to_static_op()
@@ -173,15 +176,18 @@ class SwitchableBatchNorm2d(DynamicBatchNorm2d):
     # private methods
 
     def activated_channel_num(self):
+        """The number of activated channels."""
         mask = self._get_num_features_mask()
         choice_num = (mask == 1).sum().item()
         return choice_num
 
     def _check_candidates(self, candidates: List):
+        """Check if candidates aviliable."""
         for value in candidates:
             assert isinstance(value, int)
             assert 0 < value <= self.num_features
 
     @property
     def static_op_factory(self):
+        """Return initializer of static op."""
         return nn.BatchNorm2d

@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 
 from mmrazor.models.mutables import SlimmableChannelGroup
 from mmrazor.registry import MODELS
-from .base_channel_mutator import ChannelMutator
+from .channel_mutator import ChannelMutator
 
 
 @MODELS.register_module()
