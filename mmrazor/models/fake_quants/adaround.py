@@ -1,15 +1,13 @@
 import torch
-from torch.ao.quantization import FakeQuantize
 from mmrazor.registry import MODELS
 from mmrazor.models.utils import (_is_per_channel, _is_per_tensor, 
     _is_symmetric_quant, _is_float_qparams) 
 from mmrazor.models.observers import MinMaxObserver
-from .base import BaseFakeQuantize
+from .base import FakeQuantize
 
 @MODELS.register_module()
-class AdaRoundFakeQuantize(BaseFakeQuantize):
-    
-    def __init__(observer):
+class AdaRoundFakeQuantize(FakeQuantize):
+    def __init__(self, observer):
         super().__init__(observer)
         self.adaround = False
     

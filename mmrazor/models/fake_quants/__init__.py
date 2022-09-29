@@ -1,4 +1,5 @@
-from .base import BaseFakeQuantize
+from .base import FakeQuantize
 from .adaround import AdaRoundFakeQuantize
+from .qdrop import QDropFakeQuantize
 
-__all__ = ['BaseFakeQuantize', 'AdaRoundFakeQuantize']
+__all__ = ['FakeQuantize', 'AdaRoundFakeQuantize', 'QDropFakeQuantize']

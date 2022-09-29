@@ -1,10 +1,12 @@
 from mmrazor.registry import LOOPS
 from mmrazor.models.task_modules import ModuleInputsRecorder, ModuleOutputsRecorder
-from mmengine.runner import EpochBasedTrainLoop
+from mmengine.runner import EpochBasedTrainLoop, TestLoop
+from mmengine.evaluator import Evaluator
 from typing import Union, Optional, List, Tuple, Dict
 from torch.utils.data import DataLoader
-from utils import extract_subgraph, extract_blocks
+from .utils import extract_subgraph, extract_blocks
 import numpy as np
+import torch
 
 _ADAROUND_SUPPORT_TYPE = (torch.nn.Conv2d, torch.nn.Linear)
 
@@ -42,9 +44,11 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
         else:
             self.model = runner.model
     
-    # TODO: to finish
     def calibrate(self, calibrate_dataloader) -> None:
-        pass
+        self.model.eval()
+        with torch.no_grad():
+            for batch_data in calibrate_dataloader:
+                self.model(batch_data)
     
     def run(self) -> None:
         """Launch training."""
@@ -80,7 +84,8 @@ class PTQLoop(TestLoop):
                  runner,
                  dataloader: Union[DataLoader, Dict],
                  evaluator: Union[Evaluator, Dict, List],
-                 calibrate_dataloader=None,
+                 calibrate_dataloader: Optional[Union[DataLoader, Dict]] = None,
+                 batch_num: Optional[int] = None,
                  reconstruction_cfg: Optional[Dict] = None,
                  fp16: bool = False):
         super().__init__(runner, 
@@ -103,12 +108,19 @@ class PTQLoop(TestLoop):
             self.model = runner.model.module
         else:
             self.model = runner.model
+        
+        self.batch_num = batch_num
+        self.config = reconstruction_cfg
     
-    # TODO: to finish
     def calibrate(self, calibrate_dataloader) -> None:
-        pass
+        self.model.eval()
+        with torch.no_grad():
+            for i, batch_data in enumerate(calibrate_dataloader):
+                if self.batch_num and i >= batch_num:
+                    break
+                self.model(batch_data)
 
-    def save_inter_result(model, dataloader, slices, store_input=True, store_output=True):
+    def _save_inter_result(model, dataloader, slices, store_input=True, store_output=True):
         recorders = {}
         for s in slices:
             node_l, node_r = s[:2]
@@ -121,12 +133,42 @@ class PTQLoop(TestLoop):
         
         with torch.no_grad():
             with manager:
-                for data in dataloader:
+                for i, data in enumerate(dataloader):
+                    if self.batch_num and i >= batch_num:
+                        break
                     model(data)
         return manager
 
-    def sub_reconstruction(graphmodule, manager, config):
-        pass
+    def sub_reconstruction(graphmodule, input_recorder, output_recorder, config):
+        w_para = []
+        for name, layer in graphmodule.modules():
+            if isinstance(layer, _ADAROUND_SUPPORT_TYPE):
+                weight_fake_quant = layer.weight_fake_quant
+                weight_fake_quant.init(layer.weight.data)
+                w_para += [weight_fake_quant.alpha]
+        
+        w_opt = torch.optim.Adam(w_para)
+        loss_func = MODELS.build(config.loss)
+        
+        for i in range(config.loss.iters):
+            w_opt.zero_grad()
+            
+            data_size = len(input_recorder.data_buffer)
+            data_index = np.random.randint(0, data_size)
+            out_quant = graphmodule(input_recorder.get_recorder_data(data_index))
+            out_fp = output_recorder.get_recorder_data(data_index)
+            err = loss_func(graphmodule, out_quant, out_fp)
+            err.backward()
+            w_opt.step()
+
+        for name, layer in graphmodule.named_modules():
+            if isinstance(layer, _ADAROUND_SUPPORT_TYPE):
+                weight_fake_quant = layer.weight_fake_quant
+                layer.weight.data = weight_fake_quant.get_hard_value(layer.weight.data)
+                weight_fake_quant.adaround = False
+            if isinstance(layer, torch.quantization.FakeQuantize) and hasattr(layer, 'prob'):
+                # recover to promise that drop activation quantization only occurs at reconstruction phase
+                layer.prob = 1.0   
 
     def reconstruction(self, graphmodule, calibrate_dataloader, config):
         assert isinstance(graphmodule, torch.fx.GraphModule)
@@ -135,24 +177,26 @@ class PTQLoop(TestLoop):
 
         # get layers/blocks need to reconstructe
         slices = []
-        if config['pattern'] == 'layer':
+        if config.pattern== 'layer':
             slices = extract_layers(graphmodule, layer_types=_ADAROUND_SUPPORT_TYPE)
-        elif config['pattern'] == 'block':
+        elif config.pattern == 'block':
             slices = extract_blocks(graphmodule)
         else:
             # TODO: add remind
             raise NotImplementedError
         
         # save fp inputs and outputs of each layers
-        manager_fp = self.save_inter_result(graphmodule_fp, self.calibrate_dataloader, slices)
+        manager_fp = self._save_inter_result(graphmodule_fp, self.calibrate_dataloader, slices)
 
         # extract subgraph_module
         for s in slices:
             sub_graphmodule = extract_subgraph(graphmodule_quant, s)
-            manager_quant = self.save_inter_result(graphmodule_quant, self.calibrate_dataloader, [s], store_output=False)
-            recorder_index = s[0].target + '_input'
-            cached_inputs = manager_fp[recorder_index] if np.random.random() < config['prob'] else manager_quant[recorder_index]
-            sub_reconstruction(sub_graphmodule, cached_inputs, cached_outputs, config)
+            manager_quant = self._save_inter_result(graphmodule_quant, self.calibrate_dataloader, [s], store_output=False)
+            input_index = s[0].target + '_input'
+            output_index = s[1].target + '_output'
+            input_recorder = manager_quant.get_recorder(input_index)
+            output_recorder = manager_fp.get_recorder(output_index)
+            sub_reconstruction(sub_graphmodule, input_recorder, output_recorder, config)
 
         return graphmodule_quant
     
@@ -169,7 +213,9 @@ class PTQLoop(TestLoop):
         
         self.model.state(1, 1)
 
-        self.reconstruction()
+        if self.config is not None:
+            self.model.architecture = self.reconstruction(self.model, 
+                self.calibrate_dataloader, self.config)
 
         self.model.convert()
 

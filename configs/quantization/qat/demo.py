@@ -11,7 +11,7 @@ train_cfg = dict(
 
 model = dict(
     type='QAT',
-    architecture=_base_.resnet,
+    architecture=_base_.model,
     quantizer=dict(
         type='TensorRTQuantizer',
         is_qat=True)
