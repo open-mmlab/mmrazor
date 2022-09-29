@@ -5,7 +5,7 @@ from .runner import (AutoSlimValLoop, DartsEpochBasedTrainLoop,
                      DartsIterBasedTrainLoop, EvolutionSearchLoop,
                      GreedySamplerTrainLoop, SelfDistillValLoop,
                      SingleTeacherDistillValLoop, SlimmableValLoop,
-                     QATEpochBasedLoop)
+                     QATEpochBasedLoop, PTQLoop)
 
 __all__ = [
     'SeparateOptimWrapperConstructor', 'DumpSubnetHook',
@@ -16,6 +16,10 @@ __all__ = [
     'SelfDistillValLoop'
 =======
     'GreedySamplerTrainLoop', 'AutoSlimValLoop', 'SelfDistillValLoop',
+<<<<<<< HEAD
     'EstimateResourcesHook', 'QATEpochBasedLoop'
 >>>>>>> 4bcbb1d (remove CPatcher in custome_tracer)
+=======
+    'EstimateResourcesHook', 'QATEpochBasedLoop', 'PTQLoop'
+>>>>>>> 61453e2 (adaround experiment)
 ]

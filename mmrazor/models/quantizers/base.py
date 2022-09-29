@@ -111,18 +111,10 @@ class CustomQuantizer(BaseModule):
     def qconfig_convert(self, qconfig):
         self.w_qscheme = QuantizeScheme(**qconfig['w_qscheme'])
         self.a_qscheme = QuantizeScheme(**qconfig['a_qscheme'])
-        
-        w_observer = MODELS.build(qconfig['w_observer'])
-        a_observer = MODELS.build(qconfig['a_observer'])
-        self.w_observer = w_observer.with_args(**self.w_qscheme.to_observer_params())
-        self.a_observer = a_observer.with_args(**self.a_qscheme.to_observer_params())
-
-        # w_fake_quant = MODELS.build(qconfig['w_fake_quant'])
-        # a_fake_quant = MODELS.build(qconfig['a_fake_quant'])
-        # self.w_fake_quant = w_fake_quant.with_args(observer=self.w_observer)
-        # self.a_fake_quant = a_fake_quant.with_args(observer=self.a_observer)
-        self.w_fake_quant = MODELS.build(qconfig['w_fake_quant'])
-        self.a_fake_quant = MODELS.build(qconfig['a_fake_quant'])
+        self.w_observer = MODELS.get(qconfig['w_observer']['type']).with_args(**self.w_qscheme.to_observer_params())
+        self.a_observer = MODELS.get(qconfig['a_observer']['type']).with_args(**self.a_qscheme.to_observer_params())
+        self.w_fake_quant = MODELS.get(qconfig['w_fake_quant']['type']).with_args(observer=self.w_observer)
+        self.a_fake_quant = MODELS.get(qconfig['a_fake_quant']['type']).with_args(observer=self.a_observer)
         
         torch_qconfig = QConfig(weight=self.w_fake_quant, activation=self.a_fake_quant)
         return torch_qconfig
@@ -173,86 +165,3 @@ class CustomQuantizer(BaseModule):
             self.is_qat,
             self.prepare_custom_config_dict)
         return graph_module
-
-
-# @MODELS.register_module()
-# class BaseQuantizer(BaseModule):
-
-#     def __init__(self,
-#                  qconfig=DefalutQconfigs['default'], 
-#                  prepare_custom_config=None,
-#                  convert_custom_config=None,
-#                  _remove_qconfig=True,
-#                  equalization_qconfig=None,
-#                  is_qat=True,
-#                  init_cfg=None):
-#         super().__init__(init_cfg)
-#         if self.check_qconfig(qconfig):
-#             self.qconfig = self.qconfig_convert(qconfig)
-#         else:
-#             raise ValueError('qconfig is uncorrect!')
-#         self.prepare_custom_config = prepare_custom_config    
-#         self.equalization_qconfig = equalization_qconfig
-#         self.is_qat = is_qat
-#         self.convert_custom_config = convert_custom_config
-#         self._remove_qconfig = _remove_qconfig
-
-#     def check_qconfig(self, qconfig):
-#         is_pass = True
-#         for arg in CheckArgs:
-#             if arg == 'qtype':
-#                 if qconfig[arg] in SupportQtypes and arg in qconfig.keys():
-#                     continue
-#                 else:
-#                     is_pass = False
-#                     break
-#             else:
-#                 if isinstance(qconfig[arg], dict) and arg in qconfig.keys():
-#                     continue
-#                 else:
-#                     is_pass = False
-#                     break
-#         return is_pass
-
-#     def qconfig_convert(self, qconfig):
-#         self.w_qscheme = QuantizeScheme(**qconfig['w_qscheme'])
-#         self.a_qscheme = QuantizeScheme(**qconfig['a_qscheme'])
-        
-#         w_observer = MODELS.build(qconfig['w_observer'])
-#         a_observer = MODELS.build(qconfig['a_observer'])
-#         self.w_observer = w_observer.with_args(**self.w_qscheme.to_observer_params())
-#         self.a_observer = a_observer.with_args(**self.a_qscheme.to_observer_params())
-
-#         w_fake_quant = MODELS.build(qconfig['w_fake_quant'])
-#         a_fake_quant = MODELS.build(qconfig['a_fake_quant'])
-#         self.w_fake_quant = w_fake_quant.with_args(observer=self.w_observer)
-#         self.a_fake_quant = a_fake_quant.with_args(observer=self.a_observer)
-        
-#         torch_qconfig = QConfig(weight=self.w_fake_quant, activation=self.a_fake_quant)
-#         return torch_qconfig
-
-#     def prepare(self, model):
-#         qconfig_dict = {"": self.qconfig}
-#         if self.is_qat:
-#             prepared_model = prepare_qat_fx(
-#                 model=model,
-#                 qconfig_dict=qconfig_dict,
-#                 prepare_custom_config_dict=self.prepare_custom_config
-#             )
-#         else:
-#             prepared_model = prepare_fx(
-#                 model=model,
-#                 qconfig_dict=qconfig_dict,
-#                 prepare_custom_config_dict=self.prepare_custom_config,
-#                 equalization_qconfig_dict=self.equalization_qconfig
-#             )
-#         return prepared_model
-
-#     def convert(self, graph_module):
-#         return convert_fx(
-#             graph_module=graph_module,
-#             is_reference=self.is_reference,
-#             convert_custom_config_dict=self.convert_custom_config,
-#             _remove_qconfig=self._remove_qconfig,
-#             qconfig_dict={"": self.qconfig}
-#         )

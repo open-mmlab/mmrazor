@@ -14,10 +14,11 @@ from .l2_loss import L2Loss
 from .ofd_loss import OFDLoss
 from .relational_kd import AngleWiseRKD, DistanceWiseRKD
 from .weighted_soft_label_distillation import WSLD
+from .adaround_loss import AdaRoundLoss
 
 __all__ = [
     'ChannelWiseDivergence', 'KLDivergence', 'AngleWiseRKD', 'DistanceWiseRKD',
     'WSLD', 'L2Loss', 'ABLoss', 'DKDLoss', 'KDSoftCELoss', 'ActivationLoss',
     'OnehotLikeLoss', 'InformationEntropyLoss', 'FTLoss', 'ATLoss', 'OFDLoss',
-    'L1Loss', 'FBKDLoss', 'CRDLoss'
+    'L1Loss', 'FBKDLoss', 'CRDLoss', 'AdaRoundLoss'
 ]

@@ -1,3 +1,3 @@
-from .qat import QAT
+from .base import GeneralQuant
 
-__all__ = ['QAT']
+__all__ = ['GeneralQuant']
