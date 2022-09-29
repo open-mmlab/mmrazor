@@ -32,7 +32,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
                 channel_unit_cfg = dict(
                     # type of used MutableChannelUnit
                     type ='XxxMutableChannelUnit',
-                    # default args for MutableChananelGroup
+                    # default args for MutableChananelUnit
                     default_args={},
                     units = {
                         # config of a unit
@@ -144,7 +144,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
                 channel_unit_cfg = dict(
                     # type of used MutableChannelUnit
                     type ='XxxMutableChannelUnit',
-                    # default args for MutableChananelGroup
+                    # default args for MutableChananelUnit
                     default_args={},
                     # config of units
                     units = {

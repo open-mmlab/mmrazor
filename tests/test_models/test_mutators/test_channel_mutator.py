@@ -31,7 +31,7 @@ class RandomChannelUnit(SequentialMutableChannelUnit):
         return mask
 
 
-DATA_GROUPSS = [
+DATA_UNITS = [
     SequentialMutableChannelUnit, RandomChannelUnit, L1MutableChannelUnit
 ]
 
@@ -64,7 +64,7 @@ class TestChannelMutator(unittest.TestCase):
         data_models = TestGraph.backward_tracer_passed_models()
 
         for data_model in data_models[:1]:
-            for unit_type in DATA_GROUPSS:
+            for unit_type in DATA_UNITS:
                 with self.subTest(model=data_model, unit=unit_type):
 
                     model = data_model()
