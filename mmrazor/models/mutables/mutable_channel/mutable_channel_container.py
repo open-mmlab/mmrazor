@@ -71,8 +71,9 @@ class MutableChannelContainer(BaseMutableChannel):
 
         self.mutable_channels[(start, end)] = mutable_channel
 
-    @staticmethod
-    def register_mutable_channel_to_module(module: DynamicChannelMixin,
+    @classmethod
+    def register_mutable_channel_to_module(cls,
+                                           module: DynamicChannelMixin,
                                            mutable: BaseMutableChannel,
                                            is_to_output_channel=True,
                                            start=0,

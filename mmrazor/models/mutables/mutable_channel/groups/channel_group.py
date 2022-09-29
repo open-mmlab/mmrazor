@@ -130,6 +130,7 @@ class ChannelGroup(BaseModule):
         def auto_fill_channel_config(channel_config: Dict,
                                      is_output_channel: bool,
                                      group_config: Dict = config):
+            """Fill channel config with default values."""
             if 'start' not in channel_config:
                 channel_config['start'] = 0
             if 'end' not in channel_config:
@@ -158,15 +159,7 @@ class ChannelGroup(BaseModule):
     def init_from_channel_group(cls,
                                 group: 'ChannelGroup',
                                 args: Dict = {}) -> 'ChannelGroup':
-        """Initial a object of current class from a ChannelGroup object.
-
-        Args:
-            group (ChannelGroup)
-            args (Dict): arguments to initial the object of current class.
-
-        Returns:
-            Type(cls)
-        """
+        """Initial a object of current class from a ChannelGroup object."""
         """Initialize a MutalbeChannelGroup from a ChannelGroup."""
         args['num_channels'] = group.num_channels
         mutable_group = cls(**args)
