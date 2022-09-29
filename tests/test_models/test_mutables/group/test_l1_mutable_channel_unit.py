@@ -13,7 +13,7 @@ class TestL1MutableChannelUnit(TestCase):
     def test_init(self):
         model = LineModel()
         mutator = ChannelMutator(
-            channel_group_cfg={
+            channel_unit_cfg={
                 'type': 'L1MutableChannelUnit',
                 'default_args': {
                     'choice_mode': 'ratio'

@@ -69,7 +69,7 @@ class TestChannelMutator(unittest.TestCase):
 
                     model = data_model()
 
-                    mutator = ChannelMutator(channel_group_cfg=group_type)
+                    mutator = ChannelMutator(channel_unit_cfg=group_type)
                     mutator.prepare_from_supernet(model)
                     mutator.groups
 
@@ -128,7 +128,7 @@ class TestChannelMutator(unittest.TestCase):
             with self.subTest(model=Model):
                 model = Model()
                 mutator = ChannelMutator(
-                    channel_group_cfg={
+                    channel_unit_cfg={
                         'type': 'SampleOneshotMutableChannelUnit',
                         'default_args': {}
                     },

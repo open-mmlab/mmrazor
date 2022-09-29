@@ -78,13 +78,13 @@ class TestMutableChannelUnit(TestCase):
         groups = [DefaultChannelUnit.init_from_cfg(model, config)]
         self._test_groups(groups, model)
 
-    def test_init_from_channel_group(self):
+    def test_init_from_channel_unit(self):
         model = LineModel()
         # init using tracer
         graph = ModuleGraph.init_from_backward_tracer(model)
         groups: List[ChannelUnit] = ChannelUnit.init_from_graph(graph)
         mutable_groups = [
-            DefaultChannelUnit.init_from_channel_group(group)
+            DefaultChannelUnit.init_from_channel_unit(group)
             for group in groups
         ]
         self._test_groups(mutable_groups, model)

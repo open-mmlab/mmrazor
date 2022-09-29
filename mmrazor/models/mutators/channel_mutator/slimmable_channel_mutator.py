@@ -12,7 +12,7 @@ class SlimmableChannelMutator(ChannelMutator[SlimmableChannelUnit]):
     SlimmableNetwork algorithm.
 
     Args:
-        channel_group_cfg (Dict): The config of ChannelUnits. Defaults to
+        channel_unit_cfg (Dict): The config of ChannelUnits. Defaults to
             dict( type='SlimmableChannelUnit', groups={}).
         parse_cfg (Dict): The config of the tracer to parse the model.
             Defaults to dict( type='BackwardTracer',
@@ -22,14 +22,14 @@ class SlimmableChannelMutator(ChannelMutator[SlimmableChannelUnit]):
     """
 
     def __init__(self,
-                 channel_group_cfg=dict(
+                 channel_unit_cfg=dict(
                      type='SlimmableChannelUnit', groups={}),
                  parse_cfg=dict(
                      type='BackwardTracer',
                      loss_calculator=dict(type='ImageClassifierPseudoLoss')),
                  init_cfg: Optional[Dict] = None) -> None:
 
-        super().__init__(channel_group_cfg, parse_cfg, init_cfg)
+        super().__init__(channel_unit_cfg, parse_cfg, init_cfg)
 
         self.subnets = self._prepare_subnets(self.groups_cfg)
 

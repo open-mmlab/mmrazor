@@ -189,7 +189,7 @@ class ChannelUnit(BaseModule):
         return group
 
     @classmethod
-    def init_from_channel_group(cls,
+    def init_from_channel_unit(cls,
                                 group: 'ChannelUnit',
                                 args: Dict = {}) -> 'ChannelUnit':
         """Initial a object of current class from a ChannelUnit object."""
@@ -207,15 +207,15 @@ class ChannelUnit(BaseModule):
                         num_input_channel=3) -> List['ChannelUnit']:
         """Parse a module-graph and get ChannelUnits."""
 
-        def init_from_base_channel_group(base_channel_group: BaseChannelUnit):
-            group = cls(len(base_channel_group.channel_elems), **group_args)
+        def init_from_base_channel_unit(base_channel_unit: BaseChannelUnit):
+            group = cls(len(base_channel_unit.channel_elems), **group_args)
             group.input_related = nn.ModuleList([
                 Channel.init_from_base_channel(channel)
-                for channel in base_channel_group.input_related
+                for channel in base_channel_unit.input_related
             ])
             group.output_related = nn.ModuleList([
                 Channel.init_from_base_channel(channel)
-                for channel in base_channel_group.output_related
+                for channel in base_channel_unit.output_related
             ])
             return group
 
@@ -223,7 +223,7 @@ class ChannelUnit(BaseModule):
                                              default_channel_node_converter)
         group_graph.forward(num_input_channel)
         groups = group_graph.collect_groups()
-        groups = [init_from_base_channel_group(group) for group in groups]
+        groups = [init_from_base_channel_unit(group) for group in groups]
         return groups
 
     # tools

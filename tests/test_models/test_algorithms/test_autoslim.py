@@ -30,7 +30,7 @@ ARCHITECTURE_CFG = dict(
 
 MUTATOR_CFG = dict(
     type='OneShotChannelMutator',
-    channel_group_cfg=dict(
+    channel_unit_cfg=dict(
         type='OneShotMutableChannelUnit',
         default_args=dict(
             candidate_choices=list(i / 12 for i in range(2, 13)),

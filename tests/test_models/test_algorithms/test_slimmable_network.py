@@ -27,7 +27,7 @@ CHANNEL_CFG_PATH = 'tests/data/MBV2_slimmable_config.json'
 
 MUTATOR_CFG = dict(
     type='SlimmableChannelMutator',
-    channel_group_cfg=dict(
+    channel_unit_cfg=dict(
         type='SlimmableChannelUnit', groups=CHANNEL_CFG_PATH),
     parse_cfg=dict(
         type='BackwardTracer',
@@ -72,7 +72,7 @@ class TestSlimmable(TestCase):
 
         # assert can generate config template
         mutator_cfg = copy.deepcopy(MUTATOR_CFG)
-        mutator_cfg['channel_group_cfg']['groups'] = {}
+        mutator_cfg['channel_unit_cfg']['groups'] = {}
         algo = SlimmableNetwork(mutator_cfg, MODEL_CFG)
         try:
             algo.mutator.config_template()
