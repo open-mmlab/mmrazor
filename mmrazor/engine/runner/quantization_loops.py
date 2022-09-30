@@ -118,9 +118,7 @@ class PTQLoop(TestLoop):
             for i, batch_data in enumerate(calibrate_dataloader):
                 if self.batch_num and i >= self.batch_num:
                     break
-                import pdb 
-                pdb.set_trace()
-                self.model(batch_data)
+                self.model.calib_step(batch_data)
 
     def _save_inter_result(model, dataloader, slices, store_input=True, store_output=True):
         recorders = {}
