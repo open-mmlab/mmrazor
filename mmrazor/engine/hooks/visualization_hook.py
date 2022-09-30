@@ -176,7 +176,7 @@ class RazorVisualizationHook(Hook):
             for name, record in self.mappings.items():
                 recorder = self.recorder_manager.get_recorder(record.recorder)
                 record_idx = getattr(record, 'record_idx', 0)
-                data_idx = getattr(record, 'data_idx')
+                data_idx = getattr(record, 'data_idx', None)
                 feats = recorder.get_record_data(record_idx, data_idx)
                 if isinstance(feats, torch.Tensor):
                     feats = (feats, )
@@ -192,12 +192,15 @@ class RazorVisualizationHook(Hook):
                         out_file = f'{stage}_data_idx_{idx}_{name}_{i}.jpg'
                         out_file = osp.join(self.out_dir, out_file)
 
-                    # TODO: Supported in mmengine's Viusalizer.
                     self._visualizer.add_datasample(
                         f'{stage}_data_idx_{idx}_{name}_{i}',
                         drawn_img,
+                        draw_gt=False,
+                        draw_pred=False,
+                        draw_score=False,
                         show=self.show,
                         wait_time=0.1,
+                        # TODO: Supported in mmengine's Viusalizer.
                         out_file=out_file,
                         step=self._step)
                     self._step += 1
