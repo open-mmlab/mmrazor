@@ -26,7 +26,7 @@ class PKDLoss(nn.Module):
         self.loss_weight = loss_weight
         self.resize_stu = resize_stu
 
-    def norm(self, feat: torch.Tensor):
+    def norm(self, feat: torch.Tensor) -> torch.Tensor:
         """Normalize the feature maps to have zero mean and unit variances.
 
         Args:
@@ -43,16 +43,18 @@ class PKDLoss(nn.Module):
         """Forward computation.
 
         Args:
-            preds_S (torch.Tensor): The student model prediction with
-                shape (N, C, H, W).
-            preds_T (torch.Tensor): The teacher model prediction with
-                shape (N, C, H, W).
+            preds_S (torch.Tensor | Tuple[torch.Tensor]): The student model
+                prediction. If tuple, it should be several tensors with shape
+                (N, C, H, W).
+            preds_T (torch.Tensor | Tuple[torch.Tensor]): The teacher model
+                prediction. If tuple, it should be several tensors with shape
+                (N, C, H, W).
 
         Return:
             torch.Tensor: The calculated loss value.
         """
         if isinstance(preds_S, torch.Tensor):
-            preds_S, preds_T = [preds_S], [preds_T]
+            preds_S, preds_T = (preds_S, ), (preds_T, )
 
         loss = 0.
 
