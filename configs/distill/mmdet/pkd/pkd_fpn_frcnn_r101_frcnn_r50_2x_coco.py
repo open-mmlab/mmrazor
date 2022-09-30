@@ -21,10 +21,10 @@ model = dict(
         student_recorders=dict(fpn=dict(type='ModuleOutputs', source='neck')),
         teacher_recorders=dict(fpn=dict(type='ModuleOutputs', source='neck')),
         distill_losses=dict(
-            loss_pkd_fpn0=dict(type='PKDLoss', loss_weight=5),
-            loss_pkd_fpn1=dict(type='PKDLoss', loss_weight=5),
-            loss_pkd_fpn2=dict(type='PKDLoss', loss_weight=5),
-            loss_pkd_fpn3=dict(type='PKDLoss', loss_weight=5)),
+            loss_pkd_fpn0=dict(type='PKDLoss', loss_weight=6),
+            loss_pkd_fpn1=dict(type='PKDLoss', loss_weight=6),
+            loss_pkd_fpn2=dict(type='PKDLoss', loss_weight=6),
+            loss_pkd_fpn3=dict(type='PKDLoss', loss_weight=6)),
         loss_forward_mappings=dict(
             loss_pkd_fpn0=dict(
                 preds_S=dict(from_student=True, recorder='fpn', data_idx=0),

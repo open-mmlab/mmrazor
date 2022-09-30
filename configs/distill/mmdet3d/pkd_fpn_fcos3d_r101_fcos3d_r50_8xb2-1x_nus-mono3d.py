@@ -4,7 +4,6 @@ _base_ = [
 
 train_dataloader = dict(num_workers=4)
 
-# student baseline: mAP = 0.26
 student = _base_.model
 student.backbone.depth = 50  # using original ResNet50
 student.backbone.dcn = None  # no dcn in backbone
