@@ -54,13 +54,14 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
         """Launch training."""
         self.runner.call_hook('before_train')
         
+        self.model.eval()
         self.model.prepare()
         
         if self.is_calibrate:
-            self.model.state(1, 0)
+            self.model.state = (1, 0)
             self.calibrate(self.calibrate_dataloader)
         
-        self.model.state(1, 1)
+        self.model.state = (1, 1)
 
         while self._epoch < self._max_epochs:
             self.run_epoch()
@@ -89,8 +90,7 @@ class PTQLoop(TestLoop):
                  reconstruction_cfg: Optional[Dict] = None,
                  fp16: bool = False):
         super().__init__(runner, 
-                         dataloader, 
-                         max_epochs, 
+                         dataloader,
                          evaluator, 
                          fp16)
         if isinstance(calibrate_dataloader, dict):
@@ -116,8 +116,10 @@ class PTQLoop(TestLoop):
         self.model.eval()
         with torch.no_grad():
             for i, batch_data in enumerate(calibrate_dataloader):
-                if self.batch_num and i >= batch_num:
+                if self.batch_num and i >= self.batch_num:
                     break
+                import pdb 
+                pdb.set_trace()
                 self.model(batch_data)
 
     def _save_inter_result(model, dataloader, slices, store_input=True, store_output=True):
@@ -205,13 +207,14 @@ class PTQLoop(TestLoop):
         self.runner.call_hook('before_test')
         self.runner.call_hook('before_test_epoch')
 
+        self.model.eval()
         self.model.prepare()
         
         if self.is_calibrate:
-            self.model.state(1, 0)
+            self.model.state = (1, 0)
             self.calibrate(self.calibrate_dataloader)
         
-        self.model.state(1, 1)
+        self.model.state = (1, 1)
 
         if self.config is not None:
             self.model.architecture = self.reconstruction(self.model, 
@@ -219,7 +222,7 @@ class PTQLoop(TestLoop):
 
         self.model.convert()
 
-        self.runner.model.eval()
+        self.model.eval()
         for idx, data_batch in enumerate(self.dataloader):
             self.run_iter(idx, data_batch)
 

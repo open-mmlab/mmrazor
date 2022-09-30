@@ -3,6 +3,8 @@ _base_ = [
 ]
 
 test_cfg = dict(
+    _delete_=True,
+    type='mmrazor.PTQLoop',
     dataloader=_base_.test_dataloader,
     evaluator=_base_.test_evaluator,
     calibrate_dataloader=_base_.train_dataloader,

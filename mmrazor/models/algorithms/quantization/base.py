@@ -1,5 +1,6 @@
 from mmrazor.registry import MODELS
 from ..base import BaseAlgorithm
+import torch
 
 @MODELS.register_module()
 class GeneralQuant(BaseAlgorithm):
@@ -30,7 +31,8 @@ class GeneralQuant(BaseAlgorithm):
         return (self.observers_enabled, self.fake_quants_enabled)
 
     @state.setter
-    def state(self, observers_enabled, fake_quants_enabled):
+    def state(self, state):
+        observers_enabled, fake_quants_enabled = state
         for name, submodule in self.architecture.named_modules():
             if isinstance(submodule, torch.quantization.FakeQuantize):
                 if observers_enabled:

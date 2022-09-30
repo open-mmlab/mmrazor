@@ -6,7 +6,7 @@ PARTITION="mm_dev"
 JOB_NAME="adaround"
 WORK_DIR="../experiments/adaround"
 CONFIG="configs/quantization/ptq/adaround.py"
-CHECKPOINT="/tmp/humu/resnet18_8xb32_in1k_20210831-fbbb1da6.pth"
+CHECKPOINT="/mnt/petrelfs/humu/share/resnet18_8xb32_in1k_20210831-fbbb1da6.pth"
 GPUS=${GPUS:-2}
 GPUS_PER_NODE=${GPUS_PER_NODE:-2}
 CPUS_PER_TASK=${CPUS_PER_TASK:-5}
@@ -23,4 +23,4 @@ srun -p ${PARTITION} \
     --cpus-per-task=${CPUS_PER_TASK} \
     --kill-on-bad-exit=1 \
     ${SRUN_ARGS} \
-    python -u tools/test.py ${CONFIG} ${CHECKPOINT} --work-dir=$WORK_DIR --cfg-options dist.port=12345 --launcher="slurm" ${PY_ARGS}
+    python -u tools/test.py ${CONFIG} ${CHECKPOINT} --work-dir=$WORK_DIR --launcher="slurm" ${PY_ARGS}
