@@ -36,7 +36,7 @@ class PKDLoss(nn.Module):
         feat = feat.permute(1, 0, 2, 3).reshape(C, -1)
         mean = feat.mean(dim=-1, keepdim=True)
         std = feat.std(dim=-1, keepdim=True)
-        feat = (feat - mean) / (std + 1e-8)
+        feat = (feat - mean) / (std + 1e-6)
         return feat.reshape(C, N, H, W).permute(1, 0, 2, 3)
 
     def forward(self, preds_S, preds_T):
@@ -66,6 +66,11 @@ class PKDLoss(nn.Module):
             assert pred_S.shape == pred_T.shape
 
             norm_S, norm_T = self.norm(pred_S), self.norm(pred_T)
+
+            # First conduct feature normalization and then calculate the
+            # MSE loss. Methematically, it is equivalent to firstly calculate
+            # the Pearson Correlation Coefficient (r) between two feature
+            # vectors, and then use 1-r as the new feature imitation loss.
             loss += F.mse_loss(norm_S, norm_T) / 2
 
         return loss * self.loss_weight
