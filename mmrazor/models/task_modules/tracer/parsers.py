@@ -123,22 +123,14 @@ def parse_cat(tracer, grad_fn, module2name, param2module, cur_path,
     concat_id_list.sort()
     concat_id = '_'.join(concat_id_list)
     name = f'concat_{concat_id}'
-    # If a module is not a shared module and it has been visited during
-    # forward, its parent modules must have been traced already.
-    # However, a shared module will be visited more than once during
-    # forward, so it is still need to be traced even if it has been
-    # visited.
-    if False and (name in visited and visited[name]
-                  and name not in shared_module):
-        pass
-    else:
-        visited[name] = True
-        sub_path_lists = list()
-        for i, parent in enumerate(parents):
-            sub_path_list = PathList()
-            tracer.backward_trace(parent, module2name, param2module, Path(),
-                                  sub_path_list, visited, shared_module)
-            sub_path_lists.append(sub_path_list)
+
+    visited[name] = True
+    sub_path_lists = list()
+    for _, parent in enumerate(parents):
+        sub_path_list = PathList()
+        tracer.backward_trace(parent, module2name, param2module, Path(),
+                              sub_path_list, visited, shared_module)
+        sub_path_lists.append(sub_path_list)
         cur_path.append(PathConcatNode(name, sub_path_lists))
 
         result_paths.append(copy.deepcopy(cur_path))
