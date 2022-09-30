@@ -14,9 +14,11 @@ State-of-the-art distillation methods are mainly based on distilling deep featur
 
 ### Classification
 
-| Dataset  | Model     | Teacher   | Top-1 (%) | Top-5 (%) | Configs                                       | Download                                                                                                                                                                                                                                    |
-| -------- | --------- | --------- | --------- | --------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ImageNet | ResNet-18 | ResNet-34 | 71.368    | 90.256    | [config](dkd_resnet34_resnet18_8xb32_in1k.py) | [model](https://download.openmmlab.com/mmrazor/v1/dkd/dkd_resnet34_resnet18_8xb32_in1k_20220804_202619-f9519768.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/dkd/dkd_resnet34_resnet18_8xb32_in1k_20220804_202619-f9519768.json) |
+| Dataset  | Model               | Teacher   | Top-1 (%) | Top-5 (%) | Configs                                       | Download                                                                                                                                                                                                                                    |
+| -------- | ------------------- | --------- | --------- | --------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ImageNet | ResNet-18           | ResNet-34 | 71.368    | 90.256    | [config](dkd_resnet34_resnet18_8xb32_in1k.py) | [model](https://download.openmmlab.com/mmrazor/v1/dkd/dkd_resnet34_resnet18_8xb32_in1k_20220804_202619-f9519768.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/dkd/dkd_resnet34_resnet18_8xb32_in1k_20220804_202619-f9519768.json) |
+| ImageNet | ResNet-18 (Repro 1) | ResNet-34 | 71.345    | 90.170    | [config](dkd_resnet34_resnet18_8xb32_in1k.py) | [model](https://download.openmmlab.com/mmrazor/v1/dkd/dkd_resnet34_resnet18_8xb32_in1k_20220804_202619-f9519768.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/dkd/dkd_resnet34_resnet18_8xb32_in1k_20220804_202619-f9519768.json) |
+| ImageNet | ResNet-18 (Repro 2) | ResNet-34 | 71.487    | 90.436    | [config](dkd_resnet34_resnet18_8xb32_in1k.py) | [model](https://download.openmmlab.com/mmrazor/v1/dkd/dkd_resnet34_resnet18_8xb32_in1k_20220804_202619-f9519768.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/dkd/dkd_resnet34_resnet18_8xb32_in1k_20220804_202619-f9519768.json) |
 
 ## Citation
 
