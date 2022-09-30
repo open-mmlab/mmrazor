@@ -12,9 +12,9 @@ class FakeQuantize(FakeQuantizeBase):
     scale: torch.Tensor
     zero_point: torch.Tensor
 
-    def __init__(self, observer):
+    def __init__(self, observer, **observer_kwargs):
         super().__init__()
-        self.activation_post_process = observer
+        self.activation_post_process = observer(**observer_kwargs)
         self.quant_min = self.activation_post_process.quant_min
         self.quant_max = self.activation_post_process.quant_max
         if _is_float_qparams(self.activation_post_process.qscheme):

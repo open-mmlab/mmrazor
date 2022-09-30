@@ -111,11 +111,15 @@ class CustomQuantizer(BaseModule):
     def qconfig_convert(self, qconfig):
         self.w_qscheme = QuantizeScheme(**qconfig['w_qscheme'])
         self.a_qscheme = QuantizeScheme(**qconfig['a_qscheme'])
+        w_observer = MODELS.get(qconfig['w_observer']['type'])
+        w_observer_kwargs = self.w_qscheme.to_observer_params()
+        a_observer = MODELS.get(qconfig['a_observer']['type'])
+        a_observer_kwargs = self.a_qscheme.to_observer_params()
         self.w_observer = MODELS.get(qconfig['w_observer']['type']).with_args(**self.w_qscheme.to_observer_params())
         self.a_observer = MODELS.get(qconfig['a_observer']['type']).with_args(**self.a_qscheme.to_observer_params())
-        self.w_fake_quant = MODELS.get(qconfig['w_fake_quant']['type']).with_args(observer=self.w_observer)
-        self.a_fake_quant = MODELS.get(qconfig['a_fake_quant']['type']).with_args(observer=self.a_observer)
-        
+        self.w_fake_quant = MODELS.get(qconfig['w_fake_quant']['type']).with_args(observer=w_observer, **w_observer_kwargs)
+        self.a_fake_quant = MODELS.get(qconfig['a_fake_quant']['type']).with_args(observer=a_observer, **a_observer_kwargs)
+
         torch_qconfig = QConfig(weight=self.w_fake_quant, activation=self.a_fake_quant)
         return torch_qconfig
         

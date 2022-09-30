@@ -5,8 +5,8 @@ from mmrazor.registry import MODELS
 
 @MODELS.register_module()
 class QDropFakeQuantize(FakeQuantize):
-    def __init__(self, observer):
-        super().__init__(observer)
+    def __init__(self, observer, **observer_kwargs):
+        super().__init__(observer, **observer_kwargs)
         self.scale = Parameter(torch.tensor([1.0], dtype=torch.float))
         self.prob = 1.0
 

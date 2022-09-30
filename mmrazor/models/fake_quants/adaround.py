@@ -7,8 +7,8 @@ from .base import FakeQuantize
 
 @MODELS.register_module()
 class AdaRoundFakeQuantize(FakeQuantize):
-    def __init__(self, observer):
-        super().__init__(observer)
+    def __init__(self, observer, **observer_kwargs):
+        super().__init__(observer, **observer_kwargs)
         self.adaround = False
     
     def init(self, weight_tensor: torch.Tensor):
