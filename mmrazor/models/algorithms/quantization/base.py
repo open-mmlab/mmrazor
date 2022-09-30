@@ -1,6 +1,15 @@
 from mmrazor.registry import MODELS
 from ..base import BaseAlgorithm
 import torch
+from mmrazor.models.utils import CustomTracer
+from torch.fx import GraphModule
+from typing import Dict, List, Optional, Tuple, Union
+from mmengine.structures import BaseDataElement
+
+LossResults = Dict[str, torch.Tensor]
+TensorResults = Union[Tuple[torch.Tensor], torch.Tensor]
+PredictResults = List[BaseDataElement]
+ForwardResults = Union[LossResults, TensorResults, PredictResults]
 
 @MODELS.register_module()
 class GeneralQuant(BaseAlgorithm):
@@ -19,9 +28,48 @@ class GeneralQuant(BaseAlgorithm):
         self.quantizer = MODELS.build(quantizer)
         self.observers_enabled = True
         self.fake_quants_enabled = True
+        self.gen_graphs(self.architecture)
 
-    def prepare(self):
-        self.architecture = self.quantizer.prepare(self.architecture)
+    def gen_graphs(self, model):
+        self.quantizer._swap_ff_with_fxff(model)
+        tracer = self.quantizer.tracer
+        for mode in ['tensor', 'loss', 'predict']:
+            concrete_args = {'mode': mode}
+            if mode == 'tensor':
+                self.graph_tensor = GraphModule(model, tracer.trace(model, concrete_args=concrete_args))
+            if mode == 'loss':
+                self.graph_loss = GraphModule(model, tracer.trace(model, concrete_args=concrete_args))
+            if mode == 'predict':
+                self.graph_predict = GraphModule(model, tracer.trace(model, concrete_args=concrete_args))
+
+    def forward(self,
+                inputs: torch.Tensor,
+                data_samples: Optional[List[BaseDataElement]] = None,
+                mode: str = 'tensor') -> ForwardResults:
+
+        if mode == 'loss':
+            return self.graph_loss(inputs, data_samples)
+        elif mode == 'tensor':
+            return self.graph_tensor(inputs, data_samples)
+        elif mode == 'predict':
+            return self.graph_predict(inputs, data_samples)
+        else:
+            raise RuntimeError(f'Invalid mode "{mode}". '
+                               'Only supports loss, predict and tensor mode')
+        
+    def calib_step(self, data):
+        data = self.data_preprocessor(data, False)
+        return self.graph_tensor(data)
+
+    def prepare(self, mode='tensor'):
+        assert mode in ['tensor', 'loss', 'predict']
+        if mode == 'tensor':
+            graph = self.graph_tensor
+        elif mode == 'loss':
+            graph = self.graph_loss
+        else:
+            graph = self.graph_predict
+        self.architecture = self.quantizer.prepare(self.architecture, graph)
 
     def convert(self):
         self.architecture = self.quantizer.convert(self.architecture)

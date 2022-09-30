@@ -55,13 +55,9 @@ class CustomQuantizer(BaseModule):
         
         self.is_qat = is_qat
         self._remove_qconfig = _remove_qconfig
+        self.tracer = self.build_tracer()
 
-    def prepare(self, model):
-        # swap FloatFunctional with FXFloatFunctional
-        self._swap_ff_with_fxff(model)
-
-        tracer = self.build_tracer()
-        graph_module = GraphModule(model, tracer.trace(model, concrete_args={'mode': 'tensor'}))
+    def prepare(self, model, graph_module):
 
         preserved_attributes = self.prepare_custom_config_dict.get("preserved_attributes", [])
         for attr_name in preserved_attributes:
@@ -73,7 +69,7 @@ class CustomQuantizer(BaseModule):
             graph_module,
             self.qconfig_dict,
             self.is_qat,
-            tracer.node_name_to_scope,
+            self.tracer.node_name_to_scope,
             prepare_custom_config_dict=self.prepare_custom_config_dict,
             equalization_qconfig_dict=self.equalization_qconfig_dict
         )  # type: ignore[operator]
@@ -159,8 +155,8 @@ class CustomQuantizer(BaseModule):
             self.prepare_custom_config_dict, "float_to_observed_custom_module_class"
         )
         skipped_module_classes += float_custom_module_classes
-        # tracer = CustomTracer(skipped_module_names, skipped_module_classes)
-        tracer = QuantizationTracer(skipped_module_names, skipped_module_classes)
+        tracer = CustomTracer(skipped_module_names, skipped_module_classes)
+        # tracer = QuantizationTracer(skipped_module_names, skipped_module_classes)
         return tracer
     
     def fuse_model(self, graph_module):
