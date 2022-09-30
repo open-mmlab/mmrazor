@@ -30,9 +30,9 @@ model = dict(
     data_preprocessor=data_preprocessor,
     mutator=dict(
         type='SlimmableChannelMutator',
-        channel_group_cfg=dict(
-            type='SlimmableChannelGroup',
-            groups='tests/data/MBV2_slimmable_config.json'),
+        channel_unit_cfg=dict(
+            type='SlimmableChannelUnit',
+            units='tests/data/MBV2_slimmable_config.json'),
         parse_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss'))))

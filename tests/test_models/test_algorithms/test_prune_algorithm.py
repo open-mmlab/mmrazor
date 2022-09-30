@@ -44,16 +44,16 @@ MODEL_CFG = dict(
 
 MUTATOR_CONFIG_NUM = dict(
     type='ChannelMutator',
-    channel_group_cfg={
-        'type': 'SequentialMutableChannelGroup',
+    channel_unit_cfg={
+        'type': 'SequentialMutableChannelUnit',
         'default_args': {
             'choice_mode': 'number'
         }
     })
 MUTATOR_CONFIG_FLOAT = dict(
     type='ChannelMutator',
-    channel_group_cfg={
-        'type': 'SequentialMutableChannelGroup',
+    channel_unit_cfg={
+        'type': 'SequentialMutableChannelUnit',
         'default_args': {
             'choice_mode': 'ratio'
         }

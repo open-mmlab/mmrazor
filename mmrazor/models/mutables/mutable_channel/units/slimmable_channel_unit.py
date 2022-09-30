@@ -7,12 +7,12 @@ import torch.nn as nn
 import mmrazor.models.architectures.dynamic_ops as dynamic_ops
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
-from .one_shot_mutable_channel_group import OneShotMutableChannelGroup
+from .one_shot_mutable_channel_unit import OneShotMutableChannelUnit
 
 
 @MODELS.register_module()
-class SlimmableChannelGroup(OneShotMutableChannelGroup):
-    """A type of ``MutableChannelGroup`` to train several subnets together.
+class SlimmableChannelUnit(OneShotMutableChannelUnit):
+    """A type of ``MutableChannelUnit`` to train several subnets together.
 
     Args:
         num_channels (int): The raw number of channels.
@@ -52,7 +52,7 @@ class SlimmableChannelGroup(OneShotMutableChannelGroup):
 
     def alter_candidates_of_switchbn(self, candidates: List):
         """Change candidates of SwitchableBatchNorm2d."""
-        for channel in self.output_related + self.input_related:
+        for channel in list(self.output_related) + list(self.input_related):
             if isinstance(channel.module, dynamic_ops.SwitchableBatchNorm2d) \
                     and len(channel.module.candidate_bn) == 0:
                 channel.module.init_candidates(candidates)

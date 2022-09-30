@@ -4,7 +4,7 @@ from typing import Callable, Dict, List
 from torch.nn import Module
 
 from .base_graph import BaseGraph
-from .channel_modules import BaseChannelGroup, ChannelTensor
+from .channel_modules import BaseChannelUnit, ChannelTensor
 from .channel_nodes import ChannelNode, default_channel_node_converter
 from .module_graph import ModuleGraph
 
@@ -24,17 +24,17 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
         assert isinstance(graph, ModuleGraph)
         return super().copy_from(graph, node_converter)
 
-    def collect_groups(self) -> List[BaseChannelGroup]:
-        """Collect channel groups in the graph."""
-        groups = list()
+    def collect_units(self) -> List[BaseChannelUnit]:
+        """Collect channel units in the graph."""
+        units = list()
         for node in self.topo_traverse():
-            node.register_channel_to_groups()
+            node.register_channel_to_units()
         for node in self.topo_traverse():
-            for group in node.in_channel_tensor.group_list + \
-                    node.out_channel_tensor.group_list:
-                if group not in groups:
-                    groups.append(group)
-        return groups
+            for unit in node.in_channel_tensor.unit_list + \
+                    node.out_channel_tensor.unit_list:
+                if unit not in units:
+                    units.append(unit)
+        return units
 
     def forward(self, num_input_channel=3):
         """Generate a ChanneelTensor and let it forwards through the graph."""
@@ -50,7 +50,7 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
                 node.forward()
 
     def _merge_same_module(self):
-        """Union all nodes with the same module to the same group."""
+        """Union all nodes with the same module to the same unit."""
         module2node: Dict[Module, List[ChannelNode]] = dict()
         for node in self:
             if isinstance(node.val, Module):
