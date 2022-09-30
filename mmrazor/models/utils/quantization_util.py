@@ -1,9 +1,19 @@
 import torch
 from typing import Any, Set, Optional, Dict, List
 
+USE_LINK = False
+USE_DDP = False
+
+try:
+    import spring.linklink as link
+    assert link.is_initialized()
+    USE_LINK = True
+except (ModuleNotFoundError, AssertionError):
+    import torch.distributed as dist
+    if torch.distributed.is_initialized():
+        USE_DDP = True
+
 def sync_tensor(tensor):
-    global USE_LINK
-    global USE_DDP
     if USE_LINK:
         if tensor.is_cuda is True:
             tensor.data = tensor.data / link.get_world_size()

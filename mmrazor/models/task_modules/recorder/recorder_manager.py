@@ -76,14 +76,14 @@ class RecorderManager:
 
         self._recorders: Dict[str, BaseRecorder] = dict()
         if recorders:
-            for name, cfg in recorders.items():
-                recorder_cfg = copy.deepcopy(cfg)
-                recorder_type = cfg['type']
-                recorder_type_ = recorder_type + 'Recorder'
+            # for name, cfg in recorders.items():
+            #     recorder_cfg = copy.deepcopy(cfg)
+            #     recorder_type = cfg['type']
+            #     recorder_type_ = recorder_type + 'Recorder'
 
-                recorder_cfg['type'] = recorder_type_
-                recorder = TASK_UTILS.build(recorder_cfg)
-
+            #     recorder_cfg['type'] = recorder_type_
+            #     recorder = TASK_UTILS.build(recorder_cfg)
+            for name, recorder in recorders.items():
                 self._recorders[name] = recorder
 
     @property
