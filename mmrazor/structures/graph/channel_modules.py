@@ -42,7 +42,7 @@ class BaseChannel:
 
     @property
     def num_channels(self) -> int:
-        """The number of channels in the Channels."""
+        """The number of channels in the Channel."""
         return self.index[1] - self.index[0]
 
     # others
@@ -100,7 +100,7 @@ class BaseChannelUnit:
 
     @classmethod
     def union_two_units(cls, unit1: 'BaseChannelUnit',
-                         unit2: 'BaseChannelUnit'):
+                        unit2: 'BaseChannelUnit'):
         """Union two units."""
         if unit1 is unit2:
             return unit1
@@ -253,7 +253,7 @@ class ChannelTensor:
         ]
         for channel_elem in self.channel_elems:
             unit.add_channel_elem(channel_elem,
-                                   channel_elem.index_in_channel_tensor)
+                                  channel_elem.index_in_channel_tensor)
 
     # unit operations
 
@@ -267,8 +267,7 @@ class ChannelTensor:
                 new_nums.append(nums[i])
                 start_ += nums[i]
                 i += 1
-            BaseChannelUnit.split_unit(self.unit_dict[(start, end)],
-                                         new_nums)
+            BaseChannelUnit.split_unit(self.unit_dict[(start, end)], new_nums)
 
     @property
     def unit_dict(self) -> Dict[Tuple[int, int], BaseChannelUnit]:

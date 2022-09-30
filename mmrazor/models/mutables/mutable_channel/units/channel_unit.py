@@ -97,7 +97,7 @@ class Channel(BaseModule):
 
     @property
     def num_channels(self) -> int:
-        """The number of channels in the Channels."""
+        """The number of channels in the Channel."""
         return self.index[1] - self.index[0]
 
     @property
@@ -190,10 +190,9 @@ class ChannelUnit(BaseModule):
 
     @classmethod
     def init_from_channel_unit(cls,
-                                unit: 'ChannelUnit',
-                                args: Dict = {}) -> 'ChannelUnit':
+                               unit: 'ChannelUnit',
+                               args: Dict = {}) -> 'ChannelUnit':
         """Initial a object of current class from a ChannelUnit object."""
-        """Initialize a MutalbeChannelUnit from a ChannelUnit."""
         args['num_channels'] = unit.num_channels
         mutable_unit = cls(**args)
         mutable_unit.input_related = unit.input_related
@@ -220,7 +219,7 @@ class ChannelUnit(BaseModule):
             return unit
 
         unit_graph = ChannelGraph.copy_from(graph,
-                                             default_channel_node_converter)
+                                            default_channel_node_converter)
         unit_graph.forward(num_input_channel)
         units = unit_graph.collect_units()
         units = [init_from_base_channel_unit(unit) for unit in units]
