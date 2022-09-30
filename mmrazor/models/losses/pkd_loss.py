@@ -30,8 +30,10 @@ class PKDLoss(nn.Module):
         """Normalize the feature maps to have zero mean and unit variances.
 
         Args:
-            feat (torch.Tensor): The original feature map.
+            feat (torch.Tensor): The original feature map with shape
+                (N, C, H, W).
         """
+        assert len(feat.shape) == 4
         N, C, H, W = feat.shape
         feat = feat.permute(1, 0, 2, 3).reshape(C, -1)
         mean = feat.mean(dim=-1, keepdim=True)
