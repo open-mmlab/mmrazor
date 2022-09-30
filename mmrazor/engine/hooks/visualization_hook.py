@@ -24,7 +24,7 @@ def norm(feat):
     feat = feat.permute(1, 0, 2, 3).reshape(C, -1)
     mean = feat.mean(dim=-1, keepdim=True)
     std = feat.std(dim=-1, keepdim=True)
-    centered = (feat - mean) / std
+    centered = (feat - mean) / (std + 1e-6)
     centered = centered.reshape(C, N, H, W).permute(1, 0, 2, 3)
     return centered
 
