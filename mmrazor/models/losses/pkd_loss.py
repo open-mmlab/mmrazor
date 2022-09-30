@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Tuple, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -41,7 +43,8 @@ class PKDLoss(nn.Module):
         feat = (feat - mean) / (std + 1e-6)
         return feat.reshape(C, N, H, W).permute(1, 0, 2, 3)
 
-    def forward(self, preds_S, preds_T):
+    def forward(self, preds_S: Union[torch.Tensor, Tuple],
+                preds_T: Union[torch.Tensor, Tuple]) -> torch.Tensor:
         """Forward computation.
 
         Args:
