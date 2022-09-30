@@ -48,10 +48,9 @@ def extract_blocks(graph, key_word='layer'):
 
 def extract_layers(graphmodule, layer_types):
     layer_slices = []
-    modules = graphmodule.named_children()
     for node in graphmodule.graph.nodes:
         if node.op == 'call_module':
-            m = node.graph.owning_module.get_submodule(node.target)
-            if isinstance(m, _ADAROUND_SUPPORT_TYPE):
+            m = graphmodule.get_submodule(node.target)
+            if isinstance(m, layer_types):
                 layer_slices.append((node, node))
     return layer_slices

@@ -155,8 +155,8 @@ class CustomQuantizer(BaseModule):
             self.prepare_custom_config_dict, "float_to_observed_custom_module_class"
         )
         skipped_module_classes += float_custom_module_classes
-        tracer = CustomTracer(skipped_module_names, skipped_module_classes)
-        # tracer = QuantizationTracer(skipped_module_names, skipped_module_classes)
+        # tracer = CustomTracer(skipped_module_names, skipped_module_classes)
+        tracer = QuantizationTracer(skipped_module_names, skipped_module_classes)
         return tracer
     
     def fuse_model(self, graph_module):

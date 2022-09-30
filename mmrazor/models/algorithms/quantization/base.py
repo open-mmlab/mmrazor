@@ -33,7 +33,8 @@ class GeneralQuant(BaseAlgorithm):
     def gen_graphs(self, model):
         self.quantizer._swap_ff_with_fxff(model)
         tracer = self.quantizer.tracer
-        for mode in ['tensor', 'loss', 'predict']:
+        # for mode in ['tensor', 'loss', 'predict']:
+        for mode in ['tensor']:
             concrete_args = {'mode': mode}
             if mode == 'tensor':
                 self.graph_tensor = GraphModule(model, tracer.trace(model, concrete_args=concrete_args))
@@ -59,7 +60,7 @@ class GeneralQuant(BaseAlgorithm):
         
     def calib_step(self, data):
         data = self.data_preprocessor(data, False)
-        return self.graph_tensor(data)
+        return self._run_forward(data, mode='tensor')
 
     def prepare(self, mode='tensor'):
         assert mode in ['tensor', 'loss', 'predict']

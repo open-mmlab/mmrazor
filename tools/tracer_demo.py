@@ -77,6 +77,8 @@ def main():
     print('#'*100)
     subgraph = extract_subgraph(symbolic_traced, block_slices[0])
     print(subgraph.code)
+    for name, layer in subgraph.named_modules():
+        print(name, layer)
 
 if __name__ == '__main__':
     main()
