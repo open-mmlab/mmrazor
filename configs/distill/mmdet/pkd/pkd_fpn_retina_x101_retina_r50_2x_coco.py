@@ -17,10 +17,3 @@ model = dict(
 
 # optimizer
 optim_wrapper = dict(optimizer=dict(lr=0.01))
-
-default_hooks = dict(
-    checkpoint=dict(
-        type='CheckpointHook',
-        interval=1,
-        max_keep_ckpts=3,
-        out_dir='s3://caoweihan/pkd'))

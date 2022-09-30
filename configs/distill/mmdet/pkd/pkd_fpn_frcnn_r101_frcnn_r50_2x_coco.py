@@ -43,10 +43,3 @@ model = dict(
 find_unused_parameters = True
 
 val_cfg = dict(_delete_=True, type='mmrazor.SingleTeacherDistillValLoop')
-
-default_hooks = dict(
-    checkpoint=dict(
-        type='CheckpointHook',
-        interval=1,
-        max_keep_ckpts=3,
-        out_dir='s3://caoweihan/pkd'))
