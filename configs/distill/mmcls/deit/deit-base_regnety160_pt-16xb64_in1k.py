@@ -13,7 +13,8 @@ student.head = dict(
         mode='original',
         loss_weight=0.5))
 
-data_preprocessor = dict(type='mmcls.ClsDataPreprocessor')
+data_preprocessor = dict(
+    type='mmcls.ClsDataPreprocessor', batch_augments=student.train_cfg)
 
 # teacher settings
 teacher = dict(
@@ -70,10 +71,3 @@ model = dict(
 find_unused_parameters = True
 
 val_cfg = dict(_delete_=True, type='mmrazor.SingleTeacherDistillValLoop')
-
-default_hooks = dict(
-    checkpoint=dict(
-        max_keep_ckpts=3,
-        out_dir='s3://caoweihan/deit2.0',
-        save_best='auto',
-        rule='greater'))
