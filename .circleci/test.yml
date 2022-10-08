@@ -163,7 +163,7 @@ workflows:
           torchvision: 0.13.1
           python: 3.9.0
           requires:
-            - minimum_version_cpu
+            - lint
       - hold:
           type: approval
           requires:
