@@ -5,13 +5,13 @@ import torch.nn as nn
 
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
-from .one_shot_mutable_channel_group import OneShotMutableChannelGroup
+from .one_shot_mutable_channel_unit import OneShotMutableChannelUnit
 
 
 @MODELS.register_module()
-class DCFFChannelGroup(OneShotMutableChannelGroup):
-    """``DCFFChannelGroup`` is for supernet DCFF and based on
-    OneShotMutableChannelGroup. In DCFF supernet, each module only has one
+class DCFFChannelUnit(OneShotMutableChannelUnit):
+    """``DCFFChannelUnit`` is for supernet DCFF and based on
+    OneShotMutableChannelUnit. In DCFF supernet, each module only has one
     choice. The channel choice is fixed before training.
 
     Args:
@@ -44,12 +44,12 @@ class DCFFChannelGroup(OneShotMutableChannelGroup):
         self._register_mutable_channel(self.mutable_channel)
 
     def alter_candidates_after_init(self, candidates: List[int]):
-        """In ``DCFFChannelGroup``, `candidates` is altered after initiation
+        """In ``DCFFChannelUnit``, `candidates` is altered after initiation
         with ``DCFFChannelMutator.channel_configs`` imported from file.
 
         Args:
             candidates (List(int)): candidate list of ``dynamic_ops``.
-                In ``DCFFChannelGroup`` list contains one candidate.
+                In ``DCFFChannelUnit`` list contains one candidate.
         """
         # fix import for python 3.6.9 and avoid circular import
         import mmrazor.models.architectures.dynamic_ops as dynamic_ops

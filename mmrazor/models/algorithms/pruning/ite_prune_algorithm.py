@@ -87,7 +87,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
         architecture (Union[BaseModel, Dict]): The model to be pruned.
         mutator_cfg (Union[Dict, ChannelMutator], optional): The config
             of a mutator. Defaults to dict( type='ChannelMutator',
-            channel_group_cfg=dict( type='SequentialMutableChannelGroup')).
+            channel_unit_cfg=dict( type='SequentialMutableChannelUnit')).
         data_preprocessor (Optional[Union[Dict, nn.Module]], optional):
             Defaults to None.
         target_pruning_ratio (dict, optional): The prune-target. The template
@@ -104,8 +104,8 @@ class ItePruneAlgorithm(BaseAlgorithm):
                  architecture: Union[BaseModel, Dict],
                  mutator_cfg: Union[Dict, ChannelMutator] = dict(
                      type='ChannelMutator',
-                     channel_group_cfg=dict(
-                         type='SequentialMutableChannelGroup')),
+                     channel_unit_cfg=dict(
+                         type='SequentialMutableChannelUnit')),
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  target_pruning_ratio={},
                  step_epoch=1,

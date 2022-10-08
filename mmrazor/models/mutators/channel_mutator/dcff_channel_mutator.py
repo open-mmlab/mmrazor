@@ -6,28 +6,31 @@ import torch.nn as nn
 from torch.nn import Module
 
 from mmrazor.models.architectures.dynamic_ops import FuseConv2d
-from mmrazor.models.mutables import DCFFChannelGroup
+from mmrazor.models.mutables import DCFFChannelUnit
 from mmrazor.registry import MODELS
-from .channel_mutator import ChannelGroupType, ChannelMutator
+from .channel_mutator import ChannelMutator, ChannelUnitType
 
 
 @MODELS.register_module()
-class DCFFChannelMutator(ChannelMutator[DCFFChannelGroup]):
-    """DCFF channel mutable based channel mutator. It uses DCFFChannelGroup.
+class DCFFChannelMutator(ChannelMutator[DCFFChannelUnit]):
+    """DCFF channel mutable based channel mutator. It uses DCFFChannelUnit.
 
     Args:
         channel_cfgs (list[Dict]): A list of candidate channel configs.
-        channel_group_cfg (Union[dict, Type[ChannelGroupType]], optional):
-            Config of MutableChannelGroups. Defaults to
-            dict( type='DCFFChannelGroup').
+        channel_unit_cfg (Union[dict, Type[ChannelUnitType]], optional):
+            Config of MutableChannelUnits. Defaults to
+            dict( type='DCFFChannelUnit', units={}).
     """
 
     def __init__(self,
                  channel_cfgs: Dict,
-                 channl_group_cfg: Union[dict, Type[ChannelGroupType]] = dict(
-                     type='DCFFChannelGroup'),
+                 channl_unit_cfg: Union[dict, Type[ChannelUnitType]] = dict(
+                     type='DCFFChannelUnit', units={}),
+                 parse_cfg=dict(
+                     type='BackwardTracer',
+                     loss_calculator=dict(type='ImageClassifierPseudoLoss')),
                  **kwargs) -> None:
-        super().__init__(channl_group_cfg, **kwargs)
+        super().__init__(channl_unit_cfg, parse_cfg, **kwargs)
         self._channel_cfgs = channel_cfgs
         self._subnets = self._prepare_subnets(channel_cfgs)
 
@@ -56,42 +59,51 @@ class DCFFChannelMutator(ChannelMutator[DCFFChannelGroup]):
                 in your algorithm.
         """
         super().prepare_from_supernet(supernet)
-        self.module2group = self._get_module2group()
-        self._reset_group_candidates()
+        self._reset_unit_candidates()
 
-    def _reset_group_candidates(self):
-        """Alter candidates of DCFFChannelGroup according to channel_cfgs."""
+    def _reset_unit_candidates(self):
+        """Alter candidates of DCFFChannelUnit according to channel_cfgs."""
         for key in self._channel_cfgs:
-            group: DCFFChannelGroup = self._name2group[key]
-            group.alter_candidates_after_init(
+            unit: DCFFChannelUnit = self._name2unit[key]
+            unit.alter_candidates_after_init(
                 self._channel_cfgs[key]['candidates'])
 
-    def _prepare_subnets(self, channel_cfg: Dict[str, Dict[str, List[int]]]):
+    def _prepare_subnets(self, unit_cfg: Dict) -> List[Dict[str, int]]:
+        """Prepare subnet config.
+
+        Args:
+            unit_cfg (Dict[str, Dict[str]]): Config of the units.
+                unit_cfg follows the below template:
+                    {
+                        'xx_unit_name':{
+                            'init_args':{
+                                'candidate_choices':[c],...
+                            },...
+                        },...
+                    }
+                Every unit must have the same number of candidate_choices, and
+                the candidate in the list of candidate_choices with the same
+                position compose a subnet.
+
+        Returns:
+            List[Dict[str, int]]: config of the subnets.
+        """
+        """Prepare subnet config."""
         subnets: List[Dict[str, int]] = []
         num_subnets = 0
-        for key in channel_cfg:
-            num_subnets = len(channel_cfg[key]['candidates'])
+        for key in unit_cfg:
+            num_subnets = len(unit_cfg[key]['init_args']['candidate_choices'])
             break
         for _ in range(num_subnets):
             subnets.append({})
-        for key in channel_cfg:
-            assert num_subnets == len(channel_cfg[key]['candidates'])
-            for i, value in enumerate(channel_cfg[key]['candidates']):
+        for key in unit_cfg:
+            assert num_subnets == len(
+                unit_cfg[key]['init_args']['candidate_choices'])
+            for i, value in enumerate(
+                    unit_cfg[key]['init_args']['candidate_choices']):
                 subnets[i][key] = value
 
         return subnets
-
-    def _candidates_of(self, subnets, key):
-        return [subnet[key] for subnet in subnets]
-
-    def _get_module2group(self):
-        module2group = dict()
-        for group in self.groups:
-            group: ChannelGroupType
-            for channel in group.output_related:
-                module2group[channel.name] = group
-
-        return module2group
 
     def calc_information(self, tau: float):
         """calculate channel's kl and apply softmax pooling on channel to solve
@@ -102,8 +114,8 @@ class DCFFChannelMutator(ChannelMutator[DCFFChannelGroup]):
         """
         # Calculate the filter importance of the current epoch.
 
-        for layerid, group in enumerate(self.groups):
-            for channel in group.output_related:
+        for layerid, unit in enumerate(self.units):
+            for channel in unit.output_related:
                 if isinstance(channel.module, FuseConv2d):
                     param = channel.module.weight
 

@@ -12,7 +12,7 @@ from mmrazor.models.mutators import ChannelMutator
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Get channel group of a model.')
+        description='Get channel unit of a model.')
     parser.add_argument('config', help='config of the model')
     parser.add_argument(
         '-c',
@@ -33,7 +33,7 @@ def parse_args():
         '-o',
         '--output-path',
         default='',
-        help='the file path to store channel group info')
+        help='the file path to store channel unit info')
     return parser.parse_args()
 
 
@@ -51,7 +51,7 @@ def main():
     else:
         config = mutator.config_template(
             with_channels=args.with_channel,
-            with_group_init_args=args.with_init_args)
+            with_unit_init_args=args.with_init_args)
     json_config = json.dumps(config, indent=4, separators=(',', ':'))
     if args.output_path == '':
         print('=' * 100)

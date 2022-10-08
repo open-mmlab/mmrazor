@@ -6,12 +6,12 @@ from typing import Dict, List, Union
 import torch.nn as nn
 
 from mmrazor.registry import MODELS
-from .sequential_mutable_channel_group import SequentialMutableChannelGroup
+from .sequential_mutable_channel_unit import SequentialMutableChannelUnit
 
 
 @MODELS.register_module()
-class OneShotMutableChannelGroup(SequentialMutableChannelGroup):
-    """OneShotMutableChannelGroup is for single path supernet such as AutoSlim.
+class OneShotMutableChannelUnit(SequentialMutableChannelUnit):
+    """OneShotMutableChannelUnit is for single path supernet such as AutoSlim.
     In single path supernet, each module only has one choice invoked at the
     same time. A path is obtained by sampling all the available choices. It is
     the base class for one shot mutable channel.
@@ -57,7 +57,7 @@ class OneShotMutableChannelGroup(SequentialMutableChannelGroup):
     def config_template(self,
                         with_init_args=False,
                         with_channels=False) -> Dict:
-        """Config template of the OneShotMutableChannelGroup."""
+        """Config template of the OneShotMutableChannelUnit."""
         config = super().config_template(with_init_args, with_channels)
         if with_init_args:
             init_cfg = config['init_args']
@@ -79,7 +79,7 @@ class OneShotMutableChannelGroup(SequentialMutableChannelGroup):
     def current_choice(self, choice: Union[int, float]):
         """Set current choice."""
         assert choice in self.candidate_choices
-        SequentialMutableChannelGroup.current_choice.fset(  # type: ignore
+        SequentialMutableChannelUnit.current_choice.fset(  # type: ignore
             self,  # type: ignore
             choice)  # type: ignore
 

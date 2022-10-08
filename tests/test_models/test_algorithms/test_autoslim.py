@@ -30,8 +30,8 @@ ARCHITECTURE_CFG = dict(
 
 MUTATOR_CFG = dict(
     type='OneShotChannelMutator',
-    channel_group_cfg=dict(
-        type='OneShotMutableChannelGroup',
+    channel_unit_cfg=dict(
+        type='OneShotMutableChannelUnit',
         default_args=dict(
             candidate_choices=list(i / 12 for i in range(2, 13)),
             candidate_mode='ratio')),
@@ -89,7 +89,7 @@ class TestAutoSlim(TestCase):
 
         algo = self.prepare_model()
         self.assertSequenceEqual(
-            algo.mutator.mutable_groups[0].candidate_choices,
+            algo.mutator.mutable_units[0].candidate_choices,
             list(i / 12 for i in range(2, 13)),
         )
 

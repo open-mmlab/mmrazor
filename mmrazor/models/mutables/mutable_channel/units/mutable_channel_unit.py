@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-"""This module defines MutableChannelGroup."""
+"""This module defines MutableChannelUnit."""
 import abc
 from typing import Dict, List, Type, TypeVar
 
@@ -10,18 +10,18 @@ from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables.mutable_channel.base_mutable_channel import \
     BaseMutableChannel
 from ..mutable_channel_container import MutableChannelContainer
-from .channel_group import Channel, ChannelGroup
+from .channel_unit import Channel, ChannelUnit
 
 
-class MutableChannelGroup(ChannelGroup):
+class MutableChannelUnit(ChannelUnit):
 
     # init methods
     def __init__(self, num_channels: int, **kwargs) -> None:
-        """MutableChannelGroup inherits from ChannelGroup, which manages
-        channels with channel-dependency.
+        """MutableChannelUnit inherits from ChannelUnit, which manages channels
+        with channel-dependency.
 
-        Compared with ChannelGroup, MutableChannelGroup defines the core
-        interfaces for pruning. By inheriting MutableChannelGroup,
+        Compared with ChannelUnit, MutableChannelUnit defines the core
+        interfaces for pruning. By inheriting MutableChannelUnit,
         we can implement a variant pruning and nas algorithm.
 
         These apis includes
@@ -38,7 +38,7 @@ class MutableChannelGroup(ChannelGroup):
 
         Args:
             num_channels (int): dimension of the channels of the Channel
-            objects in the group.
+            objects in the unit.
         """
 
         super().__init__(num_channels)
@@ -48,8 +48,9 @@ class MutableChannelGroup(ChannelGroup):
     @property
     def is_mutable(self) -> bool:
         """If the channel-group is prunable."""
+
         # fix import for python 3.6.9 and avoid circular import
-        import mmrazor.models.architectures.dynamic_ops as dynamic_ops
+        # import mmrazor.models.architectures.dynamic_ops as dynamic_ops
 
         def traverse(channels: List[Channel]):
             has_dynamic_op = False
@@ -58,7 +59,7 @@ class MutableChannelGroup(ChannelGroup):
                 if channel.is_mutable is False:
                     all_channel_prunable = False
                     break
-                if isinstance(channel.module, dynamic_ops.DynamicChannelMixin):
+                if isinstance(channel.module, DynamicChannelMixin):
                     has_dynamic_op = True
             return has_dynamic_op, all_channel_prunable
 
@@ -76,7 +77,7 @@ class MutableChannelGroup(ChannelGroup):
     def config_template(self,
                         with_init_args=False,
                         with_channels=False) -> Dict:
-        """Return the config template of this group. By default, the config
+        """Return the config template of this unit. By default, the config
         template only includes a key 'choice'.
 
         Args:
@@ -84,7 +85,7 @@ class MutableChannelGroup(ChannelGroup):
                 initialization.
             with_channels (bool): if the config includes info about
                 channels. the config with info about channels can used to
-                parse channel groups without tracer.
+                parse channel units without tracer.
         """
         config = super().config_template(with_init_args, with_channels)
         config['choice'] = self.current_choice
@@ -94,7 +95,7 @@ class MutableChannelGroup(ChannelGroup):
 
     @abc.abstractmethod
     def prepare_for_pruning(self, model):
-        """Post process after parse groups.
+        """Post process after parse units.
 
         For example, we need to register mutables to dynamic-ops.
         """
@@ -104,7 +105,7 @@ class MutableChannelGroup(ChannelGroup):
 
     @property
     def current_choice(self):
-        """Choice of this group."""
+        """Choice of this unit."""
         raise NotImplementedError()
 
     @current_choice.setter
@@ -120,7 +121,7 @@ class MutableChannelGroup(ChannelGroup):
     # after pruning
 
     def fix_chosen(self, choice=None):
-        """Make the channels in this group fixed."""
+        """Make the channels in this unit fixed."""
         if choice is not None:
             self.current_choice = choice
 
@@ -144,7 +145,7 @@ class MutableChannelGroup(ChannelGroup):
                 model = getattr(model, sub_name)
             return model
 
-        for channel in self.input_related + self.output_related:
+        for channel in list(self.input_related) + list(self.output_related):
             if isinstance(channel.module, nn.Module):
                 module = get_module(model, channel.name)
                 if type(module) in dynamicop_map:
@@ -160,9 +161,9 @@ class MutableChannelGroup(ChannelGroup):
             model: nn.Module, container_class: Type[MutableChannelContainer]):
         """register channel container for dynamic ops."""
         # fix import for python 3.6.9 and avoid circular import
-        import mmrazor.models.architectures.dynamic_ops as dynamic_ops
+        # import mmrazor.models.architectures.dynamic_ops as dynamic_ops
         for module in model.modules():
-            if isinstance(module, dynamic_ops.DynamicChannelMixin):
+            if isinstance(module, DynamicChannelMixin):
                 if module.get_mutable_attr('in_channels') is None:
                     in_channels = 0
                     if isinstance(module, nn.Conv2d):
@@ -190,11 +191,10 @@ class MutableChannelGroup(ChannelGroup):
 
     def _register_mutable_channel(self, mutable_channel: BaseMutableChannel):
         # register mutable_channel
-        # fix import for python 3.6.9 and avoid circular import
-        import mmrazor.models.architectures.dynamic_ops as dynamic_ops
-        for channel in self.input_related + self.output_related:
+        # import mmrazor.models.architectures.dynamic_ops as dynamic_ops
+        for channel in list(self.input_related) + list(self.output_related):
             module = channel.module
-            if isinstance(module, dynamic_ops.DynamicChannelMixin):
+            if isinstance(module, DynamicChannelMixin):
                 container: MutableChannelContainer
                 if channel.is_output_channel and module.get_mutable_attr(
                         'out_channels') is not None:
@@ -238,4 +238,4 @@ class MutableChannelGroup(ChannelGroup):
                     container.register_mutable(mutable_channel_, start, end)
 
 
-ChannelGroupType = TypeVar('ChannelGroupType', bound=MutableChannelGroup)
+ChannelUnitType = TypeVar('ChannelUnitType', bound=MutableChannelUnit)
