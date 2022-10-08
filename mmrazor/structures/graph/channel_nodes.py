@@ -196,8 +196,7 @@ class BindChannelNode(PassChannelNode):
             channel_lis.unit_dict for channel_lis in in_channel_tensor
         ]
         for key in node_units[0]:
-            BaseChannelUnit.union_units(
-                [units[key] for units in node_units])
+            BaseChannelUnit.union_units([units[key] for units in node_units])
         super().channel_forward(in_channel_tensor[0])
 
     def __repr__(self) -> str:
@@ -208,9 +207,8 @@ class CatChannelNode(ChannelNode):
     """A CatChannelNode cat all input channels."""
 
     def channel_forward(self, *in_channel_tensors: ChannelTensor):
-        BaseChannelUnit.union_two_units(
-            self.in_channel_tensor.unit_list[0],
-            self.out_channel_tensor.unit_list[0])
+        BaseChannelUnit.union_two_units(self.in_channel_tensor.unit_list[0],
+                                        self.out_channel_tensor.unit_list[0])
         num_ch = []
         for in_ch_tensor in in_channel_tensors:
             for start, end in in_ch_tensor.unit_dict:
