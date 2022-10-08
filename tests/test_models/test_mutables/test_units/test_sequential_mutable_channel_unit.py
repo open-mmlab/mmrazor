@@ -28,14 +28,12 @@ class TestSequentialMutableChannelUnit(TestCase):
         self.assertEqual(unit.current_choice, 24)
         self.assertTrue(unit.sample_choice() % 8 == 0)
 
-        unit = SequentialMutableChannelUnit(
-            48, choice_mode='ratio', divisor=8)
+        unit = SequentialMutableChannelUnit(48, choice_mode='ratio', divisor=8)
         unit.current_choice = 0.3
         self.assertEqual(unit.current_choice, 1 / 3)
 
     def test_config_template(self):
-        unit = SequentialMutableChannelUnit(
-            48, choice_mode='ratio', divisor=8)
+        unit = SequentialMutableChannelUnit(48, choice_mode='ratio', divisor=8)
         config = unit.config_template(with_init_args=True)
         unit2 = SequentialMutableChannelUnit.init_from_cfg(None, config)
         self.assertDictEqual(

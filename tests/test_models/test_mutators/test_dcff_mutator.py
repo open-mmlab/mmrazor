@@ -102,8 +102,8 @@ def test_DCFF_channel_mutator() -> None:
 
     mutator = DCFFChannelMutator(
         channel_cfgs=channel_cfgs,
-        channl_group_cfg=dict(
-            type='DCFFChannelGroup',
+        channl_unit_cfg=dict(
+            type='DCFFChannelUnit',
             candidate_choices=[8],
             candidate_mode='number'),
         parse_cfg=dict(

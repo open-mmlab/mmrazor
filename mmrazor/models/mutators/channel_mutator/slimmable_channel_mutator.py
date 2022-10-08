@@ -22,8 +22,7 @@ class SlimmableChannelMutator(ChannelMutator[SlimmableChannelUnit]):
     """
 
     def __init__(self,
-                 channel_unit_cfg=dict(
-                     type='SlimmableChannelUnit', units={}),
+                 channel_unit_cfg=dict(type='SlimmableChannelUnit', units={}),
                  parse_cfg=dict(
                      type='BackwardTracer',
                      loss_calculator=dict(type='ImageClassifierPseudoLoss')),

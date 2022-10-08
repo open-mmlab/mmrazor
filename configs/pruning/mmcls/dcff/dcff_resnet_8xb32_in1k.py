@@ -33,8 +33,8 @@ model = dict(
         cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False),
     mutator=dict(
         type='DCFFChannelMutator',
-        channl_group_cfg=dict(
-            type='DCFFChannelGroup',
+        channl_unit_cfg=dict(
+            type='DCFFChannelUnit',
             candidate_choices=[32],
             candidate_mode='number'),
         parse_cfg=dict(

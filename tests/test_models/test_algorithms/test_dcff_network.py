@@ -17,8 +17,8 @@ MODEL_CFG = dict(
 
 MUTATOR_CFG = dict(
     type='DCFFChannelMutator',
-    channl_group_cfg=dict(
-        type='DCFFChannelGroup',
+    channl_unit_cfg=dict(
+        type='DCFFChannelUnit',
         candidate_choices=[32],
         candidate_mode='number'),
     parse_cfg=dict(
@@ -29,7 +29,7 @@ CHANNEL_CFG_PATH = 'configs/pruning/mmcls/dcff/resnet_cls.json'
 
 OPTIMIZER_CFG = dict(
     type='SGD', lr=0.5, momentum=0.9, nesterov=True, weight_decay=0.0001)
-OPTIM_WRAPPER_CFG = dict(optimizer=OPTIMIZER_CFG, accumulative_counts=3)
+OPTIM_WRAPPER_CFG = dict(optimizer=OPTIMIZER_CFG, accumulative_counts=1)
 
 
 class FakeMutator:
@@ -82,7 +82,6 @@ class TestDCFF(TestCase):
 
         self.assertTrue(algo._optim_wrapper_count_status_reinitialized)
         self.assertEqual(optim_wrapper._inner_count, 1)
-        self.assertEqual(optim_wrapper._max_counts, 100)
 
         losses = algo.train_step(data, optim_wrapper)
         assert algo._optim_wrapper_count_status_reinitialized
@@ -90,7 +89,8 @@ class TestDCFF(TestCase):
     def test_fixed_train_step(self) -> None:
         algo = self.prepare_fixed_model()
         data = self._prepare_fake_data()
-        optim_wrapper = build_optim_wrapper(algo, OPTIM_WRAPPER_CFG)
+        optim_wrapper_cfg = copy.deepcopy(OPTIM_WRAPPER_CFG)
+        optim_wrapper = build_optim_wrapper(algo, optim_wrapper_cfg)
         fake_message_hub = MagicMock()
         fake_message_hub.runtime_info = {
             'iter': 0,

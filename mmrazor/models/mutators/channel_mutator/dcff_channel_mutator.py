@@ -32,7 +32,7 @@ class DCFFChannelMutator(ChannelMutator[DCFFChannelUnit]):
                  **kwargs) -> None:
         super().__init__(channl_unit_cfg, parse_cfg, **kwargs)
         self._channel_cfgs = channel_cfgs
-        self._subnets = self._prepare_subnets(channel_cfgs)
+        self._subnets = self._prepare_subnets(self.units_cfg)
 
     @property
     def subnets(self):

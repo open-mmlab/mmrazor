@@ -65,15 +65,14 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
 
     # init
 
-    def __init__(
-            self,
-            channel_unit_cfg: Union[
-                dict,
-                Type[MutableChannelUnit]] = SequentialMutableChannelUnit,
-            parse_cfg: Dict = dict(
-                type='BackwardTracer',
-                loss_calculator=dict(type='ImageClassifierPseudoLoss')),
-            init_cfg: Optional[Dict] = None) -> None:
+    def __init__(self,
+                 channel_unit_cfg: Union[
+                     dict,
+                     Type[MutableChannelUnit]] = SequentialMutableChannelUnit,
+                 parse_cfg: Dict = dict(
+                     type='BackwardTracer',
+                     loss_calculator=dict(type='ImageClassifierPseudoLoss')),
+                 init_cfg: Optional[Dict] = None) -> None:
 
         super().__init__(init_cfg)
 
@@ -244,8 +243,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
             if unit.name in self.units_cfg and \
                     'init_args' in self.units_cfg[unit.name]:
                 args = self.units_cfg[unit.name]['init_args']
-            mutable_unit = self.unit_class.init_from_channel_unit(
-                unit, args)
+            mutable_unit = self.unit_class.init_from_channel_unit(unit, args)
             mutable_units.append(mutable_unit)
         return mutable_units
 
