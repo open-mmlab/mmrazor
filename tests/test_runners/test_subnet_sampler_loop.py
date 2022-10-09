@@ -119,7 +119,7 @@ class TestGreedySamplerTrainLoop(TestCase):
                 max_iters=12,
                 val_interval=2,
                 score_key='acc',
-                flops_range=None,
+                constraints_range=None,
                 num_candidates=4,
                 num_samples=2,
                 top_k=2,

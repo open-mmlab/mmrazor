@@ -3,7 +3,7 @@ import math
 import os
 import random
 from abc import abstractmethod
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 from mmengine import fileio
@@ -16,7 +16,7 @@ from mmrazor.models.task_modules import ResourceEstimator
 from mmrazor.registry import LOOPS
 from mmrazor.structures import Candidates
 from mmrazor.utils import SupportRandomSubnet
-from .utils import check_subnet_flops
+from .utils import check_subnet_resources
 
 
 class BaseSamplerTrainLoop(IterBasedTrainLoop):
@@ -102,7 +102,8 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         val_interval (int): Validation interval. Defaults to 1000.
         score_key (str): Specify one metric in evaluation results to score
             candidates. Defaults to 'accuracy_top-1'.
-        flops_range (dict): Constraints to be used for screening candidates.
+        constraints_range (Dict[str, Any]): Constraints to be used for
+            screening candidates. Defaults to dict(flops=(0, 330)).
         resource_estimator_cfg (dict): The config for building estimator, which
             is be used to estimate the flops of sampled subnet. Defaults to
             None, which means default config is used.
@@ -139,7 +140,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
                  val_begin: int = 1,
                  val_interval: int = 1000,
                  score_key: str = 'accuracy/top1',
-                 flops_range: Optional[Tuple[float, float]] = (0., 330),
+                 constraints_range: Dict[str, Any] = dict(flops=(0, 330)),
                  resource_estimator_cfg: Optional[dict] = None,
                  num_candidates: int = 1000,
                  num_samples: int = 10,
@@ -163,7 +164,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
             self.evaluator = evaluator
 
         self.score_key = score_key
-        self.flops_range = flops_range
+        self.constraints_range = constraints_range
         self.num_candidates = num_candidates
         self.num_samples = num_samples
         self.top_k = top_k
@@ -278,7 +279,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         for _ in range(num_samples):
             if random.random() >= self.cur_prob or len(self.candidates) == 0:
                 subnet = self._sample_from_supernet()
-                if self._check_constraints(subnet):
+                if self._check_constraints(subnet, need_feedback=False):
                     sampled_candidates.append(subnet)
                 num_sample_from_supernet += 1
             else:
@@ -315,19 +316,24 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         subnet = random.choice(self.candidates)
         return subnet
 
-    def _check_constraints(self, random_subnet: SupportRandomSubnet) -> bool:
+    def _check_constraints(self,
+                           random_subnet: SupportRandomSubnet,
+                           need_feedback: bool = False):
         """Check whether is beyond constraints.
 
         Returns:
-            bool: The result of checking.
+            bool, result: The result of checking.
         """
-        is_pass = check_subnet_flops(
+        is_pass, results = check_subnet_resources(
             model=self.model,
             subnet=random_subnet,
             estimator=self.estimator,
-            flops_range=self.flops_range)
+            constraints_range=self.constraints_range)
 
-        return is_pass
+        if need_feedback:
+            return is_pass, results
+        else:
+            return is_pass
 
     def _save_candidates(self) -> None:
         """Save the candidates to init the next searching."""
