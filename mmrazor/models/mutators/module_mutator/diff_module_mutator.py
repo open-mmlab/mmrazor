@@ -88,8 +88,8 @@ class DiffModuleMutator(ModuleMutator):
 
         choices = dict()
         for group_id, mutables in self.search_groups.items():
-            arch_parm = self.arch_params[str(group_id)]
-            choice = mutables[0].sample_choice(arch_parm)
+            arch_param = self.arch_params[str(group_id)]
+            choice = mutables[0].sample_choice(arch_param)
             choices[group_id] = choice
         return choices
 
