@@ -5,7 +5,7 @@ from typing import Tuple, TypeVar
 VT = TypeVar('VT')  # Value type
 
 
-class IndexDict(OrderedDict[Tuple[int, int], VT]):
+class IndexDict(OrderedDict):
     """IndexDict inherents from OrderedDict[Tuple[int, int], VT]. Each
     IndexDict object is a OrderDict object which using index(Tuple[int,int]) as
     key and Any as value.

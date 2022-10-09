@@ -5,7 +5,7 @@ from typing import Dict, List, Type, TypeVar
 
 import torch.nn as nn
 
-import mmrazor.models.architectures.dynamic_ops as dynamic_ops
+from mmrazor.models.architectures import dynamic_ops
 from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables.mutable_channel.base_mutable_channel import \
@@ -18,8 +18,8 @@ class MutableChannelUnit(ChannelUnit):
 
     # init methods
     def __init__(self, num_channels: int, **kwargs) -> None:
-        """MutableChannelUnit inherits from ChannelUnit, which manages
-        channels with channel-dependency.
+        """MutableChannelUnit inherits from ChannelUnit, which manages channels
+        with channel-dependency.
 
         Compared with ChannelUnit, MutableChannelUnit defines the core
         interfaces for pruning. By inheriting MutableChannelUnit,

@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from mmengine import MMLogger
 
-import mmrazor.models.architectures.dynamic_ops as dynamic_ops
+from mmrazor.models.architectures import dynamic_ops
 from mmrazor.models.utils import make_divisible
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
@@ -17,9 +17,9 @@ from .mutable_channel_unit import MutableChannelUnit
 # TODO change the name of SequentialMutableChannelUnit
 @MODELS.register_module()
 class SequentialMutableChannelUnit(MutableChannelUnit):
-    """SequentialMutableChannelUnit accepts a intger(number) or float(ratio)
-    as the choice, which indicates how many of the channels are remained from
-    left to right, like 11110000.
+    """SequentialMutableChannelUnit accepts a intger(number) or float(ratio) as
+    the choice, which indicates how many of the channels are remained from left
+    to right, like 11110000.
 
     Args:
         num_channels (int): number of channels.

@@ -152,8 +152,7 @@ class SwitchableBatchNorm2d(DynamicBatchNorm2d):
         for num in candidates:
             self.candidate_bn[str(num)] = nn.BatchNorm2d(
                 num, self.eps, self.momentum, self.affine,
-                self.track_running_stats, self.weight.device,
-                self.weight.dtype)
+                self.track_running_stats)
 
     def forward(self, input: Tensor) -> Tensor:
         """Forward."""
