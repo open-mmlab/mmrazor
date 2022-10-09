@@ -113,7 +113,7 @@ class Channel(BaseModule):
 
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}('
-                f'{self.name}, index=({self.index}), '
+                f'{self.name}, index={self.index}, '
                 f'is_output_channel='
                 f'{"true" if self.is_output_channel else "false"}, '
                 f'expand_ratio={self.expand_ratio}'
