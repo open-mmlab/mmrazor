@@ -170,19 +170,17 @@ class TestDsnasDDP(TestDsnas):
         os.environ['MASTER_PORT'] = '12345'
 
         # initialize the process group
-        if torch.cuda.is_available():
-            backend = 'nccl'
-            cls.device = 'cuda'
-        else:
-            backend = 'gloo'
+        backend = 'nccl' if torch.cuda.is_available() else 'gloo'
         dist.init_process_group(backend, rank=0, world_size=1)
 
     def prepare_model(self, device_ids=None) -> Dsnas:
-        model = ToyDiffModule().to(self.device)
-        mutator = DiffModuleMutator().to(self.device)
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+        model = ToyDiffModule()
+        mutator = DiffModuleMutator()
         mutator.prepare_from_supernet(model)
 
-        algo = Dsnas(model, mutator)
+        algo = Dsnas(model, mutator).to(self.device)
 
         return DsnasDDP(
             module=algo, find_unused_parameters=True, device_ids=device_ids)
@@ -199,24 +197,19 @@ class TestDsnasDDP(TestDsnas):
 
     @patch('mmengine.logging.message_hub.MessageHub.get_info')
     def test_dsnasddp_train_step(self, mock_get_info) -> None:
-        model = ToyDiffModule()
-        mutator = DiffModuleMutator()
-        mutator.prepare_from_supernet(model)
+        ddp_model = self.prepare_model()
         mock_get_info.return_value = 2
 
-        algo = Dsnas(model, mutator)
-        ddp_model = DsnasDDP(module=algo, find_unused_parameters=True)
         data = self._prepare_fake_data()
         optim_wrapper = build_optim_wrapper(ddp_model, self.OPTIM_WRAPPER_CFG)
         loss = ddp_model.train_step(data, optim_wrapper)
 
         self.assertIsNotNone(loss)
 
-        algo = Dsnas(model, mutator)
-        ddp_model = DsnasDDP(module=algo, find_unused_parameters=True)
+        ddp_model = self.prepare_model()
         optim_wrapper_dict = OptimWrapperDict(
-            architecture=OptimWrapper(SGD(model.parameters(), lr=0.1)),
-            mutator=OptimWrapper(SGD(model.parameters(), lr=0.01)))
+            architecture=OptimWrapper(SGD(ddp_model.parameters(), lr=0.1)),
+            mutator=OptimWrapper(SGD(ddp_model.parameters(), lr=0.01)))
         loss = ddp_model.train_step(data, optim_wrapper_dict)
 
         self.assertIsNotNone(loss)
