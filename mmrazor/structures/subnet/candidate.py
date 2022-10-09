@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 
 class Candidates(UserList):
-    """The data structure of sampled candidate. The format is [(any, float),
-    (any, float), ...].
+    """The data structure of sampled candidate. The format is [(any, float,
+    float), (any, float, float), ...].
 
     Examples:
         >>> candidates = Candidates()
@@ -13,17 +13,20 @@ class Candidates(UserList):
         >>> candidates.append(subnet_1)
         >>> candidates
         [({'choice_1': 'layer_1', 'choice_2': 'layer_2'}, 0.0)]
+        >>> candidates.set_resources(0, 50.1)
         >>> candidates.set_score(0, 0.9)
         >>> candidates
-        [({'choice_1': 'layer_1', 'choice_2': 'layer_2'}, 0.9)]
+        [({'choice_1': 'layer_1', 'choice_2': 'layer_2'}, 50.1, 0.9)]
         >>> subnet_2 = {'choice_3': 'layer_3', 'choice_4': 'layer_4'}
-        >>> candidates.append((subnet_2, 0.5))
+        >>> candidates.append((subnet_2, 49.9, 0.5))
         >>> candidates
-        [({'choice_1': 'layer_1', 'choice_2': 'layer_2'}, 0.9),
-        ({'choice_3': 'layer_3', 'choice_4': 'layer_4'}, 0.5)]
+        [({'choice_1': 'layer_1', 'choice_2': 'layer_2'}, 50.1, 0.9),
+        ({'choice_3': 'layer_3', 'choice_4': 'layer_4'}, 49.9, 0.5)]
         >>> candidates.subnets
         [{'choice_1': 'layer_1', 'choice_2': 'layer_2'},
         {'choice_3': 'layer_3', 'choice_4': 'layer_4'}]
+        >>> candidates.resources
+        [49.9, 50.1]
         >>> candidates.scores
         [0.9, 0.5]
     """
