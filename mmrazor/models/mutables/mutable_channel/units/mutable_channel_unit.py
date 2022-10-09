@@ -97,7 +97,7 @@ class MutableChannelUnit(ChannelUnit):
 
         For example, we need to register mutables to dynamic-ops.
         """
-        raise not NotImplementedError
+        raise NotImplementedError
 
     # pruning: choice-related
 
