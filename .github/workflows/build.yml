@@ -177,7 +177,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Upgrade pip
-        run: pip install pip --upgrade
+        run: |
+          pip install pip --upgrade
+          pip install wheel
       - name: Install lmdb
         run: pip install lmdb
       - name: Install PyTorch
