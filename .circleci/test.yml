@@ -119,7 +119,7 @@ jobs:
             docker exec mmrazor pip install -e /mmdetection
             docker exec mmrazor pip install -e /mmclassification
             docker exec mmrazor pip install -e /mmsegmentation
-            docker exec mmrazor pip install -r requirements
+            docker exec mmrazor pip install -r requirements.txt
       - run:
           name: Build and install
           command: |
