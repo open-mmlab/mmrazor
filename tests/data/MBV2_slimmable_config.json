@@ -1,0 +1,392 @@
+{
+    "backbone.conv1.conv_(0, 48)_48": {
+        "init_args": {
+            "num_channels": 48,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                8,
+                8,
+                32
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 32
+    },
+    "backbone.layer1.0.conv.1.conv_(0, 24)_24": {
+        "init_args": {
+            "num_channels": 24,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                8,
+                8,
+                16
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 16
+    },
+    "backbone.layer2.0.conv.0.conv_(0, 144)_144": {
+        "init_args": {
+            "num_channels": 144,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                96,
+                96,
+                144
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 144
+    },
+    "backbone.layer2.0.conv.2.conv_(0, 40)_40": {
+        "init_args": {
+            "num_channels": 40,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                16,
+                16,
+                24
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 24
+    },
+    "backbone.layer2.1.conv.0.conv_(0, 240)_240": {
+        "init_args": {
+            "num_channels": 240,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                96,
+                96,
+                176
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 176
+    },
+    "backbone.layer3.0.conv.0.conv_(0, 240)_240": {
+        "init_args": {
+            "num_channels": 240,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                96,
+                96,
+                192
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 192
+    },
+    "backbone.layer3.0.conv.2.conv_(0, 48)_48": {
+        "init_args": {
+            "num_channels": 48,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                24,
+                24,
+                48
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 48
+    },
+    "backbone.layer3.1.conv.0.conv_(0, 288)_288": {
+        "init_args": {
+            "num_channels": 288,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                144,
+                144,
+                240
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 240
+    },
+    "backbone.layer3.2.conv.0.conv_(0, 288)_288": {
+        "init_args": {
+            "num_channels": 288,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                144,
+                144,
+                144
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 144
+    },
+    "backbone.layer4.0.conv.0.conv_(0, 288)_288": {
+        "init_args": {
+            "num_channels": 288,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                144,
+                144,
+                264
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 264
+    },
+    "backbone.layer4.0.conv.2.conv_(0, 96)_96": {
+        "init_args": {
+            "num_channels": 96,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                48,
+                56,
+                88
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 88
+    },
+    "backbone.layer4.1.conv.0.conv_(0, 576)_576": {
+        "init_args": {
+            "num_channels": 576,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                288,
+                288,
+                288
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 288
+    },
+    "backbone.layer4.2.conv.0.conv_(0, 576)_576": {
+        "init_args": {
+            "num_channels": 576,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                288,
+                288,
+                336
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 336
+    },
+    "backbone.layer4.3.conv.0.conv_(0, 576)_576": {
+        "init_args": {
+            "num_channels": 576,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                288,
+                288,
+                432
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 432
+    },
+    "backbone.layer5.0.conv.0.conv_(0, 576)_576": {
+        "init_args": {
+            "num_channels": 576,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                288,
+                288,
+                576
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 576
+    },
+    "backbone.layer5.0.conv.2.conv_(0, 144)_144": {
+        "init_args": {
+            "num_channels": 144,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                64,
+                96,
+                144
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 144
+    },
+    "backbone.layer5.1.conv.0.conv_(0, 864)_864": {
+        "init_args": {
+            "num_channels": 864,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                432,
+                432,
+                576
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 576
+    },
+    "backbone.layer5.2.conv.0.conv_(0, 864)_864": {
+        "init_args": {
+            "num_channels": 864,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                432,
+                432,
+                648
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 648
+    },
+    "backbone.layer6.0.conv.0.conv_(0, 864)_864": {
+        "init_args": {
+            "num_channels": 864,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                648,
+                864,
+                864
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 864
+    },
+    "backbone.layer6.0.conv.2.conv_(0, 240)_240": {
+        "init_args": {
+            "num_channels": 240,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                176,
+                240,
+                240
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 240
+    },
+    "backbone.layer6.1.conv.0.conv_(0, 1440)_1440": {
+        "init_args": {
+            "num_channels": 1440,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                720,
+                1440,
+                1440
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 1440
+    },
+    "backbone.layer6.2.conv.0.conv_(0, 1440)_1440": {
+        "init_args": {
+            "num_channels": 1440,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                720,
+                960,
+                1440
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 1440
+    },
+    "backbone.layer7.0.conv.0.conv_(0, 1440)_1440": {
+        "init_args": {
+            "num_channels": 1440,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                1440,
+                1440,
+                1440
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 1440
+    },
+    "backbone.layer7.0.conv.2.conv_(0, 480)_480": {
+        "init_args": {
+            "num_channels": 480,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                280,
+                480,
+                480
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 480
+    },
+    "backbone.conv2.conv_(0, 1920)_1920": {
+        "init_args": {
+            "num_channels": 1920,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                1920,
+                1920,
+                1920
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 1920
+    },
+    "head.fc_(0, 1000)_1000": {
+        "init_args": {
+            "num_channels": 1000,
+            "divisor": 1,
+            "min_value": 1,
+            "min_ratio": 0.9,
+            "candidate_choices": [
+                1000,
+                1000,
+                1000
+            ],
+            "choice_mode": "number"
+        },
+        "choice": 1000
+    }
+}

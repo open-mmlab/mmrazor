@@ -43,10 +43,10 @@ class SlimmableValLoop(ValLoop):
         self.runner.call_hook('before_val')
 
         all_metrics = dict()
-        for subnet_idx in range(self._model.num_subnet):
+        for subnet_idx, subnet in enumerate(self._model.mutator.subnets):
             self.runner.call_hook('before_val_epoch')
             self.runner.model.eval()
-            self._model.mutator.switch_choices(subnet_idx)
+            self._model.mutator.set_choices(subnet)
             for idx, data_batch in enumerate(self.dataloader):
                 self.run_iter(idx, data_batch)
             # compute student metrics

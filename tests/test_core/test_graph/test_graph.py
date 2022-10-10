@@ -1,14 +1,27 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import os
 import sys
 from unittest import TestCase
 
 import torch
 
+from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
 from mmrazor.structures.graph import ModuleGraph
-from tests.data.models import (AddCatModel, ConcatModel, LineModel,
-                               MultiConcatModel, MultiConcatModel2, ResBlock)
+from ...data.models import Icep  # noqa
+from ...data.models import MultipleUseModel  # noqa
+from ...data.models import Xmodel  # noqa
+from ...data.models import (AddCatModel, ConcatModel, DwConvModel,
+                            ExpandLineModel, GroupWiseConvModel, LineModel,
+                            ModelLibrary, MultiBindModel, MultiConcatModel,
+                            MultiConcatModel2, ResBlock)
+
+FULL_TEST = os.getenv('FULL_TEST') == 'true'
 
 sys.setrecursionlimit(int(1e8))
+
+
+def is_dynamic_op_fx(module, name):
+    return isinstance(module, DynamicChannelMixin)
 
 
 class ToyCNNPseudoLoss:
@@ -19,59 +32,68 @@ class ToyCNNPseudoLoss:
         return pseudo_output.sum()
 
 
-DATA = [
-    {
-        'model': LineModel,
-        'num_nodes': 5,
-    },
-    {
-        'model': ResBlock,
-        'num_nodes': 7,
-    },
-    {
-        'model': ConcatModel,
-        'num_nodes': 7,
-    },
-    {
-        'model': MultiConcatModel2,
-        'num_nodes': 7,
-    },
-    {
-        'model': MultiConcatModel,
-        'num_nodes': 7,
-    },
-    {
-        'model': AddCatModel
-    },
-]
-
-
 class TestGraph(TestCase):
 
-    def test_graph_init(self) -> None:
+    @classmethod
+    def backward_tracer_passed_models(cls):
+        '''MultipleUseModel: backward tracer can't distinguish multiple use and
+        first bind then use.'''
+        default_models = [
+            LineModel,
+            ResBlock,
+            AddCatModel,
+            ConcatModel,
+            MultiConcatModel,
+            MultiConcatModel2,
+            GroupWiseConvModel,
+            Xmodel,
+            # MultipleUseModel,  # bug
+            # Icep, bug
+            ExpandLineModel,
+            MultiBindModel,
+            DwConvModel
+        ]
+        """
+        googlenet return a tuple when training, so it
+            should trace in eval mode
+        """
 
-        for data in DATA:
+        torch_models_includes = [
+            'alexnet',
+            'densenet',
+            'efficientnet',
+            'googlenet',
+            # 'inception',  bug
+            'mnasnet',
+            'mobilenet',
+            'regnet',
+            'resnet',
+            'resnext',
+            # 'shufflenet',     # bug
+            'squeezenet',
+            'vgg',
+            'wide_resnet',
+        ]
+        model_library = ModelLibrary(torch_models_includes)
+
+        models = default_models + model_library.export_models(
+        ) if FULL_TEST else default_models
+        return models
+
+    def test_init_from_backward_tracer(self) -> None:
+        TestData = self.backward_tracer_passed_models()
+
+        for data in TestData:
             with self.subTest(data=data):
-                model = data['model']()
-                # print(model)
-                graphs = [
-                    ModuleGraph.init_using_backward_tracer(model),
-                ]
+                model = data()
+                model.eval()
+                graph = ModuleGraph.init_from_backward_tracer(model)
 
-                unit_num = len(graphs[0].nodes)
+                # check channels
+                self._valid_graph(graph)
 
-                for graph in graphs:
-
-                    # check channels
-                    try:
-                        graph.check()
-                    except Exception as e:
-                        self.fail(str(e) + '\n' + str(graph))
-
-                    # check number of nodes
-                    self.assertEqual(unit_num, len(graph.nodes))
-                    if 'num_nodes' in data:
-                        self.assertEqual(
-                            len(graph),
-                            data['num_nodes'],
-                            msg=f'{graph.nodes}')
+    def _valid_graph(self, graph: ModuleGraph):
+        try:
+            graph.check()
+        except Exception as e:
+            self.fail(str(e) + '\n' + str(graph))
