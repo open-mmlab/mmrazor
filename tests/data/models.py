@@ -8,7 +8,7 @@ from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
 from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables import BaseMutable
-from mmrazor.models.mutables import OneShotMutableChannelUnit, SimpleMutableChannel
+from mmrazor.models.mutables import OneShotMutableChannelUnit, SquentialMutableChannel
 from mmrazor.registry import MODELS
 from mmengine.model import BaseModel
 # this file includes models for tesing.
@@ -520,7 +520,7 @@ class SampleExpandDerivedMutable(BaseMutable):
         return super().num_choices
 
 
-class SampleOneshotMutableChannel(SimpleMutableChannel):
+class SampleOneshotMutableChannel(SquentialMutableChannel):
 
     def __init__(self, num_channels: int, choices=[2, 4], **kwargs):
         super().__init__(num_channels, **kwargs)

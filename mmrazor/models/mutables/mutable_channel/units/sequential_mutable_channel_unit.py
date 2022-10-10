@@ -2,16 +2,14 @@
 import random
 from typing import Dict, Union
 
-import torch
 import torch.nn as nn
 from mmengine import MMLogger
 
 from mmrazor.models.architectures import dynamic_ops
-from mmrazor.models.mutables.mutable_channel import BaseMutableChannel
 from mmrazor.models.utils import make_divisible
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
-from ..simple_mutable_channel import SimpleMutableChannel
+from ..sequential_mutable_channel import SquentialMutableChannel
 from .mutable_channel_unit import MutableChannelUnit
 
 
@@ -39,18 +37,21 @@ class SequentialMutableChannelUnit(MutableChannelUnit):
             min_value=1,
             min_ratio=0.9) -> None:
         super().__init__(num_channels)
-        self.mutable_channel: SimpleMutableChannel = SimpleMutableChannel(
-            self.num_channels)
         assert choice_mode in ['ratio', 'number']
         self.choice_mode = choice_mode
+
+        self.mutable_channel: SquentialMutableChannel = \
+            SquentialMutableChannel(num_channels, choice_mode=choice_mode)
+
         # for make_divisible
         self.divisor = divisor
         self.min_value = min_value
         self.min_ratio = min_ratio
 
     @classmethod
-    def init_from_mutable_channel(cls, mutable_channel: BaseMutableChannel):
-        unit = super().init_from_mutable_channel(mutable_channel)
+    def init_from_mutable_channel(cls,
+                                  mutable_channel: SquentialMutableChannel):
+        unit = cls(mutable_channel.num_channels, mutable_channel.choice_mode)
         unit.mutable_channel = mutable_channel
         return unit
 
@@ -97,21 +98,13 @@ class SequentialMutableChannelUnit(MutableChannelUnit):
     @property
     def current_choice(self) -> Union[int, float]:
         """return current choice."""
-        if self.is_num_mode:
-            return self.mutable_channel.activated_channels
-        else:
-            return self._num2ratio(self.mutable_channel.activated_channels)
+        return self.mutable_channel.current_choice
 
     @current_choice.setter
     def current_choice(self, choice: Union[int, float]):
         """set choice."""
-        choice_num = self._ratio2num(choice)
-        choice_num_ = self._make_divisible(choice_num)
-
-        mask = self._generate_mask(choice_num_)
-        self.mutable_channel.current_choice = mask
-        if choice_num != choice_num_:
-            self._make_divisible_info(choice, self.current_choice)
+        choice_num_ = self._get_valid_int_choice(choice)
+        self.mutable_channel.current_choice = choice_num_
 
     def sample_choice(self) -> Union[int, float]:
         """Sample a choice in (0,1]"""
@@ -123,6 +116,12 @@ class SequentialMutableChannelUnit(MutableChannelUnit):
             return self._num2ratio(num_choice)
 
     # private methods
+    def _get_valid_int_choice(self, choice: Union[float, int]) -> int:
+        choice_num = self._ratio2num(choice)
+        choice_num_ = self._make_divisible(choice_num)
+        if choice_num != choice_num_:
+            self._make_divisible_info(choice, self.current_choice)
+        return choice_num_
 
     def _make_divisible(self, choice_int: int):
         """Make the choice divisible."""
@@ -142,12 +141,6 @@ class SequentialMutableChannelUnit(MutableChannelUnit):
             return choice
         else:
             return max(1, int(self.num_channels * choice))
-
-    def _generate_mask(self, choice: int) -> torch.Tensor:
-        """torch.Tesnor: generate mask for pruning"""
-        mask = torch.zeros([self.num_channels])
-        mask[0:choice] = 1
-        return mask
 
     def _make_divisible_info(self, choice, new_choice):
         logger = MMLogger.get_current_instance()
