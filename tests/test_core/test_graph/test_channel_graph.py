@@ -100,7 +100,7 @@ class TestChannelUnit(unittest.TestCase):
         channel_tensor1 = ChannelTensor(8)
         channel_tensor2 = ChannelTensor(8)
         BaseChannelUnit.union_two_units(channel_tensor1.unit_dict[(0, 8)],
-                                          channel_tensor2.unit_dict[(0, 8)])
+                                        channel_tensor2.unit_dict[(0, 8)])
         unit1 = channel_tensor1.unit_dict[(0, 8)]
         BaseChannelUnit.split_unit(unit1, [2, 6])
 

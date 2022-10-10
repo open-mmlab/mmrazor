@@ -6,6 +6,7 @@ from typing import Dict, List, Union
 import torch.nn as nn
 
 from mmrazor.registry import MODELS
+from ..oneshot_mutalbe_channel import OneShotMutableChannel
 from .sequential_mutable_channel_unit import SequentialMutableChannelUnit
 
 
@@ -21,8 +22,8 @@ class OneShotMutableChannelUnit(SequentialMutableChannelUnit):
         candidate_choices (List[Union[int, float]], optional):
             A list of candidate width ratios. Each
             candidate indicates how many channels to be reserved.
-            Defaults to [0.5, 1.0](candidate_mode='ratio').
-        candidate_mode (str, optional): Mode of candidates.
+            Defaults to [0.5, 1.0](choice_mode='ratio').
+        choice_mode (str, optional): Mode of candidates.
             One of "ratio" or "number". Defaults to 'ratio'.
         divisor (int): Used to make choice divisible.
         min_value (int): the minimal value used when make divisible.
@@ -32,20 +33,31 @@ class OneShotMutableChannelUnit(SequentialMutableChannelUnit):
     def __init__(self,
                  num_channels: int,
                  candidate_choices: List[Union[int, float]] = [0.5, 1.0],
-                 candidate_mode='ratio',
+                 choice_mode='ratio',
                  divisor=1,
                  min_value=1,
                  min_ratio=0.9) -> None:
-        super().__init__(num_channels, candidate_mode, divisor, min_value,
+        super().__init__(num_channels, choice_mode, divisor, min_value,
                          min_ratio)
         candidate_choices = copy.copy(candidate_choices)
         if candidate_choices == []:
             candidate_choices.append(
                 self.num_channels if self.is_num_mode else 1.0)
         self.candidate_choices = self._prepare_candidate_choices(
-            candidate_choices, candidate_mode)
+            candidate_choices, choice_mode)
 
-        self._choice = self.max_choice
+        self.mutable_channel = OneShotMutableChannel(num_channels,
+                                                     self.candidate_choices,
+                                                     choice_mode)
+
+    @classmethod
+    def init_from_mutable_channel(cls, mutable_channel: OneShotMutableChannel):
+        unit = cls(mutable_channel.num_channels,
+                   mutable_channel.candidate_choices,
+                   mutable_channel.choice_mode)
+        mutable_channel.candidate_choices = unit.candidate_choices
+        unit.mutable_channel = mutable_channel
+        return unit
 
     def prepare_for_pruning(self, model: nn.Module):
         """Prepare for pruning."""
@@ -64,7 +76,7 @@ class OneShotMutableChannelUnit(SequentialMutableChannelUnit):
             init_cfg.pop('choice_mode')
             init_cfg.update({
                 'candidate_choices': self.candidate_choices,
-                'candidate_mode': self.choice_mode
+                'choice_mode': self.choice_mode
             })
         return config
 
@@ -79,9 +91,10 @@ class OneShotMutableChannelUnit(SequentialMutableChannelUnit):
     def current_choice(self, choice: Union[int, float]):
         """Set current choice."""
         assert choice in self.candidate_choices
-        SequentialMutableChannelUnit.current_choice.fset(  # type: ignore
-            self,  # type: ignore
-            choice)  # type: ignore
+        int_choice = self._get_valid_int_choice(choice)
+        choice_ = int_choice if self.is_num_mode else self._num2ratio(
+            int_choice)
+        self.mutable_channel.current_choice = choice_
 
     def sample_choice(self) -> Union[int, float]:
         """Sample a valid choice."""
@@ -101,9 +114,9 @@ class OneShotMutableChannelUnit(SequentialMutableChannelUnit):
     # private methods
 
     def _prepare_candidate_choices(self, candidate_choices: List,
-                                   candidate_mode) -> List:
+                                   choice_mode) -> List:
         """Process candidate_choices."""
-        choice_type = int if candidate_mode == 'number' else float
+        choice_type = int if choice_mode == 'number' else float
         for choice in candidate_choices:
             assert isinstance(choice, choice_type)
         if self.is_num_mode:

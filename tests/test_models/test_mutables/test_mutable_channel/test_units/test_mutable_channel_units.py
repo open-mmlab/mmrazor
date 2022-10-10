@@ -11,8 +11,8 @@ from mmrazor.models.mutables.mutable_channel import (
 from mmrazor.models.mutables.mutable_channel.units.channel_unit import (  # noqa
     Channel, ChannelUnit)
 from mmrazor.structures.graph import ModuleGraph as ModuleGraph
-from ....data.models import LineModel
-from ....test_core.test_graph.test_graph import TestGraph
+from .....data.models import LineModel
+from .....test_core.test_graph.test_graph import TestGraph
 
 MUTABLE_CFG = dict(type='SimpleMutablechannel')
 PARSE_CFG = dict(
@@ -84,8 +84,7 @@ class TestMutableChannelUnit(TestCase):
         graph = ModuleGraph.init_from_backward_tracer(model)
         units: List[ChannelUnit] = ChannelUnit.init_from_graph(graph)
         mutable_units = [
-            DefaultChannelUnit.init_from_channel_unit(unit)
-            for unit in units
+            DefaultChannelUnit.init_from_channel_unit(unit) for unit in units
         ]
         self._test_units(mutable_units, model)
 
@@ -123,8 +122,7 @@ class TestMutableChannelUnit(TestCase):
                     model: nn.Module = model_data()
                     graph = ModuleGraph.init_from_backward_tracer(model)
                     units: List[
-                        MutableChannelUnit] = unit_type.init_from_graph(
-                            graph)
+                        MutableChannelUnit] = unit_type.init_from_graph(graph)
                     for unit in units:
                         unit.prepare_for_pruning(model)
 

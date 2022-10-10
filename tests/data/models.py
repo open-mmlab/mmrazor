@@ -8,7 +8,7 @@ from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
 from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables import BaseMutable
-from mmrazor.models.mutables import OneShotMutableChannelUnit, SimpleMutableChannel
+from mmrazor.models.mutables import OneShotMutableChannelUnit, SquentialMutableChannel, OneShotMutableChannel
 from mmrazor.registry import MODELS
 from mmengine.model import BaseModel
 # this file includes models for tesing.
@@ -497,7 +497,7 @@ class SampleExpandDerivedMutable(BaseMutable):
         self.ratio = expand_ratio
 
     def __mul__(self, other):
-        if isinstance(other, SampleOneshotMutableChannel):
+        if isinstance(other, OneShotMutableChannel):
 
             def _expand_mask():
                 mask = other.current_mask
@@ -518,26 +518,6 @@ class SampleExpandDerivedMutable(BaseMutable):
 
     def num_choices(self) -> int:
         return super().num_choices
-
-
-class SampleOneshotMutableChannel(SimpleMutableChannel):
-
-    def __init__(self, num_channels: int, choices=[2, 4], **kwargs):
-        super().__init__(num_channels, **kwargs)
-        self.choices = choices
-
-
-@MODELS.register_module()
-class SampleOneshotMutableChannelUnit(OneShotMutableChannelUnit):
-
-    @classmethod
-    def init_from_mutable_channel(
-            cls, mutable_channel: SampleOneshotMutableChannel):
-        return cls(
-            mutable_channel.num_channels,
-            candidate_choices=mutable_channel.choices,
-            candidate_mode='ratio'
-            if isinstance(mutable_channel.choices[0], float) else 'number')
 
 
 class DynamicLinearModel(nn.Module):
@@ -569,8 +549,8 @@ class DynamicLinearModel(nn.Module):
         return self.linear(x1)
 
     def _register_mutable(self):
-        mutable1 = SampleOneshotMutableChannel(8, choices=[1, 4, 8])
-        mutable2 = SampleOneshotMutableChannel(16, choices=[2, 8, 16])
+        mutable1 = OneShotMutableChannel(8, candidate_choices=[1, 4, 8])
+        mutable2 = OneShotMutableChannel(16, candidate_choices=[2, 8, 16])
         mutable_value = SampleExpandDerivedMutable(1)
 
         MutableChannelContainer.register_mutable_channel_to_module(

@@ -6,7 +6,6 @@ from typing import Union
 
 import torch
 
-# from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables.mutable_channel import (
     L1MutableChannelUnit, SequentialMutableChannelUnit)
 from mmrazor.models.mutators.channel_mutator import ChannelMutator
@@ -129,7 +128,7 @@ class TestChannelMutator(unittest.TestCase):
                 model = Model()
                 mutator = ChannelMutator(
                     channel_unit_cfg={
-                        'type': 'SampleOneshotMutableChannelUnit',
+                        'type': 'OneShotMutableChannelUnit',
                         'default_args': {}
                     },
                     parse_cfg={'type': 'Predefined'})

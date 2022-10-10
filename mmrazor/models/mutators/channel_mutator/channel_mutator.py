@@ -1,17 +1,15 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import Dict, Generic, List, Optional, Set, Tuple, Type, Union
+from typing import Dict, Generic, List, Optional, Tuple, Type, Union
 
 from mmengine import fileio
 from torch.nn import Module
 
 from mmrazor.models.architectures.dynamic_ops import DynamicChannelMixin
-from mmrazor.models.mutables import (BaseMutableChannel, ChannelUnitType,
-                                     DerivedMutable, MutableChannelContainer,
-                                     MutableChannelUnit,
+from mmrazor.models.mutables import (ChannelUnitType, MutableChannelUnit,
                                      SequentialMutableChannelUnit)
-from mmrazor.models.mutables.mutable_channel.units.channel_unit import (
-    Channel, ChannelUnit)
+from mmrazor.models.mutables.mutable_channel.units.channel_unit import \
+    ChannelUnit
 from mmrazor.registry import MODELS
 from mmrazor.structures.graph import ModuleGraph
 from ..base_mutator import BaseMutator
@@ -65,15 +63,14 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
 
     # init
 
-    def __init__(
-            self,
-            channel_unit_cfg: Union[
-                dict,
-                Type[MutableChannelUnit]] = SequentialMutableChannelUnit,
-            parse_cfg: Dict = dict(
-                type='BackwardTracer',
-                loss_calculator=dict(type='ImageClassifierPseudoLoss')),
-            init_cfg: Optional[Dict] = None) -> None:
+    def __init__(self,
+                 channel_unit_cfg: Union[
+                     dict,
+                     Type[MutableChannelUnit]] = SequentialMutableChannelUnit,
+                 parse_cfg: Dict = dict(
+                     type='BackwardTracer',
+                     loss_calculator=dict(type='ImageClassifierPseudoLoss')),
+                 init_cfg: Optional[Dict] = None) -> None:
 
         super().__init__(init_cfg)
 
@@ -244,8 +241,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
             if unit.name in self.units_cfg and \
                     'init_args' in self.units_cfg[unit.name]:
                 args = self.units_cfg[unit.name]['init_args']
-            mutable_unit = self.unit_class.init_from_channel_unit(
-                unit, args)
+            mutable_unit = self.unit_class.init_from_channel_unit(unit, args)
             mutable_units.append(mutable_unit)
         return mutable_units
 
@@ -314,69 +310,6 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
         """Initialize units using the model with pre-defined dynamicops and
         mutable-channels."""
 
-        def process_container(contanier: MutableChannelContainer,
-                              module,
-                              module_name,
-                              mutable2units,
-                              is_output=True):
-            for index, mutable in contanier.mutable_channels.items():
-                if isinstance(mutable, DerivedMutable):
-                    source_mutables: Set = \
-                        mutable._trace_source_mutables()
-                    source_channel_mutables = [
-                        mutable for mutable in source_mutables
-                        if isinstance(mutable, BaseMutableChannel)
-                    ]
-                    assert len(source_channel_mutables) == 1, (
-                        'only support one mutable channel '
-                        'used in DerivedMutable')
-                    mutable = list(source_channel_mutables)[0]
+        units = self.unit_class.init_from_predefined_model(model)
 
-                if mutable not in mutable2units:
-                    if hasattr(self.unit_class, 'init_from_mutable_channel'):
-                        mutable2units[
-                            mutable] = \
-                                self.unit_class.init_from_mutable_channel(
-                                mutable)
-                    else:
-                        mutable2units[mutable] = self.unit_class(
-                            mutable.num_channels, **self.unit_default_args)
-
-                unit: MutableChannelUnit = mutable2units[mutable]
-                if is_output:
-                    unit.add_ouptut_related(
-                        Channel(
-                            module_name,
-                            module,
-                            index,
-                            is_output_channel=is_output))
-                else:
-                    unit.add_input_related(
-                        Channel(
-                            module_name,
-                            module,
-                            index,
-                            is_output_channel=is_output))
-
-        mutable2units: Dict = {}
-        for name, module in model.named_modules():
-            if isinstance(module, DynamicChannelMixin):
-                in_container: MutableChannelContainer = \
-                    module.get_mutable_attr(
-                        'in_channels')
-                out_container: MutableChannelContainer = \
-                    module.get_mutable_attr(
-                        'out_channels')
-                process_container(in_container, module, name, mutable2units,
-                                  False)
-                process_container(out_container, module, name, mutable2units,
-                                  True)
-        for mutable, unit in mutable2units.items():
-            if isinstance(mutable, DerivedMutable):
-                continue
-            else:
-                unit.mutable_channel = mutable
-        units = list(mutable2units.values())
-        for unit in units:
-            self._name2unit[unit.name] = unit
         return units

@@ -30,7 +30,7 @@ class MutableChannelContainer(BaseMutableChannel):
 
     def __init__(self, num_channels: int, **kwargs):
         super().__init__(num_channels, **kwargs)
-        self.mutable_channels: IndexDict[BaseMutableChannel] = IndexDict()
+        self.mutable_channels = IndexDict()
 
     # choice
 

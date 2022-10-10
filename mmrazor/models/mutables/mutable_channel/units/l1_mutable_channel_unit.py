@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 
 from mmrazor.registry import MODELS
+from ..simple_mutable_channel import SimpleMutableChannel
 from .sequential_mutable_channel_unit import SequentialMutableChannelUnit
 
 
@@ -25,6 +26,23 @@ class L1MutableChannelUnit(SequentialMutableChannelUnit):
                  min_ratio=0.9) -> None:
         super().__init__(num_channels, choice_mode, divisor, min_value,
                          min_ratio)
+        self.mutable_channel = SimpleMutableChannel(num_channels)
+
+    # choices
+
+    @property
+    def current_choice(self) -> Union[int, float]:
+        num = self.mutable_channel.activated_channels
+        if self.is_num_mode:
+            return num
+        else:
+            return self._num2ratio(num)
+
+    @current_choice.setter
+    def current_choice(self, choice: Union[int, float]):
+        int_choice = self._get_valid_int_choice(choice)
+        mask = self._generate_mask(int_choice).bool()
+        self.mutable_channel.current_choice = mask
 
     # private methods
 

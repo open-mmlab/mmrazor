@@ -3,7 +3,7 @@ from typing import Dict, Type, Union
 
 from mmrazor.models.mutables import OneShotMutableChannelUnit
 from mmrazor.registry import MODELS
-from .channel_mutator import ChannelUnitType, ChannelMutator
+from .channel_mutator import ChannelMutator, ChannelUnitType
 
 
 @MODELS.register_module()
