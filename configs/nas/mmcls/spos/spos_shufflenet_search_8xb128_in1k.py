@@ -13,5 +13,5 @@ train_cfg = dict(
     num_mutation=25,
     num_crossover=25,
     mutate_prob=0.1,
-    flops_range=(0., 330 * 1e6),
+    flops_range=(0., 330.),
     score_key='accuracy/top1')

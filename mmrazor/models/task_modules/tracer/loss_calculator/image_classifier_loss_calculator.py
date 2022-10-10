@@ -13,9 +13,17 @@ except ImportError:
 @TASK_UTILS.register_module()
 class ImageClassifierPseudoLoss:
     """Calculate the pseudo loss to trace the topology of a `ImageClassifier`
-    in MMClassification with `BackwardTracer`."""
+    in MMClassification with `BackwardTracer`.
+
+    Args:
+        input_shape (Tuple): The shape of the pseudo input. Defaults to
+            (2, 3, 224, 224).
+    """
+
+    def __init__(self, input_shape=(2, 3, 224, 224)):
+        self.input_shape = input_shape
 
     def __call__(self, model: ImageClassifier) -> torch.Tensor:
-        pseudo_img = torch.rand(1, 3, 224, 224)
+        pseudo_img = torch.rand(self.input_shape)
         pseudo_output = model(pseudo_img)
-        return sum(pseudo_output)
+        return pseudo_output.sum()
