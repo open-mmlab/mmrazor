@@ -23,5 +23,7 @@ __all__ = [
     'BaseMutableChannel', 'MutableChannelContainer', 'ChannelUnitType',
     'SquentialMutableChannel', 'BaseMutable', 'DiffChoiceRoute',
     'DiffMutableModule', 'DerivedMutable', 'MutableValue',
-    'OneShotMutableValue', 'OneHotMutableOP', 'OneShotMutableChannel'
+    'OneShotMutableValue', 'OneHotMutableOP', 'OneShotMutableChannel',
+    'DiffChoiceRoute', 'DiffMutableModule', 'OneShotMutableChannel',
+    'DerivedMutable', 'MutableValue', 'OneShotMutableValue', 'OneHotMutableOP'
 ]

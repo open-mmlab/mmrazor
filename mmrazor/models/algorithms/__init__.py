@@ -13,5 +13,7 @@ __all__ = [
     'Darts', 'DartsDDP', 'SelfDistill', 'DataFreeDistillation',
     'DAFLDataFreeDistillation', 'OverhaulFeatureDistillation',
     'ItePruneAlgorithm', 'DAFLDataFreeDistillation',
-    'OverhaulFeatureDistillation', 'Dsnas', 'DsnasDDP'
+    'OverhaulFeatureDistillation', 'Dsnas', 'DsnasDDP',
+    'DAFLDataFreeDistillation', 'OverhaulFeatureDistillation', 'Dsnas',
+    'DsnasDDP'
 ]
