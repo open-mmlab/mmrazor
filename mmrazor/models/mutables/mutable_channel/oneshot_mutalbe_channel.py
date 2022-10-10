@@ -5,10 +5,21 @@ from .sequential_mutable_channel import SquentialMutableChannel
 
 
 class OneShotMutableChannel(SquentialMutableChannel):
+    """OneShotMutableChannel is a subclass of SquentialMutableChannel. The
+    difference is that a OneShotMutableChannel limits the candidates of the
+    choice.
+
+    Args:
+        num_channels (int): number of channels.
+        candidate_choices (List[Union[float, int]], optional):  A list of
+            candidate width ratios. Each candidate indicates how many
+            channels to be reserved. Defaults to [].
+        choice_mode (str, optional): Mode of choices. Defaults to 'number'.
+    """
 
     def __init__(self,
                  num_channels: int,
-                 candidate_choices: List = [],
+                 candidate_choices: List[Union[float, int]] = [],
                  choice_mode='number',
                  **kwargs):
         super().__init__(num_channels, choice_mode, **kwargs)
