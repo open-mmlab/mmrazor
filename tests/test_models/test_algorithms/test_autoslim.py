@@ -18,9 +18,10 @@ MUTATOR_TYPE = Union[torch.nn.Module, Dict]
 DISTILLER_TYPE = Union[torch.nn.Module, Dict]
 
 ARCHITECTURE_CFG = dict(
-    type='mmcls.ImageClassifier',
-    backbone=dict(type='mmcls.MobileNetV2', widen_factor=1.5),
-    neck=dict(type='mmcls.GlobalAveragePooling'),
+    _scope_='mmcls',
+    type='ImageClassifier',
+    backbone=dict(type='MobileNetV2', widen_factor=1.5),
+    neck=dict(type='GlobalAveragePooling'),
     head=dict(
         type='mmcls.LinearClsHead',
         num_classes=1000,

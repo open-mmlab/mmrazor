@@ -14,7 +14,8 @@ from mmengine.optim import build_optim_wrapper
 from mmrazor.models.algorithms import SlimmableNetwork, SlimmableNetworkDDP
 
 MODEL_CFG = dict(
-    type='mmcls.ImageClassifier',
+    _scope_='mmcls',
+    type='ImageClassifier',
     backbone=dict(type='MobileNetV2', widen_factor=1.5),
     neck=dict(type='GlobalAveragePooling'),
     head=dict(
@@ -27,8 +28,7 @@ CHANNEL_CFG_PATH = 'tests/data/MBV2_slimmable_config.json'
 
 MUTATOR_CFG = dict(
     type='SlimmableChannelMutator',
-    channel_unit_cfg=dict(
-        type='SlimmableChannelUnit', units=CHANNEL_CFG_PATH),
+    channel_unit_cfg=dict(type='SlimmableChannelUnit', units=CHANNEL_CFG_PATH),
     parse_cfg=dict(
         type='BackwardTracer',
         loss_calculator=dict(type='ImageClassifierPseudoLoss')))
