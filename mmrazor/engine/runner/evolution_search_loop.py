@@ -66,7 +66,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                  num_mutation: int = 25,
                  num_crossover: int = 25,
                  mutate_prob: float = 0.1,
-                 constraints_range: Dict[str, Any] = dict(flops=(0, 330)),
+                 constraints_range: Dict[str, Any] = dict(flops=(0., 330.)),
                  resource_estimator_cfg: Dict[str, Any] = dict(),
                  dump_derived_mutable: bool = False,
                  score_key: str = 'accuracy/top1',
