@@ -15,6 +15,7 @@ from mmrazor.registry import MODELS
 from ..utils import load_and_merge_channel_cfgs
 
 MODEL_CFG = dict(
+    _scope_='mmcls',
     type='mmcls.ImageClassifier',
     backbone=dict(type='MobileNetV2', widen_factor=1.5),
     neck=dict(type='GlobalAveragePooling'),
