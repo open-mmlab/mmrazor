@@ -6,34 +6,36 @@
 
 ## Pruning Framework
 
-This document introduces the pruning framework in mmrazor. Our pruning framework can help you prune a model automatically, and it is easy to extend new algorithms.
+This document introduces the pruning framework in mmrazor. Our pruning framework can help you prune a model automatically, making it easy to extend new algorithms.
 
-The pruning framework consists of four core modules: PruneAlgorithm, ChanelMutator, MutableChannelUnit, and DynamicOp. Their main features are detailed as below:
+The pruning framework consists of five modules: Algorithm, ChanelMutator, MutableChannelUnit, MutableChannel, and DynamicOp. Their main features are detailed below:
 
 | Module             | Features                                                              |
 | ------------------ | --------------------------------------------------------------------- |
-| PruneAlgorithm     | Controls training process.                                            |
-| ChanelMutator      | manages the pruning structure of the model.                           |
-| MutableChannelUnit | makes pruning decisions.                                              |
-| DynamicOp          | forwards with mutable number of channels, and exports pruned modules. |
+| Algorithm          | Controls training process.                                            |
+| ChanelMutator      | Manages the pruning structure of the model.                           |
+| MutableChannelUnit | Makes pruning decisions.                                              |
+| MutableChannel     | Manage a channel mask.                                                |
+| DynamicOp          | Forwards with mutable number of channels, and exports pruned modules. |
 
 <p align="center">
     <img src="./images/framework-framework.png" width="250"/>
 </p>
-## PruneAlgorithm
+
+## Algorithm
 
 <p align="center">
     <img src="./images/framework-algorithm.png" width="400">
 </p>
 
-PruneAlgorithm inherents from BaseAlgorithm. It controls the training process, like deciding when to prune the model in the training/finetune process.
+Algorithms inherit from BaseAlgorithm. They control the training process, like deciding when to prune the model in the training/finetune process.
 
-For example, ItePruneAlgorithm prunes the model iteratively by certain epochs.
+For example, IteAlgorithm prunes the model iteratively by certain epochs.
 
 Here is an example of how to use PruneAlgoritm.
 
 ```python
-from mmrazor.models.algorithms import ItePruneAlgorithm
+from mmrazor.models.algorithms import IteAlgorithm
 from mmengine.model import BaseModel
 import torch.nn as nn
 
@@ -46,12 +48,12 @@ class Model(BaseModel):
         return self.conv(x)
 
 model = Model()
-algorithm = ItePruneAlgorithm(model,
+algorithm = IteAlgorithm(model,
                               mutator_cfg=dict(
-                                  type='BaseChannelMutator',
+                                  type='ChannelMutator',
                                   channl_unit_cfg=dict(type='L1ChannelUnit')),)
 print(algorithm)
-# ItePruneAlgorithm(
+# IteAlgorithm(
 #   (data_preprocessor): BaseDataPreprocessor()
 #   (architecture): Model(
 #     (data_preprocessor): BaseDataPreprocessor()
@@ -70,13 +72,11 @@ print(algorithm)
 
 ## ChanelMutator
 
-<p align="center">
-    <img src="./images/framework-ChanelGroupMutator.png" width="500">
-</p>
+<p align="center"><img src="./images/framework-ChanelMutator.png" width="500"></p>
 
-ChanelMutator controls the pruning structure of the model. In other words, ChanelMutator decides how many channels that each layer prunes. Usually, given a pruning target, such as flops, latency or pruning ratio, ChannelUnitMutator will output a pruning structure for the model. The pruning structure is variable. The default definition is channel remaining ratio, and it's also easy to extend to the number of channels or channel buckets.
+A ChanelMutator controls the pruning structure of a model. In other words, ChanelMutator decides how many channels each layer prunes. Usually, given a pruning target, such as a flops, latency, or pruning ratio target, the ChannelUnitMutator will output a pruning structure for the model. The pruning structure is variable. The default definition is the remaining channel ratio, and it's also easy to extend to the number of channels or channel buckets.
 
-As the channels of some layers are related with each other, the related layers share one pruning decision. We put these related layers to a MutableChannelUnit. Therefore, the ChanelMutator directly decides the pruning ratio of each MutableChannelUnit.
+As some layers' channels are related, the related layers share one pruning decision. We put these associated layers into a MutableChannelUnit. Therefore, the ChanelMutator directly decides the pruning ratio of each MutableChannelUnit.
 
 ```python
 from mmrazor.models.mutators import BaseChannelMutator
@@ -109,9 +109,7 @@ print(mutator.sample_choices())
 
 ## MutableChannelUnit
 
-<p align="center">
-    <img src="./images/unit.png"  width="700">
-</p>
+<p align="center"><img src="./images/unit.png"  width="700"></p>
 
 Because some layers' channels are related, the related layers are collected and put in a MutableChannelUnit.
 
@@ -119,18 +117,20 @@ Each MutableChannelUnit accepts a pruning ratio and generates a channel mask for
 
 All related layers are divided into two types: output_related and input_related.
 
-1. The output channels of output-related layers are in the MutableChannelUnit.
-2. The input channels of input-related layers are in the MutableChannelUnit.
+- The output channels of output-related layers are in the MutableChannelUnit.
+- The input channels of input-related layers are in the MutableChannelUnit.
 
-Besides, basic PyTorch modules are converted to DynamicOps, which can deal with a mutable number of channels.
+Besides, basic PyTorch modules are converted to DynamicOps, which can deal with a mutable number of channels with MutableChannels.
 
-## DynamicOP
+## DynamicOP && MutableChannel
 
-<p align="center">
-    <img src="./images/framework-op.png" width="300">
-</p>
+<p align="center"><img src="./images/framework-op.png" width="300"></p>
 
-Dynamic-ops inherit from basic torch module, like nn.Conv2d or nn.Linear. They are able to forward with mutable number of channels, and export pruned torch modules. Compared with basic torch modules, each DynamicOp has two BaseMutableChannel modules, which control the input-channels and output-channels respectively.
+**MutableChannel**: Each MutableChannel manages a channel mask for a model. They help DynamicOps to deal with mutable numbers of channels.
+
+**DynamicOp**: DynamicOps inherit from basic torch modules, like nn.Conv2d or nn.Linear. They can forward with mutable numbers of channels and export pruned torch modules.
+
+Compared with basic torch modules, each DynamicOp has two MutableChannel modules, which control the input-channels and output-channels, respectively.
 
 ## More Documents about Pruning
 
