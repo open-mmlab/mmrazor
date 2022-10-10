@@ -4,6 +4,7 @@ from typing import List, Union
 
 import torch.nn as nn
 
+from mmrazor.models.architectures import dynamic_ops
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
 from .one_shot_mutable_channel_unit import OneShotMutableChannelUnit
@@ -39,8 +40,6 @@ class SlimmableChannelUnit(OneShotMutableChannelUnit):
 
     def prepare_for_pruning(self, model: nn.Module):
         """Prepare for pruning."""
-        # avoid circular import for python 3.6.9
-        import mmrazor.models.architectures.dynamic_ops as dynamic_ops
         self._replace_with_dynamic_ops(
             model, {
                 nn.Conv2d: dynamic_ops.DynamicConv2d,
@@ -53,7 +52,6 @@ class SlimmableChannelUnit(OneShotMutableChannelUnit):
 
     def alter_candidates_of_switchbn(self, candidates: List):
         """Change candidates of SwitchableBatchNorm2d."""
-        import mmrazor.models.architectures.dynamic_ops as dynamic_ops
         for channel in list(self.output_related) + list(self.input_related):
             if isinstance(channel.module, dynamic_ops.SwitchableBatchNorm2d) \
                     and len(channel.module.candidate_bn) == 0:

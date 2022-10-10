@@ -533,11 +533,14 @@ class SampleOneshotMutableChannelUnit(OneShotMutableChannelUnit):
     @classmethod
     def init_from_mutable_channel(
             cls, mutable_channel: SampleOneshotMutableChannel):
-        return cls(
+        unit = cls(
             mutable_channel.num_channels,
             candidate_choices=mutable_channel.choices,
             candidate_mode='ratio'
             if isinstance(mutable_channel.choices[0], float) else 'number')
+
+        unit.mutable_channel = mutable_channel
+        return unit
 
 
 class DynamicLinearModel(nn.Module):

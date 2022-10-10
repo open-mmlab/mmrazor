@@ -6,6 +6,8 @@ import torch
 import torch.nn as nn
 from mmengine import MMLogger
 
+from mmrazor.models.architectures import dynamic_ops
+from mmrazor.models.mutables.mutable_channel import BaseMutableChannel
 from mmrazor.models.utils import make_divisible
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
@@ -46,11 +48,16 @@ class SequentialMutableChannelUnit(MutableChannelUnit):
         self.min_value = min_value
         self.min_ratio = min_ratio
 
+    @classmethod
+    def init_from_mutable_channel(cls, mutable_channel: BaseMutableChannel):
+        unit = super().init_from_mutable_channel(mutable_channel)
+        unit.mutable_channel = mutable_channel
+        return unit
+
     def prepare_for_pruning(self, model: nn.Module):
         """Prepare for pruning, including register mutable channels."""
         # register MutableMask
-        # avoid circular import for python 3.6.9
-        import mmrazor.models.architectures.dynamic_ops as dynamic_ops
+
         self._replace_with_dynamic_ops(
             model, {
                 nn.Conv2d: dynamic_ops.DynamicConv2d,

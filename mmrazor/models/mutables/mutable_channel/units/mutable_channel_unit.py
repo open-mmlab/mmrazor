@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """This module defines MutableChannelUnit."""
 import abc
+from collections import Set
 from typing import Dict, List, Type, TypeVar
 
 import torch.nn as nn
@@ -43,14 +44,75 @@ class MutableChannelUnit(ChannelUnit):
 
         super().__init__(num_channels)
 
+    @classmethod
+    def init_from_mutable_channel(cls, mutable_channel: BaseMutableChannel):
+        unit = cls(mutable_channel.num_channels)
+        return unit
+
+    @classmethod
+    def init_from_predefined_model(cls, model: nn.Module):
+        """Initialize units using the model with pre-defined dynamicops and
+        mutable-channels."""
+
+        def process_container(contanier: MutableChannelContainer,
+                              module,
+                              module_name,
+                              mutable2units,
+                              is_output=True):
+            for index, mutable in contanier.mutable_channels.items():
+                if isinstance(mutable, DerivedMutable):
+                    source_mutables: Set = \
+                        mutable._trace_source_mutables()
+                    source_channel_mutables = [
+                        mutable for mutable in source_mutables
+                        if isinstance(mutable, BaseMutableChannel)
+                    ]
+                    assert len(source_channel_mutables) == 1, (
+                        'only support one mutable channel '
+                        'used in DerivedMutable')
+                    mutable = list(source_channel_mutables)[0]
+
+                if mutable not in mutable2units:
+                    mutable2units[mutable] = cls.init_from_mutable_channel(
+                        mutable)
+
+                unit: MutableChannelUnit = mutable2units[mutable]
+                if is_output:
+                    unit.add_ouptut_related(
+                        Channel(
+                            module_name,
+                            module,
+                            index,
+                            is_output_channel=is_output))
+                else:
+                    unit.add_input_related(
+                        Channel(
+                            module_name,
+                            module,
+                            index,
+                            is_output_channel=is_output))
+
+        mutable2units: Dict = {}
+        for name, module in model.named_modules():
+            if isinstance(module, DynamicChannelMixin):
+                in_container: MutableChannelContainer = \
+                    module.get_mutable_attr(
+                        'in_channels')
+                out_container: MutableChannelContainer = \
+                    module.get_mutable_attr(
+                        'out_channels')
+                process_container(in_container, module, name, mutable2units,
+                                  False)
+                process_container(out_container, module, name, mutable2units,
+                                  True)
+        units = list(mutable2units.values())
+        return units
+
     # properties
 
     @property
     def is_mutable(self) -> bool:
         """If the channel-group is prunable."""
-
-        # fix import for python 3.6.9 and avoid circular import
-        # import mmrazor.models.architectures.dynamic_ops as dynamic_ops
 
         def traverse(channels: List[Channel]):
             has_dynamic_op = False
@@ -160,8 +222,7 @@ class MutableChannelUnit(ChannelUnit):
     def _register_channel_container(
             model: nn.Module, container_class: Type[MutableChannelContainer]):
         """register channel container for dynamic ops."""
-        # fix import for python 3.6.9 and avoid circular import
-        # import mmrazor.models.architectures.dynamic_ops as dynamic_ops
+
         for module in model.modules():
             if isinstance(module, DynamicChannelMixin):
                 if module.get_mutable_attr('in_channels') is None:
@@ -190,8 +251,7 @@ class MutableChannelUnit(ChannelUnit):
                                                  container_class(out_channels))
 
     def _register_mutable_channel(self, mutable_channel: BaseMutableChannel):
-        # register mutable_channel
-        # import mmrazor.models.architectures.dynamic_ops as dynamic_ops
+
         for channel in list(self.input_related) + list(self.output_related):
             module = channel.module
             if isinstance(module, DynamicChannelMixin):
