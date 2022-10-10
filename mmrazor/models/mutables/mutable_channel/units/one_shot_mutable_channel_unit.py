@@ -6,6 +6,7 @@ from typing import Dict, List, Union
 import torch.nn as nn
 
 from mmrazor.registry import MODELS
+from ..oneshot_mutalbe_channel import OneShotMutableChannel
 from .sequential_mutable_channel_unit import SequentialMutableChannelUnit
 
 
@@ -45,7 +46,18 @@ class OneShotMutableChannelUnit(SequentialMutableChannelUnit):
         self.candidate_choices = self._prepare_candidate_choices(
             candidate_choices, candidate_mode)
 
-        self._choice = self.max_choice
+        self.mutable_channel = OneShotMutableChannel(num_channels,
+                                                     self.candidate_choices,
+                                                     candidate_mode)
+
+    @classmethod
+    def init_from_mutable_channel(cls, mutable_channel: OneShotMutableChannel):
+        unit = cls(mutable_channel.num_channels,
+                   mutable_channel.candidate_choices,
+                   mutable_channel.choice_mode)
+        mutable_channel.candidate_choices = unit.candidate_choices
+        unit.mutable_channel = mutable_channel
+        return unit
 
     def prepare_for_pruning(self, model: nn.Module):
         """Prepare for pruning."""
@@ -79,9 +91,10 @@ class OneShotMutableChannelUnit(SequentialMutableChannelUnit):
     def current_choice(self, choice: Union[int, float]):
         """Set current choice."""
         assert choice in self.candidate_choices
-        SequentialMutableChannelUnit.current_choice.fset(  # type: ignore
-            self,  # type: ignore
-            choice)  # type: ignore
+        int_choice = self._get_valid_int_choice(choice)
+        choice_ = int_choice if self.is_num_mode else self._num2ratio(
+            int_choice)
+        self.mutable_channel.current_choice = choice_
 
     def sample_choice(self) -> Union[int, float]:
         """Sample a valid choice."""

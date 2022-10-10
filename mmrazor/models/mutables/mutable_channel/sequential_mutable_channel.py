@@ -31,6 +31,7 @@ class SquentialMutableChannel(SimpleMutableChannel):
 
     @property
     def is_num_mode(self):
+        """Get if the choice is number mode."""
         return self.choice_mode == 'number'
 
     @property
