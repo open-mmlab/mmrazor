@@ -19,8 +19,8 @@ class SlimmableChannelUnit(OneShotMutableChannelUnit):
         candidate_choices (List[Union[int, float]], optional):
             A list of candidate width ratios. Each
             candidate indicates how many channels to be reserved.
-            Defaults to [0.5, 1.0](candidate_mode='ratio').
-        candidate_mode (str, optional): Mode of candidates.
+            Defaults to [0.5, 1.0](choice_mode='ratio').
+        choice_mode (str, optional): Mode of candidates.
             One of 'ratio' or 'number'. Defaults to 'number'.
         divisor (int, optional): Used to make choice divisible.
         min_value (int, optional): The minimal value used when make divisible.
@@ -31,12 +31,12 @@ class SlimmableChannelUnit(OneShotMutableChannelUnit):
     def __init__(self,
                  num_channels: int,
                  candidate_choices: List[Union[int, float]] = [],
-                 candidate_mode='number',
+                 choice_mode='number',
                  divisor=1,
                  min_value=1,
                  min_ratio=0.9) -> None:
-        super().__init__(num_channels, candidate_choices, candidate_mode,
-                         divisor, min_value, min_ratio)
+        super().__init__(num_channels, candidate_choices, choice_mode, divisor,
+                         min_value, min_ratio)
 
     def prepare_for_pruning(self, model: nn.Module):
         """Prepare for pruning."""

@@ -22,8 +22,8 @@ class OneShotMutableChannelUnit(SequentialMutableChannelUnit):
         candidate_choices (List[Union[int, float]], optional):
             A list of candidate width ratios. Each
             candidate indicates how many channels to be reserved.
-            Defaults to [0.5, 1.0](candidate_mode='ratio').
-        candidate_mode (str, optional): Mode of candidates.
+            Defaults to [0.5, 1.0](choice_mode='ratio').
+        choice_mode (str, optional): Mode of candidates.
             One of "ratio" or "number". Defaults to 'ratio'.
         divisor (int): Used to make choice divisible.
         min_value (int): the minimal value used when make divisible.
@@ -33,22 +33,22 @@ class OneShotMutableChannelUnit(SequentialMutableChannelUnit):
     def __init__(self,
                  num_channels: int,
                  candidate_choices: List[Union[int, float]] = [0.5, 1.0],
-                 candidate_mode='ratio',
+                 choice_mode='ratio',
                  divisor=1,
                  min_value=1,
                  min_ratio=0.9) -> None:
-        super().__init__(num_channels, candidate_mode, divisor, min_value,
+        super().__init__(num_channels, choice_mode, divisor, min_value,
                          min_ratio)
         candidate_choices = copy.copy(candidate_choices)
         if candidate_choices == []:
             candidate_choices.append(
                 self.num_channels if self.is_num_mode else 1.0)
         self.candidate_choices = self._prepare_candidate_choices(
-            candidate_choices, candidate_mode)
+            candidate_choices, choice_mode)
 
         self.mutable_channel = OneShotMutableChannel(num_channels,
                                                      self.candidate_choices,
-                                                     candidate_mode)
+                                                     choice_mode)
 
     @classmethod
     def init_from_mutable_channel(cls, mutable_channel: OneShotMutableChannel):
@@ -76,7 +76,7 @@ class OneShotMutableChannelUnit(SequentialMutableChannelUnit):
             init_cfg.pop('choice_mode')
             init_cfg.update({
                 'candidate_choices': self.candidate_choices,
-                'candidate_mode': self.choice_mode
+                'choice_mode': self.choice_mode
             })
         return config
 
@@ -114,9 +114,9 @@ class OneShotMutableChannelUnit(SequentialMutableChannelUnit):
     # private methods
 
     def _prepare_candidate_choices(self, candidate_choices: List,
-                                   candidate_mode) -> List:
+                                   choice_mode) -> List:
         """Process candidate_choices."""
-        choice_type = int if candidate_mode == 'number' else float
+        choice_type = int if choice_mode == 'number' else float
         for choice in candidate_choices:
             assert isinstance(choice, choice_type)
         if self.is_num_mode:

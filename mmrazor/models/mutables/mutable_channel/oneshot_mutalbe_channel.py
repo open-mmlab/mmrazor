@@ -9,9 +9,9 @@ class OneShotMutableChannel(SquentialMutableChannel):
     def __init__(self,
                  num_channels: int,
                  candidate_choices: List = [],
-                 candidate_mode='number',
+                 choice_mode='number',
                  **kwargs):
-        super().__init__(num_channels, candidate_mode, **kwargs)
+        super().__init__(num_channels, choice_mode, **kwargs)
         self.candidate_choices = candidate_choices
         if candidate_choices == []:
             candidate_choices.append(num_channels if self.is_num_mode else 1.0)
