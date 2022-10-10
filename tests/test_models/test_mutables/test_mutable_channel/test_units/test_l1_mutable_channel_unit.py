@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from mmrazor.models.mutables import L1MutableChannelUnit
 from mmrazor.models.mutators import ChannelMutator
-from ....data.models import LineModel
+from .....data.models import LineModel
 
 
 class TestL1MutableChannelUnit(TestCase):
