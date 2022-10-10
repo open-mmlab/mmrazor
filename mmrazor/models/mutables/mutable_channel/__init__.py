@@ -1,8 +1,17 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .mutable_channel import MutableChannel
-from .one_shot_mutable_channel import OneShotMutableChannel
-from .slimmable_mutable_channel import SlimmableMutableChannel
+from .base_mutable_channel import BaseMutableChannel
+from .mutable_channel_container import MutableChannelContainer
+from .oneshot_mutalbe_channel import OneShotMutableChannel
+from .sequential_mutable_channel import SquentialMutableChannel
+from .simple_mutable_channel import SimpleMutableChannel
+from .units import (ChannelUnitType, L1MutableChannelUnit, MutableChannelUnit,
+                    OneShotMutableChannelUnit, SequentialMutableChannelUnit,
+                    SlimmableChannelUnit)
 
 __all__ = [
-    'OneShotMutableChannel', 'SlimmableMutableChannel', 'MutableChannel'
+    'SimpleMutableChannel', 'L1MutableChannelUnit',
+    'SequentialMutableChannelUnit', 'MutableChannelUnit',
+    'OneShotMutableChannelUnit', 'SlimmableChannelUnit', 'BaseMutableChannel',
+    'MutableChannelContainer', 'SquentialMutableChannel', 'ChannelUnitType',
+    'OneShotMutableChannel'
 ]

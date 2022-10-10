@@ -1,261 +1,315 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from abc import abstractmethod
-from typing import Dict, List, Optional
+from typing import Dict, Generic, List, Optional, Tuple, Type, Union
 
+from mmengine import fileio
 from torch.nn import Module
 
-from mmrazor.registry import MODELS, TASK_UTILS
-from ...mutables import MutableChannel
-from ...task_modules import PathConcatNode, PathDepthWiseConvNode, PathList
+from mmrazor.models.architectures.dynamic_ops import DynamicChannelMixin
+from mmrazor.models.mutables import (ChannelUnitType, MutableChannelUnit,
+                                     SequentialMutableChannelUnit)
+from mmrazor.models.mutables.mutable_channel.units.channel_unit import \
+    ChannelUnit
+from mmrazor.registry import MODELS
+from mmrazor.structures.graph import ModuleGraph
 from ..base_mutator import BaseMutator
-from ..utils import DEFAULT_MODULE_CONVERTERS
+
+
+def is_dynamic_op_for_fx_tracer(module, name):
+    return isinstance(module, DynamicChannelMixin)
 
 
 @MODELS.register_module()
-class ChannelMutator(BaseMutator):
-    """Base class for channel-based mutators.
+class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
+    """ChannelMutator manages the pruning structure of a model.
 
     Args:
-        mutable_cfg (dict): The config for the channel mutable.
-        tracer_cfg (dict | Optional): The config for the model tracer.
-            We Trace the topology of a given model with the tracer.
-        skip_prefixes (List[str] | Optional): The module whose name start with
-            a string in skip_prefixes will not be pruned.
-        init_cfg (dict, optional): The config to control the initialization.
+        channel_unit_cfg (Union[ dict, Type[MutableChannelUnit]], optional):
+            The config of ChannelUnits. When the channel_unit_cfg
+            is a dict, it should follow the template below:
+                channel_unit_cfg = dict(
+                    # type of used MutableChannelUnit
+                    type ='XxxMutableChannelUnit',
+                    # default args for MutableChananelUnit
+                    default_args={},
+                    units = {
+                        # config of a unit
+                        "xxx_unit_name": {},
+                        ...
+                    }
+                ),
+            The config template of 'units' can be got using
+            MutableChannelUnit.config_template()
+            Defaults to SequentialMutableChannelUnit.
 
-    Attributes:
-        search_groups (Dict[int, List]): Search group of supernet. Note that
-            the search group of a mutable based channel mutator is composed of
-            corresponding mutables. Mutables in the same search group should
-            be pruned together.
-        name2module (Dict[str, :obj:`torch.nn.Module`]): The mapping from
-            a module name to the module.
+        parse_cfg (Dict, optional):
+            The config to parse the model.
+            Defaults to
+                dict( type='BackwardTracer',
+                loss_calculator=dict(type='ImageClassifierPseudoLoss')).
 
-    Notes:
-        # To avoid ambiguity, we only allow the following two cases:
-        # 1. None of the parent nodes of a node is a `ConcatNode`
-        # 2. A node has only one parent node which is a `ConcatNode`
+        init_cfg (dict, optional): initialization configuration dict for
+            BaseModule.
+
+    Note:
+        There are three ways used in ChannelMutator to parse a model and
+        get MutableChannelUnits.
+        1. Using tracer. It needs parse_cfg to be the config of a tracer.
+        2. Using config. When parse_cfg['type']='Config'. It needs that
+        channel_unit_cfg['unit']['xxx_unit_name] has a key 'channels'.
+        3. Using the model with pre-defined dynamic-ops and mutablechannels:
+        When parse_cfg['type']='Predefined'.
     """
 
-    def __init__(
-        self,
-        mutable_cfg: Dict,
-        tracer_cfg: Optional[Dict] = None,
-        skip_prefixes: Optional[List[str]] = None,
-        init_cfg: Optional[Dict] = None,
-    ) -> None:
+    # init
+
+    def __init__(self,
+                 channel_unit_cfg: Union[
+                     dict,
+                     Type[MutableChannelUnit]] = SequentialMutableChannelUnit,
+                 parse_cfg: Dict = dict(
+                     type='BackwardTracer',
+                     loss_calculator=dict(type='ImageClassifierPseudoLoss')),
+                 init_cfg: Optional[Dict] = None) -> None:
+
         super().__init__(init_cfg)
 
-        self.mutable_cfg = mutable_cfg
-        if tracer_cfg:
-            self.tracer = TASK_UTILS.build(tracer_cfg)
-        else:
-            self.tracer = None
-        self.skip_prefixes = skip_prefixes
-        self._search_groups: Optional[Dict[int, List[Module]]] = None
+        # tracer
+        if isinstance(parse_cfg, dict):
+            assert parse_cfg['type'] in [
+                'RazorFxTracer', 'BackwardTracer', 'Config', 'Predefined'
+            ]
+        self.parse_cfg = parse_cfg
 
-    def add_link(self, path_list: PathList) -> None:
-        """Establish the relationship between the current nodes and their
-        parents."""
-        for path in path_list:
-            pre_node = None
-            for node in path:
-                if isinstance(node, PathDepthWiseConvNode):
-                    module = self.name2module[node.name]
-                    # The in_channels and out_channels of a depth-wise conv
-                    # should be the same
-                    module.mutable_out.register_same_mutable(module.mutable_in)
-                    module.mutable_in.register_same_mutable(module.mutable_out)
+        # units
+        self._name2unit: Dict[str, ChannelUnitType] = {}
+        self.units: List[ChannelUnitType] = []
 
-                if isinstance(node, PathConcatNode):
-                    if pre_node is not None:
-                        module_names = node.get_module_names()
-                        concat_modules = [
-                            self.name2module[name] for name in module_names
-                        ]
-                        concat_mutables = [
-                            module.mutable_out for module in concat_modules
-                        ]
-                        pre_module = self.name2module[pre_node.name]
-                        pre_module.mutable_in.register_same_mutable(
-                            concat_mutables)
-
-                    for sub_path_list in node:
-                        self.add_link(sub_path_list)
-
-                    # ConcatNode is the last node in a path
-                    break
-
-                if pre_node is None:
-                    pre_node = node
-                    continue
-
-                pre_module = self.name2module[pre_node.name]
-                cur_module = self.name2module[node.name]
-                pre_module.mutable_in.register_same_mutable(
-                    cur_module.mutable_out)
-                cur_module.mutable_out.register_same_mutable(
-                    pre_module.mutable_in)
-
-                pre_node = node
+        # unit config
+        self.channel_unit_cfg = channel_unit_cfg
+        self.unit_class, self.unit_default_args, self.units_cfg = \
+            self._parse_channel_unit_cfg(
+                channel_unit_cfg)
 
     def prepare_from_supernet(self, supernet: Module) -> None:
-        """Do some necessary preparations with supernet.
+        """Prepare from a model for pruning.
 
-        We support the following two cases:
-
-        Case 1: The input is the original nn.Module. We first replace the
-        conv/linear/norm modules in the input supernet with dynamic ops.
-        And trace the topology of the supernet. Finally, `search_groups` can be
-        built based on the topology.
-
-        Case 2: The input supernet is made up of dynamic ops. In this case,
-        relationship between nodes and their parents must have been
-        established and topology of the supernet is available for us. Then
-        `search_groups` can be built based on the topology.
-
-        Args:
-            supernet (:obj:`torch.nn.Module`): The supernet to be searched
-                in your algorithm.
+        It includes two steps:
+        1. parse the model and get MutableChannelUnits.
+        2. call unit.prepare_for_pruning for each unit.
         """
 
-        if self.tracer is not None:
-            self.convert_dynamic_module(supernet, self.module_converters)
-            # The mapping from a module name to the module
-            self._name2module = dict(supernet.named_modules())
+        self._name2module = dict(supernet.named_modules())
 
-            assert self.tracer is not None
-            module_path_list: PathList = self.tracer.trace(supernet)
-
-            self.add_link(module_path_list)
+        if 'Tracer' in self.parse_cfg['type']:
+            units = self._prepare_from_tracer(supernet, self.parse_cfg)
+        elif self.parse_cfg['type'] == 'Config':
+            units = self._prepare_from_cfg(supernet, self.units_cfg)
+        elif self.parse_cfg['type'] == 'Predefined':
+            units = self._prepare_from_predefined_model(supernet)
         else:
-            self._name2module = dict(supernet.named_modules())
+            raise NotImplementedError()
 
-        self.bind_mutable_name(supernet)
-        self._search_groups = self.build_search_groups(supernet)
+        for unit in units:
+            unit.prepare_for_pruning(supernet)
+            self._name2unit[unit.name] = unit
+        self.units = units
 
-    @staticmethod
-    def find_same_mutables(supernet) -> Dict:
-        """The mutables in the same group should be pruned together."""
-        visited = []
-        groups = {}
-        group_idx = 0
-        for name, module in supernet.named_modules():
-            if isinstance(module, MutableChannel):
-                same_mutables = module.same_mutables
-                if module not in visited and len(same_mutables) > 0:
-                    groups[group_idx] = [module] + same_mutables
-                    visited.extend(groups[group_idx])
-                    group_idx += 1
-        return groups
-
-    def bind_mutable_name(self, supernet: Module):
-        """Bind a MutableChannel to its name.
-
-        Args:
-            supernet (:obj:`torch.nn.Module`): The supernet to be searched
-                in your algorithm.
-        """
-
-        def traverse(module, prefix):
-            for name, child in module.named_children():
-                module_name = f'{prefix}.{name}' if prefix else name
-
-                if isinstance(child, MutableChannel):
-                    child.bind_mutable_name(prefix)
-                else:
-                    traverse(child, module_name)
-
-        traverse(supernet, '')
-
-    def convert_dynamic_module(self, supernet: Module, converters: Dict):
-        """Replace the conv/linear/norm modules in the input supernet with
-        dynamic ops.
-
-        Args:
-            supernet (:obj:`torch.nn.Module`): The architecture to be converted
-                in your algorithm.
-            dynamic_layer (Dict): The mapping from the module type to the
-                corresponding dynamic layer.
-        """
-
-        def traverse(module, prefix):
-            for name, child in module.named_children():
-                module_name = prefix + name
-
-                if type(child) in converters:
-                    mutable_cfg_ = copy.deepcopy(self.mutable_cfg)
-                    converter = converters[type(child)]
-                    layer = converter(child, mutable_cfg_, mutable_cfg_)
-                    setattr(module, name, layer)
-                else:
-                    traverse(child, module_name + '.')
-
-        traverse(supernet, '')
-
-    @abstractmethod
-    def build_search_groups(self, supernet: Module):
-        """Build `search_groups`.
-
-        The mutables in the same group should be pruned together.
-        """
+    # ~
 
     @property
-    def search_groups(self) -> Dict[int, List]:
-        """Search group of supernet.
+    def mutable_units(self) -> List[ChannelUnitType]:
+        """Prunable units."""
+        return [unit for unit in self.units if unit.is_mutable]
 
-        Note:
-            For mutable based mutator, the search group is composed of
-            corresponding mutables.
+    def config_template(self,
+                        only_mutable_units=False,
+                        with_unit_init_args=False,
+                        with_channels=False):
+        """Config template of the mutator.
 
-        Raises:
-            RuntimeError: Called before search group has been built.
+        Args:
+            only_mutable_units (bool, optional): If only return config of
+                prunable units. Defaults to False.
+            with_unit_init_args (bool, optional): If return init_args of
+                units. Defaults to False.
+            with_channels (bool, optional): if return channel info.
+                Defaults to False.
 
-        Returns:
-            Dict[int, List[MUTABLE_TYPE]]: Search group.
+        Example:
+            dict(
+                channel_unit_cfg = dict(
+                    # type of used MutableChannelUnit
+                    type ='XxxMutableChannelUnit',
+                    # default args for MutableChananelUnit
+                    default_args={},
+                    # config of units
+                    units = {
+                        # config of a unit
+                        "xxx_unit_name": {
+                            'init_args':{}, # if with_unit_init_args
+                            'channels':{} # if with_channels
+                        },
+                        ...
+                    }
+                ),
+                # config of tracer
+                parse_cfg={}
+            )
+
+
+        About the detail of the config of each unit, please refer to
+        MutableChannelUnit.config_template()
         """
-        if self._search_groups is None:
-            raise RuntimeError(
-                'Call `search_groups` before access `build_search_groups`!')
-        return self._search_groups
+        # template of units
+        units = self.mutable_units if only_mutable_units else self.units
+        units_template = {}
+        for unit in units:
+            units_template[unit.name] = unit.config_template(
+                with_init_args=with_unit_init_args,
+                with_channels=with_channels)
+
+        # template of mutator
+        template = dict(
+            type=str(self.__class__.__name__),
+            channel_unit_cfg=dict(
+                type=str(self.unit_class.__name__),
+                default_args=self.unit_default_args,
+                units=units_template),
+            parse_cfg=self.parse_cfg)
+
+        return template
+
+    def fix_channel_mutables(self):
+        """Fix ChannelMutables."""
+        for unit in self.units:
+            unit.fix_chosen()
+
+    # choice manage
 
     @property
-    def name2module(self):
-        """The mapping from a module name to the module.
+    def current_choices(self) -> Dict:
+        """Get current choices."""
+        config = self.choice_template
+        for unit in self.mutable_units:
+            config[unit.name] = unit.current_choice
+        return config
 
-        Returns:
-            dict: The name to module mapping.
+    def set_choices(self, config: Dict[str, Union[int, float]]):
+        """Set choices."""
+        for name, choice in config.items():
+            unit = self._name2unit[name]
+            unit.current_choice = choice
+
+    def sample_choices(self) -> Dict[str, Union[int, float]]:
+        """Sample choices(pruning structure)."""
+        template = self.choice_template
+        for key in template:
+            template[key] = self._name2unit[key].sample_choice()
+        return template
+
+    @property
+    def choice_template(self) -> Dict:
+        """Get the chocie template of the Mutator.
+
+        Example:
+            {
+                'xxx_unit_name': xx_choice_value,
+                ...
+            }
         """
-        if hasattr(self, '_name2module'):
-            return self._name2module
+        template = {}
+        for unit in self.mutable_units:
+            template[unit.name] = unit.current_choice
+        return template
+
+    # implementation of abstract functions
+
+    def search_groups(self) -> Dict:
+        return self._name2unit
+
+    def mutable_class_type(self) -> Type[ChannelUnitType]:
+        return self.unit_class
+
+    # private methods
+
+    def _convert_channel_unit_to_mutable(self, units: List[ChannelUnit]):
+        """Convert ChannelUnits to MutableChannelUnits."""
+        mutable_units = []
+        for unit in units:
+            args = copy.copy(self.unit_default_args)
+            if unit.name in self.units_cfg and \
+                    'init_args' in self.units_cfg[unit.name]:
+                args = self.units_cfg[unit.name]['init_args']
+            mutable_unit = self.unit_class.init_from_channel_unit(unit, args)
+            mutable_units.append(mutable_unit)
+        return mutable_units
+
+    def _parse_channel_unit_cfg(
+            self,
+            channel_unit_cfg) -> Tuple[Type[ChannelUnitType], Dict, Dict]:
+        """Parse channel_unit_cfg."""
+        if isinstance(channel_unit_cfg, dict):
+            unit_class = MODELS.module_dict[channel_unit_cfg['type']]
+
+            default_unit_args = channel_unit_cfg[
+                'default_args'] if 'default_args' in channel_unit_cfg else {}
+
+            unit_init_cfg = channel_unit_cfg[
+                'units'] if 'units' in channel_unit_cfg else {}
+            if isinstance(unit_init_cfg, str):
+                # load config file
+                unit_init_cfg = fileio.load(unit_init_cfg)
+        elif issubclass(channel_unit_cfg, MutableChannelUnit):
+            unit_class = channel_unit_cfg
+            default_unit_args = {}
+            unit_init_cfg = {}
         else:
-            raise RuntimeError('Called before access `prepare_from_supernet`!')
+            raise NotImplementedError()
+        return unit_class, default_unit_args, unit_init_cfg
 
-    @property
-    def module_converters(self) -> Dict:
-        """The mapping from a type to the corresponding dynamic layer. It is
-        called in `prepare_from_supernet`.
+    def _prepare_from_tracer(self, model: Module, parse_cfg: Dict):
+        """Initialize units using a tracer."""
+        if 'num_input_channel' in parse_cfg:
+            num_input_channel = parse_cfg.pop('num_input_channel')
+        else:
+            num_input_channel = 3
+        if self.parse_cfg['type'] == 'BackwardTracer':
+            graph = ModuleGraph.init_from_backward_tracer(model, parse_cfg)
+        elif self.parse_cfg['type'] == 'RazorFxTracer':
+            graph = ModuleGraph.init_from_fx_tracer(model, fx_tracer=parse_cfg)
+        else:
+            raise NotImplementedError()
+        self._graph = graph
+        # get ChannelUnits
+        units = ChannelUnit.init_from_graph(
+            graph, num_input_channel=num_input_channel)
+        # convert to MutableChannelUnits
+        units = self._convert_channel_unit_to_mutable(units)
+        return units
 
-        Returns:
-            dict: The mapping dict.
-        """
-        return DEFAULT_MODULE_CONVERTERS
+    def _prepare_from_cfg(self, model, config: Dict):
+        """Initialize units using config dict."""
+        assert isinstance(self.channel_unit_cfg, dict)
+        assert 'units' in self.channel_unit_cfg
+        config = self.channel_unit_cfg['units']
+        if isinstance(config, str):
+            config = fileio.load(config)
+        assert isinstance(config, dict)
+        units = []
+        for unit_key in config:
+            init_args = copy.deepcopy(self.unit_default_args)
+            if 'init_args' in config[unit_key]:
+                init_args.update(config[unit_key]['init_args'])
+            config[unit_key]['init_args'] = init_args
+            unit = self.unit_class.init_from_cfg(model, config[unit_key])
+            units.append(unit)
+        return units
 
-    def is_skip_pruning(self, module_name: str,
-                        skip_prefixes: Optional[List[str]]) -> bool:
-        """Judge if the module with the input `module_name` should not be
-        pruned.
+    def _prepare_from_predefined_model(self, model: Module):
+        """Initialize units using the model with pre-defined dynamicops and
+        mutable-channels."""
 
-        Args:
-            module_name (str): Module name.
-            skip_prefixes (list or None): The module whose name start with
-                a string in skip_prefixes will not be prune.
-        """
-        skip_pruning = False
-        if skip_prefixes:
-            for prefix in skip_prefixes:
-                if module_name.startswith(prefix):
-                    skip_pruning = True
-                    break
-        return skip_pruning
+        units = self.unit_class.init_from_predefined_model(model)
+
+        return units

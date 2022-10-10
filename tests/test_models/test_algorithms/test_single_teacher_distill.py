@@ -4,9 +4,9 @@ from unittest import TestCase
 
 import torch
 from mmengine import ConfigDict
-from toy_models import ToyStudent
 
 from mmrazor.models import SingleTeacherDistill
+from .toy_models import ToyStudent
 
 
 class TestSingleTeacherDistill(TestCase):

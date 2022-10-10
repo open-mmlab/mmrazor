@@ -1,282 +1,136 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import os
+import copy
+import sys
 import unittest
-from os.path import dirname
+from typing import Union
 
-import pytest
 import torch
-from mmcls.models import *  # noqa: F401,F403
-from torch import Tensor, nn
-from torch.nn import Module
 
-from mmrazor import digit_version
-from mmrazor.models.mutables import SlimmableMutableChannel
-from mmrazor.models.mutators import (OneShotChannelMutator,
-                                     SlimmableChannelMutator)
-from mmrazor.models.mutators.utils import (dynamic_bn_converter,
-                                           dynamic_conv2d_converter)
+from mmrazor.models.mutables.mutable_channel import (
+    L1MutableChannelUnit, SequentialMutableChannelUnit)
+from mmrazor.models.mutators.channel_mutator import ChannelMutator
 from mmrazor.registry import MODELS
-from .utils import load_and_merge_channel_cfgs
+from ...data.models import DynamicLinearModel
+from ...test_core.test_graph.test_graph import TestGraph
 
-ONESHOT_MUTATOR_CFG = dict(
-    type='OneShotChannelMutator',
-    tracer_cfg=dict(
-        type='BackwardTracer',
-        loss_calculator=dict(type='ImageClassifierPseudoLoss')),
-    mutable_cfg=dict(
-        type='OneShotMutableChannel',
-        candidate_choices=[
-            1 / 8, 2 / 8, 3 / 8, 4 / 8, 5 / 8, 6 / 8, 7 / 8, 1.0
-        ],
-        candidate_mode='ratio'))
-
-ONESHOT_MUTATOR_CFG_WITHOUT_TRACER = dict(
-    type='OneShotChannelMutator',
-    mutable_cfg=dict(
-        type='OneShotMutableChannel',
-        candidate_choices=[
-            1 / 8, 2 / 8, 3 / 8, 4 / 8, 5 / 8, 6 / 8, 7 / 8, 1.0
-        ],
-        candidate_mode='ratio'))
+sys.setrecursionlimit(2000)
 
 
-class MultiConcatModel(Module):
+@MODELS.register_module()
+class RandomChannelUnit(SequentialMutableChannelUnit):
 
-    def __init__(self) -> None:
-        super().__init__()
-
-        self.op1 = nn.Conv2d(3, 8, 1)
-        self.op2 = nn.Conv2d(3, 8, 1)
-        self.op3 = nn.Conv2d(16, 8, 1)
-        self.op4 = nn.Conv2d(3, 8, 1)
-
-    def forward(self, x: Tensor) -> Tensor:
-        x1 = self.op1(x)
-        x2 = self.op2(x)
-        cat1 = torch.cat([x1, x2], dim=1)
-        x3 = self.op3(cat1)
-        x4 = self.op4(x)
-        output = torch.cat([x3, x4], dim=1)
-
-        return output
+    def generate_mask(self, choice: Union[int, float]) -> torch.Tensor:
+        if isinstance(choice, float):
+            choice = max(1, int(self.num_channels * choice))
+        assert 0 < choice <= self.num_channels
+        rand_imp = torch.rand([self.num_channels])
+        ind = rand_imp.topk(choice)[1]
+        mask = torch.zeros([self.num_channels])
+        mask.scatter_(-1, ind, 1)
+        return mask
 
 
-class MultiConcatModel2(Module):
-
-    def __init__(self) -> None:
-        super().__init__()
-
-        self.op1 = nn.Conv2d(3, 8, 1)
-        self.op2 = nn.Conv2d(3, 8, 1)
-        self.op3 = nn.Conv2d(3, 8, 1)
-        self.op4 = nn.Conv2d(24, 8, 1)
-
-    def forward(self, x: Tensor) -> Tensor:
-        x1 = self.op1(x)
-        x2 = self.op2(x)
-        x3 = self.op3(x)
-        cat1 = torch.cat([x1, x2], dim=1)
-        cat2 = torch.cat([cat1, x3], dim=1)
-        output = self.op4(cat2)
-
-        return output
+DATA_UNITS = [
+    SequentialMutableChannelUnit, RandomChannelUnit, L1MutableChannelUnit
+]
 
 
-class ConcatModel(Module):
+class TestChannelMutator(unittest.TestCase):
 
-    def __init__(self) -> None:
-        super().__init__()
+    def _test_a_mutator(self, mutator: ChannelMutator, model):
+        choices = mutator.sample_choices()
+        mutator.set_choices(choices)
+        self.assertGreater(len(mutator.mutable_units), 0)
+        x = torch.rand([2, 3, 224, 224])
+        y = model(x)
+        self.assertEqual(list(y.shape), [2, 1000])
 
-        self.op1 = nn.Conv2d(3, 8, 1)
-        self.bn1 = nn.BatchNorm2d(8)
-        self.op2 = nn.Conv2d(3, 8, 1)
-        self.bn2 = nn.BatchNorm2d(8)
-        self.op3 = nn.Conv2d(16, 8, 1)
+    def test_sample_subnet(self):
+        data_models = TestGraph.backward_tracer_passed_models()
 
-    def forward(self, x: Tensor) -> Tensor:
-        x1 = self.bn1(self.op1(x))
-        x2 = self.bn2(self.op2(x))
-        cat1 = torch.cat([x1, x2], dim=1)
-        x3 = self.op3(cat1)
+        for i, data in enumerate(data_models):
+            with self.subTest(i=i, data=data):
+                model = data()
 
-        return x3
+                mutator = ChannelMutator()
+                mutator.prepare_from_supernet(model)
 
+                self.assertGreaterEqual(len(mutator.mutable_units), 1)
 
-class ResBlock(Module):
+                self._test_a_mutator(mutator, model)
 
-    def __init__(self) -> None:
-        super().__init__()
+    def test_generic_support(self):
+        data_models = TestGraph.backward_tracer_passed_models()
 
-        self.op1 = nn.Conv2d(3, 8, 1)
-        self.bn1 = nn.BatchNorm2d(8)
-        self.op2 = nn.Conv2d(8, 8, 1)
-        self.bn2 = nn.BatchNorm2d(8)
-        self.op3 = nn.Conv2d(8, 8, 1)
+        for data_model in data_models[:1]:
+            for unit_type in DATA_UNITS:
+                with self.subTest(model=data_model, unit=unit_type):
 
-    def forward(self, x: Tensor) -> Tensor:
-        x1 = self.bn1(self.op1(x))
-        x2 = self.bn2(self.op2(x1))
-        x3 = self.op3(x2 + x1)
-        return x3
+                    model = data_model()
 
+                    mutator = ChannelMutator(channel_unit_cfg=unit_type)
+                    mutator.prepare_from_supernet(model)
+                    mutator.units
 
-class DynamicResBlock(Module):
+                    self._test_a_mutator(mutator, model)
 
-    def __init__(self, mutable_cfg) -> None:
-        super().__init__()
+    def test_init_units_from_cfg(self):
+        ARCHITECTURE_CFG = dict(
+            type='mmcls.ImageClassifier',
+            backbone=dict(type='mmcls.MobileNetV2', widen_factor=1.5),
+            neck=dict(type='mmcls.GlobalAveragePooling'),
+            head=dict(
+                type='mmcls.LinearClsHead',
+                num_classes=1000,
+                in_channels=1920,
+                loss=dict(type='mmcls.CrossEntropyLoss', loss_weight=1.0),
+                topk=(1, 5)))
+        model = MODELS.build(ARCHITECTURE_CFG)
 
-        self.dynamic_op1 = dynamic_conv2d_converter(
-            nn.Conv2d(3, 8, 1), mutable_cfg, mutable_cfg)
-        self.dynamic_bn1 = dynamic_bn_converter(
-            nn.BatchNorm2d(8), mutable_cfg, mutable_cfg)
-        self.dynamic_op2 = dynamic_conv2d_converter(
-            nn.Conv2d(8, 8, 1), mutable_cfg, mutable_cfg)
-        self.dynamic_bn2 = dynamic_bn_converter(
-            nn.BatchNorm2d(8), mutable_cfg, mutable_cfg)
-        self.dynamic_op3 = dynamic_conv2d_converter(
-            nn.Conv2d(8, 8, 1), mutable_cfg, mutable_cfg)
-        self._add_link()
+        # generate config
+        model1 = copy.deepcopy(model)
+        mutator = ChannelMutator()
+        mutator.prepare_from_supernet(model1)
+        config = mutator.config_template(
+            with_channels=True, with_unit_init_args=True)
 
-    def _add_link(self):
-        op1_mutable_out = self.dynamic_op1.mutable_out
-        bn1_mutable_out = self.dynamic_bn1.mutable_out
+        # test passing config
+        model2 = copy.deepcopy(model)
+        config2 = copy.deepcopy(config)
+        config2['parse_cfg'] = {'type': 'Config'}
+        mutator2 = MODELS.build(config2)
+        mutator2.prepare_from_supernet(model2)
+        self.assertEqual(
+            len(mutator.mutable_units), len(mutator2.mutable_units))
+        self._test_a_mutator(mutator2, model2)
 
-        op2_mutable_in = self.dynamic_op2.mutable_in
-        op2_mutable_out = self.dynamic_op2.mutable_out
-        bn2_mutable_out = self.dynamic_bn2.mutable_out
+    def test_mix_config_tracer(self):
+        model = TestGraph.backward_tracer_passed_models()[0]()
 
-        op3_mutable_in = self.dynamic_op3.mutable_in
+        model0 = copy.deepcopy(model)
+        mutator0 = ChannelMutator()
+        mutator0.prepare_from_supernet(model0)
+        config = mutator0.config_template(with_unit_init_args=True)
 
-        bn1_mutable_out.register_same_mutable(op1_mutable_out)
-        op1_mutable_out.register_same_mutable(bn1_mutable_out)
+        model1 = copy.deepcopy(model)
+        mutator1 = MODELS.build(config)
+        mutator1.prepare_from_supernet(model1)
+        config1 = mutator1.config_template(with_unit_init_args=True)
 
-        op2_mutable_in.register_same_mutable(bn1_mutable_out)
-        bn1_mutable_out.register_same_mutable(op2_mutable_in)
+        self.assertDictEqual(config1, config)
+        self._test_a_mutator(mutator1, model1)
 
-        bn2_mutable_out.register_same_mutable(op2_mutable_out)
-        op2_mutable_out.register_same_mutable(bn2_mutable_out)
-
-        op3_mutable_in.register_same_mutable(bn1_mutable_out)
-        bn1_mutable_out.register_same_mutable(op3_mutable_in)
-
-        op3_mutable_in.register_same_mutable(bn2_mutable_out)
-        bn2_mutable_out.register_same_mutable(op3_mutable_in)
-
-    def forward(self, x: Tensor) -> Tensor:
-        x1 = self.dynamic_bn1(self.dynamic_op1(x))
-        x2 = self.dynamic_bn2(self.dynamic_op2(x1))
-        x3 = self.dynamic_op3(x2 + x1)
-        return x3
-
-
-@unittest.skipIf(
-    digit_version(torch.__version__) == digit_version('1.8.1'),
-    'PyTorch version 1.8.1 is not supported by the Backward Tracer.')
-def test_oneshot_channel_mutator() -> None:
-    imgs = torch.randn(16, 3, 224, 224)
-
-    def _test(model):
-        mutator.prepare_from_supernet(model)
-        assert hasattr(mutator, 'name2module')
-
-        # test set_min_choices
-        mutator.set_min_choices()
-        for mutables in mutator.search_groups.values():
-            for mutable in mutables:
-                # 1 / 8 is the minimum candidate ratio
-                assert mutable.current_choice == round(1 / 8 *
-                                                       mutable.num_channels)
-
-        # test set_max_channel
-        mutator.set_max_choices()
-        for mutables in mutator.search_groups.values():
-            for mutable in mutables:
-                # 1.0 is the maximum candidate ratio
-                assert mutable.current_choice == round(1. *
-                                                       mutable.num_channels)
-
-        # test making groups logic
-        choice_dict = mutator.sample_choices()
-        assert isinstance(choice_dict, dict)
-        mutator.set_choices(choice_dict)
-        model(imgs)
-
-    mutator: OneShotChannelMutator = MODELS.build(ONESHOT_MUTATOR_CFG)
-    with pytest.raises(RuntimeError):
-        _ = mutator.search_groups
-    with pytest.raises(RuntimeError):
-        _ = mutator.name2module
-
-    _test(ResBlock())
-    _test(MultiConcatModel())
-    _test(MultiConcatModel2())
-    _test(nn.Sequential(nn.BatchNorm2d(3)))
-
-    mutator: OneShotChannelMutator = MODELS.build(
-        ONESHOT_MUTATOR_CFG_WITHOUT_TRACER)
-    dynamic_model = DynamicResBlock(
-        ONESHOT_MUTATOR_CFG_WITHOUT_TRACER['mutable_cfg'])
-    _test(dynamic_model)
-
-
-def test_slimmable_channel_mutator() -> None:
-    imgs = torch.randn(16, 3, 224, 224)
-
-    root_path = dirname(dirname(dirname(__file__)))
-    channel_cfg_paths = [
-        os.path.join(root_path, 'data/subnet1.yaml'),
-        os.path.join(root_path, 'data/subnet2.yaml')
-    ]
-
-    mutator = SlimmableChannelMutator(
-        mutable_cfg=dict(type='SlimmableMutableChannel'),
-        channel_cfgs=load_and_merge_channel_cfgs(channel_cfg_paths),
-        tracer_cfg=dict(
-            type='BackwardTracer',
-            loss_calculator=dict(type='ImageClassifierPseudoLoss')))
-
-    model = ResBlock()
-    mutator.prepare_from_supernet(model)
-    mutator.switch_choices(0)
-    for name, module in model.named_modules():
-        if isinstance(module, SlimmableMutableChannel):
-            assert module.current_choice == 0
-    _ = model(imgs)
-
-    mutator.switch_choices(1)
-    for name, module in model.named_modules():
-        if isinstance(module, SlimmableMutableChannel):
-            assert module.current_choice == 1
-    _ = model(imgs)
-
-    channel_cfg_paths = [
-        os.path.join(root_path, 'data/concat_subnet1.yaml'),
-        os.path.join(root_path, 'data/concat_subnet2.yaml')
-    ]
-
-    mutator = SlimmableChannelMutator(
-        mutable_cfg=dict(type='SlimmableMutableChannel'),
-        channel_cfgs=load_and_merge_channel_cfgs(channel_cfg_paths),
-        tracer_cfg=dict(
-            type='BackwardTracer',
-            loss_calculator=dict(type='ImageClassifierPseudoLoss')))
-
-    model = ConcatModel()
-
-    mutator.prepare_from_supernet(model)
-
-    for name, module in model.named_modules():
-        if isinstance(module, SlimmableMutableChannel):
-            assert module.choices == [0, 1]
-
-    mutator.switch_choices(0)
-    for name, module in model.named_modules():
-        if isinstance(module, SlimmableMutableChannel):
-            assert module.current_choice == 0
-    _ = model(imgs)
-
-    mutator.switch_choices(1)
-    for name, module in model.named_modules():
-        if isinstance(module, SlimmableMutableChannel):
-            assert module.current_choice == 1
-    _ = model(imgs)
+    def test_models_with_predefined_dynamic_op(self):
+        for Model in [
+                DynamicLinearModel,
+        ]:
+            with self.subTest(model=Model):
+                model = Model()
+                mutator = ChannelMutator(
+                    channel_unit_cfg={
+                        'type': 'OneShotMutableChannelUnit',
+                        'default_args': {}
+                    },
+                    parse_cfg={'type': 'Predefined'})
+                mutator.prepare_from_supernet(model)
+                self._test_a_mutator(mutator, model)

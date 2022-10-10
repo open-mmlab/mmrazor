@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,7 +8,7 @@ from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.registry import MODELS
-from .dynamic_mixins import DynamicBatchNormMixin
+from ..mixins.dynamic_mixins import DynamicBatchNormMixin
 
 
 class _DynamicBatchNorm(_BatchNorm, DynamicBatchNormMixin):
@@ -128,3 +128,65 @@ class DynamicBatchNorm3d(_DynamicBatchNorm):
         if input.dim() != 5:
             raise ValueError('expected 5D input (got {}D input)'.format(
                 input.dim()))
+
+
+class SwitchableBatchNorm2d(DynamicBatchNorm2d):
+    """A switchable DynamicBatchNorm2d. It mmploys independent batch
+    normalization for different switches in a slimmable network.
+
+    To train slimmable networks, ``SwitchableBatchNorm2d`` privatizes all batch
+    normalization layers for each switch in a slimmable network. Compared with
+    the naive training approach, it solves the problem of feature aggregation
+    inconsistency between different switches by independently normalizing the
+    feature mean and variance during testing.
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.candidate_bn = nn.ModuleDict()
+
+    def init_candidates(self, candidates: List):
+        """Initialize candicates."""
+        assert len(self.candidate_bn) == 0
+        self._check_candidates(candidates)
+        for num in candidates:
+            self.candidate_bn[str(num)] = nn.BatchNorm2d(
+                num, self.eps, self.momentum, self.affine,
+                self.track_running_stats)
+
+    def forward(self, input: Tensor) -> Tensor:
+        """Forward."""
+        choice_num = self.activated_channel_num()
+        if choice_num == self.num_features:
+            return super().forward(input)
+        else:
+            assert str(choice_num) in self.candidate_bn
+            return self.candidate_bn[str(choice_num)](input)
+
+    def to_static_op(self: _BatchNorm) -> nn.Module:
+        """Convert to a normal BatchNorm."""
+        choice_num = self.activated_channel_num()
+        if choice_num == self.num_features:
+            return super().to_static_op()
+        else:
+            assert str(choice_num) in self.candidate_bn
+            return self.candidate_bn[str(choice_num)]
+
+    # private methods
+
+    def activated_channel_num(self):
+        """The number of activated channels."""
+        mask = self._get_num_features_mask()
+        choice_num = (mask == 1).sum().item()
+        return choice_num
+
+    def _check_candidates(self, candidates: List):
+        """Check if candidates aviliable."""
+        for value in candidates:
+            assert isinstance(value, int)
+            assert 0 < value <= self.num_features
+
+    @property
+    def static_op_factory(self):
+        """Return initializer of static op."""
+        return nn.BatchNorm2d
