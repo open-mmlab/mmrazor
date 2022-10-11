@@ -6,6 +6,7 @@ import tempfile
 from unittest import TestCase
 
 import numpy as np
+from mmcls.registry import DATASETS as CLS_DATASETS
 
 from mmrazor.registry import DATASETS
 from mmrazor.utils import register_all_modules
@@ -15,7 +16,8 @@ ASSETS_ROOT = osp.abspath(osp.join(osp.dirname(__file__), '../data/dataset'))
 
 
 class Test_CRD_CIFAR10(TestCase):
-    DATASET_TYPE = 'CRD_CIFAR10'
+    ORI_DATASET_TYPE = 'CIFAR10'
+    DATASET_TYPE = 'CRDDataset'
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -24,10 +26,11 @@ class Test_CRD_CIFAR10(TestCase):
         tmpdir = tempfile.TemporaryDirectory()
         cls.tmpdir = tmpdir
         data_prefix = tmpdir.name
-        cls.DEFAULT_ARGS = dict(
+        cls.ORI_DEFAULT_ARGS = dict(
             data_prefix=data_prefix, pipeline=[], test_mode=False)
+        cls.DEFAULT_ARGS = dict(neg_num=1, percent=0.5)
 
-        dataset_class = DATASETS.get(cls.DATASET_TYPE)
+        dataset_class = CLS_DATASETS.get(cls.ORI_DATASET_TYPE)
         base_folder = osp.join(data_prefix, dataset_class.base_folder)
         os.mkdir(base_folder)
 
@@ -65,25 +68,16 @@ class Test_CRD_CIFAR10(TestCase):
         dataset_class = DATASETS.get(self.DATASET_TYPE)
 
         # Test overriding metainfo by `metainfo` argument
-        cfg = {**self.DEFAULT_ARGS, 'metainfo': {'classes': ('bus', 'car')}}
+        ori_cfg = {
+            **self.ORI_DEFAULT_ARGS, 'metainfo': {
+                'classes': ('bus', 'car')
+            },
+            'type': self.ORI_DATASET_TYPE,
+            '_scope_': 'mmcls'
+        }
+        cfg = {'dataset': ori_cfg, **self.DEFAULT_ARGS}
         dataset = dataset_class(**cfg)
-        self.assertEqual(dataset.CLASSES, ('bus', 'car'))
-
-        # Test overriding metainfo by `classes` argument
-        cfg = {**self.DEFAULT_ARGS, 'classes': ['bus', 'car']}
-        dataset = dataset_class(**cfg)
-        self.assertEqual(dataset.CLASSES, ('bus', 'car'))
-
-        classes_file = osp.join(ASSETS_ROOT, 'classes.txt')
-        cfg = {**self.DEFAULT_ARGS, 'classes': classes_file}
-        dataset = dataset_class(**cfg)
-        self.assertEqual(dataset.CLASSES, ('bus', 'car'))
-        self.assertEqual(dataset.class_to_idx, {'bus': 0, 'car': 1})
-
-        # Test invalid classes
-        cfg = {**self.DEFAULT_ARGS, 'classes': dict(classes=1)}
-        with self.assertRaisesRegex(ValueError, "type <class 'dict'>"):
-            dataset_class(**cfg)
+        self.assertEqual(dataset.dataset.CLASSES, ('bus', 'car'))
 
     @classmethod
     def tearDownClass(cls):
@@ -91,4 +85,4 @@ class Test_CRD_CIFAR10(TestCase):
 
 
 class Test_CRD_CIFAR100(Test_CRD_CIFAR10):
-    DATASET_TYPE = 'CRD_CIFAR100'
+    ORI_DATASET_TYPE = 'CIFAR100'

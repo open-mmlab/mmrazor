@@ -43,11 +43,13 @@ model = dict(
                 preds_T=dict(recorder='fc', from_student=False)))),
     mutator=dict(
         type='OneShotChannelMutator',
-        mutable_cfg=dict(
-            type='OneShotMutableChannel',
-            candidate_choices=list(i / 12 for i in range(2, 13)),
-            candidate_mode='ratio'),
-        tracer_cfg=dict(
+        channel_unit_cfg=dict(
+            type='OneShotMutableChannelUnit',
+            default_args=dict(
+                candidate_choices=list(i / 12 for i in range(2, 13)),
+                choice_mode='ratio',
+                divisor=8)),
+        parse_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss'))))
 

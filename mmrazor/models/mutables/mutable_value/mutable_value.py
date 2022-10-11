@@ -222,15 +222,15 @@ class OneShotMutableValue(MutableValue):
         """Overload `*` operator.
 
         Args:
-            other (int, OneShotMutableChannel): Expand ratio or
-                OneShotMutableChannel.
+            other (int, SquentialMutableChannel): Expand ratio or
+                SquentialMutableChannel.
 
         Returns:
             DerivedMutable: Derived expand mutable.
         """
-        from ..mutable_channel import OneShotMutableChannel
+        from ..mutable_channel import SquentialMutableChannel
 
-        if isinstance(other, OneShotMutableChannel):
+        if isinstance(other, SquentialMutableChannel):
             return other * self
 
         return super().__mul__(other)
