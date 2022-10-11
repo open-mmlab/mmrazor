@@ -14,7 +14,8 @@ from mmengine.optim import build_optim_wrapper
 from mmrazor.models.algorithms import SlimmableNetwork, SlimmableNetworkDDP
 
 MODEL_CFG = dict(
-    type='mmcls.ImageClassifier',
+    _scope_='mmcls',
+    type='ImageClassifier',
     backbone=dict(type='MobileNetV2', widen_factor=1.5),
     neck=dict(type='GlobalAveragePooling'),
     head=dict(

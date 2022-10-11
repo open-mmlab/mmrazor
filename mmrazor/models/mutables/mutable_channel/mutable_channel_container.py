@@ -30,9 +30,7 @@ class MutableChannelContainer(BaseMutableChannel):
 
     def __init__(self, num_channels: int, **kwargs):
         super().__init__(num_channels, **kwargs)
-        # support python3.6.9: OrderedDict unsupported in typing
-        # IndexDict[BaseMutableChannel]
-        self.mutable_channels: IndexDict = IndexDict()
+        self.mutable_channels = IndexDict()
 
     # choice
 

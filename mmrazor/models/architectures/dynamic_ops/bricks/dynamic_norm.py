@@ -150,7 +150,6 @@ class SwitchableBatchNorm2d(DynamicBatchNorm2d):
         assert len(self.candidate_bn) == 0
         self._check_candidates(candidates)
         for num in candidates:
-            # support pytorch lower than 1.9.1
             self.candidate_bn[str(num)] = nn.BatchNorm2d(
                 num, self.eps, self.momentum, self.affine,
                 self.track_running_stats)

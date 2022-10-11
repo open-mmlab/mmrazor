@@ -5,8 +5,10 @@ def get_placeholder(string: str) -> object:
 
     Args:
         string (str): the dependency's name, i.e. `mmcls`
+
     Raises:
         ImportError: raise it when the dependency is not installed properly.
+
     Returns:
         object: PlaceHolder instance.
     """

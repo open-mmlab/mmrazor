@@ -8,7 +8,7 @@
           "candidate_choices":[
               3
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":3
   },
@@ -21,7 +21,7 @@
           "candidate_choices":[
               64
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":64
   },
@@ -34,7 +34,7 @@
           "candidate_choices":[
               41
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":41
   },
@@ -47,7 +47,7 @@
           "candidate_choices":[
               38
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":38
   },
@@ -60,7 +60,7 @@
           "candidate_choices":[
               230
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":230
   },
@@ -73,7 +73,7 @@
           "candidate_choices":[
               41
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":41
   },
@@ -86,7 +86,7 @@
           "candidate_choices":[
               38
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":38
   },
@@ -99,7 +99,7 @@
           "candidate_choices":[
               41
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":41
   },
@@ -112,7 +112,7 @@
           "candidate_choices":[
               38
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":38
   },
@@ -125,7 +125,7 @@
           "candidate_choices":[
               83
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":83
   },
@@ -138,7 +138,7 @@
           "candidate_choices":[
               76
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":76
   },
@@ -151,7 +151,7 @@
           "candidate_choices":[
               460
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":460
   },
@@ -164,7 +164,7 @@
           "candidate_choices":[
               83
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":83
   },
@@ -177,7 +177,7 @@
           "candidate_choices":[
               76
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":76
   },
@@ -190,7 +190,7 @@
           "candidate_choices":[
               83
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":83
   },
@@ -203,7 +203,7 @@
           "candidate_choices":[
               76
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":76
   },
@@ -216,7 +216,7 @@
           "candidate_choices":[
               83
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":83
   },
@@ -229,7 +229,7 @@
           "candidate_choices":[
               76
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":76
   },
@@ -242,7 +242,7 @@
           "candidate_choices":[
               166
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":166
   },
@@ -255,7 +255,7 @@
           "candidate_choices":[
               153
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":153
   },
@@ -268,7 +268,7 @@
           "candidate_choices":[
               921
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":921
   },
@@ -281,7 +281,7 @@
           "candidate_choices":[
               166
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":166
   },
@@ -294,7 +294,7 @@
           "candidate_choices":[
               153
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":153
   },
@@ -307,7 +307,7 @@
           "candidate_choices":[
               166
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":166
   },
@@ -320,7 +320,7 @@
           "candidate_choices":[
               153
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":153
   },
@@ -333,7 +333,7 @@
           "candidate_choices":[
               179
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":179
   },
@@ -346,7 +346,7 @@
           "candidate_choices":[
               179
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":179
   },
@@ -359,7 +359,7 @@
           "candidate_choices":[
               179
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":179
   },
@@ -372,7 +372,7 @@
           "candidate_choices":[
               179
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":179
   },
@@ -385,7 +385,7 @@
           "candidate_choices":[
               179
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":179
   },
@@ -398,7 +398,7 @@
           "candidate_choices":[
               179
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":179
   },
@@ -411,7 +411,7 @@
           "candidate_choices":[
               358
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":358
   },
@@ -424,7 +424,7 @@
           "candidate_choices":[
               358
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":358
   },
@@ -437,7 +437,7 @@
           "candidate_choices":[
               1843
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":1843
   },
@@ -450,7 +450,7 @@
           "candidate_choices":[
               358
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":358
   },
@@ -463,7 +463,7 @@
           "candidate_choices":[
               358
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":358
   },
@@ -476,7 +476,7 @@
           "candidate_choices":[
               358
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":358
   },
@@ -489,7 +489,7 @@
           "candidate_choices":[
               358
           ],
-          "candidate_mode":"number"
+          "choice_mode":"number"
       },
       "choice":358
   }

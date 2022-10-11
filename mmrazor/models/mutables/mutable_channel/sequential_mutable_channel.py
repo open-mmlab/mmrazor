@@ -1,17 +1,17 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Callable
+from typing import Callable, Union
 
 import torch
 
 from mmrazor.registry import MODELS
 from ..derived_mutable import DerivedMutable
-from .base_mutable_channel import BaseMutableChannel
+from .simple_mutable_channel import SimpleMutableChannel
 
 # TODO discuss later
 
 
 @MODELS.register_module()
-class SquentialMutableChannel(BaseMutableChannel):
+class SquentialMutableChannel(SimpleMutableChannel):
     """SquentialMutableChannel defines a BaseMutableChannel which switch off
     channel mask from right to left sequentially, like '11111000'.
 
@@ -22,21 +22,36 @@ class SquentialMutableChannel(BaseMutableChannel):
         num_channels (int): number of channels.
     """
 
-    def __init__(self, num_channels: int, **kwargs):
+    def __init__(self, num_channels: int, choice_mode='number', **kwargs):
 
         super().__init__(num_channels, **kwargs)
+        assert choice_mode in ['ratio', 'number']
+        self.choice_mode = choice_mode
         self.mask = torch.ones([self.num_channels]).bool()
 
     @property
-    def current_choice(self) -> int:
+    def is_num_mode(self):
+        """Get if the choice is number mode."""
+        return self.choice_mode == 'number'
+
+    @property
+    def current_choice(self) -> Union[int, float]:
         """Get current choice."""
-        return (self.mask == 1).sum().item()
+        int_choice = (self.mask == 1).sum().item()
+        if self.is_num_mode:
+            return int_choice
+        else:
+            return self._num2ratio(int_choice)
 
     @current_choice.setter
-    def current_choice(self, choice: int):
+    def current_choice(self, choice: Union[int, float]):
         """Set choice."""
+        if isinstance(choice, float):
+            int_choice = self._ratio2num(choice)
+        else:
+            int_choice = choice
         mask = torch.zeros([self.num_channels], device=self.mask.device)
-        mask[0:choice] = 1
+        mask[0:int_choice] = 1
         self.mask = mask.bool()
 
     @property
@@ -57,20 +72,6 @@ class SquentialMutableChannel(BaseMutableChannel):
     def dump_chosen(self):
         """Dump chosen."""
         return self.current_choice
-
-    # def __mul__(self, other):
-    #     """multiplication."""
-    #     if isinstance(other, int):
-    #         return self.derive_expand_mutable(other)
-    #     else:
-    #         return None
-
-    # def __floordiv__(self, other):
-    #     """division."""
-    #     if isinstance(other, int):
-    #         return self.derive_divide_mutable(other)
-    #     else:
-    #         return None
 
     def __rmul__(self, other) -> DerivedMutable:
         return self * other
@@ -121,3 +122,17 @@ class SquentialMutableChannel(BaseMutableChannel):
             return self.derive_divide_mutable(*other)
 
         raise TypeError(f'Unsupported type {type(other)} for div!')
+
+    def _num2ratio(self, choice: Union[int, float]) -> float:
+        """Convert the a number choice to a ratio choice."""
+        if isinstance(choice, float):
+            return choice
+        else:
+            return choice / self.num_channels
+
+    def _ratio2num(self, choice: Union[int, float]) -> int:
+        """Convert the a ratio choice to a number choice."""
+        if isinstance(choice, int):
+            return choice
+        else:
+            return max(1, int(self.num_channels * choice))

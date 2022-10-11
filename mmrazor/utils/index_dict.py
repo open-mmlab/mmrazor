@@ -1,11 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import sys
-
-if sys.version_info < (3, 7):
-    from collections import OrderedDict
-    from typing import Tuple, TypeVar
-else:
-    from typing import OrderedDict, Tuple, TypeVar
+from collections import OrderedDict
+from typing import Tuple, TypeVar
 
 VT = TypeVar('VT')  # Value type
 

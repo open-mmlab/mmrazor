@@ -18,9 +18,10 @@ MUTATOR_TYPE = Union[torch.nn.Module, Dict]
 DISTILLER_TYPE = Union[torch.nn.Module, Dict]
 
 ARCHITECTURE_CFG = dict(
-    type='mmcls.ImageClassifier',
-    backbone=dict(type='mmcls.MobileNetV2', widen_factor=1.5),
-    neck=dict(type='mmcls.GlobalAveragePooling'),
+    _scope_='mmcls',
+    type='ImageClassifier',
+    backbone=dict(type='MobileNetV2', widen_factor=1.5),
+    neck=dict(type='GlobalAveragePooling'),
     head=dict(
         type='mmcls.LinearClsHead',
         num_classes=1000,
@@ -34,7 +35,7 @@ MUTATOR_CFG = dict(
         type='OneShotMutableChannelUnit',
         default_args=dict(
             candidate_choices=list(i / 12 for i in range(2, 13)),
-            candidate_mode='ratio')),
+            choice_mode='ratio')),
     parse_cfg=dict(
         type='BackwardTracer',
         loss_calculator=dict(type='ImageClassifierPseudoLoss')))

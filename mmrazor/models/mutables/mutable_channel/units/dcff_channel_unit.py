@@ -20,20 +20,20 @@ class DCFFChannelUnit(OneShotMutableChannelUnit):
         candidate_choices (List[Union[int, float]], optional):
             A list of candidate width numbers or ratios. Each
             candidate indicates how many channels to be reserved.
-            Defaults to [32](candidate_mode='number').
-        candidate_mode (str, optional): Mode of candidates.
+            Defaults to [32](choice_mode='number').
+        choice_mode (str, optional): Mode of candidates.
             One of "ratio" or "number". Defaults to 'number'.
     """
 
     def __init__(self,
                  num_channels: int,
                  candidate_choices: List[Union[int, float]] = [32],
-                 candidate_mode: str = 'number',
+                 choice_mode: str = 'number',
                  divisor: int = 1,
                  min_value: int = 1,
                  min_ratio: float = 0.9) -> None:
-        super().__init__(num_channels, candidate_choices, candidate_mode,
-                         divisor, min_value, min_ratio)
+        super().__init__(num_channels, candidate_choices, choice_mode, divisor,
+                         min_value, min_ratio)
 
     def prepare_for_pruning(self, model: nn.Module):
         """In ``DCFFChannelGroup`` nn.Conv2d is replaced with FuseConv2d."""

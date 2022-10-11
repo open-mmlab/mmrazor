@@ -2,14 +2,16 @@
 from .base_mutable import BaseMutable
 from .derived_mutable import DerivedMutable
 from .mutable_channel import (BaseMutableChannel, MutableChannelContainer,
-                              SimpleMutableChannel, SquentialMutableChannel)
+                              OneShotMutableChannel, SimpleMutableChannel,
+                              SquentialMutableChannel)
 from .mutable_channel.units import (ChannelUnitType, DCFFChannelUnit,
                                     L1MutableChannelUnit, MutableChannelUnit,
                                     OneShotMutableChannelUnit,
                                     SequentialMutableChannelUnit,
                                     SlimmableChannelUnit)
 from .mutable_module import (DiffChoiceRoute, DiffMutableModule, DiffMutableOP,
-                             OneShotMutableModule, OneShotMutableOP)
+                             OneHotMutableOP, OneShotMutableModule,
+                             OneShotMutableOP)
 from .mutable_value import MutableValue, OneShotMutableValue
 
 __all__ = [
@@ -19,5 +21,6 @@ __all__ = [
     'L1MutableChannelUnit', 'OneShotMutableChannelUnit',
     'SimpleMutableChannel', 'MutableChannelUnit', 'SlimmableChannelUnit',
     'BaseMutableChannel', 'MutableChannelContainer', 'ChannelUnitType',
-    'SquentialMutableChannel', 'BaseMutable', 'DCFFChannelUnit'
+    'SquentialMutableChannel', 'OneHotMutableOP', 'OneShotMutableChannel',
+    'BaseMutable', 'DCFFChannelUnit'
 ]

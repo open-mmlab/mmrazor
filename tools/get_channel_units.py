@@ -59,7 +59,7 @@ def main():
         print('=' * 100)
         print(json_config)
     else:
-        with open(args.output_path, 'w+') as file:
+        with open(args.output_path, 'w') as file:
             file.write(json_config)
 
 
