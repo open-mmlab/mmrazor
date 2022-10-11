@@ -28,8 +28,12 @@ class DCFFChannelUnit(OneShotMutableChannelUnit):
     def __init__(self,
                  num_channels: int,
                  candidate_choices: List[Union[int, float]] = [32],
-                 candidate_mode: str = 'number') -> None:
-        super().__init__(num_channels, candidate_choices, candidate_mode)
+                 candidate_mode: str = 'number',
+                 divisor: int = 1,
+                 min_value: int = 1,
+                 min_ratio: float = 0.9) -> None:
+        super().__init__(num_channels, candidate_choices, candidate_mode,
+                         divisor, min_value, min_ratio)
 
     def prepare_for_pruning(self, model: nn.Module):
         """In ``DCFFChannelGroup`` nn.Conv2d is replaced with FuseConv2d."""

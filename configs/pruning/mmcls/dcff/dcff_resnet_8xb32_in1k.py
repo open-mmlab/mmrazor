@@ -27,7 +27,6 @@ model = dict(
     _scope_='mmrazor',
     type='DCFF',
     data_preprocessor=data_preprocessor,
-    channel_cfgs='configs/pruning/mmcls/dcff/resnet_cls.json',
     fuse_count=1,
     architecture=dict(
         cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False),
@@ -35,8 +34,7 @@ model = dict(
         type='DCFFChannelMutator',
         channl_unit_cfg=dict(
             type='DCFFChannelUnit',
-            candidate_choices=[32],
-            candidate_mode='number'),
+            units='configs/pruning/mmcls/dcff/resnet_cls.json'),
         parse_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss'))))

@@ -1,10 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 import torch
-from mmengine import fileio
 from mmengine.model import BaseModel
 from mmengine.optim import OptimWrapper
 from torch import nn
@@ -29,16 +27,15 @@ class DCFF(BaseAlgorithm):
     def __init__(self,
                  mutator: VALID_MUTATOR_TYPE,
                  architecture: Union[BaseModel, Dict],
-                 channel_cfgs: Union[str, Dict],
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  fuse_count: int = 1,
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
 
-        if isinstance(channel_cfgs, str):
-            channel_cfgs = fileio.load(channel_cfgs)
-
-        self.mutator = self._build_mutator(copy.copy(mutator), channel_cfgs)
+        if isinstance(mutator, dict):
+            self.mutator = MODELS.build(mutator)
+        else:
+            self.mutator = mutator
         self.mutator.prepare_from_supernet(self.architecture)
         self.num_subnet = len(self.mutator.subnets)
         self.fuse_count = fuse_count
@@ -91,23 +88,11 @@ class DCFF(BaseAlgorithm):
             self.mutator.calc_information(temperature)
 
         batch_inputs, data_samples = self.data_preprocessor(data, True)
+        # DCFF supports single subnet
+        self.mutator.set_choices(self.mutator.subnets[0])
         with optim_wrapper.optim_context(self):
             losses = self(batch_inputs, data_samples, mode='loss')
         parsed_losses, _ = self.parse_losses(losses)
         optim_wrapper.update_params(parsed_losses)
 
         return losses
-
-    def _build_mutator(self, mutator: VALID_MUTATOR_TYPE,
-                       channel_cfgs: Union[str, Dict]) -> DCFFChannelMutator:
-        """build mutator."""
-        if isinstance(mutator, dict):
-            assert 'channel_cfgs' not in mutator
-            mutator['channel_cfgs'] = channel_cfgs
-            mutator = MODELS.build(mutator)
-        if not isinstance(mutator, DCFFChannelMutator):
-            raise TypeError('mutator should be a `dict` or '
-                            '`DCFFChannelMutator` instance, but got '
-                            f'{type(mutator)}')
-
-        return mutator

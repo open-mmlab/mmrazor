@@ -30,15 +30,13 @@ param_scheduler = [
 model = dict(
     _scope_='mmrazor',
     type='DCFF',
-    channel_cfgs='configs/pruning/mmseg/dcff/resnet_seg.json',
     architecture=_base_.architecture,
     fuse_count=200,
     mutator=dict(
         type='DCFFChannelMutator',
         channl_unit_cfg=dict(
             type='DCFFChannelUnit',
-            candidate_choices=[32],
-            candidate_mode='number'),
+            units='configs/pruning/mmseg/dcff/resnet_seg.json'),
         tracer_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='CascadeEncoderDecoderPseudoLoss'))))

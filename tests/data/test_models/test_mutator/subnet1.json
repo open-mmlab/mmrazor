@@ -1,14 +1,15 @@
 {
     "op1_(0, 8)_8": {
-        "candidates": [
-          6
+      "init_args":{
+        "num_channels":8,
+        "divisor":1,
+        "min_value":1,
+        "min_ratio":0.9,
+        "candidate_choices":[
+            6
         ],
-        "candidate_mode": "number"
-    },
-    "op3_(0, 8)_8": {
-        "candidates": [
-          2
-        ],
-        "candidate_mode": "number"
+        "candidate_mode":"number"
+      },
+      "choice":6
     }
 }

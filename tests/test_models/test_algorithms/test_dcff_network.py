@@ -7,7 +7,6 @@ from unittest.mock import MagicMock
 import pytest
 import torch
 from mmcls.structures import ClsDataSample
-from mmengine import fileio
 from mmengine.optim import build_optim_wrapper
 
 from mmrazor.models.algorithms import DCFF
@@ -15,17 +14,14 @@ from mmrazor.models.algorithms import DCFF
 MODEL_CFG = dict(
     cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False)
 
+CHANNEL_CFG_PATH = 'configs/pruning/mmcls/dcff/resnet_cls.json'
+
 MUTATOR_CFG = dict(
     type='DCFFChannelMutator',
-    channl_unit_cfg=dict(
-        type='DCFFChannelUnit',
-        candidate_choices=[32],
-        candidate_mode='number'),
+    channl_unit_cfg=dict(type='DCFFChannelUnit', units=CHANNEL_CFG_PATH),
     parse_cfg=dict(
         type='BackwardTracer',
         loss_calculator=dict(type='ImageClassifierPseudoLoss')))
-
-CHANNEL_CFG_PATH = 'configs/pruning/mmcls/dcff/resnet_cls.json'
 
 OPTIMIZER_CFG = dict(
     type='SGD', lr=0.5, momentum=0.9, nesterov=True, weight_decay=0.0001)
@@ -49,18 +45,10 @@ class TestDCFF(TestCase):
     device: str = 'cpu'
 
     def test_init(self) -> None:
-        mutator_with_channel_cfgs = copy.deepcopy(MUTATOR_CFG)
-        mutator_with_channel_cfgs['channel_cfgs'] = fileio.load(
-            CHANNEL_CFG_PATH)
-
-        with pytest.raises(AssertionError):
-            _ = self.prepare_model(mutator_with_channel_cfgs, MODEL_CFG,
-                                   CHANNEL_CFG_PATH)
 
         mutator_wrong_type = FakeMutator()
-        with pytest.raises(TypeError):
-            _ = self.prepare_model(mutator_wrong_type, MODEL_CFG,
-                                   CHANNEL_CFG_PATH)
+        with pytest.raises(AttributeError):
+            _ = self.prepare_model(mutator_wrong_type, MODEL_CFG)
 
     def test_dcff_train_step(self) -> None:
         algo = self.prepare_dcff_model()
@@ -112,16 +100,14 @@ class TestDCFF(TestCase):
         return {'inputs': imgs, 'data_samples': data_samples}
 
     def prepare_dcff_model(self) -> DCFF:
-        return self.prepare_model(MUTATOR_CFG, MODEL_CFG, CHANNEL_CFG_PATH)
+        return self.prepare_model(MUTATOR_CFG, MODEL_CFG)
 
     def prepare_fixed_model(self) -> DCFF:
 
-        return self.prepare_model(MUTATOR_CFG, MODEL_CFG, CHANNEL_CFG_PATH)
+        return self.prepare_model(MUTATOR_CFG, MODEL_CFG)
 
-    def prepare_model(self, mutator_cfg: Dict, model_cfg: Dict,
-                      channel_cfg_paths: str) -> DCFF:
-        model = DCFF(mutator_cfg, model_cfg, channel_cfg_paths,
-                     ToyDataPreprocessor())
+    def prepare_model(self, mutator_cfg: Dict, model_cfg: Dict) -> DCFF:
+        model = DCFF(mutator_cfg, model_cfg, ToyDataPreprocessor())
         model.to(self.device)
 
         return model

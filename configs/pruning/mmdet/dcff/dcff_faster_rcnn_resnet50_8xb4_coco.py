@@ -22,15 +22,13 @@ train_cfg = dict(max_epochs=120, val_interval=1)
 model = dict(
     _scope_='mmrazor',
     type='DCFF',
-    channel_cfgs='configs/pruning/mmdet/dcff/resnet_det.json',
     architecture=_base_.architecture,
     fuse_count=1,
     mutator=dict(
         type='DCFFChannelMutator',
         channl_unit_cfg=dict(
             type='DCFFChannelUnit',
-            candidate_choices=[32],
-            candidate_mode='number'),
+            units='configs/pruning/mmdet/dcff/resnet_det.json'),
         parse_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='TwoStageDetectorPseudoLoss'))))

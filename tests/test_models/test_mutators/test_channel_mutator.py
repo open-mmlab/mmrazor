@@ -8,7 +8,7 @@ import torch
 
 # from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables.mutable_channel import (
-    L1MutableChannelUnit, SequentialMutableChannelUnit)
+    DCFFChannelUnit, L1MutableChannelUnit, SequentialMutableChannelUnit)
 from mmrazor.models.mutators.channel_mutator import ChannelMutator
 from mmrazor.registry import MODELS
 from ...data.models import DynamicLinearModel
@@ -32,7 +32,8 @@ class RandomChannelUnit(SequentialMutableChannelUnit):
 
 
 DATA_UNITS = [
-    SequentialMutableChannelUnit, RandomChannelUnit, L1MutableChannelUnit
+    DCFFChannelUnit, SequentialMutableChannelUnit, RandomChannelUnit,
+    L1MutableChannelUnit
 ]
 
 

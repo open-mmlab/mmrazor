@@ -88,7 +88,7 @@ class ResBlock(Module):
         x1 = self.bn1(self.op1(x))
         x2 = self.bn2(self.op2(x1))
         x3 = self.op3(x2 + x1)
-        return x3
+        return x1, x2, x3
 
 
 def test_DCFF_channel_mutator() -> None:
@@ -101,16 +101,17 @@ def test_DCFF_channel_mutator() -> None:
     channel_cfgs = fileio.load(channel_cfgs)
 
     mutator = DCFFChannelMutator(
-        channel_cfgs=channel_cfgs,
-        channl_unit_cfg=dict(
-            type='DCFFChannelUnit',
-            candidate_choices=[8],
-            candidate_mode='number'),
+        channl_unit_cfg=dict(type='DCFFChannelUnit', units=channel_cfgs),
         parse_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss')))
 
     model = ResBlock()
     mutator.prepare_from_supernet(model)
-    out = model(imgs)
-    assert out.shape == (16, 2, 224, 224)
+    choice = mutator.sample_choices()
+    mutator.set_choices(choice)
+    out1, out2, out3 = model(imgs)
+
+    assert out1.shape == (16, 6, 224, 224)
+    assert out2.shape == (16, 6, 224, 224)
+    assert out3.shape == (16, 8, 224, 224)

@@ -3,7 +3,6 @@ from typing import Dict, List, Type, Union
 
 import torch
 import torch.nn as nn
-from torch.nn import Module
 
 from mmrazor.models.architectures.dynamic_ops import FuseConv2d
 from mmrazor.models.mutables import DCFFChannelUnit
@@ -23,7 +22,6 @@ class DCFFChannelMutator(ChannelMutator[DCFFChannelUnit]):
     """
 
     def __init__(self,
-                 channel_cfgs: Dict,
                  channl_unit_cfg: Union[dict, Type[ChannelUnitType]] = dict(
                      type='DCFFChannelUnit', units={}),
                  parse_cfg=dict(
@@ -31,42 +29,12 @@ class DCFFChannelMutator(ChannelMutator[DCFFChannelUnit]):
                      loss_calculator=dict(type='ImageClassifierPseudoLoss')),
                  **kwargs) -> None:
         super().__init__(channl_unit_cfg, parse_cfg, **kwargs)
-        self._channel_cfgs = channel_cfgs
+        self._channel_cfgs = channl_unit_cfg
         self._subnets = self._prepare_subnets(self.units_cfg)
 
     @property
     def subnets(self):
         return self._subnets
-
-    def prepare_from_supernet(self, supernet: Module) -> None:
-        """Do some necessary preparations with supernet.
-
-        Note:
-            Different from `ChannelMutator`, we only support Case 1 in
-            `ChannelMutator`. The input supernet should be made up of original
-            nn.Module. And we replace the conv/linear/bn modules in the input
-            supernet with dynamic ops first. Then we trace the topology of
-            the supernet to get the `concat_parent_mutables` of a certain
-            mutable, if the input of a module is a concatenation of several
-            modules' outputs. Then we convert the ``DynamicBatchNorm`` in
-            supernet with ``SwitchableBatchNorm2d``, and set the candidate
-            channel numbers to the corresponding `SlimmableChannelMutable`.
-            Finally, we establish the relationship between the current nodes
-            and their parents.
-
-        Args:
-            supernet (:obj:`torch.nn.Module`): The supernet to be searched
-                in your algorithm.
-        """
-        super().prepare_from_supernet(supernet)
-        self._reset_unit_candidates()
-
-    def _reset_unit_candidates(self):
-        """Alter candidates of DCFFChannelUnit according to channel_cfgs."""
-        for key in self._channel_cfgs:
-            unit: DCFFChannelUnit = self._name2unit[key]
-            unit.alter_candidates_after_init(
-                self._channel_cfgs[key]['candidates'])
 
     def _prepare_subnets(self, unit_cfg: Dict) -> List[Dict[str, int]]:
         """Prepare subnet config.

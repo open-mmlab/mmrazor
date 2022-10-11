@@ -58,15 +58,13 @@ architecture = dict(
 model = dict(
     _scope_='mmrazor',
     type='DCFF',
-    channel_cfgs='configs/pruning/mmpose/dcff/resnet_pose.json',
     architecture=architecture,
     fuse_count=1,
     mutator=dict(
         type='DCFFChannelMutator',
         channl_unit_cfg=dict(
             type='DCFFChannelUnit',
-            candidate_choices=0.5,
-            candidate_mode='ratio'),
+            units='configs/pruning/mmpose/dcff/resnet_pose.json'),
         tracer_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='TopdownPoseEstimatorPseudoLoss'))))
