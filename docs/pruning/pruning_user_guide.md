@@ -129,12 +129,11 @@ Besides, basic PyTorch modules are converted to DynamicOps, which can deal with 
 **MutableChannel**: Each MutableChannel manages a channel mask for a model. They help DynamicOps to deal with mutable numbers of channels.
 
 **DynamicOp**: DynamicOps inherit from basic torch modules, like nn.Conv2d or nn.Linear. They can forward with mutable numbers of channels and export pruned torch modules.
-
-Compared with basic torch modules, each DynamicOp has two MutableChannel modules, which control the input-channels and output-channels, respectively.
+Compared with basic torch modules, each DynamicOp has two MutableChannel modules, which control the input and output channels.
 
 ## More Documents about Pruning
 
-Please refer to the following doocuments for more details.
+Please refer to the following documents for more details.
 
 - Development tutorials
   - [How to prune your model](./tutorials/how_to_prune_your_model.md)
