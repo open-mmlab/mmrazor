@@ -2,19 +2,20 @@
 
 ## Overview
 
-In this section, we will introduce you to how to prune your model. First, we suppose your model is defined and trained using one of the openmmlab repo. Besides, we suggest you read the framework of our pruning algorithm to have an overview of our pruning framework.
+This section will introduce you to pruning your model.  Before that, we suggest you read the document [User Guides: Pruning Framework](../pruning_user_guide.md) to have an overview of our pruning framework.
 
-Our pruning algorithms work as a wrapper of a model. To prune your model, you need to replace your model config with our algorithm config, which has a parameter 'architecture' to store your model, as shown below.
+First, we suppose your model is defined and trained using one openmmlab repo.
+Our pruning algorithms work as a wrapper of a model. To prune your model, you need to replace your model config with our algorithm config, which has a parameter 'architecture' to store your original model. The pipeline is shown below.
 
 <p align='center'><img src="./images/../../images/draw-config.png" width=400 /></p>
 
-After the replacement, the algorithm will prune  your model during your training process.
+After this replacement, the algorithm will prune your model during your training process.
 
-## How to config an algorithm
+## How to Config an Algorithm
 
-All pruning algorithms are defined in mmrazor.models.algorithms.pruning. All algorithms have some shared pruning-related arguments, some specific arguments and some shared mmengine.Basemode arguments.
+All pruning algorithms are defined in mmrazor.models.algorithms.pruning. All algorithms have some shared pruning-related arguments, some specific arguments, and some shared mmengine.BaseModel arguments.
 
-Here we take pruning resnet34 using the l1-norm algorithm as an example. We use mmcls::resnet/resnet34_8xb32_in1k.py as a base config. Then we override the model config and use the original model config as the architecture of 'ItePruneAlgorithm'.
+Here we take pruning resnet34 using the l1-norm algorithm as an example. We use "mmcls::resnet/resnet34_8xb32_in1k.py" as a base config. Then we override the model config and use the original model config as the architecture of 'ItePruneAlgorithm'.
 
 ```python
 _base_ = ['mmcls::resnet/resnet34_8xb32_in1k.py']
@@ -50,8 +51,8 @@ target_pruning_ratio = {
 architecture = _base_.model
 
 model = dict(
-    _delete_=True,
     _scope_='mmrazor',
+    _delete_=True,
     type='ItePruneAlgorithm',
     architecture=architecture,
     mutator_cfg=dict(
@@ -73,24 +74,24 @@ model = dict(
 **Shared pruning-related arguments**: All pruning algorithms have two shared pruning-related arguments.
 
 - Architecture
-  - Architecture defines the model to be pruned. Usually, you just need to pass your original model config to the argument.
+  - Architecture defines the model to be pruned. Usually, you need to pass your original model config to the argument.
 - mutator_cfg
-  - The config of a mutator to manage the structure of your model. Normally, each algorithm has a frequently-used mutator. Please refer to the next section for more detail.
+  - The config of a mutator to manage the structure of your model. Usually, each algorithm has a frequently-used mutator. Please refer to the next section for more detail.
 
 **Specific arguments**:
 A algorithm may have its specific arguments. You need to read their documents to know how to config. Here, we only introduce the specific arguments of ItePruneAlgorithm.
 
 - target_pruning_ratio: target_pruning_ratio is a dict. It indicates how many channels remain after pruning.
 - step_epoch: the step between two pruning operations.
-- Prune_times: the times to prune to reach the pruning target. Here, we prune resnet34 once, so we set it to 1.
+- prune_times: the times to prune to reach the pruning target. Here, we prune resnet34 once, so we set it to 1.
 
 **Shared BaseModel arguments**:
-Our algorithms inherit from BaseModel, so  each algorithm also has shared BaseModel arguments.
+Our algorithms inherit from BaseModel, so each algorithm has shared arguments from BaseModel.
 
 - data_preprocessor:  Used for pre-processing data sampled by dataloader to the format accepted by :meth:`forward`.
 - init_cfg: Initialization config dict
 
-## How to config mutator
+## How to Config A Mutator
 
 A mutator is used to manage the structure of a model.
 
@@ -115,17 +116,17 @@ Mutators have two augments:
   ),
   ```
 
-  MutableChannelUnit decides how to generate a channel mask. It's important to choose the right MutableChannelUnit. Here, we choose 'L1MutableChannelUnit' to apply the l1-norm algorithm.
+  MutableChannelUnit decides how to generate a channel choice. It's important to choose the right MutableChannelUnit. Here, we choose 'L1MutableChannelUnit' to apply the l1-norm algorithm.
 
 - parse_cfg: parse_cfg defines the method to parse the model and get channel units.
   There are three ways used in BaseChannelMutator to parse a model and get MutableChannelUnits.
 
   1. Using tracer. It needs parse_cfg to be the config of a tracer.
   2. Using config. When parse_cfg\['type'\]='Config'. It needs that channel_unit_cfg\['unit'\]\['xxx_unit_name\] to have a key 'channels' to indicate channel units.
-  3. Using the model with pre-defined dynamic-ops and mutablechannels: When parse_cfg\['type'\]='Predefined',  the mutator will parse the dynamic ops in the model and get channel units.
+  3. Using the model with pre-defined DynamicOps and MutableChannels: When parse_cfg\['type'\]='Predefined',  the mutator will parse the dynamic ops in the model and get channel units.
 
-In the example above, we directly use a tracer to parse the model.
+In the example above, we directly use a tracer to parse the model. Please refer to [ChannelMutator](../READMEs/channel_mutator.ipynb) for more details about ChannelMutator.
 
 ## End
 
-After configuring the config of algorithm, you can run the config file again with a pretrained checkpoint to prune your model.
+After configuring the algorithm, you can rerun the config file with a pretrained checkpoint to prune your model.
