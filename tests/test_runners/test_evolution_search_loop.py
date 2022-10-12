@@ -103,7 +103,7 @@ class TestEvolutionSearchLoop(TestCase):
 
         # test init_candidates is not None
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
-        fake_candidates = Candidates((fake_subnet, 0.))
+        fake_candidates = Candidates(fake_subnet)
         init_candidates_path = os.path.join(self.temp_dir, 'candidates.yaml')
         fileio.dump(fake_candidates, init_candidates_path)
         loop_cfg.init_candidates = init_candidates_path
@@ -128,7 +128,7 @@ class TestEvolutionSearchLoop(TestCase):
         self.runner.distributed = False
         self.runner.work_dir = self.temp_dir
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
-        self.runner.model.sample_subnet = MagicMock(return_value=fake_subnet)
+        loop.model.sample_subnet = MagicMock(return_value=fake_subnet)
         load_status.return_value = True
         flops_params.return_value = 0, 0
         loop.run_epoch()
@@ -193,10 +193,7 @@ class TestEvolutionSearchLoop(TestCase):
             MagicMock(return_value=mutation_candidates)
         loop.gen_crossover_candidates = \
             MagicMock(return_value=crossover_candidates)
-        loop.candidates = Candidates([(fake_subnet, 1.0, 99.)])
-        loop.candidates.extend([(fake_subnet, 0.9, 98.)])
-        loop.candidates.extend([(fake_subnet, 0.9, 97.)])
-        loop.candidates.extend([(fake_subnet, 0.9, 96.)])
+        loop.candidates = Candidates([fake_subnet] * 4)
         mock_flops.return_value = (0.5, 101)
         mock_export_fix_subnet.return_value = fake_subnet
         loop.run()
@@ -213,3 +210,8 @@ class TestEvolutionSearchLoop(TestCase):
         self.runner.rank = 0
         loop.run()
         self.assertEqual(loop._max_epochs, 1)
+
+
+if __name__ == '__main__':
+    import unittest
+    unittest.main()

@@ -231,7 +231,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
 
             self.update_candidates_scores()
 
-            self.candidates.sort(key=lambda x: x[1], reverse=True)
+            self.candidates.sort_by(key_indicator='score', reverse=True)
             self.candidates = Candidates(self.candidates[:self.num_candidates])
             self.top_k_candidates = Candidates(self.candidates[:self.top_k])
 
@@ -244,7 +244,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
                     f'{num_sample_from_supernet}/{self.num_samples} '
                     f'top1_score {top1_score:.3f} '
                     f'cur_num_candidates: {len(self.candidates)}')
-        return self.top_k_candidates.pop(0)[0]
+        return self.top_k_candidates.subnets[0]
 
     def update_cur_prob(self, cur_iter: int) -> None:
         """update current probablity of sampling from the candidates, which is

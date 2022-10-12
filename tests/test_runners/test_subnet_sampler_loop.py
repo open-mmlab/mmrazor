@@ -190,7 +190,7 @@ class TestGreedySamplerTrainLoop(TestCase):
         loop._iter = loop.val_interval
         subnet = loop.sample_subnet()
         self.assertEqual(subnet, fake_subnet)
-        self.assertEqual(len(loop.top_k_candidates), loop.top_k - 1)
+        self.assertEqual(len(loop.top_k_candidates), loop.top_k)
 
     def test_run(self):
         # test run with _check_constraints
@@ -205,3 +205,8 @@ class TestGreedySamplerTrainLoop(TestCase):
 
         self.assertEqual(runner.iter, runner.max_iters)
         assert os.path.exists(os.path.join(self.temp_dir, 'candidates.pkl'))
+
+
+if __name__ == '__main__':
+    import unittest
+    unittest.main()

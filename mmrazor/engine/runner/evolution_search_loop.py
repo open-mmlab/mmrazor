@@ -45,8 +45,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             screening candidates. Defaults to dict(flops=(0, 330)).
         resource_estimator_cfg (Dict[str, Any]): Used for building a
             resource estimator. Default to dict().
-        dump_derived_mutable (bool): Whether to dump derived information.
-            Defaults to False.
         score_key (str): Specify one metric in evaluation results to score
             candidates. Defaults to 'accuracy_top-1'.
         init_candidates (str, optional): The candidates file path, which is
@@ -68,7 +66,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                  mutate_prob: float = 0.1,
                  constraints_range: Dict[str, Any] = dict(flops=(0., 330.)),
                  resource_estimator_cfg: Dict[str, Any] = dict(),
-                 dump_derived_mutable: bool = False,
                  score_key: str = 'accuracy/top1',
                  init_candidates: Optional[str] = None) -> None:
         super().__init__(runner, dataloader, max_epochs)
@@ -87,7 +84,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         self.num_candidates = num_candidates
         self.top_k = top_k
         self.constraints_range = constraints_range
-        self.key_resource = list(self.constraints_range.keys())[0]
+        self.key_indicator = list(self.constraints_range.keys())[0]
         self.estimator_cfg = resource_estimator_cfg
         self.score_key = score_key
         self.num_mutation = num_mutation
@@ -95,7 +92,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         self.mutate_prob = mutate_prob
         self.max_keep_ckpts = max_keep_ckpts
         self.resume_from = resume_from
-        self.dump_derived = dump_derived_mutable
 
         if init_candidates is None:
             self.candidates = Candidates()
@@ -105,10 +101,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                 correct init candidates file'
 
         self.top_k_candidates = Candidates()
-        if resource_estimator_cfg:
-            self.estimator = ResourceEstimator()
-        else:
-            self.estimator = ResourceEstimator(**resource_estimator_cfg)
+        self.estimator = ResourceEstimator(**resource_estimator_cfg)
 
         if self.runner.distributed:
             self.model = runner.model.module
@@ -150,7 +143,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                                 f'{scores_before}')
 
         self.candidates.extend(self.top_k_candidates)
-        self.candidates.sort(key=lambda x: x[2], reverse=True)
+        self.candidates.sort_by(key_indicator='score', reverse=True)
         self.top_k_candidates = Candidates(self.candidates[:self.top_k])
 
         scores_after = self.top_k_candidates.scores
@@ -183,6 +176,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                 if flag:
                     self.candidates.append(candidate)
                     candidates_resources.append(result)
+            self.candidates = Candidates(self.candidates)
         else:
             self.candidates = Candidates([None] * self.num_candidates)
         # broadcast candidates to val with multi-GPUs.
@@ -190,7 +184,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         assert init_candidates + len(
             candidates_resources) == self.num_candidates
         for i in range(len(candidates_resources)):
-            resources = candidates_resources[i][self.key_resource] \
+            resources = candidates_resources[i][self.key_indicator] \
                 if len(candidates_resources[i]) != 0 else 0.
             self.candidates.set_resources(i + init_candidates, resources)
 
@@ -206,7 +200,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             self.runner.logger.info(
                 f'Epoch:[{self.runner.epoch}/{self.max_epochs}] '
                 f'Candidate:[{i + 1}/{self.num_candidates}] '
-                f'{self.key_resource}: {self.candidates.resources[i]} '
+                f'{self.key_indicator}: '
+                f'{self.candidates.resources(self.key_indicator)[i]} '
                 f'Score:{score}')
 
     def gen_mutation_candidates(self):
@@ -232,7 +227,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         mutation_candidates = Candidates(mutation_candidates)
 
         for i in range(self.num_mutation):
-            resources = mutation_resources[i][self.key_resource] \
+            resources = mutation_resources[i][self.key_indicator] \
                 if len(mutation_resources[i]) != 0 else 0.
             mutation_candidates.set_resources(i, resources)
 
@@ -260,7 +255,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         crossover_candidates = Candidates(crossover_candidates)
 
         for i in range(self.num_crossover):
-            resources = crossover_resources[i][self.key_resource] \
+            resources = crossover_resources[i][self.key_indicator] \
                 if len(crossover_resources[i]) != 0 else 0.
             crossover_candidates.set_resources(i, resources)
 
