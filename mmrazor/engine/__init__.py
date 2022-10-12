@@ -10,6 +10,6 @@ __all__ = [
     'SeparateOptimWrapperConstructor', 'DumpSubnetHook',
     'SingleTeacherDistillValLoop', 'DartsEpochBasedTrainLoop',
     'DartsIterBasedTrainLoop', 'SlimmableValLoop', 'EvolutionSearchLoop',
-    'GreedySamplerTrainLoop', 'AutoSlimValLoop', 'SelfDistillValLoop',
-    'EstimateResourcesHook'
+    'GreedySamplerTrainLoop', 'AutoSlimValLoop', 'EstimateResourcesHook',
+    'SelfDistillValLoop'
 ]

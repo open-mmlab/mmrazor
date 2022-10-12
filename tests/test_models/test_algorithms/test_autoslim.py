@@ -18,23 +18,25 @@ MUTATOR_TYPE = Union[torch.nn.Module, Dict]
 DISTILLER_TYPE = Union[torch.nn.Module, Dict]
 
 ARCHITECTURE_CFG = dict(
-    type='mmcls.ImageClassifier',
+    _scope_='mmcls',
+    type='ImageClassifier',
     backbone=dict(type='MobileNetV2', widen_factor=1.5),
     neck=dict(type='GlobalAveragePooling'),
     head=dict(
-        type='LinearClsHead',
+        type='mmcls.LinearClsHead',
         num_classes=1000,
         in_channels=1920,
-        loss=dict(type='CrossEntropyLoss', loss_weight=1.0),
+        loss=dict(type='mmcls.CrossEntropyLoss', loss_weight=1.0),
         topk=(1, 5)))
 
 MUTATOR_CFG = dict(
     type='OneShotChannelMutator',
-    mutable_cfg=dict(
-        type='OneShotMutableChannel',
-        candidate_choices=list(i / 12 for i in range(2, 13)),
-        candidate_mode='ratio'),
-    tracer_cfg=dict(
+    channel_unit_cfg=dict(
+        type='OneShotMutableChannelUnit',
+        default_args=dict(
+            candidate_choices=list(i / 12 for i in range(2, 13)),
+            choice_mode='ratio')),
+    parse_cfg=dict(
         type='BackwardTracer',
         loss_calculator=dict(type='ImageClassifierPseudoLoss')))
 
@@ -49,9 +51,17 @@ DISTILLER_CFG = dict(
             preds_S=dict(recorder='fc', from_student=True),
             preds_T=dict(recorder='fc', from_student=False))))
 
-OPTIMIZER_CFG = dict(
-    type='SGD', lr=0.5, momentum=0.9, nesterov=True, weight_decay=0.0001)
-OPTIM_WRAPPER_CFG = dict(optimizer=OPTIMIZER_CFG, accumulative_counts=4)
+OPTIM_WRAPPER_CFG = dict(
+    optimizer=dict(
+        type='mmcls.SGD',
+        lr=0.5,
+        momentum=0.9,
+        weight_decay=4e-05,
+        _scope_='mmrazor'),
+    paramwise_cfg=dict(
+        bias_decay_mult=0.0, norm_decay_mult=0.0, dwconv_decay_mult=0.0),
+    clip_grad=None,
+    accumulative_counts=4)
 
 
 class FakeMutator:
@@ -64,7 +74,7 @@ class ToyDataPreprocessor(torch.nn.Module):
             self,
             data: Dict,
             training: bool = True) -> Tuple[torch.Tensor, List[ClsDataSample]]:
-        return data['inputs'], data['data_samples']
+        return data
 
 
 @unittest.skipIf(
@@ -75,8 +85,14 @@ class TestAutoSlim(TestCase):
 
     def test_init(self) -> None:
         mutator_wrong_type = FakeMutator()
-        with pytest.raises(TypeError):
+        with pytest.raises(Exception):
             _ = self.prepare_model(mutator_wrong_type)
+
+        algo = self.prepare_model()
+        self.assertSequenceEqual(
+            algo.mutator.mutable_units[0].candidate_choices,
+            list(i / 12 for i in range(2, 13)),
+        )
 
     def test_autoslim_train_step(self) -> None:
         algo = self.prepare_model()
@@ -91,11 +107,11 @@ class TestAutoSlim(TestCase):
         assert len(losses) == 7
         assert losses['max_subnet.loss'] > 0
         assert losses['min_subnet.loss'] > 0
-        assert losses['min_subnet.loss_kl'] > 0
+        assert losses['min_subnet.loss_kl'] + 1e-5 > 0
         assert losses['random_subnet_0.loss'] > 0
-        assert losses['random_subnet_0.loss_kl'] > 0
+        assert losses['random_subnet_0.loss_kl'] + 1e-5 > 0
         assert losses['random_subnet_1.loss'] > 0
-        assert losses['random_subnet_1.loss_kl'] > 0
+        assert losses['random_subnet_1.loss_kl'] + 1e-5 > 0
 
         assert algo._optim_wrapper_count_status_reinitialized
         assert optim_wrapper._inner_count == 4

@@ -13,7 +13,7 @@ Collections:
     Converted From:
       Code: https://github.com/quark0/darts
 Models:
-  - Name: darts_subnet_1xb96_cifar10
+  - Name: darts_subnet_1xb96_cifar10_2.0
     In Collection: Darts
     Metadata:
       Params(M): 3.42
@@ -24,5 +24,5 @@ Models:
         Metrics:
           Top 1 Accuracy: 97.32
           Top 5 Accuracy: 99.94
-    Config: configs/nas/darts/darts_subnet_1xb96_cifar10.py
+    Config: configs/nas/darts/darts_subnet_1xb96_cifar10_2.0.py
     Weights: https://download.openmmlab.com/mmrazor/v0.1/nas/darts/darts_subnetnet_1xb96_cifar10/darts_subnetnet_1xb96_cifar10_acc-97.32_20211222-e5727921.pth

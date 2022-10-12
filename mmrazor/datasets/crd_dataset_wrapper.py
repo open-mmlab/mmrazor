@@ -74,7 +74,7 @@ class CRDDataset:
         #   e.g. [2, 3, 5].
         num_classes: int = self.num_classes  # type: ignore
         if num_classes is None:
-            num_classes = len(self.dataset.CLASSES)
+            num_classes = max(self.dataset.get_gt_labels()) + 1
 
         if not self.dataset.test_mode:  # type: ignore
             # Parse info.

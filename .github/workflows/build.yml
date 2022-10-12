@@ -1,0 +1,159 @@
+name: build
+
+on:
+  push:
+    paths-ignore:
+      - "README.md"
+      - "README_zh-CN.md"
+      - "model-index.yml"
+      - "configs/**"
+      - "docs/**"
+      - ".dev_scripts/**"
+
+  pull_request:
+    paths-ignore:
+      - "README.md"
+      - "README_zh-CN.md"
+      - "docs/**"
+      - "demo/**"
+      - ".dev_scripts/**"
+      - ".circleci/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test_linux:
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        python-version: [3.7]
+        torch: [1.6.0, 1.7.0, 1.8.0, 1.9.0, 1.10.0, 1.11.0, 1.12.0]
+        include:
+          - torch: 1.6.0
+            torch_version: 1.6
+            torchvision: 0.7.0
+          - torch: 1.7.0
+            torch_version: 1.7
+            torchvision: 0.8.1
+          - torch: 1.7.0
+            torch_version: 1.7
+            torchvision: 0.8.1
+            python-version: 3.8
+          - torch: 1.8.0
+            torch_version: 1.8
+            torchvision: 0.9.0
+          - torch: 1.8.0
+            torch_version: 1.8
+            torchvision: 0.9.0
+            python-version: 3.8
+          - torch: 1.9.0
+            torch_version: 1.9
+            torchvision: 0.10.0
+          - torch: 1.9.0
+            torch_version: 1.9
+            torchvision: 0.10.0
+            python-version: 3.8
+          - torch: 1.10.0
+            torch_version: 1.10
+            torchvision: 0.11.0
+          - torch: 1.10.0
+            torch_version: 1.10
+            torchvision: 0.11.0
+            python-version: 3.8
+          - torch: 1.11.0
+            torch_version: 1.11
+            torchvision: 0.12.0
+          - torch: 1.11.0
+            torch_version: 1.11
+            torchvision: 0.12.0
+            python-version: 3.8
+          - torch: 1.12.0
+            torch_version: 1.12
+            torchvision: 0.13.0
+          - torch: 1.12.0
+            torch_version: 1.12
+            torchvision: 0.13.0
+            python-version: 3.8
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Upgrade pip
+        run: |
+          pip install pip --upgrade
+          pip install wheel
+      - name: Install PyTorch
+        run: pip install torch==${{matrix.torch}}+cpu torchvision==${{matrix.torchvision}}+cpu -f https://download.pytorch.org/whl/torch_stable.html
+      - name: Install MMEngine
+        run: pip install git+https://github.com/open-mmlab/mmengine.git@main
+      - name: Install MMCV
+        run: |
+          pip install -U openmim
+          mim install 'mmcv >= 2.0.0rc1'
+      - name: Install MMCls
+        run: pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
+      - name: Install MMDet
+        run: pip install git+https://github.com/open-mmlab/mmdetection.git@dev-3.x
+      - name: Install MMSeg
+        run: pip install git+https://github.com/open-mmlab/mmsegmentation.git@dev-1.x
+      - name: Install other dependencies
+        run: pip install -r requirements.txt
+      - name: Build and install
+        run: rm -rf .eggs && pip install -e .
+      - name: Run unittests and generate coverage report
+        run: |
+          coverage run --branch --source mmrazor -m pytest tests/
+          coverage xml
+          coverage report -m
+      # Upload coverage report for python3.8 && pytorch1.12.0 cpu
+      - name: Upload coverage to Codecov
+        if: ${{matrix.torch == '1.12.0' && matrix.python-version == '3.8'}}
+        uses: codecov/codecov-action@v2
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          env_vars: OS,PYTHON
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  # test_windows:
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       os: [windows-2022]
+  #       python: [3.7]
+  #       platform: [cpu]
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Set up Python ${{ matrix.python-version }}
+  #       uses: actions/setup-python@v2
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
+  #     - name: Upgrade pip
+  #       run: |
+  #         pip install pip --upgrade
+  #         pip install wheel
+  #     - name: Install lmdb
+  #       run: pip install lmdb
+  #     - name: Install PyTorch
+  #       run: pip install torch==1.8.1+${{matrix.platform}} torchvision==0.9.1+${{matrix.platform}} -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html
+  #     - name: Install mmrazor dependencies
+  #       run: |
+  #         pip install git+https://github.com/open-mmlab/mmengine.git@main
+  #         pip install -U openmim
+  #         mim install 'mmcv >= 2.0.0rc1'
+  #         pip install git+https://github.com/open-mmlab/mmdetection.git@dev-3.x
+  #         pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
+  #         pip install git+https://github.com/open-mmlab/mmsegmentation.git@dev-1.x
+  #         pip install -r requirements.txt
+  #     - name: Build and install
+  #       run: |
+  #         pip install -e .
+  #     - name: Run unittests and generate coverage report
+  #       run: |
+  #         pytest tests/
