@@ -6,9 +6,11 @@ import pytest
 import torch
 from torch import nn
 
-from mmrazor.models.architectures.dynamic_ops.bricks import (
-    DynamicBatchNorm1d, DynamicBatchNorm2d, DynamicBatchNorm3d, DynamicMixin)
-from mmrazor.models.mutables import OneShotMutableChannel
+from mmrazor.models.architectures.dynamic_ops import (DynamicBatchNorm1d,
+                                                      DynamicBatchNorm2d,
+                                                      DynamicBatchNorm3d,
+                                                      DynamicMixin)
+from mmrazor.models.mutables import SquentialMutableChannel
 from mmrazor.structures.subnet import export_fix_subnet, load_fix_subnet
 from ..utils import fix_dynamic_op
 
@@ -22,8 +24,7 @@ from ..utils import fix_dynamic_op
 def test_dynamic_bn(dynamic_class: Type[nn.modules.batchnorm._BatchNorm],
                     input_shape: Tuple[int], affine: bool,
                     track_running_stats: bool) -> None:
-    mutable_num_features = OneShotMutableChannel(
-        10, candidate_choices=[4, 8, 10], candidate_mode='number')
+    mutable_num_features = SquentialMutableChannel(10)
 
     d_bn = dynamic_class(
         num_features=10,
@@ -87,8 +88,7 @@ def test_bn_track_running_stats(
     dynamic_class: Type[nn.modules.batchnorm._BatchNorm],
     input_shape: Tuple[int],
 ) -> None:
-    mutable_num_features = OneShotMutableChannel(
-        10, candidate_choices=[4, 8, 10], candidate_mode='number')
+    mutable_num_features = SquentialMutableChannel(10)
     mutable_num_features.current_choice = 8
     d_bn = dynamic_class(
         num_features=10, track_running_stats=True, affine=False)

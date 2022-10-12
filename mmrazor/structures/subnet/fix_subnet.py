@@ -10,7 +10,7 @@ from mmrazor.utils import FixMutable, ValidFixMutable
 
 def _dynamic_to_static(model: nn.Module) -> None:
     # Avoid circular import
-    from mmrazor.models.architectures.dynamic_ops.bricks import DynamicMixin
+    from mmrazor.models.architectures.dynamic_ops import DynamicMixin
 
     def traverse_children(module: nn.Module) -> None:
         # TODO
@@ -37,7 +37,7 @@ def load_fix_subnet(model: nn.Module,
         raise TypeError('fix_mutable should be a `str` or `dict`'
                         f'but got {type(fix_mutable)}')
 
-    from mmrazor.models.architectures.dynamic_ops.bricks import DynamicMixin
+    from mmrazor.models.architectures.dynamic_ops import DynamicMixin
     if isinstance(model, DynamicMixin):
         raise RuntimeError('Root model can not be dynamic op.')
 
@@ -50,21 +50,22 @@ def load_fix_subnet(model: nn.Module,
         # In the corresponding mutable, it will check whether the `chosen`
         # format is correct.
         if isinstance(module, BaseMutable):
-            if getattr(module, 'alias', None):
-                alias = module.alias
-                assert alias in fix_mutable, \
-                    f'The alias {alias} is not in fix_modules, ' \
-                    'please check your `fix_mutable`.'
-                chosen = fix_mutable.get(alias, None)
-            else:
-                mutable_name = name.lstrip(prefix)
-                if mutable_name not in fix_mutable and \
-                        not isinstance(module, DerivedMutable):
-                    raise RuntimeError(
-                        f'The module name {mutable_name} is not in '
-                        'fix_mutable, please check your `fix_mutable`.')
-                chosen = fix_mutable.get(mutable_name, None)
-            module.fix_chosen(chosen)
+            if not module.is_fixed:
+                if getattr(module, 'alias', None):
+                    alias = module.alias
+                    assert alias in fix_mutable, \
+                        f'The alias {alias} is not in fix_modules, ' \
+                        'please check your `fix_mutable`.'
+                    chosen = fix_mutable.get(alias, None)
+                else:
+                    mutable_name = name.lstrip(prefix)
+                    if mutable_name not in fix_mutable and \
+                            not isinstance(module, DerivedMutable):
+                        raise RuntimeError(
+                            f'The module name {mutable_name} is not in '
+                            'fix_mutable, please check your `fix_mutable`.')
+                    chosen = fix_mutable.get(mutable_name, None)
+                module.fix_chosen(chosen)
 
     # convert dynamic op to static op
     _dynamic_to_static(model)
@@ -89,7 +90,6 @@ def export_fix_subnet(model: nn.Module,
             if isinstance(module, DerivedMutable) and not dump_derived_mutable:
                 continue
 
-            assert not module.is_fixed
             if module.alias:
                 fix_subnet[module.alias] = module.dump_chosen()
             else:

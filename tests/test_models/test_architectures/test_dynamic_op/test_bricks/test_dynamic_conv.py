@@ -8,10 +8,10 @@ import pytest
 import torch
 from torch import nn
 
-from mmrazor.models.architectures.dynamic_ops.bricks import (BigNasConv2d,
-                                                             DynamicConv2d,
-                                                             OFAConv2d)
-from mmrazor.models.mutables import OneShotMutableChannel, OneShotMutableValue
+from mmrazor.models.architectures.dynamic_ops import (BigNasConv2d,
+                                                      DynamicConv2d, OFAConv2d)
+from mmrazor.models.mutables import (OneShotMutableValue,
+                                     SquentialMutableChannel)
 from mmrazor.structures.subnet import export_fix_subnet, load_fix_subnet
 from ..utils import fix_dynamic_op
 
@@ -39,10 +39,8 @@ class TestDynamicConv2d(TestCase):
         with pytest.raises(ValueError):
             d_conv2d.register_mutable_attr('out_channels', mock_mutable)
 
-        mutable_in_channels = OneShotMutableChannel(
-            10, candidate_choices=[4, 8, 10], candidate_mode='number')
-        mutable_out_channels = OneShotMutableChannel(
-            10, candidate_choices=[4, 8, 10], candidate_mode='number')
+        mutable_in_channels = SquentialMutableChannel(10)
+        mutable_out_channels = SquentialMutableChannel(10)
 
         d_conv2d.register_mutable_attr('in_channels', mutable_in_channels)
         d_conv2d.register_mutable_attr('out_channels', mutable_out_channels)
@@ -82,10 +80,8 @@ def test_dynamic_conv2d(bias: bool) -> None:
     x_max = torch.rand(10, 4, 224, 224)
     out_before_mutate = d_conv2d(x_max)
 
-    mutable_in_channels = OneShotMutableChannel(
-        4, candidate_choices=[2, 3, 4], candidate_mode='number')
-    mutable_out_channels = OneShotMutableChannel(
-        10, candidate_choices=[4, 8, 10], candidate_mode='number')
+    mutable_in_channels = SquentialMutableChannel(4)
+    mutable_out_channels = SquentialMutableChannel(10)
     d_conv2d.register_mutable_attr('in_channels', mutable_in_channels)
     d_conv2d.register_mutable_attr('out_channels', mutable_out_channels)
 
@@ -128,8 +124,7 @@ def test_dynamic_conv2d_mutable_single_channels(is_mutate_in_channels: bool,
                                                 out_channels: int) -> None:
     d_conv2d = DynamicConv2d(
         in_channels=10, out_channels=10, kernel_size=3, stride=1, bias=True)
-    mutable_channels = OneShotMutableChannel(
-        10, candidate_choices=[4, 6, 10], candidate_mode='number')
+    mutable_channels = SquentialMutableChannel(10)
 
     if is_mutate_in_channels:
         d_conv2d.register_mutable_attr('in_channels', mutable_channels)
@@ -172,10 +167,8 @@ def test_dynamic_conv2d_mutable_single_channels(is_mutate_in_channels: bool,
 def test_kernel_dynamic_conv2d(dynamic_class: Type[nn.Conv2d],
                                kernel_size_list: bool) -> None:
 
-    mutable_in_channels = OneShotMutableChannel(
-        10, candidate_choices=[4, 8, 10], candidate_mode='number')
-    mutable_out_channels = OneShotMutableChannel(
-        10, candidate_choices=[4, 8, 10], candidate_mode='number')
+    mutable_in_channels = SquentialMutableChannel(10)
+    mutable_out_channels = SquentialMutableChannel(10)
 
     mutable_kernel_size = OneShotMutableValue(value_list=kernel_size_list)
 
@@ -233,7 +226,7 @@ def test_kernel_dynamic_conv2d(dynamic_class: Type[nn.Conv2d],
 @pytest.mark.parametrize('dynamic_class', [OFAConv2d, BigNasConv2d])
 def test_mutable_kernel_dynamic_conv2d_grad(
         dynamic_class: Type[nn.Conv2d]) -> None:
-    from mmrazor.models.architectures.dynamic_ops.bricks import \
+    from mmrazor.models.architectures.dynamic_ops.mixins import \
         dynamic_conv_mixins
 
     kernel_size_list = [3, 5, 7]

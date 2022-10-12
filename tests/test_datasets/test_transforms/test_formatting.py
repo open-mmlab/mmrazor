@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 import torch
 from mmcls.structures import ClsDataSample
-from mmengine.data import LabelData
+from mmengine.structures import LabelData
 
 from mmrazor.datasets.transforms import PackCRDClsInputs
 
@@ -34,7 +34,7 @@ class TestPackClsInputs(unittest.TestCase):
             'img': rng.rand(300, 400),
             'gt_label': rng.randint(3, ),
             # TODO.
-            'contrast_sample_idxs': rng.randint()
+            'contrast_sample_idxs': rng.randint(3, )
         }
         self.meta_keys = ('sample_idx', 'img_path', 'ori_shape', 'img_shape',
                           'scale_factor', 'flip')
@@ -44,13 +44,13 @@ class TestPackClsInputs(unittest.TestCase):
         results = transform(copy.deepcopy(self.results1))
         self.assertIn('inputs', results)
         self.assertIsInstance(results['inputs'], torch.Tensor)
-        self.assertIn('data_sample', results)
-        self.assertIsInstance(results['data_sample'], ClsDataSample)
+        self.assertIn('data_samples', results)
+        self.assertIsInstance(results['data_samples'], ClsDataSample)
 
-        data_sample = results['data_sample']
+        data_sample = results['data_samples']
         self.assertIsInstance(data_sample.gt_label, LabelData)
 
     def test_repr(self):
         transform = PackCRDClsInputs(meta_keys=self.meta_keys)
         self.assertEqual(
-            repr(transform), f'PackClsInputs(meta_keys={self.meta_keys})')
+            repr(transform), f'PackCRDClsInputs(meta_keys={self.meta_keys})')
