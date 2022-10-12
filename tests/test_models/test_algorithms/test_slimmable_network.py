@@ -9,13 +9,13 @@ import pytest
 import torch
 import torch.distributed as dist
 from mmcls.structures import ClsDataSample
-from mmengine import fileio
 from mmengine.optim import build_optim_wrapper
 
 from mmrazor.models.algorithms import SlimmableNetwork, SlimmableNetworkDDP
 
 MODEL_CFG = dict(
-    type='mmcls.ImageClassifier',
+    _scope_='mmcls',
+    type='ImageClassifier',
     backbone=dict(type='MobileNetV2', widen_factor=1.5),
     neck=dict(type='GlobalAveragePooling'),
     head=dict(
@@ -24,11 +24,12 @@ MODEL_CFG = dict(
         in_channels=1920,
         loss=dict(type='CrossEntropyLoss', loss_weight=1.0),
         topk=(1, 5)))
+CHANNEL_CFG_PATH = 'tests/data/MBV2_slimmable_config.json'
 
 MUTATOR_CFG = dict(
     type='SlimmableChannelMutator',
-    mutable_cfg=dict(type='SlimmableMutableChannel'),
-    tracer_cfg=dict(
+    channel_unit_cfg=dict(type='SlimmableChannelUnit', units=CHANNEL_CFG_PATH),
+    parse_cfg=dict(
         type='BackwardTracer',
         loss_calculator=dict(type='ImageClassifierPseudoLoss')))
 
@@ -40,8 +41,7 @@ CHANNEL_CFG_PATHS = [
 
 OPTIMIZER_CFG = dict(
     type='SGD', lr=0.5, momentum=0.9, nesterov=True, weight_decay=0.0001)
-OPTIM_WRAPPER_CFG = dict(
-    optimizer=OPTIMIZER_CFG, accumulative_counts=len(CHANNEL_CFG_PATHS))
+OPTIM_WRAPPER_CFG = dict(optimizer=OPTIMIZER_CFG, accumulative_counts=3)
 
 
 class FakeMutator:
@@ -54,78 +54,39 @@ class ToyDataPreprocessor(torch.nn.Module):
             self,
             data: Dict,
             training: bool = True) -> Tuple[torch.Tensor, List[ClsDataSample]]:
-        return data['inputs'], data['data_samples']
+        return data
 
 
 class TestSlimmable(TestCase):
     device: str = 'cpu'
 
-    def test_merge_channel_cfgs(self) -> None:
-        channel_cfg1 = {
-            'layer1': {
-                'current_choice': 2,
-                'origin_channel': 4
-            },
-            'layer2': {
-                'current_choice': 5,
-                'origin_channel': 8
-            }
-        }
-        channel_cfg2 = {
-            'layer1': {
-                'current_choice': 1,
-                'origin_channel': 4
-            },
-            'layer2': {
-                'current_choice': 4,
-                'origin_channel': 8
-            }
-        }
-
-        self.assertEqual(
-            SlimmableNetwork.merge_channel_cfgs([channel_cfg1, channel_cfg2]),
-            {
-                'layer1': {
-                    'current_choice': [2, 1],
-                    'origin_channel': [4, 4]
-                },
-                'layer2': {
-                    'current_choice': [5, 4],
-                    'origin_channel': [8, 8]
-                }
-            })
-
     def test_init(self) -> None:
-        channel_cfgs = self._load_and_merge_channel_cfgs(CHANNEL_CFG_PATHS)
-        mutator_with_channel_cfgs = copy.deepcopy(MUTATOR_CFG)
-        mutator_with_channel_cfgs['channel_cfgs'] = channel_cfgs
-
-        with pytest.raises(AssertionError):
-            _ = self.prepare_model(mutator_with_channel_cfgs, MODEL_CFG,
-                                   CHANNEL_CFG_PATHS)
 
         mutator_wrong_type = FakeMutator()
-        with pytest.raises(TypeError):
-            _ = self.prepare_model(mutator_wrong_type, MODEL_CFG,
-                                   CHANNEL_CFG_PATHS)
+        with pytest.raises(AttributeError):
+            _ = self.prepare_model(mutator_wrong_type, MODEL_CFG)
+
+        # assert has prunable units
+        algo = SlimmableNetwork(MUTATOR_CFG, MODEL_CFG)
+        self.assertGreater(len(algo.mutator.mutable_units), 0)
+
+        # assert can generate config template
+        mutator_cfg = copy.deepcopy(MUTATOR_CFG)
+        mutator_cfg['channel_unit_cfg']['units'] = {}
+        algo = SlimmableNetwork(mutator_cfg, MODEL_CFG)
+        try:
+            algo.mutator.config_template()
+        except Exception:
+            self.fail()
 
     def test_is_deployed(self) -> None:
         slimmable_should_not_deployed = \
-            SlimmableNetwork(MUTATOR_CFG, MODEL_CFG, CHANNEL_CFG_PATHS)
+            SlimmableNetwork(MUTATOR_CFG, MODEL_CFG)
         assert not slimmable_should_not_deployed.is_deployed
 
         slimmable_should_deployed = \
-            SlimmableNetwork(MUTATOR_CFG, MODEL_CFG, CHANNEL_CFG_PATHS[0])
+            SlimmableNetwork(MUTATOR_CFG, MODEL_CFG, deploy_index=0)
         assert slimmable_should_deployed.is_deployed
-
-    def _load_and_merge_channel_cfgs(self,
-                                     channel_cfg_paths: List[str]) -> Dict:
-        channel_cfgs = list()
-        for channel_cfg_path in channel_cfg_paths:
-            channel_cfg = fileio.load(channel_cfg_path)
-            channel_cfgs.append(channel_cfg)
-
-        return SlimmableNetwork.merge_channel_cfgs(channel_cfgs)
 
     def test_slimmable_train_step(self) -> None:
         algo = self.prepare_slimmable_model()
@@ -170,16 +131,17 @@ class TestSlimmable(TestCase):
         return {'inputs': imgs, 'data_samples': data_samples}
 
     def prepare_slimmable_model(self) -> SlimmableNetwork:
-        return self.prepare_model(MUTATOR_CFG, MODEL_CFG, CHANNEL_CFG_PATHS)
+        return self.prepare_model(MUTATOR_CFG, MODEL_CFG)
 
     def prepare_fixed_model(self) -> SlimmableNetwork:
-        channel_cfg_paths = CHANNEL_CFG_PATHS[0]
 
-        return self.prepare_model(MUTATOR_CFG, MODEL_CFG, channel_cfg_paths)
+        return self.prepare_model(MUTATOR_CFG, MODEL_CFG, deploy=0)
 
-    def prepare_model(self, mutator_cfg: Dict, model_cfg: Dict,
-                      channel_cfg_paths: Dict) -> SlimmableNetwork:
-        model = SlimmableNetwork(mutator_cfg, model_cfg, channel_cfg_paths,
+    def prepare_model(self,
+                      mutator_cfg: Dict,
+                      model_cfg: Dict,
+                      deploy=-1) -> SlimmableNetwork:
+        model = SlimmableNetwork(mutator_cfg, model_cfg, deploy,
                                  ToyDataPreprocessor())
         model.to(self.device)
 
@@ -201,10 +163,11 @@ class TestSlimmableDDP(TestSlimmable):
             backend = 'gloo'
         dist.init_process_group(backend, rank=0, world_size=1)
 
-    def prepare_model(self, mutator_cfg: Dict, model_cfg: Dict,
-                      channel_cfg_paths: Dict) -> SlimmableNetworkDDP:
-        model = super().prepare_model(mutator_cfg, model_cfg,
-                                      channel_cfg_paths)
+    def prepare_model(self,
+                      mutator_cfg: Dict,
+                      model_cfg: Dict,
+                      deploy=-1) -> SlimmableNetwork:
+        model = super().prepare_model(mutator_cfg, model_cfg, deploy)
         return SlimmableNetworkDDP(module=model, find_unused_parameters=True)
 
     def test_is_deployed(self) -> None:
