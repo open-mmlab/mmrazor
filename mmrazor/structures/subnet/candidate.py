@@ -68,7 +68,14 @@ class Candidates(UserList):
         return [eval(key) for item in self.data for key, _ in item.items()]
 
     def _format(self, data: Any) -> _format_return:
-        """Transform [Dict, ...] to [Dict[Any, Dict], ...]."""
+        """Transform [Dict, ...] to Union[Dict[Any, Dict], List[Dict[Any,
+        Dict]]].
+
+        Three types of input are supported:
+            1. Dict.
+            2. Dict[Any, Dict].
+            3. List[Dict[Any, Dict]].
+        """
 
         def _format_item(cond: Any):
             """Transform Dict to str(Dict)."""
