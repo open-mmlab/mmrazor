@@ -44,7 +44,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         constraints_range (Dict[str, Any]): Constraints to be used for
             screening candidates. Defaults to dict(flops=(0, 330)).
         resource_estimator_cfg (Dict[str, Any]): Used for building a
-            resource estimator. Default to dict().
+            resource estimator. Defaults to dict().
         score_key (str): Specify one metric in evaluation results to score
             candidates. Defaults to 'accuracy_top-1'.
         init_candidates (str, optional): The candidates file path, which is
@@ -169,11 +169,11 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         init_candidates = len(self.candidates)
         if self.runner.rank == 0:
             while len(self.candidates) < self.num_candidates:
-                flag = False
+                is_pass = False
                 candidate = self.model.sample_subnet()
-                flag, result = self._check_constraints(
+                is_pass, result = self._check_constraints(
                     random_subnet=candidate, need_feedback=True)
-                if flag:
+                if is_pass:
                     self.candidates.append(candidate)
                     candidates_resources.append(result)
             self.candidates = Candidates(self.candidates)
@@ -217,10 +217,10 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
 
             mutation_candidate = self._mutation()
 
-            flag = False
-            flag, result = self._check_constraints(
+            is_pass = False
+            is_pass, result = self._check_constraints(
                 random_subnet=mutation_candidate, need_feedback=True)
-            if flag:
+            if is_pass:
                 mutation_candidates.append(mutation_candidate)
                 mutation_resources.append(result)
 
@@ -246,10 +246,10 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
 
             crossover_candidate = self._crossover()
 
-            flag = False
-            flag, result = self._check_constraints(
+            is_pass = False
+            is_pass, result = self._check_constraints(
                 random_subnet=crossover_candidate, need_feedback=True)
-            if flag:
+            if is_pass:
                 crossover_candidates.append(crossover_candidate)
                 crossover_resources.append(result)
         crossover_candidates = Candidates(crossover_candidates)

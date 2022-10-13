@@ -3,7 +3,7 @@ import math
 import os
 import random
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Sequence, Tuple, Union
 
 import torch
 from mmengine import fileio
@@ -106,7 +106,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
             screening candidates. Defaults to dict(flops=(0, 330)).
         resource_estimator_cfg (dict): The config for building estimator, which
             is be used to estimate the flops of sampled subnet. Defaults to
-            None, which means default config is used.
+            None, which means default config is used. Defaults to dict().
         num_candidates (int): The number of the candidates consist of samples
             from supernet and itself. Defaults to 1000.
         num_samples (int): The number of sample in each sampling subnet.
@@ -141,7 +141,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
                  val_interval: int = 1000,
                  score_key: str = 'accuracy/top1',
                  constraints_range: Dict[str, Any] = dict(flops=(0, 330)),
-                 resource_estimator_cfg: Optional[dict] = None,
+                 resource_estimator_cfg: Dict[str, Any] = dict(),
                  num_candidates: int = 1000,
                  num_samples: int = 10,
                  top_k: int = 5,
@@ -178,10 +178,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
 
         self.candidates = Candidates()
         self.top_k_candidates = Candidates()
-        if resource_estimator_cfg is None:
-            self.estimator = ResourceEstimator()
-        else:
-            self.estimator = ResourceEstimator(**resource_estimator_cfg)
+        self.estimator = ResourceEstimator(**resource_estimator_cfg)
 
     def run(self) -> None:
         """Launch training."""

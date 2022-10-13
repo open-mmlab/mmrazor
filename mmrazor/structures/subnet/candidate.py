@@ -67,7 +67,7 @@ class Candidates(UserList):
         """The subnets of candidates."""
         return [eval(key) for item in self.data for key, _ in item.items()]
 
-    def _format(self, data: Any):
+    def _format(self, data: Any) -> _format_return:
         """Transform [Dict, ...] to [Dict[Any, Dict], ...]."""
 
         def _format_item(cond: Any):

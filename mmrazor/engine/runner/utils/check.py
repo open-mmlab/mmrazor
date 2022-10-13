@@ -17,8 +17,8 @@ def check_subnet_resources(model,
                            subnet: SupportRandomSubnet,
                            estimator: ResourceEstimator,
                            constraints_range: Dict[str,
-                                                   Any] = dict(flops=(0, 330)),
-                           dump_derived: bool = False):
+                                                   Any] = dict(flops=(0,
+                                                                      330))):
     """Check whether is beyond resources constraints.
 
     Returns:
@@ -29,7 +29,7 @@ def check_subnet_resources(model,
 
     assert hasattr(model, 'set_subnet') and hasattr(model, 'architecture')
     model.set_subnet(subnet)
-    fix_mutable = export_fix_subnet(model, dump_derived)
+    fix_mutable = export_fix_subnet(model)
     copied_model = copy.deepcopy(model)
     load_fix_subnet(copied_model, fix_mutable)
 
