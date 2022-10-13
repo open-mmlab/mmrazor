@@ -197,7 +197,6 @@ class RazorVisualizationHook(Hook):
                         drawn_img,
                         draw_gt=False,
                         draw_pred=False,
-                        draw_score=False,
                         show=self.show,
                         wait_time=0.1,
                         # TODO: Supported in mmengine's Viusalizer.

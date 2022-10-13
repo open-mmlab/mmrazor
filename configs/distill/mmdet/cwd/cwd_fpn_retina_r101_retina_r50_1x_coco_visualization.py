@@ -5,6 +5,7 @@ default_hooks = dict(
     visualization=dict(
         _scope_='mmrazor',
         type='RazorVisualizationHook',
+        enabled=True,
         recorders=dict(
             # todo: Maybe it is hard for users to understand why to add a
             #  prefix `architecture.`
