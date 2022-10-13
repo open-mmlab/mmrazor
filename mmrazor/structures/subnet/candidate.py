@@ -35,7 +35,7 @@ class Candidates(UserList):
         [100.0, 0.0]
     """
     _format_return = Union[Dict[Any, Dict], List[Dict[Any, Dict]]]
-    indicators = ('score', 'flops', 'params', 'latency')
+    _indicators = ('score', 'flops', 'params', 'latency')
 
     def __init__(self, initdata: Optional[Any] = None):
         self.data = []
@@ -74,10 +74,10 @@ class Candidates(UserList):
             """Transform Dict to str(Dict)."""
             if len(cond.keys()) > 1 and isinstance(
                     list(cond.values())[0], str):
-                return {str(cond): {}.fromkeys(self.indicators, -1)}
+                return {str(cond): {}.fromkeys(self._indicators, -1)}
             else:
                 for value in list(cond.values()):
-                    for key in list(self.indicators):
+                    for key in list(self._indicators):
                         value.setdefault(key, 0.)
                 return cond
 
