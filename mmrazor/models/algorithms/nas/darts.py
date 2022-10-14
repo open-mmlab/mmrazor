@@ -150,8 +150,9 @@ class Darts(BaseAlgorithm):
                 log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
             else:
                 with optim_wrapper['mutator'].optim_context(self):
-                    mutator_batch_inputs, mutator_data_samples = \
-                        self.data_preprocessor(mutator_data, True)
+                    pseudo_data = self.data_preprocessor(mutator_data, True)
+                    mutator_batch_inputs = pseudo_data['inputs']
+                    mutator_data_samples = pseudo_data['data_samples']
                     mutator_loss = self(
                         mutator_batch_inputs,
                         mutator_data_samples,
@@ -163,8 +164,9 @@ class Darts(BaseAlgorithm):
 
             # Update the parameter of supernet
             with optim_wrapper['architecture'].optim_context(self):
-                supernet_batch_inputs, supernet_data_samples = \
-                    self.data_preprocessor(supernet_data, True)
+                pseudo_data = self.data_preprocessor(supernet_data, True)
+                supernet_batch_inputs = pseudo_data['inputs']
+                supernet_data_samples = pseudo_data['data_samples']
                 supernet_loss = self(
                     supernet_batch_inputs, supernet_data_samples, mode='loss')
             supernet_losses, supernet_log_vars = self.parse_losses(
@@ -175,7 +177,9 @@ class Darts(BaseAlgorithm):
         else:
             # Enable automatic mixed precision training context.
             with optim_wrapper.optim_context(self):
-                batch_inputs, data_samples = self.data_preprocessor(data, True)
+                pseudo_data = self.data_preprocessor(data, True)
+                batch_inputs = pseudo_data['inputs']
+                data_samples = pseudo_data['data_samples']
                 losses = self(batch_inputs, data_samples, mode='loss')
             parsed_losses, log_vars = self.parse_losses(losses)
             optim_wrapper.update_params(parsed_losses)
@@ -195,8 +199,9 @@ class Darts(BaseAlgorithm):
 
         # Calculate unrolled loss on validation data
         # Keep gradients for model here for compute hessian
-        mutator_batch_inputs, mutator_data_samples = self.data_preprocessor(
-            mutator_data, True)
+        pseudo_data = self.data_preprocessor(mutator_data, True)
+        mutator_batch_inputs = pseudo_data['inputs']
+        mutator_data_samples = pseudo_data['data_samples']
         mutator_loss = self(
             mutator_batch_inputs, mutator_data_samples, mode='loss')
         mutator_losses, mutator_log_vars = self.parse_losses(mutator_loss)
@@ -228,8 +233,9 @@ class Darts(BaseAlgorithm):
                                optim_wrapper):
         """Compute unrolled weights w`"""
         # don't need zero_grad, using autograd to calculate gradients
-        supernet_batch_inputs, supernet_data_samples = \
-            self.data_preprocessor(supernet_data, True)
+        pseudo_data = self.data_preprocessor(supernet_data, True)
+        supernet_batch_inputs = pseudo_data['inputs']
+        supernet_data_samples = pseudo_data['data_samples']
         supernet_loss = self(
             supernet_batch_inputs, supernet_data_samples, mode='loss')
         supernet_loss, _ = self.parse_losses(supernet_loss)
@@ -274,8 +280,9 @@ class Darts(BaseAlgorithm):
                 for p, d in zip(self.architecture.parameters(), dw):
                     p += e * d
 
-            supernet_batch_inputs, supernet_data_samples = \
-                self.data_preprocessor(supernet_data, True)
+            pseudo_data = self.data_preprocessor(supernet_data, True)
+            supernet_batch_inputs = pseudo_data['inputs']
+            supernet_data_samples = pseudo_data['data_samples']
             supernet_loss = self(
                 supernet_batch_inputs, supernet_data_samples, mode='loss')
             supernet_loss, _ = self.parse_losses(supernet_loss)
@@ -292,8 +299,10 @@ class Darts(BaseAlgorithm):
 
 
 class BatchNormWrapper(nn.Module):
-    """Wrapper for BatchNorm. For more information,
-    Please refer to https://github.com/NVIDIA/apex/issues/121
+    """Wrapper for BatchNorm.
+
+    For more information, Please refer to
+    https://github.com/NVIDIA/apex/issues/121
     """
 
     def __init__(self, m):
@@ -303,7 +312,7 @@ class BatchNormWrapper(nn.Module):
         self.m.eval()
 
     def forward(self, x):
-        """Convert fp16 to fp32 when forward"""
+        """Convert fp16 to fp32 when forward."""
         input_type = x.dtype
         x = self.m(x.float())
         return x.to(input_type)
@@ -380,8 +389,10 @@ class DartsDDP(MMDistributedDataParallel):
                 log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
             else:
                 with optim_wrapper['mutator'].optim_context(self):
-                    mutator_batch_inputs, mutator_data_samples = \
-                        self.module.data_preprocessor(mutator_data, True)
+                    pseudo_data = self.module.data_preprocessor(
+                        mutator_data, True)
+                    mutator_batch_inputs = pseudo_data['inputs']
+                    mutator_data_samples = pseudo_data['data_samples']
                     mutator_loss = self(
                         mutator_batch_inputs,
                         mutator_data_samples,
@@ -394,8 +405,10 @@ class DartsDDP(MMDistributedDataParallel):
 
             # Update the parameter of supernet
             with optim_wrapper['architecture'].optim_context(self):
-                supernet_batch_inputs, supernet_data_samples = \
-                    self.module.data_preprocessor(supernet_data, True)
+                pseudo_data = self.module.data_preprocessor(
+                    supernet_data, True)
+                supernet_batch_inputs = pseudo_data['inputs']
+                supernet_data_samples = pseudo_data['data_samples']
                 supernet_loss = self(
                     supernet_batch_inputs, supernet_data_samples, mode='loss')
 
@@ -409,8 +422,9 @@ class DartsDDP(MMDistributedDataParallel):
         else:
             # Enable automatic mixed precision training context.
             with optim_wrapper.optim_context(self):
-                batch_inputs, data_samples = self.module.data_preprocessor(
-                    data, True)
+                pseudo_data = self.module.data_preprocessor(data, True)
+                batch_inputs = pseudo_data['inputs']
+                data_samples = pseudo_data['data_samples']
                 losses = self(batch_inputs, data_samples, mode='loss')
             parsed_losses, log_vars = self.module.parse_losses(losses)
             optim_wrapper.update_params(parsed_losses)
@@ -432,8 +446,9 @@ class DartsDDP(MMDistributedDataParallel):
 
         # calculate unrolled loss on validation data
         # keep gradients for model here for compute hessian
-        mutator_batch_inputs, mutator_data_samples = \
-            self.module.data_preprocessor(mutator_data, True)
+        pseudo_data = self.module.data_preprocessor(mutator_data, True)
+        mutator_batch_inputs = pseudo_data['inputs']
+        mutator_data_samples = pseudo_data['data_samples']
         mutator_loss = self(
             mutator_batch_inputs, mutator_data_samples, mode='loss')
         mutator_losses, mutator_log_vars = self.module.parse_losses(
@@ -468,8 +483,9 @@ class DartsDDP(MMDistributedDataParallel):
                                optim_wrapper):
         """Compute unrolled weights w`"""
         # don't need zero_grad, using autograd to calculate gradients
-        supernet_batch_inputs, supernet_data_samples = \
-            self.module.data_preprocessor(supernet_data, True)
+        pseudo_data = self.module.data_preprocessor(supernet_data, True)
+        supernet_batch_inputs = pseudo_data['inputs']
+        supernet_data_samples = pseudo_data['data_samples']
         supernet_loss = self(
             supernet_batch_inputs, supernet_data_samples, mode='loss')
         supernet_loss, _ = self.module.parse_losses(supernet_loss)
@@ -516,8 +532,9 @@ class DartsDDP(MMDistributedDataParallel):
                 for p, d in zip(self.module.architecture.parameters(), dw):
                     p += e * d
 
-            supernet_batch_inputs, supernet_data_samples = \
-                self.module.data_preprocessor(supernet_data, True)
+            pseudo_data = self.module.data_preprocessor(supernet_data, True)
+            supernet_batch_inputs = pseudo_data['inputs']
+            supernet_data_samples = pseudo_data['data_samples']
             supernet_loss = self(
                 supernet_batch_inputs, supernet_data_samples, mode='loss')
             supernet_loss, _ = self.module.parse_losses(supernet_loss)
