@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Optional, Union
 
 
 class Candidates(UserList):
-    """The data structure of sampled candidate. The format is Union[Dict[Any,
-    Dict], List[Dict[Any, Dict]]].
+    """The data structure of sampled candidate. The format is Union[Dict[str,
+    Dict], List[Dict[str, Dict]]].
 
     Examples:
         >>> candidates = Candidates()
@@ -34,10 +34,11 @@ class Candidates(UserList):
         >>> candidates.scores
         [100.0, 0.0]
     """
-    _format_return = Union[Dict[Any, Dict], List[Dict[Any, Dict]]]
+    _format_return = Union[Dict[str, Dict], List[Dict[str, Dict]]]
+    _format_input = Union[Dict, Dict[str, Dict], List[Dict[str, Dict]]]
     _indicators = ('score', 'flops', 'params', 'latency')
 
-    def __init__(self, initdata: Optional[Any] = None):
+    def __init__(self, initdata: Optional[_format_input] = None):
         self.data = []
         if initdata is not None:
             initdata = self._format(initdata)
@@ -67,18 +68,33 @@ class Candidates(UserList):
         """The subnets of candidates."""
         return [eval(key) for item in self.data for key, _ in item.items()]
 
-    def _format(self, data: Any) -> _format_return:
-        """Transform [Dict, ...] to Union[Dict[Any, Dict], List[Dict[Any,
+    def _format(self, data: _format_input) -> _format_return:
+        """Transform [Dict, ...] to Union[Dict[str, Dict], List[Dict[str,
         Dict]]].
 
-        Three types of input are supported:
-            1. Dict.
-            2. Dict[Any, Dict].
-            3. List[Dict[Any, Dict]].
+        Args:
+            data: Three types of input are supported:
+                1. Dict: only include network information.
+                2. Dict[str, Dict]: network information and the corresponding
+                    resources.
+                3. List[Dict[str, Dict]]: multiple candidate information.
+
+        Returns:
+            Union[Dict[str, Dict], UserList[Dict[str, Dict]]]:
+                A dict that contains a pair of network information and the
+                corresponding Score | FLOPs | Params | Latency results in
+                each candidate.
+
+        Notes:
+            Score | FLOPs | Params | Latency:
+                1. a candidate resources with a default value of -1 indicates
+                    that it has not been estimated.
+                2. a candidate resources with a default value of 0 indicates
+                    that some indicators have been evaluated.
         """
 
-        def _format_item(cond: Any):
-            """Transform Dict to str(Dict)."""
+        def _format_item(cond: Dict) -> Dict[str, Dict]:
+            """Transform Dict to Dict[str, Dict]."""
             if len(cond.keys()) > 1 and isinstance(
                     list(cond.values())[0], str):
                 return {str(cond): {}.fromkeys(self._indicators, -1)}
@@ -97,12 +113,12 @@ class Candidates(UserList):
         else:
             return _format_item(data)
 
-    def append(self, item: Any) -> None:
+    def append(self, item: _format_input) -> None:
         """Append operation."""
         item = self._format(item)
         self.data.append(item)
 
-    def insert(self, i: int, item: Any) -> None:
+    def insert(self, i: int, item: _format_input) -> None:
         """Insert operation."""
         item = self._format(item)
         self.data.insert(i, item)
@@ -129,10 +145,15 @@ class Candidates(UserList):
         for _, value in self.data[i].items():
             value[key_indicator] = resources
 
-    def sort_by(self, key_indicator='score', reverse=True):
-        """Sort by a specific indicator.
+    def sort_by(self,
+                key_indicator: str = 'score',
+                reverse: bool = True) -> None:
+        """Sort by a specific indicator in descending order.
 
-        Default score.
+        Args:
+            key_indicator (str): sort all candidates by key_indicator.
+                Defaults to 'score'.
+            reverse (bool): sort all candidates in descending order.
         """
         self.data.sort(
             key=lambda x: list(x.values())[0][key_indicator], reverse=reverse)
