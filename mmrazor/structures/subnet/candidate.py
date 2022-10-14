@@ -34,7 +34,8 @@ class Candidates(UserList):
         [100.0, 0.0]
     """
     _format_return = Union[Dict[str, Dict], List[Dict[str, Dict]]]
-    _format_input = Union[Dict, Dict[str, Dict], List[Dict[str, Dict]]]
+    _format_input = Union[Dict, List[Dict], Dict[str, Dict], List[Dict[str,
+                                                                       Dict]]]
     _indicators = ('score', 'flops', 'params', 'latency')
 
     def __init__(self, initdata: Optional[_format_input] = None):
@@ -72,16 +73,18 @@ class Candidates(UserList):
         Dict]]].
 
         Args:
-            data: Three types of input are supported:
+            data: Four types of input are supported:
                 1. Dict: only include network information.
-                2. Dict[str, Dict]: network information and the corresponding
+                2. List[Dict]: multiple candidates only include network
+                    information.
+                3. Dict[str, Dict]: network information and the corresponding
                     resources.
-                3. List[Dict[str, Dict]]: multiple candidate information.
+                4. List[Dict[str, Dict]]: multiple candidate information.
         Returns:
             Union[Dict[str, Dict], UserList[Dict[str, Dict]]]:
-                A dict that contains a pair of network information and the
-                corresponding Score | FLOPs | Params | Latency results in
-                each candidate.
+                A dict or a list of dict that contains a pair of network
+                information and the corresponding Score | FLOPs | Params |
+                Latency results in each candidate.
         Notes:
             Score | FLOPs | Params | Latency:
                 1. a candidate resources with a default value of -1 indicates
