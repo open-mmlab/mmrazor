@@ -62,7 +62,6 @@ class DartsSubnetClsHead(LinearClsHead):
     def loss(self, feats: Tuple[torch.Tensor],
              data_samples: List[ClsDataSample], **kwargs) -> dict:
         """Calculate losses from the classification score.
-
         Args:
             feats (tuple[Tensor]): The features extracted from the backbone.
                 Multiple stage inputs are acceptable but only the last stage
@@ -71,7 +70,6 @@ class DartsSubnetClsHead(LinearClsHead):
             data_samples (List[ClsDataSample]): The annotation data of
                 every samples.
             **kwargs: Other keyword arguments to forward the loss module.
-
         Returns:
             dict[str, Tensor]: a dictionary of loss components
         """

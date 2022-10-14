@@ -389,7 +389,7 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
     def __init__(
         self,
         edges: nn.ModuleDict,
-        num_chsoen: int = 2,
+        num_chosen: int = 2,
         with_arch_param: bool = False,
         alias: Optional[str] = None,
         init_cfg: Optional[Dict] = None,
@@ -402,7 +402,7 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
         self._with_arch_param = with_arch_param
         self._is_fixed = False
         self._candidates: nn.ModuleDict = edges
-        self.num_chosen = num_chsoen
+        self.num_chosen = num_chosen
 
     def forward_fixed(self, inputs: Union[List, Tuple]) -> Tensor:
         """Forward when the mutable is in `fixed` mode.
