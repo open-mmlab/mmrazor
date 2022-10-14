@@ -415,7 +415,6 @@ class DartsDDP(MMDistributedDataParallel):
                 supernet_losses, supernet_log_vars = self.module.parse_losses(
                     supernet_loss)
 
-                # import ipdb; ipdb.set_trace()
                 optim_wrapper['architecture'].update_params(supernet_losses)
                 log_vars.update(add_prefix(supernet_log_vars, 'supernet'))
 
