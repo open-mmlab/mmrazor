@@ -1,6 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import Any, Dict
+from typing import Optional, Tuple
+
+import torch.nn as nn
 
 from mmrazor.models import ResourceEstimator
 from mmrazor.structures import export_fix_subnet, load_fix_subnet
@@ -13,19 +15,18 @@ except ImportError:
     BaseDetector = get_placeholder('mmdet')
 
 
-def check_subnet_resources(model,
-                           subnet: SupportRandomSubnet,
-                           estimator: ResourceEstimator,
-                           constraints_range: Dict[str,
-                                                   Any] = dict(flops=(0,
-                                                                      330))):
-    """Check whether is beyond resources constraints.
+def check_subnet_flops(
+        model: nn.Module,
+        subnet: SupportRandomSubnet,
+        estimator: ResourceEstimator,
+        flops_range: Optional[Tuple[float, float]] = None) -> bool:
+    """Check whether is beyond flops constraints.
 
     Returns:
         bool: The result of checking.
     """
-    if constraints_range is None:
-        return True, None
+    if flops_range is None:
+        return True
 
     assert hasattr(model, 'set_subnet') and hasattr(model, 'architecture')
     model.set_subnet(subnet)
@@ -39,9 +40,9 @@ def check_subnet_resources(model,
     else:
         results = estimator.estimate(model=model_to_check)
 
-    for k, v in constraints_range.items():
-        if not isinstance(v, (list, tuple)):
-            v = (0, v)
-        if results[k] < v[0] or results[k] > v[1]:
-            return False, results
-    return True, results
+    flops = results['flops']
+    flops_mix, flops_max = flops_range
+    if flops_mix <= flops <= flops_max:  # type: ignore
+        return True
+    else:
+        return False

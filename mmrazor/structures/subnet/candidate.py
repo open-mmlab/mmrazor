@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional, Union
 class Candidates(UserList):
     """The data structure of sampled candidate. The format is Union[Dict[str,
     Dict], List[Dict[str, Dict]]].
-
     Examples:
         >>> candidates = Candidates()
         >>> subnet_1 = {'1': 'choice1', '2': 'choice2'}
@@ -78,13 +77,11 @@ class Candidates(UserList):
                 2. Dict[str, Dict]: network information and the corresponding
                     resources.
                 3. List[Dict[str, Dict]]: multiple candidate information.
-
         Returns:
             Union[Dict[str, Dict], UserList[Dict[str, Dict]]]:
                 A dict that contains a pair of network information and the
                 corresponding Score | FLOPs | Params | Latency results in
                 each candidate.
-
         Notes:
             Score | FLOPs | Params | Latency:
                 1. a candidate resources with a default value of -1 indicates
