@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os
-from typing import Dict, List, Tuple
+from typing import Dict
 from unittest import TestCase
 
 import pytest
@@ -18,15 +18,13 @@ from mmrazor.models import Darts, DiffModuleMutator, DiffMutableOP
 from mmrazor.models.algorithms.nas.darts import DartsDDP
 from mmrazor.registry import MODELS
 
-# from unittest.mock import Mock
-
 MODELS.register_module(name='torchConv2d', module=nn.Conv2d, force=True)
 MODELS.register_module(name='torchMaxPool2d', module=nn.MaxPool2d, force=True)
 MODELS.register_module(name='torchAvgPool2d', module=nn.AvgPool2d, force=True)
 
 
 @MODELS.register_module()
-class ToyDiffModule(BaseModel):
+class ToyDiffModule2(BaseModel):
 
     def __init__(self, data_preprocessor=None):
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=None)
@@ -72,15 +70,6 @@ class ToyDiffModule(BaseModel):
             return out
 
 
-class ToyDataPreprocessor(torch.nn.Module):
-
-    def forward(
-            self,
-            data: Dict,
-            training: bool = True) -> Tuple[torch.Tensor, List[ClsDataSample]]:
-        return data['inputs'], data['data_samples']
-
-
 class TestDarts(TestCase):
 
     def setUp(self) -> None:
@@ -97,14 +86,14 @@ class TestDarts(TestCase):
 
     def test_init(self) -> None:
         # initiate darts when `norm_training` is True.
-        model = ToyDiffModule()
+        model = ToyDiffModule2()
         mutator = DiffModuleMutator()
         algo = Darts(architecture=model, mutator=mutator, norm_training=True)
         algo.eval()
         self.assertTrue(model.bn.training)
 
         # initiate darts with built mutator
-        model = ToyDiffModule()
+        model = ToyDiffModule2()
         mutator = DiffModuleMutator()
         algo = Darts(model, mutator)
         self.assertIs(algo.mutator, mutator)
@@ -125,7 +114,7 @@ class TestDarts(TestCase):
 
     def test_forward_loss(self) -> None:
         inputs = torch.randn(1, 3, 8, 8)
-        model = ToyDiffModule()
+        model = ToyDiffModule2()
 
         # supernet
         mutator = DiffModuleMutator()
@@ -150,7 +139,7 @@ class TestDarts(TestCase):
         return {'inputs': imgs, 'data_samples': data_samples}
 
     def test_search_subnet(self) -> None:
-        model = ToyDiffModule()
+        model = ToyDiffModule2()
 
         mutator = DiffModuleMutator()
         mutator.prepare_from_supernet(model)
@@ -159,7 +148,7 @@ class TestDarts(TestCase):
         self.assertIsInstance(subnet, dict)
 
     def test_darts_train_step(self) -> None:
-        model = ToyDiffModule(data_preprocessor=ToyDataPreprocessor())
+        model = ToyDiffModule2()
         mutator = DiffModuleMutator()
         mutator.prepare_from_supernet(model)
 
@@ -182,7 +171,7 @@ class TestDarts(TestCase):
         self.assertIsNotNone(loss)
 
     def test_darts_with_unroll(self) -> None:
-        model = ToyDiffModule(data_preprocessor=ToyDataPreprocessor())
+        model = ToyDiffModule2()
         mutator = DiffModuleMutator()
         mutator.prepare_from_supernet(model)
 
@@ -205,19 +194,17 @@ class TestDartsDDP(TestDarts):
         os.environ['MASTER_PORT'] = '12345'
 
         # initialize the process group
-        if torch.cuda.is_available():
-            backend = 'nccl'
-            cls.device = 'cuda'
-        else:
-            backend = 'gloo'
+        backend = 'nccl' if torch.cuda.is_available() else 'gloo'
         dist.init_process_group(backend, rank=0, world_size=1)
 
-    def prepare_model(self, device_ids=None) -> Darts:
-        model = ToyDiffModule().to(self.device)
-        mutator = DiffModuleMutator().to(self.device)
+    def prepare_model(self, unroll=False, device_ids=None) -> Darts:
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+        model = ToyDiffModule2()
+        mutator = DiffModuleMutator()
         mutator.prepare_from_supernet(model)
 
-        algo = Darts(model, mutator)
+        algo = Darts(model, mutator, unroll=unroll).to(self.device)
 
         return DartsDDP(
             module=algo, find_unused_parameters=True, device_ids=device_ids)
@@ -230,17 +217,11 @@ class TestDartsDDP(TestDarts):
         not torch.cuda.is_available(), reason='cuda device is not avaliable')
     def test_init(self) -> None:
         ddp_model = self.prepare_model()
-        # ddp_model = DartsDDP(module=model, device_ids=[0])
         self.assertIsInstance(ddp_model, DartsDDP)
 
     def test_dartsddp_train_step(self) -> None:
-        model = ToyDiffModule(data_preprocessor=ToyDataPreprocessor())
-        mutator = DiffModuleMutator()
-        mutator.prepare_from_supernet(model)
-
         # data is tensor
-        algo = Darts(model, mutator)
-        ddp_model = DartsDDP(module=algo, find_unused_parameters=True)
+        ddp_model = self.prepare_model()
         data = self._prepare_fake_data()
         optim_wrapper = build_optim_wrapper(ddp_model, self.OPTIM_WRAPPER_CFG)
         loss = ddp_model.train_step(data, optim_wrapper)
@@ -248,34 +229,22 @@ class TestDartsDDP(TestDarts):
         self.assertIsNotNone(loss)
 
         # data is tuple or list
-        algo = Darts(model, mutator)
-        ddp_model = DartsDDP(module=algo, find_unused_parameters=True)
+        ddp_model = self.prepare_model()
         data = [self._prepare_fake_data() for _ in range(2)]
         optim_wrapper_dict = OptimWrapperDict(
-            architecture=OptimWrapper(SGD(model.parameters(), lr=0.1)),
-            mutator=OptimWrapper(SGD(model.parameters(), lr=0.01)))
+            architecture=OptimWrapper(SGD(ddp_model.parameters(), lr=0.1)),
+            mutator=OptimWrapper(SGD(ddp_model.parameters(), lr=0.01)))
         loss = ddp_model.train_step(data, optim_wrapper_dict)
 
         self.assertIsNotNone(loss)
 
     def test_dartsddp_with_unroll(self) -> None:
-        model = ToyDiffModule(data_preprocessor=ToyDataPreprocessor())
-        mutator = DiffModuleMutator()
-        mutator.prepare_from_supernet(model)
-
         # data is tuple or list
-        algo = Darts(model, mutator, unroll=True)
-        ddp_model = DartsDDP(module=algo, find_unused_parameters=True)
-
+        ddp_model = self.prepare_model(unroll=True)
         data = [self._prepare_fake_data() for _ in range(2)]
         optim_wrapper_dict = OptimWrapperDict(
-            architecture=OptimWrapper(SGD(model.parameters(), lr=0.1)),
-            mutator=OptimWrapper(SGD(model.parameters(), lr=0.01)))
+            architecture=OptimWrapper(SGD(ddp_model.parameters(), lr=0.1)),
+            mutator=OptimWrapper(SGD(ddp_model.parameters(), lr=0.01)))
         loss = ddp_model.train_step(data, optim_wrapper_dict)
 
         self.assertIsNotNone(loss)
-
-
-if __name__ == '__main__':
-    import unittest
-    unittest.main()
