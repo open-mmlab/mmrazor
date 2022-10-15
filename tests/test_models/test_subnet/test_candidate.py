@@ -101,6 +101,23 @@ class TestCandidates(TestCase):
         self.assertEqual(candidates.resources('flops'), [50., 49.9])
         self.assertEqual(candidates.resources('latency'), [0., 49.9])
 
+    def test_update_resources(self):
+        # test update_resources
+        candidates = Candidates([self.fake_subnet])
+        candidates.append([self.fake_subnet_with_score])
+        candidates_2 = Candidates(self.fake_subnet_with_resource)
+        candidates.append(candidates_2)
+        self.assertEqual(len(candidates), 3)
+        self.assertEqual(candidates.resources('flops'), [-1, 0., 50.])
+        self.assertEqual(candidates.resources('latency'), [-1, 0., 0.])
+        resources = [{'flops': -2}, {'latency': 4.}]
+        candidates.update_resources(resources)
+        self.assertEqual(candidates.resources('flops'), [-1, -2, 50.])
+        self.assertEqual(candidates.resources('latency'), [-1, 0., 4])
+        candidates.update_resources(resources, 'insert')
+        self.assertEqual(candidates.resources('flops'), [-2, -2, 50.])
+        self.assertEqual(candidates.resources('latency'), [-1, 4., 4.])
+
     def test_set_score(self):
         # test set_score
         candidates = Candidates([self.fake_subnet_with_score])
@@ -127,3 +144,7 @@ class TestCandidates(TestCase):
         self.assertEqual(candidates.scores, [98., 99., 100.])
         candidates.sort_by(key_indicator='flops', reverse=False)
         self.assertEqual(candidates.scores, [100., 99., 98.])
+
+if __name__ == '__main__':
+    import unittest
+    unittest.main()

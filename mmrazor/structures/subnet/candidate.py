@@ -116,7 +116,11 @@ class Candidates(UserList):
     def append(self, item: _format_input) -> None:
         """Append operation."""
         item = self._format(item)
-        self.data.append(item)
+        if isinstance(item, list):
+            self.data = self.data + item 
+        else:
+            self.data.append(item)
+        # print(self.data)
 
     def insert(self, i: int, item: _format_input) -> None:
         """Insert operation."""
@@ -144,6 +148,19 @@ class Candidates(UserList):
         assert key_indicator in ['flops', 'params', 'latency']
         for _, value in self.data[i].items():
             value[key_indicator] = resources
+
+    def update_resources(self,
+                      resources: list, 
+                      mode: str= 'append') -> None:
+        """Update resources to the specified candidate."""
+        assert len(resources) <= len(self.data), 'Check the number of candidate resources.'
+        if mode == 'append':
+            start, end = len(self.data) - len(resources), len(self.data)
+        elif mode == 'insert':
+            start, end = 0, len(resources)
+        for i, item in enumerate(self.data[start:end]):
+            for _, value in item.items():
+                value.update(resources[i])
 
     def sort_by(self,
                 key_indicator: str = 'score',

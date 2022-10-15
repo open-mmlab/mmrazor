@@ -84,7 +84,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         self.num_candidates = num_candidates
         self.top_k = top_k
         self.constraints_range = constraints_range
-        self.key_indicator = list(self.constraints_range.keys())[0]
         self.estimator_cfg = resource_estimator_cfg
         self.score_key = score_key
         self.num_mutation = num_mutation
@@ -150,15 +149,14 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         self.runner.logger.info(f'top k scores after update: '
                                 f'{scores_after}')
 
-        self.candidates_mutator_crossover = Candidates()
         mutation_candidates = self.gen_mutation_candidates()
-        self.candidates_mutator_crossover.extend(mutation_candidates)
+        self.candidates_mutator_crossover = Candidates(mutation_candidates)
         crossover_candidates = self.gen_crossover_candidates()
         self.candidates_mutator_crossover.extend(crossover_candidates)
 
         assert len(self.candidates_mutator_crossover
                    ) <= self.num_candidates, 'Total of mutation and \
-            crossover should be no more than the number of candidates.'
+            crossover should be less than the number of candidates.'
 
         self.candidates = self.candidates_mutator_crossover
         self._epoch += 1
@@ -179,14 +177,13 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             self.candidates = Candidates(self.candidates.data)
         else:
             self.candidates = Candidates([dict()] * self.num_candidates)
+        
+        if len(candidates_resources) > 0:
+            self.candidates.update_resources(candidates_resources)
         # broadcast candidates to val with multi-GPUs.
         broadcast_object_list(self.candidates.data)
         assert init_candidates + len(
             candidates_resources) == self.num_candidates
-        for i in range(len(candidates_resources)):
-            resources = candidates_resources[i][self.key_indicator] \
-                if len(candidates_resources[i]) != 0 else 0.
-            self.candidates.set_resources(i + init_candidates, resources)
 
     def update_candidates_scores(self) -> None:
         """Validate candicate one by one from the candicate pool, and update
@@ -200,9 +197,10 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             self.runner.logger.info(
                 f'Epoch:[{self.runner.epoch}/{self.max_epochs}] '
                 f'Candidate:[{i + 1}/{self.num_candidates}] '
-                f'{self.key_indicator}: '
-                f'{self.candidates.resources(self.key_indicator)[i]} '
-                f'Score:{score}')
+                f'Flops: {self.candidates.resources("flops")[i]} '
+                f'Params: {self.candidates.resources("params")[i]} '
+                f'Latency: {self.candidates.resources("latency")[i]} '
+                f'Score:{self.candidates.scores}')
 
     def gen_mutation_candidates(self):
         """Generate specified number of mutation candicates."""
@@ -225,11 +223,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                 mutation_resources.append(result)
 
         mutation_candidates = Candidates(mutation_candidates)
-
-        for i in range(self.num_mutation):
-            resources = mutation_resources[i][self.key_indicator] \
-                if len(mutation_resources[i]) != 0 else 0.
-            mutation_candidates.set_resources(i, resources)
+        mutation_candidates.update_resources(mutation_resources)
 
         return mutation_candidates
 
@@ -252,12 +246,9 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             if is_pass:
                 crossover_candidates.append(crossover_candidate)
                 crossover_resources.append(result)
-        crossover_candidates = Candidates(crossover_candidates)
 
-        for i in range(self.num_crossover):
-            resources = crossover_resources[i][self.key_indicator] \
-                if len(crossover_resources[i]) != 0 else 0.
-            crossover_candidates.set_resources(i, resources)
+        crossover_candidates = Candidates(crossover_candidates)
+        crossover_candidates.update_resources(crossover_resources)
 
         return crossover_candidates
 
