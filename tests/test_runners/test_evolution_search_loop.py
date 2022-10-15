@@ -210,7 +210,3 @@ class TestEvolutionSearchLoop(TestCase):
         self.runner.rank = 0
         loop.run()
         self.assertEqual(loop._max_epochs, 1)
-
-if __name__ == '__main__':
-    import unittest
-    unittest.main()

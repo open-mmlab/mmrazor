@@ -144,7 +144,3 @@ class TestCandidates(TestCase):
         self.assertEqual(candidates.scores, [98., 99., 100.])
         candidates.sort_by(key_indicator='flops', reverse=False)
         self.assertEqual(candidates.scores, [100., 99., 98.])
-
-if __name__ == '__main__':
-    import unittest
-    unittest.main()

@@ -177,7 +177,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             self.candidates = Candidates(self.candidates.data)
         else:
             self.candidates = Candidates([dict()] * self.num_candidates)
-        
+
         if len(candidates_resources) > 0:
             self.candidates.update_resources(candidates_resources)
         # broadcast candidates to val with multi-GPUs.

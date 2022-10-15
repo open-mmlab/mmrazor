@@ -205,8 +205,3 @@ class TestGreedySamplerTrainLoop(TestCase):
 
         self.assertEqual(runner.iter, runner.max_iters)
         assert os.path.exists(os.path.join(self.temp_dir, 'candidates.pkl'))
-
-
-if __name__ == '__main__':
-    import unittest
-    unittest.main()

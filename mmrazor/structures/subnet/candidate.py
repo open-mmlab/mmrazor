@@ -120,7 +120,6 @@ class Candidates(UserList):
             self.data = self.data + item 
         else:
             self.data.append(item)
-        # print(self.data)
 
     def insert(self, i: int, item: _format_input) -> None:
         """Insert operation."""
@@ -150,7 +149,7 @@ class Candidates(UserList):
             value[key_indicator] = resources
 
     def update_resources(self,
-                      resources: list, 
+                      resources: list,
                       mode: str= 'append') -> None:
         """Update resources to the specified candidate."""
         assert len(resources) <= len(self.data), 'Check the number of candidate resources.'
