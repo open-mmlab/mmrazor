@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import warnings
+
 from collections import UserList
 from typing import Any, Dict, List, Optional, Union
 
@@ -157,6 +159,9 @@ class Candidates(UserList):
             start, end = len(self.data) - len(resources), len(self.data)
         elif mode == 'insert':
             start, end = 0, len(resources)
+        else:
+            start, end = 0, len(self.data)
+            warnings.warn('Please check whether the dimensions of A and B are matched')
         for i, item in enumerate(self.data[start:end]):
             for _, value in item.items():
                 value.update(resources[i])
