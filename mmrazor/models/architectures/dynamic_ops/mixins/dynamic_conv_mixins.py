@@ -410,15 +410,6 @@ class FuseConvMixin(DynamicConvMixin):
     """A mixin class for Pytorch conv, which can mutate ``in_channels``,
     ``out_channels`` ."""
 
-    def forward_mixin(self: _ConvNd, x: Tensor) -> Tensor:
-        """Forward of dynamic conv2d OP."""
-        groups = self.groups
-        if self.groups == self.in_channels == self.out_channels:
-            groups = x.size(1)
-        weight, bias, padding = self.get_dynamic_params()
-        return self.conv_func(x, weight, bias, self.stride, padding,
-                              self.dilation, groups)
-
     def change_mutable_attrs_after_init(self: _ConvNd, key: str,
                                         value: Any) -> None:
         self.mutable_attrs_modified = {}

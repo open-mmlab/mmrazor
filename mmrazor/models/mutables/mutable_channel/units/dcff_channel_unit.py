@@ -20,15 +20,18 @@ class DCFFChannelUnit(OneShotMutableChannelUnit):
         candidate_choices (List[Union[int, float]], optional):
             A list of candidate width numbers or ratios. Each
             candidate indicates how many channels to be reserved.
-            Defaults to [32](choice_mode='number').
+            Defaults to [1.0](choice_mode='number').
         choice_mode (str, optional): Mode of candidates.
-            One of "ratio" or "number". Defaults to 'number'.
+            One of "ratio" or "number". Defaults to 'ratio'.
+        divisor (int): Used to make choice divisible.
+        min_value (int): the minimal value used when make divisible.
+        min_ratio (float): the minimal ratio used when make divisible.
     """
 
     def __init__(self,
                  num_channels: int,
-                 candidate_choices: List[Union[int, float]] = [32],
-                 choice_mode: str = 'number',
+                 candidate_choices: List[Union[int, float]] = [1.0],
+                 choice_mode: str = 'ratio',
                  divisor: int = 1,
                  min_value: int = 1,
                  min_ratio: float = 0.9) -> None:
@@ -45,21 +48,3 @@ class DCFFChannelUnit(OneShotMutableChannelUnit):
             })
         self._register_channel_container(model, MutableChannelContainer)
         self._register_mutable_channel(self.mutable_channel)
-
-    def alter_candidates_after_init(self, candidates: List[int]):
-        """In ``DCFFChannelUnit``, `candidates` is altered after initiation
-        with ``DCFFChannelMutator.channel_configs`` imported from file.
-
-        Args:
-            candidates (List(int)): candidate list of ``dynamic_ops``.
-                In ``DCFFChannelUnit`` list contains one candidate.
-        """
-        self.candidate_choices = candidates
-        for channel in self.input_related:
-            if isinstance(channel.module, dynamic_ops.FuseConv2d):
-                channel.module.change_mutable_attrs_after_init(
-                    'in_channels', candidates)
-        for channel in self.output_related:
-            if isinstance(channel.module, dynamic_ops.FuseConv2d):
-                channel.module.change_mutable_attrs_after_init(
-                    'out_channels', candidates)

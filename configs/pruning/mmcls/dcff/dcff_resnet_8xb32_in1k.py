@@ -32,7 +32,7 @@ model = dict(
         cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False),
     mutator=dict(
         type='DCFFChannelMutator',
-        channl_unit_cfg=dict(
+        channel_unit_cfg=dict(
             type='DCFFChannelUnit',
             units='configs/pruning/mmcls/dcff/resnet_cls.json'),
         parse_cfg=dict(

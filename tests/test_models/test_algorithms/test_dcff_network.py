@@ -18,7 +18,7 @@ CHANNEL_CFG_PATH = 'configs/pruning/mmcls/dcff/resnet_cls.json'
 
 MUTATOR_CFG = dict(
     type='DCFFChannelMutator',
-    channl_unit_cfg=dict(type='DCFFChannelUnit', units=CHANNEL_CFG_PATH),
+    channel_unit_cfg=dict(type='DCFFChannelUnit', units=CHANNEL_CFG_PATH),
     parse_cfg=dict(
         type='BackwardTracer',
         loss_calculator=dict(type='ImageClassifierPseudoLoss')))
@@ -103,11 +103,13 @@ class TestDCFF(TestCase):
         return self.prepare_model(MUTATOR_CFG, MODEL_CFG)
 
     def prepare_fixed_model(self) -> DCFF:
+        return self.prepare_model(MUTATOR_CFG, MODEL_CFG, deploy=0)
 
-        return self.prepare_model(MUTATOR_CFG, MODEL_CFG)
-
-    def prepare_model(self, mutator_cfg: Dict, model_cfg: Dict) -> DCFF:
-        model = DCFF(mutator_cfg, model_cfg, ToyDataPreprocessor())
+    def prepare_model(self,
+                      mutator_cfg: Dict,
+                      model_cfg: Dict,
+                      deploy=-1) -> DCFF:
+        model = DCFF(mutator_cfg, model_cfg, deploy, ToyDataPreprocessor())
         model.to(self.device)
 
         return model

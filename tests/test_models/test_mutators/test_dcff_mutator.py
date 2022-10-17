@@ -101,7 +101,7 @@ def test_DCFF_channel_mutator() -> None:
     channel_cfgs = fileio.load(channel_cfgs)
 
     mutator = DCFFChannelMutator(
-        channl_unit_cfg=dict(type='DCFFChannelUnit', units=channel_cfgs),
+        channel_unit_cfg=dict(type='DCFFChannelUnit', units=channel_cfgs),
         parse_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss')))

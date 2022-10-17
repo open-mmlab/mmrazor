@@ -15,21 +15,23 @@ class DCFFChannelMutator(ChannelMutator[DCFFChannelUnit]):
     """DCFF channel mutable based channel mutator. It uses DCFFChannelUnit.
 
     Args:
-        channel_cfgs (list[Dict]): A list of candidate channel configs.
         channel_unit_cfg (Union[dict, Type[ChannelUnitType]], optional):
             Config of MutableChannelUnits. Defaults to
             dict( type='DCFFChannelUnit', units={}).
+        parse_cfg (Dict): The config of the tracer to parse the model.
+            Defaults to dict( type='BackwardTracer',
+                loss_calculator=dict(type='ImageClassifierPseudoLoss')).
     """
 
     def __init__(self,
-                 channl_unit_cfg: Union[dict, Type[ChannelUnitType]] = dict(
+                 channel_unit_cfg: Union[dict, Type[ChannelUnitType]] = dict(
                      type='DCFFChannelUnit', units={}),
                  parse_cfg=dict(
                      type='BackwardTracer',
                      loss_calculator=dict(type='ImageClassifierPseudoLoss')),
                  **kwargs) -> None:
-        super().__init__(channl_unit_cfg, parse_cfg, **kwargs)
-        self._channel_cfgs = channl_unit_cfg
+        super().__init__(channel_unit_cfg, parse_cfg, **kwargs)
+        self._channel_cfgs = channel_unit_cfg
         self._subnets = self._prepare_subnets(self.units_cfg)
 
     @property
