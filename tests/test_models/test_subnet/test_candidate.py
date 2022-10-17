@@ -110,7 +110,6 @@ class TestCandidates(TestCase):
         self.assertEqual(len(candidates), 2)
         self.assertEqual(candidates.resources('flops'), [50., 49.9])
         self.assertEqual(candidates.resources('latency'), [0., 49.9])
-        # test set_score
         candidates = Candidates([self.fake_subnet_with_score])
         candidates.set_resource(0, 100.0, 'score')
         self.assertEqual(candidates.scores[0], 100.)
@@ -151,7 +150,3 @@ class TestCandidates(TestCase):
         self.assertEqual(candidates.scores, [98., 99., 100.])
         candidates.sort_by(key_indicator='flops', reverse=False)
         self.assertEqual(candidates.scores, [100., 99., 98.])
-
-if __name__ == '__main__':
-    import unittest
-    unittest.main()
