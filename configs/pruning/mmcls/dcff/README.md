@@ -48,7 +48,7 @@ The mainstream approach for filter pruning is usually either to force a hard-cod
 ### Generate channel_config file
 
 ```bash
-python tools/get_channel_units
+python tools/get_channel_units.py
   configs/pruning/mmcls/dcff/dcff_resnet50_8xb32_in1k.py \
   -c -i --output-path=$OUTPUT_DIR
 ```
