@@ -370,7 +370,7 @@ class DerivedMutable(BaseMutable, DerivedMethodMixin):
             elif isinstance(mutable, Iterable):
                 for m in mutable:
                     add_mutables_dfs(m)
-                    
+
         noncolcal_pars = inspect.getclosurevars(closure).nonlocals
         add_mutables_dfs(noncolcal_pars.values())
 
