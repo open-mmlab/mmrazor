@@ -275,7 +275,8 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         for _ in range(num_samples):
             if random.random() >= self.cur_prob or len(self.candidates) == 0:
                 subnet = self._sample_from_supernet()
-                if self._check_constraints(subnet, need_feedback=False):
+                is_pass, _ = self._check_constraints(subnet)
+                if is_pass:
                     sampled_candidates.append(subnet)
                 num_sample_from_supernet += 1
             else:
@@ -312,9 +313,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         subnet = random.choice(self.candidates.data)
         return subnet
 
-    def _check_constraints(self,
-                           random_subnet: SupportRandomSubnet,
-                           need_feedback: bool = False):
+    def _check_constraints(self, random_subnet: SupportRandomSubnet):
         """Check whether is beyond constraints.
 
         Returns:
@@ -326,10 +325,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
             estimator=self.estimator,
             constraints_range=self.constraints_range)
 
-        if need_feedback:
-            return is_pass, results
-        else:
-            return is_pass
+        return is_pass, results
 
     def _save_candidates(self) -> None:
         """Save the candidates to init the next searching."""

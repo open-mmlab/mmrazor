@@ -200,7 +200,7 @@ class TestGreedySamplerTrainLoop(TestCase):
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
         runner.model.sample_subnet = MagicMock(return_value=fake_subnet)
         loop = runner.build_train_loop(cfg.train_cfg)
-        loop._check_constraints = MagicMock(return_value=True)
+        loop._check_constraints = MagicMock(return_value=(True, dict()))
         runner.train()
 
         self.assertEqual(runner.iter, runner.max_iters)

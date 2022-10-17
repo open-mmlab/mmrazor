@@ -173,7 +173,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                 is_pass = False
                 candidate = self.model.sample_subnet()
                 is_pass, result = self._check_constraints(
-                    random_subnet=candidate, need_feedback=True)
+                    random_subnet=candidate)
                 if is_pass:
                     self.candidates.append(candidate)
                     candidates_resources.append(result)
@@ -182,7 +182,9 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             self.candidates = Candidates([dict()] * self.num_candidates)
 
         if len(candidates_resources) > 0:
-            self.candidates.update_resources(candidates_resources, start=len(self.candidates.data) - len(candidates_resources))
+            self.candidates.update_resources(
+                candidates_resources,
+                start=len(self.candidates.data) - len(candidates_resources))
         # broadcast candidates to val with multi-GPUs.
         broadcast_object_list(self.candidates.data)
         assert init_candidates + len(
@@ -220,7 +222,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
 
             is_pass = False
             is_pass, result = self._check_constraints(
-                random_subnet=mutation_candidate, need_feedback=True)
+                random_subnet=mutation_candidate)
             if is_pass:
                 mutation_candidates.append(mutation_candidate)
                 mutation_resources.append(result)
@@ -245,7 +247,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
 
             is_pass = False
             is_pass, result = self._check_constraints(
-                random_subnet=crossover_candidate, need_feedback=True)
+                random_subnet=crossover_candidate)
             if is_pass:
                 crossover_candidates.append(crossover_candidate)
                 crossover_resources.append(result)
@@ -332,9 +334,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                     if osp.isfile(ckpt_path):
                         os.remove(ckpt_path)
 
-    def _check_constraints(self,
-                           random_subnet: SupportRandomSubnet,
-                           need_feedback: bool = False) -> Union[Tuple[bool, Dict], Dict]:
+    def _check_constraints(
+            self, random_subnet: SupportRandomSubnet) -> Tuple[bool, Dict]:
         """Check whether is beyond constraints.
 
         Returns:
@@ -346,10 +347,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             estimator=self.estimator,
             constraints_range=self.constraints_range)
 
-        if need_feedback:
-            return is_pass, results
-        else:
-            return is_pass
+        return is_pass, results
+
 
 if __name__ == '__main__':
     import unittest

@@ -93,7 +93,8 @@ class Candidates(UserList):
                     that some indicators have been evaluated.
         """
 
-        def _format_item(cond: Union[Dict, Dict[str, Dict]]) -> Dict[str, Dict]:
+        def _format_item(
+                cond: Union[Dict, Dict[str, Dict]]) -> Dict[str, Dict]:
             """Transform Dict to Dict[str, Dict]."""
             if isinstance(list(cond.values())[0], str):
                 return {str(cond): {}.fromkeys(self._indicators, -1)}
@@ -116,7 +117,7 @@ class Candidates(UserList):
         """Append operation."""
         item = self._format(item)
         if isinstance(item, list):
-            self.data = self.data + item 
+            self.data = self.data + item
         else:
             self.data.append(item)
 
@@ -134,20 +135,19 @@ class Candidates(UserList):
             self.data.extend([other])
 
     def set_resource(self,
-                      i: int,
-                      resources: float,
-                      key_indicator: str = 'flops') -> None:
+                     i: int,
+                     resources: float,
+                     key_indicator: str = 'flops') -> None:
         """Set resources to the specified subnet by index."""
         assert key_indicator in ['score', 'flops', 'params', 'latency']
         for _, value in self.data[i].items():
             value[key_indicator] = resources
 
-    def update_resources(self,
-                      resources: list,
-                      start: int = 0) -> None:
+    def update_resources(self, resources: list, start: int = 0) -> None:
         """Update resources to the specified candidate."""
         end = start + len(resources)
-        assert len(self.data) >= end, 'Check the number of candidate resources.'
+        assert len(
+            self.data) >= end, 'Check the number of candidate resources.'
         for i, item in enumerate(self.data[start:end]):
             for _, value in item.items():
                 value.update(resources[i])

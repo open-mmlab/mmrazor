@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, Tuple
 
 from mmrazor.models import ResourceEstimator
 from mmrazor.structures import export_fix_subnet, load_fix_subnet
@@ -13,19 +13,19 @@ except ImportError:
     BaseDetector = get_placeholder('mmdet')
 
 
-def check_subnet_resources(model,
-                           subnet: SupportRandomSubnet,
-                           estimator: ResourceEstimator,
-                           constraints_range: Dict[str,
-                                                   Any] = dict(flops=(0,
-                                                                      330))) -> Union[Tuple[bool, Dict], Dict]:
+def check_subnet_resources(
+    model,
+    subnet: SupportRandomSubnet,
+    estimator: ResourceEstimator,
+    constraints_range: Dict[str, Any] = dict(flops=(0, 330))
+) -> Tuple[bool, Dict]:
     """Check whether is beyond resources constraints.
 
     Returns:
         bool: The result of checking.
     """
     if constraints_range is None:
-        return True, None
+        return True, dict()
 
     assert hasattr(model, 'set_subnet') and hasattr(model, 'architecture')
     model.set_subnet(subnet)

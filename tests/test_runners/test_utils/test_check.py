@@ -43,6 +43,7 @@ def test_check_subnet_resources(mock_model, mock_estimator):
                                         mock_estimator, constraints_range)
     assert is_pass is False
 
+
 if __name__ == '__main__':
     import unittest
     unittest.main()
