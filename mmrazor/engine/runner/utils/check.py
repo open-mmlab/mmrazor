@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import Any, Dict
+from typing import Any, Dict, Tuple, Union
 
 from mmrazor.models import ResourceEstimator
 from mmrazor.structures import export_fix_subnet, load_fix_subnet
@@ -18,7 +18,7 @@ def check_subnet_resources(model,
                            estimator: ResourceEstimator,
                            constraints_range: Dict[str,
                                                    Any] = dict(flops=(0,
-                                                                      330))):
+                                                                      330))) -> Union[Tuple[bool, Dict], Dict]:
     """Check whether is beyond resources constraints.
 
     Returns:

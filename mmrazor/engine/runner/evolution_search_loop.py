@@ -3,7 +3,7 @@ import os
 import os.path as osp
 import random
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 from mmengine import fileio
@@ -44,7 +44,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         crossover_prob (float): The probability of crossover. Defaults to 0.5.
         constraints_range (Dict[str, Any]): Constraints to be used for
             screening candidates. Defaults to dict(flops=(0, 330)).
-        resource_estimator_cfg (Dict[str, Any]): Used for building a
+        resource_estimator_cfg (dict): Used for building a
             resource estimator. Defaults to dict().
         score_key (str): Specify one metric in evaluation results to score
             candidates. Defaults to 'accuracy_top-1'.
@@ -67,7 +67,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                  mutate_prob: float = 0.1,
                  crossover_prob: float = 0.5,
                  constraints_range: Dict[str, Any] = dict(flops=(0., 330.)),
-                 resource_estimator_cfg: Dict[str, Any] = dict(),
+                 resource_estimator_cfg: Dict = dict(),
                  score_key: str = 'accuracy/top1',
                  init_candidates: Optional[str] = None) -> None:
         super().__init__(runner, dataloader, max_epochs)
@@ -334,7 +334,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
 
     def _check_constraints(self,
                            random_subnet: SupportRandomSubnet,
-                           need_feedback: bool = False):
+                           need_feedback: bool = False) -> Union[Tuple[bool, Dict], Dict]:
         """Check whether is beyond constraints.
 
         Returns:

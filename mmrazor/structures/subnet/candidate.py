@@ -1,6 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import warnings
-
 from collections import UserList
 from typing import Any, Dict, List, Optional, Union
 
@@ -95,7 +93,7 @@ class Candidates(UserList):
                     that some indicators have been evaluated.
         """
 
-        def _format_item(cond: Union[Dict[str, str], Dict[str, Dict]]) -> Dict[str, Dict]:
+        def _format_item(cond: Union[Dict, Dict[str, Dict]]) -> Dict[str, Dict]:
             """Transform Dict to Dict[str, Dict]."""
             if isinstance(list(cond.values())[0], str):
                 return {str(cond): {}.fromkeys(self._indicators, -1)}
