@@ -6,6 +6,7 @@ from mmengine.logging import print_log
 from torch import nn
 
 from mmrazor.utils import FixMutable, ValidFixMutable
+from mmrazor.utils.typing import DumpChosen
 
 
 def _dynamic_to_static(model: nn.Module) -> None:
@@ -56,6 +57,7 @@ def load_fix_subnet(model: nn.Module,
                     assert alias in fix_mutable, \
                         f'The alias {alias} is not in fix_modules, ' \
                         'please check your `fix_mutable`.'
+                    # {chosen=xx, meta=xx)
                     chosen = fix_mutable.get(alias, None)
                 else:
                     mutable_name = name.lstrip(prefix)
@@ -64,8 +66,12 @@ def load_fix_subnet(model: nn.Module,
                         raise RuntimeError(
                             f'The module name {mutable_name} is not in '
                             'fix_mutable, please check your `fix_mutable`.')
+                    # {chosen=xx, meta=xx)
                     chosen = fix_mutable.get(mutable_name, None)
-                module.fix_chosen(chosen)
+
+                if not isinstance(chosen, DumpChosen):
+                    chosen = DumpChosen(**chosen)
+                module.fix_chosen(chosen.chosen)
 
     # convert dynamic op to static op
     _dynamic_to_static(model)
