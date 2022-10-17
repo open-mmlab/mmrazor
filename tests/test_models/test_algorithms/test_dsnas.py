@@ -97,7 +97,7 @@ class TestDsnas(TestCase):
         self.assertIsInstance(algo.mutator, DiffModuleMutator)
 
         # initiate Dsnas when `fix_subnet` is not None
-        fix_subnet = {'mutable': 'torch_conv2d_5x5'}
+        fix_subnet = {'mutable': {'chosen': 'torch_conv2d_5x5'}}
         algo = Dsnas(model, mutator, fix_subnet=fix_subnet)
         self.assertEqual(algo.architecture.mutable.num_choices, 1)
 
@@ -117,7 +117,7 @@ class TestDsnas(TestCase):
         self.assertIsInstance(loss, dict)
 
         # subnet
-        fix_subnet = {'mutable': 'torch_conv2d_5x5'}
+        fix_subnet = {'mutable': {'chosen': 'torch_conv2d_5x5'}}
         algo = Dsnas(model, fix_subnet=fix_subnet)
         loss = algo(inputs, mode='loss')
         self.assertIsInstance(loss, dict)

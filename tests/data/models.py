@@ -513,6 +513,9 @@ class SampleExpandDerivedMutable(BaseMutable):
     def dump_chosen(self):
         return super().dump_chosen()
 
+    def export_chosen(self):
+        return super().export_chosen()
+
     def fix_chosen(self, chosen):
         return super().fix_chosen(chosen)
 
