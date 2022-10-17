@@ -183,12 +183,12 @@ class TestEvolutionSearchLoop(TestCase):
 
         mutation_candidates = Candidates([fake_subnet] * loop.num_mutation)
         for i in range(loop.num_mutation):
-            mutation_candidates.set_resources(i, 0.1 + 0.1 * i)
-            mutation_candidates.set_score(i, 99 + i)
+            mutation_candidates.set_resource(i, 0.1 + 0.1 * i, 'flops')
+            mutation_candidates.set_resource(i, 99 + i, 'score')
         crossover_candidates = Candidates([fake_subnet] * loop.num_crossover)
         for i in range(loop.num_crossover):
-            crossover_candidates.set_resources(i, 0.1 + 0.1 * i)
-            crossover_candidates.set_score(i, 99 + i)
+            crossover_candidates.set_resource(i, 0.1 + 0.1 * i, 'flops')
+            crossover_candidates.set_resource(i, 99 + i, 'score')
         loop.gen_mutation_candidates = \
             MagicMock(return_value=mutation_candidates)
         loop.gen_crossover_candidates = \
