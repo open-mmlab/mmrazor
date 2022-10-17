@@ -289,7 +289,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
             self.model.set_subnet(candidate)
             metrics = self._val_candidate()
             score = metrics[self.score_key] if len(metrics) != 0 else 0.
-            self.candidates.set_score(i, score)
+            self.candidates.set_resource(i, score, 'score')
 
     @torch.no_grad()
     def _val_candidate(self) -> Dict:

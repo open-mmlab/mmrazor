@@ -95,10 +95,9 @@ class Candidates(UserList):
                     that some indicators have been evaluated.
         """
 
-        def _format_item(cond: Dict) -> Dict[str, Dict]:
+        def _format_item(cond: Union[Dict[str, str], Dict[str, Dict]]) -> Dict[str, Dict]:
             """Transform Dict to Dict[str, Dict]."""
-            if len(cond.keys()) > 1 and isinstance(
-                    list(cond.values())[0], str):
+            if isinstance(list(cond.values())[0], str):
                 return {str(cond): {}.fromkeys(self._indicators, -1)}
             else:
                 for value in list(cond.values()):
@@ -136,32 +135,21 @@ class Candidates(UserList):
         else:
             self.data.extend([other])
 
-    def set_score(self, i: int, score: float) -> None:
-        """Set score to the specified subnet by index."""
-        for _, value in self.data[i].items():
-            value['score'] = score
-
-    def set_resources(self,
+    def set_resource(self,
                       i: int,
                       resources: float,
                       key_indicator: str = 'flops') -> None:
         """Set resources to the specified subnet by index."""
-        assert key_indicator in ['flops', 'params', 'latency']
+        assert key_indicator in ['score', 'flops', 'params', 'latency']
         for _, value in self.data[i].items():
             value[key_indicator] = resources
 
     def update_resources(self,
                       resources: list,
-                      mode: str= 'append') -> None:
+                      start: int = 0) -> None:
         """Update resources to the specified candidate."""
-        assert len(resources) <= len(self.data), 'Check the number of candidate resources.'
-        if mode == 'append':
-            start, end = len(self.data) - len(resources), len(self.data)
-        elif mode == 'insert':
-            start, end = 0, len(resources)
-        else:
-            start, end = 0, len(self.data)
-            warnings.warn('Please check whether the dimensions of A and B are matched')
+        end = start + len(resources)
+        assert len(self.data) >= end, 'Check the number of candidate resources.'
         for i, item in enumerate(self.data[start:end]):
             for _, value in item.items():
                 value.update(resources[i])
