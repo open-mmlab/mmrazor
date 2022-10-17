@@ -15,8 +15,9 @@ import torch
 from mmengine.logging import print_log
 from torch import Tensor
 
+from mmrazor.utils.typing import DumpChosen
 from ..utils import make_divisible
-from .base_mutable import CHOICE_TYPE, BaseMutable
+from .base_mutable import BaseMutable
 
 
 class MutableProtocol(Protocol):  # pragma: no cover
@@ -172,8 +173,7 @@ class DerivedMethodMixin:
         return DerivedMutable(choice_fn=choice_fn, mask_fn=mask_fn)
 
 
-class DerivedMutable(BaseMutable[CHOICE_TYPE, CHOICE_TYPE],
-                     DerivedMethodMixin):
+class DerivedMutable(BaseMutable, DerivedMethodMixin):
     """Class for derived mutable.
 
     A derived mutable is a mutable derived from other mutables that has
@@ -242,7 +242,7 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, CHOICE_TYPE],
 
     # TODO
     # has no effect
-    def fix_chosen(self, chosen: CHOICE_TYPE) -> None:
+    def fix_chosen(self, chosen) -> None:
         """Fix mutable with subnet config.
 
         Warning:
@@ -253,7 +253,7 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, CHOICE_TYPE],
             'which will have no effect.',
             level=logging.WARNING)
 
-    def dump_chosen(self) -> CHOICE_TYPE:
+    def dump_chosen(self) -> DumpChosen:
         """Dump information of chosen.
 
         Returns:
@@ -263,6 +263,9 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, CHOICE_TYPE],
             'Trying to dump chosen for derived mutable, '
             'but its value depend on the source mutables.',
             level=logging.WARNING)
+        return DumpChosen(chosen=self.export_chosen(), meta=None)
+
+    def export_chosen(self):
         return self.current_choice
 
     @property
@@ -314,12 +317,12 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, CHOICE_TYPE],
         return 1
 
     @property
-    def current_choice(self) -> CHOICE_TYPE:
+    def current_choice(self):
         """Current choice of derived mutable."""
         return self.choice_fn()
 
     @current_choice.setter
-    def current_choice(self, choice: CHOICE_TYPE) -> None:
+    def current_choice(self, choice) -> None:
         """Setter of current choice.
 
         Raises:
@@ -367,7 +370,7 @@ class DerivedMutable(BaseMutable[CHOICE_TYPE, CHOICE_TYPE],
             elif isinstance(mutable, Iterable):
                 for m in mutable:
                     add_mutables_dfs(m)
-
+                    
         noncolcal_pars = inspect.getclosurevars(closure).nonlocals
         add_mutables_dfs(noncolcal_pars.values())
 

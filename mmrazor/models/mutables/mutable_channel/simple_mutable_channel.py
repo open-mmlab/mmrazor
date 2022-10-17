@@ -3,6 +3,7 @@
 import torch
 
 from mmrazor.registry import MODELS
+from mmrazor.utils.typing import DumpChosen
 from ..derived_mutable import DerivedMutable
 from .base_mutable_channel import BaseMutableChannel
 
@@ -36,6 +37,16 @@ class SimpleMutableChannel(BaseMutableChannel):
     def current_mask(self) -> torch.Tensor:
         """Get current mask."""
         return self.current_choice.bool()
+
+    def dump_chosen(self) -> DumpChosen:
+        """Dump chosen."""
+        meta = dict(max_channels=self.mask.size(0))
+        chosen = self.export_chosen()
+
+        return DumpChosen(chosen=chosen, meta=meta)
+
+    def export_chosen(self) -> int:
+        return self.activated_channels
 
     # basic extension
 

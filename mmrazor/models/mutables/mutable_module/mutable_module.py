@@ -2,10 +2,10 @@
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
-from ..base_mutable import CHOICE_TYPE, CHOSEN_TYPE, BaseMutable
+from ..base_mutable import BaseMutable
 
 
-class MutableModule(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
+class MutableModule(BaseMutable):
     """Base Class for mutables. Mutable means a searchable module widely used
     in Neural Architecture Search(NAS).
 
@@ -34,10 +34,23 @@ class MutableModule(BaseMutable[CHOICE_TYPE, CHOSEN_TYPE]):
         super().__init__(**kwargs)
 
         self.module_kwargs = module_kwargs
+        self._current_choice = None
+
+    @property
+    def current_choice(self):
+        """Current choice will affect :meth:`forward` and will be used in
+        :func:`mmrazor.core.subnet.utils.export_fix_subnet` or mutator.
+        """
+        return self._current_choice
+
+    @current_choice.setter
+    def current_choice(self, choice) -> None:
+        """Current choice setter will be executed in mutator."""
+        self._current_choice = choice
 
     @property
     @abstractmethod
-    def choices(self) -> List[CHOICE_TYPE]:
+    def choices(self) -> List[str]:
         """list: all choices.  All subclasses must implement this method."""
 
     @abstractmethod

@@ -9,13 +9,13 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from mmrazor.registry import MODELS
-from ..base_mutable import CHOICE_TYPE, CHOSEN_TYPE
+from mmrazor.utils.typing import DumpChosen
 from .mutable_module import MutableModule
 
 PartialType = Callable[[Any, Optional[nn.Parameter]], Any]
 
 
-class DiffMutableModule(MutableModule[CHOICE_TYPE, CHOSEN_TYPE]):
+class DiffMutableModule(MutableModule):
     """Base class for differentiable mutables.
 
     Args:
@@ -34,9 +34,12 @@ class DiffMutableModule(MutableModule[CHOICE_TYPE, CHOSEN_TYPE]):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
-    def forward(self,
-                x: Any,
-                arch_param: Optional[nn.Parameter] = None) -> Any:
+    @abstractmethod
+    def sample_choice(self, arch_param: Tensor):
+        """Sample choice based on arch_parameters."""
+        raise NotImplementedError
+
+    def forward(self, x: Any, arch_param: Optional[nn.Parameter] = None):
         """Calls either :func:`forward_fixed` or :func:`forward_arch_param`
         depending on whether :func:`is_fixed` is ``True`` and whether
         :func:`arch_param` is None.
@@ -67,20 +70,18 @@ class DiffMutableModule(MutableModule[CHOICE_TYPE, CHOSEN_TYPE]):
         return F.softmax(arch_param, -1)
 
     @abstractmethod
-    def forward_fixed(self, x: Any) -> Any:
+    def forward_fixed(self, x):
         """Forward when the mutable is fixed.
 
         All subclasses must implement this method.
         """
 
     @abstractmethod
-    def forward_all(self, x: Any) -> Any:
+    def forward_all(self, x):
         """Forward all choices."""
 
     @abstractmethod
-    def forward_arch_param(self,
-                           x: Any,
-                           arch_param: Optional[nn.Parameter] = None) -> Any:
+    def forward_arch_param(self, x, arch_param: Optional[nn.Parameter] = None):
         """Forward when the mutable is not fixed.
 
         All subclasses must implement this method.
@@ -94,7 +95,7 @@ class DiffMutableModule(MutableModule[CHOICE_TYPE, CHOSEN_TYPE]):
 
 
 @MODELS.register_module()
-class DiffMutableOP(DiffMutableModule[str, str]):
+class DiffMutableOP(DiffMutableModule):
     """A type of ``MUTABLES`` for differentiable architecture search, such as
     DARTS. Search the best module by learnable parameters `arch_param`.
 
@@ -159,7 +160,7 @@ class DiffMutableOP(DiffMutableModule[str, str]):
             ops[name] = MODELS.build(op_cfg)
         return ops
 
-    def forward_fixed(self, x: Any) -> Tensor:
+    def forward_fixed(self, x) -> Tensor:
         """Forward when the mutable is in `fixed` mode.
 
         Args:
@@ -172,7 +173,7 @@ class DiffMutableOP(DiffMutableModule[str, str]):
         return sum(self._candidates[choice](x) for choice in self._chosen)
 
     def forward_arch_param(self,
-                           x: Any,
+                           x,
                            arch_param: Optional[nn.Parameter] = None
                            ) -> Tensor:
         """Forward with architecture parameters.
@@ -201,7 +202,7 @@ class DiffMutableOP(DiffMutableModule[str, str]):
 
             return sum(outputs)
 
-    def forward_all(self, x: Any) -> Tensor:
+    def forward_all(self, x) -> Tensor:
         """Forward all choices. Used to calculate FLOPs.
 
         Args:
@@ -240,12 +241,16 @@ class DiffMutableOP(DiffMutableModule[str, str]):
         self._chosen = chosen
         self.is_fixed = True
 
-    def sample_choice(self, arch_param):
+    def sample_choice(self, arch_param: Tensor) -> str:
         """Sample choice based on arch_parameters."""
         return self.choices[torch.argmax(arch_param).item()]
 
-    def dump_chosen(self):
-        """Dump current choice."""
+    def dump_chosen(self) -> DumpChosen:
+        chosen = self.export_chosen()
+        meta = dict(all_choices=self.choices)
+        return DumpChosen(chosen=chosen, meta=meta)
+
+    def export_chosen(self) -> str:
         assert self.current_choice is not None
         return self.current_choice
 
@@ -344,7 +349,7 @@ class OneHotMutableOP(DiffMutableOP):
 
 
 @MODELS.register_module()
-class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
+class DiffChoiceRoute(DiffMutableModule):
     """A type of ``MUTABLES`` for Neural Architecture Search, which can select
     inputs from different edges in a differentiable or non-differentiable way.
     It is commonly used in DARTS.
@@ -424,10 +429,10 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
                 outputs.append(self._candidates[choice](x))
         return sum(outputs)
 
-    def forward_arch_param(
-            self,
-            x: Union[List[Any], Tuple[Any]],
-            arch_param: Optional[nn.Parameter] = None) -> Tensor:
+    def forward_arch_param(self,
+                           x,
+                           arch_param: Optional[nn.Parameter] = None
+                           ) -> Tensor:
         """Forward with architecture parameters.
 
         Args:
@@ -457,7 +462,7 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
         else:
             return self.forward_all(x)
 
-    def forward_all(self, x: Any) -> Tensor:
+    def forward_all(self, x):
         """Forward all choices.
 
         Args:
@@ -500,16 +505,20 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
         self.is_fixed = True
 
     @property
-    def choices(self) -> List[CHOSEN_TYPE]:
+    def choices(self) -> List[str]:
         """list: all choices. """
         return list(self._candidates.keys())
 
-    def dump_chosen(self):
-        """dump current choice."""
+    def dump_chosen(self) -> DumpChosen:
+        chosen = self.export_chosen()
+        meta = dict(all_choices=self.choices)
+        return DumpChosen(chosen=chosen, meta=meta)
+
+    def export_chosen(self) -> str:
         assert self.current_choice is not None
         return self.current_choice
 
-    def sample_choice(self, arch_param):
+    def sample_choice(self, arch_param: Tensor) -> List[str]:
         """sample choice based on `arch_param`."""
         sort_idx = torch.argsort(-arch_param).cpu().numpy().tolist()
         choice_idx = sort_idx[:self.num_chosen]

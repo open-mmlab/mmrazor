@@ -4,6 +4,7 @@ from abc import abstractmethod
 
 import torch
 
+from mmrazor.utils.typing import DumpChosen
 from ..base_mutable import BaseMutable
 from ..derived_mutable import DerivedMethodMixin
 
@@ -73,9 +74,15 @@ class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
 
         self.is_fixed = True
 
-    def dump_chosen(self):
-        """dump current choice to a dict."""
-        raise NotImplementedError()
+    def dump_chosen(self) -> DumpChosen:
+        """Dump chosen."""
+        meta = dict(max_channels=self.mask.size(0))
+        chosen = self.export_chosen()
+
+        return DumpChosen(chosen=chosen, meta=meta)
+
+    def export_chosen(self) -> int:
+        return self.activated_channels
 
     def num_choices(self) -> int:
         """Number of available choices."""
