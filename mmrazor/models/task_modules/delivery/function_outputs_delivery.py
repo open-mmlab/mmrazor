@@ -78,23 +78,7 @@ class FunctionOutputsDelivery(DistillDelivery):
         super().__init__(max_keep_data)
 
         self._check_valid_path(func_path)
-        module_path = self._get_module_path(func_path)
-        try:
-            module = import_modules_from_strings(module_path)
-        except ImportError:
-            raise ImportError(f'{module_path} is not imported correctly.')
-        self.module = module
-
-        func_name = self._get_func_name(func_path)
-        assert hasattr(module, func_name), \
-            f'{func_name} is not in {module_path}.'
-        self.func_name = func_name
-
-        origin_func = getattr(module, func_name)
-        if not isinstance(origin_func, FunctionType):
-            raise TypeError(f'{func_name} should be a FunctionType '
-                            f'instance, but got {type(origin_func)}')
-        self.origin_func = origin_func
+        self.func_path = func_path
 
     @staticmethod
     def _check_valid_path(func_path: str) -> None:
@@ -121,6 +105,24 @@ class FunctionOutputsDelivery(DistillDelivery):
 
         Wrap the origin function.
         """
+        module_path = self._get_module_path(self.func_path)
+        try:
+            module = import_modules_from_strings(module_path)
+        except ImportError:
+            raise ImportError(f'{module_path} is not imported correctly.')
+        self.module = module
+
+        func_name = self._get_func_name(self.func_path)
+        assert hasattr(module, func_name), \
+            f'{func_name} is not in {module_path}.'
+        self.func_name = func_name
+
+        origin_func = getattr(module, func_name)
+        if not isinstance(origin_func, FunctionType):
+            raise TypeError(f'{func_name} should be a FunctionType '
+                            f'instance, but got {type(origin_func)}')
+        self.origin_func = origin_func
+
         wrapped_func = self.deliver_wrapper(self.origin_func)
         setattr(self.module, self.func_name, wrapped_func)
 
@@ -131,6 +133,11 @@ class FunctionOutputsDelivery(DistillDelivery):
         """
         setattr(self.module, self.func_name, self.origin_func)
 
+        # self.module and self.origin_func can not be pickled.
+        # Delete these two attributes to avoid errors when ema model is used.
+        del self.module
+        del self.origin_func
+
     def deliver_wrapper(self, origin_func: Callable) -> Callable:
         """Wrap the specific function to make the intermediate results of the
         model can be delivered."""
@@ -139,12 +146,13 @@ class FunctionOutputsDelivery(DistillDelivery):
         def wrap_func(*args, **kwargs):
 
             if self.override_data:
-                assert not self.data_queue.empty(), 'pop from an empty queue'
-                outputs = self.data_queue.get()
+                assert len(self.data_queue) > 0, 'pop from an empty queue'
+                outputs = self.data_queue.popleft()
             else:
-                assert not self.data_queue.full(), 'push into an full queue'
+                assert len(self.data_queue) < self.data_queue.maxlen,\
+                    'push into an full queue'
                 outputs = origin_func(*args, **kwargs)
-                self.data_queue.put(outputs)
+                self.data_queue.append(outputs)
             return outputs
 
         return wrap_func

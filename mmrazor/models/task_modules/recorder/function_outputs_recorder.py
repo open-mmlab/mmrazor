@@ -65,27 +65,7 @@ class FunctionOutputsRecorder(BaseRecorder):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-
         self._check_valid_source(self.source)
-
-        # import the function corrosponding module
-        try:
-            mod = import_modules_from_strings(self.module_string)
-        except ImportError:
-            raise ImportError(
-                f'{self.module_string} is not imported correctly.')
-
-        self.imported_module: ModuleType = mod
-
-        assert hasattr(mod, self.func_name), \
-            f'{self.func_name} is not in {self.module_string}.'
-
-        origin_func = getattr(mod, self.func_name)
-        if not isinstance(origin_func, FunctionType):
-            raise TypeError(f'{self.func_name} should be a FunctionType '
-                            f'instance, but got {type(origin_func)}')
-
-        self.origin_func: Callable = origin_func
 
     @staticmethod
     def _check_valid_source(source):
@@ -135,8 +115,25 @@ class FunctionOutputsRecorder(BaseRecorder):
         """Enter the context manager."""
         super().__enter__()
 
-        mod = self.imported_module
-        origin_func = self.origin_func
+        # import the function corrosponding module
+        try:
+            mod = import_modules_from_strings(self.module_string)
+        except ImportError:
+            raise ImportError(
+                f'{self.module_string} is not imported correctly.')
+
+        self.imported_module: ModuleType = mod
+
+        assert hasattr(mod, self.func_name), \
+            f'{self.func_name} is not in {self.module_string}.'
+
+        origin_func = getattr(mod, self.func_name)
+        if not isinstance(origin_func, FunctionType):
+            raise TypeError(f'{self.func_name} should be a FunctionType '
+                            f'instance, but got {type(origin_func)}')
+
+        self.origin_func: Callable = origin_func
+
         # add record wrapper to origin function.
         record_func = self.func_record_wrapper(origin_func, self.data_buffer)
 
@@ -158,3 +155,8 @@ class FunctionOutputsRecorder(BaseRecorder):
 
         # restore the origin function
         setattr(mod, self.func_name, origin_func)
+
+        # self.imported_module and self.origin_func can not be pickled.
+        # Delete these two attributes to avoid errors when ema model is used.
+        del self.imported_module
+        del self.origin_func
