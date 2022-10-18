@@ -14,7 +14,7 @@ from mmengine.utils import is_list_of
 from torch.utils.data import DataLoader
 
 from mmrazor.models.task_modules import ResourceEstimator
-from mmrazor.registry import LOOPS
+from mmrazor.registry import LOOPS, TASK_UTILS
 from mmrazor.structures import Candidates, export_fix_subnet
 from mmrazor.utils import SupportRandomSubnet
 from .utils import check_subnet_resources, crossover
@@ -44,8 +44,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         crossover_prob (float): The probability of crossover. Defaults to 0.5.
         constraints_range (Dict[str, Any]): Constraints to be used for
             screening candidates. Defaults to dict(flops=(0, 330)).
-        resource_estimator_cfg (dict): Used for building a
-            resource estimator. Defaults to dict().
+        resource_estimator_cfg (dict, Optional): Used for building a
+            resource estimator. Defaults to None.
         score_key (str): Specify one metric in evaluation results to score
             candidates. Defaults to 'accuracy_top-1'.
         init_candidates (str, optional): The candidates file path, which is
@@ -67,7 +67,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                  mutate_prob: float = 0.1,
                  crossover_prob: float = 0.5,
                  constraints_range: Dict[str, Any] = dict(flops=(0., 330.)),
-                 resource_estimator_cfg: Dict = dict(),
+                 resource_estimator_cfg: Optional[Dict] = None,
                  score_key: str = 'accuracy/top1',
                  init_candidates: Optional[str] = None) -> None:
         super().__init__(runner, dataloader, max_epochs)
@@ -86,7 +86,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         self.num_candidates = num_candidates
         self.top_k = top_k
         self.constraints_range = constraints_range
-        self.estimator_cfg = resource_estimator_cfg
         self.score_key = score_key
         self.num_mutation = num_mutation
         self.num_crossover = num_crossover
@@ -103,7 +102,10 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                 correct init candidates file'
 
         self.top_k_candidates = Candidates()
-        self.estimator = ResourceEstimator(**resource_estimator_cfg)
+        if 'type' in resource_estimator_cfg:
+            self.estimator = TASK_UTILS.build(resource_estimator_cfg)
+        else:
+            self.estimator = ResourceEstimator(**resource_estimator_cfg)
 
         if self.runner.distributed:
             self.model = runner.model.module
@@ -170,7 +172,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         init_candidates = len(self.candidates)
         if self.runner.rank == 0:
             while len(self.candidates) < self.num_candidates:
-                is_pass = False
                 candidate = self.model.sample_subnet()
                 is_pass, result = self._check_constraints(
                     random_subnet=candidate)
@@ -200,7 +201,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                 if len(metrics) != 0 else 0.
             self.candidates.set_resource(i, score, 'score')
             self.runner.logger.info(
-                f'Epoch:[{self.runner.epoch}/{self.max_epochs}] '
+                f'Epoch:[{self._epoch}/{self._max_epochs}] '
                 f'Candidate:[{i + 1}/{self.num_candidates}] '
                 f'Flops: {self.candidates.resources("flops")[i]} '
                 f'Params: {self.candidates.resources("params")[i]} '
@@ -220,7 +221,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
 
             mutation_candidate = self._mutation()
 
-            is_pass = False
             is_pass, result = self._check_constraints(
                 random_subnet=mutation_candidate)
             if is_pass:
@@ -245,7 +245,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
 
             crossover_candidate = self._crossover()
 
-            is_pass = False
             is_pass, result = self._check_constraints(
                 random_subnet=crossover_candidate)
             if is_pass:
@@ -278,7 +277,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             for k in searcher_resume.keys():
                 setattr(self, k, searcher_resume[k])
             epoch_start = int(searcher_resume['_epoch'])
-            self._max_epochs = self.max_epochs - epoch_start
+            self._max_epochs = self._max_epochs - epoch_start
             self.runner.logger.info('#' * 100)
             self.runner.logger.info(f'Resume from epoch: {epoch_start}')
             self.runner.logger.info('#' * 100)
@@ -322,11 +321,11 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                 osp.join(self.runner.work_dir,
                          f'search_epoch_{self._epoch}.pkl'))
             self.runner.logger.info(
-                f'Epoch:[{self._epoch}/{self.max_epochs}], top1_score: '
+                f'Epoch:[{self._epoch}/{self._max_epochs}], top1_score: '
                 f'{self.top_k_candidates.scores[0]}')
 
             if self.max_keep_ckpts > 0:
-                cur_ckpt = self.runner.epoch + 1
+                cur_ckpt = self._epoch + 1
                 redundant_ckpts = range(1, cur_ckpt - self.max_keep_ckpts)
                 for _step in redundant_ckpts:
                     ckpt_path = osp.join(self.runner.work_dir,

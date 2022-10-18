@@ -3,7 +3,7 @@ import math
 import os
 import random
 from abc import abstractmethod
-from typing import Any, Dict, List, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 from mmengine import fileio
@@ -13,7 +13,7 @@ from mmengine.utils import is_list_of
 from torch.utils.data import DataLoader
 
 from mmrazor.models.task_modules import ResourceEstimator
-from mmrazor.registry import LOOPS
+from mmrazor.registry import LOOPS, TASK_UTILS
 from mmrazor.structures import Candidates
 from mmrazor.utils import SupportRandomSubnet
 from .utils import check_subnet_resources
@@ -101,9 +101,8 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
             candidates. Defaults to 'accuracy_top-1'.
         constraints_range (Dict[str, Any]): Constraints to be used for
             screening candidates. Defaults to dict(flops=(0, 330)).
-        resource_estimator_cfg (dict): The config for building estimator, which
-            is be used to estimate the flops of sampled subnet. Defaults to
-            None, which means default config is used. Defaults to dict().
+        resource_estimator_cfg (dict, Optional): Used for building a
+            resource estimator. Defaults to None.
         num_candidates (int): The number of the candidates consist of samples
             from supernet and itself. Defaults to 1000.
         num_samples (int): The number of sample in each sampling subnet.
@@ -138,7 +137,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
                  val_interval: int = 1000,
                  score_key: str = 'accuracy/top1',
                  constraints_range: Dict[str, Any] = dict(flops=(0, 330)),
-                 resource_estimator_cfg: Dict[str, Any] = dict(),
+                 resource_estimator_cfg: Optional[Dict] = None,
                  num_candidates: int = 1000,
                  num_samples: int = 10,
                  top_k: int = 5,
@@ -175,7 +174,11 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
 
         self.candidates = Candidates()
         self.top_k_candidates = Candidates()
-        self.estimator = ResourceEstimator(**resource_estimator_cfg)
+        if 'type' in resource_estimator_cfg:
+            self.estimator = TASK_UTILS.build(resource_estimator_cfg)
+        else:
+            self.estimator = ResourceEstimator(**resource_estimator_cfg)
+
 
     def run(self) -> None:
         """Launch training."""
