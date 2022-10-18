@@ -19,13 +19,13 @@ The pruning framework consists of five modules: Algorithm, ChanelMutator, Mutabl
 | DynamicOp          | Forwards with mutable number of channels, and exports pruned modules. |
 
 <p align="center">
-    <img src="./images/framework-framework.png" width="250"/>
+    <img src="../imgs/pruning/framework-framework.png" width="250"/>
 </p>
 
 ## Algorithm
 
 <p align="center">
-    <img src="./images/framework-algorithm.png" width="400">
+    <img src="../imgs/pruning/framework-algorithm.png" width="400">
 </p>
 
 Algorithms inherit from BaseAlgorithm. They control the training process, like deciding when to prune the model in the training/finetune process.
@@ -72,7 +72,7 @@ print(algorithm)
 
 ## ChanelMutator
 
-<p align="center"><img src="./images/framework-ChanelMutator.png" width="500"></p>
+<p align="center"><img src="../imgs/pruning/framework-ChanelMutator.png" width="500"></p>
 
 A ChanelMutator controls the pruning structure of a model. In other words, ChanelMutator decides how many channels each layer prunes. Usually, given a pruning target, such as a flops, latency, or pruning ratio target, the ChannelUnitMutator will output a pruning structure for the model. The pruning structure is variable. The default definition is the remaining channel ratio, and it's also easy to extend to the number of channels or channel buckets.
 
@@ -109,7 +109,7 @@ print(mutator.sample_choices())
 
 ## MutableChannelUnit
 
-<p align="center"><img src="./images/unit.png"  width="700"></p>
+<p align="center"><img src="../imgs/pruning/unit.png"  width="700"></p>
 
 Because some layers' channels are related, the related layers are collected and put in a MutableChannelUnit.
 
@@ -124,7 +124,7 @@ Besides, basic PyTorch modules are converted to DynamicOps, which can deal with 
 
 ## DynamicOP && MutableChannel
 
-<p align="center"><img src="./images/framework-op.png" width="300"></p>
+<p align="center"><img src="../imgs/pruning/framework-op.png" width="300"></p>
 
 **MutableChannel**: Each MutableChannel manages a channel mask for a model. They help DynamicOps to deal with mutable numbers of channels.
 
@@ -136,8 +136,8 @@ Compared with basic torch modules, each DynamicOp has two MutableChannel modules
 Please refer to the following documents for more details.
 
 - Development tutorials
-  - [How to prune your model](./tutorials/how_to_prune_your_model.md)
-  - [How to use config tool of pruning](./tutorials/how_to_use_config_tool_of_pruning.md)
+  - [How to prune your model](../advanced_guides/tutorials/how_to_prune_your_model.md)
+  - [How to use config tool of pruning](../advanced_guides/tutorials/how_to_use_config_tool_of_pruning.md)
 - READMEs
-  - [ChannelMutator](./READMEs/channel_mutator.ipynb)
-  - [MutableChannelUnit](./READMEs/mutable_channel_unit.ipynb)
+  - [ChannelMutator](../../../mmrazor/models/mutables/mutable_channel/units/mutable_channel_unit.ipynb)
+  - [MutableChannelUnit](../../../mmrazor/models/mutators/channel_mutator/channel_mutator.ipynb)

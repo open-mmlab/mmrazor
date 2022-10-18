@@ -7,7 +7,7 @@ It makes it easy to prune new models.
 
 The parsing process is placed in ChannelUnitMutator.prepare_from_supernet. We first trace the model and get a graph, then we parse the graph and get MutableChannelUnits.
 
-<p align='center'><img src="./images/../../images/framework-graph.png" width=400 /></p>
+<p align='center'><img src="../../imgs/pruning/framework-graph.png" width=400 /></p>
 
 ## How to Get ChannelUnit Config Template
 

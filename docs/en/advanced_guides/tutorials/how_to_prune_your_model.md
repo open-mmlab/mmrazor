@@ -2,12 +2,12 @@
 
 ## Overview
 
-This section will introduce you to pruning your model.  Before that, we suggest you read the document [User Guides: Pruning Framework](../pruning_user_guide.md) to have an overview of our pruning framework.
+This section will introduce you to pruning your model.  Before that, we suggest you read the document [User Guides: Pruning Framework](../../user_guides/pruning_user_guide.md) to have an overview of our pruning framework.
 
 First, we suppose your model is defined and trained using one openmmlab repo.
 Our pruning algorithms work as a wrapper of a model. To prune your model, you need to replace your model config with our algorithm config, which has a parameter 'architecture' to store your original model. The pipeline is shown below.
 
-<p align='center'><img src="./images/../../images/draw-config.png" width=400 /></p>
+<p align='center'><img src="../../imgs/pruning/draw-config.png" width=400 /></p>
 
 After this replacement, the algorithm will prune your model during your training process.
 
@@ -125,7 +125,7 @@ Mutators have two augments:
   2. Using config. When parse_cfg\['type'\]='Config'. It needs that channel_unit_cfg\['unit'\]\['xxx_unit_name\] to have a key 'channels' to indicate channel units.
   3. Using the model with pre-defined DynamicOps and MutableChannels: When parse_cfg\['type'\]='Predefined',  the mutator will parse the dynamic ops in the model and get channel units.
 
-In the example above, we directly use a tracer to parse the model. Please refer to [ChannelMutator](../READMEs/channel_mutator.ipynb) for more details about ChannelMutator.
+In the example above, we directly use a tracer to parse the model. Please refer to [ChannelMutator](../../../../mmrazor/models/mutators/channel_mutator/channel_mutator.ipynb) for more details about ChannelMutator.
 
 ## End
 
