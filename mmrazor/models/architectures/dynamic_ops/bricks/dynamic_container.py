@@ -8,7 +8,7 @@ from torch.nn import Module
 
 from mmrazor.models.mutables import DerivedMutable, MutableValue
 from mmrazor.models.mutables.base_mutable import BaseMutable
-from ..mixins.dynamic_squential_mixin import DynamicSequentialMixin
+from ..mixins.dynamic_squential_mixins import DynamicSequentialMixin
 
 
 class DynamicSequential(Sequential, DynamicSequentialMixin):
