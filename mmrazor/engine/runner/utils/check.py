@@ -22,7 +22,7 @@ def check_subnet_resources(
     """Check whether is beyond resources constraints.
 
     Returns:
-        bool: The result of checking.
+        bool, result: The result of checking.      
     """
     if constraints_range is None:
         return True, dict()

@@ -348,8 +348,3 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
             constraints_range=self.constraints_range)
 
         return is_pass, results
-
-
-if __name__ == '__main__':
-    import unittest
-    unittest.main()

@@ -96,13 +96,13 @@ class Candidates(UserList):
         def _format_item(
                 cond: Union[Dict, Dict[str, Dict]]) -> Dict[str, Dict]:
             """Transform Dict to Dict[str, Dict]."""
-            if isinstance(list(cond.values())[0], str):
-                return {str(cond): {}.fromkeys(self._indicators, -1)}
-            else:
+            if isinstance(list(cond.values())[0], dict):
                 for value in list(cond.values()):
                     for key in list(self._indicators):
                         value.setdefault(key, 0.)
                 return cond
+            else:
+                return {str(cond): {}.fromkeys(self._indicators, -1)}
 
         if isinstance(data, UserList):
             return [_format_item(i) for i in data.data]
@@ -133,6 +133,10 @@ class Candidates(UserList):
             self.data.extend(other)
         else:
             self.data.extend([other])
+
+    def set_score(self, i: int, score: float) -> None:
+        """Set score to the specified subnet by index."""
+        self.set_resource(i, score, 'score')
 
     def set_resource(self,
                      i: int,
