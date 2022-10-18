@@ -1,10 +1,12 @@
-
+# Copyright (c) OpenMMLab. All rights reserved.
 from unittest import TestCase
 
 import pytest
 from torch.nn import LayerNorm
+
 from mmrazor.models.architectures.dynamic_ops import DynamicLayerNorm
 from mmrazor.models.mutables import SquentialMutableChannel
+
 
 class TestDynamicLayerNorm(TestCase):
 

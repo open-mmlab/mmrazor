@@ -4,8 +4,8 @@ from typing import Dict, List, Optional
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-from torch.nn.modules.batchnorm import _BatchNorm
 from torch.nn import LayerNorm
+from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.registry import MODELS
@@ -194,6 +194,7 @@ class SwitchableBatchNorm2d(DynamicBatchNorm2d):
     def static_op_factory(self):
         """Return initializer of static op."""
         return nn.BatchNorm2d
+
 
 @MODELS.register_module()
 class DynamicLayerNorm(LayerNorm, DynamicLayerNormMixin):

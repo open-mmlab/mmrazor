@@ -1,13 +1,15 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import logging
-from typing import Dict, Set, Optional, Tuple
+from typing import Dict, Optional, Set, Tuple
 
-from mmengine import print_log
 import torch
+from mmengine import print_log
 from torch import Tensor, nn
 from torch.nn import LayerNorm
+
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from .dynamic_mixins import DynamicChannelMixin
+
 
 class DynamicLayerNormMixin(DynamicChannelMixin):
     """A mixin class for Pytorch LayerNorm, which can mutate

@@ -2,12 +2,14 @@
 import logging
 from typing import Dict, Set
 
-from mmengine import print_log
 import torch
-from torch import Tensor, nn
 from mmcls.models.utils import PatchEmbed
+from mmengine import print_log
+from torch import nn
+
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from .dynamic_mixins import DynamicChannelMixin
+
 
 class DynamicPatchEmbedMixin(DynamicChannelMixin):
 

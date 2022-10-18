@@ -1,16 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import logging
-from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Set, Tuple
+from typing import Set
 
-import torch
-from mmengine import print_log
-from torch import Tensor, nn
-from torch.nn.modules.batchnorm import _BatchNorm
+from mmengine.model import Sequential
+from torch import nn
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.mutables.mutable_value import MutableValue
-from mmengine.model import Sequential
 from .dynamic_mixins import DynamicMixin
 
 

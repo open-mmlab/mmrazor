@@ -48,7 +48,7 @@ class TestPatchEmbed(TestCase):
         #     100, candidate_choices=[10, 50, 100], candidate_mode='number')
 
         mutable_embed_dims = SquentialMutableChannel(num_channels=100)
-    
+
         mutable_embed_dims.current_choice = 10
 
         with pytest.raises(RuntimeError):
