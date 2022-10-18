@@ -177,26 +177,29 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         self.top_k_candidates = Candidates()
 
         # Build resource estimator.
-        resource_estimator_cfg = dict() if resource_estimator_cfg is None else resource_estimator_cfg
+        resource_estimator_cfg = dict(
+        ) if resource_estimator_cfg is None else resource_estimator_cfg
         self.estimator = self.build_resource_estimator(resource_estimator_cfg)
 
     def build_resource_estimator(
-            self, resource_estimator: Union[ResourceEstimator, Dict]) -> ResourceEstimator:
+        self, resource_estimator: Union[ResourceEstimator,
+                                        Dict]) -> ResourceEstimator:
         """Build resource estimator for search loop.
 
         Examples of ``resource_estimator``:
 
             # `ResourceEstimator` will be used
             resource_estimator = dict()
-            
+
             # custom resource_estimator
             resource_estimator = dict(type='mmrazor.ResourceEstimator')
-        
+
         Args:
-            resource_estimator (ResourceEstimator or dict): A resource_estimator or a dict
-            to build resource estimator. If ``resource_estimator`` is a resource estimator
-            object, just returns itself.
-        
+            resource_estimator (ResourceEstimator or dict):
+            A resource_estimator or a dict to build resource estimator.
+            If ``resource_estimator`` is a resource estimator object,
+            just returns itself.
+
         Returns:
             :obj:`ResourceEstimator`: Resource estimator object build from
             ``resource_estimator``.
@@ -205,15 +208,17 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
             return resource_estimator
         elif not isinstance(resource_estimator, dict):
             raise TypeError(
-                'resource estimator should be a ResourceEstimator object or dict, but'
-                f'got {resource_estimator}')
+                'resource estimator should be a ResourceEstimator object or'
+                f'dict, but got {resource_estimator}')
 
-        resource_estimator_cfg = copy.deepcopy(resource_estimator)  # type: ignore
+        resource_estimator_cfg = copy.deepcopy(
+            resource_estimator)  # type: ignore
 
         if 'type' in resource_estimator_cfg:
             estimator = TASK_UTILS.build(resource_estimator_cfg)
         else:
-            estimator = ResourceEstimator(**resource_estimator_cfg)  # type: ignore
+            estimator = ResourceEstimator(
+                **resource_estimator_cfg)  # type: ignore
 
         return estimator  # type: ignore
 
