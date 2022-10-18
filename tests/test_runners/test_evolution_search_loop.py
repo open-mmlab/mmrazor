@@ -122,7 +122,6 @@ class TestEvolutionSearchLoop(TestCase):
         loop_cfg.runner = self.runner
         loop_cfg.dataloader = self.dataloader
         loop_cfg.evaluator = self.evaluator
-        loop_cfg.runner.epoch = 1
         loop = LOOPS.build(loop_cfg)
         self.runner.rank = 0
         self.runner.distributed = False
