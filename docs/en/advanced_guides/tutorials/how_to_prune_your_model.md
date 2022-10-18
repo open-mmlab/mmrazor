@@ -125,7 +125,9 @@ Mutators have two augments:
   2. Using config. When parse_cfg\['type'\]='Config'. It needs that channel_unit_cfg\['unit'\]\['xxx_unit_name\] to have a key 'channels' to indicate channel units.
   3. Using the model with pre-defined DynamicOps and MutableChannels: When parse_cfg\['type'\]='Predefined',  the mutator will parse the dynamic ops in the model and get channel units.
 
-In the example above, we directly use a tracer to parse the model. Please refer to [ChannelMutator](../../../../mmrazor/models/mutators/channel_mutator/channel_mutator.ipynb) for more details about ChannelMutator.
+In the example above, we directly use a tracer to parse the model.
+We also provide a tool for you to configure the mutator, please refer to [How to Use our Config Tool for Pruning](./how_to_use_config_tool_of_pruning.md).
+Besides, pxlease refer to [ChannelMutator](../../../../mmrazor/models/mutators/channel_mutator/channel_mutator.ipynb) for more details about ChannelMutator.
 
 ## End
 
