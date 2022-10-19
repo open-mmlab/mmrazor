@@ -81,7 +81,7 @@ model = dict(
 **Specific arguments**:
 A algorithm may have its specific arguments. You need to read their documents to know how to config. Here, we only introduce the specific arguments of ItePruneAlgorithm.
 
-- target_pruning_ratio: target_pruning_ratio is a dict. It indicates how many channels remain after pruning.
+- target_pruning_ratio: target_pruning_ratio is a dict that uses the name of units as keys and the choice values as values.. It indicates how many channels remain after pruning. You can use python ./tools/get_channel_units.py --choice {config_file} to get the choice template. Please refer to [How to Use our Config Tool for Pruning](./how_to_use_config_tool_of_pruning.md).
 - step_epoch: the step between two pruning operations.
 - prune_times: the times to prune to reach the pruning target. Here, we prune resnet34 once, so we set it to 1.
 

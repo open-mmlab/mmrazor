@@ -21,13 +21,13 @@ def config_template(self,
     """Config template of the mutator.
 
     Args:
-        only_mutable_units (bool, optional): If only return config of
+        only_mutable_units (bool, optional): Whether only return config of
             prunable units. It can omit unmutable MutableChannelUnits
             to decrease the length of the config. Defaults to False.
-        with_unit_init_args (bool, optional): If return init_args of
+        with_unit_init_args (bool, optional): Whether return init_args of
             units. Let it be true, when you want to change the init
             args of units. Defaults to False.
-        with_channels (bool, optional): if return channel info.
+        with_channels (bool, optional): Whether return channel info.
             The channel info can initialization the units without
             tracer. When you want to prune your model without a
             tracer next time, let it be true. Defaults to False.
@@ -59,10 +59,7 @@ def config_template(self,
     """
 ```
 
-It has three arguments:
-
-- only_mutable_units: If only return mutable MutableChannelUnits. It can omit unmutable MutableChannelUnits to decrease the length of the config.
-- with_unit_init_args: If return the initializtion arguments of MutableChannelUnits.
+Note the name of a unit is generated automatically according to their content, avoid to change the name in config.
 
 Here, we give an example of getting a config template using code.
 
@@ -204,5 +201,39 @@ python ./tools/get_channel_units.py -i ./configs/pruning/mmcls/autoslim/autoslim
 #             "type":"ImageClassifierPseudoLoss"
 #         }
 #     }
+# }
+```
+
+With "--choice" flag, it will return the choice template, a dict which uses unit_name as key, and use the choice value as value.
+
+```shell
+python ./tools/get_channel_units.py -i ./configs/pruning/mmcls/autoslim/autoslim_mbv2_1.5x_slimmable_subnet_8xb256_in1k.py --choice
+
+# {
+#     "backbone.conv1.conv_(0, 48)_48":32,
+#     "backbone.layer1.0.conv.1.conv_(0, 24)_24":16,
+#     "backbone.layer2.0.conv.0.conv_(0, 144)_144":144,
+#     "backbone.layer2.0.conv.2.conv_(0, 40)_40":24,
+#     "backbone.layer2.1.conv.0.conv_(0, 240)_240":176,
+#     "backbone.layer3.0.conv.0.conv_(0, 240)_240":192,
+#     "backbone.layer3.0.conv.2.conv_(0, 48)_48":48,
+#     "backbone.layer3.1.conv.0.conv_(0, 288)_288":240,
+#     "backbone.layer3.2.conv.0.conv_(0, 288)_288":144,
+#     "backbone.layer4.0.conv.0.conv_(0, 288)_288":264,
+#     "backbone.layer4.0.conv.2.conv_(0, 96)_96":88,
+#     "backbone.layer4.1.conv.0.conv_(0, 576)_576":288,
+#     "backbone.layer4.2.conv.0.conv_(0, 576)_576":336,
+#     "backbone.layer4.3.conv.0.conv_(0, 576)_576":432,
+#     "backbone.layer5.0.conv.0.conv_(0, 576)_576":576,
+#     "backbone.layer5.0.conv.2.conv_(0, 144)_144":144,
+#     "backbone.layer5.1.conv.0.conv_(0, 864)_864":576,
+#     "backbone.layer5.2.conv.0.conv_(0, 864)_864":648,
+#     "backbone.layer6.0.conv.0.conv_(0, 864)_864":864,
+#     "backbone.layer6.0.conv.2.conv_(0, 240)_240":240,
+#     "backbone.layer6.1.conv.0.conv_(0, 1440)_1440":1440,
+#     "backbone.layer6.2.conv.0.conv_(0, 1440)_1440":1440,
+#     "backbone.layer7.0.conv.0.conv_(0, 1440)_1440":1440,
+#     "backbone.layer7.0.conv.2.conv_(0, 480)_480":480,
+#     "backbone.conv2.conv_(0, 1920)_1920":1920
 # }
 ```

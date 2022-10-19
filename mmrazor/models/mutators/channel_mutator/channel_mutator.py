@@ -129,13 +129,13 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
         """Config template of the mutator.
 
         Args:
-            only_mutable_units (bool, optional): If only return config of
+            only_mutable_units (bool, optional): Whether only return config of
                 prunable units. It can omit unmutable MutableChannelUnits
                 to decrease the length of the config. Defaults to False.
-            with_unit_init_args (bool, optional): If return init_args of
+            with_unit_init_args (bool, optional): Whether return init_args of
                 units. Let it be true, when you want to change the init
                 args of units. Defaults to False.
-            with_channels (bool, optional): if return channel info.
+            with_channels (bool, optional): Whether return channel info.
                 The channel info can initialization the units without
                 tracer. When you want to prune your model without a
                 tracer next time, let it be true. Defaults to False.
