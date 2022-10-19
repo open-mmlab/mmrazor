@@ -16,7 +16,6 @@ class TestPatchEmbed(TestCase):
 
         # mutable_embed_dims = OneShotMutableChannel(
         #     100, candidate_choices=[10, 50, 100], candidate_mode='number')
-
         mutable_embed_dims = SquentialMutableChannel(num_channels=100)
 
         mutable_embed_dims.current_choice = 50
@@ -24,9 +23,6 @@ class TestPatchEmbed(TestCase):
                                                  mutable_embed_dims)
 
     def test_patch_embed(self):
-        # mutable = OneShotMutableChannel(
-        #     120, candidate_choices=[10, 50, 120], candidate_mode='number')
-
         mutable = SquentialMutableChannel(num_channels=120)
 
         with pytest.raises(ValueError):
@@ -44,9 +40,6 @@ class TestPatchEmbed(TestCase):
         self.assertIsNotNone(dynamic_m)
 
     def test_to_static_op(self):
-        # mutable_embed_dims = OneShotMutableChannel(
-        #     100, candidate_choices=[10, 50, 100], candidate_mode='number')
-
         mutable_embed_dims = SquentialMutableChannel(num_channels=100)
 
         mutable_embed_dims.current_choice = 10

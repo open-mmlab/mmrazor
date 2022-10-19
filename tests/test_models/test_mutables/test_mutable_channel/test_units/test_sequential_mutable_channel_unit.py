@@ -39,3 +39,7 @@ class TestSequentialMutableChannelUnit(TestCase):
         self.assertDictEqual(
             unit2.config_template(with_init_args=True)['init_args'],
             config['init_args'])
+
+if __name__ == '__main__':
+    import unittest
+    unittest.main()

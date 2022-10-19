@@ -6,9 +6,13 @@ from .bricks.dynamic_linear import DynamicLinear
 from .bricks.dynamic_norm import (DynamicBatchNorm1d, DynamicBatchNorm2d,
                                   DynamicBatchNorm3d, DynamicLayerNorm,
                                   SwitchableBatchNorm2d)
+from .bricks.dynamic_relative_position import DynamicRelativePosition2D
+from .bricks.dynamic_attention import DynamicMultiheadAttention
 from .mixins.dynamic_conv_mixins import DynamicConvMixin
 from .mixins.dynamic_mixins import (DynamicBatchNormMixin, DynamicChannelMixin,
                                     DynamicLinearMixin, DynamicMixin)
+from .mixins.dynamic_rp_mixins import DynamicRelativePosition2DMixin
+from .mixins.dynamic_mha_mixins import DynamicMHAMixin
 
 __all__ = [
     'BigNasConv2d',
@@ -27,5 +31,9 @@ __all__ = [
     # Autoformer
     'DynamicSequential',
     'DynamicPatchEmbed',
-    'DynamicLayerNorm'
+    'DynamicLayerNorm',
+    'DynamicRelativePosition2D',
+    'DynamicRelativePosition2DMixin',
+    'DynamicMultiheadAttention',
+    'DynamicMHAMixin'
 ]

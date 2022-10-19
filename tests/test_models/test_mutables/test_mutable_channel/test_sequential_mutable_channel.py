@@ -3,8 +3,7 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models.mutables import SquentialMutableChannel
-
+from mmrazor.models.mutables import (SquentialMutableChannel, OneShotMutableValue)
 
 class TestSquentialMutableChannel(TestCase):
 
@@ -41,3 +40,31 @@ class TestSquentialMutableChannel(TestCase):
         channel = SquentialMutableChannel(10, choice_mode='ratio')
         self._test_mutable(channel, 0.5, 0.5, 5, self._generate_mask(5, 10))
         self._test_mutable(channel, 2, 0.2, 2, self._generate_mask(2, 10))
+
+    def test_mutable_channel_mul(self):
+        channel = SquentialMutableChannel(2)
+        self.assertEqual(channel.current_choice, 2)
+        mv = OneShotMutableValue(value_list=[1, 2, 3], default_value=3)
+        derived1 = channel * mv
+        derived2 = mv * channel
+        assert derived1.current_choice == 6
+        assert derived2.current_choice == 6
+        mv.current_choice = mv.min_choice
+        assert derived1.current_choice == 2
+        assert derived2.current_choice == 2
+        assert torch.equal(derived1.current_mask, derived2.current_mask)
+
+        # ratio mode
+        # channel = SquentialMutableChannel(10, choice_mode='ratio')
+
+        # derived_mutable * OneShotMutableValue
+        # channel = SquentialMutableChannel(8)
+        # new_channel = channel * 0.25
+        # # new_channel.current_choice = 0.5
+        # self.assertEqual(new_channel.current_choice, 2)
+        # mv = OneShotMutableValue(value_list=[1, 2, 3], default_value=3)
+        # derived1 = new_channel * mv
+        # derived2 = mv * new_channel
+        # assert derived1.current_choice == 6
+        # assert derived2.current_choice == 6
+        # assert torch.equal(derived1.current_mask, derived2.current_mask)

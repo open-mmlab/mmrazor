@@ -11,6 +11,7 @@ from mmrazor.registry import MODELS
 from ..mixins.dynamic_patchembed_mixins import DynamicPatchEmbedMixin
 
 
+
 @MODELS.register_module()
 class DynamicPatchEmbed(PatchEmbed, DynamicPatchEmbedMixin):
     """Dynamic Patch Embedding.
