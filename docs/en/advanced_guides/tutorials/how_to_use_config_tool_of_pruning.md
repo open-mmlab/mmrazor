@@ -22,11 +22,15 @@ def config_template(self,
 
     Args:
         only_mutable_units (bool, optional): If only return config of
-            prunable units. Defaults to False.
+            prunable units. It can omit unmutable MutableChannelUnits
+            to decrease the length of the config. Defaults to False.
         with_unit_init_args (bool, optional): If return init_args of
-            units. Defaults to False.
+            units. Let it be true, when you want to change the init
+            args of units. Defaults to False.
         with_channels (bool, optional): if return channel info.
-            Defaults to False.
+            The channel info can initialization the units without
+            tracer. When you want to prune your model without a
+            tracer next time, let it be true. Defaults to False.
 
     Example:
         dict(
@@ -54,6 +58,11 @@ def config_template(self,
     MutableChannelUnit.config_template()
     """
 ```
+
+It has three arguments:
+
+- only_mutable_units: If only return mutable MutableChannelUnits. It can omit unmutable MutableChannelUnits to decrease the length of the config.
+- with_unit_init_args: If return the initializtion arguments of MutableChannelUnits.
 
 Here, we give an example of getting a config template using code.
 
