@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
 import scipy.stats as stats
@@ -15,38 +15,38 @@ class MetricPredictor(BasePredictor):
     """Metric predictor.
 
     Args:
-        handler_type (str): The chosen type for different handler.
-        search_groups(dict) : search_groups of the specified super net.
-        pool_size(int) : Total nums of training samples if necessary.
-        handler_cfg (dict, optional): Optional parameter for predictor.
-        fit_cfg(dict, optional): Training parameters. Only supported for
+        handler_cfg (dict): Cfg to build a predict handler.
+        search_groups (dict) : search_groups of the specified supernet.
+        score_key (str): Specify one metric in evaluation results to score
+            candidates. Defaults to 'accuracy_top-1'.
+        train_samples (int, Optional): Num of predictor training samples.
+            Defaults to 2.
+        fit_cfg (dict, Optional): Training parameters. Only supported for
             MLP predictor.
-        pretrained(str, optional): Path to predictor's weights. If given,
-            predictor will load the specified weights and skip
-            training phase.
-        evaluation(str, optional): If not None, compute the correlations
+        pretrained (str, Optional): Path to predictor's weights. If given,
+            predictor will load the specified weights directly.
+        evaluation (str, Optional): If not None, compute the correlations
             between prediction and true label, used for evaluate the
-            predictor's performance. 'simple' only evaluate the final
-            samples, 'complex' whill evaluate samples in the
-            candidate_pool. Defaults to None.
-        retrain_samples(dict, optional): Given the training samples for
+            predictor's performance. Defaults to None.
+            If set as 'simple', it will only evaluate the final samples;
+            If set as 'complex', it will evaluate samples in the
+                candidate_pool.
+        evaluate_samples (dict, Optional): Given the predicting samples for
             predictor.
-        evaluate_samples(dict, optional): Given the predicting samples for
-            predictor.
-        encoding_type(str, optional): how to encode the search space to
-            integer bit-string. Default is onehot.
+        encoding_type (str, Optional): how to encode the search space to
+            integer bit-string. Defaults to `onehot`.
     """
 
     def __init__(self,
-                 handler_cfg: dict,
-                 search_groups,
-                 score_key,
+                 handler_cfg: Dict,
+                 search_groups: Dict,
+                 score_key: str = 'accuracy_top-1',
                  train_samples: int = 2,
-                 fit_cfg: dict = None,
-                 pretrained=None,
-                 evaluation=None,
-                 evaluate_samples=None,
-                 encoding_type='onehot',
+                 fit_cfg: Optional[Dict] = None,
+                 pretrained: str = None,
+                 evaluation: str = None,
+                 evaluate_samples: Dict = None,
+                 encoding_type: str = 'onehot',
                  **kwargs):
         super().__init__(handler_cfg=handler_cfg)
 
@@ -98,7 +98,7 @@ class MetricPredictor(BasePredictor):
         for choice in candidate.values():
             assert len(self.search_groups[index]) == 1
             _candidates = self.search_groups[index][0].choices
-            onehot = np.zeros(len(_candidates))
+            onehot = np.zeros(len(_candidates), dtype=np.int)
             _chosen_index = _candidates.index(choice)
             onehot[_chosen_index] = 1
 
