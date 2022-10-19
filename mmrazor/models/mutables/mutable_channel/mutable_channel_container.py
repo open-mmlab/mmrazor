@@ -121,3 +121,13 @@ class MutableChannelContainer(BaseMutableChannel):
             self.register_mutable(
                 SimpleMutableChannel(self.num_channels - last_end), last_end,
                 self.num_channels)
+
+    def dump_chosen(self):
+        chosen = 0
+        for mutable in self.mutable_channels.values():
+            chosen += mutable.current_choice * mutable.num_channels
+
+        return chosen / self.num_channels
+
+    def fix_chosen(self, chosen=None):
+        self.is_fixed = True
