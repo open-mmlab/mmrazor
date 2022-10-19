@@ -107,6 +107,8 @@ print(mutator.sample_choices())
 # }
 ```
 
+Please refer to [ChannelMutator](../../../mmrazor/models/mutables/mutable_channel/units/mutable_channel_unit.ipynb) for more details.
+
 ## MutableChannelUnit
 
 <p align="center"><img src="../imgs/pruning/unit.png"  width="700"></p>
@@ -120,13 +122,15 @@ All related layers are divided into two types: output_related and input_related.
 - The output channels of output-related layers are in the MutableChannelUnit.
 - The input channels of input-related layers are in the MutableChannelUnit.
 
+Please refer to [MutableChannelUnit](../../../mmrazor/models/mutators/channel_mutator/channel_mutator.ipynb) for more details.
+
 Besides, basic PyTorch modules are converted to DynamicOps, which can deal with a mutable number of channels with MutableChannels.
 
 ## DynamicOP && MutableChannel
 
 <p align="center"><img src="../imgs/pruning/framework-op.png" width="300"></p>
 
-**MutableChannel**: Each MutableChannel manages a channel mask for a model. They help DynamicOps to deal with mutable numbers of channels.
+**MutableChannel**: Each MutableChannel manages a channel mask for a model. They help DynamicOps to deal with mutable numbers of channels. Please refer to [MutableChannel](../../../mmrazor/models/mutables/mutable_channel/MutableChannel.md) for more details.
 
 **DynamicOp**: DynamicOps inherit from basic torch modules, like nn.Conv2d or nn.Linear. They can forward with mutable numbers of channels and export pruned torch modules.
 Compared with basic torch modules, each DynamicOp has two MutableChannel modules, which control the input and output channels.
