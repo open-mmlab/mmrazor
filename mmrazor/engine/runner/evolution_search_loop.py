@@ -234,6 +234,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
 
         # broadcast candidates to val with multi-GPUs.
         broadcast_object_list(self.candidates.data)
+        assert init_candidates + len(
+            candidates_resources) == self.num_candidates
 
     def update_candidates_scores(self) -> None:
         """Validate candicate one by one from the candicate pool, and update
