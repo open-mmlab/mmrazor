@@ -139,5 +139,6 @@ Please refer to the following documents for more details.
   - [How to prune your model](../advanced_guides/tutorials/how_to_prune_your_model.md)
   - [How to use config tool of pruning](../advanced_guides/tutorials/how_to_use_config_tool_of_pruning.md)
 - READMEs
+  - [MutableChannel](../../../mmrazor/models/mutables/mutable_channel/MutableChannel.md)
   - [ChannelMutator](../../../mmrazor/models/mutables/mutable_channel/units/mutable_channel_unit.ipynb)
   - [MutableChannelUnit](../../../mmrazor/models/mutators/channel_mutator/channel_mutator.ipynb)
