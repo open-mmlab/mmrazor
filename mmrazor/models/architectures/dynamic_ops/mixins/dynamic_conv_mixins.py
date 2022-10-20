@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import abstractmethod
 from itertools import repeat
-from typing import Any, Callable, Iterable, Optional, Tuple
+from typing import Callable, Iterable, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
@@ -399,28 +399,6 @@ class OFAConvMixin(BigNasConvMixin):
 class FuseConvMixin(DynamicConvMixin):
     """A mixin class for Pytorch conv, which can mutate ``in_channels``,
     ``out_channels`` ."""
-
-    def change_mutable_attrs_after_init(self: _ConvNd, key: str,
-                                        value: Any) -> None:
-        self.mutable_attrs_modified = {}
-
-        if key not in self.mutable_attrs_modified.keys():
-            if key in self.mutable_attrs.keys():
-                self.mutable_attrs_modified[key] = False
-            else:
-                raise KeyError(
-                    f'Current { self } only support key'
-                    f'`mutable_attrs_modified`: {self.mutable_attrs_modified},'
-                    f' but got {self.groups}.')
-        if (self.mutable_attrs_modified[key]):
-            raise KeyError(
-                f'Current { self } mutable_attrs {key} has been changed.')
-        self.mutable_attrs_modified[key] = True
-        for _, channel in self.mutable_attrs[key].mutable_channels.items():
-            mask = torch.zeros([channel.num_channels])
-            mask[0:value[0]] = 1
-            channel.current_choice = mask.bool()
-            del mask
 
     def get_dynamic_params(
             self: _ConvNd) -> Tuple[Tensor, Optional[Tensor], Tuple[int]]:

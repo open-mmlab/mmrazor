@@ -47,11 +47,15 @@ The mainstream approach for filter pruning is usually either to force a hard-cod
 
 ### Generate channel_config file
 
+Generate `resnet_cls.json` with `tools/get_channel_units.py`.
+
 ```bash
 python tools/get_channel_units.py
   configs/pruning/mmcls/dcff/dcff_resnet50_8xb32_in1k.py \
-  -c -i --output-path=$OUTPUT_DIR
+  -c -i --output-path=configs/pruning/mmcls/dcff/resnet_cls.json
 ```
+
+Then set layers' pruning rates `choice` in `resnet_cls.json`.
 
 ### Train DCFF
 
