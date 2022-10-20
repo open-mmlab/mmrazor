@@ -82,9 +82,9 @@ class CustomQuantizer(BaseModule):
         quantized = _convert_fx(
             graph_module,
             is_reference=False,
-            convert_custom_config=self.convert_custom_config,
+            convert_custom_config_dict=self.convert_custom_config_dict,
             _remove_qconfig=self._remove_qconfig,
-            qconfig_mapping=self.qconfig)
+            qconfig_dict=self.qconfig_dict)
         return quantized
 
     def check_qconfig(self, qconfig):

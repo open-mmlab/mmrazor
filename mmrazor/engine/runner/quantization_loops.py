@@ -224,14 +224,21 @@ class PTQLoop(TestLoop):
 
         self.model.convert()
 
-        self.model.eval()
-        for idx, data_batch in enumerate(self.dataloader):
-            self.run_iter(idx, data_batch)
+        # self.model.eval()
+        # for idx, data_batch in enumerate(self.dataloader):
+        #     self.run_iter(idx, data_batch)
 
-        # compute metrics
-        metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+        # # compute metrics
+        # metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
 
-        self.runner.call_hook('after_test_epoch', metrics=metrics)
+        self.runner.save_checkpoint(
+            out_dir=self.runner.work_dir,
+            filename='quantizied.pth',
+            save_optimizer=False,
+            save_param_scheduler=False
+        )
+
+        # self.runner.call_hook('after_test_epoch', metrics=metrics)
         self.runner.call_hook('after_test')
-        return metrics
+        # return metrics
         

@@ -9,13 +9,13 @@ test_cfg = dict(
     evaluator=_base_.test_evaluator,
     calibrate_dataloader=_base_.train_dataloader,
     batch_num=32,
-    reconstruction_cfg=dict(
-        pattern='layer',
-        loss=dict(
-            type='mmrazor.AdaRoundLoss',
-            iters=20000
-        )
-    )
+    # reconstruction_cfg=dict(
+    #     pattern='layer',
+    #     loss=dict(
+    #         type='mmrazor.AdaRoundLoss',
+    #         iters=20000
+    #     )
+    # )
 )
 
 model = dict(
