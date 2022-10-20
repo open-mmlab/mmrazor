@@ -25,8 +25,7 @@ class GreedySearchLoop(BaseLoop):
                  dataloader: Union[DataLoader, Dict],
                  evaluator: Union[Evaluator, Dict, List],
                  target_flops: Tuple[float],
-                 resource_estimator_cfg: Dict[str, Any] = dict(
-                     input_shape=(1, 3, 64, 64)),
+                 resource_estimator_cfg: Dict[str, Any] = dict(),
                  score_key: str = 'accuracy_top-1',
                  resume_from: Optional[str] = None):
         super().__init__(runner, dataloader)
@@ -67,7 +66,6 @@ class GreedySearchLoop(BaseLoop):
         self.current_flops = get_subnet_flops(self.model,
                                               current_subnet_choices,
                                               self.estimator)
-        print(self.current_flops)
 
         self.searched_subnet: List[Dict[str, int]] = []
         self.searched_subnet_flops: List[float] = []
@@ -103,7 +101,6 @@ class GreedySearchLoop(BaseLoop):
                     pruned_subnet_choices = self._channel_bins2choices(
                         pruned_subnet)
                     self.model.set_subnet(pruned_subnet_choices)
-                    # score = random.random()
                     metrics = self._val_subnet()
                     score = metrics[self.score_key] \
                         if len(metrics) != 0 else 0.
@@ -125,7 +122,6 @@ class GreedySearchLoop(BaseLoop):
                 self.current_flops = get_subnet_flops(self.model,
                                                       current_subnet_choices,
                                                       self.estimator)
-                print(self.current_flops)
                 self.runner.logger.info(
                     f'Greedily find model, score: {self.current_subnet}, '
                     f'FLOPS: {self.current_flops}')

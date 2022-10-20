@@ -141,7 +141,7 @@ class TestGreedySearchLoop(TestCase):
 
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
-        train_cfg = dict(type='GreedySearchLoop', target_flops=(8, ))
+        train_cfg = dict(type='GreedySearchLoop', target_flops=(680, ))
         self.train_cfg = Config(train_cfg)
         self.runner = MagicMock(spec=ToyRunner)
         self.runner.model = self.prepare_model(MUTATOR_CFG, DISTILLER_CFG,
