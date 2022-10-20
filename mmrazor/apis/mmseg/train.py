@@ -5,15 +5,16 @@ import warnings
 import numpy as np
 import torch
 from mmcv.parallel import MMDataParallel, MMDistributedDataParallel
-from mmcv.runner import build_runner, EpochBasedRunner
+from mmcv.runner import EpochBasedRunner, build_runner
 from mmseg.core import DistEvalHook, EvalHook
 from mmseg.datasets import build_dataloader, build_dataset
 from mmseg.utils import get_root_logger
 
 from mmrazor.core.distributed_wrapper import DistributedDataParallelWrapper
+from mmrazor.core.hooks import DistSamplerSeedHook
 from mmrazor.core.optimizer import build_optimizers
 from mmrazor.utils import find_latest_checkpoint
-from mmrazor.core.hooks import DistSamplerSeedHook
+
 
 def set_random_seed(seed, deterministic=False):
     """Import `set_random_seed` function here was deprecated in v0.3 and will
@@ -138,7 +139,7 @@ def train_mmseg_model(model,
     if distributed:
         if isinstance(runner, EpochBasedRunner):
             runner.register_hook(DistSamplerSeedHook())
-    
+
     # register eval hooks
     if validate:
         val_dataset = build_dataset(cfg.data.val, dict(test_mode=True))
