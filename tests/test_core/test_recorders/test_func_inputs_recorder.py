@@ -12,7 +12,6 @@ from mmengine.hooks import EMAHook
 from mmengine.logging import MMLogger
 from mmengine.model import BaseModel, ExponentialMovingAverage
 from mmengine.optim import OptimWrapper
-from mmengine.registry import DATASETS
 from mmengine.runner import Runner
 from torch.utils.data import Dataset
 
@@ -45,7 +44,6 @@ class ToyModel(BaseModel):
             return outputs
 
 
-@DATASETS.register_module()
 class DummyDataset(Dataset):
     METAINFO = dict()  # type: ignore
     data = torch.randn(12, 2)
@@ -108,12 +106,12 @@ class TestFuncInputsRecorder(TestCase):
         runner = Runner(
             model=model,
             train_dataloader=dict(
-                dataset=dict(type='DummyDataset'),
+                dataset=DummyDataset(),
                 sampler=dict(type='DefaultSampler', shuffle=True),
                 batch_size=3,
                 num_workers=0),
             val_dataloader=dict(
-                dataset=dict(type='DummyDataset'),
+                dataset=DummyDataset(),
                 sampler=dict(type='DefaultSampler', shuffle=False),
                 batch_size=3,
                 num_workers=0),
