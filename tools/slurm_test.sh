@@ -2,7 +2,7 @@
 
 set -x
 
-PARTITION="mm_dev"
+PARTITION="mm_model"
 JOB_NAME="adaround"
 WORK_DIR="../experiments/adaround"
 CONFIG="configs/quantization/ptq/adaround.py"
