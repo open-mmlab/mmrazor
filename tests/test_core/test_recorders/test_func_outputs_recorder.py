@@ -16,17 +16,26 @@ class TestFuncOutputsRecorder(TestCase):
         with self.assertRaisesRegex(AssertionError, 'source must have at '):
             _ = FunctionOutputsRecorder('aaaaa')
 
-        with self.assertRaisesRegex(ImportError, 'aaa is not imported'):
-            _ = FunctionOutputsRecorder('aaa.bbb')
-
-        with self.assertRaisesRegex(AssertionError, 'aaa is not in toy_mod'):
-            _ = FunctionOutputsRecorder('toy_mod.aaa')
-
-        with self.assertRaisesRegex(TypeError, 'TOY_VAR should be'):
-            _ = FunctionOutputsRecorder('toy_mod.TOY_VAR')
-
     def test_context_manager(self):
         from toy_mod import execute_toy_func
+
+        recorder = FunctionOutputsRecorder('aaa.bbb')
+        recorder.initialize()
+        with self.assertRaisesRegex(ImportError, 'aaa is not imported'):
+            with recorder:
+                execute_toy_func(1)
+
+        recorder = FunctionOutputsRecorder('toy_mod.aaa')
+        recorder.initialize()
+        with self.assertRaisesRegex(AssertionError, 'aaa is not in toy_mod'):
+            with recorder:
+                execute_toy_func(1)
+
+        recorder = FunctionOutputsRecorder('toy_mod.TOY_VAR')
+        recorder.initialize()
+        with self.assertRaisesRegex(TypeError, 'TOY_VAR should be'):
+            with recorder:
+                execute_toy_func(1)
 
         recorder = FunctionOutputsRecorder('toy_mod.toy_func')
         recorder.initialize()

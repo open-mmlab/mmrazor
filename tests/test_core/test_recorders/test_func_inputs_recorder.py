@@ -24,7 +24,9 @@ class ToyModel(BaseModel):
     def __init__(self):
         super().__init__()
         self.linear = nn.Linear(2, 1)
-        recorders_cfg = dict(fc=dict(type='ModuleOutputs', source='linear'))
+        # test FunctionInputsRecorder when ema_hook is used
+        recorders_cfg = dict(
+            out=dict(type='FunctionInputs', source='toy_mod.toy_func'))
         self.recorders = RecorderManager(recorders_cfg)
         self.recorders.initialize(self)
 
