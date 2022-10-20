@@ -1,8 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import sys
+import warnings
 from functools import partial
-from typing import Dict
+from typing import Dict, List
 
+import mmcv
 import torch
 import torch.nn as nn
 
@@ -409,6 +411,12 @@ def start_flops_params_count(self, disabled_counters):
 
             else:
                 counter_type = get_counter_type(module)
+                if counter_type not in TASK_UTILS._module_dict.keys():
+                    old_counter_type = counter_type
+                    counter_type = \
+                        module.__class__.__base__.__name__ + 'Counter'
+                    warnings.warn(f'`{old_counter_type}` not in '
+                                  f'op_counters. Using `{counter_type}`')
                 if (disabled_counters is None
                         or counter_type not in disabled_counters):
                     counter = TASK_UTILS.build(
@@ -503,9 +511,13 @@ def get_counter_type(module):
 
 
 def is_supported_instance(module):
-    """Judge whether the module is in TASK_UTILS registry or not."""
+    """Judge whether the module can be countered or not."""
     if get_counter_type(module) in TASK_UTILS._module_dict.keys():
         return True
+    else:
+        for op in get_modules_list():
+            if issubclass(module.__class__.__base__, op):
+                return True
     return False
 
 
@@ -518,3 +530,54 @@ def remove_flops_params_counter_hook_function(module):
         del module.__flops__
     if hasattr(module, '__params__'):
         del module.__params__
+
+
+def get_modules_list() -> List:
+    return [
+        # convolutions
+        nn.Conv1d,
+        nn.Conv2d,
+        nn.Conv3d,
+        mmcv.cnn.bricks.Conv2d,
+        mmcv.cnn.bricks.Conv3d,
+        # activations
+        nn.ReLU,
+        nn.PReLU,
+        nn.ELU,
+        nn.LeakyReLU,
+        nn.ReLU6,
+        # poolings
+        nn.MaxPool1d,
+        nn.AvgPool1d,
+        nn.AvgPool2d,
+        nn.MaxPool2d,
+        nn.MaxPool3d,
+        nn.AvgPool3d,
+        mmcv.cnn.bricks.MaxPool2d,
+        mmcv.cnn.bricks.MaxPool3d,
+        nn.AdaptiveMaxPool1d,
+        nn.AdaptiveAvgPool1d,
+        nn.AdaptiveMaxPool2d,
+        nn.AdaptiveAvgPool2d,
+        nn.AdaptiveMaxPool3d,
+        nn.AdaptiveAvgPool3d,
+        # normalizations
+        nn.BatchNorm1d,
+        nn.BatchNorm2d,
+        nn.BatchNorm3d,
+        nn.GroupNorm,
+        nn.InstanceNorm1d,
+        nn.InstanceNorm2d,
+        nn.InstanceNorm3d,
+        nn.LayerNorm,
+        # FC
+        nn.Linear,
+        mmcv.cnn.bricks.Linear,
+        # Upscale
+        nn.Upsample,
+        nn.UpsamplingNearest2d,
+        nn.UpsamplingBilinear2d,
+        # Deconvolution
+        nn.ConvTranspose2d,
+        mmcv.cnn.bricks.ConvTranspose2d,
+    ]

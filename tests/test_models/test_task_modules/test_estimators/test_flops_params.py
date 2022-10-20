@@ -4,6 +4,7 @@ from unittest import TestCase
 
 import pytest
 import torch
+from mmcv.cnn.bricks import Conv2dAdaptivePadding
 from torch import Tensor
 from torch.nn import Conv2d, Module, Parameter
 
@@ -127,6 +128,15 @@ class TestResourceEstimator(TestCase):
         self.assertGreater(flops_count, 0)
         self.assertGreater(params_count, 0)
 
+        fool_conv2d = Conv2dAdaptivePadding(3, 32, 3)
+        results = estimator.estimate(
+            model=fool_conv2d, flops_params_cfg=flops_params_cfg)
+        flops_count = results['flops']
+        params_count = results['params']
+
+        self.assertGreater(flops_count, 0)
+        self.assertGreater(params_count, 0)
+
     def test_register_module(self) -> None:
         fool_add_constant = FoolConvModule()
         flops_params_cfg = dict(input_shape=(1, 3, 224, 224))
@@ -150,6 +160,17 @@ class TestResourceEstimator(TestCase):
 
         self.assertLess(rest_flops_count, 45.158)
         self.assertLess(rest_params_count, 0.701)
+
+        fool_conv2d = Conv2dAdaptivePadding(3, 32, 3)
+        flops_params_cfg = dict(
+            input_shape=(1, 3, 224, 224), disabled_counters=['Conv2dCounter'])
+        rest_results = estimator.estimate(
+            model=fool_conv2d, flops_params_cfg=flops_params_cfg)
+        rest_flops_count = rest_results['flops']
+        rest_params_count = rest_results['params']
+
+        self.assertEqual(rest_flops_count, 0)
+        self.assertEqual(rest_params_count, 0)
 
     def test_estimate_spec_module(self) -> None:
         fool_add_constant = FoolConvModule()
