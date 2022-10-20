@@ -27,7 +27,7 @@ model = dict(
     _scope_='mmrazor',
     type='DCFF',
     data_preprocessor=data_preprocessor,
-    fuse_count=1,
+    fuse_freq=1,
     architecture=dict(
         cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False),
     mutator=dict(
