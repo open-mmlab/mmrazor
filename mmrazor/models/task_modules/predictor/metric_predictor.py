@@ -65,7 +65,7 @@ class MetricPredictor(BasePredictor):
         assert evaluation in [None, 'simple', 'complex'
                               ], (f'Not support evaluation mode {evaluation}.')
 
-        self.fit_cfg = fit_cfg
+        self.fit_cfg = fit_cfg if fit_cfg is not None else dict()
         self.evaluate_samples = evaluate_samples
         self.score_key_list = [score_key] + ['anticipate']
         self.initialize = False
@@ -156,7 +156,7 @@ class MetricPredictor(BasePredictor):
         input = self.preprocess(input)
         if isinstance(self.handler, MLPHandler):
             self.handler.check_dimentions(input.shape[1])
-            self.handler.fit(x=input, y=target, **self.fit_cfg)
+            self.handler.fit(input, target, **self.fit_cfg)
         else:
             self.handler.fit(input, target)
 
