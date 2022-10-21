@@ -125,8 +125,8 @@ class TestResourceEstimator(TestCase):
         flops_count = results['flops']
         params_count = results['params']
 
-        self.assertGreater(flops_count, 0)
-        self.assertGreater(params_count, 0)
+        self.assertEqual(flops_count, 44.158)
+        self.assertEqual(params_count, 0.001)
 
         fool_conv2d = Conv2dAdaptivePadding(3, 32, 3)
         results = estimator.estimate(
@@ -134,8 +134,8 @@ class TestResourceEstimator(TestCase):
         flops_count = results['flops']
         params_count = results['params']
 
-        self.assertGreater(flops_count, 0)
-        self.assertGreater(params_count, 0)
+        self.assertEqual(flops_count, 44.958)
+        self.assertEqual(params_count, 0.001)
 
     def test_register_module(self) -> None:
         fool_add_constant = FoolConvModule()

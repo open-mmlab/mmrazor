@@ -1,6 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import sys
-import warnings
 from functools import partial
 from typing import Dict, List
 
@@ -411,12 +410,6 @@ def start_flops_params_count(self, disabled_counters):
 
             else:
                 counter_type = get_counter_type(module)
-                if counter_type not in TASK_UTILS._module_dict.keys():
-                    old_counter_type = counter_type
-                    counter_type = \
-                        module.__class__.__base__.__name__ + 'Counter'
-                    warnings.warn(f'`{old_counter_type}` not in '
-                                  f'op_counters. Using `{counter_type}`')
                 if (disabled_counters is None
                         or counter_type not in disabled_counters):
                     counter = TASK_UTILS.build(
@@ -505,19 +498,35 @@ def add_flops_params_counter_variable_or_reset(module):
         module.__params__ = 0
 
 
-def get_counter_type(module):
-    """Get counter type of the module based on the module class name."""
-    return module.__class__.__name__ + 'Counter'
+def get_counter_type(module) -> str:
+    """Get counter type of the module based on the module class name.
+
+    If the current module counter_type is not in TASK_UTILS._module_dict,
+    it will search the base classes of the module to see if it matches any
+    base class counter_type.
+
+    Returns:
+        str: Counter type (or the base counter type) of the current module.
+    """
+    counter_type = module.__class__.__name__ + 'Counter'
+    if counter_type not in TASK_UTILS._module_dict.keys():
+        old_counter_type = counter_type
+        assert nn.Module in module.__class__.mro()
+        for base_cls in module.__class__.mro():
+            if base_cls in get_modules_list():
+                counter_type = base_cls.__name__ + 'Counter'
+                from mmengine import MMLogger
+                logger = MMLogger.get_current_instance()
+                logger.warning(f'`{old_counter_type}` not in op_counters. '
+                               f'Using `{counter_type}` instead.')
+                break
+    return counter_type
 
 
 def is_supported_instance(module):
-    """Judge whether the module can be countered or not."""
+    """Judge whether the module is in TASK_UTILS registry or not."""
     if get_counter_type(module) in TASK_UTILS._module_dict.keys():
         return True
-    else:
-        for op in get_modules_list():
-            if issubclass(module.__class__.__base__, op):
-                return True
     return False
 
 
