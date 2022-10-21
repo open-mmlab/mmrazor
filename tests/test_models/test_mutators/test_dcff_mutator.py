@@ -110,6 +110,7 @@ def test_DCFF_channel_mutator() -> None:
     mutator.prepare_from_supernet(model)
     choice = mutator.sample_choices()
     mutator.set_choices(choice)
+    mutator.calc_information(1.0)
     out3 = model(imgs)
 
     assert out3.shape == (16, 8, 224, 224)

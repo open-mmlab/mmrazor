@@ -477,6 +477,51 @@ class FuseConvMixin(DynamicConvMixin):
             fused_bias = self.bias
         return fused_weight, fused_bias
 
+    def get_pooled_channel(self: _ConvNd, tau: float) -> None:
+        """Calculate channel's kl and apply softmax pooling on channel. Reset
+        `self.layeri_softmaxp` as pooling result.
+
+        Args:
+            tau (float): Temperature by epoch/iter.
+
+        Returns:
+            Tuple[Tensor, Optional[Tensor], Tuple[int]]: Sliced weight, bias
+                and padding.
+        """
+        param = self.weight
+
+        # Compute layeri_param.
+        layeri_param = torch.reshape(param.detach(), (param.shape[0], -1))
+        layeri_Eudist = torch.cdist(layeri_param, layeri_param, p=2)
+        layeri_negaEudist = -layeri_Eudist
+        softmax = nn.Softmax(dim=1)
+        layeri_softmaxp = softmax(layeri_negaEudist / tau)
+
+        # KL = [c, 1, c] * ([c, 1 ,c] / [c, c, 1]).log()
+        #    = [c, 1, c] * ([c, 1, c].log() - [c, c, 1].log())
+        # only dim0 is required, dim1 and dim2 are pooled
+        # calc mean(dim=1) first
+
+        # avoid frequent NaN
+        eps = 1e-7
+        layeri_kl = layeri_softmaxp[:, None, :]
+        log_p = layeri_kl * (layeri_kl + eps).log()
+        log_q = layeri_kl * torch.mean((layeri_softmaxp + eps).log(), dim=1)
+
+        layeri_kl = torch.mean((log_p - log_q), dim=2)
+        del log_p, log_q
+        real_out = self.mutable_attrs['out_channels'].activated_channels
+
+        layeri_iscore_kl = torch.sum(layeri_kl, dim=1)
+        _, topm_ids_order = torch.topk(
+            layeri_iscore_kl, int(real_out), sorted=False)
+        softmaxp = layeri_softmaxp[topm_ids_order, :]
+        if (not hasattr(self, 'layeri_softmaxp')):
+            setattr(self, 'layeri_softmaxp', softmaxp)
+        else:
+            self.layeri_softmaxp.data = softmaxp
+        del param, layeri_param, layeri_negaEudist, layeri_kl
+
     def to_static_op(self: _ConvNd) -> nn.Conv2d:
         """Convert dynamic conv2d to :obj:`torch.nn.Conv2d`.
 
