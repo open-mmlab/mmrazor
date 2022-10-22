@@ -17,14 +17,14 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Feature map visualization')
     parser.add_argument('img', help='Image file')
     parser.add_argument(
-        'tea_config', help='train config file path for the teacher model')
+        'config1', help='train config file path for the first model')
     parser.add_argument(
-        'stu_config', help='train config file path for the student model')
+        'config2', help='train config file path for the second model')
     parser.add_argument('vis_config', help='visualization config file path')
     parser.add_argument(
-        'tea_checkpoint', help='Checkpoint file for the teacher model')
+        'checkpoint1', help='Checkpoint file for the first model')
     parser.add_argument(
-        'stu_checkpoint', help='Checkpoint file for the student model')
+        'checkpoint2', help='Checkpoint file for the second model')
     parser.add_argument('--out-file', default=None, help='Path to output file')
     parser.add_argument(
         '--device', default='cpu', help='Device used for inference')
@@ -95,61 +95,55 @@ def main(args):
             init_model = getattr(apis, attr_name)
     assert inference_model and init_model
 
-    student = init_model(
-        args.stu_config, args.stu_checkpoint, device=args.device)
+    model1 = init_model(args.config1, args.checkpoint1, device=args.device)
     # init visualizer
-    visualizer = VISUALIZERS.build(student.cfg.visualizer)
+    visualizer = VISUALIZERS.build(model1.cfg.visualizer)
     visualizer.draw_featmap = modify
 
-    teacher = init_model(
-        args.tea_config, args.tea_checkpoint, device=args.device)
+    model2 = init_model(args.config2, args.checkpoint2, device=args.device)
 
     visualization_cfg = Config.fromfile(args.vis_config)
-    student_recorder_cfg = visualization_cfg.student_recorders
-    student_mappings = visualization_cfg.student_mappings
-    teacher_recorder_cfg = visualization_cfg.teacher_recorders
-    teacher_mappings = visualization_cfg.teacher_mappings
+    recorder_cfg1 = visualization_cfg.recorders1
+    mappings1 = visualization_cfg.mappings1
+    recorder_cfg2 = visualization_cfg.recorders2
+    mappings2 = visualization_cfg.mappings2
 
-    student_recorder_manager = RecorderManager(student_recorder_cfg)
-    student_recorder_manager.initialize(student)
+    recorder_manager1 = RecorderManager(recorder_cfg1)
+    recorder_manager1.initialize(model1)
 
-    teacher_recorder_manager = RecorderManager(teacher_recorder_cfg)
-    teacher_recorder_manager.initialize(teacher)
+    recorder_manager2 = RecorderManager(recorder_cfg2)
+    recorder_manager2.initialize(model2)
 
-    with student_recorder_manager:
+    with recorder_manager1:
         # test a single image
-        _ = inference_model(student, args.img)
+        _ = inference_model(model1, args.img)
 
-    with teacher_recorder_manager:
+    with recorder_manager2:
         # test a single image
-        _ = inference_model(teacher, args.img)
+        _ = inference_model(model2, args.img)
 
     overlaid_image = mmcv.imread(
         args.img, channel_order='rgb') if args.overlaid else None
 
-    for teacher_name, student_name in zip(teacher_mappings.keys(),
-                                          student_mappings.keys()):
-        teacher_record = teacher_mappings[teacher_name]
-        teacher_recorder = teacher_recorder_manager.get_recorder(
-            teacher_record.recorder)
-        record_idx = getattr(teacher_record, 'record_idx', 0)
-        data_idx = getattr(teacher_record, 'data_idx')
-        teacher_feats = teacher_recorder.get_record_data(record_idx, data_idx)
-        if isinstance(teacher_feats, torch.Tensor):
-            teacher_feats = (teacher_feats, )
+    for name1, name2 in zip(mappings1.keys(), mappings2.keys()):
+        record1 = mappings1[name1]
+        recorder1 = recorder_manager1.get_recorder(record1.recorder)
+        record_idx = getattr(record1, 'record_idx', 0)
+        data_idx = getattr(record1, 'data_idx')
+        feats1 = recorder1.get_record_data(record_idx, data_idx)
+        if isinstance(feats1, torch.Tensor):
+            feats1 = (feats1, )
 
-        student_record = student_mappings[student_name]
-        student_recorder = student_recorder_manager.get_recorder(
-            student_record.recorder)
-        record_idx = getattr(student_record, 'record_idx', 0)
-        data_idx = getattr(student_record, 'data_idx')
-        student_feats = student_recorder.get_record_data(record_idx, data_idx)
-        if isinstance(student_feats, torch.Tensor):
-            student_feats = (student_feats, )
+        record2 = mappings2[name2]
+        recorder2 = recorder_manager2.get_recorder(record2.recorder)
+        record_idx = getattr(record2, 'record_idx', 0)
+        data_idx = getattr(record2, 'data_idx')
+        feats2 = recorder2.get_record_data(record_idx, data_idx)
+        if isinstance(feats2, torch.Tensor):
+            feats2 = (feats2, )
 
-        for i, (teacher_feat,
-                student_feat) in enumerate(zip(teacher_feats, student_feats)):
-            diff = torch.abs(teacher_feat - student_feat)
+        for i, (feat1, feat2) in enumerate(zip(feats1, feats2)):
+            diff = torch.abs(feat1 - feat2)
             if args.use_norm:
                 diff = norm(diff)
             drawn_img = visualizer.draw_featmap(
@@ -162,7 +156,7 @@ def main(args):
                 if args.resize_shape else None,
                 alpha=args.alpha)
             visualizer.add_datasample(
-                f'tea_{teacher_name}_stu_{student_name}_{i}',
+                f'model1_{name1}_model2_{name2}_{i}',
                 drawn_img,
                 show=args.out_file is None,
                 wait_time=0.1,
