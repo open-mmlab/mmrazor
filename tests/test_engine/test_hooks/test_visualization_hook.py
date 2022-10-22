@@ -1,7 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import os
 import os.path as osp
 import shutil
 import time
+from os.path import dirname
 from typing import Optional
 from unittest import TestCase
 from unittest.mock import Mock
@@ -18,9 +20,9 @@ from mmrazor.engine.hooks import RazorVisualizationHook
 
 
 def get_data_info(idx):
+    root_path = dirname(dirname(dirname(dirname(__file__))))
     return {
-        'img_path':
-        r'G:\projects\openmmlab\mmrazor\tools\visualizations\demo.jpg'
+        'img_path': os.path.join(root_path, 'tools/visualizations/demo.jpg')
     }
 
 
