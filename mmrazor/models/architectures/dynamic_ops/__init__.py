@@ -13,6 +13,7 @@ from .mixins.dynamic_mixins import (DynamicBatchNormMixin, DynamicChannelMixin,
                                     DynamicLinearMixin, DynamicMixin)
 from .mixins.dynamic_rp_mixins import DynamicRelativePosition2DMixin
 from .mixins.dynamic_mha_mixins import DynamicMHAMixin
+from .head import DynamicLinearClsHead
 
 __all__ = [
     'BigNasConv2d',
@@ -35,5 +36,6 @@ __all__ = [
     'DynamicRelativePosition2D',
     'DynamicRelativePosition2DMixin',
     'DynamicMultiheadAttention',
-    'DynamicMHAMixin'
+    'DynamicMHAMixin',
+    'DynamicLinearClsHead'
 ]

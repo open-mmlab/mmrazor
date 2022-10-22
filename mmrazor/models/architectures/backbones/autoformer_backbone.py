@@ -178,7 +178,7 @@ class TransformerEncoderLayer(BaseBackbone):
         return residual + x
 
 
-# @MODELS.register_module()
+@MODELS.register_module()
 class AutoformerBackbone(BaseBackbone):
     """Autoformer backbone.
 

@@ -98,6 +98,7 @@ class MutableChannelUnit(ChannelUnit):
 
         mutable2units: Dict = {}
         for name, module in model.named_modules():
+            print(name, type(module))
             if isinstance(module, DynamicChannelMixin): # 少了 attn
 
                 print(name, type(module))
