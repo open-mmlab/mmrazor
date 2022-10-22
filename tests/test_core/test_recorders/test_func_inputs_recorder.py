@@ -117,13 +117,14 @@ class TestFuncInputsRecorder(TestCase):
                 num_workers=0),
             val_evaluator=evaluator,
             work_dir=self.temp_dir.name,
+            default_scope='mmrazor',
             optim_wrapper=OptimWrapper(
                 torch.optim.Adam(ToyModel().parameters())),
             train_cfg=dict(by_epoch=True, max_epochs=2, val_interval=1),
             val_cfg=dict(),
             default_hooks=dict(logger=None),
             custom_hooks=[dict(type='EMAHook', )],
-            experiment_name='test1')
+            experiment_name='test_func_inputs_recorder')
         runner.train()
         for hook in runner.hooks:
             if isinstance(hook, EMAHook):
