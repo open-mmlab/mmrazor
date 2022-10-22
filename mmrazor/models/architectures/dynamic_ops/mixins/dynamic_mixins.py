@@ -43,6 +43,7 @@ class DynamicMixin(ABC):
             attr_map = self.attr_mappings[attr]
             return getattr(self.mutable_attrs, attr_map, None)  # type:ignore
         else:
+            # self.accepted_mutable_attrs
             return getattr(self.mutable_attrs, attr, None)  # type:ignore
 
     @classmethod

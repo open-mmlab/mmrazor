@@ -132,6 +132,8 @@ class MultiheadAttention(BaseOP):
         self.head_dims = 64  # unit
         self.scale = qk_scale or self.head_dims**-0.5
 
+        self.q_embed_dims = num_heads * self.head_dims
+
         self.w_qs = nn.Linear(
             self.input_dims, num_heads * self.head_dims, bias=qkv_bias)
         self.w_ks = nn.Linear(

@@ -101,7 +101,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
 
         self._name2module = dict(supernet.named_modules())
 
-        if 'Tracer' in self.parse_cfg['type']:
+        if 'Tracer' in self.parse_cfg['type']: # 一般build model
             units = self._prepare_from_tracer(supernet, self.parse_cfg)
         elif self.parse_cfg['type'] == 'Config':
             units = self._prepare_from_cfg(supernet, self.units_cfg)

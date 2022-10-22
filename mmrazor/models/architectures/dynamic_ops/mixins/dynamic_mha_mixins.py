@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 
-from typing import Set, Tuple
+from typing import Dict, Set, Tuple
 
 import sys
 
@@ -42,6 +42,12 @@ class DynamicMHAMixin(DynamicMixin, DynamicMHAProtocol):
     """
     accepted_mutable_attrs: Set[str] = {
         'num_heads', 'embed_dims', 'q_embed_dims'
+    }
+
+    # add
+    attr_mappings: Dict[str, str] = {
+        'in_channels': 'embed_dims',
+        'out_channels': 'q_embed_dims',
     }
 
     @property

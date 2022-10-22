@@ -13,6 +13,10 @@ from mmrazor.models.mutables.mutable_channel import (BaseMutableChannel,
                                                      MutableChannelContainer)
 from .channel_unit import Channel, ChannelUnit
 
+from mmcls.models.utils import PatchEmbed
+from torch.nn import LayerNorm
+from mmrazor.models.architectures.ops import RelativePosition2D
+from mmrazor.models.architectures.ops import MultiheadAttention
 
 class MutableChannelUnit(ChannelUnit):
 
@@ -94,7 +98,9 @@ class MutableChannelUnit(ChannelUnit):
 
         mutable2units: Dict = {}
         for name, module in model.named_modules():
-            if isinstance(module, DynamicChannelMixin):
+            if isinstance(module, DynamicChannelMixin): # 少了 attn
+
+                print(name, type(module))
                 in_container: MutableChannelContainer = \
                     module.get_mutable_attr(
                         'in_channels')
@@ -222,6 +228,8 @@ class MutableChannelUnit(ChannelUnit):
     def _register_channel_container(
             model: nn.Module, container_class: Type[MutableChannelContainer]):
         """register channel container for dynamic ops."""
+
+        """
         for module in model.modules():
             if isinstance(module, dynamic_ops.DynamicChannelMixin):
                 if module.get_mutable_attr('in_channels') is None:
@@ -248,6 +256,66 @@ class MutableChannelUnit(ChannelUnit):
                         raise NotImplementedError()
                     module.register_mutable_attr('out_channels',
                                                  container_class(out_channels))
+
+        """
+        for module in model.modules():
+            # 跳过 DynamicChannelMixin
+            if isinstance(module, MultiheadAttention):
+                in_channels = module.embed_dims
+                module.register_mutable_attr('embed_dims',
+                                                container_class(in_channels))
+                out_channels = module.q_embed_dims
+                module.register_mutable_attr('q_embed_dims',
+                                                container_class(out_channels))
+                # out_channels = module.num_heads
+                # module.register_mutable_attr('num_heads',
+                #                                 container_class(out_channels))
+                # out_channels = module.head_dims
+                # module.register_mutable_attr('head_dims',
+                #                                 container_class(out_channels))
+                # out_channels = module.q_embed_dims
+
+            if isinstance(module, dynamic_ops.DynamicChannelMixin):
+                if module.get_mutable_attr('in_channels') is None:
+                    in_channels = 0
+                    if isinstance(module, nn.Conv2d):
+                        in_channels = module.in_channels
+                    elif isinstance(module, nn.modules.batchnorm._BatchNorm):
+                        in_channels = module.num_features
+                    elif isinstance(module, nn.Linear):
+                        in_channels = module.in_features
+                    # autoformer
+                    elif isinstance(module, PatchEmbed):
+                        in_channels = module.embed_dims
+                    elif isinstance(module, LayerNorm):
+                        in_channels = module.normalized_shape[0]
+                    elif isinstance(module, RelativePosition2D):
+                        in_channels = module.head_dims
+                    else:
+                        raise NotImplementedError()
+                    module.register_mutable_attr('in_channels',
+                                                 container_class(in_channels))
+                                                 
+                if module.get_mutable_attr('out_channels') is None:
+                    out_channels = 0
+                    if isinstance(module, nn.Conv2d):
+                        out_channels = module.out_channels
+                    elif isinstance(module, nn.modules.batchnorm._BatchNorm):
+                        out_channels = module.num_features
+                    elif isinstance(module, nn.Linear):
+                        out_channels = module.out_features
+                    # autoformer
+                    elif isinstance(module, PatchEmbed):
+                        out_channels = module.embed_dims
+                    elif isinstance(module, LayerNorm):
+                        out_channels = module.normalized_shape[0]
+                    elif isinstance(module, RelativePosition2D):
+                        out_channels = module.head_dims
+                    else:
+                        raise NotImplementedError()
+                    module.register_mutable_attr('out_channels',
+                                                 container_class(out_channels))
+
 
     def _register_mutable_channel(self, mutable_channel: BaseMutableChannel):
         # register mutable_channel

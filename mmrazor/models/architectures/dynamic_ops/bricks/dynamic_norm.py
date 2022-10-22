@@ -216,6 +216,11 @@ class DynamicLayerNorm(LayerNorm, DynamicLayerNormMixin):
 
         self.mutable_attrs: Dict[str, Optional[BaseMutable]] = nn.ModuleDict()
 
+    @property
+    def static_op_factory(self):
+        """Corresponding Pytorch OP."""
+        return LayerNorm
+
     @classmethod
     def convert_from(cls, module: LayerNorm):
         """Convert a _BatchNorm module to a DynamicBatchNorm.
@@ -241,10 +246,6 @@ class DynamicLayerNorm(LayerNorm, DynamicLayerNormMixin):
         return F.layer_norm(input, self.normalized_shape, weight, bias,
                             self.eps)
 
-    @property
-    def static_op_factory(self):
-        """Corresponding Pytorch OP."""
-        return LayerNorm
 
     def _check_input_dim(self, input: Tensor) -> None:
         """Check if input dimension is valid."""

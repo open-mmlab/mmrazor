@@ -125,12 +125,12 @@ class TestChannelMutator(unittest.TestCase):
                 DynamicLinearModel,
         ]:
             with self.subTest(model=Model):
-                model = Model()
+                model = Model() # 初始化模型
                 mutator = ChannelMutator(
                     channel_unit_cfg={
                         'type': 'OneShotMutableChannelUnit',
                         'default_args': {}
                     },
                     parse_cfg={'type': 'Predefined'})
-                mutator.prepare_from_supernet(model)
+                mutator.prepare_from_supernet(model) 
                 self._test_a_mutator(mutator, model)

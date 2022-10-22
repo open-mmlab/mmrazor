@@ -534,11 +534,14 @@ class DynamicLinearModel(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.net = nn.Sequential(
-            DynamicConv2d(3, 8, 3, 1, 1), DynamicBatchNorm2d(8), nn.ReLU(),
-            DynamicConv2d(8, 16, 3, 1, 1), DynamicBatchNorm2d(16),
+            DynamicConv2d(3, 8, 3, 1, 1), # 0
+            DynamicBatchNorm2d(8), # 1
+            nn.ReLU(),
+            DynamicConv2d(8, 16, 3, 1, 1), # 3 
+            DynamicBatchNorm2d(16),
             nn.AdaptiveAvgPool2d(1))
         self.linear = DynamicLinear(16, 1000)
-
+        # 搞一个 MutableChannelUnit
         MutableChannelUnit._register_channel_container(
             self, MutableChannelContainer)
         self._register_mutable()
@@ -552,20 +555,36 @@ class DynamicLinearModel(nn.Module):
         mutable1 = OneShotMutableChannel(8, candidate_choices=[1, 4, 8])
         mutable2 = OneShotMutableChannel(16, candidate_choices=[2, 8, 16])
         mutable_value = SampleExpandDerivedMutable(1)
-
+        # True 表示container拿到的out_channels 否则拿到的in_channels的属性
+        # start/end 当属于派生类的时候，end的计算可能不是准确的，需要手动指定
+        # DynamicConv2d(3, 8, 3, 1, 1), # 0
         MutableChannelContainer.register_mutable_channel_to_module(
-            self.net[0], mutable1, True)
+            self.net[0], mutable1, True) # 【1, 4, 8】True
+        # DynamicBatchNorm2d(8), # 1
         MutableChannelContainer.register_mutable_channel_to_module(
             self.net[1], mutable1.expand_mutable_channel(1), True, 0, 8)
+        # DynamicConv2d(8, 16, 3, 1, 1), # 3 
         MutableChannelContainer.register_mutable_channel_to_module(
             self.net[3], mutable_value * mutable1, False, 0, 8)
+        
+        # MutableChannelContainer.register_mutable_channel_to_module(
+        #     self.net[3], mutable2, True)
+        mutable_value = SampleExpandDerivedMutable(2)
+        MutableChannelContainer.register_mutable_channel_to_module(
+            self.net[3], mutable_value * mutable1, True, 0, end=16)
 
+
+        # DynamicBatchNorm2d(16),
+        # MutableChannelContainer.register_mutable_channel_to_module(
+        #     self.net[4], mutable2, True)
         MutableChannelContainer.register_mutable_channel_to_module(
-            self.net[3], mutable2, True)
+            self.net[4], mutable_value * mutable1, True, 0, end=16)
+        
+        # DynamicLinear(16, 1000) 16
+        # MutableChannelContainer.register_mutable_channel_to_module(
+        #     self.linear, mutable2, False)
         MutableChannelContainer.register_mutable_channel_to_module(
-            self.net[4], mutable2, True)
-        MutableChannelContainer.register_mutable_channel_to_module(
-            self.linear, mutable2, False)
+            self.linear, mutable_value * mutable1, False, 0, end=16)
 
 
 default_models = [
