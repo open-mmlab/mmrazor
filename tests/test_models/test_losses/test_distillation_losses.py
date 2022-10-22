@@ -2,7 +2,7 @@
 from unittest import TestCase
 
 import torch
-from mmengine.data import BaseDataElement
+from mmengine.structures import BaseDataElement
 
 from mmrazor import digit_version
 from mmrazor.models import (ABLoss, ActivationLoss, ATLoss, CRDLoss, DKDLoss,

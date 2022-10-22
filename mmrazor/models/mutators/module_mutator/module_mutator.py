@@ -55,6 +55,24 @@ class ModuleMutator(BaseMutator[MUTABLE_TYPE]):
         self._build_search_groups(supernet)
 
     @property
+    def name2mutable(self) -> Dict[str, MUTABLE_TYPE]:
+        """Search space of supernet.
+
+        Note:
+            To get the mapping: module name to mutable.
+
+        Raises:
+            RuntimeError: Called before search space has been parsed.
+
+        Returns:
+            Dict[str, MUTABLE_TYPE]: The name2mutable dict.
+        """
+        if self._name2mutable is None:
+            raise RuntimeError(
+                'Call `prepare_from_supernet` before access name2mutable!')
+        return self._name2mutable
+
+    @property
     def search_groups(self) -> Dict[int, List[MUTABLE_TYPE]]:
         """Search group of supernet.
 
@@ -80,6 +98,8 @@ class ModuleMutator(BaseMutator[MUTABLE_TYPE]):
         for name, module in supernet.named_modules():
             if isinstance(module, self.mutable_class_type):
                 name2mutable[name] = module
+        self._name2mutable = name2mutable
+
         return name2mutable
 
     def _build_alias_names_mapping(self,
@@ -121,7 +141,7 @@ class ModuleMutator(BaseMutator[MUTABLE_TYPE]):
             >>> import torch
             >>> from mmrazor.models.mutables.diff_mutable import DiffMutableOP
 
-            >>> # Assume that a toy model consists of three mutabels
+            >>> # Assume that a toy model consists of three mutables
             >>> # whose name are op1,op2,op3. The corresponding
             >>> # alias names of the three mutables are a1, a1, a2.
             >>> model = ToyModel()

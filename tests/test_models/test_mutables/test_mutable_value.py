@@ -5,8 +5,8 @@ from unittest import TestCase
 import pytest
 import torch
 
-from mmrazor.models.mutables import (MutableValue, OneShotMutableChannel,
-                                     OneShotMutableValue)
+from mmrazor.models.mutables import (MutableValue, OneShotMutableValue,
+                                     SquentialMutableChannel)
 
 
 class TestMutableValue(TestCase):
@@ -87,8 +87,7 @@ class TestMutableValue(TestCase):
             _ = mv * 1.2
 
         mv = MutableValue(value_list=[1, 2, 3], default_value=3)
-        mc = OneShotMutableChannel(
-            num_channels=4, candidate_choices=[2, 4], candidate_mode='number')
+        mc = SquentialMutableChannel(num_channels=4)
 
         with pytest.raises(TypeError):
             _ = mc * mv
