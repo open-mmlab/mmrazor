@@ -7,8 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 from mmengine import fileio
 from mmengine.evaluator import Evaluator
-from mmengine.runner import BaseLoop
-from mmengine.utils import is_list_of
+from mmengine.runner import TestLoop
 from torch.utils.data import DataLoader
 
 from mmrazor.models.task_modules import ResourceEstimator
@@ -18,7 +17,7 @@ from .utils import get_subnet_flops
 
 
 @LOOPS.register_module()
-class GreedySearchLoop(BaseLoop):
+class GreedySearchLoop(TestLoop):
 
     def __init__(self,
                  runner,
@@ -26,13 +25,9 @@ class GreedySearchLoop(BaseLoop):
                  evaluator: Union[Evaluator, Dict, List],
                  target_flops: Tuple[float],
                  resource_estimator_cfg: Dict[str, Any] = dict(),
-                 score_key: str = 'accuracy_top-1',
+                 score_key: str = 'accuracy/top1',
                  resume_from: Optional[str] = None):
-        super().__init__(runner, dataloader)
-        if isinstance(evaluator, dict) or is_list_of(evaluator, dict):
-            self.evaluator = runner.build_evaluator(evaluator)  # type: ignore
-        else:
-            self.evaluator = evaluator  # type: ignore
+        super().__init__(runner, dataloader, evaluator)
 
         if hasattr(self.dataloader.dataset, 'metainfo'):
             self.evaluator.dataset_meta = self.dataloader.dataset.metainfo
@@ -72,7 +67,7 @@ class GreedySearchLoop(BaseLoop):
 
     def run(self) -> None:
         """Launch searching."""
-        self.runner.call_hook('before_train')
+        self.runner.call_hook('before_test')
 
         if self.resume_from:
             self._resume()
@@ -123,8 +118,8 @@ class GreedySearchLoop(BaseLoop):
                                                       current_subnet_choices,
                                                       self.estimator)
                 self.runner.logger.info(
-                    f'Greedily find model, score: {self.current_subnet}, '
-                    f'FLOPS: {self.current_flops}')
+                    f'Greedily find model, score: {best_score}, '
+                    f'{self.current_subnet}, FLOPS: {self.current_flops}')
                 self._save_searcher_ckpt()
 
             self.searched_subnet.append(self.current_subnet)
@@ -133,9 +128,12 @@ class GreedySearchLoop(BaseLoop):
                 f'Find model flops {self.current_flops} <= {target}')
 
         self._save_searched_subnet()
-        self.runner.call_hook('after_train')
+        self.runner.call_hook('after_test')
 
     def _channel_bins2choices(self, subnet_channel_bins):
+        """Convert the channel bin number of a channel unit to the choice
+        (ratio when choice_mode='ratio' and channel number when
+        choice_mode='number')."""
         choices = {}
         for unit_name, bins in subnet_channel_bins.items():
             # `bins` is in range [1, max_bins]
@@ -148,7 +146,7 @@ class GreedySearchLoop(BaseLoop):
         self.runner.model.eval()
         for data_batch in self.dataloader:
             outputs = self.runner.model.val_step(data_batch)
-            self.evaluator.process(data_batch, outputs)
+            self.evaluator.process(data_samples=outputs, data_batch=data_batch)
         metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
         return metrics
 
@@ -173,6 +171,7 @@ class GreedySearchLoop(BaseLoop):
             f'FLOPs are {self.searched_subnet_flops}')
 
     def _save_searched_subnet(self):
+        """Save the final searched subnet dict."""
         if self.runner.rank != 0:
             return
         self.runner.logger.info('Search finished:')
