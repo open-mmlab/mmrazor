@@ -107,7 +107,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
                      channel_unit_cfg=dict(
                          type='SequentialMutableChannelUnit')),
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
-                 target_pruning_ratio={},
+                 target_pruning_ratio: Optional[Dict[str, float]] = None,
                  step_epoch=1,
                  prune_times=1,
                  init_cfg: Optional[Dict] = None) -> None:
@@ -119,14 +119,35 @@ class ItePruneAlgorithm(BaseAlgorithm):
         self.mutator.prepare_from_supernet(self.architecture)
 
         # config_manager
-        self.check_prune_targe(target_pruning_ratio)
+        if target_pruning_ratio is None:
+            group_target_ratio = self.mutator.current_choices
+        else:
+            group_target_ratio = self.group_target_pruning_ratio(
+                target_pruning_ratio, self.mutator.search_groups)
+
         self.prune_config_manager = ItePruneConfigManager(
-            target_pruning_ratio,
-            self.mutator.choice_template,
+            group_target_ratio,
+            self.mutator.current_choices,
             step_epoch,
             times=prune_times)
 
-    def check_prune_targe(self, config: Dict):
+    def group_target_pruning_ratio(self, target, search_groups):
+
+        group_target = dict()
+        for group_id, units in search_groups.items():
+            for unit in units:
+                unit_name = unit.name
+                if group_id in group_target:
+                    unit_target = target[unit_name]
+                    assert unit_target == group_target[group_id]
+                else:
+                    unit_target = target[unit_name]
+                    assert isinstance(unit_target, (float, int))
+                    group_target[group_id] = unit_target
+
+        return group_target
+
+    def check_prune_target(self, config: Dict):
         """Check if the prune-target is supported."""
         for value in config.values():
             assert isinstance(value, int) or isinstance(value, float)
@@ -141,7 +162,9 @@ class ItePruneAlgorithm(BaseAlgorithm):
                                                    self._iteration):
 
             config = self.prune_config_manager.prune_at(self._epoch)
+
             self.mutator.set_choices(config)
+
             logger = MMLogger.get_current_instance()
             logger.info(f'The model is pruned at {self._epoch}th epoch once.')
 

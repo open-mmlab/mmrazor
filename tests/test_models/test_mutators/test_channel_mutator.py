@@ -134,3 +134,22 @@ class TestChannelMutator(unittest.TestCase):
                     parse_cfg={'type': 'Predefined'})
                 mutator.prepare_from_supernet(model)
                 self._test_a_mutator(mutator, model)
+
+    def test_custom_group(self):
+        ARCHITECTURE_CFG = dict(
+            type='mmcls.ImageClassifier',
+            backbone=dict(type='mmcls.MobileNetV2', widen_factor=1.5),
+            neck=dict(type='mmcls.GlobalAveragePooling'),
+            head=dict(
+                type='mmcls.LinearClsHead',
+                num_classes=1000,
+                in_channels=1920,
+                loss=dict(type='mmcls.CrossEntropyLoss', loss_weight=1.0),
+                topk=(1, 5)))
+        model = MODELS.build(ARCHITECTURE_CFG)
+
+        # generate config
+        model1 = copy.deepcopy(model)
+        mutator = ChannelMutator()
+        mutator.prepare_from_supernet(model1)
+        mutator.search_groups
