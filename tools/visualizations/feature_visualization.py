@@ -4,7 +4,7 @@ import os
 
 import mmcv
 import torch
-from mmengine.config import Config
+from mmengine.config import Config, DictAction
 from mmengine.registry import VISUALIZERS
 from mmengine.utils import import_modules_from_strings
 
@@ -36,6 +36,7 @@ def parse_args():
         default=None)
     parser.add_argument(
         '--topk',
+        type=int,
         help='If channel_reduction is not None and topk > 0, it will select '
         'topk channel to show by the sum of each channel. If topk <= 0, '
         'tensor_chw is assert to be one or three.',
@@ -55,6 +56,17 @@ def parse_args():
         default=None)
     parser.add_argument(
         '--alpha', help='the transparency of featmap', default=0.5)
+    parser.add_argument(
+        '--cfg-options',
+        nargs='+',
+        action=DictAction,
+        help='override some settings in the used config, the key-value pair '
+        'in xxx=yyy format will be merged into config file. If the value to '
+        'be overwritten is a list, it should be like key="[a,b]" or key=a,b '
+        'It also allows nested list/tuple values, e.g. key="[(a,b),(c,d)]" '
+        'Note that the quotation marks are necessary and that no white space '
+        'is allowed.',
+        default={})
 
     parser.add_argument('--local_rank', type=int, default=0)
 
@@ -102,7 +114,7 @@ def main(args):
 
     with recorder_manager:
         # test a single image
-        _ = inference_model(model, args.img)
+        result = inference_model(model, args.img)
 
     overlaid_image = mmcv.imread(
         args.img, channel_order='rgb') if args.overlaid else None
@@ -130,9 +142,12 @@ def main(args):
             visualizer.add_datasample(
                 f'{name}_{i}',
                 drawn_img,
+                data_sample=result,
+                draw_gt=False,
                 show=args.out_file is None,
                 wait_time=0.1,
-                out_file=args.out_file)
+                out_file=args.out_file,
+                **args.cfg_options)
 
 
 if __name__ == '__main__':

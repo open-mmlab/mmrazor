@@ -45,6 +45,7 @@ def parse_args():
         help='If channel_reduction is not None and topk > 0, it will select '
         'topk channel to show by the sum of each channel. If topk <= 0, '
         'tensor_chw is assert to be one or three.',
+        type=int,
         default=20)
     parser.add_argument(
         '--arrangement',
