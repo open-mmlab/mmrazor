@@ -1,13 +1,15 @@
-import torch
+# Copyright (c) OpenMMLab. All rights reserved.
 import copy
-import os
 import shutil
 import tempfile
-from torch.utils.data import DataLoader, Dataset
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
+
+import torch
+from torch.utils.data import DataLoader, Dataset
+
 from mmrazor.core.builder import SEARCHERS
-from mmcv import Config
+
 
 def collate_fn(data_batch):
     return data_batch
@@ -28,6 +30,7 @@ class ToyDataset(Dataset):
     def __getitem__(self, index):
         return dict(inputs=self.data[index], data_sample=self.label[index])
 
+
 class TestEvolutionSearcher(TestCase):
 
     def setUp(self):
@@ -46,10 +49,10 @@ class TestEvolutionSearcher(TestCase):
         self.dataloader = DataLoader(ToyDataset(), collate_fn=collate_fn)
         self.test_fn = MagicMock()
         self.logger = MagicMock()
-    
+
     def tearDown(self):
         shutil.rmtree(self.work_dir)
-    
+
     @patch('mmrazor.models.algorithms.DetNAS')
     def test_init(self, mock_algo):
         cfg = copy.deepcopy(self.searcher_cfg)
@@ -61,8 +64,7 @@ class TestEvolutionSearcher(TestCase):
         searcher = SEARCHERS.build(cfg)
         assert hasattr(searcher, 'algorithm')
         assert hasattr(searcher, 'logger')
- 
+
         cfg['num_mutation'] = 40
         with self.assertRaises(ValueError):
             searcher = SEARCHERS.build(cfg)
-
