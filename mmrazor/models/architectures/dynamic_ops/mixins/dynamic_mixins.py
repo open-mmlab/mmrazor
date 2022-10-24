@@ -270,8 +270,12 @@ class DynamicBatchNormMixin(DynamicChannelMixin):
 
         if running_mean is not None:
             static_bn.running_mean.copy_(running_mean)
+            static_bn.running_mean = static_bn.running_mean.to(
+                running_mean.device)
         if running_var is not None:
             static_bn.running_var.copy_(running_var)
+            static_bn.running_var = static_bn.running_var.to(
+                running_var.device)
         if weight is not None:
             static_bn.weight = nn.Parameter(weight)
         if bias is not None:
