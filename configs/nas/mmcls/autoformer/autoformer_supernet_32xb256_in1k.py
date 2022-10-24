@@ -72,3 +72,13 @@ find_unused_parameters = True
 # 1024
 # chmod -R 777 tools/slurm_train.sh
 # GPUS=1 GPUS_PER_NODE=1 tools/slurm_train.sh pat_virgo xxx_exp configs/nas/mmcls/autoformer/autoformer_supernet_32xb256_in1k.py work_dirs/1022_debug
+
+# LG
+# gml_old
+# source /mnt/cache/share/platform/env/pt1.7.1 mmcv=1.4.6
+
+# new_mmrazor
+# source /mnt/cache/share/platform/env/pt1.8v1
+# export PYTHONPATH="/mnt/lustre/sunyue1/autolink/workspace-547/0802_mmrazor/.base/mmcv":$PYTHONPATH
+
+# GPUS=1 GPUS_PER_NODE=1 tools/slurm_train.sh pat_dev xxx_exp configs/nas/mmcls/autoformer/autoformer_supernet_32xb256_in1k.py work_dirs/1022_debug

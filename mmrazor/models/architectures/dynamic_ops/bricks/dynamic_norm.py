@@ -241,7 +241,8 @@ class DynamicLayerNorm(LayerNorm, DynamicLayerNormMixin):
         self._check_input_dim(input)
 
         weight, bias = self.get_dynamic_params()
-        self.normalized_shape = (self.mutable_num_features.current_choice, )
+        # self.normalized_shape = (self.mutable_num_features.current_choice, )
+        self.normalized_shape = (self.mutable_num_features.activated_channels, )
 
         return F.layer_norm(input, self.normalized_shape, weight, bias,
                             self.eps)

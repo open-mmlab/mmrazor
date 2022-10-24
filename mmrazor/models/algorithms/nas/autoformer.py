@@ -65,9 +65,10 @@ class Autoformer(BaseAlgorithm):
             elif isinstance(mutators, dict):
                 built_mutators: Dict = dict()
                 for name, mutator_cfg in mutators.items():
-                    mutator = MODELS.build(mutator_cfg)
-                    built_mutators[name] = mutator
-                    mutator.prepare_from_supernet(self.architecture)
+                    if name == 'channel_mutator':
+                        mutator = MODELS.build(mutator_cfg)
+                        built_mutators[name] = mutator
+                        mutator.prepare_from_supernet(self.architecture) # ?
                 self.mutators = built_mutators
             else:
                 raise TypeError('mutator should be a `dict` or belong to '
@@ -80,14 +81,17 @@ class Autoformer(BaseAlgorithm):
         """Random sample subnet by mutator."""
         subnet_dict = dict()
         for name, mutator in self.mutators.items():
-            subnet_dict[name] = mutator.sample_choices()
+            # 只channel_mutator进行采样
+            if name == 'channel_mutator':
+                subnet_dict[name] = mutator.sample_choices()
         dist.broadcast_object_list([subnet_dict])
         return subnet_dict
 
     def set_subnet(self, subnet_dict: Dict) -> None:
         """Set the subnet sampled by :meth:sample_subnet."""
         for name, mutator in self.mutators.items():
-            mutator.set_choices(subnet_dict[name])
+            if name == 'channel_mutator':
+                mutator.set_choices(subnet_dict[name])
 
     def loss(
         self,

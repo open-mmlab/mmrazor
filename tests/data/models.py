@@ -8,7 +8,7 @@ from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
 from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables import BaseMutable
-from mmrazor.models.mutables import OneShotMutableChannelUnit, SquentialMutableChannel, OneShotMutableChannel
+from mmrazor.models.mutables import OneShotMutableChannelUnit, SquentialMutableChannel, OneShotMutableChannel, OneShotMutableValue
 from mmrazor.registry import MODELS
 from mmengine.model import BaseModel
 # this file includes models for tesing.
@@ -537,10 +537,14 @@ class DynamicLinearModel(nn.Module):
             DynamicConv2d(3, 8, 3, 1, 1), # 0
             DynamicBatchNorm2d(8), # 1
             nn.ReLU(),
-            DynamicConv2d(8, 16, 3, 1, 1), # 3 
-            DynamicBatchNorm2d(16),
+            DynamicConv2d(8, 8, 3, 1, 1), # 3 
+            DynamicBatchNorm2d(8),
             nn.AdaptiveAvgPool2d(1))
-        self.linear = DynamicLinear(16, 1000)
+        
+        # 
+        self.fc1 = DynamicLinear(8, 32)
+        self.fc2 = DynamicLinear(32, 1000)
+
         # 搞一个 MutableChannelUnit
         MutableChannelUnit._register_channel_container(
             self, MutableChannelContainer)
@@ -549,42 +553,62 @@ class DynamicLinearModel(nn.Module):
     def forward(self, x):
         x1 = self.net(x)
         x1 = x1.reshape([x1.shape[0], -1])
-        return self.linear(x1)
+
+        x1 = self.fc1(x1)
+        return self.fc2(x1)
+        # return self.linear(x1)
 
     def _register_mutable(self):
-        mutable1 = OneShotMutableChannel(8, candidate_choices=[1, 4, 8])
-        mutable2 = OneShotMutableChannel(16, candidate_choices=[2, 8, 16])
-        mutable_value = SampleExpandDerivedMutable(1)
+        # mutable1 = OneShotMutableChannel(8, candidate_choices=[1, 4, 8])
+        # ex_ratio1 = OneShotMutableValue(value_list=[2.0, 3.0, 4.0], default_value=4.0)
+
+        mutable1 = OneShotMutableChannel(num_channels=8, candidate_choices=[8])
+        self.ex_ratio1 = OneShotMutableValue(value_list=[2.0, 3.0, 4.0], default_value=4.0)
+
+        # mutable_value = SampleExpandDerivedMutable(1)
+        # mutable_value_2 = SampleExpandDerivedMutable(2)
         # True 表示container拿到的out_channels 否则拿到的in_channels的属性
         # start/end 当属于派生类的时候，end的计算可能不是准确的，需要手动指定
+        
         # DynamicConv2d(3, 8, 3, 1, 1), # 0
         MutableChannelContainer.register_mutable_channel_to_module(
             self.net[0], mutable1, True) # 【1, 4, 8】True
         # DynamicBatchNorm2d(8), # 1
         MutableChannelContainer.register_mutable_channel_to_module(
-            self.net[1], mutable1.expand_mutable_channel(1), True, 0, 8)
+            self.net[1], mutable1, True)
+            # self.net[1], mutable1.expand_mutable_channel(1), True, 0, 8)
+        
         # DynamicConv2d(8, 16, 3, 1, 1), # 3 
         MutableChannelContainer.register_mutable_channel_to_module(
-            self.net[3], mutable_value * mutable1, False, 0, 8)
-        
+            self.net[3], mutable1, False)
         # MutableChannelContainer.register_mutable_channel_to_module(
         #     self.net[3], mutable2, True)
-        mutable_value = SampleExpandDerivedMutable(2)
         MutableChannelContainer.register_mutable_channel_to_module(
-            self.net[3], mutable_value * mutable1, True, 0, end=16)
+            self.net[3],  mutable1, True)
 
 
         # DynamicBatchNorm2d(16),
         # MutableChannelContainer.register_mutable_channel_to_module(
         #     self.net[4], mutable2, True)
         MutableChannelContainer.register_mutable_channel_to_module(
-            self.net[4], mutable_value * mutable1, True, 0, end=16)
+            self.net[4], mutable1, True)
         
         # DynamicLinear(16, 1000) 16
         # MutableChannelContainer.register_mutable_channel_to_module(
         #     self.linear, mutable2, False)
+        # MutableChannelContainer.register_mutable_channel_to_module(
+        #     self.linear, mutable_value_2 * mutable1, False, 0, end=16)
         MutableChannelContainer.register_mutable_channel_to_module(
-            self.linear, mutable_value * mutable1, False, 0, end=16)
+            self.fc1, mutable1, False)
+        MutableChannelContainer.register_mutable_channel_to_module(
+            # self.fc1, ex_ratio2 * mutable2, True, 0, end=32)
+            self.fc1, self.ex_ratio1 * mutable1, True, 0, end=32)
+
+        MutableChannelContainer.register_mutable_channel_to_module(
+            # self.fc2, ex_ratio2 * mutable2, False, 0, end=32)
+            self.fc2, self.ex_ratio1 * mutable1, False, 0, end=32)
+        # MutableChannelContainer.register_mutable_channel_to_module(
+        #     self.fc2, mutable1, True)
 
 
 default_models = [

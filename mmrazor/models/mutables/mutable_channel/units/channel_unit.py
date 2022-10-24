@@ -257,14 +257,14 @@ class ChannelUnit(BaseModule):
         """Add a Channel which is output related."""
         # print(self.num_channels, channel.num_channels)
         assert channel.is_output_channel
-        assert self.num_channels == channel.num_channels
+        # assert self.num_channels == channel.num_channels
         if channel not in self.output_related:
             self.output_related.append(channel)
 
     def add_input_related(self, channel: Channel):
         """Add a Channel which is input related."""
         assert channel.is_output_channel is False
-        assert self.num_channels == channel.num_channels
+        # assert self.num_channels == channel.num_channels
         if channel not in self.input_related:
             self.input_related.append(channel)
 

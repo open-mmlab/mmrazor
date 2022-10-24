@@ -76,8 +76,6 @@ class MutableChannelContainer(BaseMutableChannel):
                                            module: DynamicChannelMixin,
                                            mutable: BaseMutableChannel,
                                            is_to_output_channel=True,
-                                        #    out_label='out_channels',
-                                        #    in_label='in_channels',
                                            start=0,
                                            end=-1):
         """Register a BaseMutableChannel to a module with
@@ -90,8 +88,7 @@ class MutableChannelContainer(BaseMutableChannel):
         else:
             container = module.get_mutable_attr('in_channels')
         assert isinstance(container, MutableChannelContainer)
-        container.register_mutable(mutable, start, end) # 最后拿到
-        # 下边一行其实是检验是否除了channel之外的放进去了
+        container.register_mutable(mutable, start, end)
 
     # private methods
 
@@ -103,7 +100,8 @@ class MutableChannelContainer(BaseMutableChannel):
         for start, end in self.mutable_channels:
             assert start == last_end
             last_end = end
-        assert last_end == self.num_channels
+        print(last_end, self.num_channels)
+        # assert last_end == self.num_channels
 
     def _fill_unregistered_range(self):
         """Fill with SimpleMutableChannels in the range without any stored

@@ -88,41 +88,48 @@ class TransformerEncoderLayer(BaseBackbone):
 
     def mutate_encoder_layer(self, mutable_num_heads: BaseMutable,
                              mutable_mlp_ratios: BaseMutable,
+                             mutable_q_embed_dims: BaseMutable,
                              mutable_embed_dims: BaseMutable):
         """Mutate the mutables of encoder layer."""
         # record the mutables
         self.mutable_embed_dims = mutable_embed_dims
         self.mutable_num_heads = mutable_num_heads
         self.mutable_mlp_ratios = mutable_mlp_ratios
+        self.mutable_q_embed_dims = mutable_q_embed_dims
 
         # handle the mutable of the first dynamic LN
         MutableChannelContainer.register_mutable_channel_to_module(
             self.norm1, self.mutable_embed_dims, True)
-        MutableChannelContainer.register_mutable_channel_to_module(
-            self.attn, self.mutable_embed_dims, False)
-        MutableChannelContainer.register_mutable_channel_to_module(
-            self.attn, mutable_q_embed_dims, True, end=640)
-
-        # handle the mutable in multihead attention
-        mutable_q_embed_dims = 64 * mutable_num_heads
-        self.attn.register_mutable_attr('num_heads', mutable_num_heads)
-
         # handle the mutable of the second dynamic LN
         MutableChannelContainer.register_mutable_channel_to_module(
             self.norm2, self.mutable_embed_dims, True)
 
+        # num_heads = 10
+        self.attn.register_mutable_attr('num_heads', mutable_num_heads)
+
+        MutableChannelContainer.register_mutable_channel_to_module(
+            self.attn, self.mutable_embed_dims, False)
+        MutableChannelContainer.register_mutable_channel_to_module(
+            self.attn, self.mutable_q_embed_dims, True, end=640)
+        
+        MutableChannelContainer.register_mutable_channel_to_module(
+            self.attn.rel_pos_embed_k, self.mutable_embed_dims, False)
+        MutableChannelContainer.register_mutable_channel_to_module(
+            self.attn.rel_pos_embed_v, self.mutable_embed_dims, False)
+
         # handle the mutable of FFN
-        self.middle_channels = mutable_mlp_ratios * mutable_embed_dims
+        self.middle_channels = self.mutable_mlp_ratios * self.mutable_embed_dims
 
         # !!bugfix: support the derive_range
         MutableChannelContainer.register_mutable_channel_to_module(
             self.fc1, mutable_embed_dims, False)
         MutableChannelContainer.register_mutable_channel_to_module(
-            self.fc1, self.middle_channels, True, start=0, end=624)
-            # self.fc1, self.middle_channels, True, start=0, end=2496)
+            self.fc1, self.middle_channels, True, start=0, end=2496)
+            # self.fc1, mutable_embed_dims, True)
+        
         MutableChannelContainer.register_mutable_channel_to_module(
-            self.fc2, self.middle_channels, False, start=0, end=624)
-            # self.fc2, self.middle_channels, False, start=0, end=2496)
+            self.fc2, self.middle_channels, False, start=0, end=2496)
+            # self.fc2, mutable_embed_dims, False)
         MutableChannelContainer.register_mutable_channel_to_module(
             self.fc2, mutable_embed_dims, True)
 
@@ -177,6 +184,7 @@ class AutoformerBackbone(BaseBackbone):
         'mlp_ratios': [3.0, 3.5, 4.0],
         'num_heads': [8, 9, 10],
         'depth': [14, 15, 16],
+        # 'embed_dims': [624],
         'embed_dims': [528, 576, 624],
     }
 
@@ -213,6 +221,9 @@ class AutoformerBackbone(BaseBackbone):
 
         self.mutable_embed_dims = OneShotMutableChannel(num_channels=self.embed_dim_range[-1], candidate_choices=self.embed_dim_range)
 
+        # handle the mutable in multihead attention
+        self.base_embed_dims = OneShotMutableChannel(num_channels=64, candidate_choices=[64])
+
         self.mutable_num_heads = [
             OneShotMutableValue(
                 value_list=self.num_head_range,
@@ -226,8 +237,11 @@ class AutoformerBackbone(BaseBackbone):
             for _ in range(self.depth_range[-1])
         ]
 
+        self.mutable_q_embed_dims = [i * self.base_embed_dims for i in self.mutable_num_heads] 
+
+
         # patch embeddings
-        self.last_mutable = None
+        # self.last_mutable = None
         self.patch_embed = DynamicPatchEmbed(
             img_size=self.img_size,
             in_channels=self.in_channels,
@@ -269,6 +283,8 @@ class AutoformerBackbone(BaseBackbone):
         
         self.register_mutate()
 
+        print(self.blocks)
+
     @property
     def norm1(self):
         """The first normalization."""
@@ -293,6 +309,7 @@ class AutoformerBackbone(BaseBackbone):
         """Mutate the autoformer."""
         # handle the mutation of depth
         self.blocks.register_mutable_attr('depth', self.mutable_depth)
+        # self.mutable_depth self.blocks.mutable_depth
 
         # handle the mutation of patch embed
         MutableChannelContainer.register_mutable_channel_to_module(
@@ -305,7 +322,9 @@ class AutoformerBackbone(BaseBackbone):
             layer.mutate_encoder_layer(
                 mutable_num_heads=self.mutable_num_heads[i],
                 mutable_mlp_ratios=self.mutable_mlp_ratios[i],
+                mutable_q_embed_dims=self.mutable_q_embed_dims[i],
                 mutable_embed_dims=self.last_mutable)
+                # mutable_embed_dims=self.mutable_embed_dims)
 
         # handle the mutable of final norm
         if self.final_norm:

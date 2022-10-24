@@ -101,7 +101,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
 
         self._name2module = dict(supernet.named_modules())
 
-        if 'Tracer' in self.parse_cfg['type']: # 一般build model
+        if 'Tracer' in self.parse_cfg['type']:
             units = self._prepare_from_tracer(supernet, self.parse_cfg)
         elif self.parse_cfg['type'] == 'Config':
             units = self._prepare_from_cfg(supernet, self.units_cfg)
@@ -111,7 +111,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
             raise NotImplementedError()
 
         for unit in units:
-            unit.prepare_for_pruning(supernet)
+            # unit.prepare_for_pruning(supernet) # unit级别？
             self._name2unit[unit.name] = unit
         self.units = units
 
@@ -310,6 +310,6 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
         """Initialize units using the model with pre-defined dynamicops and
         mutable-channels."""
 
-        units = self.unit_class.init_from_predefined_model(model)
+        units = self.unit_class.init_from_predefined_model(model) # OneShotMutableChannelUnit
 
         return units
