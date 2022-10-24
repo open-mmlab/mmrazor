@@ -15,7 +15,7 @@ from mmengine.optim import OptimWrapper
 from mmengine.runner import Runner
 from torch.utils.data import Dataset
 
-from mmrazor.models.task_modules import FunctionOutputsDelivery
+from mmrazor.models.task_modules import FunctionInputsRecorder, RecorderManager
 
 
 class ToyModel(BaseModel):
@@ -23,14 +23,16 @@ class ToyModel(BaseModel):
     def __init__(self):
         super().__init__()
         self.linear = nn.Linear(2, 1)
-        # test FunctionOutputsDelivery when ema_hook is used
-        self.deliver = FunctionOutputsDelivery(
-            max_keep_data=2, func_path='toy_module.toy_func')
+        # test FunctionInputsRecorder when ema_hook is used
+        recorders_cfg = dict(
+            out=dict(type='FunctionInputs', source='toy_mod.toy_func'))
+        self.recorders = RecorderManager(recorders_cfg)
+        self.recorders.initialize(self)
 
     def forward(self, inputs, data_sample, mode='tensor'):
         labels = torch.stack(data_sample)
         inputs = torch.stack(inputs)
-        with self.deliver:
+        with self.recorders:
             outputs = self.linear(inputs)
         if mode == 'tensor':
             return outputs
@@ -58,7 +60,7 @@ class DummyDataset(Dataset):
         return dict(inputs=self.data[index], data_sample=self.label[index])
 
 
-class TestFuncOutputsDeliver(TestCase):
+class TestFuncInputsRecorder(TestCase):
 
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -70,58 +72,31 @@ class TestFuncOutputsDeliver(TestCase):
         MMLogger._instance_dict.clear()
         self.temp_dir.cleanup()
 
-    def test_init(self):
-
-        with self.assertRaisesRegex(TypeError, 'func_path should be'):
-            _ = FunctionOutputsDelivery(max_keep_data=1, func_path=1)
-
-        with self.assertRaisesRegex(AssertionError, 'func_path must have at '):
-            _ = FunctionOutputsDelivery(max_keep_data=1, func_path='toy_func')
-
     def test_context_manager(self):
-        import toy_module
+        from toy_mod import execute_toy_func2 as execute_toy_func
 
-        delivery = FunctionOutputsDelivery(max_keep_data=2, func_path='aaa.bb')
-        with self.assertRaisesRegex(ImportError, 'aaa is not imported'):
-            with delivery:
-                _ = toy_module.toy_func()
+        recorder = FunctionInputsRecorder('toy_mod.toy_func2')
+        recorder.initialize()
 
-        delivery = FunctionOutputsDelivery(
-            max_keep_data=1, func_path='toy_module.bb')
-        with self.assertRaisesRegex(AssertionError, 'bb is not in toy_mod'):
-            with delivery:
-                _ = toy_module.toy_func()
+        with recorder:
+            execute_toy_func(1, 2)
+            execute_toy_func(1, b=2)
+            execute_toy_func(b=2, a=1)
 
-        delivery = FunctionOutputsDelivery(
-            max_keep_data=1, func_path='toy_module.TOY_VAR')
-        with self.assertRaisesRegex(TypeError, 'TOY_VAR should be'):
-            with delivery:
-                _ = toy_module.toy_func()
+        self.assertTrue(
+            recorder.get_record_data(record_idx=0, data_idx=0) == 1)
+        self.assertTrue(
+            recorder.get_record_data(record_idx=0, data_idx=1) == 2)
 
-        delivery = FunctionOutputsDelivery(
-            max_keep_data=2, func_path='toy_module.toy_func')
+        self.assertTrue(
+            recorder.get_record_data(record_idx=1, data_idx=0) == 1)
+        self.assertTrue(
+            recorder.get_record_data(record_idx=1, data_idx=1) == 2)
 
-        delivery.override_data = False
-        with delivery:
-            output1_tea = toy_module.toy_func()
-            output2_tea = toy_module.toy_func()
-
-        with self.assertRaisesRegex(AssertionError, 'push into an full queue'):
-            with delivery:
-                _ = toy_module.toy_func()
-
-        delivery.override_data = True
-        with delivery:
-            output1_stu = toy_module.toy_func()
-            output2_stu = toy_module.toy_func()
-
-        # With ``FunctionOutputsDeliver``, outputs of the teacher and
-        # the student are the same.
-        assert output1_stu == output1_tea and output2_stu == output2_tea
-
-        with self.assertRaisesRegex(AssertionError, 'pop from an empty queue'):
-            with delivery:
-                _ = toy_module.toy_func()
+        self.assertTrue(
+            recorder.get_record_data(record_idx=2, data_idx=0) == 1)
+        self.assertTrue(
+            recorder.get_record_data(record_idx=2, data_idx=1) == 2)
 
     def test_ema_hook(self):
         device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -149,7 +124,7 @@ class TestFuncOutputsDeliver(TestCase):
             val_cfg=dict(),
             default_hooks=dict(logger=None),
             custom_hooks=[dict(type='EMAHook', )],
-            experiment_name='test_func_outputs_deliver')
+            experiment_name='test_func_inputs_recorder')
         runner.train()
         for hook in runner.hooks:
             if isinstance(hook, EMAHook):

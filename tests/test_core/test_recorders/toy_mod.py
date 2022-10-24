@@ -8,12 +8,20 @@ def toy_func(a):
     return a
 
 
+def toy_func2(a, b):
+    return a, b
+
+
 def toy_list_func(a):
     return [a, a, a]
 
 
 def execute_toy_func(a):
     toy_func(a)
+
+
+def execute_toy_func2(a, b):
+    toy_func2(a, b)
 
 
 def execute_toy_list_func(a):
@@ -30,6 +38,9 @@ class ToyClass:
     def toy(self):
         self._count += 1
         return self._count
+
+    def func(self, x, y=0):
+        return x + y
 
     def __call__(self):
         self._count += 1
