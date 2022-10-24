@@ -5,12 +5,12 @@ from typing import Optional, Tuple
 import torch
 from mmcls.models import ClsHead
 
+from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables.base_mutable import BaseMutable
+from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
 from mmrazor.registry import MODELS
 from ..bricks.dynamic_linear import DynamicLinear
 
-from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
-from mmrazor.models.mutables import MutableChannelUnit
 
 class DynamicHead:
 

@@ -2,9 +2,8 @@
 import copy
 from unittest import TestCase
 
-from mmengine import ConfigDict
-
 from mmrazor.models import SearchableImageClassifier
+
 
 class TestSearchableImageClassifier(TestCase):
 
@@ -38,8 +37,7 @@ class TestSearchableImageClassifier(TestCase):
 
         # test connect_with_backbone
         supernet_kwargs_ = copy.deepcopy(supernet_kwargs)
-        supernet_kwargs_['head'] = dict(
-            toy=dict(type='ToyDistillLoss'))
+        supernet_kwargs_['head'] = dict(toy=dict(type='ToyDistillLoss'))
         supernet_kwargs_['loss_forward_mappings'] = dict(
             toy=dict(
                 arg1=dict(from_student=True, recorder='conv'),

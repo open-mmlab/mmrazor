@@ -25,7 +25,7 @@ class DynamicSequential(Sequential, DynamicSequentialMixin):
     def forward(self, x: Tensor) -> Tensor:
         """Forward of Dynamic Sequential."""
         if self.mutable_depth is None:
-        # if not hasattr(self, 'mutable_depth'):
+            # if not hasattr(self, 'mutable_depth'):
             return self(x)
 
         current_depth = self.get_current_choice(self.mutable_depth)

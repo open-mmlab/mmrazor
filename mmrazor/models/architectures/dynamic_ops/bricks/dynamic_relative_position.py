@@ -8,6 +8,7 @@ from mmrazor.models.architectures.ops import RelativePosition2D
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from ..mixins.dynamic_rp_mixins import DynamicRelativePosition2DMixin
 
+
 class DynamicRelativePosition2D(RelativePosition2D,
                                 DynamicRelativePosition2DMixin):
     """Searchable RelativePosition module.

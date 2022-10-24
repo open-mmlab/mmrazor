@@ -5,7 +5,6 @@ from .module_mutator import (DiffModuleMutator, ModuleMutator,
                              OneShotModuleMutator)
 from .value_mutator import DynamicValueMutator, ValueMutator
 
-
 __all__ = [
     'OneShotModuleMutator', 'DiffModuleMutator', 'ModuleMutator',
     'ChannelMutator', 'OneShotChannelMutator', 'SlimmableChannelMutator',

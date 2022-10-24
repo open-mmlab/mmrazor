@@ -1,8 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 
-from typing import Dict, Set, Tuple
-
 import sys
+from typing import Dict, Set, Tuple
 
 if sys.version_info < (3, 8):
     from typing_extensions import Protocol
@@ -10,12 +9,13 @@ else:
     from typing import Protocol
 
 import torch.nn as nn
-import torch.nn.functional as F
 from torch import Tensor
 
-from mmrazor.models.architectures.ops import RelativePosition2D, MultiheadAttention
+from mmrazor.models.architectures.ops import (MultiheadAttention,
+                                              RelativePosition2D)
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from .dynamic_mixins import DynamicMixin
+
 
 class DynamicMHAProtocol(Protocol):
     """Protocol for Dynamic Multi head Attention."""
@@ -202,4 +202,3 @@ class DynamicMHAMixin(DynamicMixin, DynamicMHAProtocol):
             static_mha.rel_pos_embed_v = self.rel_pos_embed_v.to_static_op()
 
         return static_mha
-

@@ -7,16 +7,17 @@ if sys.version_info < (3, 8):
 else:
     from typing import Protocol
 
-from mmrazor.models.architectures.ops import RelativePosition2D
 import logging
 from typing import Dict, Set
 
 import torch
 from mmengine import print_log
-from torch import nn, Tensor
+from torch import Tensor, nn
 
+from mmrazor.models.architectures.ops import RelativePosition2D
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from .dynamic_mixins import DynamicChannelMixin
+
 
 class DynamicRPProtocol(Protocol):
     """Protocol for Dynamic Relative Position."""
@@ -26,6 +27,7 @@ class DynamicRPProtocol(Protocol):
     max_relative_position: int
     embeddings_table_v: nn.Parameter
     embeddings_table_h: nn.Parameter
+
 
 class DynamicRelativePosition2DMixin(DynamicChannelMixin, DynamicRPProtocol):
 

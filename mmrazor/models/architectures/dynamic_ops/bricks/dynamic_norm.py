@@ -242,11 +242,11 @@ class DynamicLayerNorm(LayerNorm, DynamicLayerNormMixin):
 
         weight, bias = self.get_dynamic_params()
         # self.normalized_shape = (self.mutable_num_features.current_choice, )
-        self.normalized_shape = (self.mutable_num_features.activated_channels, )
+        self.normalized_shape = (
+            self.mutable_num_features.activated_channels, )
 
         return F.layer_norm(input, self.normalized_shape, weight, bias,
                             self.eps)
-
 
     def _check_input_dim(self, input: Tensor) -> None:
         """Check if input dimension is valid."""

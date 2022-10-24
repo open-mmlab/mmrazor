@@ -33,13 +33,10 @@ class TestSequentialMutableChannelUnit(TestCase):
         self.assertEqual(unit.current_choice, 1 / 3)
 
         unit = SequentialMutableChannelUnit(
-            num_channels=624,
-            divisor=48,
-            min_value=528,
-            choice_mode='number') # [528, 576, 624]
+            num_channels=624, divisor=48, min_value=528,
+            choice_mode='number')  # [528, 576, 624]
         # unit.current_choice
         self.assertTrue(unit.sample_choice() in [528, 576, 624])
-
 
     def test_config_template(self):
         unit = SequentialMutableChannelUnit(48, choice_mode='ratio', divisor=8)
@@ -48,6 +45,7 @@ class TestSequentialMutableChannelUnit(TestCase):
         self.assertDictEqual(
             unit2.config_template(with_init_args=True)['init_args'],
             config['init_args'])
+
 
 if __name__ == '__main__':
     import unittest

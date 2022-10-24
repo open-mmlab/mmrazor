@@ -8,14 +8,17 @@ from mmcls.models.backbones.base_backbone import BaseBackbone
 from mmcv.cnn import build_activation_layer, build_norm_layer
 from torch import Tensor
 
-from mmrazor.models.architectures.dynamic_ops import (
-    DynamicLinear, DynamicMultiheadAttention, DynamicPatchEmbed,
-    DynamicSequential)
-from mmrazor.models.mutables import OneShotMutableChannel, OneShotMutableValue
+from mmrazor.models.architectures.dynamic_ops.bricks.dynamic_container import DynamicSequential
+from mmrazor.models.architectures.dynamic_ops.bricks.dynamic_multi_head_attention import DynamicMultiheadAttention
+from mmrazor.models.architectures.dynamic_ops.bricks.dynamic_linear import DynamicLinear
+from mmrazor.models.architectures.dynamic_ops.bricks.dynamic_embed import DynamicPatchEmbed
+ 
+from mmrazor.models.mutables import (MutableChannelUnit, OneShotMutableChannel,
+                                     OneShotMutableValue)
 from mmrazor.models.mutables.base_mutable import BaseMutable
-from mmrazor.registry import MODELS
 from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
-from mmrazor.models.mutables import MutableChannelUnit
+from mmrazor.registry import MODELS
+
 
 class TransformerEncoderLayer(BaseBackbone):
     """Autoformer block.
@@ -111,7 +114,7 @@ class TransformerEncoderLayer(BaseBackbone):
             self.attn, self.mutable_embed_dims, False)
         MutableChannelContainer.register_mutable_channel_to_module(
             self.attn, self.mutable_q_embed_dims, True, end=640)
-        
+
         MutableChannelContainer.register_mutable_channel_to_module(
             self.attn.rel_pos_embed_k, self.mutable_embed_dims, False)
         MutableChannelContainer.register_mutable_channel_to_module(
@@ -125,11 +128,11 @@ class TransformerEncoderLayer(BaseBackbone):
             self.fc1, mutable_embed_dims, False)
         MutableChannelContainer.register_mutable_channel_to_module(
             self.fc1, self.middle_channels, True, start=0, end=2496)
-            # self.fc1, mutable_embed_dims, True)
-        
+        # self.fc1, mutable_embed_dims, True)
+
         MutableChannelContainer.register_mutable_channel_to_module(
             self.fc2, self.middle_channels, False, start=0, end=2496)
-            # self.fc2, mutable_embed_dims, False)
+        # self.fc2, mutable_embed_dims, False)
         MutableChannelContainer.register_mutable_channel_to_module(
             self.fc2, mutable_embed_dims, True)
 
@@ -218,10 +221,13 @@ class AutoformerBackbone(BaseBackbone):
         self.mutable_depth = OneShotMutableValue(
             value_list=self.depth_range, default_value=self.depth_range[-1])
 
-        self.mutable_embed_dims = OneShotMutableChannel(num_channels=self.embed_dim_range[-1], candidate_choices=self.embed_dim_range)
+        self.mutable_embed_dims = OneShotMutableChannel(
+            num_channels=self.embed_dim_range[-1],
+            candidate_choices=self.embed_dim_range)
 
         # handle the mutable in multihead attention
-        self.base_embed_dims = OneShotMutableChannel(num_channels=64, candidate_choices=[64])
+        self.base_embed_dims = OneShotMutableChannel(
+            num_channels=64, candidate_choices=[64])
 
         self.mutable_num_heads = [
             OneShotMutableValue(
@@ -236,8 +242,9 @@ class AutoformerBackbone(BaseBackbone):
             for _ in range(self.depth_range[-1])
         ]
 
-        self.mutable_q_embed_dims = [i * self.base_embed_dims for i in self.mutable_num_heads] 
-
+        self.mutable_q_embed_dims = [
+            i * self.base_embed_dims for i in self.mutable_num_heads
+        ]
 
         # patch embeddings
         # self.last_mutable = None
@@ -279,7 +286,7 @@ class AutoformerBackbone(BaseBackbone):
 
         MutableChannelUnit._register_channel_container(
             self, MutableChannelContainer)
-        
+
         self.register_mutate()
 
     @property
@@ -311,7 +318,7 @@ class AutoformerBackbone(BaseBackbone):
         # handle the mutation of patch embed
         MutableChannelContainer.register_mutable_channel_to_module(
             self.patch_embed, self.mutable_embed_dims, True)
-        
+
         self.last_mutable = self.mutable_embed_dims
         # handle the dependencies of TransformerEncoderLayers
         for i in range(self.mutable_depth.max_choice):  # max depth here
@@ -321,7 +328,7 @@ class AutoformerBackbone(BaseBackbone):
                 mutable_mlp_ratios=self.mutable_mlp_ratios[i],
                 mutable_q_embed_dims=self.mutable_q_embed_dims[i],
                 mutable_embed_dims=self.last_mutable)
-                # mutable_embed_dims=self.mutable_embed_dims)
+            # mutable_embed_dims=self.mutable_embed_dims)
 
         # handle the mutable of final norm
         if self.final_norm:
@@ -353,19 +360,3 @@ class AutoformerBackbone(BaseBackbone):
             x = self.norm1(x)
 
         return (torch.mean(x[:, 1:], dim=1), )
-
-
-if __name__ == '__main__':
-    from mmrazor.models.mutators import OneShotChannelMutator
-    model = AutoformerBackbone()
-    mutator = OneShotChannelMutator(
-        channel_unit_cfg={
-            'type': 'OneShotMutableChannelUnit',
-            'default_args': {}
-        },
-        parse_cfg={'type': 'Predefined'})
-
-    mutator.prepare_from_supernet(model)
-    print(mutator.sample_choices())
-
-

@@ -111,7 +111,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
             raise NotImplementedError()
 
         for unit in units:
-            # unit.prepare_for_pruning(supernet) 
+            # unit.prepare_for_pruning(supernet)
             self._name2unit[unit.name] = unit
         self.units = units
 

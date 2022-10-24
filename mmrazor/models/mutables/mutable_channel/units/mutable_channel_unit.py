@@ -5,18 +5,18 @@ from collections import Set
 from typing import Dict, List, Type, TypeVar
 
 import torch.nn as nn
+from mmcls.models.utils import PatchEmbed
+from torch.nn import LayerNorm
 
 from mmrazor.models.architectures import dynamic_ops
 from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
+from mmrazor.models.architectures.ops import (MultiheadAttention,
+                                              RelativePosition2D)
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables.mutable_channel import (BaseMutableChannel,
                                                      MutableChannelContainer)
 from .channel_unit import Channel, ChannelUnit
 
-from mmcls.models.utils import PatchEmbed
-from torch.nn import LayerNorm
-from mmrazor.models.architectures.ops import RelativePosition2D
-from mmrazor.models.architectures.ops import MultiheadAttention
 
 class MutableChannelUnit(ChannelUnit):
 
@@ -101,8 +101,6 @@ class MutableChannelUnit(ChannelUnit):
         for name, module in model.named_modules():
             # [blocker]
             if isinstance(module, MultiheadAttention):
-                if name == 'backbone.blocks.0.attn':
-                    print(name)
                 in_container: MutableChannelContainer = \
                     module.get_mutable_attr(
                         'in_channels')
@@ -242,7 +240,6 @@ class MutableChannelUnit(ChannelUnit):
     def _register_channel_container(
             model: nn.Module, container_class: Type[MutableChannelContainer]):
         """register channel container for dynamic ops."""
-
         """
         for module in model.modules():
             if isinstance(module, dynamic_ops.DynamicChannelMixin):
@@ -277,10 +274,10 @@ class MutableChannelUnit(ChannelUnit):
             if isinstance(module, MultiheadAttention):
                 in_channels = module.embed_dims
                 module.register_mutable_attr('embed_dims',
-                                                container_class(in_channels))
+                                             container_class(in_channels))
                 out_channels = module.q_embed_dims
                 module.register_mutable_attr('q_embed_dims',
-                                                container_class(out_channels))
+                                             container_class(out_channels))
 
             if isinstance(module, dynamic_ops.DynamicChannelMixin):
                 if module.get_mutable_attr('in_channels') is None:
@@ -302,7 +299,7 @@ class MutableChannelUnit(ChannelUnit):
                         raise NotImplementedError()
                     module.register_mutable_attr('in_channels',
                                                  container_class(in_channels))
-                                                 
+
                 if module.get_mutable_attr('out_channels') is None:
                     out_channels = 0
                     if isinstance(module, nn.Conv2d):
@@ -322,7 +319,6 @@ class MutableChannelUnit(ChannelUnit):
                         raise NotImplementedError()
                     module.register_mutable_attr('out_channels',
                                                  container_class(out_channels))
-
 
     def _register_mutable_channel(self, mutable_channel: BaseMutableChannel):
         # register mutable_channel

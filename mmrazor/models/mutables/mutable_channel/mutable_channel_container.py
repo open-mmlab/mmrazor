@@ -3,9 +3,9 @@ import copy
 
 import torch
 
-from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
 from mmrazor.registry import MODELS
 from mmrazor.utils import IndexDict
+from ...architectures.dynamic_ops.mixins import DynamicChannelMixin
 from .base_mutable_channel import BaseMutableChannel
 from .simple_mutable_channel import SimpleMutableChannel
 

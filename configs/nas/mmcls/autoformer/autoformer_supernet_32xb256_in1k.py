@@ -46,11 +46,10 @@ model = dict(
             type='mmrazor.OneShotChannelMutator',
             channel_unit_cfg={
                 'type': 'OneShotMutableChannelUnit',
-                'default_args': {}},
+                'default_args': {}
+            },
             parse_cfg={'type': 'Predefined'}),
-        value_mutator=dict(type='mmrazor.DynamicValueMutator')
-    )
-)
+        value_mutator=dict(type='mmrazor.DynamicValueMutator')))
 
 # runtime setting
 custom_hooks = [dict(type='EMAHook', momentum=4e-5, priority='ABOVE_NORMAL')]

@@ -154,7 +154,7 @@ class DerivedMethodMixin:
         else:
             raise NotImplementedError(
                 f'Not support type of ratio: {type(expand_ratio)}')
-        
+
         mask_fn: Optional[Callable] = None
         if hasattr(self, 'current_mask'):
             if isinstance(expand_ratio, int):
@@ -167,13 +167,13 @@ class DerivedMethodMixin:
                 raise NotImplementedError(
                     f'Not support type of ratio: {type(expand_ratio)}')
 
-
         return DerivedMutable(choice_fn=choice_fn, mask_fn=mask_fn)
 
-    def derive_divide_mutable(self: MutableProtocol,
-                            #   ratio: int,
-                              ratio: Union[int, BaseMutable],
-                              divisor: int = 8) -> 'DerivedMutable':
+    def derive_divide_mutable(
+            self: MutableProtocol,
+            #   ratio: int,
+            ratio: Union[int, BaseMutable],
+            divisor: int = 8) -> 'DerivedMutable':
         """Derive divide mutable, usually used with `make_divisable`."""
         # from .mutable_channel import MutableChannel
         from .mutable_channel import BaseMutableChannel
@@ -189,9 +189,9 @@ class DerivedMethodMixin:
             raise NotImplementedError(
                 f'Not support type of ratio: {type(ratio)}')
 
-
         mask_fn: Optional[Callable] = None
-        if isinstance(self, BaseMutableChannel) and hasattr(self, 'current_mask'):
+        if isinstance(self, BaseMutableChannel) and hasattr(
+                self, 'current_mask'):
             mask_fn = _divide_mask_fn(self, ratio=ratio, divisor=divisor)
         elif getattr(self, 'mask_fn', None):  # OneShotMutableChannel
             mask_fn = _divide_mask_fn(self, ratio=ratio, divisor=divisor)
