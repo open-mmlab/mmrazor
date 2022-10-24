@@ -18,7 +18,6 @@ class DynamicSequentialMixin(DynamicMixin):
         """Mutable depth."""
         assert hasattr(self, 'mutable_attrs')
         return self.mutable_attrs['depth']
-        # return self.mutable_attrs['depth'] if self.mutable_attrs.has_key('depth') else None
 
     def register_mutable_attr(self: Sequential, attr: str,
                               mutable: BaseMutable):

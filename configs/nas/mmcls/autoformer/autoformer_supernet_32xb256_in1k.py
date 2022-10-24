@@ -42,13 +42,12 @@ model = dict(
     architecture=supernet,
     fix_subnet=None,
     mutators=dict(
-        # channel_mutator=dict(type='mmrazor.BigNASChannelMutator'),
         channel_mutator=dict(
             type='mmrazor.OneShotChannelMutator',
-                channel_unit_cfg={
-                    'type': 'OneShotMutableChannelUnit',
-                    'default_args': {}},
-                parse_cfg={'type': 'Predefined'}),
+            channel_unit_cfg={
+                'type': 'OneShotMutableChannelUnit',
+                'default_args': {}},
+            parse_cfg={'type': 'Predefined'}),
         value_mutator=dict(type='mmrazor.DynamicValueMutator')
     )
 )
@@ -65,20 +64,3 @@ _base_.default_hooks.checkpoint = dict(
     max_keep_ckpts=3)
 
 find_unused_parameters = True
-
-# SRUN_ARGS='-p pat_dev -x HOST-10-198-32-[12,22]' GPUS=1 GPUS_PER_NODE=1 tools/slurm_train.sh pat_dev xxx_exp configs/nas/mmcls/autoformer/autoformer_supernet_32xb256_in1k.py work_dirs/0912_mmrazor_autoformer_supernet_32xb64_exp14_debug
-# GPUS=1 GPUS_PER_NODE=1 tools/slurm_train.sh pat_dev xxx_exp configs/nas/mmcls/autoformer/autoformer_supernet_32xb256_in1k.py work_dirs/1022_debug
-
-# 1024
-# chmod -R 777 tools/slurm_train.sh
-# GPUS=1 GPUS_PER_NODE=1 tools/slurm_train.sh pat_virgo xxx_exp configs/nas/mmcls/autoformer/autoformer_supernet_32xb256_in1k.py work_dirs/1022_debug
-
-# LG
-# gml_old
-# source /mnt/cache/share/platform/env/pt1.7.1 mmcv=1.4.6
-
-# new_mmrazor
-# source /mnt/cache/share/platform/env/pt1.8v1
-# export PYTHONPATH="/mnt/lustre/sunyue1/autolink/workspace-547/0802_mmrazor/.base/mmcv":$PYTHONPATH
-
-# GPUS=1 GPUS_PER_NODE=1 tools/slurm_train.sh pat_dev xxx_exp configs/nas/mmcls/autoformer/autoformer_supernet_32xb256_in1k.py work_dirs/1022_debug

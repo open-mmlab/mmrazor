@@ -184,7 +184,6 @@ class AutoformerBackbone(BaseBackbone):
         'mlp_ratios': [3.0, 3.5, 4.0],
         'num_heads': [8, 9, 10],
         'depth': [14, 15, 16],
-        # 'embed_dims': [624],
         'embed_dims': [528, 576, 624],
     }
 
@@ -283,8 +282,6 @@ class AutoformerBackbone(BaseBackbone):
         
         self.register_mutate()
 
-        print(self.blocks)
-
     @property
     def norm1(self):
         """The first normalization."""
@@ -359,12 +356,8 @@ class AutoformerBackbone(BaseBackbone):
 
 
 if __name__ == '__main__':
-    model = AutoformerBackbone()
-    # inputs = torch.randn(1, 3, 224, 224)
-    # outputs = model(inputs)
-    # print(outputs.shape)
-
     from mmrazor.models.mutators import OneShotChannelMutator
+    model = AutoformerBackbone()
     mutator = OneShotChannelMutator(
         channel_unit_cfg={
             'type': 'OneShotMutableChannelUnit',

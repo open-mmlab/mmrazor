@@ -44,24 +44,12 @@ class DynamicMultiheadAttention(MultiheadAttention, DynamicMHAMixin):
     def forward(self, x: Tensor) -> Tensor:
         """Forward of dynamic MultiheadAttention."""
         B, N = x.shape[0], x.shape[1]
-        q_w, q_b = self._get_dynamic_qkv_params(self.w_qs) # torch.Size([640, 624]), torch.Size([640])
+        q_w, q_b = self._get_dynamic_qkv_params(self.w_qs)
         k_w, k_b = self._get_dynamic_qkv_params(self.w_ks)
         v_w, v_b = self._get_dynamic_qkv_params(self.w_vs)
 
-        # import pdb;pdb.set_trace() 
-        # self.mutable_q_embed_dims.mutable_channels
         q_embed_dims = self.mutable_q_embed_dims.activated_channels
-
-        # out_mask = self.mutable_embed_dims.current_mask.to(
-        #     self.projection.weight.device)
-        
-        # num_heads = self.mutable_num_heads.activated_channels
-        # q_embed_dims = self.mutable_q_embed_dims.current_choice
         num_heads = self.mutable_num_heads.current_choice
-        # 为什么没对应上？
-        # num_heads = 10
-        print(F.linear(x, q_w, q_b).shape, num_heads, q_embed_dims)
-
 
         q = F.linear(x, q_w, q_b).view(B, N, num_heads,
                                        q_embed_dims // num_heads)
@@ -75,7 +63,7 @@ class DynamicMultiheadAttention(MultiheadAttention, DynamicMHAMixin):
         attn = (q @ k.transpose(-2, -1)) * self.scale
 
         if self.relative_position:
-            r_p_k = self.rel_pos_embed_k(N, N) # torch.Size([197, 197, 64]) attn::torch.Size([64, 8, 197, 197])
+            r_p_k = self.rel_pos_embed_k(N, N)
             attn = attn + (q.permute(2, 0, 1, 3).reshape(N, num_heads * B, -1)  # noqa: E501
                            @ r_p_k.transpose(2, 1)) \
                 .transpose(1, 0).reshape(B, num_heads, N, N) * self.scale

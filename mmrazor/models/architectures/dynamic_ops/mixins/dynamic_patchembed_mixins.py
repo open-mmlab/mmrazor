@@ -37,7 +37,7 @@ class DynamicPatchEmbedMixin(DynamicChannelMixin):
                     f'{attr_map}({attr}) is already in `mutable_attrs`',
                     level=logging.WARNING)
             else:
-                self._register_mutable_attr(attr_map, mutable) # 'embed_dims', MutableChannelContainer(num_channels=624, activated_channels=624)
+                self._register_mutable_attr(attr_map, mutable)
         elif attr in self.accepted_mutable_attrs:
             self._register_mutable_attr(attr, mutable)
         else:

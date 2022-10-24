@@ -111,7 +111,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
             raise NotImplementedError()
 
         for unit in units:
-            # unit.prepare_for_pruning(supernet) # unit级别？
+            # unit.prepare_for_pruning(supernet) 
             self._name2unit[unit.name] = unit
         self.units = units
 
@@ -310,6 +310,6 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
         """Initialize units using the model with pre-defined dynamicops and
         mutable-channels."""
 
-        units = self.unit_class.init_from_predefined_model(model) # OneShotMutableChannelUnit
+        units = self.unit_class.init_from_predefined_model(model)
 
         return units

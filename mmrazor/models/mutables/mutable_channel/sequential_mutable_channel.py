@@ -97,10 +97,8 @@ class SquentialMutableChannel(SimpleMutableChannel):
                 mask = mutable1.current_mask
                 max_expand_ratio = mutable2.max_choice
                 current_expand_ratio = mutable2.current_choice
-                # expand_num_channels = mask.size(0) * max_expand_ratio
                 expand_num_channels = int(mask.size(0) * max_expand_ratio)
 
-                # expand_choice = mutable1.current_choice * current_expand_ratio
                 expand_choice = int(mutable1.current_choice *
                                     current_expand_ratio)
                 expand_mask = torch.zeros(expand_num_channels).bool()

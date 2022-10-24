@@ -14,5 +14,4 @@ train_cfg = dict(
     num_crossover=5,
     mutate_prob=0.2,
     constraints_range=dict(params=(0, 55)),
-    dump_derived_mutable=True,
     score_key='accuracy/top1')

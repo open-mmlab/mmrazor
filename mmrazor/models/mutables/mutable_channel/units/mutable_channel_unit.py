@@ -97,9 +97,9 @@ class MutableChannelUnit(ChannelUnit):
                             is_output_channel=is_output))
 
         mutable2units: Dict = {}
-        # print(name, type(module))  # 少了 attn
-        for name, module in model.named_modules():
 
+        for name, module in model.named_modules():
+            # [blocker]
             if isinstance(module, MultiheadAttention):
                 if name == 'backbone.blocks.0.attn':
                     print(name)
@@ -113,10 +113,8 @@ class MutableChannelUnit(ChannelUnit):
                                   False)
                 process_container(out_container, module, name, mutable2units,
                                   True)
-            # print(name)
 
             if isinstance(module, DynamicChannelMixin):
-                # print(name, type(module))
                 in_container: MutableChannelContainer = \
                     module.get_mutable_attr(
                         'in_channels')
@@ -275,7 +273,7 @@ class MutableChannelUnit(ChannelUnit):
 
         """
         for module in model.modules():
-            # 跳过 DynamicChannelMixin
+            # [blocker]
             if isinstance(module, MultiheadAttention):
                 in_channels = module.embed_dims
                 module.register_mutable_attr('embed_dims',
@@ -283,14 +281,6 @@ class MutableChannelUnit(ChannelUnit):
                 out_channels = module.q_embed_dims
                 module.register_mutable_attr('q_embed_dims',
                                                 container_class(out_channels))
-                
-                # out_channels = module.num_heads
-                # module.register_mutable_attr('num_heads',
-                #                                 container_class(out_channels))
-                # out_channels = module.head_dims
-                # module.register_mutable_attr('head_dims',
-                #                                 container_class(out_channels))
-                # out_channels = module.q_embed_dims
 
             if isinstance(module, dynamic_ops.DynamicChannelMixin):
                 if module.get_mutable_attr('in_channels') is None:

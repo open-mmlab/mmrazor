@@ -75,9 +75,5 @@ class DynamicLinearClsHead(ClsHead, DynamicHead):
         MutableChannelUnit._register_channel_container(
             self, MutableChannelContainer)
 
-        # self.fc.register_mutable_attr(
-        #     'in_features', backbone_output_mutable.derive_same_mutable())
-            # 'in_features', backbone_output_mutable.derive_same_mutable())
-
         MutableChannelContainer.register_mutable_channel_to_module(
             self.fc, backbone_output_mutable, False)

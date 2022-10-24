@@ -77,7 +77,6 @@ class DynamicRelativePosition2DMixin(DynamicChannelMixin, DynamicRPProtocol):
             self.current_head_dim = self.head_dims
         else:
             self.current_head_dim = self.mutable_head_dims.activated_channels
-            # self.current_head_dim = self.mutable_head_dims.current_choice
 
         self.sample_eb_table_h = self.embeddings_table_h[:, :self.
                                                          current_head_dim]
