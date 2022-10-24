@@ -8,6 +8,7 @@ from .utils import extract_subgraph, extract_blocks, extract_layers
 import numpy as np
 import torch
 import copy
+import os
 
 _ADAROUND_SUPPORT_TYPE = (torch.nn.Conv2d, torch.nn.Linear)
 
@@ -230,6 +231,18 @@ class PTQLoop(TestLoop):
 
         # # compute metrics
         # metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+
+        self.model.eval()
+        from torch.onnx import OperatorExportTypes
+        dummy_input = torch.randn([1, 3, 224, 224])
+        onnx_path = os.path.join(self.runner.work_dir, 'quantizied.onnx')
+        torch.onnx.export(
+            self.model.architecture, 
+            dummy_input, 
+            onnx_path,
+            opset_version=13,
+            operator_export_type=OperatorExportTypes.ONNX_ATEN_FALLBACK
+        )
 
         self.runner.save_checkpoint(
             out_dir=self.runner.work_dir,
