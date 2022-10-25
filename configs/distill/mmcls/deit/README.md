@@ -22,9 +22,12 @@ Recently, neural networks purely based on attention were shown to address image 
 | ImageNet | Deit-base | RegNety-160 | 83.24     | 96.33     | [config](deit-base_regnety160_pt-16xb64_in1k.py) | [model](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/deit/deit-base/deit-base_regnety160_pt-16xb64_in1k_20221011_113403-a67bf475.pth?versionId=CAEQThiBgMCFteW0oBgiIDdmMWY2NGRiOGY1YzRmZWZiOTExMzQ2NjNlMjk2Nzcz) \| [log](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/deit/deit-base/deit-base_regnety160_pt-16xb64_in1k_20221011_113403-a67bf475.json?versionId=CAEQThiBgIDGos20oBgiIGVlNDgyM2M2ZTk5MzQyYjFhNTgwNGIzMjllZjg3YmZm) |
 
 ```{warning}
-Before training, please first download teacher ckpt from
-https://dl.fbaipublicfiles.com/deit/regnety_160-a5fe301d.pth and
-save it to ./checkpoint/regnety_160-a5fe301d.pth.
+Before training, please first install `timm`.
+
+pip install timm
+or
+git clone https://github.com/rwightman/pytorch-image-models
+cd pytorch-image-models && pip install -e .
 ```
 
 ## Citation

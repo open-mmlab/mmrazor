@@ -17,15 +17,12 @@ data_preprocessor = dict(
     type='mmcls.ClsDataPreprocessor', batch_augments=student.train_cfg)
 
 # teacher settings
-# FIXME: modify the checkpoint_path to the actual path of the ckeckpoint file
-checkpoint_path = 'checkpoint/regnety_160-a5fe301d.pth'
+checkpoint_path = 'https://dl.fbaipublicfiles.com/deit/regnety_160-a5fe301d.pth'  # noqa: E501
 teacher = dict(
     _scope_='mmcls',
     type='ImageClassifier',
     backbone=dict(
-        type='TIMMBackbone',
-        model_name='regnety_160',
-        checkpoint_path=checkpoint_path),
+        type='TIMMBackbone', model_name='regnety_160', pretrained=True),
     neck=dict(type='GlobalAveragePooling'),
     head=dict(
         type='LinearClsHead',
