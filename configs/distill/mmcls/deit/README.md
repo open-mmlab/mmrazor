@@ -1,6 +1,7 @@
 # DeiT
 
-> [Training data-efficient image transformers & distillation through attention](https://arxiv.org/abs/2012.12877)
+> [](https://arxiv.org/abs/2012.12877)
+> Training data-efficient image transformers & distillation through attention
 
 <!-- [ALGORITHM] -->
 
@@ -16,9 +17,9 @@ Recently, neural networks purely based on attention were shown to address image 
 
 ### Classification
 
-| Dataset  | Model     | Teacher     | Top-1 (%) | Top-5 (%) | Configs                                          | Download                                                                                                                                                                                                                                    |
-| -------- | --------- | ----------- | --------- | --------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ImageNet | Deit-base | RegNety-160 | 83.21     | 96.27     | [config](deit-base_regnety160_pt-16xb64_in1k.py) | [model](https://download.openmmlab.com/mmrazor/v1/dkd/dkd_resnet34_resnet18_8xb32_in1k_20220804_202619-f9519768.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/dkd/dkd_resnet34_resnet18_8xb32_in1k_20220804_202619-f9519768.json) |
+| Dataset  | Model     | Teacher     | Top-1 (%) | Top-5 (%) | Configs                                          | Download                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| -------- | --------- | ----------- | --------- | --------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ImageNet | Deit-base | RegNety-160 | 83.24     | 96.33     | [config](deit-base_regnety160_pt-16xb64_in1k.py) | [model](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/deit/deit-base/deit-base_regnety160_pt-16xb64_in1k_20221011_113403-a67bf475.pth?versionId=CAEQThiBgMCFteW0oBgiIDdmMWY2NGRiOGY1YzRmZWZiOTExMzQ2NjNlMjk2Nzcz) \| [log](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/deit/deit-base/deit-base_regnety160_pt-16xb64_in1k_20221011_113403-a67bf475.json?versionId=CAEQThiBgIDGos20oBgiIGVlNDgyM2M2ZTk5MzQyYjFhNTgwNGIzMjllZjg3YmZm) |
 
 ```{warning}
 Before training, please first download teacher ckpt from
