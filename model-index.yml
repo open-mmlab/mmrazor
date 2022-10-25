@@ -18,3 +18,5 @@ Import:
   - configs/nas/mmcls/autoslim/metafile.yml
   - configs/nas/mmcls/darts/metafile.yml
   - configs/nas/mmdet/detnas/metafile.yml
+  - configs/distill/mmdet/pkd/metafile.yml
+  - configs/distill/mmdet3d/pkd/metafile.yml
