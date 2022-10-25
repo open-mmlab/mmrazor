@@ -26,7 +26,7 @@ class FXModelWrapper(BaseModule):
         self.mode = mode
         self.tracer = CustomTracer(
             customed_skipped_module=customed_skipped_method)
-        self.model = self.tracer.trace(self.model)
+        # self.model = self.tracer.trace(self.model)
 
     def forward(self, inputs, data_samples):
         if self.mode == 'loss':
