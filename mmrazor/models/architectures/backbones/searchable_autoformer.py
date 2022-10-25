@@ -8,12 +8,11 @@ from mmcls.models.backbones.base_backbone import BaseBackbone
 from mmcv.cnn import build_activation_layer, build_norm_layer
 from torch import Tensor
 
-from mmrazor.models.architectures.dynamic_ops.bricks.dynamic_container import DynamicSequential
-from mmrazor.models.architectures.dynamic_ops.bricks.dynamic_multi_head_attention import DynamicMultiheadAttention
-from mmrazor.models.architectures.dynamic_ops.bricks.dynamic_linear import DynamicLinear
-from mmrazor.models.architectures.dynamic_ops.bricks.dynamic_embed import DynamicPatchEmbed
- 
-from mmrazor.models.mutables import (MutableChannelUnit, OneShotMutableChannel,
+from mmrazor.models.architectures.dynamic_ops.bricks import (
+    DynamicLinear, DynamicMultiheadAttention, DynamicPatchEmbed,
+    DynamicSequential)
+from mmrazor.models.mutables import (BaseMutableChannel, MutableChannelUnit,
+                                     OneShotMutableChannel,
                                      OneShotMutableValue)
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
@@ -71,13 +70,10 @@ class TransformerEncoderLayer(BaseBackbone):
         self.add_module(self.norm2_name, norm2)
 
         # derived mutable
-        self.middle_channels = int(embed_dims * mlp_ratio)
-        self.fc1 = DynamicLinear(embed_dims, self.middle_channels)
-        self.fc2 = DynamicLinear(self.middle_channels, embed_dims)
+        self.max_middle_channels = int(embed_dims * mlp_ratio)
+        self.fc1 = DynamicLinear(embed_dims, self.max_middle_channels)
+        self.fc2 = DynamicLinear(self.max_middle_channels, embed_dims)
         self.act = build_activation_layer(act_cfg)
-
-        self.mutable_head_dims = OneShotMutableValue(
-            value_list=[64], default_value=64)
 
     @property
     def norm1(self):
@@ -95,10 +91,15 @@ class TransformerEncoderLayer(BaseBackbone):
                              mutable_embed_dims: BaseMutable):
         """Mutate the mutables of encoder layer."""
         # record the mutables
-        self.mutable_embed_dims = mutable_embed_dims
         self.mutable_num_heads = mutable_num_heads
         self.mutable_mlp_ratios = mutable_mlp_ratios
         self.mutable_q_embed_dims = mutable_q_embed_dims
+        self.mutable_embed_dims = mutable_embed_dims
+        # handle the mutable of FFN
+        self.middle_channels = mutable_mlp_ratios * mutable_embed_dims
+
+        # mutablevalue
+        self.attn.register_mutable_attr('num_heads', mutable_num_heads)
 
         # handle the mutable of the first dynamic LN
         MutableChannelContainer.register_mutable_channel_to_module(
@@ -107,32 +108,23 @@ class TransformerEncoderLayer(BaseBackbone):
         MutableChannelContainer.register_mutable_channel_to_module(
             self.norm2, self.mutable_embed_dims, True)
 
-        # num_heads = 10
-        self.attn.register_mutable_attr('num_heads', mutable_num_heads)
-
+        # handle the mutable of attn
         MutableChannelContainer.register_mutable_channel_to_module(
             self.attn, self.mutable_embed_dims, False)
         MutableChannelContainer.register_mutable_channel_to_module(
             self.attn, self.mutable_q_embed_dims, True, end=640)
-
         MutableChannelContainer.register_mutable_channel_to_module(
             self.attn.rel_pos_embed_k, self.mutable_embed_dims, False)
         MutableChannelContainer.register_mutable_channel_to_module(
             self.attn.rel_pos_embed_v, self.mutable_embed_dims, False)
 
-        # handle the mutable of FFN
-        self.middle_channels = self.mutable_mlp_ratios * self.mutable_embed_dims
-
-        # !!bugfix: support the derive_range
+        # handle the mutable of fc
         MutableChannelContainer.register_mutable_channel_to_module(
             self.fc1, mutable_embed_dims, False)
         MutableChannelContainer.register_mutable_channel_to_module(
             self.fc1, self.middle_channels, True, start=0, end=2496)
-        # self.fc1, mutable_embed_dims, True)
-
         MutableChannelContainer.register_mutable_channel_to_module(
             self.fc2, self.middle_channels, False, start=0, end=2496)
-        # self.fc2, mutable_embed_dims, False)
         MutableChannelContainer.register_mutable_channel_to_module(
             self.fc2, mutable_embed_dims, True)
 
@@ -187,7 +179,7 @@ class AutoformerBackbone(BaseBackbone):
         'mlp_ratios': [3.0, 3.5, 4.0],
         'num_heads': [8, 9, 10],
         'depth': [14, 15, 16],
-        'embed_dims': [528, 576, 624],
+        'embed_dims': [528, 576, 624]
     }
 
     def __init__(self,
@@ -209,6 +201,7 @@ class AutoformerBackbone(BaseBackbone):
         self.qkv_bias = qkv_bias
         self.in_channels = in_channels
         self.drop_rate = drop_rate
+        self.final_norm = final_norm
         self.act_cfg = act_cfg
 
         # adapt mutable settings
@@ -247,7 +240,6 @@ class AutoformerBackbone(BaseBackbone):
         ]
 
         # patch embeddings
-        # self.last_mutable = None
         self.patch_embed = DynamicPatchEmbed(
             img_size=self.img_size,
             in_channels=self.in_channels,
@@ -278,12 +270,15 @@ class AutoformerBackbone(BaseBackbone):
             embed_dims=self.mutable_embed_dims.num_channels,
             depth=self.mutable_depth.max_choice)
 
-        self.final_norm = final_norm
+        # final norm
         if self.final_norm:
             self.norm1_name, norm1 = build_norm_layer(
                 norm_cfg, self.mutable_embed_dims.num_channels)
             self.add_module(self.norm1_name, norm1)
 
+        self.last_mutable = self.mutable_embed_dims
+
+        # MutableChannelContainer
         MutableChannelUnit._register_channel_container(
             self, MutableChannelContainer)
 
@@ -313,13 +308,11 @@ class AutoformerBackbone(BaseBackbone):
         """Mutate the autoformer."""
         # handle the mutation of depth
         self.blocks.register_mutable_attr('depth', self.mutable_depth)
-        # self.mutable_depth self.blocks.mutable_depth
 
         # handle the mutation of patch embed
         MutableChannelContainer.register_mutable_channel_to_module(
             self.patch_embed, self.mutable_embed_dims, True)
 
-        self.last_mutable = self.mutable_embed_dims
         # handle the dependencies of TransformerEncoderLayers
         for i in range(self.mutable_depth.max_choice):  # max depth here
             layer = self.blocks[i]
@@ -328,7 +321,6 @@ class AutoformerBackbone(BaseBackbone):
                 mutable_mlp_ratios=self.mutable_mlp_ratios[i],
                 mutable_q_embed_dims=self.mutable_q_embed_dims[i],
                 mutable_embed_dims=self.last_mutable)
-            # mutable_embed_dims=self.mutable_embed_dims)
 
         # handle the mutable of final norm
         if self.final_norm:
@@ -340,10 +332,14 @@ class AutoformerBackbone(BaseBackbone):
         B = x.shape[0]
         x = self.patch_embed(x)
 
-        if self.mutable_embed_dims is not None:
-            embed_dims = self.mutable_embed_dims.current_choice
-        else:
-            embed_dims = self.embed_dim_range[-1]
+        # if isinstance(self.mutable_embed_dims, BaseMutableChannel):
+        #     embed_dims = self.mutable_embed_dims.current_choice
+        # else:
+        #     embed_dims = self.embed_dim_range[-1]
+
+        embed_dims = int(self.mutable_embed_dims.current_choice) if isinstance(
+            self.mutable_embed_dims,
+            BaseMutableChannel) else self.embed_dim_range[-1]
 
         # cls token
         cls_tokens = self.cls_token[..., :embed_dims].expand(B, -1, -1)

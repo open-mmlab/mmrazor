@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
+from mmrazor.models.architectures.dynamic_ops.mixins import DynamicMHAMixin
 from mmrazor.models.architectures.ops import MultiheadAttention
-from mmrazor.models.architectures.dynamic_ops.mixins.dynamic_mha_mixins import DynamicMHAMixin
 from .dynamic_relative_position import DynamicRelativePosition2D  # noqa: E501
 
 
