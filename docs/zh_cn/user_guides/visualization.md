@@ -3,7 +3,7 @@
 ## 特征图可视化
 
 <div align=center>
-<img src="G:\projects\openmmlab\mmrazor\docs\zh_cn\user_guides\vis.jpg" width="1000" alt="image"/>
+<img src="https://user-images.githubusercontent.com/41630003/197720299-774b202c-fecc-414b-9f31-499092caee18.jpg" width="1000" alt="image"/>
 </div>
 可视化可以给深度学习的模型训练和测试过程提供直观解释。
 
@@ -88,7 +88,7 @@ python tools/visualizations/feature_visualization.py \
 ```
 
 <div align=center>
-<img src="G:\projects\openmmlab\mmrazor\docs\zh_cn\user_guides\retina-r101_fpn.jpg" width="800" alt="image"/>
+<img src="https://user-images.githubusercontent.com/41630003/197720372-08e29a02-21ce-46a4-910a-97aabe7ec796.jpg" width="800" alt="image"/>
 </div>
 
 (2) 将多通道特征图采用 `select_max` 参数压缩为单通道并显示, 通过提取 `neck` 层输出进行特征图可视化（这里只显示了前4个stage的特征图）：
@@ -104,7 +104,7 @@ python tools/visualizations/feature_visualization.py \
 ```
 
 <div align=center>
-<img src="G:\projects\openmmlab\mmrazor\docs\zh_cn\user_guides\retina-r101_fpn_select_max.jpg" width="800" alt="image"/>
+<img src="https://user-images.githubusercontent.com/41630003/197720581-0ed2fd5a-e07d-4320-90e7-adbe0f05fd41.jpg" width="800" alt="image"/>
 </div>
 
 (3) 将多通道特征图采用 `squeeze_mean` 参数压缩为单通道并显示, 通过提取 `neck` 层输出进行特征图可视化（这里只显示了前4个stage的特征图）：
@@ -120,7 +120,7 @@ python tools/visualizations/feature_visualization.py \
 ```
 
 <div align=center>
-<img src="G:\projects\openmmlab\mmrazor\docs\zh_cn\user_guides\retina-r101_fpn_squeeze_mean.jpg" width="800" alt="image"/>
+<img src="https://user-images.githubusercontent.com/41630003/197720659-b25fcbcf-c5c5-45a6-965d-5336d136acde.jpg" width="800" alt="image"/>
 </div>
 
 (4) 将多通道特征图采用 `squeeze_mean` 参数压缩为单通道并显示, 通过提取 `neck` 层输出进行特征图可视化（这里只显示了前4个stage的特征图）：
@@ -136,7 +136,7 @@ python tools/visualizations/feature_visualization.py \
 ```
 
 <div align=center>
-<img src="G:\projects\openmmlab\mmrazor\docs\zh_cn\user_guides\retina-r101_fpn_topk.jpg" width="800" alt="image"/>
+<img src="https://user-images.githubusercontent.com/41630003/197720735-f30299be-2c42-444b-bec6-759723ad43fa.jpg" width="800" alt="image"/>
 </div>
 
 (5) 将多通道的两个模型的特征图差异采用 `pixel_wise_max` 参数压缩为单通道并显示, 这里只显示了前4个stage的特征图差异：
@@ -154,5 +154,5 @@ python tools/visualizations/feature_diff_visualization.py \
 ```
 
 <div align=center>
-<img src="G:\projects\openmmlab\mmrazor\docs\zh_cn\user_guides\retina-r101_retina-r50_fpn_diff.jpg" width="800" alt="image"/>
+<img src="https://user-images.githubusercontent.com/41630003/197720804-be0f3a27-e4d7-4160-b518-33d527114f9f.jpg" width="800" alt="image"/>
 </div>
