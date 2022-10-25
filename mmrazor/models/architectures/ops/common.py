@@ -1,4 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import List, Optional, Tuple, Union
+
+import torch
+import torch.nn.functional as F
 from mmcv.cnn import ConvModule
 
 from mmrazor.registry import MODELS
@@ -46,3 +50,44 @@ class Identity(BaseOP):
         if self.downsample is not None:
             x = self.downsample(x)
         return x
+
+
+@MODELS.register_module()
+class InputResizer(BaseOP):
+    valid_interpolation_type = {
+        'nearest', 'linear', 'bilinear', 'bicubic', 'trilinear', 'area',
+        'nearest-exact'
+    }
+
+    def __init__(self,
+                 size: Optional[Tuple[int, int]] = None,
+                 interpolation_type: str = 'bicubic',
+                 align_corners: bool = False,
+                 scale_factor: Optional[Union[float, List[float]]] = None,
+                 **kwargs) -> None:
+        super(InputResizer, self).__init__(**kwargs)
+
+        if size is not None:
+            if len(size) != 2:
+                raise ValueError('Length of size must be 2, '
+                                 f'but got: {len(size)}')
+        self._size = size
+        if interpolation_type not in self.valid_interpolation_type:
+            raise ValueError(
+                'Expect `interpolation_type` be '
+                f'one of {self.valid_interpolation_type}, but got: '
+                f'{interpolation_type}')
+        self._interpolation_type = interpolation_type
+        self._scale_factor = scale_factor
+        self._align_corners = align_corners
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self._size is None:
+            return x
+
+        return F.interpolate(
+            input=x,
+            size=self._size,
+            mode=self._interpolation_type,
+            scale_factor=self._scale_factor,
+            align_corners=self._align_corners)

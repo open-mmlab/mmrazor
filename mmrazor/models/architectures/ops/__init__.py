@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .common import Identity
+from .common import Identity, InputResizer
 from .darts_series import (DartsDilConv, DartsPoolBN, DartsSepConv,
                            DartsSkipConnect, DartsZero)
 from .efficientnet_series import ConvBnAct, DepthwiseSeparableConv
@@ -12,5 +12,5 @@ __all__ = [
     'ShuffleBlock', 'ShuffleXception', 'DartsPoolBN', 'DartsDilConv',
     'DartsSepConv', 'DartsSkipConnect', 'DartsZero', 'MBBlock', 'Identity',
     'ConvBnAct', 'DepthwiseSeparableConv', 'GatherTensors',
-    'RelativePosition2D', 'MultiheadAttention'
+    'RelativePosition2D', 'MultiheadAttention', 'InputResizer'
 ]

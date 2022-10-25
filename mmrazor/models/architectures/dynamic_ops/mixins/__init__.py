@@ -5,6 +5,7 @@ from .dynamic_mha_mixins import DynamicMHAMixin
 from .dynamic_mixins import (DynamicBatchNormMixin, DynamicChannelMixin,
                              DynamicLinearMixin, DynamicMixin)
 from .dynamic_patchembed_mixins import DynamicPatchEmbedMixin
+from .dynamic_resizer_mixins import DynamicResizeMixin
 from .dynamic_rp_mixins import DynamicRelativePosition2DMixin
 from .dynamic_squential_mixins import DynamicSequentialMixin
 
@@ -12,5 +13,5 @@ __all__ = [
     'DynamicChannelMixin', 'DynamicBatchNormMixin', 'DynamicLinearMixin',
     'DynamicMixin', 'DynamicConvMixin', 'DynamicSequentialMixin',
     'DynamicPatchEmbedMixin', 'DynamicLayerNormMixin',
-    'DynamicRelativePosition2DMixin', 'DynamicMHAMixin'
+    'DynamicRelativePosition2DMixin', 'DynamicMHAMixin', 'DynamicResizeMixin'
 ]

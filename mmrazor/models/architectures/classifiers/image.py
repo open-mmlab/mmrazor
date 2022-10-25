@@ -1,19 +1,17 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, Optional
+from typing import Optional
 
-from mmcls.models import ImageClassifier
-from torch import Tensor
+import torch
 
-# bignas PR
-
-try:
-    from mmrazor.models.architectures.dynamic_ops import DynamicInputResizer
-except ImportError:
-    from mmrazor.utils import get_placeholder
-    DynamicInputResizer = get_placeholder('DynamicInputResizer')
-
+from mmrazor.models.architectures.dynamic_ops import DynamicInputResizer
 from mmrazor.models.mutables import OneShotMutableValue
 from mmrazor.registry import MODELS
+
+try:
+    from mmcls.models import ImageClassifier
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    ImageClassifier = get_placeholder('mmcls')
 
 
 @MODELS.register_module()
@@ -37,14 +35,14 @@ class SearchableImageClassifier(ImageClassifier):
     """
 
     def __init__(self,
-                 backbone: Dict,
-                 neck: Optional[Dict] = None,
-                 head: Optional[Dict] = None,
+                 backbone: dict,
+                 neck: Optional[dict] = None,
+                 head: Optional[dict] = None,
                  pretrained: Optional[str] = None,
-                 train_cfg: Optional[Dict] = None,
-                 data_preprocessor: Optional[Dict] = None,
-                 init_cfg: Optional[Dict] = None,
-                 input_resizer_cfg: Optional[Dict] = None):
+                 train_cfg: Optional[dict] = None,
+                 data_preprocessor: Optional[dict] = None,
+                 init_cfg: Optional[dict] = None,
+                 input_resizer_cfg: Optional[dict] = None):
         super().__init__(backbone, neck, head, pretrained, train_cfg,
                          data_preprocessor, init_cfg)
 
@@ -56,16 +54,19 @@ class SearchableImageClassifier(ImageClassifier):
                 self._build_input_resizer(input_resizer_cfg)
         else:
             input_resizer = None
+
         self.input_resizer = input_resizer
 
-    def extract_feat(self, batch_inputs: Tensor, stage='neck') -> Tensor:
+    def extract_feat(self,
+                     batch_inputs: torch.Tensor,
+                     stage='neck') -> torch.Tensor:
         if self.input_resizer is not None:
             batch_inputs = self.input_resizer(batch_inputs)
 
         return super().extract_feat(batch_inputs, stage)
 
     def _build_input_resizer(self,
-                             input_resizer_cfg: Dict) -> DynamicInputResizer:
+                             input_resizer_cfg: dict) -> DynamicInputResizer:
         input_resizer_cfg_ = input_resizer_cfg['input_resizer']
         input_resizer = MODELS.build(input_resizer_cfg_)
         if not isinstance(input_resizer, DynamicInputResizer):

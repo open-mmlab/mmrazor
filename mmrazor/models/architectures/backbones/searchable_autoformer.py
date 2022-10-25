@@ -1,22 +1,25 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, List, Union
+from typing import Dict, List
 
 import numpy as np
 import torch
 import torch.nn as nn
-from mmcls.models.backbones.base_backbone import BaseBackbone
 from mmcv.cnn import build_activation_layer, build_norm_layer
-from torch import Tensor
 
 from mmrazor.models.architectures.dynamic_ops.bricks import (
     DynamicLinear, DynamicMultiheadAttention, DynamicPatchEmbed,
     DynamicSequential)
-from mmrazor.models.mutables import (BaseMutableChannel, MutableChannelUnit,
-                                     OneShotMutableChannel,
+from mmrazor.models.mutables import (BaseMutable, BaseMutableChannel,
+                                     MutableChannelContainer,
+                                     MutableChannelUnit, OneShotMutableChannel,
                                      OneShotMutableValue)
-from mmrazor.models.mutables.base_mutable import BaseMutable
-from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
 from mmrazor.registry import MODELS
+
+try:
+    from mmcls.models.backbones.base_backbone import BaseBackbone
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    BaseBackbone = get_placeholder('mmcls')
 
 
 class TransformerEncoderLayer(BaseBackbone):
@@ -31,7 +34,7 @@ class TransformerEncoderLayer(BaseBackbone):
         attn_drop_rate (float): The drop path rate after attention.
             Defaults to 0.
         drop_path_rate (float): Stochastic depth rate. Defaults to 0.
-        qkv_bias (bool, optional): Whether keep bias of qkv.
+        qkv_bias (bool, optional): Whether to keep bias of qkv.
             Defaults to True.
         act_cfg (Dict, optional): The config for acitvation function.
             Defaults to dict(type='GELU').
@@ -41,9 +44,9 @@ class TransformerEncoderLayer(BaseBackbone):
     """
 
     def __init__(self,
-                 embed_dims: Union[int, BaseMutable],
-                 num_heads: Union[int, BaseMutable],
-                 mlp_ratio: Union[float, BaseMutable],
+                 embed_dims: int,
+                 num_heads: int,
+                 mlp_ratio: float,
                  drop_rate: float = 0.,
                  attn_drop_rate: float = 0.,
                  drop_path_rate: float = 0.,
@@ -128,7 +131,7 @@ class TransformerEncoderLayer(BaseBackbone):
         MutableChannelContainer.register_mutable_channel_to_module(
             self.fc2, mutable_embed_dims, True)
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward of Transformer Encode Layer."""
         residual = x
         x = self.norm1(x)
@@ -327,7 +330,7 @@ class AutoformerBackbone(BaseBackbone):
             MutableChannelContainer.register_mutable_channel_to_module(
                 self.norm1, self.last_mutable, True)
 
-    def forward(self, x: Tensor):
+    def forward(self, x: torch.Tensor):
         """Forward of Autoformer."""
         B = x.shape[0]
         x = self.patch_embed(x)
