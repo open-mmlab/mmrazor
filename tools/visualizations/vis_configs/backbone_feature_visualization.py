@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 recorders = dict(
     backbone=dict(_scope_='mmrazor', type='ModuleOutputs', source='backbone'))
 mappings = dict(

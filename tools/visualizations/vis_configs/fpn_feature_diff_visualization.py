@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 # configs for the 1st model
 recorders1 = dict(
     neck=dict(_scope_='mmrazor', type='ModuleOutputs', source='neck'))

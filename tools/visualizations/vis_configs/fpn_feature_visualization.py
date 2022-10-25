@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 recorders = dict(
     neck=dict(_scope_='mmrazor', type='ModuleOutputs', source='neck'))
 mappings = dict(

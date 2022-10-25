@@ -14,7 +14,7 @@ MMRazor 中，将使用 MMEngine 提供的 `Visualizer` 可视化器搭配 MMRaz
 
 ## 特征图绘制
 
-你可以调用 `tools/visualizations/feature_visualization.py` 来简单快捷地得到单张图片单个模型的可视化结果。
+你可以调用 `tools/visualizations/vis_configs/feature_visualization.py` 来简单快捷地得到单张图片单个模型的可视化结果。
 
 为了方便理解，将其主要参数的功能梳理如下：
 
@@ -57,7 +57,7 @@ MMRazor 中，将使用 MMEngine 提供的 `Visualizer` 可视化器搭配 MMRaz
 - `--cfg-options`：由于不同算法库的visualizer拥有特例化的add_datasample方法，如mmdet的visualizer
   拥有 `pred_score_thr` 作为输入参数，可以在`--cfg-options`加入一些特例化的设置。
 
-类似的，用户可以通过调用 `tools/visualizations/feature_diff_visualization.py` 来得到
+类似的，用户可以通过调用 `tools/visualizations/vis_configs/feature_diff_visualization.py` 来得到
 单张图片两个模型的特征差异可视化结果，用法与上述类似，差异为：
 
 - `config1` / `config2`：选择算法1/2的配置文件。
@@ -81,7 +81,7 @@ wget https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_r50_fpn
 python tools/visualizations/feature_visualization.py \
        tools/visualizations/demo.jpg \
        PATH/TO/THE/CONFIG \
-       configs/visualizations/fpn_feature_visualization.py \
+       tools/visualizations/vis_configs/fpn_feature_visualization.py \
        retinanet_r101_fpn_2x_coco_20200131-5560aee8.pth \
        --repo mmdet --use-norm --overlaid
        --channel-reduction pixel_wise_max
@@ -97,7 +97,7 @@ python tools/visualizations/feature_visualization.py \
 python tools/visualizations/feature_visualization.py \
        tools/visualizations/demo.jpg \
        PATH/TO/THE/CONFIG \
-       configs/visualizations/fpn_feature_visualization.py \
+       tools/visualizations/vis_configs/fpn_feature_visualization.py \
        retinanet_r101_fpn_2x_coco_20200131-5560aee8.pth \
        --repo mmdet --overlaid
        --channel-reduction select_max
@@ -113,7 +113,7 @@ python tools/visualizations/feature_visualization.py \
 python tools/visualizations/feature_visualization.py \
        tools/visualizations/demo.jpg \
        PATH/TO/THE/CONFIG \
-       configs/visualizations/fpn_feature_visualization.py \
+       tools/visualizations/vis_configs/fpn_feature_visualization.py \
        retinanet_r101_fpn_2x_coco_20200131-5560aee8.pth \
        --repo mmdet --overlaid
        --channel-reduction squeeze_mean
@@ -129,7 +129,7 @@ python tools/visualizations/feature_visualization.py \
 python tools/visualizations/feature_visualization.py \
        tools/visualizations/demo.jpg \
        PATH/TO/THE/CONFIG \
-       configs/visualizations/fpn_feature_visualization.py \
+       tools/visualizations/vis_configs/fpn_feature_visualization.py \
        retinanet_r101_fpn_2x_coco_20200131-5560aee8.pth \
        --repo mmdet --overlaid
        --channel-reduction squeeze_mean
@@ -146,7 +146,7 @@ python tools/visualizations/feature_diff_visualization.py \
        tools/visualizations/demo.jpg \
        PATH/TO/THE/CONFIG1 \
        PATH/TO/THE/CONFIG2 \
-       configs/visualizations/fpn_feature_diff_visualization.py.py \
+       tools/visualizations/vis_configs/fpn_feature_diff_visualization.py.py \
        retinanet_r101_fpn_2x_coco_20200131-5560aee8.pth \
        retinanet_r50_fpn_2x_coco_20200131-fdb43119.pth \
        --repo mmdet --use-norm --overlaid
