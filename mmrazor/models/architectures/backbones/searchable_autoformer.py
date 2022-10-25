@@ -332,11 +332,6 @@ class AutoformerBackbone(BaseBackbone):
         B = x.shape[0]
         x = self.patch_embed(x)
 
-        # if isinstance(self.mutable_embed_dims, BaseMutableChannel):
-        #     embed_dims = self.mutable_embed_dims.current_choice
-        # else:
-        #     embed_dims = self.embed_dim_range[-1]
-
         embed_dims = int(self.mutable_embed_dims.current_choice) if isinstance(
             self.mutable_embed_dims,
             BaseMutableChannel) else self.embed_dim_range[-1]
