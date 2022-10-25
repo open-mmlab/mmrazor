@@ -28,7 +28,7 @@ model = dict(
         teacher_recorders=dict(
             fc=dict(type='ModuleOutputs', source='head.fc')),
         distill_losses=dict(
-            loss_kl=dict(type='KLDivergence', tau=1, loss_weight=5)),
+            loss_kl=dict(type='KLDivergence', tau=1, loss_weight=3)),
         loss_forward_mappings=dict(
             loss_kl=dict(
                 preds_S=dict(from_student=True, recorder='fc'),
