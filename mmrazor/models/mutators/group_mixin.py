@@ -1,19 +1,20 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from abc import abstractmethod
+
 from collections import Counter
-from typing import Dict, List, Optional, Type
+from typing import Dict, List, Type
 
 from torch.nn import Module
 
-from .base_mutator import MUTABLE_TYPE, BaseMutator
+from ..mutables import BaseMutable
 
 
 class GroupMixin():
 
     def _build_name_mutable_mapping(
-            self, supernet: Module, support_mutables) -> Dict[str, MUTABLE_TYPE]:
+            self, supernet: Module,
+            support_mutables: Type) -> Dict[str, BaseMutable]:
         """Mapping module name to mutable."""
-        name2mutable: Dict[str, MUTABLE_TYPE] = dict()
+        name2mutable: Dict[str, BaseMutable] = dict()
         for name, module in supernet.named_modules():
             if isinstance(module, support_mutables):
                 name2mutable[name] = module
@@ -21,13 +22,14 @@ class GroupMixin():
 
         return name2mutable
 
-    def _build_alias_names_mapping(self,
-                                   supernet: Module,
-                                   support_mutables) -> Dict[str, List[str]]:
+    def _build_alias_names_mapping(
+            self, supernet: Module,
+            support_mutables: Type) -> Dict[str, List[str]]:
         """Mapping alias to module names."""
         alias2mutable_names: Dict[str, List[str]] = dict()
         for name, module in supernet.named_modules():
             if isinstance(module, support_mutables):
+
                 if module.alias is not None:
                     if module.alias not in alias2mutable_names:
                         alias2mutable_names[module.alias] = [name]
@@ -36,7 +38,8 @@ class GroupMixin():
 
         return alias2mutable_names
 
-    def build_search_groups(self, supernet: Module, support_mutables, custom_groups) -> None:
+    def build_search_groups(self, supernet: Module, support_mutables: Type,
+                            custom_groups: List[List[str]]) -> Dict[int, List]:
         """Build search group with ``custom_group`` and ``alias``(see more
         information in :class:`BaseMutable`). Grouping by alias and module name
         are both supported.
@@ -84,8 +87,11 @@ class GroupMixin():
             supernet (:obj:`torch.nn.Module`): The supernet to be searched
                 in your algorithm.
         """
-        name2mutable = self._build_name_mutable_mapping(supernet, support_mutables)
-        alias2mutable_names = self._build_alias_names_mapping(supernet, support_mutables)
+        name2mutable: Dict[str,
+                           BaseMutable] = self._build_name_mutable_mapping(
+                               supernet, support_mutables)
+        alias2mutable_names = self._build_alias_names_mapping(
+            supernet, support_mutables)
 
         # Check whether the custom group is valid
         if len(custom_groups) > 0:
@@ -93,7 +99,7 @@ class GroupMixin():
                                      custom_groups)
 
         # Construct search_groups based on user-defined group
-        search_groups: Dict[int, List[MUTABLE_TYPE]] = dict()
+        search_groups: Dict[int, List[BaseMutable]] = dict()
 
         current_group_nums = 0
         grouped_mutable_names: List[str] = list()
@@ -161,7 +167,7 @@ class GroupMixin():
         return search_groups
 
     def _check_valid_groups(self, alias2mutable_names: Dict[str, List[str]],
-                            name2mutable: Dict[str, MUTABLE_TYPE],
+                            name2mutable: Dict[str, BaseMutable],
                             custom_group: List[List[str]]) -> None:
 
         aliases = [*alias2mutable_names.keys()]

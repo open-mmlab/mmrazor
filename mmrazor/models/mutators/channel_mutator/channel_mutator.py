@@ -96,7 +96,6 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
         if custom_groups is None:
             custom_groups = []
         self._custom_groups = custom_groups
-        self._search_groups = None
 
     def prepare_from_supernet(self, supernet: Module) -> None:
         """Prepare from a model for pruning.
@@ -256,7 +255,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
 
     # implementation of abstract functions
     @property
-    def search_groups(self) -> Dict:
+    def search_groups(self) -> Dict[int, List]:
 
         return self._search_groups
 

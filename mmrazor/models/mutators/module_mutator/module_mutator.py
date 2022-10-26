@@ -1,6 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import abstractmethod
-from collections import Counter
 from typing import Dict, List, Optional, Type
 
 from torch.nn import Module

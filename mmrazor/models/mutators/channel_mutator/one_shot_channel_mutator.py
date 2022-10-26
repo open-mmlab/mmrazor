@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, Type, Union, Any
+from typing import Dict, Type, Union
 
 from mmrazor.models.mutables import OneShotMutableChannelUnit
 from mmrazor.registry import MODELS
@@ -41,5 +41,3 @@ class OneShotChannelMutator(ChannelMutator[OneShotMutableChannelUnit]):
             max_choices[group_id] = modules[0].max_choice
 
         return max_choices
-
-    
