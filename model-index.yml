@@ -20,3 +20,4 @@ Import:
   - configs/nas/mmdet/detnas/metafile.yml
   - configs/distill/mmdet/pkd/metafile.yml
   - configs/distill/mmdet3d/pkd/metafile.yml
+  - configs/distill/mmcls/deit/metafile.yml

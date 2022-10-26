@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import ABCMeta, abstractmethod
-from queue import Queue
+from collections import deque
 from typing import Callable
 
 
@@ -33,7 +33,7 @@ class DistillDelivery(metaclass=ABCMeta):
     def __init__(self, max_keep_data: int = 1) -> None:
 
         self._override_data = False
-        self.data_queue: Queue = Queue(maxsize=max_keep_data)
+        self.data_queue: deque = deque([], maxlen=max_keep_data)
         self.max_keep_data = max_keep_data
 
     @property
