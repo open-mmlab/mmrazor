@@ -25,6 +25,9 @@ model = dict(
     quantizer=dict(
         type='mmrazor.CustomQuantizer',
         is_qat=False,
+        skipped_methods=[
+            'mmcls.models.heads.ClsHead._get_loss', 
+            'mmcls.models.heads.ClsHead._get_predictions'],
         qconfig=dict(
             qtype='affine',
             w_observer=dict(type='mmrazor.MSEObserver'),

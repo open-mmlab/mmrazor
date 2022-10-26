@@ -211,6 +211,15 @@ class PTQLoop(TestLoop):
         self.runner.call_hook('before_test_epoch')
 
         self.model.eval()
+        # dummy_input = torch.randn([1, 3, 224, 224]).cuda()
+        # onnx_path = os.path.join(self.runner.work_dir, 'fp.onnx')
+        # torch.onnx.export(
+        #     self.model.architecture, 
+        #     dummy_input, 
+        #     onnx_path,
+        #     opset_version=13,
+        #     # operator_export_type=OperatorExportTypes.ONNX_ATEN_FALLBACK
+        # )
         self.model.prepare()
         
         if self.is_calibrate:
@@ -231,25 +240,25 @@ class PTQLoop(TestLoop):
 
         # # compute metrics
         # metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+        
+        # self.model.eval()
+        # from torch.onnx import OperatorExportTypes
+        # dummy_input = torch.randn([1, 3, 224, 224])
+        # onnx_path = os.path.join(self.runner.work_dir, 'quantizied.onnx')
+        # torch.onnx.export(
+        #     self.model.architecture, 
+        #     dummy_input, 
+        #     onnx_path,
+        #     opset_version=11,
+        #     # operator_export_type=OperatorExportTypes.ONNX_ATEN_FALLBACK
+        # )
 
-        self.model.eval()
-        from torch.onnx import OperatorExportTypes
-        dummy_input = torch.randn([1, 3, 224, 224])
-        onnx_path = os.path.join(self.runner.work_dir, 'quantizied.onnx')
-        torch.onnx.export(
-            self.model.architecture, 
-            dummy_input, 
-            onnx_path,
-            opset_version=13,
-            operator_export_type=OperatorExportTypes.ONNX_ATEN_FALLBACK
-        )
-
-        self.runner.save_checkpoint(
-            out_dir=self.runner.work_dir,
-            filename='quantizied.pth',
-            save_optimizer=False,
-            save_param_scheduler=False
-        )
+        # self.runner.save_checkpoint(
+        #     out_dir=self.runner.work_dir,
+        #     filename='quantizied.pth',
+        #     save_optimizer=False,
+        #     save_param_scheduler=False
+        # )
 
         # self.runner.call_hook('after_test_epoch', metrics=metrics)
         self.runner.call_hook('after_test')
