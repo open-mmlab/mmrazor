@@ -23,6 +23,7 @@ class CustomQuantizer(BaseModule):
     def __init__(self,
                  qconfig=DefalutQconfigs['default'],
                  is_qat=True,
+                 skipped_methods=None,
                  prepare_custom_config_dict=None,
                  convert_custom_config_dict=None,
                  equalization_qconfig_dict=None,
@@ -54,6 +55,7 @@ class CustomQuantizer(BaseModule):
         check_is_valid_qconfig_dict(self.equalization_qconfig_dict)
         
         self.is_qat = is_qat
+        self.skipped_methods = skipped_methods
         self._remove_qconfig = _remove_qconfig
         self.tracer = self.build_tracer()
 
@@ -155,8 +157,11 @@ class CustomQuantizer(BaseModule):
             self.prepare_custom_config_dict, "float_to_observed_custom_module_class"
         )
         skipped_module_classes += float_custom_module_classes
-        # tracer = CustomTracer(skipped_module_names, skipped_module_classes)
-        tracer = QuantizationTracer(skipped_module_names, skipped_module_classes)
+        tracer = CustomTracer(
+            self.skipped_methods,
+            skipped_module_names, 
+            skipped_module_classes)
+        # tracer = QuantizationTracer(skipped_module_names, skipped_module_classes)
         return tracer
     
     def fuse_model(self, graph_module):

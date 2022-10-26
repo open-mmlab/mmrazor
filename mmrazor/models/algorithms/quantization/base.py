@@ -33,8 +33,7 @@ class GeneralQuant(BaseAlgorithm):
     def gen_graphs(self, model):
         self.quantizer._swap_ff_with_fxff(model)
         tracer = self.quantizer.tracer
-        # for mode in ['tensor', 'loss', 'predict']:
-        for mode in ['tensor']:
+        for mode in ['tensor', 'loss', 'predict']:
             concrete_args = {'mode': mode}
             if mode == 'tensor':
                 self.graph_tensor = GraphModule(model, tracer.trace(model, concrete_args=concrete_args))

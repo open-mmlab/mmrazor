@@ -9,14 +9,17 @@ from torch.fx.proxy import Proxy
 from types import FunctionType, MethodType
 from typing import Callable, Dict, List, Optional, Type, Union
 
-import mmdet.models as models
+from mmdet.models import BaseDetector
+from mmcls.models import BaseClassifier
+from mmengine.registry import MODELS
+from mmengine.utils import import_modules_from_strings
 
 _orig_module_call: Callable = torch.nn.Module.__call__
 _orig_module_getattr: Callable = torch.nn.Module.__getattr__
 # _orig_module_forward_train: Callable = models.BaseDenseHead.forward_train
 
 
-class TracedMethodRegistry:
+class UntracedMethodRegistry:
     method_dict = dict()
     tracer = None
 
@@ -58,12 +61,52 @@ def custom_symbolic_tracer(root,
         root, torch.nn.Module) else root.__name__
     return GraphModule(tracer.root, graph, name)
 
-
 class CustomTracer(Tracer):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, skipped_methods=None, *args, **kwargs):
         super(CustomTracer, self).__init__()
-        TracedMethodRegistry.tracer = self
+        UntracedMethodRegistry.tracer = self
+        self.skipped_methods = skipped_methods
+        if self.skipped_methods:
+            self.register_skipped_methods()
+    
+    @staticmethod
+    def _check_valid_source(source):
+        """Check if the source's format is valid."""
+        if not isinstance(source, str):
+            raise TypeError(f'source should be a str '
+                            f'instance, but got {type(source)}')
+
+        assert len(source.split('.')) > 1, \
+            'source must have at least one `.`'
+    
+    def register_skipped_methods(self):
+        if not isinstance(self.skipped_methods, list):
+            self.skipped_methods = [self.skipped_methods]
+        for s_method in self.skipped_methods:
+            self._check_valid_source(s_method)
+            mod_str = '.'.join(s_method.split('.')[:-2])
+            cls_str = s_method.split('.')[-2]
+            method_str = s_method.split('.')[-1]
+
+            try:
+                mod = import_modules_from_strings(mod_str)
+            except ImportError:
+                raise ImportError(
+                    f'{mod_str} is not imported correctly.')
+            
+            imported_cls: type = getattr(mod, cls_str)
+            if not isinstance(imported_cls, type):
+                raise TypeError(f'{cls_str} should be a type '
+                                f'instance, but got {type(imported_cls)}')
+            assert hasattr(imported_cls, method_str), \
+            f'{method_str} is not in {mod_str}.'
+            
+            method = getattr(imported_cls, method_str)
+            
+            method_registry = UntracedMethodRegistry(method)
+            method_registry.__set_name__(imported_cls, method_str)
+            
 
     def call_method(self, m: torch.nn.Module, name, method, args, kwargs):
         """
@@ -101,14 +144,14 @@ class CustomTracer(Tracer):
         return self.create_proxy('call_method', name, args, kwargs)
 
     def trace(self, root, concrete_args=None):
-        if isinstance(root, models.BaseDetector):
-            self.root = root
-            fn = type(root).forward_trace
-            self.submodule_paths = {
-                mod: name
-                for name, mod in root.named_modules()
-            }
-        elif isinstance(root, torch.nn.Module):
+        # if isinstance(root, (BaseClassifier, BaseDetector)):
+        #     self.root = root
+        #     fn = type(root).forward_trace
+        #     self.submodule_paths = {
+        #         mod: name
+        #         for name, mod in root.named_modules()
+        #     }
+        if isinstance(root, torch.nn.Module):
             self.root = root
             fn = type(root).forward
             self.submodule_paths = {
@@ -179,7 +222,7 @@ class CustomTracer(Tracer):
                 module_call_wrapper,
                 deduplicate=False)
 
-            for name, value in TracedMethodRegistry.method_dict.items():
+            for name, value in UntracedMethodRegistry.method_dict.items():
                 wrapped = value['wrapped']
                 patcher.patch_method(
                     value['mod'], name, wrapped, deduplicate=False)
@@ -201,7 +244,7 @@ class CustomTracer(Tracer):
 
     def is_skipped_method(self, m):
         mods = tuple(value['mod']
-                     for value in TracedMethodRegistry.method_dict.values())
+                     for value in UntracedMethodRegistry.method_dict.values())
         custom = isinstance(m, mods)
         return custom
 
