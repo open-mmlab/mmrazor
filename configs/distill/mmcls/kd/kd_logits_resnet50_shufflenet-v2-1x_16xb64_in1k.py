@@ -1,13 +1,12 @@
-_base_ = [
-    'mmcls::_base_/datasets/imagenet_bs32.py',
-    'mmcls::_base_/schedules/imagenet_bs256.py',
-    'mmcls::_base_/default_runtime.py'
-]
+_base_ = ['mmcls::shufflenet_v2/shufflenet-v2-1x_16xb64_in1k.py']
 
-teacher_ckpt = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet34_8xb32_in1k_20210831-f257d4e6.pth'  # noqa: E501
+student = _base_.model
+
+teacher_ckpt = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth'  # noqa: E501
 
 model = dict(
     _scope_='mmrazor',
+    _delete_=True,
     type='SingleTeacherDistill',
     data_preprocessor=dict(
         type='ImgDataPreprocessor',
@@ -16,10 +15,9 @@ model = dict(
         std=[58.395, 57.12, 57.375],
         # convert image from BGR to RGB
         bgr_to_rgb=True),
-    architecture=dict(
-        cfg_path='mmcls::resnet/resnet18_8xb32_in1k.py', pretrained=False),
+    architecture=student,
     teacher=dict(
-        cfg_path='mmcls::resnet/resnet34_8xb32_in1k.py', pretrained=False),
+        cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False),
     teacher_ckpt=teacher_ckpt,
     distiller=dict(
         type='ConfigurableDistiller',
