@@ -6,9 +6,9 @@ VT = TypeVar('VT')  # Value type
 
 
 class IndexDict(OrderedDict):
-    """IndexDict inherents from OrderedDict[Tuple[int, int], VT]. Each
-    IndexDict object is a OrderDict object which using index(Tuple[int,int]) as
-    key and Any as value.
+    """IndexDict inherits from OrderedDict[Tuple[int, int], VT]. Each IndexDict
+    object is a OrderDict object which using index(Tuple[int,int]) as key and
+    Any as value.
 
     The key type is Tuple[a: int,b: int]. It indicates a range in
     the [a,b).
