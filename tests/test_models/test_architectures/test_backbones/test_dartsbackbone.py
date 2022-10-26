@@ -55,7 +55,7 @@ class TestDartsBackbone(TestCase):
 
         self.mutator_cfg = dict(
             type='DiffModuleMutator',
-            custom_group=None,
+            custom_groups=None,
         )
 
     def test_darts_backbone(self):
@@ -81,7 +81,7 @@ class TestDartsBackbone(TestCase):
         custom_group = self.generate_key(model)
 
         assert model is not None
-        self.mutable_cfg.update(custom_group=custom_group)
+        self.mutable_cfg.update(custom_groups=custom_group)
         mutator = MODELS.build(self.mutator_cfg)
         assert mutator is not None
         mutator.prepare_from_supernet(model)

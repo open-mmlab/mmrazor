@@ -16,19 +16,19 @@ class ModuleMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
     - ``mutable_class_type``
 
     Args:
-        custom_group (list[list[str]], optional): User-defined search groups.
+        custom_groups (list[list[str]], optional): User-defined search groups.
             All searchable modules that are not in ``custom_group`` will be
             grouped separately.
     """
 
     def __init__(self,
-                 custom_group: Optional[List[List[str]]] = None,
+                 custom_groups: Optional[List[List[str]]] = None,
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(init_cfg)
 
-        if custom_group is None:
-            custom_group = []
-        self._custom_group = custom_group
+        if custom_groups is None:
+            custom_groups = []
+        self._custom_groups = custom_groups
         self._search_groups: Optional[Dict[int, List[MUTABLE_TYPE]]] = None
 
     # TODO
@@ -54,7 +54,7 @@ class ModuleMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
         """
         self._search_groups = self.build_search_groups(supernet,
                                                        self.mutable_class_type,
-                                                       self._custom_group)
+                                                       self._custom_groups)
 
     @property
     def name2mutable(self) -> Dict[str, MUTABLE_TYPE]:

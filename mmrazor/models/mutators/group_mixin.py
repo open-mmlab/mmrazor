@@ -9,6 +9,51 @@ from ..mutables import BaseMutable
 
 
 class GroupMixin():
+    """A mixin for :class:`ChannelMutator`, which can group mutables by
+    ``custom_group`` and ``alias``(see more information in
+    :class:`BaseMutable`). Grouping by alias and module name are both
+    supported.
+
+    Note:
+        Apart from user-defined search group, all other searchable
+        modules(mutable) will be grouped separately.
+
+        The main difference between using alias and module name for
+        grouping is that the alias is One-to-Many while the module
+        name is One-to-One.
+
+        When using both alias and module name in `custom_group`, the
+        priority of alias is higher than that of module name.
+
+        If alias is set in `custom_group`, then its corresponding module
+        name should not be in the `custom_group`.
+
+        Moreover, there should be no duplicate keys in the `custom_group`.
+
+    Example:
+        >>> import torch
+        >>> from mmrazor.models import DiffModuleMutator
+
+        >>> # Using alias for grouping
+        >>> mutator = DiffModuleMutator(custom_group=[['a1'], ['a2']])
+        >>> mutator.prepare_from_supernet(model)
+        >>> mutator.search_groups
+        {0: [op1, op2], 1: [op3]}
+
+        >>> # Using module name for grouping
+        >>> mutator = DiffModuleMutator(custom_group=[['op1', 'op2'], ['op3']])
+        >>> mutator.prepare_from_supernet(model)
+        >>> mutator.search_groups
+        {0: [op1, op2], 1: [op3]}
+
+        >>> # Using both alias and module name for grouping
+        >>> mutator = DiffModuleMutator(custom_group=[['a2'], ['op2']])
+        >>> mutator.prepare_from_supernet(model)
+        >>> # The last operation would be grouped
+        >>> mutator.search_groups
+        {0: [op3], 1: [op2], 2: [op1]}
+
+    """
 
     def _build_name_mutable_mapping(
             self, supernet: Module,
@@ -44,48 +89,13 @@ class GroupMixin():
         information in :class:`BaseMutable`). Grouping by alias and module name
         are both supported.
 
-        Note:
-            Apart from user-defined search group, all other searchable
-            modules(mutable) will be grouped separately.
-
-            The main difference between using alias and module name for
-            grouping is that the alias is One-to-Many while the module
-            name is One-to-One.
-
-            When using both alias and module name in `custom_group`, the
-            priority of alias is higher than that of module name.
-
-            If alias is set in `custom_group`, then its corresponding module
-            name should not be in the `custom_group`.
-
-            Moreover, there should be no duplicate keys in the `custom_group`.
-
-        Example:
-            >>> import torchBaseMutator
-
-            >>> # Using alias for grouping
-            >>> mutator = DiffMutableOP(custom_group=[['a1'], ['a2']])
-            >>> mutator.prepare_from_supernet(model)
-            >>> mutator.search_groups
-            {0: [op1, op2], 1: [op3]}
-
-            >>> # Using module name for grouping
-            >>> mutator = DiffMutableOP(custom_group=[['op1', 'op2'], ['op3']])
-            >>> mutator.prepare_from_supernet(model)
-            >>> mutator.search_groups
-            {0: [op1, op2], 1: [op3]}
-
-            >>> # Using both alias and module name for grouping
-            >>> mutator = DiffMutableOP(custom_group=[['a2'], ['op2']])
-            >>> mutator.prepare_from_supernet(model)
-            >>> # The last operation would be grouped
-            >>> mutator.search_groups
-            {0: [op3], 1: [op2], 2: [op1]}
-
-
         Args:
             supernet (:obj:`torch.nn.Module`): The supernet to be searched
                 in your algorithm.
+            support_mutables (Type): Mutable type that can be grouped.
+            custom_group (list, optional): User-defined search groups.
+                All searchable modules that are not in ``custom_group`` will be
+                grouped separately.
         """
         name2mutable: Dict[str,
                            BaseMutable] = self._build_name_mutable_mapping(
