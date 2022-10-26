@@ -1,13 +1,16 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
+from typing import Dict, Generic, Optional, TypeVar
 
 from mmengine.model import BaseModule
 
 from mmrazor.utils.typing import DumpChosen
 
+Chosen = TypeVar('Chosen')
+Choice = TypeVar('Choice')
 
-class BaseMutable(BaseModule, ABC):
+
+class BaseMutable(BaseModule, ABC, Generic[Choice, Chosen]):
     """Base Class for mutables. Mutable means a searchable module widely used
     in Neural Architecture Search(NAS).
 
@@ -16,14 +19,17 @@ class BaseMutable(BaseModule, ABC):
 
     All subclass should implement the following APIs:
 
-    - ``forward()``
     - ``fix_chosen()``
-    - ``choices()``
+    - ``dump_chosen()``
+    - ``current_choice.setter()``
+    - ``current_choice.getter()``
 
     Args:
-        module_kwargs (dict[str, dict], optional): Module initialization named
-            arguments. Defaults to None.
-        alias (str, optional): alias oraise NotImplementedError()
+        alias (str, optional): alias of the `MUTABLE`.
+        init_cfg (dict, optional): initialization configuration dict for
+            ``BaseModule``. OpenMMLab has implement 5 initializer including
+            `Constant`, `Xavier`, `Normal`, `Uniform`, `Kaiming`,
+            and `Pretrained`.
     """
 
     def __init__(self,
@@ -34,17 +40,17 @@ class BaseMutable(BaseModule, ABC):
         self.alias = alias
         self._is_fixed = False
 
-    @property
-    def current_choice(self):
+    @property  # type: ignore
+    @abstractmethod
+    def current_choice(self) -> Choice:
         """Current choice will affect :meth:`forward` and will be used in
         :func:`mmrazor.core.subnet.utils.export_fix_subnet` or mutator.
         """
-        raise NotImplementedError()
 
-    @current_choice.setter
+    @current_choice.setter  # type: ignore
+    @abstractmethod
     def current_choice(self, choice) -> None:
         """Current choice setter will be executed in mutator."""
-        raise NotImplementedError()
 
     @property
     def is_fixed(self) -> bool:
@@ -70,7 +76,7 @@ class BaseMutable(BaseModule, ABC):
         self._is_fixed = is_fixed
 
     @abstractmethod
-    def fix_chosen(self, chosen) -> None:
+    def fix_chosen(self, chosen: Chosen) -> None:
         """Fix mutable with choice. This function would fix the choice of
         Mutable. The :attr:`is_fixed` will be set to True and only the selected
         operations can be retained. All subclasses must implement this method.
@@ -84,8 +90,10 @@ class BaseMutable(BaseModule, ABC):
     # type hint
     @abstractmethod
     def dump_chosen(self) -> DumpChosen:
-        raise NotImplementedError()
+        """Save the current state of the mutable as a dictionary.
 
-    @abstractmethod
-    def export_chosen(self):
+        ``DumpChosen`` has ``chosen`` and ``meta`` fields. ``chosen`` is
+        necessary, ``fix_chosen`` will use the ``chosen`` . ``meta`` is used to
+        store some non-essential information.
+        """
         raise NotImplementedError()

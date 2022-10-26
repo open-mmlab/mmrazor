@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import random
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Generic, List, Optional, Union
 
 import numpy as np
 import torch.nn as nn
@@ -9,10 +9,11 @@ from torch import Tensor
 
 from mmrazor.registry import MODELS
 from mmrazor.utils.typing import DumpChosen
+from ..base_mutable import Choice, Chosen
 from .mutable_module import MutableModule
 
 
-class OneShotMutableModule(MutableModule):
+class OneShotMutableModule(MutableModule, Generic[Choice, Chosen]):
     """Base class for one shot mutable module. A base type of ``MUTABLES`` for
     single path supernet such as Single Path One Shot.
 
@@ -22,15 +23,6 @@ class OneShotMutableModule(MutableModule):
     - ``forward_fixed()``
     - ``forward_all()``
     - ``forward_choice()``
-
-    Args:
-        module_kwargs (dict[str, dict], optional): Module initialization named
-            arguments. Defaults to None.
-        alias (str, optional): alias of the `MUTABLE`.
-        init_cfg (dict, optional): initialization configuration dict for
-            ``BaseModule``. OpenMMLab has implement 5 initializer including
-            `Constant`, `Xavier`, `Normal`, `Uniform`, `Kaiming`,
-            and `Pretrained`.
 
     Note:
         :meth:`forward_all` is called when calculating FLOPs.
@@ -67,21 +59,7 @@ class OneShotMutableModule(MutableModule):
         """Sample random choice.
 
         Returns:
-            CHOICE_TYPE: the chosen key in ``MUTABLE``.
-        """
-
-    @abstractmethod
-    def forward_fixed(self, x):
-        """Forward with the fixed mutable.
-
-        All subclasses must implement this method.
-        """
-
-    @abstractmethod
-    def forward_all(self, x):
-        """Forward all choices.
-
-        All subclasses must implement this method.
+            str: the chosen key in ``MUTABLE``.
         """
 
     @abstractmethod
@@ -93,7 +71,7 @@ class OneShotMutableModule(MutableModule):
 
 
 @MODELS.register_module()
-class OneShotMutableOP(OneShotMutableModule):
+class OneShotMutableOP(OneShotMutableModule[str, str]):
     """A type of ``MUTABLES`` for single path supernet, such as Single Path One
     Shot. In single path supernet, each choice block only has one choice
     invoked at the same time. A path is obtained by sampling all the choice
@@ -114,8 +92,9 @@ class OneShotMutableOP(OneShotMutableModule):
         >>> import torch
         >>> from mmrazor.models.mutables import OneShotMutableOP
 
-        >>> candidates = nn.ModuleDic: Any32, 32, 5, 1, 2),
-        ...     'conv7x7': nn.Conv2d(32, 32, 7, 1, 3)})
+        >>> candidates = nn.ModuleDict({
+        ...     'conv3x3': nn.Conv2d(32, 32, 3, 1, 1),
+        ...     'conv5x5': nn.Conv2d(32, 32, 5, 1, 2),
 
         >>> input = torch.randn(1, 32, 64, 64)
         >>> op = OneShotMutableOP(candidates)

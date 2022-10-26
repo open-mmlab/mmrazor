@@ -47,11 +47,6 @@ class TestMutableValue(TestCase):
         with pytest.raises(AssertionError):
             mv.fix_chosen(5)
 
-        # chosen_copied = copy.deepcopy(chosen)
-        # chosen_copied['all_choices'] = [1, 2, 3]
-        # with pytest.raises(AssertionError):
-        #     mv.fix_chosen(chosen_copied)
-
         mv.fix_chosen(3)
         assert mv.current_choice == 3
 

@@ -7,6 +7,8 @@ from mmrazor.utils.typing import DumpChosen
 from ..base_mutable import BaseMutable
 from ..derived_mutable import DerivedMethodMixin, DerivedMutable
 
+Value = Union[int, float]
+
 
 @MODELS.register_module()
 class MutableValue(BaseMutable, DerivedMethodMixin):
@@ -27,7 +29,7 @@ class MutableValue(BaseMutable, DerivedMethodMixin):
     """
 
     def __init__(self,
-                 value_list: List[Any],
+                 value_list: List[Value],
                  default_value: Optional[Any] = None,
                  alias: Optional[str] = None,
                  init_cfg: Optional[Dict] = None) -> None:
@@ -60,7 +62,7 @@ class MutableValue(BaseMutable, DerivedMethodMixin):
         """List of choices."""
         return self._value_list
 
-    def fix_chosen(self, chosen: Dict[str, Any]) -> None:
+    def fix_chosen(self, chosen: Value) -> None:
         """Fix mutable value with subnet config.
 
         Args:
@@ -69,11 +71,6 @@ class MutableValue(BaseMutable, DerivedMethodMixin):
         if self.is_fixed:
             raise RuntimeError('MutableValue can not be fixed twice')
 
-        # all_choices = chosen['all_choices']
-        # current_choice = chosen['current_choice']
-
-        # assert all_choices == self.choices, \
-        #     f'Expect choices to be: {self.choices}, but got: {all_choices}'
         assert chosen in self.choices
 
         self.current_choice = chosen

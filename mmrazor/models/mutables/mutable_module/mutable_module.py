@@ -1,21 +1,21 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generic, List, Optional
 
-from ..base_mutable import BaseMutable
+from ..base_mutable import BaseMutable, Choice, Chosen
 
 
-class MutableModule(BaseMutable):
+class MutableModule(BaseMutable, Generic[Choice, Chosen]):
     """Base Class for mutables. Mutable means a searchable module widely used
     in Neural Architecture Search(NAS).
 
     It mainly consists of some optional operations, and achieving
     searchable function by handling choice with ``MUTATOR``.
 
-    All subclass should implement the following APIs:
+    All subclass should implement the following APIs and the other
+    abstract method in ``BaseMutable``:
 
     - ``forward()``
-    - ``fix_chosen()``
     - ``choices()``
 
     Args:
@@ -56,6 +56,20 @@ class MutableModule(BaseMutable):
     @abstractmethod
     def forward(self, x: Any) -> Any:
         """Forward computation."""
+
+    @abstractmethod
+    def forward_fixed(self, x):
+        """Forward with the fixed mutable.
+
+        All subclasses must implement this method.
+        """
+
+    @abstractmethod
+    def forward_all(self, x):
+        """Forward all choices.
+
+        All subclasses must implement this method.
+        """
 
     @property
     def num_choices(self) -> int:

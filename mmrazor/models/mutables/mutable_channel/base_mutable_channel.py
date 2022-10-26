@@ -35,20 +35,6 @@ class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
         self.name = ''
         self.num_channels = num_channels
 
-    # choice
-
-    @property  # type: ignore
-    @abstractmethod
-    def current_choice(self):
-        """get current choice."""
-        raise NotImplementedError()
-
-    @current_choice.setter  # type: ignore
-    @abstractmethod
-    def current_choice(self):
-        """set current choice."""
-        raise NotImplementedError()
-
     @property  # type: ignore
     @abstractmethod
     def current_mask(self) -> torch.Tensor:

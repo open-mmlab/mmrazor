@@ -522,6 +522,16 @@ class SampleExpandDerivedMutable(BaseMutable):
     def num_choices(self) -> int:
         return super().num_choices
 
+    @property
+    def current_choice(self):
+        return super().current_choice
+
+    @current_choice.setter
+    def current_choice(self, choice):
+        super().current_choice(choice)
+
+    
+
 
 class DynamicLinearModel(nn.Module):
     """

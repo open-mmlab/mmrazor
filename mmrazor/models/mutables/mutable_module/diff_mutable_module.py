@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import abstractmethod
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Generic, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -10,12 +10,13 @@ from torch import Tensor
 
 from mmrazor.registry import MODELS
 from mmrazor.utils.typing import DumpChosen
+from ..base_mutable import Choice, Chosen
 from .mutable_module import MutableModule
 
 PartialType = Callable[[Any, Optional[nn.Parameter]], Any]
 
 
-class DiffMutableModule(MutableModule):
+class DiffMutableModule(MutableModule, Generic[Choice, Chosen]):
     """Base class for differentiable mutables.
 
     Args:
@@ -36,7 +37,7 @@ class DiffMutableModule(MutableModule):
 
     @abstractmethod
     def sample_choice(self, arch_param: Tensor):
-        """Sample choice based on arch_parameters."""
+        """Sample choice according arch parameters."""
         raise NotImplementedError
 
     def forward(self, x: Any, arch_param: Optional[nn.Parameter] = None):
@@ -63,22 +64,14 @@ class DiffMutableModule(MutableModule):
         if self.is_fixed:
             return self.forward_fixed(x)
         else:
-            return self.forward_arch_param(x, arch_param=arch_param)
+            if arch_param is None:
+                return self.forward_all(x)
+            else:
+                return self.forward_arch_param(x, arch_param=arch_param)
 
     def compute_arch_probs(self, arch_param: nn.Parameter) -> Tensor:
         """compute chosen probs according to architecture params."""
         return F.softmax(arch_param, -1)
-
-    @abstractmethod
-    def forward_fixed(self, x):
-        """Forward when the mutable is fixed.
-
-        All subclasses must implement this method.
-        """
-
-    @abstractmethod
-    def forward_all(self, x):
-        """Forward all choices."""
 
     @abstractmethod
     def forward_arch_param(self, x, arch_param: Optional[nn.Parameter] = None):
@@ -95,7 +88,7 @@ class DiffMutableModule(MutableModule):
 
 
 @MODELS.register_module()
-class DiffMutableOP(DiffMutableModule):
+class DiffMutableOP(DiffMutableModule[str, str]):
     """A type of ``MUTABLES`` for differentiable architecture search, such as
     DARTS. Search the best module by learnable parameters `arch_param`.
 
@@ -349,7 +342,7 @@ class OneHotMutableOP(DiffMutableOP):
 
 
 @MODELS.register_module()
-class DiffChoiceRoute(DiffMutableModule):
+class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
     """A type of ``MUTABLES`` for Neural Architecture Search, which can select
     inputs from different edges in a differentiable or non-differentiable way.
     It is commonly used in DARTS.
