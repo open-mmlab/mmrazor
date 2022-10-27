@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import abstractmethod
 from functools import partial
-from typing import Any, Callable, Dict, Generic, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -10,13 +10,13 @@ from torch import Tensor
 
 from mmrazor.registry import MODELS
 from mmrazor.utils.typing import DumpChosen
-from ..base_mutable import Choice, Chosen
 from .mutable_module import MutableModule
 
 PartialType = Callable[[Any, Optional[nn.Parameter]], Any]
 
 
-class DiffMutableModule(MutableModule, Generic[Choice, Chosen]):
+class DiffMutableModule(
+        MutableModule, ):
     """Base class for differentiable mutables.
 
     Args:
@@ -88,7 +88,7 @@ class DiffMutableModule(MutableModule, Generic[Choice, Chosen]):
 
 
 @MODELS.register_module()
-class DiffMutableOP(DiffMutableModule[str, str]):
+class DiffMutableOP(DiffMutableModule):
     """A type of ``MUTABLES`` for differentiable architecture search, such as
     DARTS. Search the best module by learnable parameters `arch_param`.
 
@@ -342,7 +342,7 @@ class OneHotMutableOP(DiffMutableOP):
 
 
 @MODELS.register_module()
-class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
+class DiffChoiceRoute(DiffMutableModule):
     """A type of ``MUTABLES`` for Neural Architecture Search, which can select
     inputs from different edges in a differentiable or non-differentiable way.
     It is commonly used in DARTS.

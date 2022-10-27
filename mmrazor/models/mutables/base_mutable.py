@@ -1,16 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import ABC, abstractmethod
-from typing import Dict, Generic, Optional, TypeVar
+from typing import Dict, Optional
 
 from mmengine.model import BaseModule
 
 from mmrazor.utils.typing import DumpChosen
 
-Chosen = TypeVar('Chosen')
-Choice = TypeVar('Choice')
 
-
-class BaseMutable(BaseModule, ABC, Generic[Choice, Chosen]):
+class BaseMutable(BaseModule, ABC):
     """Base Class for mutables. Mutable means a searchable module widely used
     in Neural Architecture Search(NAS).
 
@@ -42,7 +39,7 @@ class BaseMutable(BaseModule, ABC, Generic[Choice, Chosen]):
 
     @property  # type: ignore
     @abstractmethod
-    def current_choice(self) -> Choice:
+    def current_choice(self):
         """Current choice will affect :meth:`forward` and will be used in
         :func:`mmrazor.core.subnet.utils.export_fix_subnet` or mutator.
         """
@@ -76,7 +73,7 @@ class BaseMutable(BaseModule, ABC, Generic[Choice, Chosen]):
         self._is_fixed = is_fixed
 
     @abstractmethod
-    def fix_chosen(self, chosen: Chosen) -> None:
+    def fix_chosen(self, chosen) -> None:
         """Fix mutable with choice. This function would fix the choice of
         Mutable. The :attr:`is_fixed` will be set to True and only the selected
         operations can be retained. All subclasses must implement this method.

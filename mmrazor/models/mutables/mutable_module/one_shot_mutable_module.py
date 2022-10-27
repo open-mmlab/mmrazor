@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import random
 from abc import abstractmethod
-from typing import Any, Dict, Generic, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import torch.nn as nn
@@ -9,11 +9,10 @@ from torch import Tensor
 
 from mmrazor.registry import MODELS
 from mmrazor.utils.typing import DumpChosen
-from ..base_mutable import Choice, Chosen
 from .mutable_module import MutableModule
 
 
-class OneShotMutableModule(MutableModule, Generic[Choice, Chosen]):
+class OneShotMutableModule(MutableModule):
     """Base class for one shot mutable module. A base type of ``MUTABLES`` for
     single path supernet such as Single Path One Shot.
 
@@ -71,7 +70,7 @@ class OneShotMutableModule(MutableModule, Generic[Choice, Chosen]):
 
 
 @MODELS.register_module()
-class OneShotMutableOP(OneShotMutableModule[str, str]):
+class OneShotMutableOP(OneShotMutableModule):
     """A type of ``MUTABLES`` for single path supernet, such as Single Path One
     Shot. In single path supernet, each choice block only has one choice
     invoked at the same time. A path is obtained by sampling all the choice
@@ -259,7 +258,7 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
         return list(self._candidates.keys())
 
     @property
-    def num_choices(self):
+    def num_choices(self) -> int:
         return len(self.choices)
 
 

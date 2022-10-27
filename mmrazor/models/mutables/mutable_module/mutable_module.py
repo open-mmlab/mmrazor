@@ -1,11 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import abstractmethod
-from typing import Any, Dict, Generic, List, Optional
+from typing import Any, Dict, List, Optional
 
-from ..base_mutable import BaseMutable, Choice, Chosen
+from ..base_mutable import BaseMutable
 
 
-class MutableModule(BaseMutable, Generic[Choice, Chosen]):
+class MutableModule(BaseMutable):
     """Base Class for mutables. Mutable means a searchable module widely used
     in Neural Architecture Search(NAS).
 
