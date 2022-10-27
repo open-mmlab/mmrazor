@@ -14,8 +14,8 @@ from mmengine.optim.optimizer import OptimWrapper, OptimWrapperDict
 from torch import Tensor
 from torch.optim import SGD
 
-from mmrazor.models import DiffModuleMutator, Dsnas, OneHotMutableOP
-from mmrazor.models.algorithms.nas.dsnas import DsnasDDP
+from mmrazor.models import DSNAS, DiffModuleMutator, OneHotMutableOP
+from mmrazor.models.algorithms.nas.dsnas import DSNASDDP
 from mmrazor.registry import MODELS
 
 MODELS.register_module(name='torchConv2d', module=nn.Conv2d, force=True)
@@ -81,29 +81,29 @@ class TestDsnas(TestCase):
         # initiate dsnas when `norm_training` is True.
         model = ToyDiffModule()
         mutator = DiffModuleMutator()
-        algo = Dsnas(architecture=model, mutator=mutator, norm_training=True)
+        algo = DSNAS(architecture=model, mutator=mutator, norm_training=True)
         algo.eval()
         self.assertTrue(model.bn.training)
 
         # initiate Dsnas with built mutator
         model = ToyDiffModule()
         mutator = DiffModuleMutator()
-        algo = Dsnas(model, mutator)
+        algo = DSNAS(model, mutator)
         self.assertIs(algo.mutator, mutator)
 
         # initiate Dsnas with unbuilt mutator
         mutator = dict(type='DiffModuleMutator')
-        algo = Dsnas(model, mutator)
+        algo = DSNAS(model, mutator)
         self.assertIsInstance(algo.mutator, DiffModuleMutator)
 
         # initiate Dsnas when `fix_subnet` is not None
         fix_subnet = {'mutable': {'chosen': 'torch_conv2d_5x5'}}
-        algo = Dsnas(model, mutator, fix_subnet=fix_subnet)
+        algo = DSNAS(model, mutator, fix_subnet=fix_subnet)
         self.assertEqual(algo.architecture.mutable.num_choices, 1)
 
         # initiate Dsnas with error type `mutator`
         with self.assertRaisesRegex(TypeError, 'mutator should be'):
-            Dsnas(model, model)
+            DSNAS(model, model)
 
     def test_forward_loss(self) -> None:
         inputs = torch.randn(1, 3, 8, 8)
@@ -112,13 +112,13 @@ class TestDsnas(TestCase):
         # supernet
         mutator = DiffModuleMutator()
         mutator.prepare_from_supernet(model)
-        algo = Dsnas(model, mutator)
+        algo = DSNAS(model, mutator)
         loss = algo(inputs, mode='loss')
         self.assertIsInstance(loss, dict)
 
         # subnet
         fix_subnet = {'mutable': {'chosen': 'torch_conv2d_5x5'}}
-        algo = Dsnas(model, fix_subnet=fix_subnet)
+        algo = DSNAS(model, fix_subnet=fix_subnet)
         loss = algo(inputs, mode='loss')
         self.assertIsInstance(loss, dict)
 
@@ -135,7 +135,7 @@ class TestDsnas(TestCase):
 
         mutator = DiffModuleMutator()
         mutator.prepare_from_supernet(model)
-        algo = Dsnas(model, mutator)
+        algo = DSNAS(model, mutator)
         subnet = algo.search_subnet()
         self.assertIsInstance(subnet, dict)
 
@@ -146,14 +146,14 @@ class TestDsnas(TestCase):
         mutator.prepare_from_supernet(model)
         mock_get_info.return_value = 2
 
-        algo = Dsnas(model, mutator)
+        algo = DSNAS(model, mutator)
         data = self._prepare_fake_data()
         optim_wrapper = build_optim_wrapper(algo, self.OPTIM_WRAPPER_CFG)
         loss = algo.train_step(data, optim_wrapper)
 
         self.assertTrue(isinstance(loss['loss'], Tensor))
 
-        algo = Dsnas(model, mutator)
+        algo = DSNAS(model, mutator)
         optim_wrapper_dict = OptimWrapperDict(
             architecture=OptimWrapper(SGD(model.parameters(), lr=0.1)),
             mutator=OptimWrapper(SGD(model.parameters(), lr=0.01)))
@@ -173,16 +173,16 @@ class TestDsnasDDP(TestDsnas):
         backend = 'nccl' if torch.cuda.is_available() else 'gloo'
         dist.init_process_group(backend, rank=0, world_size=1)
 
-    def prepare_model(self, device_ids=None) -> Dsnas:
+    def prepare_model(self, device_ids=None) -> DSNAS:
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         model = ToyDiffModule()
         mutator = DiffModuleMutator()
         mutator.prepare_from_supernet(model)
 
-        algo = Dsnas(model, mutator).to(self.device)
+        algo = DSNAS(model, mutator).to(self.device)
 
-        return DsnasDDP(
+        return DSNASDDP(
             module=algo, find_unused_parameters=True, device_ids=device_ids)
 
     @classmethod
@@ -193,7 +193,7 @@ class TestDsnasDDP(TestDsnas):
         not torch.cuda.is_available(), reason='cuda device is not avaliable')
     def test_init(self) -> None:
         ddp_model = self.prepare_model()
-        self.assertIsInstance(ddp_model, DsnasDDP)
+        self.assertIsInstance(ddp_model, DSNASDDP)
 
     @patch('mmengine.logging.message_hub.MessageHub.get_info')
     def test_dsnasddp_train_step(self, mock_get_info) -> None:

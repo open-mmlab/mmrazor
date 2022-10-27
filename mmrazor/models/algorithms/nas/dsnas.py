@@ -23,7 +23,7 @@ from ..base import BaseAlgorithm
 
 
 @MODELS.register_module()
-class Dsnas(BaseAlgorithm):
+class DSNAS(BaseAlgorithm):
     """Implementation of `DSNAS <https://arxiv.org/abs/2002.09128>`_
 
     Args:
@@ -272,7 +272,7 @@ class Dsnas(BaseAlgorithm):
 
 
 @MODEL_WRAPPERS.register_module()
-class DsnasDDP(MMDistributedDataParallel):
+class DSNASDDP(MMDistributedDataParallel):
 
     def __init__(self,
                  *,

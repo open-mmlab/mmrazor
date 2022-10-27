@@ -3,7 +3,7 @@ from .base import BaseAlgorithm
 from .distill import (DAFLDataFreeDistillation, DataFreeDistillation,
                       FpnTeacherDistill, OverhaulFeatureDistillation,
                       SelfDistill, SingleTeacherDistill)
-from .nas import SPOS, AutoSlim, AutoSlimDDP, Darts, DartsDDP, Dsnas, DsnasDDP
+from .nas import DSNAS, DSNASDDP, SPOS, AutoSlim, AutoSlimDDP, Darts, DartsDDP
 from .pruning import SlimmableNetwork, SlimmableNetworkDDP
 from .pruning.ite_prune_algorithm import ItePruneAlgorithm
 
@@ -23,6 +23,6 @@ __all__ = [
     'DAFLDataFreeDistillation',
     'OverhaulFeatureDistillation',
     'ItePruneAlgorithm',
-    'Dsnas',
-    'DsnasDDP',
+    'DSNAS',
+    'DSNASDDP',
 ]
