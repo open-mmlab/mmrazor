@@ -2,15 +2,18 @@
 import functools
 import inspect
 from types import FunctionType, MethodType
-from typing import Callable, Dict, Iterator, List, Optional, Type, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Type, Union
 
 import torch
 import torch.nn as nn
 from torch._C import ScriptObject  # type: ignore[attr-defined]
 from torch.fx import GraphModule, Tracer
+from torch.fx._compatibility import compatibility
 from torch.fx._symbolic_trace import (Graph, _autowrap_check,
                                       _patch_wrapped_functions, _Patcher)
 from torch.fx.proxy import Proxy, TraceError
+
+from .graph_module import MMGraphModule
 
 _orig_module_call: Callable = nn.Module.__call__
 _orig_module_getattr: Callable = nn.Module.__getattr__
@@ -96,25 +99,39 @@ def _parse_method_string(method_string):
     return mod
 
 
+@compatibility(is_backward_compatible=True)
+def custom_trace(
+    root: Union[torch.nn.Module, Callable[..., Any]],
+    concrete_args: Optional[Dict[str, Any]] = None,
+    customed_skipped_method: Optional[Dict[str, Any]] = None,
+) -> MMGraphModule:
+
+    tracer = CustomTracer(customed_skipped_method=customed_skipped_method)
+    root.mode = 'loss'  # type: ignore
+    graph_loss = tracer.trace(root, concrete_args)
+    root.mode = 'predict'  # type: ignore
+    graph_predict = tracer.trace(root, concrete_args)
+    name = (
+        root.__class__.__name__
+        if isinstance(root, torch.nn.Module) else root.__name__)
+    graphs = dict(loss=graph_loss, predict=graph_predict)
+    return MMGraphModule(tracer.root, graphs, name)
+
+
 class CustomTracer(Tracer):
 
-    def __init__(self,
-                 *args,
-                 customed_leaf_module=None,
-                 customed_skipped_module=None,
-                 **kwargs):
+    def __init__(self, *args, customed_skipped_method=None, **kwargs):
         super(CustomTracer, self).__init__()
         UntracedMethodRegistry.tracer = self
-        self.customed_leaf_module = customed_leaf_module
-        self.customed_skipped_module = customed_skipped_module
-        if self.customed_skipped_module:
+        self.customed_skipped_method = customed_skipped_method
+        if self.customed_skipped_method:
             self.register_skipped_module()
 
     def register_skipped_module(self):
-        if not isinstance(self.customed_skipped_module, list):
-            self.customed_skipped_module = [self.customed_skipped_module]
+        if not isinstance(self.customed_skipped_method, list):
+            self.customed_skipped_method = [self.customed_skipped_method]
         method_list = []
-        for method_str in self.customed_skipped_module:
+        for method_str in self.customed_skipped_method:
             method = _parse_method_string(method_str)
             method_list.append(method)
         register_skipped_method(method_list)
@@ -247,11 +264,6 @@ class CustomTracer(Tracer):
                      for value in UntracedMethodRegistry.method_dict.values())
         custom = isinstance(m, mods)
         return custom
-
-    def is_leaf_module(self, m: torch.nn.Module,
-                       module_qualified_name: str) -> bool:
-        leaf = super().is_leaf_module(m, module_qualified_name)
-        return leaf
 
     def iter(self, obj: 'Proxy') -> Iterator:
         """Called when a proxy object is being iterated over, such as when used
