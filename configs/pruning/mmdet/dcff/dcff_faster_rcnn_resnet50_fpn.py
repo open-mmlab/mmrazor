@@ -1,4 +1,4 @@
-# model settings
+# architecture settings
 architecture = dict(
     _scope_='mmdet',
     type='FasterRCNN',

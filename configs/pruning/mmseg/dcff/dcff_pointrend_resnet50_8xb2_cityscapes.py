@@ -41,7 +41,5 @@ model = dict(
             type='BackwardTracer',
             loss_calculator=dict(type='CascadeEncoderDecoderPseudoLoss'))))
 
-find_unused_parameters = True
-
 model_wrapper = dict(
     type='mmcv.MMDistributedDataParallel', find_unused_parameters=True)

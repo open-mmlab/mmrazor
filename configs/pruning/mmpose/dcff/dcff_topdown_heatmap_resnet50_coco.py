@@ -125,7 +125,8 @@ val_dataloader = dict(
     ))
 test_dataloader = val_dataloader
 
-find_unused_parameters = True
+model_wrapper = dict(
+    type='mmcv.MMDistributedDataParallel', find_unused_parameters=True)
 
 val_evaluator = dict(
     type='mmpose.CocoMetric',

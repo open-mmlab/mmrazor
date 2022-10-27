@@ -521,39 +521,3 @@ class FuseConvMixin(DynamicConvMixin):
         else:
             self.layeri_softmaxp.data = softmaxp
         del param, layeri_param, layeri_negaEudist, layeri_kl
-
-    def to_static_op(self: _ConvNd) -> nn.Conv2d:
-        """Convert dynamic conv2d to :obj:`torch.nn.Conv2d`.
-
-        Returns:
-            torch.nn.Conv2d: :obj:`torch.nn.Conv2d` with sliced parameters.
-        """
-        self.check_if_mutables_fixed()
-
-        weight, bias, padding = self.get_dynamic_params()
-        groups = self.groups
-        if groups == self.in_channels == self.out_channels and \
-                self.mutable_in_channels is not None:
-            mutable_in_channels = self.mutable_attrs['in_channels']
-            groups = mutable_in_channels.current_mask.sum().item()
-        out_channels = weight.size(0)
-        in_channels = weight.size(1) * groups
-
-        kernel_size = tuple(weight.shape[2:])
-
-        static_conv = self.static_op_factory(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            kernel_size=kernel_size,
-            stride=self.stride,
-            padding=padding,
-            padding_mode=self.padding_mode,
-            dilation=self.dilation,
-            groups=groups,
-            bias=True if bias is not None else False)
-
-        static_conv.weight = nn.Parameter(weight)
-        if bias is not None:
-            static_conv.bias = nn.Parameter(bias)
-
-        return static_conv

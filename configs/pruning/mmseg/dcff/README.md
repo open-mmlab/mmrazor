@@ -47,24 +47,24 @@ The mainstream approach for filter pruning is usually either to force a hard-cod
 
 ### Generate channel_config file
 
-Generate `resnet_cls.json` with `tools/get_channel_units.py`.
+Generate `resnet_seg.json` with `tools/get_channel_units.py`.
 
 ```bash
 python tools/get_channel_units.py
-  configs/pruning/mmcls/dcff/dcff_resnet50_8xb32_in1k.py \
-  -c -i --output-path=configs/pruning/mmcls/dcff/resnet_cls.json
+  configs/pruning/mmseg/dcff/dcff_pointrend_resnet50_8xb2_cityscapes.py \
+  -c -i --output-path=configs/pruning/mmseg/dcff/resnet_seg.json
 ```
 
-Then set layers' pruning rates `choice` in `resnet_cls.json`.
+Then set layers' pruning rates `choice` in `resnet_seg.json`.
 
 ### Train DCFF
 
-#### Classification
+#### Segmentation
 
-##### ImageNet
+##### Citpscapes
 
 ```bash
 sh tools/slurm_train.sh $PARTITION $JOB_NAME \
-  configs/pruning/mmcls/dcff/dcff_resnet50_8xb32_in1k.py \
+  configs/pruning/mmseg/dcff/dcff_pointrend_resnet50_8xb2_cityscapes.py \
   $WORK_DIR
 ```
