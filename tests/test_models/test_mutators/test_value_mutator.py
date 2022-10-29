@@ -19,9 +19,17 @@ class TestValueMutator(unittest.TestCase):
                 value_mutator.prepare_from_supernet(model)
                 value_choices = value_mutator.sample_choices()
                 value_mutator.set_choices(value_choices)
-
                 print(value_choices)
                 # self.assertGreater(len(mutator.mutable_units), 0)
+
+                # mutator = ChannelMutator(
+                #     channel_unit_cfg={
+                #         'type': 'OneShotMutableChannelUnit',
+                #         'default_args': {}
+                #     },
+                #     parse_cfg={'type': 'Predefined'})
+                # mutator.prepare_from_supernet(model)
+                # self._test_a_mutator(mutator, model)
 
                 x = torch.rand([2, 3, 224, 224])
                 y = model(x)

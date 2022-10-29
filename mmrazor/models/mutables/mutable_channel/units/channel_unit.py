@@ -140,7 +140,6 @@ class ChannelUnit(BaseModule):
     A ChannelUnit has two list, input_related and output_related, to store
     the Channels. These Channels are dependent on each other, and have to
     have the same number of activated number of channels.
-
     Args:
         num_channels (int): the number of channels of Channel object.
     """
@@ -256,14 +255,14 @@ class ChannelUnit(BaseModule):
     def add_ouptut_related(self, channel: Channel):
         """Add a Channel which is output related."""
         assert channel.is_output_channel
-        # assert self.num_channels == channel.num_channels
+        assert self.num_channels == channel.num_channels
         if channel not in self.output_related:
             self.output_related.append(channel)
 
     def add_input_related(self, channel: Channel):
         """Add a Channel which is input related."""
         assert channel.is_output_channel is False
-        # assert self.num_channels == channel.num_channels
+        assert self.num_channels == channel.num_channels
         if channel not in self.input_related:
             self.input_related.append(channel)
 

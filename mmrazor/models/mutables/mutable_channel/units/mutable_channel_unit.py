@@ -5,13 +5,9 @@ from collections import Set
 from typing import Dict, List, Type, TypeVar
 
 import torch.nn as nn
-from mmcls.models.utils import PatchEmbed
-from torch.nn import LayerNorm
 
 from mmrazor.models.architectures import dynamic_ops
 from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
-from mmrazor.models.architectures.ops import (MultiheadAttention,
-                                              RelativePosition2D)
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables.mutable_channel import (BaseMutableChannel,
                                                      MutableChannelContainer)
@@ -23,13 +19,11 @@ class MutableChannelUnit(ChannelUnit):
     # init methods
     def __init__(self, num_channels: int, **kwargs) -> None:
         """MutableChannelUnit inherits from ChannelUnit, which manages channels
-        with channel-dependency.
+        with channel-dependency. Compared with ChannelUnit, MutableChannelUnit
+        defines the core interfaces for pruning. By inheriting
+        MutableChannelUnit, we can implement a variant pruning and nas
+        algorithm. These apis includes.
 
-        Compared with ChannelUnit, MutableChannelUnit defines the core
-        interfaces for pruning. By inheriting MutableChannelUnit,
-        we can implement a variant pruning and nas algorithm.
-
-        These apis includes
             - basic property
                 - name
                 - is_mutable
@@ -40,7 +34,6 @@ class MutableChannelUnit(ChannelUnit):
                 - sample_choice
             - after pruning
                 - fix_chosen
-
         Args:
             num_channels (int): dimension of the channels of the Channel
             objects in the unit.
@@ -97,22 +90,7 @@ class MutableChannelUnit(ChannelUnit):
                             is_output_channel=is_output))
 
         mutable2units: Dict = {}
-
         for name, module in model.named_modules():
-            # [blocker]
-            # if isinstance(module, DynamicMultiheadAttention):
-            if isinstance(module, MultiheadAttention):
-                in_container: MutableChannelContainer = \
-                    module.get_mutable_attr(
-                        'in_channels')
-                out_container: MutableChannelContainer = \
-                    module.get_mutable_attr(
-                        'out_channels')
-                process_container(in_container, module, name, mutable2units,
-                                  False)
-                process_container(out_container, module, name, mutable2units,
-                                  True)
-
             if isinstance(module, DynamicChannelMixin):
                 in_container: MutableChannelContainer = \
                     module.get_mutable_attr(
@@ -158,9 +136,10 @@ class MutableChannelUnit(ChannelUnit):
     def config_template(self,
                         with_init_args=False,
                         with_channels=False) -> Dict:
-        """Return the config template of this unit. By default, the config
-        template only includes a key 'choice'.
+        """Return the config template of this unit.
 
+        By default, the config
+        template only includes a key 'choice'.
         Args:
             with_init_args (bool): if the config includes args for
                 initialization.
@@ -241,7 +220,6 @@ class MutableChannelUnit(ChannelUnit):
     def _register_channel_container(
             model: nn.Module, container_class: Type[MutableChannelContainer]):
         """register channel container for dynamic ops."""
-        """
         for module in model.modules():
             if isinstance(module, dynamic_ops.DynamicChannelMixin):
                 if module.get_mutable_attr('in_channels') is None:
@@ -264,59 +242,6 @@ class MutableChannelUnit(ChannelUnit):
                         out_channels = module.num_features
                     elif isinstance(module, nn.Linear):
                         out_channels = module.out_features
-                    else:
-                        raise NotImplementedError()
-                    module.register_mutable_attr('out_channels',
-                                                 container_class(out_channels))
-
-        """
-        for module in model.modules():
-            # [blocker]
-            # if isinstance(module, DynamicMultiheadAttention):
-            if isinstance(module, MultiheadAttention):
-                in_channels = module.embed_dims
-                module.register_mutable_attr('embed_dims',
-                                             container_class(in_channels))
-                out_channels = module.q_embed_dims
-                module.register_mutable_attr('q_embed_dims',
-                                             container_class(out_channels))
-
-            if isinstance(module, dynamic_ops.DynamicChannelMixin):
-                if module.get_mutable_attr('in_channels') is None:
-                    in_channels = 0
-                    if isinstance(module, nn.Conv2d):
-                        in_channels = module.in_channels
-                    elif isinstance(module, nn.modules.batchnorm._BatchNorm):
-                        in_channels = module.num_features
-                    elif isinstance(module, nn.Linear):
-                        in_channels = module.in_features
-                    # autoformer
-                    elif isinstance(module, PatchEmbed):
-                        in_channels = module.embed_dims
-                    elif isinstance(module, LayerNorm):
-                        in_channels = module.normalized_shape[0]
-                    elif isinstance(module, RelativePosition2D):
-                        in_channels = module.head_dims
-                    else:
-                        raise NotImplementedError()
-                    module.register_mutable_attr('in_channels',
-                                                 container_class(in_channels))
-
-                if module.get_mutable_attr('out_channels') is None:
-                    out_channels = 0
-                    if isinstance(module, nn.Conv2d):
-                        out_channels = module.out_channels
-                    elif isinstance(module, nn.modules.batchnorm._BatchNorm):
-                        out_channels = module.num_features
-                    elif isinstance(module, nn.Linear):
-                        out_channels = module.out_features
-                    # autoformer
-                    elif isinstance(module, PatchEmbed):
-                        out_channels = module.embed_dims
-                    elif isinstance(module, LayerNorm):
-                        out_channels = module.normalized_shape[0]
-                    elif isinstance(module, RelativePosition2D):
-                        out_channels = module.head_dims
                     else:
                         raise NotImplementedError()
                     module.register_mutable_attr('out_channels',

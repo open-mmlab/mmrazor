@@ -45,7 +45,8 @@ model = dict(
         channel_mutator=dict(
             type='mmrazor.OneShotChannelMutator',
             channel_unit_cfg={
-                'type': 'OneShotMutableChannelUnit',
+                # 'type': 'OneShotMutableChannelUnit',
+                'type': 'OneShotMutableChannelUnit_VIT',
                 'default_args': {}
             },
             parse_cfg={'type': 'Predefined'}),

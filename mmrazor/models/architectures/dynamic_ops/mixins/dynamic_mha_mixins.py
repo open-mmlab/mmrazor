@@ -119,13 +119,11 @@ class DynamicMHAMixin(DynamicMixin, DynamicMHAProtocol):
             return w.weight, w.bias
 
         if self.mutable_q_embed_dims is not None:
-            # in_features = self.mutable_q_embed_dims.current_choice
             in_features = self.mutable_q_embed_dims.activated_channels
         else:
             in_features = self.embed_dims
 
         if self.mutable_embed_dims is not None:
-            # out_features = self.mutable_embed_dims.current_choice
             out_features = self.mutable_embed_dims.activated_channels
         else:
             out_features = self.embed_dims
@@ -148,13 +146,11 @@ class DynamicMHAMixin(DynamicMixin, DynamicMHAProtocol):
             return w.weight, w.bias
 
         if self.mutable_embed_dims is not None:
-            # in_features = self.mutable_embed_dims.current_choice
             in_features = self.mutable_embed_dims.activated_channels
         else:
             in_features = self.embed_dims
 
         if self.mutable_q_embed_dims is not None:
-            # out_features = self.mutable_q_embed_dims.current_choice
             out_features = self.mutable_q_embed_dims.activated_channels
         else:
             out_features = self.embed_dims

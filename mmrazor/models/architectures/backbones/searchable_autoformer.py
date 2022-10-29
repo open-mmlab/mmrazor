@@ -11,8 +11,10 @@ from mmrazor.models.architectures.dynamic_ops.bricks import (
     DynamicSequential)
 from mmrazor.models.mutables import (BaseMutable, BaseMutableChannel,
                                      MutableChannelContainer,
-                                     MutableChannelUnit, OneShotMutableChannel,
+                                     OneShotMutableChannel,
                                      OneShotMutableValue)
+from mmrazor.models.mutables.mutable_channel import \
+    OneShotMutableChannelUnit_VIT
 from mmrazor.registry import MODELS
 
 try:
@@ -282,7 +284,7 @@ class AutoformerBackbone(BaseBackbone):
         self.last_mutable = self.mutable_embed_dims
 
         # MutableChannelContainer
-        MutableChannelUnit._register_channel_container(
+        OneShotMutableChannelUnit_VIT._register_channel_container(
             self, MutableChannelContainer)
 
         self.register_mutate()

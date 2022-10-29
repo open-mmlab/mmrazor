@@ -91,6 +91,8 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
             self._parse_channel_unit_cfg(
                 channel_unit_cfg)
 
+        print(self.parse_cfg)
+
     def prepare_from_supernet(self, supernet: Module) -> None:
         """Prepare from a model for pruning.
 
@@ -100,7 +102,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
         """
 
         self._name2module = dict(supernet.named_modules())
-
+        # 需要跑下前两种情况的case
         if 'Tracer' in self.parse_cfg['type']:
             units = self._prepare_from_tracer(supernet, self.parse_cfg)
         elif self.parse_cfg['type'] == 'Config':
