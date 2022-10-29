@@ -140,6 +140,7 @@ class ChannelUnit(BaseModule):
     A ChannelUnit has two list, input_related and output_related, to store
     the Channels. These Channels are dependent on each other, and have to
     have the same number of activated number of channels.
+
     Args:
         num_channels (int): the number of channels of Channel object.
     """

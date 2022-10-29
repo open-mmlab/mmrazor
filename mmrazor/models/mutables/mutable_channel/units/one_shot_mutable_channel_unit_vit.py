@@ -10,13 +10,12 @@ from mmrazor.models.architectures import dynamic_ops
 from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
 from mmrazor.models.architectures.ops import (MultiheadAttention,
                                               RelativePosition2D)
-from mmrazor.models.mutables import DerivedMutable
-from mmrazor.models.mutables.mutable_channel import (BaseMutableChannel,
-                                                     MutableChannelContainer)
+from mmrazor.models.mutables import (BaseMutableChannel, DerivedMutable,
+                                     MutableChannelContainer)
+from mmrazor.models.mutables.mutable_channel import (MutableChannelUnit,
+                                                     OneShotMutableChannelUnit)
 from mmrazor.registry import MODELS
 from .channel_unit import Channel
-from .mutable_channel_unit import MutableChannelUnit
-from .one_shot_mutable_channel_unit import OneShotMutableChannelUnit
 
 
 @MODELS.register_module()
@@ -26,14 +25,12 @@ class OneShotMutableChannelUnit_VIT(OneShotMutableChannelUnit):
         """Add a Channel which is output related."""
         assert channel.is_output_channel
         # assert self.num_channels == channel.num_channels
-        # assert self.num_channels == channel.num_channels
         if channel not in self.output_related:
             self.output_related.append(channel)
 
     def add_input_related(self, channel: Channel):
         """Add a Channel which is input related."""
         assert channel.is_output_channel is False
-        # assert self.num_channels == channel.num_channels
         # assert self.num_channels == channel.num_channels
         if channel not in self.input_related:
             self.input_related.append(channel)
@@ -85,19 +82,19 @@ class OneShotMutableChannelUnit_VIT(OneShotMutableChannelUnit):
         for name, module in model.named_modules():
             # [blocker]
             # if isinstance(module, DynamicMultiheadAttention):
-            if isinstance(module, MultiheadAttention):
-                in_container: MutableChannelContainer = \
-                    module.get_mutable_attr(
-                        'in_channels')
-                out_container: MutableChannelContainer = \
-                    module.get_mutable_attr(
-                        'out_channels')
-                process_container(in_container, module, name, mutable2units,
-                                  False)
-                process_container(out_container, module, name, mutable2units,
-                                  True)
+            # if isinstance(module, ):
+            #     in_container: MutableChannelContainer = \
+            #         module.get_mutable_attr(
+            #             'in_channels')
+            #     out_container: MutableChannelContainer = \
+            #         module.get_mutable_attr(
+            #             'out_channels')
+            #     process_container(in_container, module, name, mutable2units,
+            #                       False)
+            #     process_container(out_container, module, name, mutable2units,
+            #                       True)
 
-            if isinstance(module, DynamicChannelMixin):
+            if isinstance(module, (DynamicChannelMixin, MultiheadAttention)):
                 in_container: MutableChannelContainer = \
                     module.get_mutable_attr(
                         'in_channels')

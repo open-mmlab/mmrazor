@@ -34,6 +34,7 @@ class MutableChannelUnit(ChannelUnit):
                 - sample_choice
             - after pruning
                 - fix_chosen
+
         Args:
             num_channels (int): dimension of the channels of the Channel
             objects in the unit.
@@ -136,10 +137,9 @@ class MutableChannelUnit(ChannelUnit):
     def config_template(self,
                         with_init_args=False,
                         with_channels=False) -> Dict:
-        """Return the config template of this unit.
-
-        By default, the config
+        """Return the config template of this unit. By default, the config
         template only includes a key 'choice'.
+
         Args:
             with_init_args (bool): if the config includes args for
                 initialization.
