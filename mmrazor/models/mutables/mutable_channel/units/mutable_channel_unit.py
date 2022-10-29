@@ -100,6 +100,7 @@ class MutableChannelUnit(ChannelUnit):
 
         for name, module in model.named_modules():
             # [blocker]
+            # if isinstance(module, DynamicMultiheadAttention):
             if isinstance(module, MultiheadAttention):
                 in_container: MutableChannelContainer = \
                     module.get_mutable_attr(
@@ -271,6 +272,7 @@ class MutableChannelUnit(ChannelUnit):
         """
         for module in model.modules():
             # [blocker]
+            # if isinstance(module, DynamicMultiheadAttention):
             if isinstance(module, MultiheadAttention):
                 in_channels = module.embed_dims
                 module.register_mutable_attr('embed_dims',

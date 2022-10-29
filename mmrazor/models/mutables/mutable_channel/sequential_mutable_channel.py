@@ -86,7 +86,7 @@ class SquentialMutableChannel(SimpleMutableChannel):
                              mutable2: OneShotMutableValue) -> Callable:
 
             def fn():
-                return mutable1.current_choice * mutable2.current_choice
+                return int(mutable1.current_choice * mutable2.current_choice)
 
             return fn
 
@@ -118,6 +118,8 @@ class SquentialMutableChannel(SimpleMutableChannel):
     def __floordiv__(self, other) -> DerivedMutable:
         if isinstance(other, int):
             return self.derive_divide_mutable(other)
+        elif isinstance(other, float):
+            return self.derive_divide_mutable(int(other))
         if isinstance(other, tuple):
             assert len(other) == 2
             return self.derive_divide_mutable(*other)
@@ -141,4 +143,4 @@ class SquentialMutableChannel(SimpleMutableChannel):
         if isinstance(choice, int):
             return choice
         else:
-            return max(1, int(self.num_channels * choice))
+            return max(1, int(choice))

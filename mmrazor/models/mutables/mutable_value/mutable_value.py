@@ -114,7 +114,7 @@ class MutableValue(BaseMutable[Any, Dict], DerivedMethodMixin):
         """Please refer to method :func:`__mul__`."""
         return self * other
 
-    def __mul__(self, other: int) -> DerivedMutable:
+    def __mul__(self, other: Union[int, float]) -> DerivedMutable:
         """Overload `*` operator.
 
         Args:
@@ -125,7 +125,8 @@ class MutableValue(BaseMutable[Any, Dict], DerivedMethodMixin):
         """
         if isinstance(other, int):
             return self.derive_expand_mutable(other)
-
+        elif isinstance(other, float):
+            return self.derive_expand_mutable(other)
         raise TypeError(f'Unsupported type {type(other)} for mul!')
 
     def __floordiv__(self, other: Union[int, Tuple[int,
@@ -141,6 +142,8 @@ class MutableValue(BaseMutable[Any, Dict], DerivedMethodMixin):
         """
         if isinstance(other, int):
             return self.derive_divide_mutable(other)
+        elif isinstance(other, float):
+            return self.derive_divide_mutable(int(other))
         if isinstance(other, tuple):
             assert len(other) == 2
             return self.derive_divide_mutable(*other)

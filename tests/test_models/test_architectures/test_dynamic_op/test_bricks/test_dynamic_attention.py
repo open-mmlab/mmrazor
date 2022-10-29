@@ -49,7 +49,6 @@ class TestDynamicMHA(TestCase):
     def test_convert(self) -> None:
         static_m = MultiheadAttention(embed_dims=100, num_heads=10)
         dynamic_m = DynamicMultiheadAttention.convert_from(static_m)
-
         self.assertIsNotNone(dynamic_m)
 
     def test_to_static_op(self) -> None:
