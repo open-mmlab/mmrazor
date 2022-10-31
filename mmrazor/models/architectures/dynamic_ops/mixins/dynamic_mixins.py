@@ -115,6 +115,11 @@ class DynamicChannelMixin(DynamicMixin):
         ``mutable_out_channels`` APIs.
     """
 
+    attr_mappings: Dict[str, str] = {
+        'in_channels': 'in_channels',
+        'out_channels': 'out_channels',
+    }
+
     @staticmethod
     def check_mutable_channels(mutable_channels: BaseMutable) -> None:
         """Check if mutable has `currnet_mask` attribute.

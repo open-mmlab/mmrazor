@@ -100,8 +100,7 @@ class MutableChannelContainer(BaseMutableChannel):
         for start, end in self.mutable_channels:
             assert start == last_end
             last_end = end
-        # Fix
-        # assert last_end == self.num_channels
+        assert last_end == self.num_channels
 
     def _fill_unregistered_range(self):
         """Fill with SimpleMutableChannels in the range without any stored

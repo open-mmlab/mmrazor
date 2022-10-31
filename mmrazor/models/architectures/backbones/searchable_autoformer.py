@@ -93,6 +93,7 @@ class TransformerEncoderLayer(BaseBackbone):
     def mutate_encoder_layer(self, mutable_num_heads: BaseMutable,
                              mutable_mlp_ratios: BaseMutable,
                              mutable_q_embed_dims: BaseMutable,
+                             mutable_head_dims: BaseMutable,
                              mutable_embed_dims: BaseMutable):
         """Mutate the mutables of encoder layer."""
         # record the mutables
@@ -100,6 +101,7 @@ class TransformerEncoderLayer(BaseBackbone):
         self.mutable_mlp_ratios = mutable_mlp_ratios
         self.mutable_q_embed_dims = mutable_q_embed_dims
         self.mutable_embed_dims = mutable_embed_dims
+        self.mutable_head_dims = mutable_head_dims
         # handle the mutable of FFN
         self.middle_channels = mutable_mlp_ratios * mutable_embed_dims
 
@@ -119,9 +121,9 @@ class TransformerEncoderLayer(BaseBackbone):
         MutableChannelContainer.register_mutable_channel_to_module(
             self.attn, self.mutable_q_embed_dims, True, end=640)
         MutableChannelContainer.register_mutable_channel_to_module(
-            self.attn.rel_pos_embed_k, self.mutable_embed_dims, False)
+            self.attn.rel_pos_embed_k, self.mutable_head_dims, False)
         MutableChannelContainer.register_mutable_channel_to_module(
-            self.attn.rel_pos_embed_v, self.mutable_embed_dims, False)
+            self.attn.rel_pos_embed_v, self.mutable_head_dims, False)
 
         # handle the mutable of fc
         MutableChannelContainer.register_mutable_channel_to_module(
@@ -283,7 +285,7 @@ class AutoformerBackbone(BaseBackbone):
 
         self.last_mutable = self.mutable_embed_dims
 
-        # MutableChannelContainer
+        # OneShotMutableChannelUnit_VIT
         OneShotMutableChannelUnit_VIT._register_channel_container(
             self, MutableChannelContainer)
 
@@ -325,6 +327,7 @@ class AutoformerBackbone(BaseBackbone):
                 mutable_num_heads=self.mutable_num_heads[i],
                 mutable_mlp_ratios=self.mutable_mlp_ratios[i],
                 mutable_q_embed_dims=self.mutable_q_embed_dims[i],
+                mutable_head_dims=self.base_embed_dims,
                 mutable_embed_dims=self.last_mutable)
 
         # handle the mutable of final norm

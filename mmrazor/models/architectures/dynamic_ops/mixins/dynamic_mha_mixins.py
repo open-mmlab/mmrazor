@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-
+import logging
 import sys
 from typing import Dict, Set, Tuple
 
@@ -9,8 +9,10 @@ else:
     from typing import Protocol
 
 import torch.nn as nn
+from mmengine import print_log
 from torch import Tensor
 
+from mmrazor.models.architectures.dynamic_ops import DynamicMultiheadAttention
 from mmrazor.models.architectures.ops import (MultiheadAttention,
                                               RelativePosition2D)
 from mmrazor.models.mutables.base_mutable import BaseMutable
@@ -27,7 +29,9 @@ class DynamicMHAProtocol(Protocol):
     w_ks: nn.Linear
     w_vs: nn.Linear
     embed_dims: int
-    proj: nn.Module
+    q_embed_dims: int
+    # proj: nn.Module
+    proj: nn.Linear
     attn_drop_rate: float
 
 
@@ -70,6 +74,23 @@ class DynamicMHAMixin(DynamicMixin, DynamicMHAProtocol):
 
     def register_mutable_attr(self, attr: str, mutable: BaseMutable):
         """Register attribute of mutable."""
+        self.check_mutable_attr_valid(attr)
+        if attr in self.attr_mappings:
+            attr_map = self.attr_mappings[attr]
+            assert attr_map in self.accepted_mutable_attrs
+            if attr_map in self.mutable_attrs:
+                print_log(
+                    f'{attr_map}({attr}) is already in `mutable_attrs`',
+                    level=logging.WARNING)
+            else:
+                self._register_mutable_attr(attr_map, mutable)
+        elif attr in self.accepted_mutable_attrs:
+            self._register_mutable_attr(attr, mutable)
+        else:
+            raise NotImplementedError
+
+    def _register_mutable_attr(self, attr: str, mutable: BaseMutable):
+        """Register `embed_dims` `q_embed_dims` `num_heads`"""
         if attr == 'num_heads':
             self._register_mutable_num_heads(mutable)
         elif attr == 'embed_dims':
@@ -153,7 +174,7 @@ class DynamicMHAMixin(DynamicMixin, DynamicMHAProtocol):
         if self.mutable_q_embed_dims is not None:
             out_features = self.mutable_q_embed_dims.activated_channels
         else:
-            out_features = self.embed_dims
+            out_features = self.mutable_q_embed_dims
 
         weight = w.weight[:out_features, :in_features]
         bias = w.bias[:out_features] if w.bias is not None else None
