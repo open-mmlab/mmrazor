@@ -86,7 +86,8 @@ class ItePruneAlgorithm(BaseAlgorithm):
 
     Args:
         architecture (Union[BaseModel, Dict]): The model to be pruned.
-        mutator_cfg (UnioChannelUnit. Defaults to dict( type='ChannelMutator',
+        mutator_cfg (Union[Dict, ChannelMutator], optional): The config
+            of a mutator. Defaults to dict( type='ChannelMutator',
             channel_unit_cfg=dict( type='SequentialMutableChannelUnit')).
         data_preprocessor (Optional[Union[Dict, nn.Module]], optional):
             Defaults to None.
