@@ -46,7 +46,6 @@ class DynamicMHAMixin(DynamicMixin, DynamicMHAProtocol):
         'num_heads', 'embed_dims', 'q_embed_dims'
     }
 
-    # add
     attr_mappings: Dict[str, str] = {
         'in_channels': 'embed_dims',
         'out_channels': 'q_embed_dims',
@@ -165,12 +164,12 @@ class DynamicMHAMixin(DynamicMixin, DynamicMHAProtocol):
             return w.weight, w.bias
 
         if self.mutable_embed_dims is not None:
-            in_features = self.mutable_embed_dims.activated_channels
+            in_features = self.mutable_embed_dims.current_choice
         else:
             in_features = self.embed_dims
 
         if self.mutable_q_embed_dims is not None:
-            out_features = self.mutable_q_embed_dims.activated_channels
+            out_features = self.mutable_q_embed_dims.current_choice
         else:
             out_features = self.mutable_q_embed_dims
 

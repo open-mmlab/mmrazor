@@ -30,17 +30,13 @@ class TestSearchableImageClassifier(TestCase):
 
         # test input_resizer_cfg
         supernet_kwargs_ = copy.deepcopy(supernet_kwargs)
-        supernet_kwargs_['input_resizer_cfg'] = None
-        with self.assertRaisesRegex(AssertionError,
-                                    '"loss_toy" is not in distill'):
+        supernet_kwargs_['input_resizer_cfg'] = dict(
+            type='FAKE_DynamicInputResizer')
+        with self.assertRaisesRegex(
+                TypeError, 'input_resizer should be a `dict` or '
+                '`DynamicInputResizer` instance, but got '
+                'FAKE_DynamicInputResizer'):
             _ = SearchableImageClassifier(**supernet_kwargs_)
 
         # test connect_with_backbone
-        supernet_kwargs_ = copy.deepcopy(supernet_kwargs)
-        supernet_kwargs_['head'] = dict(toy=dict(type='ToyDistillLoss'))
-        supernet_kwargs_['loss_forward_mappings'] = dict(
-            toy=dict(
-                arg1=dict(from_student=True, recorder='conv'),
-                arg2=dict(from_student=False, recorder='conv')))
-        with self.assertWarnsRegex(UserWarning, 'Warning: If toy is a'):
-            _ = SearchableImageClassifier(**supernet_kwargs_)
+        # TODO
