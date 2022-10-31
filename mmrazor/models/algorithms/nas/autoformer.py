@@ -7,7 +7,6 @@ from mmengine.model import BaseModel
 from mmengine.structures import BaseDataElement
 from torch import nn
 
-from mmrazor.models.mutators.base_mutator import BaseMutator
 from mmrazor.registry import MODELS
 from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm, LossResults
@@ -42,7 +41,7 @@ class Autoformer(BaseAlgorithm):
 
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
-                 mutators: Optional[Union[BaseMutator, Dict]] = None,
+                 mutators: Optional[Dict] = None,
                  fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[dict, nn.Module]] = None,
                  init_cfg: Optional[dict] = None):
@@ -60,18 +59,20 @@ class Autoformer(BaseAlgorithm):
         else:
             assert mutators is not None, \
                 'mutator cannot be None when fix_subnet is None.'
-            if isinstance(mutators, BaseMutator):
-                self.mutator = mutators
-            elif isinstance(mutators, dict):
+            if isinstance(mutators, dict):
                 built_mutators: Dict = dict()
                 for name, mutator_cfg in mutators.items():
+                    if 'parse_cfg' in mutator_cfg and isinstance(
+                            mutator_cfg['parse_cfg'], dict):
+                        assert mutator_cfg['parse_cfg'][
+                            'type'] == 'Predefined', \
+                                'autoformer only support predefined.'
                     mutator = MODELS.build(mutator_cfg)
                     built_mutators[name] = mutator
                     mutator.prepare_from_supernet(self.architecture)
                 self.mutators = built_mutators
             else:
-                raise TypeError('mutator should be a `dict` or belong to '
-                                f'`BaseMutator` instance, but got '
+                raise TypeError('mutator should be a `dict` but got '
                                 f'{type(mutator)}')
 
             self.is_supernet = True
