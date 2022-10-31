@@ -150,6 +150,18 @@ class TestChannelMutator(unittest.TestCase):
 
         # generate config
         model1 = copy.deepcopy(model)
-        mutator = ChannelMutator()
-        mutator.prepare_from_supernet(model1)
-        mutator.search_groups
+        mutator1 = ChannelMutator()
+        mutator1.prepare_from_supernet(model1)
+
+        self.assertEqual(len(mutator1.search_groups), 25)
+
+        custom_groups = [[
+            'backbone.layer2.1.conv.0.conv_(0, 240)_240',
+            'backbone.layer3.0.conv.0.conv_(0, 240)_240'
+        ]]
+
+        model2 = copy.deepcopy(model)
+        mutator2 = ChannelMutator(custom_groups=custom_groups)
+        mutator2.prepare_from_supernet(model2)
+
+        self.assertEqual(len(mutator2.search_groups), 24)

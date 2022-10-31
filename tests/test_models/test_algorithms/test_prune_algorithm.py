@@ -170,3 +170,43 @@ class TestItePruneAlgorithm(unittest.TestCase):
 
         # delete checkpoint
         os.remove(checkpoint_path)
+
+    def test_group_target_ratio(self):
+
+        model = MODELS.build(MODEL_CFG)
+        mutator = MODELS.build(MUTATOR_CONFIG_FLOAT)
+        mutator.prepare_from_supernet(model)
+        mutator.set_choices(mutator.sample_choices())
+        prune_target = mutator.choice_template
+
+        custom_groups = [[
+            'backbone.layer1.0.conv1_(0, 64)_64',
+            'backbone.layer1.1.conv1_(0, 64)_64'
+        ]]
+        mutator_cfg = copy.deepcopy(MUTATOR_CONFIG_FLOAT)
+        mutator_cfg['custom_groups'] = custom_groups
+
+        epoch_step = 2
+        times = 3
+
+        prune_target['backbone.layer1.0.conv1_(0, 64)_64'] = 0.1
+        prune_target['backbone.layer1.1.conv1_(0, 64)_64'] = 0.1
+
+        _ = ItePruneAlgorithm(
+            MODEL_CFG,
+            target_pruning_ratio=prune_target,
+            mutator_cfg=mutator_cfg,
+            step_epoch=epoch_step,
+            prune_times=times).to(DEVICE)
+
+        prune_target['backbone.layer1.0.conv1_(0, 64)_64'] = 0.1
+        prune_target['backbone.layer1.1.conv1_(0, 64)_64'] = 0.2
+
+        with self.assertRaises(ValueError):
+
+            _ = ItePruneAlgorithm(
+                MODEL_CFG,
+                target_pruning_ratio=prune_target,
+                mutator_cfg=mutator_cfg,
+                step_epoch=epoch_step,
+                prune_times=times).to(DEVICE)

@@ -149,7 +149,7 @@ class ChannelUnit(BaseModule):
 
     def __init__(self, num_channels: int, **kwargs):
         super().__init__()
-        self.alias = None
+
         self.num_channels = num_channels
         self.output_related: List[nn.Module] = list()
         self.input_related: List[nn.Module] = list()
@@ -239,6 +239,11 @@ class ChannelUnit(BaseModule):
             first_module_name = 'unitx'
         name = f'{first_module_name}_{self.num_channels}'
         return name
+
+    @property
+    def alias(self) -> str:
+        """str: alias of the unit"""
+        return self.name
 
     def config_template(self,
                         with_init_args=False,

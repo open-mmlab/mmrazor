@@ -7,6 +7,7 @@ from mmengine import MessageHub, MMLogger
 from mmengine.model import BaseModel
 from mmengine.structures import BaseDataElement
 
+from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutators import ChannelMutator
 from mmrazor.registry import MODELS
 from ..base import BaseAlgorithm
@@ -85,8 +86,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
 
     Args:
         architecture (Union[BaseModel, Dict]): The model to be pruned.
-        mutator_cfg (Union[Dict, ChannelMutator], optional): The config
-            of a mutator. Defaults to dict( type='ChannelMutator',
+        mutator_cfg (UnioChannelUnit. Defaults to dict( type='ChannelMutator',
             channel_unit_cfg=dict( type='SequentialMutableChannelUnit')).
         data_preprocessor (Optional[Union[Dict, nn.Module]], optional):
             Defaults to None.
@@ -118,28 +118,41 @@ class ItePruneAlgorithm(BaseAlgorithm):
         self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
         self.mutator.prepare_from_supernet(self.architecture)
 
-        # config_manager
         if target_pruning_ratio is None:
             group_target_ratio = self.mutator.current_choices
         else:
             group_target_ratio = self.group_target_pruning_ratio(
                 target_pruning_ratio, self.mutator.search_groups)
 
+        # config_manager
         self.prune_config_manager = ItePruneConfigManager(
             group_target_ratio,
             self.mutator.current_choices,
             step_epoch,
             times=prune_times)
 
-    def group_target_pruning_ratio(self, target, search_groups):
-
-        group_target = dict()
+    def group_target_pruning_ratio(
+        self, target: Dict[str, float],
+        search_groups: Dict[int,
+                            List[MutableChannelUnit]]) -> Dict[int, float]:
+        """According to the target pruning ratio of each unit, set the target
+        ratio of each search group."""
+        group_target: Dict[int, float] = dict()
         for group_id, units in search_groups.items():
             for unit in units:
                 unit_name = unit.name
+                # The config of target pruning ratio does not
+                # contain all units.
+                if unit_name not in target:
+                    continue
                 if group_id in group_target:
                     unit_target = target[unit_name]
-                    assert unit_target == group_target[group_id]
+                    if unit_target != group_target[group_id]:
+                        group_names = [u.name for u in units]
+                        raise ValueError(
+                            f"'{unit_name}' target ratio is different from "
+                            f'other units in the same group {group_names}. '
+                            'Pls check your target pruning ratio config.')
                 else:
                     unit_target = target[unit_name]
                     assert isinstance(unit_target, (float, int))
