@@ -32,8 +32,9 @@ class MutableModule(BaseMutable):
 
     def __init__(self,
                  module_kwargs: Optional[Dict[str, Dict]] = None,
-                 **kwargs) -> None:
-        super().__init__(**kwargs)
+                 alias: Optional[str] = None,
+                 init_cfg: Optional[Dict] = None) -> None:
+        super().__init__(alias, init_cfg)
 
         self.module_kwargs = module_kwargs
         self._current_choice = None

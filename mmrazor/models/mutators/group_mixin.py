@@ -9,7 +9,7 @@ from ..mutables import BaseMutable
 
 
 class GroupMixin():
-    """A mixin for :class:`ChannelMutator`, which can group mutables by
+    """A mixin for :class:`BaseMutator`, which can group mutables by
     ``custom_group`` and ``alias``(see more information in
     :class:`BaseMutable`). Grouping by alias and module name are both
     supported.
@@ -34,6 +34,11 @@ class GroupMixin():
         >>> import torch
         >>> from mmrazor.models import DiffModuleMutator
 
+        >>> # Assume that a toy model consists of three mutables
+        >>> # whose name are op1,op2,op3. The corresponding
+        >>> # alias names of the three mutables are a1, a1, a2.
+        >>> model = ToyModel()
+
         >>> # Using alias for grouping
         >>> mutator = DiffModuleMutator(custom_group=[['a1'], ['a2']])
         >>> mutator.prepare_from_supernet(model)
@@ -42,6 +47,8 @@ class GroupMixin():
 
         >>> # Using module name for grouping
         >>> mutator = DiffModuleMutator(custom_group=[['op1', 'op2'], ['op3']])
+
+        >>> # Using module name for grouping
         >>> mutator.prepare_from_supernet(model)
         >>> mutator.search_groups
         {0: [op1, op2], 1: [op3]}

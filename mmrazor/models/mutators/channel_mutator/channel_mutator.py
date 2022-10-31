@@ -49,6 +49,10 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
                 dict( type='BackwardTracer',
                 loss_calculator=dict(type='ImageClassifierPseudoLoss')).
 
+        custom_groups (list[list[str]], optional): User-defined search groups.
+            All searchable modules that are not in ``custom_group`` will be
+            grouped separately.
+
         init_cfg (dict, optional): initialization configuration dict for
             BaseModule.
 

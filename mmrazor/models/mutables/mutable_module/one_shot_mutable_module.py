@@ -16,11 +16,10 @@ class OneShotMutableModule(MutableModule):
     """Base class for one shot mutable module. A base type of ``MUTABLES`` for
     single path supernet such as Single Path One Shot.
 
-    All subclass should implement the following APIs:
+    All subclass should implement the following APIs and the other
+    abstract method in ``MutableModule``:
 
     - ``sample_choice()``
-    - ``forward_fixed()``
-    - ``forward_all()``
     - ``forward_choice()``
 
     Note:
