@@ -8,7 +8,7 @@ from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
 from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables import BaseMutable
-from mmrazor.models.mutables import OneShotMutableChannelUnit, SquentialMutableChannel, OneShotMutableChannel
+from mmrazor.models.mutables import OneShotMutableChannelUnit_VIT, SquentialMutableChannel, OneShotMutableChannel
 from mmrazor.registry import MODELS
 from mmengine.model import BaseModel
 # this file includes models for tesing.
@@ -478,7 +478,7 @@ class DwConvModel(nn.Module):
 
 
 def register_mutable(module: DynamicChannelMixin,
-                     mutable: OneShotMutableChannelUnit,
+                     mutable: MutableChannelUnit,
                      is_out=True,
                      start=0,
                      end=-1):
@@ -587,7 +587,7 @@ class DynamicAttention(nn.Module):
         self.mutable_depth = OneShotMutableValue(
             value_list=[1, 2], default_value=2)
         self.mutable_embed_dims = OneShotMutableChannel(
-            num_channels=64, candidate_choices=[32, 48, 64])
+            num_channels=624, candidate_choices=[576, 624])
         self.base_embed_dims = OneShotMutableChannel(
             num_channels=64, candidate_choices=[64])
         self.mutable_num_heads = [
@@ -628,7 +628,7 @@ class DynamicAttention(nn.Module):
         self.blocks = DynamicSequential(*layers)
 
         # MutableChannelContainer
-        MutableChannelUnit._register_channel_container(
+        OneShotMutableChannelUnit_VIT._register_channel_container(
             self, MutableChannelContainer)
 
         self.register_mutate()
@@ -646,6 +646,7 @@ class DynamicAttention(nn.Module):
                 mutable_num_heads=self.mutable_num_heads[i],
                 mutable_mlp_ratios=self.mutable_mlp_ratios[i],
                 mutable_q_embed_dims=self.mutable_q_embed_dims[i],
+                mutable_head_dims=self.base_embed_dims,
                 mutable_embed_dims=self.mutable_embed_dims)
 
     def forward(self, x: torch.Tensor):

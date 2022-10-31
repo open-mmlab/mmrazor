@@ -43,8 +43,7 @@ class TestChannelMutator(unittest.TestCase):
         self.assertGreater(len(mutator.mutable_units), 0)
         x = torch.rand([2, 3, 224, 224])
         y = model(x)
-        print(list(y.shape))
-        # self.assertEqual(list(y.shape), [2, 1000])
+        self.assertEqual(list(y.shape), [2, 1000])
 
     def test_sample_subnet(self):
         data_models = TestGraph.backward_tracer_passed_models()
@@ -124,7 +123,6 @@ class TestChannelMutator(unittest.TestCase):
     def test_models_with_predefined_dynamic_op(self):
         for Model in [
                 DynamicLinearModel,
-                DynamicAttention,
         ]:
             with self.subTest(model=Model):
                 model = Model()
@@ -136,3 +134,25 @@ class TestChannelMutator(unittest.TestCase):
                     parse_cfg={'type': 'Predefined'})
                 mutator.prepare_from_supernet(model)
                 self._test_a_mutator(mutator, model)
+
+    def test_models_with_predefined_dynamic_op_without_pruning(self):
+        for Model in [
+                DynamicAttention,
+        ]:
+            with self.subTest(model=Model):
+                model = Model()
+                mutator = ChannelMutator(
+                    channel_unit_cfg={
+                        'type': 'OneShotMutableChannelUnit_VIT',
+                        'default_args': {}
+                    },
+                    parse_cfg={'type': 'Predefined'})
+                mutator.prepare_from_supernet(model)
+                choices = mutator.sample_choices()
+                mutator.set_choices(choices)
+                self.assertGreater(len(mutator.mutable_units), 0)
+                x = torch.rand([2, 3, 224, 224])
+                y = model(x)
+                self.assertEqual(
+                    list(y.shape),
+                    [2, list(mutator.current_choices.values())[0]])

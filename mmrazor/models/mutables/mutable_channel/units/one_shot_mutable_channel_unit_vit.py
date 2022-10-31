@@ -22,11 +22,19 @@ from .one_shot_mutable_channel_unit import OneShotMutableChannelUnit
 @MODELS.register_module()
 class OneShotMutableChannelUnit_VIT(OneShotMutableChannelUnit):
 
+    def prepare_for_pruning(self,
+                            model: nn.Module,
+                            unit_predefined: bool = True):
+        """Prepare for pruning."""
+        if not unit_predefined:
+            super().prepare_for_pruning(model)
+        self.current_choice = self.max_choice
+
     def add_ouptut_related(self, channel: Channel):
         """Add a Channel which is output related."""
         assert channel.is_output_channel
         assert self.num_channels == \
-            channel.num_channels // channel.expand_ratio
+            int(channel.num_channels // channel.expand_ratio)
         if channel not in self.output_related:
             self.output_related.append(channel)
 
@@ -34,7 +42,7 @@ class OneShotMutableChannelUnit_VIT(OneShotMutableChannelUnit):
         """Add a Channel which is input related."""
         assert channel.is_output_channel is False
         assert self.num_channels == \
-            channel.num_channels // channel.expand_ratio
+            int(channel.num_channels // channel.expand_ratio)
         if channel not in self.input_related:
             self.input_related.append(channel)
 

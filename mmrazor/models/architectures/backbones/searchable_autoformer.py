@@ -285,7 +285,6 @@ class AutoformerBackbone(BaseBackbone):
 
         self.last_mutable = self.mutable_embed_dims
 
-        # OneShotMutableChannelUnit_VIT
         OneShotMutableChannelUnit_VIT._register_channel_container(
             self, MutableChannelContainer)
 

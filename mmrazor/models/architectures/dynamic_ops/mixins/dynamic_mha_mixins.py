@@ -12,7 +12,6 @@ import torch.nn as nn
 from mmengine import print_log
 from torch import Tensor
 
-from mmrazor.models.architectures.dynamic_ops import DynamicMultiheadAttention
 from mmrazor.models.architectures.ops import (MultiheadAttention,
                                               RelativePosition2D)
 from mmrazor.models.mutables.base_mutable import BaseMutable
