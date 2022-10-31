@@ -627,7 +627,7 @@ class DynamicAttention(nn.Module):
             layers.append(layer)
         self.blocks = DynamicSequential(*layers)
 
-        # MutableChannelContainer
+        # OneShotMutableChannelUnit_VIT
         OneShotMutableChannelUnit_VIT._register_channel_container(
             self, MutableChannelContainer)
 

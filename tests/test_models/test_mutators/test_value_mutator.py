@@ -3,6 +3,7 @@ import unittest
 
 import torch
 
+from mmrazor.models.mutables import MutableValue
 from mmrazor.models.mutators import DynamicValueMutator
 from ...data.models import DynamicAttention
 
@@ -19,19 +20,14 @@ class TestValueMutator(unittest.TestCase):
                 value_mutator.prepare_from_supernet(model)
                 value_choices = value_mutator.sample_choices()
                 value_mutator.set_choices(value_choices)
-                print(value_choices)
-                # self.assertGreater(len(mutator.mutable_units), 0)
 
-                # mutator = ChannelMutator(
-                #     channel_unit_cfg={
-                #         'type': 'OneShotMutableChannelUnit',
-                #         'default_args': {}
-                #     },
-                #     parse_cfg={'type': 'Predefined'})
-                # mutator.prepare_from_supernet(model)
-                # self._test_a_mutator(mutator, model)
+                mutable_value_space = []
+                for mutable_value, module in model.named_modules():
+                    if isinstance(module, MutableValue):
+                        mutable_value_space.append(mutable_value)
+                assert len(
+                    value_mutator.search_groups) == len(mutable_value_space)
 
                 x = torch.rand([2, 3, 224, 224])
                 y = model(x)
-                print(list(y.shape))
-                # self.assertEqual(list(y.shape), [2, 1000])
+                self.assertEqual(list(y.shape), [2, 624])

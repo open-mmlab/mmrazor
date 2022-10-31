@@ -29,7 +29,6 @@ class DynamicMHAProtocol(Protocol):
     w_vs: nn.Linear
     embed_dims: int
     q_embed_dims: int
-    # proj: nn.Module
     proj: nn.Linear
     attn_drop_rate: float
 
