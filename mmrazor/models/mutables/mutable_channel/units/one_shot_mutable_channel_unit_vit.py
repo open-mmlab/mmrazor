@@ -10,10 +10,11 @@ from mmrazor.models.architectures import dynamic_ops
 from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
 from mmrazor.models.architectures.ops import (MultiheadAttention,
                                               RelativePosition2D)
-from mmrazor.models.mutables import (BaseMutableChannel, DerivedMutable,
-                                     MutableChannelContainer)
-from mmrazor.models.mutables.mutable_channel import (MutableChannelUnit,
-                                                     OneShotMutableChannelUnit)
+from mmrazor.models.mutables import DerivedMutable
+from mmrazor.models.mutables.mutable_channel import (BaseMutableChannel,
+                                                     MutableChannelContainer)
+from .mutable_channel_unit import MutableChannelUnit
+from .one_shot_mutable_channel_unit import OneShotMutableChannelUnit
 from mmrazor.registry import MODELS
 from .channel_unit import Channel
 

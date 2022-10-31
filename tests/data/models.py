@@ -13,9 +13,9 @@ from mmrazor.registry import MODELS
 from mmengine.model import BaseModel
 # this file includes models for tesing.
 
-# from mmcls.models.backbones.base_backbone import BaseBackbone
 from mmrazor.models.mutables import OneShotMutableValue
 from mmrazor.models.architectures.backbones.searchable_autoformer import TransformerEncoderLayer
+
 
 class LinearHead(Module):
 
@@ -584,9 +584,12 @@ class DynamicAttention(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-        self.mutable_depth = OneShotMutableValue(value_list=[1, 2], default_value=2)
-        self.mutable_embed_dims = OneShotMutableChannel(num_channels=64, candidate_choices=[32, 48, 64])
-        self.base_embed_dims = OneShotMutableChannel(num_channels=64, candidate_choices=[64])
+        self.mutable_depth = OneShotMutableValue(
+            value_list=[1, 2], default_value=2)
+        self.mutable_embed_dims = OneShotMutableChannel(
+            num_channels=64, candidate_choices=[32, 48, 64])
+        self.base_embed_dims = OneShotMutableChannel(
+            num_channels=64, candidate_choices=[64])
         self.mutable_num_heads = [
             OneShotMutableValue(
                 value_list=[8, 10],
