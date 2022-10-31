@@ -16,6 +16,8 @@ class MutableModule(BaseMutable):
     abstract method in ``BaseMutable``:
 
     - ``forward()``
+    - ``forward_all()``
+    - ``forward_fix()``
     - ``choices()``
 
     Args:

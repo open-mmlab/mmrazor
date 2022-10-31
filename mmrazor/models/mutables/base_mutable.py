@@ -74,8 +74,8 @@ class BaseMutable(BaseModule, ABC):
 
     @abstractmethod
     def fix_chosen(self, chosen) -> None:
-        """Fix mutable with choice. This function would fix the choice of
-        Mutable. The :attr:`is_fixed` will be set to True and only the selected
+        """Fix mutable with chosen. This function would fix the chosen of
+        mutable. The :attr:`is_fixed` will be set to True and only the selected
         operations can be retained. All subclasses must implement this method.
 
         Note:
@@ -83,8 +83,6 @@ class BaseMutable(BaseModule, ABC):
         """
         raise NotImplementedError()
 
-    # TODO
-    # type hint
     @abstractmethod
     def dump_chosen(self) -> DumpChosen:
         """Save the current state of the mutable as a dictionary.

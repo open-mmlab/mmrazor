@@ -21,9 +21,9 @@ class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
     |mutable_out_channel(BaseMutableChannel)|
     |---------------------------------------|
 
-    All subclasses should implement the following APIs:
+    All subclasses should implement the following APIs and the other
+    abstract method in ``BaseMutable``
 
-    - ``current_choice``
     - ``current_mask``
 
     Args:

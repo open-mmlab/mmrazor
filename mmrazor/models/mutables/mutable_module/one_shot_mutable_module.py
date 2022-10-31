@@ -257,10 +257,6 @@ class OneShotMutableOP(OneShotMutableModule):
         """list: all choices. """
         return list(self._candidates.keys())
 
-    @property
-    def num_choices(self) -> int:
-        return len(self.choices)
-
 
 @MODELS.register_module()
 class OneShotProbMutableOP(OneShotMutableOP):

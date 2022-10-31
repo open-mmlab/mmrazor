@@ -253,14 +253,24 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
             template[unit.name] = unit.current_choice
         return template
 
-    # implementation of abstract functions
     @property
     def search_groups(self) -> Dict[int, List]:
+        """Search group of the supernet.
 
+        Note:
+            Search group is different from search space. The key of search
+            group is called ``group_id``, and the value is corresponding
+            searchable modules. The searchable modules will have the same
+            search space if they are in the same group.
+
+        Returns:
+            dict: Search group.
+        """
         return self._search_groups
 
     @property
     def mutable_class_type(self) -> Type[ChannelUnitType]:
+        """Mutable class type supported by this mutator."""
         return self.unit_class
 
     # private methods

@@ -15,8 +15,7 @@ from .mutable_module import MutableModule
 PartialType = Callable[[Any, Optional[nn.Parameter]], Any]
 
 
-class DiffMutableModule(
-        MutableModule, ):
+class DiffMutableModule(MutableModule):
     """Base class for differentiable mutables.
 
     Args:
