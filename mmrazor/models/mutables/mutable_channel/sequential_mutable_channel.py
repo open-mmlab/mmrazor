@@ -34,8 +34,8 @@ class SquentialMutableChannel(SimpleMutableChannel):
         """Get if the choice is number mode."""
         return self.choice_mode == 'number'
 
-    @property
-    def current_choice(self) -> Union[int, float]:
+    @property  # type: ignore
+    def current_choice(self) -> Union[int, float]:  # type: ignore
         """Get current choice."""
         int_choice = (self.mask == 1).sum().item()
         if self.is_num_mode:
@@ -44,7 +44,7 @@ class SquentialMutableChannel(SimpleMutableChannel):
             return self._num2ratio(int_choice)
 
     @current_choice.setter
-    def current_choice(self, choice: Union[int, float]):
+    def current_choice(self, choice: int):
         """Set choice."""
         if isinstance(choice, float):
             int_choice = self._ratio2num(choice)
@@ -122,7 +122,7 @@ class SquentialMutableChannel(SimpleMutableChannel):
 
         from ..mutable_value import OneShotMutableValue
         if isinstance(other, OneShotMutableValue):
-            ratio = int(other.current_choice)
+            ratio = other.current_choice
             return self.derive_divide_mutable(ratio)
 
         raise TypeError(f'Unsupported type {type(other)} for div!')
@@ -139,5 +139,4 @@ class SquentialMutableChannel(SimpleMutableChannel):
         if isinstance(choice, int):
             return choice
         else:
-            # return max(1, int(choice))
             return max(1, int(self.num_channels * choice))

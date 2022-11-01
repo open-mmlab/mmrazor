@@ -43,7 +43,7 @@ class MutableChannelProtocol(MutableProtocol):  # pragma: no cover
 
 
 def _expand_choice_fn(mutable: MutableProtocol,
-                      expand_ratio: Union[int, float]) -> Callable:
+                      expand_ratio: Union[int, float, Any]) -> Callable:
     """Helper function to build `choice_fn` for expand derived mutable."""
 
     def fn():
@@ -54,7 +54,7 @@ def _expand_choice_fn(mutable: MutableProtocol,
 
 def _expand_mask_fn(
         mutable: MutableProtocol,
-        expand_ratio: Union[int, float]) -> Callable:  # pragma: no cover
+        expand_ratio: Union[int, float, Any]) -> Callable:  # pragma: no cover
     """Helper function to build `mask_fn` for expand derived mutable."""
     if not hasattr(mutable, 'current_mask'):
         raise ValueError('mutable must have attribute `currnet_mask`')
@@ -150,7 +150,7 @@ class DerivedMethodMixin:
         elif isinstance(expand_ratio, float):
             choice_fn = _expand_choice_fn(self, expand_ratio=expand_ratio)
         elif isinstance(expand_ratio, MutableValue):
-            current_ratio: int = expand_ratio.current_choice
+            current_ratio = expand_ratio.current_choice
             choice_fn = _expand_choice_fn(self, expand_ratio=current_ratio)
         else:
             raise NotImplementedError(
@@ -170,11 +170,9 @@ class DerivedMethodMixin:
 
         return DerivedMutable(choice_fn=choice_fn, mask_fn=mask_fn)
 
-    def derive_divide_mutable(
-            self: MutableProtocol,
-            #   ratio: int,
-            ratio: Union[int, BaseMutable],
-            divisor: int = 8) -> 'DerivedMutable':
+    def derive_divide_mutable(self: MutableProtocol,
+                              ratio: Union[int, float, BaseMutable],
+                              divisor: int = 8) -> 'DerivedMutable':
         """Derive divide mutable, usually used with `make_divisable`."""
         # from .mutable_channel import MutableChannel
         from .mutable_channel import BaseMutableChannel
@@ -184,7 +182,7 @@ class DerivedMethodMixin:
         if isinstance(ratio, int):
             choice_fn = _divide_choice_fn(self, ratio=ratio, divisor=divisor)
         elif isinstance(ratio, MutableValue):
-            current_ratio = ratio.current_choice
+            current_ratio = int(ratio.current_choice)
             choice_fn = _divide_choice_fn(self, ratio=current_ratio, divisor=1)
         else:
             raise NotImplementedError(

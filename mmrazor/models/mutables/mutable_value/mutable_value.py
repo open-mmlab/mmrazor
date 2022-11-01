@@ -99,7 +99,7 @@ class MutableValue(BaseMutable, DerivedMethodMixin):
         return len(self.choices)
 
     @property
-    def current_choice(self) -> Optional[Any]:
+    def current_choice(self) -> Value:
         """Current choice of mutable value."""
         return self._current_choice
 
