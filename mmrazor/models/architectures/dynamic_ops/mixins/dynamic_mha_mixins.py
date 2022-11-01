@@ -51,6 +51,8 @@ class DynamicMHAMixin(DynamicMixin, DynamicMHAProtocol):
         'out_channels': 'q_embed_dims',
     }
 
+    mutable_attrs: Dict[str, BaseMutable] = nn.ModuleDict()  # type: ignore
+
     @property
     def mutable_num_heads(self):
         """Mutable number of heads."""
