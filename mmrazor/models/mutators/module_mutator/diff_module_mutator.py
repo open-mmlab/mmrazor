@@ -25,9 +25,9 @@ class DiffModuleMutator(ModuleMutator):
     """
 
     def __init__(self,
-                 custom_group: Optional[List[List[str]]] = None,
+                 custom_groups: Optional[List[List[str]]] = None,
                  init_cfg: Optional[Dict] = None) -> None:
-        super().__init__(custom_group=custom_group, init_cfg=init_cfg)
+        super().__init__(custom_groups=custom_groups, init_cfg=init_cfg)
 
     def build_arch_param(self, num_choices) -> nn.Parameter:
         """Build learnable architecture parameters."""

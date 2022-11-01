@@ -1,2 +1,4 @@
-mutable1: conv1
-mutable2: conv2
+mutable1: 
+  chosen: conv1
+mutable2: 
+  chosen: conv2

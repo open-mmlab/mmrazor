@@ -1,14 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import ABC, abstractmethod
-from typing import Dict, Generic, Optional, TypeVar
+from typing import Dict, Optional
 
 from mmengine.model import BaseModule
 
-CHOICE_TYPE = TypeVar('CHOICE_TYPE')
-CHOSEN_TYPE = TypeVar('CHOSEN_TYPE')
+from mmrazor.utils.typing import DumpChosen
 
 
-class BaseMutable(BaseModule, ABC, Generic[CHOICE_TYPE, CHOSEN_TYPE]):
+class BaseMutable(BaseModule, ABC):
     """Base Class for mutables. Mutable means a searchable module widely used
     in Neural Architecture Search(NAS).
 
@@ -17,13 +16,12 @@ class BaseMutable(BaseModule, ABC, Generic[CHOICE_TYPE, CHOSEN_TYPE]):
 
     All subclass should implement the following APIs:
 
-    - ``forward()``
     - ``fix_chosen()``
-    - ``choices()``
+    - ``dump_chosen()``
+    - ``current_choice.setter()``
+    - ``current_choice.getter()``
 
     Args:
-        module_kwargs (dict[str, dict], optional): Module initialization named
-            arguments. Defaults to None.
         alias (str, optional): alias of the `MUTABLE`.
         init_cfg (dict, optional): initialization configuration dict for
             ``BaseModule``. OpenMMLab has implement 5 initializer including
@@ -38,19 +36,18 @@ class BaseMutable(BaseModule, ABC, Generic[CHOICE_TYPE, CHOSEN_TYPE]):
 
         self.alias = alias
         self._is_fixed = False
-        self._current_choice: Optional[CHOICE_TYPE] = None
 
-    @property
-    def current_choice(self) -> Optional[CHOICE_TYPE]:
+    @property  # type: ignore
+    @abstractmethod
+    def current_choice(self):
         """Current choice will affect :meth:`forward` and will be used in
         :func:`mmrazor.core.subnet.utils.export_fix_subnet` or mutator.
         """
-        return self._current_choice
 
-    @current_choice.setter
-    def current_choice(self, choice: Optional[CHOICE_TYPE]) -> None:
+    @current_choice.setter  # type: ignore
+    @abstractmethod
+    def current_choice(self, choice) -> None:
         """Current choice setter will be executed in mutator."""
-        self._current_choice = choice
 
     @property
     def is_fixed(self) -> bool:
@@ -76,22 +73,22 @@ class BaseMutable(BaseModule, ABC, Generic[CHOICE_TYPE, CHOSEN_TYPE]):
         self._is_fixed = is_fixed
 
     @abstractmethod
-    def fix_chosen(self, chosen: CHOSEN_TYPE) -> None:
-        """Fix mutable with choice. This function would fix the choice of
-        Mutable. The :attr:`is_fixed` will be set to True and only the selected
+    def fix_chosen(self, chosen) -> None:
+        """Fix mutable with chosen. This function would fix the chosen of
+        mutable. The :attr:`is_fixed` will be set to True and only the selected
         operations can be retained. All subclasses must implement this method.
 
         Note:
             This operation is irreversible.
         """
+        raise NotImplementedError()
 
-    # TODO
-    # type hint
     @abstractmethod
-    def dump_chosen(self) -> CHOSEN_TYPE:
-        ...
+    def dump_chosen(self) -> DumpChosen:
+        """Save the current state of the mutable as a dictionary.
 
-    @property
-    @abstractmethod
-    def num_choices(self) -> int:
-        pass
+        ``DumpChosen`` has ``chosen`` and ``meta`` fields. ``chosen`` is
+        necessary, ``fix_chosen`` will use the ``chosen`` . ``meta`` is used to
+        store some non-essential information.
+        """
+        raise NotImplementedError()

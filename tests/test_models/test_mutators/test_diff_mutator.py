@@ -98,7 +98,8 @@ class TestDiffModuleMutator(TestCase):
             module_kwargs=dict(in_channels=32, out_channels=32, stride=1))
 
         self.MUTATOR_CFG = dict(
-            type='DiffModuleMutator', custom_group=[['op1'], ['op2'], ['op3']])
+            type='DiffModuleMutator',
+            custom_groups=[['op1'], ['op2'], ['op3']])
 
     def test_diff_mutator_diffop_layer(self) -> None:
         model = SearchableLayer(self.MUTABLE_CFG)
@@ -111,7 +112,7 @@ class TestDiffModuleMutator(TestCase):
         model = SearchableModel(self.MUTABLE_CFG)
 
         mutator_cfg = self.MUTATOR_CFG.copy()
-        mutator_cfg['custom_group'] = [
+        mutator_cfg['custom_groups'] = [
             ['slayer1.op1', 'slayer2.op1', 'slayer3.op1'],
             ['slayer1.op2', 'slayer2.op2', 'slayer3.op2'],
             ['slayer1.op3', 'slayer2.op3', 'slayer3.op3'],
@@ -128,7 +129,7 @@ class TestDiffModuleMutator(TestCase):
         model = SearchableModel(self.MUTABLE_CFG)
 
         mutator_cfg = self.MUTATOR_CFG.copy()
-        mutator_cfg['custom_group'] = [
+        mutator_cfg['custom_groups'] = [
             ['slayer1.op1', 'slayer2.op1', 'slayer3.op1'],
             ['slayer1.op2', 'slayer2.op2', 'slayer3.op2'],
             ['slayer1.op3', 'slayer2.op3', 'slayer3.op3_error_key'],
@@ -142,7 +143,7 @@ class TestDiffModuleMutator(TestCase):
         model = SearchableModelAlias(self.MUTABLE_CFG)
 
         mutator_cfg = self.MUTATOR_CFG.copy()
-        mutator_cfg['custom_group'] = [['op1'], ['op2'], ['op3']]
+        mutator_cfg['custom_groups'] = [['op1'], ['op2'], ['op3']]
         mutator: DiffModuleMutator = MODELS.build(mutator_cfg)
 
         mutator.prepare_from_supernet(model)
@@ -157,11 +158,11 @@ class TestDiffModuleMutator(TestCase):
         model = SearchableModelAlias(self.MUTABLE_CFG)
 
         mutator_cfg = self.MUTATOR_CFG.copy()
-        mutator_cfg['custom_group'] = [['op1'],
-                                       [
-                                           'slayer1.op2', 'slayer2.op2',
-                                           'slayer3.op2'
-                                       ], ['slayer1.op3', 'slayer2.op3']]
+        mutator_cfg['custom_groups'] = [['op1'],
+                                        [
+                                            'slayer1.op2', 'slayer2.op2',
+                                            'slayer3.op2'
+                                        ], ['slayer1.op3', 'slayer2.op3']]
         mutator: DiffModuleMutator = MODELS.build(mutator_cfg)
 
         mutator.prepare_from_supernet(model)
@@ -175,7 +176,7 @@ class TestDiffModuleMutator(TestCase):
         model = SearchableModel(self.MUTABLE_CFG)
 
         mutator_cfg = self.MUTATOR_CFG.copy()
-        mutator_cfg['custom_group'] = [
+        mutator_cfg['custom_groups'] = [
             ['slayer1.op1', 'slayer2.op1', 'slayer3.op1'],
             ['slayer1.op2', 'slayer2.op2', 'slayer3.op2'],
             ['slayer1.op3', 'slayer2.op3', 'slayer2.op3'],
@@ -189,7 +190,7 @@ class TestDiffModuleMutator(TestCase):
         model = SearchableModelAlias(self.MUTABLE_CFG)
 
         mutator_cfg = self.MUTATOR_CFG.copy()
-        mutator_cfg['custom_group'] = [
+        mutator_cfg['custom_groups'] = [
             ['op1', 'slayer1.op1', 'slayer2.op1', 'slayer3.op1'],
             ['slayer1.op2', 'slayer2.op2', 'slayer3.op2'],
             ['slayer1.op3', 'slayer2.op3', 'slayer3.op3'],
@@ -203,7 +204,7 @@ class TestDiffModuleMutator(TestCase):
         model = SearchableModel(self.MUTABLE_CFG)
 
         mutator_cfg = self.MUTATOR_CFG.copy()
-        mutator_cfg['custom_group'] = [
+        mutator_cfg['custom_groups'] = [
             ['illegal_key', 'slayer1.op1', 'slayer2.op1', 'slayer3.op1'],
             ['slayer1.op2', 'slayer2.op2', 'slayer3.op2'],
             ['slayer1.op3', 'slayer2.op3', 'slayer3.op3'],
@@ -217,7 +218,7 @@ class TestDiffModuleMutator(TestCase):
         model = SearchableModel(self.MUTABLE_CFG)
 
         mutator_cfg = self.MUTATOR_CFG.copy()
-        mutator_cfg['custom_group'] = [
+        mutator_cfg['custom_groups'] = [
             ['slayer1.op1', 'slayer2.op1', 'slayer3.op1'],
             ['slayer1.op2', 'slayer2.op2', 'slayer3.op2'],
             ['slayer1.op3', 'slayer2.op3', 'slayer3.op3'],
