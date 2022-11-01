@@ -143,4 +143,5 @@ class SquentialMutableChannel(SimpleMutableChannel):
         if isinstance(choice, int):
             return choice
         else:
-            return max(1, int(choice))
+            # return max(1, int(choice))
+            return max(1, int(self.num_channels * choice))
