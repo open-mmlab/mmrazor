@@ -1,10 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Dict
+
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
 from mmrazor.models.architectures.dynamic_ops.mixins import DynamicMHAMixin
 from mmrazor.models.architectures.ops import MultiheadAttention
+from mmrazor.models.mutables.base_mutable import BaseMutable
 from .dynamic_relative_position import DynamicRelativePosition2D  # noqa: E501
 
 
@@ -20,7 +23,8 @@ class DynamicMultiheadAttention(MultiheadAttention, DynamicMHAMixin):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.mutable_attrs = nn.ModuleDict()
+        self.mutable_attrs: Dict[str,
+                                 BaseMutable] = nn.ModuleDict()  # type: ignore
 
         # dynamic image relative position encoding
         if self.relative_position:

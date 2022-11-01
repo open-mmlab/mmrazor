@@ -8,7 +8,8 @@ from torch.nn import LayerNorm
 
 from mmrazor.models.architectures.dynamic_ops.mixins import (
     DynamicChannelMixin, DynamicMHAMixin)
-from mmrazor.models.architectures.ops import RelativePosition2D
+from mmrazor.models.architectures.ops import (MultiheadAttention,
+                                              RelativePosition2D)
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables.mutable_channel import (BaseMutableChannel,
                                                      MutableChannelContainer)
@@ -66,7 +67,7 @@ class OneShotMutableChannelUnit_VIT(OneShotMutableChannelUnit):
                         in_channels = module.normalized_shape[0]
                     elif isinstance(module, RelativePosition2D):
                         in_channels = module.head_dims
-                    elif isinstance(module, DynamicMHAMixin):
+                    elif isinstance(module, MultiheadAttention):
                         in_channels = module.embed_dims
                     else:
                         raise NotImplementedError()
@@ -87,7 +88,7 @@ class OneShotMutableChannelUnit_VIT(OneShotMutableChannelUnit):
                         out_channels = module.normalized_shape[0]
                     elif isinstance(module, RelativePosition2D):
                         out_channels = module.head_dims
-                    elif isinstance(module, DynamicMHAMixin):
+                    elif isinstance(module, MultiheadAttention):
                         out_channels = module.q_embed_dims
                     else:
                         raise NotImplementedError()
@@ -121,8 +122,8 @@ class OneShotMutableChannelUnit_VIT(OneShotMutableChannelUnit):
                         'only support one mutable channel '
                         'used in DerivedMutable')
                     mutable = list(source_channel_mutables)[0]
-                    expand_ratio = list(
-                        source_value_mutables)[0].current_choice
+                    expand_ratio = int(
+                        list(source_value_mutables)[0].current_choice)
 
                 if mutable not in mutable2units:
                     mutable2units[mutable] = cls.init_from_mutable_channel(
