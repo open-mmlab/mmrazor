@@ -31,7 +31,7 @@ Models:
         Metrics:
           Top 1 Accuracy: 71.81
     Config: configs/distill/mmcls/kd/kd_logits_resnet34_resnet18_8xb32_in1k.py
-    Weights: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/kd/kl_r18_w3/kd_logits_resnet34_resnet18_8xb32_in1k_w3_20221011_181115-5c6a834d.pth?versionId=CAEQThiBgID1_Me0oBgiIDE3NTk3MDgxZmU2YjRlMjVhMzg1ZTQwMmRhNmYyNGU2
+    Weights: https://download.openmmlab.com/mmrazor/v1/kd/kl_r18_w3/kd_logits_resnet34_resnet18_8xb32_in1k_w3_20221011_181115-5c6a834d.pth?versionId=CAEQThiBgID1_Me0oBgiIDE3NTk3MDgxZmU2YjRlMjVhMzg1ZTQwMmRhNmYyNGU2
 
   - Name: kd_logits_resnet50_mobilenet-v2_8xb32_in1k
     In Collection: KD
@@ -53,9 +53,9 @@ Models:
       - Task: Image Classification
         Dataset: ImageNet-1k
         Metrics:
-          Top 1 Accuracy: 73.68
+          Top 1 Accuracy: 73.56
     Config: configs/distill/mmcls/kd/kd_logits_resnet50_mobilenet-v2_8xb32_in1k.py
-    Weights: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/kd/kl_mbv2/kd_logits_resnet50_mobilenet-v2_8xb32_in1k_20221003_124149-d9548d27.pth?versionId=CAEQThiBgICdqMS0oBgiIGEzMmI1NmIwODI2ODQyODFiM2ZmOTE3NDQ3NmU1Yjhh
+    Weights: https://download.openmmlab.com/mmrazor/v1/kd/kl_mbv2_w3t1/kd_logits_resnet50_mobilenet-v2_8xb32_in1k_20221025_212407-6ea9e2a5.pth
 
   - Name: kd_logits_resnet50_shufflenet-v2-1x_16xb64_in1k
     In Collection: KD
@@ -77,6 +77,6 @@ Models:
       - Task: Image Classification
         Dataset: ImageNet-1k
         Metrics:
-          Top 1 Accuracy: 71.27
+          Top 1 Accuracy: 70.87
     Config: configs/distill/mmcls/kd/kd_logits_resnet50_shufflenet-v2-1x_16xb64_in1k.py
-    Weights: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/kd/kl_shuffle/kd_logits_resnet50_shufflenet-v2-1x_16xb64_in1k_20221003_124324-666a2414.pth?versionId=CAEQThiBgMCe78e0oBgiIDdhYjA0NTE4ZDZjMDRmOTU4YzNkN2E2ODNmODUwOGY5
+    Weights: https://download.openmmlab.com/mmrazor/v1/kd/kl_shuffle_w3t1/kd_logits_resnet50_shufflenet-v2-1x_16xb64_in1k_20221025_224424-5d748c1b.pth
