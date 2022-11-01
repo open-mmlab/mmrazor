@@ -149,9 +149,10 @@ class ChannelUnit(BaseModule):
 
     def __init__(self, num_channels: int, **kwargs):
         super().__init__()
+
         self.num_channels = num_channels
-        self.output_related: nn.ModuleList = nn.ModuleList()
-        self.input_related: nn.ModuleList = nn.ModuleList()
+        self.output_related: List[nn.Module] = list()
+        self.input_related: List[nn.Module] = list()
         self.init_args: Dict = {
         }  # is used to generate new channel unit with same args
 
@@ -208,14 +209,14 @@ class ChannelUnit(BaseModule):
 
         def init_from_base_channel_unit(base_channel_unit: BaseChannelUnit):
             unit = cls(len(base_channel_unit.channel_elems), **unit_args)
-            unit.input_related = nn.ModuleList([
+            unit.input_related = [
                 Channel.init_from_base_channel(channel)
                 for channel in base_channel_unit.input_related
-            ])
-            unit.output_related = nn.ModuleList([
+            ]
+            unit.output_related = [
                 Channel.init_from_base_channel(channel)
                 for channel in base_channel_unit.output_related
-            ])
+            ]
             return unit
 
         unit_graph = ChannelGraph.copy_from(graph,
@@ -238,6 +239,11 @@ class ChannelUnit(BaseModule):
             first_module_name = 'unitx'
         name = f'{first_module_name}_{self.num_channels}'
         return name
+
+    @property
+    def alias(self) -> str:
+        """str: alias of the unit"""
+        return self.name
 
     def config_template(self,
                         with_init_args=False,

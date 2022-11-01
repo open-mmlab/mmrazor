@@ -143,12 +143,13 @@ class MethodOutputsDelivery(DistillDelivery):
         def wrap_method(*args, **kwargs):
 
             if self.override_data:
-                assert not self.data_queue.empty(), 'pop from an empty queue'
-                outputs = self.data_queue.get()
+                assert len(self.data_queue) > 0, 'pop from an empty queue'
+                outputs = self.data_queue.popleft()
             else:
-                assert not self.data_queue.full(), 'push into an full queue'
+                assert len(self.data_queue) < self.data_queue.maxlen,\
+                    'push into an full queue'
                 outputs = origin_method(*args, **kwargs)
-                self.data_queue.put(outputs)
+                self.data_queue.append(outputs)
             return outputs
 
         return wrap_method

@@ -4,6 +4,7 @@ from abc import abstractmethod
 
 import torch
 
+from mmrazor.utils.typing import DumpChosen
 from ..base_mutable import BaseMutable
 from ..derived_mutable import DerivedMethodMixin
 
@@ -20,9 +21,9 @@ class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
     |mutable_out_channel(BaseMutableChannel)|
     |---------------------------------------|
 
-    All subclasses should implement the following APIs:
+    All subclasses should implement the following APIs and the other
+    abstract method in ``BaseMutable``
 
-    - ``current_choice``
     - ``current_mask``
 
     Args:
@@ -33,20 +34,6 @@ class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
         super().__init__(**kwargs)
         self.name = ''
         self.num_channels = num_channels
-
-    # choice
-
-    @property  # type: ignore
-    @abstractmethod
-    def current_choice(self):
-        """get current choice."""
-        raise NotImplementedError()
-
-    @current_choice.setter  # type: ignore
-    @abstractmethod
-    def current_choice(self):
-        """set current choice."""
-        raise NotImplementedError()
 
     @property  # type: ignore
     @abstractmethod
@@ -73,9 +60,15 @@ class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
 
         self.is_fixed = True
 
-    def dump_chosen(self):
-        """dump current choice to a dict."""
-        raise NotImplementedError()
+    def dump_chosen(self) -> DumpChosen:
+        """Dump chosen."""
+        meta = dict(max_channels=self.mask.size(0))
+        chosen = self.export_chosen()
+
+        return DumpChosen(chosen=chosen, meta=meta)
+
+    def export_chosen(self) -> int:
+        return self.activated_channels
 
     def num_choices(self) -> int:
         """Number of available choices."""
