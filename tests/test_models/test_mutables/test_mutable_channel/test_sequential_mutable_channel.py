@@ -55,18 +55,3 @@ class TestSquentialMutableChannel(TestCase):
         assert derived1.current_choice == 2
         assert derived2.current_choice == 2
         assert torch.equal(derived1.current_mask, derived2.current_mask)
-
-        # ratio mode
-        # channel = SquentialMutableChannel(10, choice_mode='ratio')
-
-        # derived_mutable * OneShotMutableValue
-        # channel = SquentialMutableChannel(8)
-        # new_channel = channel * 0.25
-        # # new_channel.current_choice = 0.5
-        # self.assertEqual(new_channel.current_choice, 2)
-        # mv = OneShotMutableValue(value_list=[1, 2, 3], default_value=3)
-        # derived1 = new_channel * mv
-        # derived2 = mv * new_channel
-        # assert derived1.current_choice == 6
-        # assert derived2.current_choice == 6
-        # assert torch.equal(derived1.current_mask, derived2.current_mask)
