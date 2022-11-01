@@ -56,7 +56,7 @@ class TestSPOS(TestCase):
         self.assertIsInstance(alg.mutator, OneShotModuleMutator)
 
         # initiate spos when `fix_subnet` is not None.
-        fix_subnet = {'mutable': 'conv1'}
+        fix_subnet = {'mutable': {'chosen': 'conv1'}}
         alg = SPOS(model, mutator, fix_subnet=fix_subnet)
         self.assertEqual(alg.architecture.mutable.num_choices, 1)
 
@@ -75,7 +75,7 @@ class TestSPOS(TestCase):
         self.assertIsInstance(loss, dict)
 
         # subnet
-        fix_subnet = {'mutable': 'conv1'}
+        fix_subnet = {'mutable': {'chosen': 'conv1'}}
         alg = SPOS(model, fix_subnet=fix_subnet)
         loss = alg(inputs, mode='loss')
         self.assertIsInstance(loss, dict)

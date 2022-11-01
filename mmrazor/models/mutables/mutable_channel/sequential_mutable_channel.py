@@ -69,10 +69,6 @@ class SquentialMutableChannel(SimpleMutableChannel):
         self.current_choice = chosen
         self.is_fixed = True
 
-    def dump_chosen(self):
-        """Dump chosen."""
-        return self.current_choice
-
     def __rmul__(self, other) -> DerivedMutable:
         return self * other
 

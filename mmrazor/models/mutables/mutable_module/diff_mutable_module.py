@@ -9,13 +9,13 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from mmrazor.registry import MODELS
-from ..base_mutable import CHOICE_TYPE, CHOSEN_TYPE
+from mmrazor.utils.typing import DumpChosen
 from .mutable_module import MutableModule
 
 PartialType = Callable[[Any, Optional[nn.Parameter]], Any]
 
 
-class DiffMutableModule(MutableModule[CHOICE_TYPE, CHOSEN_TYPE]):
+class DiffMutableModule(MutableModule):
     """Base class for differentiable mutables.
 
     Args:
@@ -34,9 +34,12 @@ class DiffMutableModule(MutableModule[CHOICE_TYPE, CHOSEN_TYPE]):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
-    def forward(self,
-                x: Any,
-                arch_param: Optional[nn.Parameter] = None) -> Any:
+    @abstractmethod
+    def sample_choice(self, arch_param: Tensor):
+        """Sample choice according arch parameters."""
+        raise NotImplementedError
+
+    def forward(self, x: Any, arch_param: Optional[nn.Parameter] = None):
         """Calls either :func:`forward_fixed` or :func:`forward_arch_param`
         depending on whether :func:`is_fixed` is ``True`` and whether
         :func:`arch_param` is None.
@@ -60,27 +63,17 @@ class DiffMutableModule(MutableModule[CHOICE_TYPE, CHOSEN_TYPE]):
         if self.is_fixed:
             return self.forward_fixed(x)
         else:
-            return self.forward_arch_param(x, arch_param=arch_param)
+            if arch_param is None:
+                return self.forward_all(x)
+            else:
+                return self.forward_arch_param(x, arch_param=arch_param)
 
     def compute_arch_probs(self, arch_param: nn.Parameter) -> Tensor:
         """compute chosen probs according to architecture params."""
         return F.softmax(arch_param, -1)
 
     @abstractmethod
-    def forward_fixed(self, x: Any) -> Any:
-        """Forward when the mutable is fixed.
-
-        All subclasses must implement this method.
-        """
-
-    @abstractmethod
-    def forward_all(self, x: Any) -> Any:
-        """Forward all choices."""
-
-    @abstractmethod
-    def forward_arch_param(self,
-                           x: Any,
-                           arch_param: Optional[nn.Parameter] = None) -> Any:
+    def forward_arch_param(self, x, arch_param: nn.Parameter):
         """Forward when the mutable is not fixed.
 
         All subclasses must implement this method.
@@ -94,7 +87,7 @@ class DiffMutableModule(MutableModule[CHOICE_TYPE, CHOSEN_TYPE]):
 
 
 @MODELS.register_module()
-class DiffMutableOP(DiffMutableModule[str, str]):
+class DiffMutableOP(DiffMutableModule):
     """A type of ``MUTABLES`` for differentiable architecture search, such as
     DARTS. Search the best module by learnable parameters `arch_param`.
 
@@ -159,7 +152,7 @@ class DiffMutableOP(DiffMutableModule[str, str]):
             ops[name] = MODELS.build(op_cfg)
         return ops
 
-    def forward_fixed(self, x: Any) -> Tensor:
+    def forward_fixed(self, x) -> Tensor:
         """Forward when the mutable is in `fixed` mode.
 
         Args:
@@ -171,10 +164,7 @@ class DiffMutableOP(DiffMutableModule[str, str]):
         """
         return sum(self._candidates[choice](x) for choice in self._chosen)
 
-    def forward_arch_param(self,
-                           x: Any,
-                           arch_param: Optional[nn.Parameter] = None
-                           ) -> Tensor:
+    def forward_arch_param(self, x, arch_param: nn.Parameter) -> Tensor:
         """Forward with architecture parameters.
 
         Args:
@@ -187,21 +177,19 @@ class DiffMutableOP(DiffMutableModule[str, str]):
         Returns:
             Tensor: the result of forward with ``arch_param``.
         """
-        if arch_param is None:
-            return self.forward_all(x)
-        else:
-            # compute the probs of choice
-            probs = self.compute_arch_probs(arch_param=arch_param)
 
-            # forward based on probs
-            outputs = list()
-            for prob, module in zip(probs, self._candidates.values()):
-                if prob > 0.:
-                    outputs.append(prob * module(x))
+        # compute the probs of choice
+        probs = self.compute_arch_probs(arch_param=arch_param)
 
-            return sum(outputs)
+        # forward based on probs
+        outputs = list()
+        for prob, module in zip(probs, self._candidates.values()):
+            if prob > 0.:
+                outputs.append(prob * module(x))
 
-    def forward_all(self, x: Any) -> Tensor:
+        return sum(outputs)
+
+    def forward_all(self, x) -> Tensor:
         """Forward all choices. Used to calculate FLOPs.
 
         Args:
@@ -240,12 +228,16 @@ class DiffMutableOP(DiffMutableModule[str, str]):
         self._chosen = chosen
         self.is_fixed = True
 
-    def sample_choice(self, arch_param):
+    def sample_choice(self, arch_param: Tensor) -> str:
         """Sample choice based on arch_parameters."""
         return self.choices[torch.argmax(arch_param).item()]
 
-    def dump_chosen(self):
-        """Dump current choice."""
+    def dump_chosen(self) -> DumpChosen:
+        chosen = self.export_chosen()
+        meta = dict(all_choices=self.choices)
+        return DumpChosen(chosen=chosen, meta=meta)
+
+    def export_chosen(self) -> str:
         assert self.current_choice is not None
         return self.current_choice
 
@@ -297,10 +289,11 @@ class OneHotMutableOP(DiffMutableOP):
             m = D.one_hot_categorical.OneHotCategorical(probs=probs)
         return m.sample()
 
-    def forward_arch_param(self,
-                           x: Any,
-                           arch_param: Optional[nn.Parameter] = None
-                           ) -> Tensor:
+    def forward_arch_param(
+        self,
+        x: Any,
+        arch_param: nn.Parameter,
+    ) -> Tensor:
         """Forward with architecture parameters.
 
         Args:
@@ -312,39 +305,35 @@ class OneHotMutableOP(DiffMutableOP):
         Returns:
             Tensor: the result of forward with ``arch_param``.
         """
-        if arch_param is None:
-            return self.forward_all(x)
-        else:
-            # compute the probs of choice
-            probs = self.compute_arch_probs(arch_param=arch_param)
 
-            if not self.is_fixed:
-                self.arch_weights = self.sample_weights(arch_param, probs)
-                sorted_param = torch.topk(probs, 2)
-                index = (
-                    sorted_param[0][0] - sorted_param[0][1] >=
-                    self.fix_threshold)
-                if index:
-                    self.fix_chosen(self.choices[index])
+        # compute the probs of choice
+        probs = self.compute_arch_probs(arch_param=arch_param)
 
-            if self.is_fixed:
-                index = self.choices.index(self._chosen[0])
-                self.arch_weights.data.zero_()
-                self.arch_weights.data[index].fill_(1.0)
-            self.arch_weights.requires_grad_()
+        if not self.is_fixed:
+            self.arch_weights = self.sample_weights(arch_param, probs)
+            sorted_param = torch.topk(probs, 2)
+            index = (
+                sorted_param[0][0] - sorted_param[0][1] >= self.fix_threshold)
+            if index:
+                self.fix_chosen(self.choices[index])
 
-            # forward based on self.arch_weights
-            outputs = list()
-            for prob, module in zip(self.arch_weights,
-                                    self._candidates.values()):
-                if prob > 0.:
-                    outputs.append(prob * module(x))
+        if self.is_fixed:
+            index = self.choices.index(self._chosen[0])
+            self.arch_weights.data.zero_()
+            self.arch_weights.data[index].fill_(1.0)
+        self.arch_weights.requires_grad_()
 
-            return sum(outputs)
+        # forward based on self.arch_weights
+        outputs = list()
+        for prob, module in zip(self.arch_weights, self._candidates.values()):
+            if prob > 0.:
+                outputs.append(prob * module(x))
+
+        return sum(outputs)
 
 
 @MODELS.register_module()
-class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
+class DiffChoiceRoute(DiffMutableModule):
     """A type of ``MUTABLES`` for Neural Architecture Search, which can select
     inputs from different edges in a differentiable or non-differentiable way.
     It is commonly used in DARTS.
@@ -389,7 +378,7 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
     def __init__(
         self,
         edges: nn.ModuleDict,
-        num_chsoen: int = 2,
+        num_chosen: int = 2,
         with_arch_param: bool = False,
         alias: Optional[str] = None,
         init_cfg: Optional[Dict] = None,
@@ -402,7 +391,36 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
         self._with_arch_param = with_arch_param
         self._is_fixed = False
         self._candidates: nn.ModuleDict = edges
-        self.num_chosen = num_chsoen
+        self.num_chosen = num_chosen
+
+    def forward(self, x: Any, arch_param: Optional[nn.Parameter] = None):
+        """Calls either :func:`forward_fixed` or :func:`forward_arch_param`
+        depending on whether :func:`is_fixed` is ``True`` and whether
+        :func:`arch_param` is None.
+
+        To reduce the coupling between `Mutable` and `Mutator`, the
+        `arch_param` is generated by the `Mutator` and is passed to the
+        forward function as an argument.
+
+        Note:
+            :meth:`forward_fixed` is called when in `fixed` mode.
+            :meth:`forward_arch_param` is called when in `unfixed` mode.
+
+        Args:
+            x (Any): input data for forward computation.
+            arch_param (nn.Parameter, optional): the architecture parameters
+                for ``DiffMutableModule``.
+
+        Returns:
+            Any: the result of forward
+        """
+        if self.is_fixed:
+            return self.forward_fixed(x)
+        else:
+            if arch_param is not None and self._with_arch_param:
+                return self.forward_arch_param(x, arch_param=arch_param)
+            else:
+                return self.forward_all(x)
 
     def forward_fixed(self, inputs: Union[List, Tuple]) -> Tensor:
         """Forward when the mutable is in `fixed` mode.
@@ -424,10 +442,7 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
                 outputs.append(self._candidates[choice](x))
         return sum(outputs)
 
-    def forward_arch_param(
-            self,
-            x: Union[List[Any], Tuple[Any]],
-            arch_param: Optional[nn.Parameter] = None) -> Tensor:
+    def forward_arch_param(self, x, arch_param: nn.Parameter) -> Tensor:
         """Forward with architecture parameters.
 
         Args:
@@ -443,21 +458,17 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
             f'Length of `edges` {len(self._candidates)} should be ' \
             f'same as the length of inputs {len(x)}.'
 
-        if self._with_arch_param:
-            probs = self.compute_arch_probs(arch_param=arch_param)
+        probs = self.compute_arch_probs(arch_param=arch_param)
 
-            outputs = list()
-            for prob, module, input in zip(probs, self._candidates.values(),
-                                           x):
-                if prob > 0:
-                    # prob may equal to 0 in gumbel softmax.
-                    outputs.append(prob * module(input))
+        outputs = list()
+        for prob, module, input in zip(probs, self._candidates.values(), x):
+            if prob > 0:
+                # prob may equal to 0 in gumbel softmax.
+                outputs.append(prob * module(input))
 
-            return sum(outputs)
-        else:
-            return self.forward_all(x)
+        return sum(outputs)
 
-    def forward_all(self, x: Any) -> Tensor:
+    def forward_all(self, x):
         """Forward all choices.
 
         Args:
@@ -500,16 +511,20 @@ class DiffChoiceRoute(DiffMutableModule[str, List[str]]):
         self.is_fixed = True
 
     @property
-    def choices(self) -> List[CHOSEN_TYPE]:
+    def choices(self) -> List[str]:
         """list: all choices. """
         return list(self._candidates.keys())
 
-    def dump_chosen(self):
-        """dump current choice."""
+    def dump_chosen(self) -> DumpChosen:
+        chosen = self.export_chosen()
+        meta = dict(all_choices=self.choices)
+        return DumpChosen(chosen=chosen, meta=meta)
+
+    def export_chosen(self) -> str:
         assert self.current_choice is not None
         return self.current_choice
 
-    def sample_choice(self, arch_param):
+    def sample_choice(self, arch_param: Tensor) -> List[str]:
         """sample choice based on `arch_param`."""
         sort_idx = torch.argsort(-arch_param).cpu().numpy().tolist()
         choice_idx = sort_idx[:self.num_chosen]

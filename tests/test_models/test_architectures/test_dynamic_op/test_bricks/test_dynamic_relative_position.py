@@ -43,7 +43,7 @@ class TestDynamicRP(TestCase):
         mutable = SquentialMutableChannel(num_channels=8)
         mutable.current_choice = 4
 
-        mutable.fix_chosen(mutable.dump_chosen())
+        mutable.fix_chosen(mutable.dump_chosen().chosen)
 
         self.dynamic_rp.register_mutable_attr('head_dims', mutable)
         static_m = self.dynamic_rp.to_static_op()

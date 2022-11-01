@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Union
 
 FixMutable = Dict[str, Any]
 ValidFixMutable = Union[str, Path, FixMutable]
@@ -23,3 +23,15 @@ MultiMutatorsRandomSubnet = List[SingleMutatorRandomSubnet]
 
 SupportRandomSubnet = Union[SingleMutatorRandomSubnet,
                             MultiMutatorsRandomSubnet]
+
+Chosen = Union[str, float, List[str]]
+ChosenMeta = Optional[Dict[str, Any]]
+
+
+class DumpChosen(NamedTuple):
+    chosen: Chosen
+    meta: ChosenMeta = None
+
+
+# DumpChosen = NamedTuple('DumpChosen', [('chosen', Chosen),
+#                                        ('meta', ChosenMeta)])

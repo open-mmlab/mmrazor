@@ -28,9 +28,19 @@ class SlimmableChannelMutator(ChannelMutator[SlimmableChannelUnit]):
                      loss_calculator=dict(type='ImageClassifierPseudoLoss')),
                  init_cfg: Optional[Dict] = None) -> None:
 
-        super().__init__(channel_unit_cfg, parse_cfg, init_cfg)
+        super().__init__(channel_unit_cfg, parse_cfg, None, init_cfg)
 
         self.subnets = self._prepare_subnets(self.units_cfg)
+
+    def set_choices(self, config: Dict[str, float]):  # type: ignore[override]
+        """Set choices."""
+        for name, choice in config.items():
+            unit = self._name2unit[name]
+            unit.current_choice = choice
+
+    def sample_choices(self):
+        """Sample choices(pruning structure)."""
+        raise RuntimeError
 
     # private methods
 

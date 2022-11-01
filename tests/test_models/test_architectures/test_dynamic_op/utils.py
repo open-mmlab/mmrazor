@@ -2,6 +2,7 @@
 from typing import Dict, Optional
 
 from mmrazor.models.architectures.dynamic_ops import DynamicMixin
+from mmrazor.utils.typing import DumpChosen
 
 
 def fix_dynamic_op(op: DynamicMixin,
@@ -13,4 +14,7 @@ def fix_dynamic_op(op: DynamicMixin,
         else:
             chosen = mutable.dump_chosen()
 
-        mutable.fix_chosen(chosen)
+        if not isinstance(chosen, DumpChosen):
+            chosen = DumpChosen(**chosen)
+
+        mutable.fix_chosen(chosen.chosen)

@@ -47,7 +47,7 @@ class TestPatchEmbed(TestCase):
         with pytest.raises(RuntimeError):
             self.dynamic_embed.to_static_op()
 
-        mutable_embed_dims.fix_chosen(mutable_embed_dims.dump_chosen())
+        mutable_embed_dims.fix_chosen(mutable_embed_dims.dump_chosen().chosen)
         self.dynamic_embed.register_mutable_attr('embed_dims',
                                                  mutable_embed_dims)
         static_op = self.dynamic_embed.to_static_op()

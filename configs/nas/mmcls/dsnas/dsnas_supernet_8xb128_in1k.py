@@ -6,7 +6,7 @@ _base_ = [
 
 # model
 model = dict(
-    type='mmrazor.Dsnas',
+    type='mmrazor.DSNAS',
     architecture=dict(
         type='ImageClassifier',
         data_preprocessor=_base_.data_preprocessor,
@@ -29,7 +29,7 @@ model = dict(
 )
 
 model_wrapper_cfg = dict(
-    type='mmrazor.DsnasDDP',
+    type='mmrazor.DSNASDDP',
     broadcast_buffers=False,
     find_unused_parameters=True)
 

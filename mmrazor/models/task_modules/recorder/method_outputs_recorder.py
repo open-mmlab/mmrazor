@@ -130,8 +130,7 @@ class MethodOutputsRecorder(BaseRecorder):
         Args:
             origin_method (MethodType): The method whose outputs need to be
                 recorded.
-            buffer_key (str): The key of the method's outputs saved in
-                ``data_buffer``.
+            data_buffer (list): A list of data.
         """
 
         @functools.wraps(orgin_method)

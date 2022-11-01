@@ -33,7 +33,7 @@ class TestDynamicSequential(TestCase):
             self.dynamic_m.to_static_op()
 
         current_mutable = self.dynamic_m.get_mutable_attr('depth')
-        current_mutable.fix_chosen(current_mutable.dump_chosen())
+        current_mutable.fix_chosen(current_mutable.dump_chosen().chosen)
 
         static_op = self.dynamic_m.to_static_op()
         self.assertIsNotNone(static_op)

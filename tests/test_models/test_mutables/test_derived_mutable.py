@@ -24,9 +24,9 @@ class TestDerivedMutable(TestCase):
         with pytest.raises(RuntimeError):
             derived_mutable.is_fixed = True
 
-        mc.fix_chosen(mc.dump_chosen())
+        mc.fix_chosen(mc.dump_chosen().chosen)
         assert not derived_mutable.is_fixed
-        mv.fix_chosen(mv.dump_chosen())
+        mv.fix_chosen(mv.dump_chosen().chosen)
         assert derived_mutable.is_fixed
 
     def test_fix_dump_chosen(self) -> None:
@@ -34,13 +34,13 @@ class TestDerivedMutable(TestCase):
         mv.current_choice = 3
 
         derived_mutable = mv * 2
-        assert derived_mutable.dump_chosen() == 6
+        assert derived_mutable.dump_chosen().chosen == 6
 
         mv.current_choice = 4
-        assert derived_mutable.dump_chosen() == 8
+        assert derived_mutable.dump_chosen().chosen == 8
 
         # nothing will happen
-        derived_mutable.fix_chosen(derived_mutable.dump_chosen())
+        derived_mutable.fix_chosen(derived_mutable.dump_chosen().chosen)
 
     def test_derived_same_mutable(self) -> None:
         mc = SquentialMutableChannel(num_channels=3)
@@ -281,9 +281,9 @@ class TestDerivedMutable(TestCase):
 
         with pytest.raises(RuntimeError):
             derived_mutable.is_fixed = True
-        mc.fix_chosen(mc.dump_chosen())
+        mc.fix_chosen(mc.dump_chosen().chosen)
         assert not derived_mutable.is_fixed
-        mv.fix_chosen(mv.dump_chosen())
+        mv.fix_chosen(mv.dump_chosen().chosen)
         assert derived_mutable.is_fixed
 
 
