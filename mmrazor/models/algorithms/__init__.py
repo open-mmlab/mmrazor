@@ -9,22 +9,9 @@ from .pruning.ite_prune_algorithm import ItePruneAlgorithm
 from .quantization import GeneralQuant
 
 __all__ = [
-    'SingleTeacherDistill',
-    'BaseAlgorithm',
-    'FpnTeacherDistill',
-    'SPOS',
-    'SlimmableNetwork',
-    'SlimmableNetworkDDP',
-    'AutoSlim',
-    'AutoSlimDDP',
-    'Darts',
-    'DartsDDP',
-    'SelfDistill',
-    'DataFreeDistillation',
-    'DAFLDataFreeDistillation',
-    'OverhaulFeatureDistillation',
-    'ItePruneAlgorithm',
-    'Dsnas',
-    'DsnasDDP',
-    'GeneralQuant'
+    'SingleTeacherDistill', 'BaseAlgorithm', 'FpnTeacherDistill', 'SPOS',
+    'SlimmableNetwork', 'SlimmableNetworkDDP', 'AutoSlim', 'AutoSlimDDP',
+    'Darts', 'DartsDDP', 'SelfDistill', 'DataFreeDistillation',
+    'DAFLDataFreeDistillation', 'OverhaulFeatureDistillation',
+    'ItePruneAlgorithm', 'Dsnas', 'DsnasDDP', 'GeneralQuant'
 ]

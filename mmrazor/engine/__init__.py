@@ -11,15 +11,6 @@ __all__ = [
     'SeparateOptimWrapperConstructor', 'DumpSubnetHook',
     'SingleTeacherDistillValLoop', 'DartsEpochBasedTrainLoop',
     'DartsIterBasedTrainLoop', 'SlimmableValLoop', 'EvolutionSearchLoop',
-<<<<<<< HEAD
     'GreedySamplerTrainLoop', 'AutoSlimValLoop', 'EstimateResourcesHook',
-    'SelfDistillValLoop'
-=======
-    'GreedySamplerTrainLoop', 'AutoSlimValLoop', 'SelfDistillValLoop',
-<<<<<<< HEAD
-    'EstimateResourcesHook', 'QATEpochBasedLoop'
->>>>>>> 4bcbb1d (remove CPatcher in custome_tracer)
-=======
-    'EstimateResourcesHook', 'QATEpochBasedLoop', 'PTQLoop'
->>>>>>> 61453e2 (adaround experiment)
+    'SelfDistillValLoop', 'QATEpochBasedLoop', 'PTQLoop'
 ]
