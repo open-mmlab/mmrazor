@@ -5,8 +5,8 @@ from torch.ao.quantization import QConfig
 from torch.ao.quantization.fx import prepare
 from torch.ao.quantization.quantize_fx import _convert_fx, _fuse_fx
 
-from mmrazor.models.utils import (CustomTracer,
-                                  check_is_valid_convert_custom_config_dict,
+from mmrazor.models.task_modules.tracer import CustomTracer
+from mmrazor.models.utils import (check_is_valid_convert_custom_config_dict,
                                   check_is_valid_prepare_custom_config_dict,
                                   check_is_valid_qconfig_dict,
                                   get_custom_module_class_keys)

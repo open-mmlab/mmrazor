@@ -6,7 +6,7 @@ import torch.fx as fx
 from mmengine.config import Config
 from mmengine.registry import MODELS
 
-from mmrazor.models.utils import custom_symbolic_tracer
+from mmrazor.models.task_modules.tracer import custom_symbolic_tracer
 
 cfg_path = 'configs/quantization/ptq/demo.py'
 _ADAROUND_SUPPORT_TYPE = (torch.nn.Conv2d, torch.nn.Linear)
