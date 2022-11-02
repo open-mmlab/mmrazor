@@ -1,6 +1,4 @@
-_base_ = [
-    'mmcls::resnet/resnet18_8xb32_in1k.py'
-]
+_base_ = ['mmcls::resnet/resnet18_8xb32_in1k.py']
 
 test_cfg = dict(
     _delete_=True,
@@ -26,8 +24,9 @@ model = dict(
         type='mmrazor.CustomQuantizer',
         is_qat=False,
         skipped_methods=[
-            'mmcls.models.heads.ClsHead._get_loss', 
-            'mmcls.models.heads.ClsHead._get_predictions'],
+            'mmcls.models.heads.ClsHead._get_loss',
+            'mmcls.models.heads.ClsHead._get_predictions'
+        ],
         qconfig=dict(
             qtype='affine',
             w_observer=dict(type='mmrazor.MSEObserver'),
@@ -45,6 +44,4 @@ model = dict(
                 is_symmetry=False,
                 is_per_channel=False,
                 is_pot_scale=False),
-        )
-    )
-)
+        )))

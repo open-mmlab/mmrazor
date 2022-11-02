@@ -1,15 +1,18 @@
+# Copyright (c) OpenMMLab. All rights reserved.
+from typing import Dict, List, Optional, Tuple, Union
+
+import torch
+from mmengine.structures import BaseDataElement
+from torch.fx import GraphModule
+
 from mmrazor.registry import MODELS
 from ..base import BaseAlgorithm
-import torch
-from mmrazor.models.utils import CustomTracer
-from torch.fx import GraphModule
-from typing import Dict, List, Optional, Tuple, Union
-from mmengine.structures import BaseDataElement
 
 LossResults = Dict[str, torch.Tensor]
 TensorResults = Union[Tuple[torch.Tensor], torch.Tensor]
 PredictResults = List[BaseDataElement]
 ForwardResults = Union[LossResults, TensorResults, PredictResults]
+
 
 @MODELS.register_module()
 class GeneralQuant(BaseAlgorithm):
@@ -23,7 +26,7 @@ class GeneralQuant(BaseAlgorithm):
             data_preprocessor = {}
         # The build process is in MMEngine, so we need to add scope here.
         data_preprocessor.setdefault('type', 'mmcls.ClsDataPreprocessor')
-        
+
         super().__init__(architecture, data_preprocessor, init_cfg)
         self.quantizer = MODELS.build(quantizer)
         self.observers_enabled = True
@@ -36,11 +39,14 @@ class GeneralQuant(BaseAlgorithm):
         for mode in ['tensor', 'loss', 'predict']:
             concrete_args = {'mode': mode}
             if mode == 'tensor':
-                self.graph_tensor = GraphModule(model, tracer.trace(model, concrete_args=concrete_args))
+                self.graph_tensor = GraphModule(
+                    model, tracer.trace(model, concrete_args=concrete_args))
             if mode == 'loss':
-                self.graph_loss = GraphModule(model, tracer.trace(model, concrete_args=concrete_args))
+                self.graph_loss = GraphModule(
+                    model, tracer.trace(model, concrete_args=concrete_args))
             if mode == 'predict':
-                self.graph_predict = GraphModule(model, tracer.trace(model, concrete_args=concrete_args))
+                self.graph_predict = GraphModule(
+                    model, tracer.trace(model, concrete_args=concrete_args))
 
     def forward(self,
                 inputs: torch.Tensor,
@@ -56,7 +62,7 @@ class GeneralQuant(BaseAlgorithm):
         else:
             raise RuntimeError(f'Invalid mode "{mode}". '
                                'Only supports loss, predict and tensor mode')
-        
+
     def calib_step(self, data):
         data = self.data_preprocessor(data, False)
         return self._run_forward(data, mode='tensor')
@@ -87,7 +93,7 @@ class GeneralQuant(BaseAlgorithm):
                     submodule.enable_observer()
                 else:
                     submodule.disable_observer()
-    
+
                 if fake_quants_enabled:
                     submodule.enable_fake_quant()
                 else:
@@ -95,6 +101,3 @@ class GeneralQuant(BaseAlgorithm):
 
         self.observers_enabled = observers_enabled
         self.fake_quants_enabled = fake_quants_enabled
-        
-
-

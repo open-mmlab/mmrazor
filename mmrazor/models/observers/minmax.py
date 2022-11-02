@@ -1,31 +1,30 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import torch
+
 from mmrazor.registry import MODELS
 from .base import BaseObserver
 
+
 @MODELS.register_module()
 class MinMaxObserver(BaseObserver):
-    def __init__(
-        self,
-        dtype=torch.quint8,
-        qscheme=torch.per_tensor_affine,
-        reduce_range=False,
-        quant_min=None,
-        quant_max=None,
-        ch_axis=-1,
-        is_pot_scale=False,
-        factory_kwargs=None,
-        eps=torch.finfo(torch.float32).eps) -> None:
-        super(MinMaxObserver, self).__init__(dtype, qscheme, reduce_range, quant_min, quant_max,
-                                             ch_axis, is_pot_scale, factory_kwargs, eps)
-        if (
-            self.qscheme == torch.per_tensor_symmetric
-            and self.reduce_range
-            and self.dtype == torch.quint8
-        ):
-            raise NotImplementedError(
-                "Cannot reduce range for symmetric \
-                                       quantization for quint8"
-            )
+
+    def __init__(self,
+                 dtype=torch.quint8,
+                 qscheme=torch.per_tensor_affine,
+                 reduce_range=False,
+                 quant_min=None,
+                 quant_max=None,
+                 ch_axis=-1,
+                 is_pot_scale=False,
+                 factory_kwargs=None,
+                 eps=torch.finfo(torch.float32).eps) -> None:
+        super(MinMaxObserver, self).__init__(dtype, qscheme, reduce_range,
+                                             quant_min, quant_max, ch_axis,
+                                             is_pot_scale, factory_kwargs, eps)
+        if (self.qscheme == torch.per_tensor_symmetric and self.reduce_range
+                and self.dtype == torch.quint8):
+            raise NotImplementedError('Cannot reduce range for symmetric \
+                                       quantization for quint8')
 
     def forward(self, x_orig):
         r"""Records the running minimum and maximum of ``x``."""

@@ -1,21 +1,10 @@
-_base_ = [
-    'mmcls::resnet/resnet18_8xb16_cifar10.py'
-]
+_base_ = ['mmcls::resnet/resnet18_8xb16_cifar10.py']
 
 train_cfg = dict(
     _delete_=True,
     type='mmrazor.QATEpochBasedLoop',
     max_epochs=3,
-    calibrate_dataloader=None
-)
-
-model = dict(
-    type='QAT',
-    architecture=_base_.model,
-    quantizer=dict(
-        type='TensorRTQuantizer',
-        is_qat=True)
-)
+    calibrate_dataloader=None)
 
 model = dict(
     _delete_=True,
@@ -44,8 +33,7 @@ model = dict(
         ),
         prepare_custom_config_dict=None,
         convert_custom_config_dict=None,
-    )
-)
+    ))
 
 # model = dict(
 #     type='QAT',

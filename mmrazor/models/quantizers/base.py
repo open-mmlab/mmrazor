@@ -1,21 +1,19 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import torch
-from torch.fx import GraphModule
 from mmengine.model import BaseModule
-from mmrazor.structures.quantization import DefalutQconfigs, QuantizeScheme
-from mmrazor.structures.quantization import SupportQtypes, CheckArgs
-from mmrazor.models.utils import CustomTracer
-from torch.ao.quantization.fx import prepare
-from torch.ao.quantization.quantize_fx import _fuse_fx, _convert_fx, QuantizationTracer
 from torch.ao.quantization import QConfig
-from torch.ao.quantization.quantize_fx import prepare_qat_fx, prepare_fx, convert_fx
+from torch.ao.quantization.fx import prepare
+from torch.ao.quantization.quantize_fx import _convert_fx, _fuse_fx
+
+from mmrazor.models.utils import (CustomTracer,
+                                  check_is_valid_convert_custom_config_dict,
+                                  check_is_valid_prepare_custom_config_dict,
+                                  check_is_valid_qconfig_dict,
+                                  get_custom_module_class_keys)
 from mmrazor.registry import MODELS
-from mmrazor.models.utils import (
-    check_is_valid_convert_custom_config_dict,
-    check_is_valid_fuse_custom_config_dict,
-    check_is_valid_prepare_custom_config_dict,
-    check_is_valid_qconfig_dict,
-    get_custom_module_class_keys
-)
+from mmrazor.structures.quantization import (CheckArgs, DefalutQconfigs,
+                                             QuantizeScheme, SupportQtypes)
+
 
 @MODELS.register_module()
 class CustomQuantizer(BaseModule):
@@ -32,10 +30,10 @@ class CustomQuantizer(BaseModule):
         super().__init__(init_cfg)
         if self.check_qconfig(qconfig):
             qconfig = self.qconfig_convert(qconfig)
-            self.qconfig_dict = {"": qconfig}
+            self.qconfig_dict = {'': qconfig}
         else:
-            raise ValueError('qconfig is uncorrect!')
-        
+            raise ValueError('qconfig is incorrect!')
+
         if prepare_custom_config_dict is None:
             self.prepare_custom_config_dict = {}
         else:
@@ -50,10 +48,12 @@ class CustomQuantizer(BaseModule):
             self.equalization_qconfig_dict = equalization_qconfig_dict
 
         check_is_valid_qconfig_dict(self.qconfig_dict)
-        check_is_valid_prepare_custom_config_dict(self.prepare_custom_config_dict)
-        check_is_valid_convert_custom_config_dict(self.convert_custom_config_dict)
+        check_is_valid_prepare_custom_config_dict(
+            self.prepare_custom_config_dict)
+        check_is_valid_convert_custom_config_dict(
+            self.convert_custom_config_dict)
         check_is_valid_qconfig_dict(self.equalization_qconfig_dict)
-        
+
         self.is_qat = is_qat
         self.skipped_methods = skipped_methods
         self._remove_qconfig = _remove_qconfig
@@ -61,12 +61,13 @@ class CustomQuantizer(BaseModule):
 
     def prepare(self, model, graph_module):
 
-        preserved_attributes = self.prepare_custom_config_dict.get("preserved_attributes", [])
+        preserved_attributes = self.prepare_custom_config_dict.get(
+            'preserved_attributes', [])
         for attr_name in preserved_attributes:
             setattr(graph_module, attr_name, getattr(model, attr_name))
-        
+
         graph_module = self.fuse_model(graph_module)
-        
+
         prepared = prepare(
             graph_module,
             self.qconfig_dict,
@@ -113,14 +114,21 @@ class CustomQuantizer(BaseModule):
         w_observer_kwargs = self.w_qscheme.to_observer_params()
         a_observer = MODELS.get(qconfig['a_observer']['type'])
         a_observer_kwargs = self.a_qscheme.to_observer_params()
-        self.w_observer = MODELS.get(qconfig['w_observer']['type']).with_args(**self.w_qscheme.to_observer_params())
-        self.a_observer = MODELS.get(qconfig['a_observer']['type']).with_args(**self.a_qscheme.to_observer_params())
-        self.w_fake_quant = MODELS.get(qconfig['w_fake_quant']['type']).with_args(observer=w_observer, **w_observer_kwargs)
-        self.a_fake_quant = MODELS.get(qconfig['a_fake_quant']['type']).with_args(observer=a_observer, **a_observer_kwargs)
+        self.w_observer = MODELS.get(qconfig['w_observer']['type']).with_args(
+            **self.w_qscheme.to_observer_params())
+        self.a_observer = MODELS.get(qconfig['a_observer']['type']).with_args(
+            **self.a_qscheme.to_observer_params())
+        self.w_fake_quant = MODELS.get(
+            qconfig['w_fake_quant']['type']).with_args(
+                observer=w_observer, **w_observer_kwargs)
+        self.a_fake_quant = MODELS.get(
+            qconfig['a_fake_quant']['type']).with_args(
+                observer=a_observer, **a_observer_kwargs)
 
-        torch_qconfig = QConfig(weight=self.w_fake_quant, activation=self.a_fake_quant)
+        torch_qconfig = QConfig(
+            weight=self.w_fake_quant, activation=self.a_fake_quant)
         return torch_qconfig
-        
+
     def _swap_ff_with_fxff(self, model: torch.nn.Module) -> None:
         r""" Swap FloatFunctional with FXFloatFunctional
         """
@@ -137,36 +145,31 @@ class CustomQuantizer(BaseModule):
 
     def build_tracer(self):
         skipped_module_names = self.prepare_custom_config_dict.get(
-            "non_traceable_module_name", []
-        )
+            'non_traceable_module_name', [])
         skipped_module_classes = self.prepare_custom_config_dict.get(
-            "non_traceable_module_class", []
-        )  
+            'non_traceable_module_class', [])
         standalone_module_name_configs = self.prepare_custom_config_dict.get(
-            "standalone_module_name", []
-        )
-        skipped_module_names += [config[0] for config in standalone_module_name_configs]
+            'standalone_module_name', [])
+        skipped_module_names += [
+            config[0] for config in standalone_module_name_configs
+        ]
 
         standalone_module_class_configs = self.prepare_custom_config_dict.get(
-            "standalone_module_class", []
-        )
+            'standalone_module_class', [])
         skipped_module_classes += [
             config[0] for config in standalone_module_class_configs
         ]
         float_custom_module_classes = get_custom_module_class_keys(
-            self.prepare_custom_config_dict, "float_to_observed_custom_module_class"
-        )
+            self.prepare_custom_config_dict,
+            'float_to_observed_custom_module_class')
         skipped_module_classes += float_custom_module_classes
-        tracer = CustomTracer(
-            self.skipped_methods,
-            skipped_module_names, 
-            skipped_module_classes)
-        # tracer = QuantizationTracer(skipped_module_names, skipped_module_classes)
+        tracer = CustomTracer(self.skipped_methods, skipped_module_names,
+                              skipped_module_classes)
+        # tracer = QuantizationTracer(skipped_module_names,
+        #    skipped_module_classes)
         return tracer
-    
+
     def fuse_model(self, graph_module):
-        graph_module = _fuse_fx(
-            graph_module,
-            self.is_qat,
-            self.prepare_custom_config_dict)
+        graph_module = _fuse_fx(graph_module, self.is_qat,
+                                self.prepare_custom_config_dict)
         return graph_module
