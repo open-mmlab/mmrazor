@@ -28,14 +28,16 @@ class OneShotChannelMutator(ChannelMutator[OneShotMutableChannelUnit]):
 
     def min_choices(self) -> Dict:
         """Return the minimal pruning subnet(structure)."""
-        template = self.choice_template
-        for key in template:
-            template[key] = self._name2unit[key].min_choice
-        return template
+        min_choices = dict()
+        for group_id, modules in self.search_groups.items():
+            min_choices[group_id] = modules[0].min_choice
+
+        return min_choices
 
     def max_choices(self) -> Dict:
         """Return the maximal pruning subnet(structure)."""
-        template = self.choice_template
-        for key in template:
-            template[key] = self._name2unit[key].max_choice
-        return template
+        max_choices = dict()
+        for group_id, modules in self.search_groups.items():
+            max_choices[group_id] = modules[0].max_choice
+
+        return max_choices

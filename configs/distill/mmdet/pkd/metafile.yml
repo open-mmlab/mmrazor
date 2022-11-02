@@ -1,0 +1,110 @@
+Models:
+  - Name: pkd_fpn_fcos_x101_retina_r50_1x_coco
+    In Collection: PKD
+    Metadata:
+      Location: FPN
+      Student:
+        Metrics:
+          box AP: 36.5
+        Config: mmdet::retinanet/retinanet_r50_fpn_1x_coco.py
+        Weights: https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_r50_fpn_1x_coco/retinanet_r50_fpn_1x_coco_20200130-c2398f9e.pth
+      Teacher:
+        Metrics:
+          box AP: 42.6
+        Config: mmdet::fcos/fcos_x101-64x4d_fpn_gn-head_ms-640-800-2x_coco.py
+        Weights: https://download.openmmlab.com/mmdetection/v2.0/fcos/fcos_x101_64x4d_fpn_gn-head_mstrain_640-800_2x_coco/fcos_x101_64x4d_fpn_gn-head_mstrain_640-800_2x_coco-ede514a8.pth
+    Results:
+      - Task: Object Detection
+        Dataset: COCO
+        Metrics:
+          box AP: 40.3
+    Config: configs/distill/mmdet/pkd/pkd_fpn_fcos_x101_retina_r50_1x_coco.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/pkd/pkd_fcos_retina/pkd_fpn_fcos_x101_retina_r50_1x_coco_20220925_181547-9cac5059.pth?versionId=CAEQThiBgMCLyNC0oBgiIDBjY2FkY2JlNGFiYzRmM2RiZGUyYzM1NjQxYzQxODA4
+
+  - Name: pkd_fpn_faster-rcnn_r101_faster-rcnn_r50_2x_coco
+    In Collection: PKD
+    Metadata:
+      Location: FPN
+      Student:
+        Metrics:
+          box AP: 38.4
+        Config: mmdet::faster_rcnn/faster-rcnn_r50_fpn_2x_coco.py
+        Weights: https://download.openmmlab.com/mmdetection/v2.0/faster_rcnn/faster_rcnn_r50_fpn_2x_coco/faster_rcnn_r50_fpn_2x_coco_bbox_mAP-0.384_20200504_210434-a5d8aa15.pth
+      Teacher:
+        Metrics:
+          box AP: 39.8
+        Config: mmdet::faster_rcnn/faster-rcnn_r101_fpn_2x_coco.py
+        Weights: https://download.openmmlab.com/mmdetection/v2.0/faster_rcnn/faster_rcnn_r101_fpn_2x_coco/faster_rcnn_r101_fpn_2x_coco_bbox_mAP-0.398_20200504_210455-1d2dac9c.pth
+    Results:
+      - Task: Object Detection
+        Dataset: COCO
+        Metrics:
+          box AP: 40.4
+    Config: configs/distill/mmdet/pkd/pkd_fpn_faster-rcnn_r101_faster-rcnn_r50_2x_coco.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/pkd/pkd_frcnn/pkd_fpn_faster-rcnn_r101_faster-rcnn_r50_2x_coco_20221014_103040-3efbd439.pth?versionId=CAEQThiBgMDQr9C0oBgiIDMyZWE1Y2ZlMDA2ZDQ2ZGNhZmQ3NzMxODk3YzgzYWFl
+
+  - Name: pkd_fpn_mask-rcnn_swin_retina_r50_2x_coco
+    In Collection: PKD
+    Metadata:
+      Location: FPN
+      Student:
+        Metrics:
+          box AP: 37.4
+        Config: mmdet::retinanet/retinanet_r50_fpn_2x_coco.py
+        Weights: https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_r50_fpn_2x_coco/retinanet_r50_fpn_2x_coco_20200131-fdb43119.pth
+      Teacher:
+        Metrics:
+          box AP: 48.2
+        Config: mmdet::swin/mask-rcnn_swin-s-p4-w7_fpn_amp-ms-crop-3x_coco.py
+        Weights: https://download.openmmlab.com/mmdetection/v2.0/swin/mask_rcnn_swin-t-p4-w7_fpn_1x_coco/mask_rcnn_swin-t-p4-w7_fpn_1x_coco_20210902_120937-9d6b7cfa.pth
+    Results:
+      - Task: Object Detection
+        Dataset: COCO
+        Metrics:
+          box AP: 41.5
+    Config: configs/distill/mmdet/pkd/pkd_fpn_mask-rcnn_swin_retina_r50_2x_coco.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/pkd/pkd_swin_retina/pkd_fpn_mask_rcnn_swin_retina_r50_2x_coco_20220925_142555-edec7433.pth?versionId=CAEQThiBgIDWqNC0oBgiIDViOGE0ZDU4ODgxNzQ5YmE5OGU3MzRkMjFiZGRjZmRm
+
+  - Name: pkd_fpn_reppoints_x101-dcn_reppoints_r50_2x_coco
+    In Collection: PKD
+    Metadata:
+      Location: FPN
+      Student:
+        Metrics:
+          box AP: 38.6
+        Config: mmdet::reppoints/reppoints-moment_r50_fpn-gn_head-gn_2x_coco.py
+        Weights: https://download.openmmlab.com/mmdetection/v2.0/reppoints/reppoints_moment_r50_fpn_gn-neck%2Bhead_2x_coco/reppoints_moment_r50_fpn_gn-neck%2Bhead_2x_coco_20200329-91babaa2.pth
+      Teacher:
+        Metrics:
+          box AP: 44.2
+        Config: mmdet::reppoints/reppoints-moment_x101-dconv-c3-c5_fpn-gn_head-gn_2x_coco.py
+        Weights: https://download.openmmlab.com/mmdetection/v2.0/reppoints/reppoints_moment_x101_fpn_dconv_c3-c5_gn-neck%2Bhead_2x_coco/reppoints_moment_x101_fpn_dconv_c3-c5_gn-neck%2Bhead_2x_coco_20200329-f87da1ea.pth
+    Results:
+      - Task: Object Detection
+        Dataset: COCO
+        Metrics:
+          box AP: 42.3
+    Config: configs/distill/mmdet/pkd/pkd_fpn_reppoints_x101-dcn_reppoints_r50_2x_coco.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/pkd/pkd_reppoints/pkd_fpn_reppoints_x101_dcn_reppoints_r50_2x_coco_20220926_145818-f8932e12.pth?versionId=CAEQThiBgIC8rNC0oBgiIGU2N2IxM2NkMjNlMjQyN2E4YmVlNmViNGI2MDY3OTE5
+
+  - Name: pkd_fpn_retina_x101_retina_r50_2x_coco
+    In Collection: PKD
+    Metadata:
+      Location: FPN
+      Student:
+        Metrics:
+          box AP: 37.4
+        Config: mmdet::retinanet/retinanet_r50_fpn_2x_coco.py
+        Weights: https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_r50_fpn_2x_coco/retinanet_r50_fpn_2x_coco_20200131-fdb43119.pth
+      Teacher:
+        Metrics:
+          box AP: 41.0
+        Config: mmdet::retinanet/retinanet_x101-64x4d_fpn_1x_coco.py
+        Weights: https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_x101_64x4d_fpn_1x_coco/retinanet_x101_64x4d_fpn_1x_coco_20200130-366f5af1.pth
+    Results:
+      - Task: Object Detection
+        Dataset: COCO
+        Metrics:
+          box AP: 40.8
+    Config: configs/distill/mmdet/pkd/pkd_fpn_retina_x101_retina_r50_2x_coco.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/pkd/pkd_retinax_retina/pkd_fpn_retina_x101_retina_r50_2x_coco_20221014_232526-4c0f8d96.pth?versionId=CAEQThiBgIDQqdC0oBgiIGFmZjNmZmE4NDFiMDQ4MzhiMzdjOGI2NzI4MTQxMjFi

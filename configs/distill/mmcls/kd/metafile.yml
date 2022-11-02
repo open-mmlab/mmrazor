@@ -7,9 +7,7 @@ Collections:
       URL: https://arxiv.org/abs/1503.02531
       Title: Distilling the Knowledge in a Neural Network
     README: configs/distill/mmcls/kd/README.md
-    Code:
-      URL: https://github.com/open-mmlab/mmrazor/blob/v0.1.0/mmrazor/models/losses/weighted_soft_label_distillation.py
-      Version: v0.1.0
+
 Models:
   - Name: kd_logits_resnet34_resnet18_8xb32_in1k
     In Collection: KD
@@ -31,6 +29,54 @@ Models:
       - Task: Image Classification
         Dataset: ImageNet-1k
         Metrics:
-          Top 1 Accuracy: 71.54
+          Top 1 Accuracy: 71.81
     Config: configs/distill/mmcls/kd/kd_logits_resnet34_resnet18_8xb32_in1k.py
-    Weights: https://download.openmmlab.com/mmrazor/v0.1/distill/wsld/wsld_cls_head_resnet34_resnet18_8xb32_in1k/wsld_cls_head_resnet34_resnet18_8xb32_in1k_acc-71.54_20211222-91f28cf6.pth
+    Weights: https://download.openmmlab.com/mmrazor/v1/kd/kl_r18_w3/kd_logits_resnet34_resnet18_8xb32_in1k_w3_20221011_181115-5c6a834d.pth?versionId=CAEQThiBgID1_Me0oBgiIDE3NTk3MDgxZmU2YjRlMjVhMzg1ZTQwMmRhNmYyNGU2
+
+  - Name: kd_logits_resnet50_mobilenet-v2_8xb32_in1k
+    In Collection: KD
+    Metadata:
+      Location: logits
+      Student:
+        Config: mmcls::mobilenet_v2/mobilenet-v2_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/mobilenet_v2/mobilenet_v2_batch256_imagenet_20200708-3b2dc3af.pth
+        Metrics:
+          Top 1 Accuracy: 71.86
+          Top 5 Accuracy: 90.42
+      Teacher:
+        Config: mmcls::resnet/resnet50_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth
+        Metrics:
+          Top 1 Accuracy: 76.55
+          Top 5 Accuracy: 93.06
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 73.56
+    Config: configs/distill/mmcls/kd/kd_logits_resnet50_mobilenet-v2_8xb32_in1k.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/kd/kl_mbv2_w3t1/kd_logits_resnet50_mobilenet-v2_8xb32_in1k_20221025_212407-6ea9e2a5.pth
+
+  - Name: kd_logits_resnet50_shufflenet-v2-1x_16xb64_in1k
+    In Collection: KD
+    Metadata:
+      Location: logits
+      Student:
+        Config: mmcls::shufflenet_v2/shufflenet-v2-1x_16xb64_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/shufflenet_v2/shufflenet_v2_batch1024_imagenet_20200812-5bf4721e.pth
+        Metrics:
+          Top 1 Accuracy: 69.55
+          Top 5 Accuracy: 88.92
+      Teacher:
+        Config: mmcls::resnet/resnet50_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth
+        Metrics:
+          Top 1 Accuracy: 76.55
+          Top 5 Accuracy: 93.06
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 70.87
+    Config: configs/distill/mmcls/kd/kd_logits_resnet50_shufflenet-v2-1x_16xb64_in1k.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/kd/kl_shuffle_w3t1/kd_logits_resnet50_shufflenet-v2-1x_16xb64_in1k_20221025_224424-5d748c1b.pth

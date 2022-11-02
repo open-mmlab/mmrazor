@@ -8,29 +8,19 @@ import torch.nn as nn
 from torch import Tensor
 
 from mmrazor.registry import MODELS
-from ..base_mutable import CHOICE_TYPE, CHOSEN_TYPE
+from mmrazor.utils.typing import DumpChosen
 from .mutable_module import MutableModule
 
 
-class OneShotMutableModule(MutableModule[CHOICE_TYPE, CHOSEN_TYPE]):
+class OneShotMutableModule(MutableModule):
     """Base class for one shot mutable module. A base type of ``MUTABLES`` for
     single path supernet such as Single Path One Shot.
 
-    All subclass should implement the following APIs:
+    All subclass should implement the following APIs and the other
+    abstract method in ``MutableModule``:
 
     - ``sample_choice()``
-    - ``forward_fixed()``
-    - ``forward_all()``
     - ``forward_choice()``
-
-    Args:
-        module_kwargs (dict[str, dict], optional): Module initialization named
-            arguments. Defaults to None.
-        alias (str, optional): alias of the `MUTABLE`.
-        init_cfg (dict, optional): initialization configuration dict for
-            ``BaseModule``. OpenMMLab has implement 5 initializer including
-            `Constant`, `Xavier`, `Normal`, `Uniform`, `Kaiming`,
-            and `Pretrained`.
 
     Note:
         :meth:`forward_all` is called when calculating FLOPs.
@@ -63,29 +53,15 @@ class OneShotMutableModule(MutableModule[CHOICE_TYPE, CHOSEN_TYPE]):
             return self.forward_choice(x, choice=self.current_choice)
 
     @abstractmethod
-    def sample_choice(self) -> CHOICE_TYPE:
+    def sample_choice(self) -> str:
         """Sample random choice.
 
         Returns:
-            CHOICE_TYPE: the chosen key in ``MUTABLE``.
+            str: the chosen key in ``MUTABLE``.
         """
 
     @abstractmethod
-    def forward_fixed(self, x: Any) -> Any:
-        """Forward with the fixed mutable.
-
-        All subclasses must implement this method.
-        """
-
-    @abstractmethod
-    def forward_all(self, x: Any) -> Any:
-        """Forward all choices.
-
-        All subclasses must implement this method.
-        """
-
-    @abstractmethod
-    def forward_choice(self, x: Any, choice: CHOICE_TYPE) -> Any:
+    def forward_choice(self, x, choice: str):
         """Forward with the unfixed mutable and current_choice is not None.
 
         All subclasses must implement this method.
@@ -93,7 +69,7 @@ class OneShotMutableModule(MutableModule[CHOICE_TYPE, CHOSEN_TYPE]):
 
 
 @MODELS.register_module()
-class OneShotMutableOP(OneShotMutableModule[str, str]):
+class OneShotMutableOP(OneShotMutableModule):
     """A type of ``MUTABLES`` for single path supernet, such as Single Path One
     Shot. In single path supernet, each choice block only has one choice
     invoked at the same time. A path is obtained by sampling all the choice
@@ -117,7 +93,6 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
         >>> candidates = nn.ModuleDict({
         ...     'conv3x3': nn.Conv2d(32, 32, 3, 1, 1),
         ...     'conv5x5': nn.Conv2d(32, 32, 5, 1, 2),
-        ...     'conv7x7': nn.Conv2d(32, 32, 7, 1, 3)})
 
         >>> input = torch.randn(1, 32, 64, 64)
         >>> op = OneShotMutableOP(candidates)
@@ -214,7 +189,7 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
         """
         return self._candidates[self._chosen](x)
 
-    def forward_choice(self, x: Any, choice: str) -> Tensor:
+    def forward_choice(self, x, choice: str) -> Tensor:
         """Forward with the `unfixed` mutable and current choice is not None.
 
         Args:
@@ -228,7 +203,7 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
         assert isinstance(choice, str) and choice in self.choices
         return self._candidates[choice](x)
 
-    def forward_all(self, x: Any) -> Tensor:
+    def forward_all(self, x) -> Tensor:
         """Forward all choices. Used to calculate FLOPs.
 
         Args:
@@ -263,9 +238,13 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
         self._chosen = chosen
         self.is_fixed = True
 
-    def dump_chosen(self) -> str:
-        assert self.current_choice is not None
+    def dump_chosen(self) -> DumpChosen:
+        chosen = self.export_chosen()
+        meta = dict(all_choices=self.choices)
+        return DumpChosen(chosen=chosen, meta=meta)
 
+    def export_chosen(self) -> str:
+        assert self.current_choice is not None
         return self.current_choice
 
     def sample_choice(self) -> str:
@@ -276,10 +255,6 @@ class OneShotMutableOP(OneShotMutableModule[str, str]):
     def choices(self) -> List[str]:
         """list: all choices. """
         return list(self._candidates.keys())
-
-    @property
-    def num_choices(self):
-        return len(self.choices)
 
 
 @MODELS.register_module()
