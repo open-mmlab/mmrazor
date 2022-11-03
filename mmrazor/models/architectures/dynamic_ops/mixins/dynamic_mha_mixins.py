@@ -76,11 +76,11 @@ class DynamicMHAMixin(DynamicMixin, DynamicMHAProtocol):
         if attr in self.attr_mappings:
             attr_map = self.attr_mappings[attr]
             assert attr_map in self.accepted_mutable_attrs
-            if hasattr(self, 'mutable_attrs'):
-                if attr_map in self.mutable_attrs:
-                    print_log(
-                        f'{attr_map}({attr}) is already in `mutable_attrs`',
-                        level=logging.WARNING)
+            # if hasattr(self, 'mutable_attrs'):
+            if attr_map in self.mutable_attrs:
+                print_log(
+                    f'{attr_map}({attr}) is already in `mutable_attrs`',
+                    level=logging.WARNING)
             else:
                 self._register_mutable_attr(attr_map, mutable)
         elif attr in self.accepted_mutable_attrs:
