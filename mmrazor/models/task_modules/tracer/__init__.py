@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from fx import CustomTracer, UntracedMethodRegistry, custom_symbolic_tracer
+from .fx import CustomTracer, UntracedMethodRegistry, custom_symbolic_tracer
 
 from .backward_tracer import BackwardTracer
 from .loss_calculator import *  # noqa: F401,F403
