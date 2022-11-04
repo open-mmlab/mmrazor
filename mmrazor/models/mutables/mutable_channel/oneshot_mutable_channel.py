@@ -35,6 +35,7 @@ class OneShotMutableChannel(SquentialMutableChannel):
     @current_choice.setter
     def current_choice(self, choice: Union[int, float]):
         """Set current choice."""
+        print('choice', choice, self.candidate_choices)
         assert choice in self.candidate_choices
         SquentialMutableChannel.current_choice.fset(  # type: ignore
             self,  # type: ignore

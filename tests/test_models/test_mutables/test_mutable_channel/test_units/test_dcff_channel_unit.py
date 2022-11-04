@@ -6,7 +6,7 @@ import torch
 
 from mmrazor.models.mutables import DCFFChannelUnit
 from mmrazor.structures.graph import ModuleGraph as ModuleGraph
-from ....data.models import LineModel
+from .....data.models import LineModel
 
 DEVICE = torch.device('cuda:0') if torch.cuda.is_available() \
     else torch.device('cpu')

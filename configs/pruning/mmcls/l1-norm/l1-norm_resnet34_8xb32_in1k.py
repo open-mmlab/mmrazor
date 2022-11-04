@@ -51,6 +51,6 @@ model = dict(
             type='L1MutableChannelUnit',
             default_args=dict(choice_mode='ratio'))),
     target_pruning_ratio=target_pruning_ratio,
-    step_epoch=1,
+    step_freq=1,
     prune_times=1,
 )

@@ -125,7 +125,7 @@ class TestItePruneAlgorithm(unittest.TestCase):
             MODEL_CFG,
             target_pruning_ratio=prune_target,
             mutator_cfg=MUTATOR_CONFIG_FLOAT,
-            step_epoch=epoch_step,
+            step_freq=epoch_step,
             prune_times=times).to(DEVICE)
 
         for e in range(epoch):
@@ -162,7 +162,7 @@ class TestItePruneAlgorithm(unittest.TestCase):
             model_cfg,
             mutator_cfg=MUTATOR_CONFIG_NUM,
             target_pruning_ratio=None,
-            step_epoch=epoch_step,
+            step_freq=epoch_step,
             prune_times=times,
         ).to(DEVICE)
         algorithm.init_weights()
@@ -196,7 +196,7 @@ class TestItePruneAlgorithm(unittest.TestCase):
             MODEL_CFG,
             target_pruning_ratio=prune_target,
             mutator_cfg=mutator_cfg,
-            step_epoch=epoch_step,
+            step_freq=epoch_step,
             prune_times=times).to(DEVICE)
 
         prune_target['backbone.layer1.0.conv1_(0, 64)_64'] = 0.1
@@ -208,5 +208,5 @@ class TestItePruneAlgorithm(unittest.TestCase):
                 MODEL_CFG,
                 target_pruning_ratio=prune_target,
                 mutator_cfg=mutator_cfg,
-                step_epoch=epoch_step,
+                step_freq=epoch_step,
                 prune_times=times).to(DEVICE)

@@ -26,19 +26,20 @@ class ItePruneConfigManager:
         target (Dict[str, Union[int, float]]): The target structure to prune.
         supernet (Dict[str, Union[int, float]]): The sturecture of the
             supernet.
-        epoch_step (int, optional): The prune step to prune. Defaults to 1.
+        prune_step (int, optional): The prune step of epoch/iter to prune.
+            Defaults to 1.
         times (int, optional): The times to prune. Defaults to 1.
     """
 
     def __init__(self,
                  target: Dict[str, Union[int, float]],
                  supernet: Dict[str, Union[int, float]],
-                 epoch_step=1,
+                 prune_step=1,
                  times=1) -> None:
 
         self.supernet = supernet
         self.target = target
-        self.epoch_step = epoch_step
+        self.prune_step = prune_step
         self.prune_times = times
 
         self.delta: Dict = self._get_delta_each_epoch(self.target,
@@ -47,13 +48,13 @@ class ItePruneConfigManager:
 
     def is_prune_time(self, epoch, ite):
         """Is the time to prune during training process."""
-        return epoch % self.epoch_step == 0 \
-            and epoch//self.epoch_step < self.prune_times \
+        return epoch % self.prune_step == 0 \
+            and epoch//self.prune_step < self.prune_times \
             and ite == 0
 
     def prune_at(self, epoch):
         """Get the pruning structure in a time(epoch)."""
-        times = epoch // self.epoch_step + 1
+        times = epoch // self.prune_step + 1
         assert times <= self.prune_times
         prune_current = {}
         ratio = times / self.prune_times
@@ -94,7 +95,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
         target_pruning_ratio (dict, optional): The prune-target. The template
             of the prune-target can be get by calling
             mutator.choice_template(). Defaults to {}.
-        step_epoch (int, optional): The step between two pruning operations.
+        step_freq (int, optional): The step between two pruning operations.
             Defaults to 1.
         prune_times (int, optional): The times to prune a model. Defaults to 1.
         init_cfg (Optional[Dict], optional): init config for architecture.
@@ -109,11 +110,15 @@ class ItePruneAlgorithm(BaseAlgorithm):
                          type='SequentialMutableChannelUnit')),
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  target_pruning_ratio: Optional[Dict[str, float]] = None,
-                 step_epoch=1,
+                 step_freq=1,
                  prune_times=1,
-                 init_cfg: Optional[Dict] = None) -> None:
+                 init_cfg: Optional[Dict] = None,
+                 by_epoch=True) -> None:
 
         super().__init__(architecture, data_preprocessor, init_cfg)
+
+        # decided by EpochBasedRunner or IterBasedRunner
+        self.by_epoch = by_epoch
 
         # mutator
         self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
@@ -129,7 +134,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
         self.prune_config_manager = ItePruneConfigManager(
             group_target_ratio,
             self.mutator.current_choices,
-            step_epoch,
+            step_freq,
             times=prune_times)
 
     def group_target_pruning_ratio(
@@ -158,7 +163,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
                     unit_target = target[unit_name]
                     assert isinstance(unit_target, (float, int))
                     group_target[group_id] = unit_target
-
+        print('group_target', group_target)
         return group_target
 
     def check_prune_target(self, config: Dict):
@@ -172,15 +177,19 @@ class ItePruneAlgorithm(BaseAlgorithm):
                 mode: str = 'tensor') -> ForwardResults:
         """Forward."""
         print(self._epoch, self._iteration)
-        if self.prune_config_manager.is_prune_time(self._epoch,
-                                                   self._iteration):
+        if self.prune_config_manager.is_prune_time(self._num,
+                                                   self._current_iteration):
 
-            config = self.prune_config_manager.prune_at(self._epoch)
+            config = self.prune_config_manager.prune_at(self._num)
 
             self.mutator.set_choices(config)
 
             logger = MMLogger.get_current_instance()
-            logger.info(f'The model is pruned at {self._epoch}th epoch once.')
+            if (self.by_epoch):
+                logger.info(
+                    f'The model is pruned at {self._num}th epoch once.')
+            else:
+                logger.info(f'The model is pruned at {self._num}th iter once.')
 
         return super().forward(inputs, data_samples, mode)
 
@@ -200,12 +209,37 @@ class ItePruneAlgorithm(BaseAlgorithm):
 
     @property
     def _iteration(self):
-        """Get current iteration number."""
+        """Get total iteration number."""
         message_hub = MessageHub.get_current_instance()
         if 'iter' in message_hub.runtime_info:
-            iter = message_hub.runtime_info['iter']
-            max_iter = message_hub.runtime_info['max_iters']
-            max_epoch = message_hub.runtime_info['max_epochs']
-            return iter % (max_iter // max_epoch)
+            return message_hub.runtime_info['iter']
         else:
             return 0
+
+    @property
+    def _current_iteration(self):
+        """Get iteration number in current epoch."""
+        message_hub = MessageHub.get_current_instance()
+        if 'iter' in message_hub.runtime_info:
+            max_iter = message_hub.runtime_info['max_iters']
+            max_epoch = message_hub.runtime_info['max_epochs']
+            return self._iteration % (max_iter // max_epoch)
+        else:
+            return 0
+
+    @property
+    def _num(self):
+        """Get current epoch/iter (decided by Runner) for pruning."""
+        if (self.by_epoch):
+            return self._epoch
+        else:
+            return self._iteration
+
+    @property
+    def _max_num(self):
+        """Get total max epoch/iter (decided by Runner) for pruning."""
+        message_hub = MessageHub.get_current_instance()
+        if (self.by_epoch):
+            return message_hub.runtime_info['max_epochs']
+        else:
+            return message_hub.runtime_info['max_iters']

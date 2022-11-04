@@ -1,115 +1,216 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import Dict, List, Tuple
-from unittest import TestCase
-from unittest.mock import MagicMock
+import os
+import unittest
 
-import pytest
 import torch
 from mmcls.structures import ClsDataSample
-from mmengine.optim import build_optim_wrapper
+from mmengine import MessageHub
+from mmengine.model import BaseModel
 
-from mmrazor.models.algorithms import DCFF
+from mmrazor.models.algorithms.pruning.dcff import DCFF
+from mmrazor.models.algorithms.pruning.ite_prune_algorithm import \
+    ItePruneConfigManager
+from mmrazor.registry import MODELS
+
+
+# @TASK_UTILS.register_module()
+class ImageClassifierPseudoLoss:
+    """Calculate the pseudo loss to trace the topology of a `ImageClassifier`
+    in MMClassification with `BackwardTracer`."""
+
+    def __call__(self, model) -> torch.Tensor:
+        pseudo_img = torch.rand(2, 3, 32, 32)
+        pseudo_output = model(pseudo_img)
+        return pseudo_output.sum()
+
 
 MODEL_CFG = dict(
-    cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False)
+    _scope_='mmcls',
+    type='ImageClassifier',
+    backbone=dict(
+        type='ResNet',
+        depth=18,
+        num_stages=4,
+        out_indices=(3, ),
+        style='pytorch'),
+    neck=dict(type='GlobalAveragePooling'),
+    head=dict(
+        type='LinearClsHead',
+        num_classes=1000,
+        in_channels=512,
+        loss=dict(type='CrossEntropyLoss', loss_weight=1.0),
+        topk=(1, 5),
+    ))
 
-CHANNEL_CFG_PATH = 'configs/pruning/mmcls/dcff/resnet_cls.json'
-
-MUTATOR_CFG = dict(
+MUTATOR_CONFIG_NUM = dict(
     type='DCFFChannelMutator',
-    channel_unit_cfg=dict(type='DCFFChannelUnit', units=CHANNEL_CFG_PATH),
-    parse_cfg=dict(
-        type='BackwardTracer',
-        loss_calculator=dict(type='ImageClassifierPseudoLoss')))
-
-OPTIMIZER_CFG = dict(
-    type='SGD', lr=0.5, momentum=0.9, nesterov=True, weight_decay=0.0001)
-OPTIM_WRAPPER_CFG = dict(optimizer=OPTIMIZER_CFG, accumulative_counts=1)
-
-
-class FakeMutator:
-    ...
-
-
-class ToyDataPreprocessor(torch.nn.Module):
-
-    def forward(
-            self,
-            data: Dict,
-            training: bool = True) -> Tuple[torch.Tensor, List[ClsDataSample]]:
-        return data['inputs'], data['data_samples']
-
-
-class TestDCFF(TestCase):
-    device: str = 'cpu'
-
-    def test_init(self) -> None:
-
-        mutator_wrong_type = FakeMutator()
-        with pytest.raises(AttributeError):
-            _ = self.prepare_model(mutator_wrong_type, MODEL_CFG)
-
-    def test_dcff_train_step(self) -> None:
-        algo = self.prepare_dcff_model()
-        data = self._prepare_fake_data()
-        optim_wrapper_cfg = copy.deepcopy(OPTIM_WRAPPER_CFG)
-        optim_wrapper_cfg['accumulative_counts'] = 1
-        optim_wrapper = build_optim_wrapper(algo, optim_wrapper_cfg)
-        fake_message_hub = MagicMock()
-        fake_message_hub.runtime_info = {
-            'iter': 0,
-            'max_iters': 100,
+    channel_unit_cfg={
+        'type': 'DCFFChannelUnit',
+        'default_args': {
+            'choice_mode': 'number'
         }
-        optim_wrapper.message_hub = fake_message_hub
-        assert not algo._optim_wrapper_count_status_reinitialized
-        losses = algo.train_step(data, optim_wrapper)
-
-        assert len(losses) == 1
-        assert losses['loss'] > 0
-
-        self.assertTrue(algo._optim_wrapper_count_status_reinitialized)
-        self.assertEqual(optim_wrapper._inner_count, 1)
-
-        losses = algo.train_step(data, optim_wrapper)
-        assert algo._optim_wrapper_count_status_reinitialized
-
-    def test_fixed_train_step(self) -> None:
-        algo = self.prepare_fixed_model()
-        data = self._prepare_fake_data()
-        optim_wrapper_cfg = copy.deepcopy(OPTIM_WRAPPER_CFG)
-        optim_wrapper = build_optim_wrapper(algo, optim_wrapper_cfg)
-        fake_message_hub = MagicMock()
-        fake_message_hub.runtime_info = {
-            'iter': 0,
-            'max_iters': 100,
+    })
+MUTATOR_CONFIG_FLOAT = dict(
+    type='DCFFChannelMutator',
+    channel_unit_cfg={
+        'type': 'DCFFChannelUnit',
+        'default_args': {
+            'choice_mode': 'ratio'
         }
-        optim_wrapper.message_hub = fake_message_hub
-        losses = algo.train_step(data, optim_wrapper)
+    })
 
-        assert len(losses) == 1
-        assert losses['loss'] > 0
+if torch.cuda.is_available():
+    DEVICE = torch.device('cuda:0')
+else:
+    DEVICE = torch.device('cpu')
 
-    def _prepare_fake_data(self) -> Dict:
-        imgs = torch.randn(16, 3, 224, 224).to(self.device)
+
+class TestDCFFAlgorithm(unittest.TestCase):
+
+    def _set_epoch_ite(self, epoch, ite, max_epoch):
+        iter_per_epoch = 10
+        message_hub = MessageHub.get_current_instance()
+        message_hub.update_info('epoch', epoch)
+        message_hub.update_info('max_epochs', max_epoch)
+        message_hub.update_info('max_iters', max_epoch * 10)
+        message_hub.update_info('iter', ite + iter_per_epoch * epoch)
+
+    def fake_cifar_data(self):
+        imgs = torch.randn(16, 3, 32, 32).to(DEVICE)
         data_samples = [
-            ClsDataSample().set_gt_label(torch.randint(0, 1000,
-                                                       (16, ))).to(self.device)
+            ClsDataSample().set_gt_label(torch.randint(0, 10,
+                                                       (16, ))).to(DEVICE)
         ]
 
         return {'inputs': imgs, 'data_samples': data_samples}
 
-    def prepare_dcff_model(self) -> DCFF:
-        return self.prepare_model(MUTATOR_CFG, MODEL_CFG)
+    def test_ite_prune_config_manager(self):
+        float_origin, float_target = 1.0, 0.5
+        int_origin, int_target = 10, 5
+        for origin, target, manager in [
+            (float_origin, float_target,
+             ItePruneConfigManager({'a': float_target}, {'a': float_origin}, 2,
+                                   5)),
+            (int_origin, int_target,
+             ItePruneConfigManager({'a': int_target}, {'a': int_origin}, 2, 5))
+        ]:
+            times = 1
+            for e in range(1, 20):
+                for ite in range(1, 5):
+                    self._set_epoch_ite(e, ite, 5)
+                    if (e, ite) in [(0, 0), (2, 0), (4, 0), (6, 0), (8, 0)]:
+                        self.assertTrue(manager.is_prune_time(e, ite))
+                        self.assertEqual(
+                            manager.prune_at(e)['a'],
+                            origin - (origin - target) * times / 5)
+                        times += 1
+                    else:
+                        self.assertFalse(manager.is_prune_time(e, ite))
 
-    def prepare_fixed_model(self) -> DCFF:
-        return self.prepare_model(MUTATOR_CFG, MODEL_CFG, deploy=0)
+    def test_iterative_prune_int(self):
 
-    def prepare_model(self,
-                      mutator_cfg: Dict,
-                      model_cfg: Dict,
-                      deploy=-1) -> DCFF:
-        model = DCFF(mutator_cfg, model_cfg, deploy, ToyDataPreprocessor())
-        model.to(self.device)
+        data = self.fake_cifar_data()
 
-        return model
+        model = MODELS.build(MODEL_CFG)
+        mutator = MODELS.build(MUTATOR_CONFIG_FLOAT)
+        mutator.prepare_from_supernet(model)
+        mutator.set_choices(mutator.sample_choices())
+        prune_target = mutator.choice_template
+
+        epoch = 10
+        epoch_step = 2
+        times = 3
+
+        algorithm = DCFF(
+            MODEL_CFG,
+            target_pruning_ratio=prune_target,
+            mutator_cfg=MUTATOR_CONFIG_FLOAT,
+            step_freq=epoch_step,
+            prune_times=times,
+            by_epoch=True).to(DEVICE)
+
+        for e in range(epoch):
+            for ite in range(5):
+                self._set_epoch_ite(e, ite, 5)
+
+                algorithm.forward(
+                    data['inputs'], data['data_samples'], mode='loss')
+
+        current_choices = algorithm.mutator.current_choices
+        group_prune_target = algorithm.group_target_pruning_ratio(
+            prune_target, mutator.search_groups)
+        for key in current_choices:
+            self.assertAlmostEqual(
+                current_choices[key], group_prune_target[key], delta=0.1)
+
+    def test_load_pretrained(self):
+        epoch_step = 2
+        times = 3
+        data = self.fake_cifar_data()
+
+        # prepare checkpoint
+        model_cfg = copy.deepcopy(MODEL_CFG)
+        model: BaseModel = MODELS.build(model_cfg)
+        checkpoint_path = os.path.dirname(__file__) + '/checkpoint'
+        torch.save(model.state_dict(), checkpoint_path)
+
+        # build algorithm
+        model_cfg['init_cfg'] = {
+            'type': 'Pretrained',
+            'checkpoint': checkpoint_path
+        }
+        algorithm = DCFF(
+            model_cfg,
+            mutator_cfg=MUTATOR_CONFIG_FLOAT,
+            target_pruning_ratio=None,
+            step_freq=epoch_step,
+            prune_times=times,
+            by_epoch=True).to(DEVICE)
+        algorithm.init_weights()
+        algorithm.forward(data['inputs'], data['data_samples'], mode='loss')
+
+        # delete checkpoint
+        os.remove(checkpoint_path)
+
+    def test_group_target_ratio(self):
+
+        model = MODELS.build(MODEL_CFG)
+        mutator = MODELS.build(MUTATOR_CONFIG_FLOAT)
+        mutator.prepare_from_supernet(model)
+        mutator.set_choices(mutator.sample_choices())
+        prune_target = mutator.choice_template
+
+        custom_groups = [[
+            'backbone.layer1.0.conv1_(0, 64)_64',
+            'backbone.layer1.1.conv1_(0, 64)_64'
+        ]]
+        mutator_cfg = copy.deepcopy(MUTATOR_CONFIG_FLOAT)
+        mutator_cfg['custom_groups'] = custom_groups
+
+        epoch_step = 2
+        times = 3
+
+        prune_target['backbone.layer1.0.conv1_(0, 64)_64'] = 0.1
+        prune_target['backbone.layer1.1.conv1_(0, 64)_64'] = 0.1
+
+        _ = DCFF(
+            MODEL_CFG,
+            target_pruning_ratio=prune_target,
+            mutator_cfg=mutator_cfg,
+            step_freq=epoch_step,
+            prune_times=times,
+            by_epoch=True).to(DEVICE)
+
+        prune_target['backbone.layer1.0.conv1_(0, 64)_64'] = 0.1
+        prune_target['backbone.layer1.1.conv1_(0, 64)_64'] = 0.2
+
+        with self.assertRaises(ValueError):
+
+            _ = DCFF(
+                MODEL_CFG,
+                target_pruning_ratio=prune_target,
+                mutator_cfg=mutator_cfg,
+                step_freq=epoch_step,
+                prune_times=times,
+                by_epoch=True).to(DEVICE)
