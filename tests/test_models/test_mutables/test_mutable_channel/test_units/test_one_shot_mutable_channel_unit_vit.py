@@ -18,6 +18,6 @@ class TestOneShotMutableChannelUnit_VIT(TestCase):
         mutator.prepare_from_supernet(model)
         choices = mutator.sample_choices()
         mutator.set_choices(choices)
-        print(mutator.units)
-        print(mutator.mutable_units)
-        print(mutator.choice_template)
+        self.assertSequenceEqual(mutator.units[0].candidate_choices,
+                                 [576, 624])
+        self.assertSequenceEqual(mutator.units[1].candidate_choices, [64])

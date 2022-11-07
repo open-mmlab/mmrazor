@@ -5,9 +5,10 @@ from typing import Optional, Tuple
 import torch
 from mmcls.models import ClsHead
 
-from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
+from mmrazor.models.mutables.mutable_channel.units import \
+    OneShotMutableChannelUnit_VIT
 from mmrazor.registry import MODELS
 from ..bricks.dynamic_linear import DynamicLinear
 
@@ -72,7 +73,7 @@ class DynamicLinearClsHead(ClsHead, DynamicHead):
                               backbone_output_mutable: BaseMutable) -> None:
         """Connect dynamic backbone."""
 
-        MutableChannelUnit._register_channel_container(
+        OneShotMutableChannelUnit_VIT._register_channel_container(
             self, MutableChannelContainer)
 
         MutableChannelContainer.register_mutable_channel_to_module(

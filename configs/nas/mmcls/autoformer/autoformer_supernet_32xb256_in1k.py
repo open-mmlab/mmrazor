@@ -35,6 +35,7 @@ supernet = dict(
             label_smooth_val=0.1,
             loss_weight=1.0),
         topk=(1, 5)),
+    connect_head=dict(connect_with_backbone='backbone.last_mutable'),
 )
 
 model = dict(

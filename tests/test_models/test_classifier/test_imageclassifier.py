@@ -23,12 +23,14 @@ class TestSearchableImageClassifier(TestCase):
                     label_smooth_val=0.1,
                     loss_weight=1.0),
                 topk=(1, 5)),
+            connect_head=dict(connect_with_backbone='backbone.last_mutable'),
         )
 
-        _ = SearchableImageClassifier(**supernet_kwargs)
-
-        # test input_resizer_cfg
-        # TODO
+        supernet = SearchableImageClassifier(**supernet_kwargs)
 
         # test connect_with_backbone
-        # TODO
+        self.assertEqual(
+            supernet.backbone.last_mutable.activated_channels,
+            len(
+                supernet.head.fc.get_mutable_attr(
+                    'in_channels').current_choice))
