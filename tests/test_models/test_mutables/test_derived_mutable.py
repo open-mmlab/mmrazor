@@ -101,26 +101,6 @@ class TestDerivedMutable(TestCase):
             mc_derived.current_mask = torch.ones(
                 mc_derived.current_mask.size())
 
-        # TODO
-        # mc_derived = mc * 3.0
-        # assert mc_derived.source_mutables == {mc}
-
-        # mc.current_choice = 1.0
-        # assert mc_derived.current_choice == 3
-        # assert torch.equal(
-        #     mc_derived.current_mask,
-        #     torch.tensor([1, 1, 1, 0, 0, 0, 0, 0, 0], dtype=torch.bool))
-
-        # mc.current_choice = 2.0
-        # assert mc_derived.current_choice == 6
-        # assert torch.equal(
-        #     mc_derived.current_mask,
-        #     torch.tensor([1, 1, 1, 1, 1, 1, 0, 0, 0], dtype=torch.bool))
-
-        # with pytest.raises(RuntimeError):
-        #     mc_derived.current_mask = torch.ones(
-        #         mc_derived.current_mask.size())
-
     def test_mutable_divide(self) -> None:
         mc = SquentialMutableChannel(num_channels=128)
         mc_derived = mc // 8
