@@ -136,7 +136,6 @@ class ItePruneAlgorithm(BaseAlgorithm):
                 data_samples: Optional[List[BaseDataElement]] = None,
                 mode: str = 'tensor') -> ForwardResults:
         """Forward."""
-        print(self._epoch, self._iteration)
         if self.prune_config_manager.is_prune_time(self._epoch,
                                                    self._iteration):
 

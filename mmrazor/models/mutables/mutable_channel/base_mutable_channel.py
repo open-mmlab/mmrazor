@@ -75,7 +75,10 @@ class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
 
     def dump_chosen(self):
         """dump current choice to a dict."""
-        raise NotImplementedError()
+        mask = self.current_mask
+        mask = mask.bool()
+        mask = mask.tolist()
+        return mask
 
     def num_choices(self) -> int:
         """Number of available choices."""

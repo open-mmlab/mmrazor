@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
+import torch.nn as nn
 
 from mmrazor.registry import TASK_UTILS
 from .base_counter import BaseCounter
@@ -59,3 +60,15 @@ class Conv2dCounter(ConvCounter):
 class Conv3dCounter(ConvCounter):
     """FLOPs/params counter for Conv3d module."""
     pass
+
+
+@TASK_UTILS.register_module()
+class DynamicConv2dCounter(ConvCounter):
+
+    @staticmethod
+    def add_count_hook(module: nn.Conv2d, input, output):
+        module.in_channels = module.get_mutable_attr(
+            'in_channels').activated_channels
+        module.out_channels = module.get_mutable_attr(
+            'out_channels').activated_channels
+        return Conv2dCounter.add_count_hook(module, input, output)
