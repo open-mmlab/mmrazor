@@ -33,6 +33,14 @@ class DynamicMultiheadAttention(MultiheadAttention, DynamicMHAMixin):
             self.rel_pos_embed_v = DynamicRelativePosition2D(
                 self.head_dims, self.max_relative_position)
 
+    @property
+    def in_channels(self):
+        return getattr(self, self.attr_mappings['in_channels'])
+
+    @property
+    def out_channels(self):
+        return getattr(self, self.attr_mappings['out_channels'])
+
     @classmethod
     def convert_from(cls, module):
         """Convert the static module to dynamic one."""

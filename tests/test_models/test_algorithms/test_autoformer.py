@@ -14,7 +14,10 @@ MUTATOR_CFG = dict(
             'type': 'OneShotMutableChannelUnit_VIT',
             'default_args': {}
         },
-        parse_cfg={'type': 'Predefined'}),
+        parse_cfg={
+            'type': 'Predefined',
+            'extra_mixin': 'mix'
+        }),
     value_mutator=dict(type='mmrazor.DynamicValueMutator'))
 
 ARCHITECTURE_CFG = dict(
@@ -47,7 +50,10 @@ ALGORITHM_CFG = dict(
                 'type': 'OneShotMutableChannelUnit_VIT',
                 'default_args': {}
             },
-            parse_cfg={'type': 'Predefined'}),
+            parse_cfg={
+                'type': 'Predefined',
+                'extra_mixin': 'mix'
+            }),
         value_mutator=dict(type='mmrazor.DynamicValueMutator')))
 
 

@@ -3,10 +3,8 @@ import torch
 import torch.nn as nn
 from mmengine.model.weight_init import trunc_normal_
 
-from .base import BaseOP
 
-
-class RelativePosition2D(BaseOP):
+class RelativePosition2D(nn.Module):
     """Rethinking and Improving Relative Position Encoding for Vision
     Transformer.
 
@@ -19,7 +17,7 @@ class RelativePosition2D(BaseOP):
     """
 
     def __init__(self, head_dims, max_relative_position=14):
-        super().__init__(in_channels=head_dims, out_channels=head_dims)
+        super().__init__()
 
         self.head_dims = head_dims
         self.max_relative_position = max_relative_position
@@ -74,7 +72,7 @@ class RelativePosition2D(BaseOP):
         return embeddings
 
 
-class MultiheadAttention(BaseOP):
+class MultiheadAttention(nn.Module):
     """Multi-head Attention Module with iRPE.
 
     This module implements multi-head attention that supports different input
@@ -121,8 +119,7 @@ class MultiheadAttention(BaseOP):
                  proj_bias=True,
                  v_shortcut=False,
                  init_cfg=None):
-        super(MultiheadAttention, self).__init__(
-            init_cfg=init_cfg, in_channels=embed_dims, out_channels=embed_dims)
+        super().__init__()
 
         self.input_dims = input_dims or embed_dims
         self.embed_dims = embed_dims

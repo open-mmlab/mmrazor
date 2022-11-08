@@ -15,6 +15,7 @@ class DynamicLayerNormMixin(DynamicChannelMixin):
     """A mixin class for Pytorch LayerNorm, which can mutate
     ``num_features``."""
     accepted_mutable_attrs: Set[str] = {'num_features'}
+
     attr_mappings: Dict[str, str] = {
         'in_channels': 'num_features',
         'out_channels': 'num_features',

@@ -146,7 +146,10 @@ class TestChannelMutator(unittest.TestCase):
                         'type': 'OneShotMutableChannelUnit_VIT',
                         'default_args': {}
                     },
-                    parse_cfg={'type': 'Predefined'})
+                    parse_cfg={
+                        'type': 'Predefined',
+                        'extra_mixin': 'mix'
+                    })
                 mutator.prepare_from_supernet(model)
                 choices = mutator.sample_choices()
                 mutator.set_choices(choices)

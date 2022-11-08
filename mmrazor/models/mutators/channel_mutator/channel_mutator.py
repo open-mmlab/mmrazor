@@ -116,7 +116,9 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
         elif self.parse_cfg['type'] == 'Config':
             units = self._prepare_from_cfg(supernet, self.units_cfg)
         elif self.parse_cfg['type'] == 'Predefined':
-            units = self._prepare_from_predefined_model(supernet)
+            self.parse_cfg.pop('type')
+            units = self._prepare_from_predefined_model(
+                supernet, **self.parse_cfg)
         else:
             raise NotImplementedError()
 
@@ -352,10 +354,12 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
             units.append(unit)
         return units
 
-    def _prepare_from_predefined_model(self, model: Module):
+    def _prepare_from_predefined_model(self,
+                                       model: Module,
+                                       extra_mixin: str = 'naive'):
         """Initialize units using the model with pre-defined dynamicops and
         mutable-channels."""
 
-        units = self.unit_class.init_from_predefined_model(model)
+        units = self.unit_class.init_from_predefined_model(model, extra_mixin)
 
         return units
