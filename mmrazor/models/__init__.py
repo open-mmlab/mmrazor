@@ -3,7 +3,6 @@ from .algorithms import *  # noqa: F401,F403
 from .architectures import *  # noqa: F401,F403
 from .distillers import *  # noqa: F401,F403
 from .fake_quants import *  # noqa: F401,F403
-from .fx_models import *  # noqa: F401,F403
 from .losses import *  # noqa: F401,F403
 from .mutables import *  # noqa: F401,F403
 from .mutators import *  # noqa: F401,F403
