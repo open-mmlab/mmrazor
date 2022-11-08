@@ -54,11 +54,11 @@ class GeneralQuant(BaseAlgorithm):
                 mode: str = 'tensor') -> ForwardResults:
 
         if mode == 'loss':
-            return self.graph_loss(inputs, data_samples)
+            return self.graph_loss(inputs, data_samples, mode)
         elif mode == 'tensor':
-            return self.graph_tensor(inputs, data_samples)
+            return self.graph_tensor(inputs, data_samples, mode)
         elif mode == 'predict':
-            return self.graph_predict(inputs, data_samples)
+            return self.graph_predict(inputs, data_samples, mode)
         else:
             raise RuntimeError(f'Invalid mode "{mode}". '
                                'Only supports loss, predict and tensor mode')

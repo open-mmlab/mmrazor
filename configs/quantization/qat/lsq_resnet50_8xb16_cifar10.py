@@ -4,6 +4,7 @@ train_cfg = dict(
     _delete_=True,
     type='mmrazor.QATEpochBasedLoop',
     max_epochs=_base_.train_cfg.max_epochs,
+    # dataloader=_base_.train_cfg.dataloader
 )
 
 model = dict(
@@ -12,7 +13,7 @@ model = dict(
     type='GeneralQuant',
     architecture={{_base_.model}},
     quantizer=dict(
-        type='TensorRTQuantizer',
+        type='QATQuantizer',
         skipped_methods=[
             'mmcls.models.heads.ClsHead._get_loss',
             'mmcls.models.heads.ClsHead._get_predictions'

@@ -61,7 +61,6 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
         """Launch training."""
         self.runner.call_hook('before_train')
 
-        self.model.eval()
         self.model.prepare()
 
         if self.is_calibrate:

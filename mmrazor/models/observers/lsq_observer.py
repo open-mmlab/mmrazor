@@ -10,7 +10,7 @@ from .base import BaseObserver
 
 @MODELS.register_module()
 class LSQObserver(BaseObserver):
-    """Observer for `LEARNED STEP SIZE QUANTIZATION`"""
+    """LSQ observer."""
 
     def __init__(self,
                  dtype=torch.quint8,
@@ -52,7 +52,7 @@ class LSQObserver(BaseObserver):
         zero_point = torch.zeros_like(self.tensor_norm)
         sync_tensor(scale)
         sync_tensor(zero_point)
-        if self.is_pot_scale:
+        if self.pot_scale:
             scale = pot_quantization(scale)
         if not _is_symmetric_quant(self.qscheme):
             zero_point = self.quant_min - torch.round(self.min_val / scale)

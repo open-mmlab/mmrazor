@@ -1,7 +1,44 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from functools import partial
 from typing import Any, Dict, List, Optional, Set
 
 import torch
+
+
+class PerChannelLoadHook:
+
+    def __init__(self, module, hook_param=['scale', 'zero_point']):
+        self.hook = module._register_load_state_dict_pre_hook(
+            partial(self.hook_fn, module=module))
+        self.hook_param = hook_param
+
+    def hook_fn(self, state_dict, prefix, local_metadata, strict, missing_keys,
+                unexpected_keys, error_msgs, module):
+        if module.ch_axis == -1:
+            # no per-channel parameters
+            return
+        for module_key, param in module._parameters.items():
+            if module_key not in self.hook_param:
+                continue
+            candidate = prefix + module_key
+            if candidate in state_dict:
+                input_param = state_dict[candidate]
+                if param.shape != input_param.shape:
+                    param.data = torch.ones_like(
+                        input_param, dtype=param.dtype, device=param.device)
+        for module_key, param in module._buffers.items():
+            if module_key not in self.hook_param:
+                continue
+            candidate = prefix + module_key
+            if candidate in state_dict:
+                input_param = state_dict[candidate]
+                if param.shape != input_param.shape:
+                    param.data = torch.ones_like(
+                        input_param, dtype=param.dtype, device=param.device)
+
+    def close(self):
+        self.hook.remove()
+
 
 USE_LINK = False
 USE_DDP = False
@@ -50,6 +87,10 @@ def _is_per_tensor(qscheme: 'torch.qscheme') -> bool:
 
 def _is_symmetric_quant(qscheme: 'torch.qscheme') -> bool:
     return qscheme in [torch.per_tensor_symmetric, torch.per_channel_symmetric]
+
+
+def is_tracing_state():
+    return torch._C._get_tracing_state()
 
 
 def _is_float_qparams(qscheme: 'torch.qscheme') -> bool:
