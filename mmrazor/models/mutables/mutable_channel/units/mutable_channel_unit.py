@@ -6,7 +6,8 @@ from typing import Dict, List, Type, TypeVar
 
 import torch.nn as nn
 
-from mmrazor.models.architectures.dynamic_ops.mixins import DynamicMixin, DynamicChannelMixin
+from mmrazor.models.architectures.dynamic_ops.mixins import (
+    DynamicChannelMixin, DynamicMixin)
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables.mutable_channel import (BaseMutableChannel,
                                                      MutableChannelContainer)
@@ -16,7 +17,9 @@ from .channel_unit import Channel, ChannelUnit
 
 class MutableChannelUnit(ChannelUnit):
 
-    MixinScope: Dict[str, Type[DynamicMixin]] = {'naive': (DynamicChannelMixin)}
+    MixinScope: Dict[str, Type[DynamicMixin]] = {
+        'naive': (DynamicChannelMixin)
+    }
 
     # init methods
     def __init__(self, num_channels: int, **kwargs) -> None:

@@ -4,7 +4,7 @@ from typing import Dict, Type
 import torch.nn as nn
 
 from mmrazor.models.architectures.dynamic_ops.mixins import (
-    DynamicMixin, DynamicChannelMixin, DynamicMHAMixin)
+    DynamicChannelMixin, DynamicMHAMixin, DynamicMixin)
 from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
 from mmrazor.registry import MODELS
 from .one_shot_mutable_channel_unit import OneShotMutableChannelUnit
@@ -36,15 +36,15 @@ class OneShotMutableChannelUnit_VIT(OneShotMutableChannelUnit):
             if isinstance(
                     module,
                     OneShotMutableChannelUnit_VIT.MixinScope[extra_mixin]):
-                if module.get_mutable_attr('in_channels') is None:
+                if hasattr(module, in_channels):
                     in_channels = 0
-                    if hasattr(module, in_channels):
+                    if module.get_mutable_attr('in_channels') is None:
                         in_channels = module.in_channels
                     module.register_mutable_attr('in_channels',
                                                  container_class(in_channels))
-                if module.get_mutable_attr('out_channels') is None:
+                if hasattr(module, out_channels):
                     out_channels = 0
-                    if hasattr(module, out_channels):
+                    if module.get_mutable_attr('out_channels') is None:
                         out_channels = module.out_channels
                     module.register_mutable_attr('out_channels',
                                                  container_class(out_channels))
