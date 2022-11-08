@@ -4,7 +4,6 @@ train_cfg = dict(
     _delete_=True,
     type='mmrazor.QATEpochBasedLoop',
     max_epochs=_base_.train_cfg.max_epochs,
-    # dataloader=_base_.train_cfg.dataloader
 )
 
 model = dict(
