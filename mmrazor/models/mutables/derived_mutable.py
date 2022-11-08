@@ -54,7 +54,7 @@ def _expand_choice_fn(mutable: MutableProtocol,
 
 def _expand_mask_fn(
         mutable: MutableProtocol,
-        expand_ratio: Union[int, float, Any]) -> Callable:  # pragma: no cover
+        expand_ratio: Union[int, float]) -> Callable:  # pragma: no cover
     """Helper function to build `mask_fn` for expand derived mutable."""
     if not hasattr(mutable, 'current_mask'):
         raise ValueError('mutable must have attribute `currnet_mask`')
@@ -142,14 +142,12 @@ class DerivedMethodMixin:
             self: MutableProtocol,
             expand_ratio: Union[int, BaseMutable, float]) -> 'DerivedMutable':
         """Derive expand mutable, usually used with `expand_ratio`."""
-        from .mutable_value import MutableValue
-
         # avoid circular import
         if isinstance(expand_ratio, int):
             choice_fn = _expand_choice_fn(self, expand_ratio=expand_ratio)
         elif isinstance(expand_ratio, float):
             choice_fn = _expand_choice_fn(self, expand_ratio=expand_ratio)
-        elif isinstance(expand_ratio, MutableValue):
+        elif isinstance(expand_ratio, BaseMutable):
             current_ratio = expand_ratio.current_choice
             choice_fn = _expand_choice_fn(self, expand_ratio=current_ratio)
         else:

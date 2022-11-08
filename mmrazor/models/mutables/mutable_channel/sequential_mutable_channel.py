@@ -44,7 +44,7 @@ class SquentialMutableChannel(SimpleMutableChannel):
             return self._num2ratio(int_choice)
 
     @current_choice.setter
-    def current_choice(self, choice: int):
+    def current_choice(self, choice: Union[int, float]):
         """Set choice."""
         if isinstance(choice, float):
             int_choice = self._ratio2num(choice)
