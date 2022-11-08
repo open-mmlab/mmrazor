@@ -644,9 +644,9 @@ class DynamicAttention(nn.Module):
         OneShotMutableChannelUnit_VIT._register_channel_container(
             self, MutableChannelContainer)
 
-        self.register_mutate()
+        self.register_mutables()
 
-    def register_mutate(self):
+    def register_mutables(self):
         # mutablevalue
         self.blocks.register_mutable_attr('depth', self.mutable_depth)
         # mutablechannel
@@ -655,7 +655,7 @@ class DynamicAttention(nn.Module):
 
         for i in range(self.mutable_depth.max_choice):
             layer = self.blocks[i]
-            layer.mutate_encoder_layer(
+            layer.register_mutables(
                 mutable_num_heads=self.mutable_num_heads[i],
                 mutable_mlp_ratios=self.mutable_mlp_ratios[i],
                 mutable_q_embed_dims=self.mutable_q_embed_dims[i],

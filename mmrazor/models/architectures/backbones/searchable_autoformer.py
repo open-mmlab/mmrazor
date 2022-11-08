@@ -75,9 +75,9 @@ class TransformerEncoderLayer(BaseBackbone):
         self.add_module(self.norm2_name, norm2)
 
         # derived mutable
-        self.max_middle_channels = int(embed_dims * mlp_ratio)
-        self.fc1 = DynamicLinear(embed_dims, self.max_middle_channels)
-        self.fc2 = DynamicLinear(self.max_middle_channels, embed_dims)
+        middle_channels = int(embed_dims * mlp_ratio)
+        self.fc1 = DynamicLinear(embed_dims, middle_channels)
+        self.fc2 = DynamicLinear(middle_channels, embed_dims)
         self.act = build_activation_layer(act_cfg)
 
     @property
@@ -90,11 +90,11 @@ class TransformerEncoderLayer(BaseBackbone):
         """The second normalization."""
         return getattr(self, self.norm2_name)
 
-    def mutate_encoder_layer(self, mutable_num_heads: BaseMutable,
-                             mutable_mlp_ratios: BaseMutable,
-                             mutable_q_embed_dims: BaseMutable,
-                             mutable_head_dims: BaseMutable,
-                             mutable_embed_dims: BaseMutable):
+    def register_mutables(self, mutable_num_heads: BaseMutable,
+                          mutable_mlp_ratios: BaseMutable,
+                          mutable_q_embed_dims: BaseMutable,
+                          mutable_head_dims: BaseMutable,
+                          mutable_embed_dims: BaseMutable):
         """Mutate the mutables of encoder layer."""
         # record the mutables
         self.mutable_num_heads = mutable_num_heads
@@ -119,7 +119,10 @@ class TransformerEncoderLayer(BaseBackbone):
         MutableChannelContainer.register_mutable_channel_to_module(
             self.attn, self.mutable_embed_dims, False)
         MutableChannelContainer.register_mutable_channel_to_module(
-            self.attn, self.mutable_q_embed_dims, True, end=640)
+            self.attn,
+            self.mutable_q_embed_dims,
+            True,
+            end=self.mutable_q_embed_dims.current_choice)
         MutableChannelContainer.register_mutable_channel_to_module(
             self.attn.rel_pos_embed_k, self.mutable_head_dims, False)
         MutableChannelContainer.register_mutable_channel_to_module(
@@ -129,9 +132,17 @@ class TransformerEncoderLayer(BaseBackbone):
         MutableChannelContainer.register_mutable_channel_to_module(
             self.fc1, mutable_embed_dims, False)
         MutableChannelContainer.register_mutable_channel_to_module(
-            self.fc1, self.middle_channels, True, start=0, end=2496)
+            self.fc1,
+            self.middle_channels,
+            True,
+            start=0,
+            end=self.middle_channels.current_choice)
         MutableChannelContainer.register_mutable_channel_to_module(
-            self.fc2, self.middle_channels, False, start=0, end=2496)
+            self.fc2,
+            self.middle_channels,
+            False,
+            start=0,
+            end=self.middle_channels.current_choice)
         MutableChannelContainer.register_mutable_channel_to_module(
             self.fc2, mutable_embed_dims, True)
 
@@ -176,7 +187,7 @@ class AutoformerBackbone(BaseBackbone):
             Defaults to dict(type='mmrazor.DynamicLayerNorm').
         act_cfg (Dict, optional): The config of activation functions.
             Defaults to dict(type='GELU').
-        final_norm (bool, optional): Whether use final normalization.
+        use_final_norm (bool, optional): Whether use final normalization.
             Defaults to True.
         init_cfg (Dict, optional): The config for initialization.
             Defaults to None.
@@ -198,7 +209,7 @@ class AutoformerBackbone(BaseBackbone):
                  qkv_bias: bool = True,
                  norm_cfg: Dict = dict(type='mmrazor.DynamicLayerNorm'),
                  act_cfg: Dict = dict(type='GELU'),
-                 final_norm: bool = True,
+                 use_final_norm: bool = True,
                  init_cfg: Dict = None) -> None:
 
         super().__init__(init_cfg)
@@ -208,7 +219,7 @@ class AutoformerBackbone(BaseBackbone):
         self.qkv_bias = qkv_bias
         self.in_channels = in_channels
         self.drop_rate = drop_rate
-        self.final_norm = final_norm
+        self.use_final_norm = use_final_norm
         self.act_cfg = act_cfg
 
         # adapt mutable settings
@@ -278,17 +289,14 @@ class AutoformerBackbone(BaseBackbone):
             depth=self.mutable_depth.max_choice)
 
         # final norm
-        if self.final_norm:
+        if self.use_final_norm:
             self.norm1_name, norm1 = build_norm_layer(
                 norm_cfg, self.mutable_embed_dims.num_channels)
             self.add_module(self.norm1_name, norm1)
 
         self.last_mutable = self.mutable_embed_dims
 
-        OneShotMutableChannelUnit_VIT._register_channel_container(
-            self, MutableChannelContainer)
-
-        self.register_mutate()
+        self.register_mutables()
 
     @property
     def norm1(self):
@@ -310,8 +318,11 @@ class AutoformerBackbone(BaseBackbone):
             layers.append(layer)
         return DynamicSequential(*layers)
 
-    def register_mutate(self):
+    def register_mutables(self):
         """Mutate the autoformer."""
+        OneShotMutableChannelUnit_VIT._register_channel_container(
+            self, MutableChannelContainer)
+
         # handle the mutation of depth
         self.blocks.register_mutable_attr('depth', self.mutable_depth)
 
@@ -322,7 +333,7 @@ class AutoformerBackbone(BaseBackbone):
         # handle the dependencies of TransformerEncoderLayers
         for i in range(self.mutable_depth.max_choice):  # max depth here
             layer = self.blocks[i]
-            layer.mutate_encoder_layer(
+            layer.register_mutables(
                 mutable_num_heads=self.mutable_num_heads[i],
                 mutable_mlp_ratios=self.mutable_mlp_ratios[i],
                 mutable_q_embed_dims=self.mutable_q_embed_dims[i],
@@ -330,7 +341,7 @@ class AutoformerBackbone(BaseBackbone):
                 mutable_embed_dims=self.last_mutable)
 
         # handle the mutable of final norm
-        if self.final_norm:
+        if self.use_final_norm:
             MutableChannelContainer.register_mutable_channel_to_module(
                 self.norm1, self.last_mutable, True)
 
@@ -354,7 +365,7 @@ class AutoformerBackbone(BaseBackbone):
         # dynamic depth
         x = self.blocks(x)
 
-        if self.final_norm:
+        if self.use_final_norm:
             x = self.norm1(x)
 
         return (torch.mean(x[:, 1:], dim=1), )

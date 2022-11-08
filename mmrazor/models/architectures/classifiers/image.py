@@ -29,7 +29,7 @@ class SearchableImageClassifier(ImageClassifier):
         connect_head (dict, optional): Dimensions are aligned in head will be
             substitute to it's `str type` value, so that search_space of the
             first components can be connets to the next. e.g:
-            {'connect_with_backbone': 'backbone.last_mutable'} Means that
+            {'connect_with_backbone': 'backbone.last_mutable'} means that
             func:`connect_with_backbone` will be substitute to backbones
             last_mutable. Defaults to None.
     """

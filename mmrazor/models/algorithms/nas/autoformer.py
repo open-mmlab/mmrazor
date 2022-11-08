@@ -1,7 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict, List, Optional, Union
 
-import mmengine.dist as dist
 import torch
 from mmengine.model import BaseModel
 from mmengine.structures import BaseDataElement
@@ -34,7 +33,7 @@ class Autoformer(BaseAlgorithm):
             Defaults to None.
     Note:
         Autoformer uses two mutators which are ``DynamicValueMutator`` and
-        ``ChannelMutator``. DynamicValueMutator handle the mutable object
+        ``ChannelMutator``. `DynamicValueMutator` handle the mutable object
         ``OneShotMutableValue`` in Autoformer while ChannelMutator handle
         the mutable object ``OneShotMutableChannel`` in Autoformer.
     """
@@ -82,7 +81,6 @@ class Autoformer(BaseAlgorithm):
         subnet_dict = dict()
         for name, mutator in self.mutators.items():
             subnet_dict[name] = mutator.sample_choices()
-        dist.broadcast_object_list([subnet_dict])
         return subnet_dict
 
     def set_subnet(self, subnet_dict: Dict) -> None:

@@ -14,8 +14,8 @@ class RelativePosition2D(BaseOP):
     Image RPE (iRPE for short) methods are new relative position encoding
     methods dedicated to 2D images.
     Args:
-        head_dims ([int]): embedding dims of relative position.
-        max_relative_position ([int]): The max relative position distance.
+        head_dims (list[int]): embedding dims of relative position.
+        max_relative_position (list[int]): The max relative position distance.
     """
 
     def __init__(self, head_dims, max_relative_position=14):
@@ -91,6 +91,9 @@ class MultiheadAttention(BaseOP):
             output projection. Defaults to 0.
         dropout_layer (dict): The dropout config before adding the shortcut.
             Defaults to ``dict(type='Dropout', drop_prob=0.)``.
+        relative_position (bool, optional): Whether use relative position.
+            Defaults to True.
+        max_relative_position (list[int]): The max relative position distance.
         qkv_bias (bool): If True, add a learnable bias to q, k, v.
             Defaults to True.
         qk_scale (float, optional): Override default qk scale of
