@@ -2,16 +2,23 @@
 from joblib import dump, load
 
 
-class BaseHandler():
-    """Base handler."""
+class BaseHandler:
+    """Base class for a handler.
+
+    Note:
+        The handler works through a specific machine leanring algorithm,
+        and is designed for predicting the evaluation metric of a model.
+    """
 
     def __init__(self) -> None:
         pass
 
     def fit(self, train_data, train_label):
+        """Training the model of handler."""
         pass
 
     def predict(self, test_data):
+        """Predicting the metric using the model of handler."""
         pass
 
     def load(self, path):

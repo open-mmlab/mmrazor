@@ -321,10 +321,10 @@ class TestEvolutionSearchLoopWithPredictor(TestCase):
 
     @patch('mmrazor.engine.runner.utils.check.export_fix_subnet')
     @patch('mmrazor.models.task_modules.predictor.metric_predictor.'
-           'MetricPredictor.spec2feats')
+           'MetricPredictor.model2vector')
     @patch('mmrazor.models.task_modules.estimators.resource_estimator.'
            'get_model_flops_params')
-    def test_run_loop(self, mock_flops, mock_spec2feats,
+    def test_run_loop(self, mock_flops, mock_model2vector,
                       mock_export_fix_subnet):
         # test a new search: resume == None
         loop_cfg = copy.deepcopy(self.train_cfg)
@@ -358,7 +358,7 @@ class TestEvolutionSearchLoopWithPredictor(TestCase):
 
         mock_flops.return_value = (0.5, 101)
         mock_export_fix_subnet.return_value = fake_subnet
-        mock_spec2feats.return_value = dict(
+        mock_model2vector.return_value = dict(
             feats=[0, 1], onehot_feats=[0, 1, 0, 1])
 
         loop.run()

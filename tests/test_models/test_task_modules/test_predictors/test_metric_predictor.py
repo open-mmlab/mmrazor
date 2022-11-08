@@ -54,7 +54,7 @@ class TestMetricPredictorWithGP(TestCase):
     def generate_data(self):
         inputs = []
         for candidate in self.candidates:
-            inputs.append(self.predictor.spec2feats(candidate))
+            inputs.append(self.predictor.model2vector(candidate))
         inputs = np.array(inputs)
         labels = np.random.rand(3)
         return inputs, labels
@@ -94,7 +94,7 @@ class TestMetricPredictorWithCart(TestCase):
     def generate_data(self):
         inputs = []
         for candidate in self.candidates:
-            inputs.append(self.predictor.spec2feats(candidate))
+            inputs.append(self.predictor.model2vector(candidate))
         inputs = np.array(inputs)
         labels = np.random.rand(3)
         return inputs, labels
@@ -134,7 +134,7 @@ class TestMetricPredictorWithRBF(TestCase):
     def generate_data(self):
         inputs = []
         for candidate in self.candidates:
-            inputs.append(self.predictor.spec2feats(candidate))
+            inputs.append(self.predictor.model2vector(candidate))
         inputs = np.array(inputs)
         labels = np.random.rand(3)
         return inputs, labels
@@ -174,7 +174,7 @@ class TestMetricPredictorWithMLP(TestCase):
     def generate_data(self):
         inputs = []
         for candidate in self.candidates:
-            inputs.append(self.predictor.spec2feats(candidate))
+            inputs.append(self.predictor.model2vector(candidate))
         inputs = np.array(inputs)
         labels = np.random.rand(3)
         return inputs, labels

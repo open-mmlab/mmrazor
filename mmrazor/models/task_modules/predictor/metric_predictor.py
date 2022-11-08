@@ -1,163 +1,189 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, Optional
+from typing import Dict, List
 
 import numpy as np
 import scipy.stats as stats
 
 from mmrazor.registry import TASK_UTILS
 from mmrazor.structures import export_fix_subnet
-from .base_predictor import BasePredictor
-from .handler import MLPHandler, RBFHandler
+from .handler import RBFHandler
 
 
 @TASK_UTILS.register_module()
-class MetricPredictor(BasePredictor):
-    """Metric predictor.
+class MetricPredictor:
+    """A predictor for predicting evaluation metrics in different tasks.
 
     Args:
-        handler_cfg (dict): Cfg to build a predict handler.
-        search_groups (dict) : search_groups of the specified supernet.
-        score_key (str): Specify one metric in evaluation results to score
-            candidates. Defaults to 'accuracy_top-1'.
-        train_samples (int, Optional): Num of predictor training samples.
+        handler_cfg (dict): Config to build a predict handler.
+        search_groups (dict) : The search_groups of the specified supernet.
+        train_samples (int): Num of training samples for the handler.
             Defaults to 2.
-        fit_cfg (dict, Optional): Training parameters. Only supported for
-            MLP predictor.
-        pretrained (str, Optional): Path to predictor's weights. If given,
-            predictor will load the specified weights directly.
-        evaluation (str, Optional): If not None, compute the correlations
-            between prediction and true label, used for evaluate the
-            predictor's performance. Defaults to None.
-            If set as 'simple', it will only evaluate the final samples;
-            If set as 'complex', it will evaluate samples in the
-                candidate_pool.
-        evaluate_samples (dict, Optional): Given the predicting samples for
-            predictor.
-        encoding_type (str, Optional): how to encode the search space to
-            integer bit-string. Defaults to `onehot`.
+        handler_ckpt (str, optional): Path to handler's checkpoint. If given,
+            predictor will load weights directly instead of handler training.
+        encoding_type (str, optional): Type of how to encode the search space
+            to integer bit-string. Defaults to `onehot`.
+        score_key (str): Specify one metric in evaluation results to score
+            models. Defaults to 'accuracy_top-1'.
     """
 
     def __init__(self,
                  handler_cfg: Dict,
                  search_groups: Dict,
-                 score_key: str = 'accuracy_top-1',
                  train_samples: int = 2,
-                 fit_cfg: Optional[Dict] = None,
-                 pretrained: str = None,
-                 evaluation: str = None,
-                 evaluate_samples: Dict = None,
+                 handler_ckpt: str = None,
                  encoding_type: str = 'onehot',
+                 score_key: str = 'accuracy_top-1',
                  **kwargs):
-        super().__init__(handler_cfg=handler_cfg)
+        self.handler_cfg = handler_cfg
+        self.handler = TASK_UTILS.build(handler_cfg)
 
-        if isinstance(self.handler, RBFHandler):
-            encoding_type = 'normal'
         assert encoding_type in [
             'normal', 'onehot'
         ], ('encoding_type must be `normal` or `onehot`.'
             f'Got `{encoding_type}`.')
+        if isinstance(self.handler, RBFHandler):
+            encoding_type = 'normal'
         self.encoding_type = encoding_type
 
         self.search_groups = search_groups
         self.train_samples = train_samples
-        self.pretrained = pretrained
-        self.evaluation = evaluation
-        assert evaluation in [None, 'simple', 'complex'
-                              ], (f'Not support evaluation mode {evaluation}.')
+        self.handler_ckpt = handler_ckpt
 
-        self.fit_cfg = fit_cfg if fit_cfg is not None else dict()
-        self.evaluate_samples = evaluate_samples
         self.score_key_list = [score_key] + ['anticipate']
         self.initialize = False
 
-    def predict(self, model, predict_args=dict()):
-        """Predict the candidate's performance."""
-        metric = {}
+    def predict(self, model, predict_args: Dict = dict()) -> Dict[str, float]:
+        """Predict the evaluation metric of input model using the handler.
+
+        Args:
+            model: input model.
+            predict_args (Dict, optional): predict args for predictor.
+
+        Returns:
+            Dict[str, float]: evaluation metric of the model.
+        """
+        metric: Dict[str, float] = {}
         if not self.initialize or predict_args.get('anticipate', False):
             raise AssertionError(
                 'Call evaluator to get metric instead of predictor.')
 
         if self.initialize:
-            candidate = export_fix_subnet(model)
-            input = self.preprocess(np.array([self.spec2feats(candidate)]))
-            score = float(np.squeeze(self.handler.predict(input)))
+            model = export_fix_subnet(model)
+            data = self.preprocess(np.array([self.model2vector(model)]))
+            score = float(np.squeeze(self.handler.predict(data)))
             if metric.get(self.score_key_list[0], None):
                 metric.update({self.score_key_list[1]: score})
             else:
                 metric.update({self.score_key_list[0]: score})
         return metric
 
-    def spec2feats(self, candidate: dict) -> dict:
-        """Convert the candidate to N dimensions vector.
+    def model2vector(self, model: dict) -> Dict[str, list]:
+        """Convert the input model to N-dims vector.
 
-        N is different for different supernet.
+        Args:
+            model (Dict[str, list]): input model.
+
+        Returns:
+            Dict[str, list]: converted vector.
         """
         index = 0
-        feats_dict: Dict[str, list] = dict(feats=[], onehot_feats=[])
+        vector_dict: Dict[str, list] = \
+            dict(normal_vector=[], onehot_vector=[])
 
-        for choice in candidate.values():
+        for choice in model.values():
             assert len(self.search_groups[index]) == 1
-            _candidates = self.search_groups[index][0].choices
-            onehot = np.zeros(len(_candidates), dtype=np.int)
-            _chosen_index = _candidates.index(choice)
+            choices = self.search_groups[index][0].choices
+            onehot = np.zeros(len(choices), dtype=np.int)
+            _chosen_index = choices.index(choice)
             onehot[_chosen_index] = 1
 
-            feats_dict['feats'].extend([_chosen_index])
-            feats_dict['onehot_feats'].extend(onehot)
+            vector_dict['normal_vector'].extend([_chosen_index])
+            vector_dict['onehot_vector'].extend(onehot)
             index += 1
 
-        return feats_dict
+        return vector_dict
 
-    def feats2spec(self, feats, type='onehot'):
-        """Convert the N dimensions vector to original candidates.
+    def vector2model(self, vector: np.array) -> Dict[str, str]:
+        """Convert the N-dims vector to original model.
 
-        feats is the output comes form self.spec2feats.
+        Args:
+            vector (numpy.array): input vector which represents the model.
+
+        Returns:
+            Dict[str, str]: converted model.
         """
-        fix_subnet = {}
         start = 0
+        model = {}
         for key, value in self.search_groups.items():
-            if type == 'onehot':
-                index = np.where(feats[start:start +
-                                       len(value[0].choices)] == 1)[0][0]
+            if self.encoding_type == 'onehot':
+                index = np.where(vector[start:start +
+                                        len(value[0].choices)] == 1)[0][0]
                 start += len(value)
             else:
-                index = feats[start]
+                index = vector[start]
                 start += 1
             chosen = value[0].choices[int(index)]
-            fix_subnet[key] = chosen
-        return fix_subnet
+            model[key] = chosen
 
-    def load_checkpoint(self):
-        self.handler.load(self.pretrained)
-        self.initialize = True
+        return model
 
-    def save(self, path):
-        """Save predictor and return saved path for diff suffix;"""
-        return self.handler.save(path)
+    @staticmethod
+    def get_correlation(prediction: np.array,
+                        label: np.array) -> List[np.array]:
+        """Compute the correlations between prediction and ground-truth label.
 
-    def get_correlation(self, prediction, target):
-        """Compute the correlations between prediction and true label."""
-        rmse = np.sqrt(((prediction - target)**2).mean())
-        rho, _ = stats.spearmanr(prediction, target)
-        tau, _ = stats.kendalltau(prediction, target)
+        Args:
+            prediction (numpy.array): predict vector.
+            label (numpy.array): ground-truth label.
 
-        return rmse, rho, tau
+        Returns:
+            List[numpy.array]: coefficients of correlations between predicton
+                and ground-truth label.
+        """
+        rmse = np.sqrt(((prediction - label)**2).mean())
+        rho, _ = stats.spearmanr(prediction, label)
+        tau, _ = stats.kendalltau(prediction, label)
+        return [rmse, rho, tau]
 
-    def preprocess(self, input):
-        if isinstance(input[0], dict):
-            if self.encoding_type == 'normal':
-                input = np.array([x['feats'] for x in input])
-            else:
-                input = np.array([x['onehot_feats'] for x in input])
-        return input
+    def preprocess(self, data: List[Dict[str, list]]) -> np.array:
+        """Preprocess the data, convert it into np.array format.
 
-    def fit(self, input, target):
-        """Training the accuracy predictor."""
-        input = self.preprocess(input)
-        if isinstance(self.handler, MLPHandler):
-            self.handler.check_dimentions(input.shape[1])
-            self.handler.fit(input, target, **self.fit_cfg)
+        Args:
+            data (List[Dict[str, list]]): input data for training.
+
+        Returns:
+            numpy.array: input data in numpy.array format.
+        """
+        if self.encoding_type == 'normal':
+            data = np.array([x['normal_vector'] for x in data])
         else:
-            self.handler.fit(input, target)
+            data = np.array([x['onehot_vector'] for x in data])
+        return data
 
+    def fit(self, data: List[Dict[str, list]], label: np.array) -> None:
+        """Training the handler using the structure information of a model. The
+        weights of handler will be fixed after that.
+
+        Args:
+            data (List[Dict[str, list]]): input data for training.
+            label (numpy.array): input label for training.
+        """
+        data = self.preprocess(data)
+        self.handler.fit(data, label)
         self.initialize = True
+
+    def load_checkpoint(self) -> None:
+        """Load checkpoint for handler."""
+        self.handler.load(self.handler_ckpt)
+        self.initialize = True
+
+    def save_checkpoint(self, path: str) -> str:
+        """Save checkpoint of handler and return saved path for diff suffix.
+
+        Args:
+            path (str): save path for the handler.
+
+        Returns:
+            (str): specific checkpoint path of the current handler.
+        """
+        return self.handler.save(path)

@@ -422,10 +422,10 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
 
     def _init_predictor(self):
         """Initialize predictor, training is required."""
-        if self.predictor.pretrained:
+        if self.predictor.handler_ckpt:
             self.predictor.load_checkpoint()
             self.runner.logger.info(
-                f'Loaded Checkpoints from {self.predictor.pretrained}')
+                f'Loaded Checkpoints from {self.predictor.handler_ckpt}')
         else:
             self.runner.logger.info('No predictor checkpoints found. '
                                     'Start pre-training the predictor.')
@@ -448,12 +448,12 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
 
             inputs = []
             for candidate in self.candidates.subnets:
-                inputs.append(self.predictor.spec2feats(candidate))
+                inputs.append(self.predictor.model2vector(candidate))
             inputs = np.array(inputs)
             labels = np.array(self.candidates.scores)
             self.predictor.fit(inputs, labels)
             if self.runner.rank == 0:
-                predictor_dir = self.predictor.save(
+                predictor_dir = self.predictor.save_checkpoint(
                     osp.join(self.runner.work_dir, 'predictor'))
                 self.runner.logger.info(
                     f'Predictor pre-trained, saved in {predictor_dir}.')
