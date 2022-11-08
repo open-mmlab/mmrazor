@@ -80,7 +80,7 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
 
         self.model.convert()
 
-        self.runner.val_loop.run()
+        # self.runner.val_loop.run()
 
         self.runner.call_hook('after_train')
 
