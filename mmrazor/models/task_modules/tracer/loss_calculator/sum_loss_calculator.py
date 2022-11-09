@@ -19,6 +19,7 @@ class SumPseudoLoss:
 
     def __call__(self, model) -> torch.Tensor:
         pseudo_img = torch.rand(self.input_shape)
+        model.eval()
         pseudo_output = model(pseudo_img)
         return self._sum_of_output(pseudo_output)
 
