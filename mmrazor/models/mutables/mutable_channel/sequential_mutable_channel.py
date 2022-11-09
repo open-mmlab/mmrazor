@@ -34,8 +34,8 @@ class SquentialMutableChannel(SimpleMutableChannel):
         """Get if the choice is number mode."""
         return self.choice_mode == 'number'
 
-    @property  # type: ignore
-    def current_choice(self) -> Union[int, float]:  # type: ignore
+    @property
+    def current_choice(self) -> Union[int, float]:
         """Get current choice."""
         int_choice = (self.mask == 1).sum().item()
         if self.is_num_mode:

@@ -29,7 +29,7 @@ class _DynamicBatchNorm(_BatchNorm, DynamicBatchNormMixin):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.mutable_attrs = nn.ModuleDict()
+        self.mutable_attrs: Dict[str, Optional[BaseMutable]] = nn.ModuleDict()
 
     @classmethod
     def convert_from(cls, module: _BatchNorm):
@@ -215,14 +215,6 @@ class DynamicLayerNorm(LayerNorm, DynamicLayerNormMixin):
         super(DynamicLayerNorm, self).__init__(*args, **kwargs)
 
         self.mutable_attrs: Dict[str, Optional[BaseMutable]] = nn.ModuleDict()
-
-    # @property
-    # def in_channels(self):
-    #     return getattr(self, 'normalized_shape')[0]
-
-    # @property
-    # def out_channels(self):
-    #     return getattr(self, 'normalized_shape')[0]
 
     @property
     def static_op_factory(self):
