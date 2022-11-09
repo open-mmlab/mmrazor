@@ -81,7 +81,7 @@ class MLPHandler(BaseHandler):
                  epochs: int = 100,
                  data_split_ratio: float = 0.8,
                  model_cfg: Dict = None,
-                 device: str = 'cuda'):
+                 device: str = 'cpu'):
         self.epochs = epochs
         self.data_split_ratio = data_split_ratio
 

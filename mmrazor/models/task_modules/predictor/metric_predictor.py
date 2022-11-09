@@ -52,20 +52,19 @@ class MetricPredictor:
         self.score_key_list = [score_key] + ['anticipate']
         self.initialize = False
 
-    def predict(self, model, predict_args: Dict = dict()) -> Dict[str, float]:
+    def predict(self, model) -> Dict[str, float]:
         """Predict the evaluation metric of input model using the handler.
 
         Args:
             model: input model.
-            predict_args (Dict, optional): predict args for predictor.
 
         Returns:
             Dict[str, float]: evaluation metric of the model.
         """
         metric: Dict[str, float] = {}
-        if not self.initialize or predict_args.get('anticipate', False):
-            raise AssertionError(
-                'Call evaluator to get metric instead of predictor.')
+        assert self.initialize is True, (
+            'Before predicting, evaluator is required to be executed first, '
+            'cause the model of handler in predictor needs to be initialized.')
 
         if self.initialize:
             model = export_fix_subnet(model)
