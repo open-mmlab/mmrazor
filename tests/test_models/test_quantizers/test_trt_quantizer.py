@@ -11,7 +11,7 @@ class ToyModel(nn.Module):
         # TODO
 
 
-class TestTRTQuantizer(TestCase):
+class TestGeneralQuant(TestCase):
     """TODO.
 
     Args:

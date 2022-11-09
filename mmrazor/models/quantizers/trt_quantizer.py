@@ -9,7 +9,7 @@ class TensorRTQuantizer(CustomQuantizer):
     """Quantizer for TensorRT backend."""
 
     def __init__(self,
-                 qconfig=DefalutQconfigs['tensorrt'],
+                 qconfig=DefalutQconfigs['default'],
                  is_qat=True,
                  skipped_methods=None,
                  prepare_custom_config_dict=None,
