@@ -3,7 +3,18 @@ import torch
 
 
 class QuantizeScheme(object):
-    """Describe quantization scheme."""
+    """Custom QScheme. Refer to:
+    https://github.com/pytorch/pytorch/blob/master/c10/core/QScheme.h.
+
+    Args:
+        bit (int, optional): Bit number. Defaults to 8.
+        is_symmetry (bool, optional): Is symmetry quantization or not. Defaults
+            to True.
+        is_per_channel (bool, optional): Is per-channel quantization or not.
+            Defaults to False.
+        is_pot_scale (bool, optional):  Indicate whether scale is power of two.
+            Defaults to False.
+    """
 
     def __init__(self,
                  bit=8,
