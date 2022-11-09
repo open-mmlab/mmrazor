@@ -7,6 +7,7 @@ from .base import BaseObserver
 
 @MODELS.register_module()
 class MinMaxObserver(BaseObserver):
+    """Min max observer."""
 
     def __init__(self,
                  dtype=torch.quint8,

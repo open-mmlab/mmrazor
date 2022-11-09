@@ -10,7 +10,7 @@ from .base import BaseObserver
 
 @MODELS.register_module()
 class LSQObserver(BaseObserver):
-    """LSQ observer."""
+    """Observer for `LEARNED STEP SIZE QUANTIZATION`"""
 
     def __init__(self,
                  dtype=torch.quint8,

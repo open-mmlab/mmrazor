@@ -9,6 +9,7 @@ _version_under_1100 = int(torch.__version__.split('.')[1]) < 10
 
 @MODELS.register_module()
 class MSEObserver(BaseObserver):
+    """MSE observer."""
 
     def __init__(self,
                  dtype=torch.quint8,

@@ -10,6 +10,24 @@ from mmrazor.models.utils import pot_quantization, sync_tensor
 
 
 class BaseObserver(UniformQuantizationObserverBase):
+    """Modified torch quantization observer.
+
+    Args:
+        dtype: dtype argument to the `quantize` node needed to implement the
+            reference model spec.
+        qscheme: Quantization scheme to be used.
+        reduce_range: Reduces the range of the quantized data type by 1 bit.
+            This is sometimes required to avoid instruction overflow.
+        quant_min: Minimum quantization value. If unspecified, it will follow
+            the 8-bit setup.
+        quant_max: Maximum quantization value. If unspecified, it will follow
+            the 8-bit setup.
+        ch_axis (int, optional): Channel axis index. Defaults to -1.
+        is_pot_scale (bool, optional):  Indicate whether scale is power of two.
+            Defaults to False.
+        eps: Epsilon value for float32.
+            Defaults to `torch.finfo(torch.float32).eps`.
+    """
 
     min_val: torch.Tensor
     max_val: torch.Tensor
