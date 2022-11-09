@@ -12,7 +12,7 @@ model = dict(
     type='GeneralQuant',
     architecture={{_base_.model}},
     quantizer=dict(
-        type='QATQuantizer',
+        type='TensorRTQuantizer',
         skipped_methods=[
             'mmcls.models.heads.ClsHead._get_loss',
             'mmcls.models.heads.ClsHead._get_predictions'
