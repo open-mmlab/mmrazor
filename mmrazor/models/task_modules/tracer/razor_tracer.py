@@ -120,7 +120,7 @@ class RazorFxTracer(CostumFxTracer):
 
         return graph
 
-    def trace(self, model) -> BaseGraph[FxBaseNode]:
+    def trace(self, model) -> BaseGraph[FxBaseNode]:  # type: ignore
         torch_graph = super().trace(model)
         torch_graph.owning_module = model
 

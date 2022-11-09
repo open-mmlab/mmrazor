@@ -13,7 +13,11 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='Get the config to prune a model.')
     parser.add_argument('config', help='config of the model')
-    parser.add_argument('checkpoint', help='checkpoint path of the model')
+    parser.add_argument(
+        '--checkpoint',
+        default=None,
+        type=str,
+        help='checkpoint path of the model')
     parser.add_argument(
         '-o',
         type=str,
@@ -26,19 +30,27 @@ def parse_args():
 def wrap_prune_config(config: Config, prune_target: Dict,
                       checkpoint_path: str):
     config = copy.deepcopy(config)
+
+    arch_config: Dict = config['model']
+
+    # update checkpoint_path
+    if checkpoint_path is not None:
+        arch_config.update({
+            'init_cfg': {
+                'type': 'Pretrained',
+                'checkpoint': checkpoint_path  # noqa
+            },
+        })
+
+    # deal with data_preprocessor
     if 'data_preprocessor' in config:
         data_preprocessor = config['data_preprocessor']
+        arch_config.update({'data_preprocessor': data_preprocessor})
+        config['data_preprocessor'] = None
     else:
         data_preprocessor = None
-    arch_config: Dict = config['model']
-    arch_config.update({
-        'init_cfg': {
-            'type': 'Pretrained',
-            'checkpoint': checkpoint_path  # noqa
-        },
-        'data_preprocessor': data_preprocessor
-    })
 
+    # prepare algorithm
     algorithm_config = dict(
         _scope_='mmrazor',
         type='ItePruneAlgorithm',
@@ -49,13 +61,8 @@ def wrap_prune_config(config: Config, prune_target: Dict,
             channel_unit_cfg=dict(
                 type='L1MutableChannelUnit',
                 default_args=dict(choice_mode='ratio')),
-            parse_cfg=dict(
-                type='BackwardTracer',
-                loss_calculator=dict(
-                    type='ImageClassifierPseudoLoss',
-                    input_shape=(2, 3, 32, 32)))))
+            parse_cfg=dict(type='PruneTracer', tracer_type='FxTracer')))
     config['model'] = algorithm_config
-    config['data_preprocessor'] = None
 
     return config
 
@@ -73,7 +80,12 @@ if __name__ == '__main__':
     mutator: ChannelMutator = ChannelMutator(
         channel_unit_cfg=dict(
             type='L1MutableChannelUnit',
-            default_args=dict(choice_mode='ratio')))
+            default_args=dict(choice_mode='ratio'),
+        ),
+        parse_cfg={
+            'type': 'PruneTracer',
+            'tracer_type': 'FxTracer'
+        })
     mutator.prepare_from_supernet(model)
     choice_template = mutator.choice_template
 

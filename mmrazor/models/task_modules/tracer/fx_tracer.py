@@ -1,12 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """This module define FxTracer and related classes."""
 
+import copy
 import functools
 from types import FunctionType
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import torch
-import torch.fx as fx
 import torch.nn as nn
 from torch._C import ScriptObject  # type: ignore[attr-defined]
 from torch.fx._symbolic_trace import (Tracer, _autowrap_check,
@@ -58,8 +58,14 @@ class CostumFxTracer(Tracer):
             is_extra = self.extra_is_leaf_module(m, module_qualified_name)
         return is_torch_module or is_extra
 
-    def trace(self, root) -> fx.graph.Graph:
-        return self._trace(root, self.concrete_args)
+    def trace(self,
+              root: Union[torch.nn.Module, Callable[..., Any]],
+              concrete_args: Optional[Dict[str, Any]] = None) -> Graph:
+        if concrete_args is None:
+            concrete_args = {}
+        concrete_args = copy.copy(concrete_args)
+        concrete_args.update(self.concrete_args)
+        return self._trace(root, concrete_args)
 
     def _trace(self,
                root: Union[torch.nn.Module, Callable[..., Any]],

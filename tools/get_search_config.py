@@ -11,7 +11,11 @@ def parse_args():
         description='Get the config to search the pruning structure of a model'
     )
     parser.add_argument('config', help='config of the model')
-    parser.add_argument('checkpoint', help='checkpoint path of the model')
+    parser.add_argument(
+        '--checkpoint',
+        default=None,
+        type=str,
+        help='checkpoint path of the model')
     parser.add_argument(
         '--flops-min', type=float, default=0.45, help='minimal flops')
     parser.add_argument(
@@ -28,18 +32,26 @@ def parse_args():
 def wrap_search_config(config: Config, checkpoint_path: str,
                        flop_range: Tuple):
     config = copy.deepcopy(config)
+
+    arch_config: Dict = config['model']
+
+    # deal with data_preprocessor
     if 'data_preprocessor' in config:
         data_preprocessor = config['data_preprocessor']
+        arch_config.update({'data_preprocessor': data_preprocessor})
+        config['data_preprocessor'] = None
     else:
         data_preprocessor = None
-    arch_config: Dict = config['model']
-    arch_config.update({
-        'init_cfg': {
-            'type': 'Pretrained',
-            'checkpoint': checkpoint_path  # noqa
-        },
-        'data_preprocessor': data_preprocessor
-    })
+
+    # deal with checkpoint
+    if checkpoint_path is not None:
+        arch_config.update({
+            'init_cfg': {
+                'type': 'Pretrained',
+                'checkpoint': checkpoint_path  # noqa
+            },
+        })
+
     model_config = dict(
         _scope_='mmrazor',
         type='SearchWrapper',
@@ -49,14 +61,9 @@ def wrap_search_config(config: Config, checkpoint_path: str,
             channel_unit_cfg=dict(
                 type='L1MutableChannelUnit',
                 default_args=dict(choice_mode='ratio')),
-            parse_cfg=dict(
-                type='BackwardTracer',
-                loss_calculator=dict(
-                    type='ImageClassifierPseudoLoss',
-                    input_shape=(2, 3, 224, 224)))))
+            parse_cfg=dict(type='PruneTracer', tracer_type='FxTracer')))
 
     config['model'] = model_config
-    config['data_preprocessor'] = None
 
     val_loader_config = config['val_dataloader']
     val_loader_config['dataset']['type'] = config[
