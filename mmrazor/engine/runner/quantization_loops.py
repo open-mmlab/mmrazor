@@ -21,13 +21,31 @@ _ADAROUND_SUPPORT_TYPE = (torch.nn.Conv2d, torch.nn.Linear)
 
 @LOOPS.register_module()
 class QATEpochBasedLoop(EpochBasedTrainLoop):
+    """`EpochBasedLoop` for `QuantizationAwareTraining`
+
+    Args:
+        runner (Runner): A reference of runner
+        dataloader (Dataloader or dict): An iterator to generate one batch of
+            dataset each iteration.
+        max_epochs (int): Total training epochs.
+        calibrate_dataloader (Dataloader or dict, optional): A dataloader
+            object or a dict to build a dataloader for calibration. Defaults
+            to None.
+        val_begin (int): The epoch that begins validating.
+            Defaults to 1.
+        val_interval (int): Validation interval. Defaults to 1.
+        dynamic_intervals (List[Tuple[int, int]], optional): The
+            first element in the tuple is a milestone and the second
+            element is a interval. The interval is used after the
+            corresponding milestone. Defaults to None.
+    """
 
     def __init__(
             self,
             runner,
             dataloader: Union[DataLoader, Dict],
             max_epochs: int,
-            calibrate_dataloader=None,
+            calibrate_dataloader: Union[DataLoader, Dict] = None,
             val_begin: int = 1,
             val_interval: int = 1,
             dynamic_intervals: Optional[List[Tuple[int, int]]] = None) -> None:
@@ -87,6 +105,22 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
 
 @LOOPS.register_module()
 class PTQLoop(TestLoop):
+    """`TestLoop` for Post Training Quantization.
+
+    Args:
+        runner (Runner): A reference of runner
+        dataloader (Dataloader or dict): An iterator to generate one batch of
+            dataset each iteration.
+        evaluator (Evaluator or dict or list): Used for computing metrics.
+        calibrate_dataloader (Dataloader or dict, optional): A dataloader
+            object or a dict to build a dataloader for calibration. Defaults
+            to None.
+        batch_num (Optional[int], optional): Total calibration batches.
+            Defaults to None.
+        reconstruction_cfg (Optional[Dict], optional): Model reconstruction
+            configuration. Defaults to None.
+        fp16 (bool, optional): Enable FP16 training mode. Defaults to False.
+    """
 
     def __init__(self,
                  runner,
@@ -169,7 +203,7 @@ class PTQLoop(TestLoop):
         w_opt = torch.optim.Adam(w_para)
         loss_func = MODELS.build(config.loss)
 
-        for i in range(config.loss.iters):
+        for _ in range(config.loss.iters):
             w_opt.zero_grad()
 
             data_size = len(input_recorder.data_buffer)
@@ -235,15 +269,6 @@ class PTQLoop(TestLoop):
         self.runner.call_hook('before_test_epoch')
 
         self.model.eval()
-        # dummy_input = torch.randn([1, 3, 224, 224]).cuda()
-        # onnx_path = os.path.join(self.runner.work_dir, 'fp.onnx')
-        # torch.onnx.export(
-        #     self.model.architecture,
-        #     dummy_input,
-        #     onnx_path,
-        #     opset_version=11,
-        #     # operator_export_type=OperatorExportTypes.ONNX_ATEN_FALLBACK
-        # )
         self.model.prepare()
 
         if self.is_calibrate:
@@ -259,13 +284,6 @@ class PTQLoop(TestLoop):
 
         self.model.convert()
 
-        # self.model.eval()
-        # for idx, data_batch in enumerate(self.dataloader):
-        #     self.run_iter(idx, data_batch)
-
-        # # compute metrics
-        # metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
-
         self.model.eval()
         from torch.onnx import OperatorExportTypes
         dummy_input = torch.randn([1, 3, 224, 224])
@@ -277,13 +295,4 @@ class PTQLoop(TestLoop):
             opset_version=11,
             operator_export_type=OperatorExportTypes.ONNX_ATEN_FALLBACK)
 
-        # self.runner.save_checkpoint(
-        #     out_dir=self.runner.work_dir,
-        #     filename='quantizied.pth',
-        #     save_optimizer=False,
-        #     save_param_scheduler=False
-        # )
-
-        # self.runner.call_hook('after_test_epoch', metrics=metrics)
         self.runner.call_hook('after_test')
-        # return metrics
