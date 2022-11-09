@@ -46,13 +46,12 @@ model = dict(
         channel_mutator=dict(
             type='mmrazor.OneShotChannelMutator',
             channel_unit_cfg={
-                'type': 'OneShotMutableChannelUnit_VIT',
-                'default_args': {}
+                'type': 'OneShotMutableChannelUnit',
+                'default_args': {
+                    'unit_predefined': True
+                }
             },
-            parse_cfg={
-                'type': 'Predefined',
-                'extra_mixin': 'mix'
-            }),
+            parse_cfg={'type': 'Predefined'}),
         value_mutator=dict(type='mmrazor.DynamicValueMutator')))
 
 # runtime setting

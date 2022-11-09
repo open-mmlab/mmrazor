@@ -1,11 +1,16 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-
+import sys
 from collections import Counter
 from typing import Dict, List, Type
 
 from torch.nn import Module
 
 from ..mutables import BaseMutable
+
+if sys.version_info < (3, 8):
+    from typing_extensions import Protocol
+else:
+    from typing import Protocol
 
 
 class GroupMixin():
@@ -220,3 +225,49 @@ class GroupMixin():
                         f'When a mutable is set alias attribute :{alias_key},'
                         f'the corresponding module name {mutable_name} should '
                         f'not be used in `custom_group` {custom_group}.')
+
+
+class MutatorProtocol(Protocol):  # pragma: no cover
+
+    @property
+    def mutable_class_type(self) -> Type[BaseMutable]:
+        ...
+
+    @property
+    def search_groups(self) -> Dict:
+        ...
+
+
+class OneShotSampleMixin:
+
+    def sample_choices(self: MutatorProtocol) -> Dict:
+        random_choices = dict()
+        for group_id, modules in self.search_groups.items():
+            random_choices[group_id] = modules[0].sample_choice()
+
+        return random_choices
+
+    def set_choices(self: MutatorProtocol, choices: Dict) -> None:
+        for group_id, modules in self.search_groups.items():
+            choice = choices[group_id]
+            for module in modules:
+                module.current_choice = choice
+
+
+class DynamicSampleMixin(OneShotSampleMixin):
+
+    @property
+    def max_choices(self: MutatorProtocol) -> Dict:
+        max_choices = dict()
+        for group_id, modules in self.search_groups.items():
+            max_choices[group_id] = modules[0].max_choice
+
+        return max_choices
+
+    @property
+    def min_choices(self: MutatorProtocol) -> Dict:
+        min_choices = dict()
+        for group_id, modules in self.search_groups.items():
+            min_choices[group_id] = modules[0].min_choice
+
+        return min_choices

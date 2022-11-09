@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from mmrazor.models.mutables import OneShotMutableValue
 from mmrazor.registry import MODELS
-from ..mixins import DynamicSampleMixin
+from ..group_mixin import DynamicSampleMixin
 from .value_mutator import ValueMutator
 
 

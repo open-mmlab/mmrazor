@@ -6,8 +6,7 @@ from typing import Dict, List, Type, TypeVar
 
 import torch.nn as nn
 
-from mmrazor.models.architectures.dynamic_ops.mixins import (
-    DynamicChannelMixin, DynamicMixin)
+from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables.mutable_channel import (BaseMutableChannel,
                                                      MutableChannelContainer)
@@ -16,11 +15,6 @@ from .channel_unit import Channel, ChannelUnit
 
 
 class MutableChannelUnit(ChannelUnit):
-
-    MixinScope: Dict[str, Type[DynamicMixin]] = {
-        'naive': (DynamicChannelMixin)
-    }
-
     # init methods
     def __init__(self, num_channels: int, **kwargs) -> None:
         """MutableChannelUnit inherits from ChannelUnit, which manages channels
@@ -53,9 +47,7 @@ class MutableChannelUnit(ChannelUnit):
         return unit
 
     @classmethod
-    def init_from_predefined_model(cls,
-                                   model: nn.Module,
-                                   extra_mixin: str = 'naive'):
+    def init_from_predefined_model(cls, model: nn.Module):
         """Initialize units using the model with pre-defined dynamicops and
         mutable-channels."""
 
@@ -110,7 +102,7 @@ class MutableChannelUnit(ChannelUnit):
 
         mutable2units: Dict = {}
         for name, module in model.named_modules():
-            if isinstance(module, cls.MixinScope[extra_mixin]):
+            if isinstance(module, DynamicChannelMixin):
                 in_container: MutableChannelContainer = \
                     module.get_mutable_attr(
                         'in_channels')
@@ -137,7 +129,7 @@ class MutableChannelUnit(ChannelUnit):
                 if channel.is_mutable is False:
                     all_channel_prunable = False
                     break
-                if isinstance(channel.module, self.MixinScope['naive']):
+                if isinstance(channel.module, DynamicChannelMixin):
                     has_dynamic_op = True
             return has_dynamic_op, all_channel_prunable
 
@@ -239,29 +231,19 @@ class MutableChannelUnit(ChannelUnit):
             model: nn.Module, container_class: Type[MutableChannelContainer]):
         """register channel container for dynamic ops."""
         for module in model.modules():
-            if isinstance(module, MutableChannelUnit.MixinScope['naive']):
+            if isinstance(module, DynamicChannelMixin):
                 if module.get_mutable_attr('in_channels') is None:
                     in_channels = 0
-                    if isinstance(module, nn.Conv2d):
-                        in_channels = module.in_channels
-                    elif isinstance(module, nn.modules.batchnorm._BatchNorm):
-                        in_channels = module.num_features
-                    elif isinstance(module, nn.Linear):
-                        in_channels = module.in_features
-                    else:
-                        raise NotImplementedError()
+                    in_channels = getattr(module,
+                                          module.attr_mappings['in_channels'])
+
                     module.register_mutable_attr('in_channels',
                                                  container_class(in_channels))
                 if module.get_mutable_attr('out_channels') is None:
                     out_channels = 0
-                    if isinstance(module, nn.Conv2d):
-                        out_channels = module.out_channels
-                    elif isinstance(module, nn.modules.batchnorm._BatchNorm):
-                        out_channels = module.num_features
-                    elif isinstance(module, nn.Linear):
-                        out_channels = module.out_features
-                    else:
-                        raise NotImplementedError()
+                    out_channels = getattr(
+                        module, module.attr_mappings['out_channels'])
+
                     module.register_mutable_attr('out_channels',
                                                  container_class(out_channels))
 
@@ -269,7 +251,7 @@ class MutableChannelUnit(ChannelUnit):
         # register mutable_channel
         for channel in list(self.input_related) + list(self.output_related):
             module = channel.module
-            if isinstance(module, MutableChannelUnit.MixinScope['naive']):
+            if isinstance(module, DynamicChannelMixin):
                 container: MutableChannelContainer
                 if channel.is_output_channel and module.get_mutable_attr(
                         'out_channels') is not None:

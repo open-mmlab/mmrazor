@@ -6,7 +6,7 @@ from torch.nn import Module
 from mmrazor.models.mutables import MutableValue
 from mmrazor.registry import MODELS
 from ..base_mutator import BaseMutator
-from ..mixins import GroupMixin
+from ..group_mixin import GroupMixin
 
 
 @MODELS.register_module()
@@ -51,7 +51,9 @@ class ValueMutator(BaseMutator[MutableValue], GroupMixin):
             supernet (:obj:`torch.nn.Module`): The supernet to be searched
                 in your algorithm.
         """
-        self._build_search_groups(supernet)
+        self._search_groups = self.build_search_groups(supernet,
+                                                       self.mutable_class_type,
+                                                       self._custom_group)
 
     @property
     def search_groups(self) -> Dict[int, List[MutableValue]]:
@@ -69,7 +71,3 @@ class ValueMutator(BaseMutator[MutableValue], GroupMixin):
             raise RuntimeError(
                 'Call `prepare_from_supernet` before access search group!')
         return self._search_groups
-
-    def _build_search_groups(self, supernet: Module) -> None:
-        self._search_groups = self.group_by_name_and_alias(
-            supernet, self._custom_group)

@@ -143,13 +143,12 @@ class TestChannelMutator(unittest.TestCase):
                 model = Model()
                 mutator = ChannelMutator(
                     channel_unit_cfg={
-                        'type': 'OneShotMutableChannelUnit_VIT',
-                        'default_args': {}
+                        'type': 'OneShotMutableChannelUnit',
+                        'default_args': {
+                            'unit_predefined': True
+                        }
                     },
-                    parse_cfg={
-                        'type': 'Predefined',
-                        'extra_mixin': 'mix'
-                    })
+                    parse_cfg={'type': 'Predefined'})
                 mutator.prepare_from_supernet(model)
                 choices = mutator.sample_choices()
                 mutator.set_choices(choices)

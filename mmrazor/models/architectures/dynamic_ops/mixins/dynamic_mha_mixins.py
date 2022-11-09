@@ -15,7 +15,8 @@ from torch import Tensor
 from mmrazor.models.architectures.ops import (MultiheadAttention,
                                               RelativePosition2D)
 from mmrazor.models.mutables.base_mutable import BaseMutable
-from .dynamic_mixins import DynamicMixin
+# from .dynamic_mixins import DynamicMixin
+from .dynamic_mixins import DynamicChannelMixin
 
 
 class DynamicMHAProtocol(Protocol):
@@ -34,7 +35,7 @@ class DynamicMHAProtocol(Protocol):
     mutable_attrs: Dict
 
 
-class DynamicMHAMixin(DynamicMixin, DynamicMHAProtocol):
+class DynamicMHAMixin(DynamicChannelMixin, DynamicMHAProtocol):
     """Mixins for Dynamic Multi head attention.
 
     Note:

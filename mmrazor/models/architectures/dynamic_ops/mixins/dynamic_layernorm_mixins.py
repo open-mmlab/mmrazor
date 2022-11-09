@@ -22,6 +22,10 @@ class DynamicLayerNormMixin(DynamicChannelMixin):
     }
 
     @property
+    def num_features(self):
+        return getattr(self, 'normalized_shape')[0]
+
+    @property
     def mutable_num_features(self):
         """Mutable number of features."""
         assert hasattr(self, 'mutable_attrs')

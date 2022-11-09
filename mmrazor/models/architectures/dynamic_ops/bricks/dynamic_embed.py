@@ -33,14 +33,6 @@ class DynamicPatchEmbed(PatchEmbed, DynamicPatchEmbedMixin):
         self.mutable_attrs: Dict[str, BaseMutable] = nn.ModuleDict()
 
     @property
-    def in_channels(self):
-        return getattr(self, self.attr_mappings['in_channels'])
-
-    @property
-    def out_channels(self):
-        return getattr(self, self.attr_mappings['out_channels'])
-
-    @property
     def static_op_factory(self):
         """Corresponding Pytorch OP."""
         return PatchEmbed

@@ -8,7 +8,7 @@ from mmcls.models import ClsHead
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
 from mmrazor.models.mutables.mutable_channel.units import \
-    OneShotMutableChannelUnit_VIT
+    OneShotMutableChannelUnit
 from mmrazor.registry import MODELS
 from ..bricks.dynamic_linear import DynamicLinear
 
@@ -73,7 +73,7 @@ class DynamicLinearClsHead(ClsHead, DynamicHead):
                               backbone_output_mutable: BaseMutable) -> None:
         """Connect dynamic backbone."""
 
-        OneShotMutableChannelUnit_VIT._register_channel_container(
+        OneShotMutableChannelUnit._register_channel_container(
             self, MutableChannelContainer)
 
         MutableChannelContainer.register_mutable_channel_to_module(

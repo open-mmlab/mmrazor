@@ -8,7 +8,7 @@ from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
 from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables import BaseMutable
-from mmrazor.models.mutables import OneShotMutableChannelUnit_VIT, SquentialMutableChannel, OneShotMutableChannel
+from mmrazor.models.mutables import OneShotMutableChannelUnit, SquentialMutableChannel, OneShotMutableChannel
 from mmrazor.registry import MODELS
 from mmengine.model import BaseModel
 # this file includes models for tesing.
@@ -640,8 +640,8 @@ class DynamicAttention(nn.Module):
             layers.append(layer)
         self.blocks = DynamicSequential(*layers)
 
-        # OneShotMutableChannelUnit_VIT
-        OneShotMutableChannelUnit_VIT._register_channel_container(
+        # OneShotMutableChannelUnit
+        OneShotMutableChannelUnit._register_channel_container(
             self, MutableChannelContainer)
 
         self.register_mutables()

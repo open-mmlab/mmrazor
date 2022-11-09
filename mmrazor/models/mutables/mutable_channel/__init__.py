@@ -5,13 +5,13 @@ from .oneshot_mutalbe_channel import OneShotMutableChannel
 from .sequential_mutable_channel import SquentialMutableChannel
 from .simple_mutable_channel import SimpleMutableChannel
 from .units import (ChannelUnitType, L1MutableChannelUnit, MutableChannelUnit,
-                    OneShotMutableChannelUnit, OneShotMutableChannelUnit_VIT,
-                    SequentialMutableChannelUnit, SlimmableChannelUnit)
+                    OneShotMutableChannelUnit, SequentialMutableChannelUnit,
+                    SlimmableChannelUnit)
 
 __all__ = [
     'SimpleMutableChannel', 'L1MutableChannelUnit',
     'SequentialMutableChannelUnit', 'MutableChannelUnit',
     'OneShotMutableChannelUnit', 'SlimmableChannelUnit', 'BaseMutableChannel',
     'MutableChannelContainer', 'SquentialMutableChannel', 'ChannelUnitType',
-    'OneShotMutableChannel', 'OneShotMutableChannelUnit_VIT'
+    'OneShotMutableChannel'
 ]

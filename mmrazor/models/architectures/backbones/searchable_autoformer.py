@@ -13,8 +13,7 @@ from mmrazor.models.mutables import (BaseMutable, BaseMutableChannel,
                                      MutableChannelContainer,
                                      OneShotMutableChannel,
                                      OneShotMutableValue)
-from mmrazor.models.mutables.mutable_channel import \
-    OneShotMutableChannelUnit_VIT
+from mmrazor.models.mutables.mutable_channel import OneShotMutableChannelUnit
 from mmrazor.registry import MODELS
 
 try:
@@ -320,7 +319,7 @@ class AutoformerBackbone(BaseBackbone):
 
     def register_mutables(self):
         """Mutate the autoformer."""
-        OneShotMutableChannelUnit_VIT._register_channel_container(
+        OneShotMutableChannelUnit._register_channel_container(
             self, MutableChannelContainer)
 
         # handle the mutation of depth
