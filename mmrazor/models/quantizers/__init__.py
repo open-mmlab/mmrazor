@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .base import CustomQuantizer
-from .qat_quantizer import QATQuantizer
+from .trt_quantizer import TensorRTQuantizer
 
-__all__ = ['CustomQuantizer', 'QATQuantizer']
+__all__ = ['CustomQuantizer', 'TensorRTQuantizer']

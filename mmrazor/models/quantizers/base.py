@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Dict, List
+
 import torch
 from mmengine.model import BaseModule
 from torch.ao.quantization import QConfig
@@ -17,16 +19,33 @@ from mmrazor.structures.quantization import (CheckArgs, DefalutQconfigs,
 
 @MODELS.register_module()
 class CustomQuantizer(BaseModule):
+    """Configurable quantizer, base class of quantizers.
+
+    Args:
+        qconfig (Dict, optional): QConfig. Defaults to DefalutQconfigs['default'].  # noqa: E501
+        is_qat (bool, optional): Is QAT ro not. Defaults to True.
+        skipped_methods (List, optional): Skipped methods list for tracer.
+            Defaults to None.
+        prepare_custom_config_dict (Dict, optional): `PrepareCustomConfig`
+            from `torch.quantization.fx`. Defaults to None.
+        convert_custom_config_dict (Dict, optional): `ConvertCustomConfig`
+            from `torch.quantization.fx`. Defaults to None.
+        equalization_qconfig_dict (Dict, optional): Custom `QConfig` effects
+            on all modules. Defaults to None.
+        _remove_qconfig (Dict, optional): Remove qconfig at the end of
+            `_convert_fx`. Defaults to True.
+        init_cfg (dict, optional): Initialization config dict.
+    """
 
     def __init__(self,
-                 qconfig=DefalutQconfigs['default'],
-                 is_qat=True,
-                 skipped_methods=None,
-                 prepare_custom_config_dict=None,
-                 convert_custom_config_dict=None,
-                 equalization_qconfig_dict=None,
-                 _remove_qconfig=True,
-                 init_cfg=None):
+                 qconfig: Dict = DefalutQconfigs['default'],
+                 is_qat: bool = True,
+                 skipped_methods: List = None,
+                 prepare_custom_config_dict: Dict = None,
+                 convert_custom_config_dict: Dict = None,
+                 equalization_qconfig_dict: Dict = None,
+                 _remove_qconfig: bool = True,
+                 init_cfg: Dict = None):
         super().__init__(init_cfg)
         if self.check_qconfig(qconfig):
             qconfig = self.qconfig_convert(qconfig)

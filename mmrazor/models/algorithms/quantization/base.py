@@ -16,6 +16,19 @@ ForwardResults = Union[LossResults, TensorResults, PredictResults]
 
 @MODELS.register_module()
 class GeneralQuant(BaseAlgorithm):
+    """General quantization.
+
+    Args:
+        Args:
+        architecture (dict | :obj:`BaseModel`): The config of
+            :class:`BaseModel` or built model.
+        quantizer (dict | :obj:`BaseModel`): The config of
+            :class:`BaseQuantizer` or built model.
+        data_preprocessor (dict | torch.nn.Module | None): The pre-process
+            config of :class:`BaseDataPreprocessor`. Defaults to None.
+        init_cfg (dict): The weight initialized config for
+            :class:`BaseModule`.
+    """
 
     def __init__(self,
                  architecture,
