@@ -1,7 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import abstractmethod
+from functools import partial
 from itertools import repeat
-from typing import Callable, Iterable, Optional, Tuple
+from typing import Any, Callable, Iterable, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
@@ -10,6 +11,8 @@ from torch.nn.modules.conv import _ConvNd
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from .dynamic_mixins import DynamicChannelMixin
+
+PartialType = Callable[[Any, Optional[nn.Parameter]], Any]
 
 
 def _ntuple(n: int) -> Callable:  # pragma: no cover
@@ -397,8 +400,34 @@ class OFAConvMixin(BigNasConvMixin):
 
 
 class FuseConvMixin(DynamicConvMixin):
-    """A mixin class for Pytorch conv, which can mutate ``in_channels``,
+    """A mixin class for fuse conv, which can mutate ``in_channels``,
     ``out_channels`` ."""
+
+    def set_forward_args(self, choice: Tensor) -> None:
+        """Interface for modifying the arch_param using partial."""
+        forward_with_default_args: PartialType = \
+            partial(self.forward_mixin_choice, choice=choice)
+        static_with_default_args: PartialType = \
+            partial(self.to_static_op_choice, choice=choice)
+        param_channel_with_default_args: PartialType = \
+            partial(
+                self._get_dynamic_params_by_mutable_channels_choice,
+                choice=choice)
+        setattr(self, 'forward_mixin', forward_with_default_args)
+        setattr(self, 'to_static_op', static_with_default_args)
+        setattr(self, '_get_dynamic_params_by_mutable_channels',
+                param_channel_with_default_args)
+
+    def forward_mixin_choice(self: _ConvNd, x: Tensor,
+                             choice: Tensor) -> Tensor:
+        """Forward of fuse conv2d OP."""
+        groups = self.groups
+        if self.groups == self.in_channels == self.out_channels:
+            groups = x.size(1)
+        weight, bias, padding = self.get_dynamic_params()
+
+        return self.conv_func(x, weight, bias, self.stride, padding,
+                              self.dilation, groups)
 
     def get_dynamic_params(
             self: _ConvNd) -> Tuple[Tensor, Optional[Tensor], Tuple[int]]:
@@ -414,9 +443,9 @@ class FuseConvMixin(DynamicConvMixin):
             self.weight, self.bias)
         return weight, bias, self.padding
 
-    def _get_dynamic_params_by_mutable_channels(
-            self: _ConvNd, weight: Tensor,
-            bias: Optional[Tensor]) -> Tuple[Tensor, Optional[Tensor]]:
+    def _get_dynamic_params_by_mutable_channels_choice(
+            self: _ConvNd, weight: Tensor, bias: Optional[Tensor],
+            choice: Tensor) -> Tuple[Tensor, Optional[Tensor]]:
         """Get sliced weight and bias according to ``mutable_in_channels`` and
         ``mutable_out_channels``.
 
@@ -445,24 +474,16 @@ class FuseConvMixin(DynamicConvMixin):
                 mutable_out_channels == self.out_channels:
             return weight, bias
 
-        if not hasattr(self, 'layeri_softmaxp'):
-            self.layeri_softmaxp = torch.ones(
-                mutable_out_channels, self.out_channels,
-                requires_grad=False).to(self.weight.device)
-        if self.layeri_softmaxp.shape[0] != mutable_out_channels:
-            self.layeri_softmaxp = torch.ones(
-                mutable_out_channels, self.out_channels,
-                requires_grad=False).to(self.weight.device)
         weight = self.weight[:, 0:mutable_in_channels, :, :]
         if self.groups == 1:
             cout, cin, k, _ = weight.shape
-            fused_weight = torch.mm(self.layeri_softmaxp,
+            fused_weight = torch.mm(choice,
                                     weight.reshape(cout,
                                                    -1)).reshape(-1, cin, k, k)
         elif self.groups == self.in_channels == self.out_channels:
             # depth-wise conv
             cout, cin, k, _ = weight.shape
-            fused_weight = torch.mm(self.layeri_softmaxp,
+            fused_weight = torch.mm(choice,
                                     weight.reshape(cout,
                                                    -1)).reshape(-1, cin, k, k)
         else:
@@ -471,22 +492,56 @@ class FuseConvMixin(DynamicConvMixin):
                 '`nn.Conv2d` or `nn.Conv2d` module whose group number equals '
                 f'to one, but got {self.groups}.')
         if (self.bias is not None):
-            fused_bias = torch.mm(self.layeri_softmaxp,
-                                  self.bias.unsqueeze(1)).squeeze(1)
+            fused_bias = torch.mm(choice, self.bias.unsqueeze(1)).squeeze(1)
         else:
             fused_bias = self.bias
         return fused_weight, fused_bias
 
-    def get_pooled_channel(self: _ConvNd, tau: float) -> None:
-        """Calculate channel's kl and apply softmax pooling on channel. Reset
-        `self.layeri_softmaxp` as pooling result.
+    def to_static_op_choice(self: _ConvNd, choice: Tensor) -> nn.Conv2d:
+        """Convert dynamic conv2d to :obj:`torch.nn.Conv2d`.
+
+        Returns:
+            torch.nn.Conv2d: :obj:`torch.nn.Conv2d` with sliced parameters.
+        """
+        self.check_if_mutables_fixed()
+
+        weight, bias, padding = self.get_dynamic_params()
+        groups = self.groups
+        if groups == self.in_channels == self.out_channels and \
+                self.mutable_in_channels is not None:
+            mutable_in_channels = self.mutable_attrs['in_channels']
+            groups = mutable_in_channels.current_mask.sum().item()
+        out_channels = weight.size(0)
+        in_channels = weight.size(1) * groups
+
+        kernel_size = tuple(weight.shape[2:])
+
+        static_conv = self.static_op_factory(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=self.stride,
+            padding=padding,
+            padding_mode=self.padding_mode,
+            dilation=self.dilation,
+            groups=groups,
+            bias=True if bias is not None else False)
+
+        static_conv.weight = nn.Parameter(weight)
+        if bias is not None:
+            static_conv.bias = nn.Parameter(bias)
+
+        return static_conv
+
+    def get_pooled_channel(self: _ConvNd, tau: float) -> Tensor:
+        """Calculate channel's kl and apply softmax pooling on channel. Return
+        `layeri_softmaxp` as pooling result.
 
         Args:
             tau (float): Temperature by epoch/iter.
 
         Returns:
-            Tuple[Tensor, Optional[Tensor], Tuple[int]]: Sliced weight, bias
-                and padding.
+            Tensor: softmax pooled channel.
         """
         param = self.weight
 
@@ -515,9 +570,5 @@ class FuseConvMixin(DynamicConvMixin):
         layeri_iscore_kl = torch.sum(layeri_kl, dim=1)
         _, topm_ids_order = torch.topk(
             layeri_iscore_kl, int(real_out), sorted=False)
-        softmaxp = layeri_softmaxp[topm_ids_order, :]
-        if (not hasattr(self, 'layeri_softmaxp')):
-            setattr(self, 'layeri_softmaxp', softmaxp)
-        else:
-            self.layeri_softmaxp.data = softmaxp
         del param, layeri_param, layeri_negaEudist, layeri_kl
+        return layeri_softmaxp[topm_ids_order, :]

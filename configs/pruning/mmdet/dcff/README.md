@@ -68,3 +68,15 @@ sh tools/slurm_train.sh $PARTITION $JOB_NAME \
   configs/pruning/mmdet/dcff/dcff_faster_rcnn_resnet50_8xb4_coco.py \
   $WORK_DIR
 ```
+
+### Test DCFF
+
+#### Detection
+
+##### COCO
+
+```bash
+sh tools/slurm_test.sh $PARTITION $JOB_NAME \
+  configs/pruning/mmdet/dcff/dcff_compact_faster_rcnn_resnet50_8xb4_coco.py \
+  $WORK_DIR
+```

@@ -68,3 +68,15 @@ sh tools/slurm_train.sh $PARTITION $JOB_NAME \
   configs/pruning/mmpose/dcff/dcff_topdown_heatmap_resnet50.py \
   $WORK_DIR
 ```
+
+### Test DCFF
+
+#### Pose
+
+##### COCO
+
+```bash
+sh tools/slurm_test.sh $PARTITION $JOB_NAME \
+  configs/pruning/mmpose/dcff/dcff_compact_topdown_heatmap_resnet50.py \
+  $WORK_DIR
+```

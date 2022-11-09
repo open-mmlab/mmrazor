@@ -4,6 +4,7 @@ from unittest import TestCase
 
 import torch
 
+from mmrazor.models.architectures.dynamic_ops import FuseConv2d
 from mmrazor.models.mutables import DCFFChannelUnit
 from mmrazor.structures.graph import ModuleGraph as ModuleGraph
 from .....data.models import LineModel
@@ -47,6 +48,11 @@ class TestDCFFChannelUnit(TestCase):
         for unit in mutable_units:
             choice = unit.sample_choice()
             unit.current_choice = choice
+            for channel in unit.output_related:
+                if isinstance(channel.module, FuseConv2d):
+                    layeri_softmaxp = channel.module.get_pooled_channel(1.0)
+                    # update fuseconv op's selected layeri_softmax
+                    channel.module.set_forward_args(choice=layeri_softmaxp)
         x = torch.rand([2, 3, 224, 224]).to(DEVICE)
         y = model(x)
         self.assertSequenceEqual(y.shape, [2, 1000])

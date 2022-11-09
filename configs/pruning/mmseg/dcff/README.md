@@ -68,3 +68,15 @@ sh tools/slurm_train.sh $PARTITION $JOB_NAME \
   configs/pruning/mmseg/dcff/dcff_pointrend_resnet50_8xb2_cityscapes.py \
   $WORK_DIR
 ```
+
+### Test DCFF
+
+#### Segmentation
+
+##### Citpscapes
+
+```bash
+sh tools/slurm_test.sh $PARTITION $JOB_NAME \
+  configs/pruning/mmseg/dcff/dcff_compact_pointrend_resnet50_8xb2_cityscapes.py \
+  $WORK_DIR
+```

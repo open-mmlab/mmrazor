@@ -68,3 +68,15 @@ sh tools/slurm_train.sh $PARTITION $JOB_NAME \
   configs/pruning/mmcls/dcff/dcff_resnet50_8xb32_in1k.py \
   $WORK_DIR
 ```
+
+### Test DCFF
+
+#### Classification
+
+##### ImageNet
+
+```bash
+sh tools/slurm_test.sh $PARTITION $JOB_NAME \
+  configs/pruning/mmcls/dcff/dcff_compact_resnet50_8xb32_in1k.py \
+  $WORK_DIR
+```

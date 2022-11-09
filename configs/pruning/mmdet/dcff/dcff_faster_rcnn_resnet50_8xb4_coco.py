@@ -84,7 +84,7 @@ model = dict(
         loss_calculator=dict(type='TwoStageDetectorPseudoLoss')),
     target_pruning_ratio=target_pruning_ratio,
     step_freq=1,
-    prune_times=1,
+    prune_times=120,
     by_epoch=True,
     is_deployed=False)
 

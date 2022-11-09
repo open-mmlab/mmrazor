@@ -48,8 +48,7 @@ class DCFFChannelMutator(ChannelMutator[DCFFChannelUnit]):
                             },...
                         },...
                     }
-                Every unit must have the same number of candidate_choices, and
-                the candidate in the list of candidate_choices with the same
+                The candidate in the list of candidate_choices with the same
                 position compose a subnet.
 
         Returns:
@@ -84,4 +83,6 @@ class DCFFChannelMutator(ChannelMutator[DCFFChannelUnit]):
         for layerid, unit in enumerate(self.units):
             for channel in unit.output_related:
                 if isinstance(channel.module, FuseConv2d):
-                    channel.module.get_pooled_channel(tau)
+                    layeri_softmaxp = channel.module.get_pooled_channel(tau)
+                    # update fuseconv op's selected layeri_softmax
+                    channel.module.set_forward_args(choice=layeri_softmaxp)

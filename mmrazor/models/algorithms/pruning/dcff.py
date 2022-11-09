@@ -94,7 +94,6 @@ class DCFF(ItePruneAlgorithm):
                 data_samples: Optional[List[BaseDataElement]] = None,
                 mode: str = 'tensor') -> ForwardResults:
         """Forward."""
-
         if self.prune_config_manager.is_prune_time(self._num,
                                                    self._current_iteration):
             # calc fusion channel

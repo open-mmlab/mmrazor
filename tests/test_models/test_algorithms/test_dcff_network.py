@@ -146,7 +146,7 @@ class TestDCFFAlgorithm(unittest.TestCase):
 
     def test_load_pretrained(self):
         epoch_step = 2
-        times = 3
+        times = 100
         data = self.fake_cifar_data()
 
         # prepare checkpoint
@@ -168,6 +168,7 @@ class TestDCFFAlgorithm(unittest.TestCase):
             prune_times=times,
             by_epoch=True).to(DEVICE)
         algorithm.init_weights()
+        self._set_epoch_ite(20, 2000, 100)
         algorithm.forward(data['inputs'], data['data_samples'], mode='loss')
 
         # delete checkpoint
