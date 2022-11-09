@@ -43,7 +43,7 @@ class MutableChannelProtocol(MutableProtocol):  # pragma: no cover
 
 
 def _expand_choice_fn(mutable: MutableProtocol,
-                      expand_ratio: Union[int, float, Any]) -> Callable:
+                      expand_ratio: Union[int, float]) -> Callable:
     """Helper function to build `choice_fn` for expand derived mutable."""
 
     def fn():
@@ -67,6 +67,9 @@ def _expand_mask_fn(
         elif isinstance(expand_ratio, float):
             expand_num_channels = int(mask.size(0) * expand_ratio)
             expand_choice = int(mutable.current_choice * expand_ratio)
+        else:
+            raise NotImplementedError(
+                f'Not support type of expand_ratio: {type(expand_ratio)}')
         expand_mask = torch.zeros(expand_num_channels).bool()
         expand_mask[:expand_choice] = True
 
@@ -172,14 +175,16 @@ class DerivedMethodMixin:
                               ratio: Union[int, float, BaseMutable],
                               divisor: int = 8) -> 'DerivedMutable':
         """Derive divide mutable, usually used with `make_divisable`."""
-        # from .mutable_channel import MutableChannel
         from .mutable_channel import BaseMutableChannel
-        from .mutable_value import MutableValue
 
         # avoid circular import
         if isinstance(ratio, int):
             choice_fn = _divide_choice_fn(self, ratio=ratio, divisor=divisor)
-        elif isinstance(ratio, MutableValue):
+            current_ratio = ratio
+        elif isinstance(ratio, float):
+            current_ratio = int(ratio)
+            choice_fn = _divide_choice_fn(self, ratio=current_ratio, divisor=1)
+        elif isinstance(ratio, BaseMutable):
             current_ratio = int(ratio.current_choice)
             choice_fn = _divide_choice_fn(self, ratio=current_ratio, divisor=1)
         else:
@@ -189,9 +194,11 @@ class DerivedMethodMixin:
         mask_fn: Optional[Callable] = None
         if isinstance(self, BaseMutableChannel) and hasattr(
                 self, 'current_mask'):
-            mask_fn = _divide_mask_fn(self, ratio=ratio, divisor=divisor)
+            mask_fn = _divide_mask_fn(
+                self, ratio=current_ratio, divisor=divisor)
         elif getattr(self, 'mask_fn', None):  # OneShotMutableChannel
-            mask_fn = _divide_mask_fn(self, ratio=ratio, divisor=divisor)
+            mask_fn = _divide_mask_fn(
+                self, ratio=current_ratio, divisor=divisor)
 
         return DerivedMutable(choice_fn=choice_fn, mask_fn=mask_fn)
 
