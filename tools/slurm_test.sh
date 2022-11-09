@@ -3,13 +3,13 @@
 set -x
 
 PARTITION="mm_model"
-JOB_NAME="adaround"
-WORK_DIR="../experiments/adaround"
+JOB_NAME="adaround_resnet"
+WORK_DIR="../experiments/adaround_resnet"
 CONFIG="configs/quantization/ptq/adaround.py"
 CHECKPOINT="/mnt/petrelfs/humu/share/resnet18_8xb32_in1k_20210831-fbbb1da6.pth"
-GPUS=${GPUS:-2}
-GPUS_PER_NODE=${GPUS_PER_NODE:-2}
-CPUS_PER_TASK=${CPUS_PER_TASK:-5}
+GPUS=${GPUS:-1}
+GPUS_PER_NODE=${GPUS_PER_NODE:-1}
+CPUS_PER_TASK=${CPUS_PER_TASK:-2}
 PY_ARGS=${@:5}
 SRUN_ARGS=${SRUN_ARGS:-""}
 

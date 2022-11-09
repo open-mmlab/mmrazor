@@ -1,4 +1,5 @@
 _base_ = ['mmcls::resnet/resnet18_8xb32_in1k.py']
+# _base_ = ['mmcls::vgg/vgg16_8xb32_in1k.py']
 
 test_cfg = dict(
     _delete_=True,

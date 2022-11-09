@@ -86,7 +86,7 @@ class MSEObserver(BaseObserver):
             return x_orig
         x = x_orig.clone().detach().to(self.min_val.dtype)
         if self.ch_axis == -1:
-            min_val_cur, max_val_cur = torch._aminmax(x)
+            min_val_cur, max_val_cur = torch.aminmax(x)
             min_val_cur, max_val_cur = self.mse(
                 x, min_val_cur, max_val_cur, iter=95)
         else:
@@ -96,7 +96,7 @@ class MSEObserver(BaseObserver):
             new_axis_list[0] = self.ch_axis
             x_channel = x.permute(new_axis_list)
             y = torch.flatten(x_channel, start_dim=1)
-            min_val_cur, max_val_cur = torch._aminmax(y, 1)
+            min_val_cur, max_val_cur = torch.aminmax(y, 1)
             min_val_cur, max_val_cur = self.mse_perchannel(
                 x, min_val_cur, max_val_cur, iter=80, ch_axis=self.ch_axis)
 
@@ -130,7 +130,7 @@ class EMAMSEObserver(MSEObserver):
             return x_orig
         x = x_orig.clone().detach().to(self.min_val.dtype)
         if self.ch_axis == -1:
-            min_val_cur, max_val_cur = torch._aminmax(x)
+            min_val_cur, max_val_cur = torch.aminmax(x)
             min_val_cur, max_val_cur = self.mse(
                 x, min_val_cur, max_val_cur, iter=95)
         else:
@@ -140,7 +140,7 @@ class EMAMSEObserver(MSEObserver):
             new_axis_list[0] = self.ch_axis
             x_channel = x.permute(new_axis_list)
             y = torch.flatten(x_channel, start_dim=1)
-            min_val_cur, max_val_cur = torch._aminmax(y, 1)
+            min_val_cur, max_val_cur = torch.aminmax(y, 1)
             min_val_cur, max_val_cur = self.mse_perchannel(
                 x, min_val_cur, max_val_cur, iter=80, ch_axis=self.ch_axis)
 

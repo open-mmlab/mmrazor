@@ -13,6 +13,8 @@ TensorResults = Union[Tuple[torch.Tensor], torch.Tensor]
 PredictResults = List[BaseDataElement]
 ForwardResults = Union[LossResults, TensorResults, PredictResults]
 
+GRAPH_MODES = ['tensor', 'loss', 'predict']
+
 
 @MODELS.register_module()
 class GeneralQuant(BaseAlgorithm):
@@ -21,7 +23,8 @@ class GeneralQuant(BaseAlgorithm):
                  architecture,
                  quantizer,
                  data_preprocessor=None,
-                 init_cfg=None):
+                 init_cfg=None,
+                 modes=GRAPH_MODES):
         if data_preprocessor is None:
             data_preprocessor = {}
         # The build process is in MMEngine, so we need to add scope here.
@@ -31,12 +34,14 @@ class GeneralQuant(BaseAlgorithm):
         self.quantizer = MODELS.build(quantizer)
         self.observers_enabled = True
         self.fake_quants_enabled = True
-        self.gen_graphs(self.architecture)
+        self.gen_graphs(self.architecture, GRAPH_MODES)
 
-    def gen_graphs(self, model):
+    def gen_graphs(self, model, modes=['tensor', 'loss', 'predict']):
+        for mode in modes:
+            assert mode in ['tensor', 'loss', 'predict']
         self.quantizer._swap_ff_with_fxff(model)
         tracer = self.quantizer.tracer
-        for mode in ['tensor', 'loss', 'predict']:
+        for mode in modes:
             concrete_args = {'mode': mode}
             if mode == 'tensor':
                 self.graph_tensor = GraphModule(
@@ -54,11 +59,11 @@ class GeneralQuant(BaseAlgorithm):
                 mode: str = 'tensor') -> ForwardResults:
 
         if mode == 'loss':
-            return self.graph_loss(inputs, data_samples)
+            return self.graph_loss(inputs, data_samples, mode)
         elif mode == 'tensor':
-            return self.graph_tensor(inputs, data_samples)
+            return self.graph_tensor(inputs, data_samples, mode)
         elif mode == 'predict':
-            return self.graph_predict(inputs, data_samples)
+            return self.graph_predict(inputs, data_samples, mode)
         else:
             raise RuntimeError(f'Invalid mode "{mode}". '
                                'Only supports loss, predict and tensor mode')
@@ -70,15 +75,21 @@ class GeneralQuant(BaseAlgorithm):
     def prepare(self, mode='tensor'):
         assert mode in ['tensor', 'loss', 'predict']
         if mode == 'tensor':
-            graph = self.graph_tensor
+            self.graph_tensor = self.quantizer.prepare(self, self.graph_tensor)
         elif mode == 'loss':
-            graph = self.graph_loss
+            self.graph_loss = self.quantizer.prepare(self, self.graph_loss)
         else:
-            graph = self.graph_predict
-        self.architecture = self.quantizer.prepare(self.architecture, graph)
+            self.graph_predict = self.quantizer.prepare(
+                self, self.graph_predict)
 
-    def convert(self):
-        self.architecture = self.quantizer.convert(self.architecture)
+    def convert(self, mode='tensor'):
+        assert mode in ['tensor', 'loss', 'predict']
+        if mode == 'tensor':
+            self.graph_tensor = self.quantizer.convert(self.graph_tensor)
+        elif mode == 'loss':
+            self.graph_loss = self.quantizer.convert(self.graph_loss)
+        else:
+            self.graph_predict = self.quantizer.convert(self.graph_predict)
 
     @property
     def state(self):

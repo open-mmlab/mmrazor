@@ -236,8 +236,9 @@ class PTQLoop(TestLoop):
         self.runner.call_hook('before_test_epoch')
 
         self.model.eval()
+
         # dummy_input = torch.randn([1, 3, 224, 224]).cuda()
-        # onnx_path = os.path.join(self.runner.work_dir, 'fp.onnx')
+        # onnx_path = os.path.join(self.runner.work_dir, 'fp_mmcls.onnx')
         # torch.onnx.export(
         #     self.model.architecture,
         #     dummy_input,
@@ -245,6 +246,7 @@ class PTQLoop(TestLoop):
         #     opset_version=11,
         #     # operator_export_type=OperatorExportTypes.ONNX_ATEN_FALLBACK
         # )
+
         self.model.prepare()
 
         if self.is_calibrate:
@@ -260,6 +262,9 @@ class PTQLoop(TestLoop):
 
         self.model.convert()
 
+        # import pdb
+        # pdb.set_trace()
+
         # self.model.eval()
         # for idx, data_batch in enumerate(self.dataloader):
         #     self.run_iter(idx, data_batch)
@@ -267,17 +272,20 @@ class PTQLoop(TestLoop):
         # # compute metrics
         # metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
 
-        self.model.eval()
-        from torch.onnx import OperatorExportTypes
+        # import pdb
+        # pdb.set_trace()
+        # self.model.eval()
+        # from torch.onnx import OperatorExportTypes
         dummy_input = torch.randn([1, 3, 224, 224])
-        onnx_path = os.path.join(self.runner.work_dir, 'quantizied.onnx')
+        onnx_path = os.path.join(self.runner.work_dir, 'quantizied_vgg.onnx')
         torch.onnx.export(
-            self.model.architecture,
+            self.model.graph_tensor,
             dummy_input,
             onnx_path,
-            opset_version=11,
-            operator_export_type=OperatorExportTypes.ONNX_ATEN_FALLBACK)
-
+            opset_version=13,
+            # operator_export_type=OperatorExportTypes.ONNX_ATEN_FALLBACK
+        )
+        self.runner.logger.info('export onnx finished')
         # self.runner.save_checkpoint(
         #     out_dir=self.runner.work_dir,
         #     filename='quantizied.pth',
