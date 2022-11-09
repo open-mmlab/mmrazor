@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import functools
 from types import FunctionType, MethodType
-from typing import Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import torch
 from mmengine.utils import import_modules_from_strings
@@ -18,10 +18,16 @@ _orig_module_getattr: Callable = torch.nn.Module.__getattr__
 
 
 class UntracedMethodRegistry:
+    """A `Descriptor` class which records untraced methods."""
     method_dict: Dict = dict()
     tracer = None
 
     def __init__(self, method):
+        """_summary_
+
+        Args:
+            method (FunctionType): Function to be registered.
+        """
         self.method = method
         self.instances: Dict = dict()
         self.owner = None
@@ -51,7 +57,20 @@ class UntracedMethodRegistry:
         return wrapped_method
 
 
-def custom_symbolic_tracer(root, concrete_args=None):
+def custom_symbolic_trace(
+        root: Union[torch.nn.Module, Callable[..., Any]],
+        concrete_args: Optional[Dict[str, Any]] = None) -> GraphModule:
+    """Modified `symbolic_trace` function.
+
+    Args:
+        root (Union[torch.nn.Module, Callable]): Module or function to be
+            traced and converted into a Graph representation.
+        concrete_args (Optional[Dict[str, any]]): Inputs to be partially
+            specialized.
+
+    Returns:
+        _type_: _description_
+    """
     tracer = CustomTracer()
     graph = tracer.trace(root, concrete_args)
     name = root.__class__.__name__ if isinstance(
@@ -62,14 +81,24 @@ def custom_symbolic_tracer(root, concrete_args=None):
 class CustomTracer(QuantizationTracer):
 
     def __init__(self,
-                 skipped_methods=None,
-                 skipped_module_names=None,
-                 skipped_module_classes=None,
+                 skipped_methods: List[str] = [],
+                 skipped_module_names: List[str] = [],
+                 skipped_module_classes: List[Callable] = [],
                  *args,
                  **kwargs):
+        """_summary_
+
+        Args:
+            skipped_methods (List[str], optional): Methods to be skipped while
+                tracing. Defaults to None.
+            skipped_module_names (List[str], optional): Modules to be skipped
+                while tracing. Defaults to None.
+            skipped_module_classes (List[str], optional): Class to be skipped
+                while tracing. Defaults to None.
+        """
         super(CustomTracer, self).__init__(skipped_module_names,
                                            skipped_module_classes)
-        UntracedMethodRegistry.tracer = self
+        UntracedMethodRegistry.tracer = self  # type: ignore
         self.skipped_methods = skipped_methods
         if self.skipped_methods:
             self.register_skipped_methods()
@@ -148,13 +177,6 @@ class CustomTracer(QuantizationTracer):
         return self.create_proxy('call_method', name, args, kwargs)
 
     def trace(self, root, concrete_args=None):
-        # if isinstance(root, (BaseClassifier, BaseDetector)):
-        #     self.root = root
-        #     fn = type(root).forward_trace
-        #     self.submodule_paths = {
-        #         mod: name
-        #         for name, mod in root.named_modules()
-        #     }
         if isinstance(root, torch.nn.Module):
             self.root = root
             fn = type(root).forward
