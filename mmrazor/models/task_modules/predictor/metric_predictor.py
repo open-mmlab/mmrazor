@@ -1,11 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import numpy as np
 import scipy.stats as stats
 
 from mmrazor.registry import TASK_UTILS
 from mmrazor.structures import export_fix_subnet
+from mmrazor.utils.typing import DumpChosen
 from .handler import RBFHandler
 
 
@@ -76,11 +77,12 @@ class MetricPredictor:
                 metric.update({self.score_key_list[0]: score})
         return metric
 
-    def model2vector(self, model: dict) -> Dict[str, list]:
+    def model2vector(
+            self, model: Dict[str, Union[str, DumpChosen]]) -> Dict[str, list]:
         """Convert the input model to N-dims vector.
 
         Args:
-            model (Dict[str, list]): input model.
+            model (Dict[str, Union[str, DumpChosen]]): input model.
 
         Returns:
             Dict[str, list]: converted vector.
@@ -89,11 +91,19 @@ class MetricPredictor:
         vector_dict: Dict[str, list] = \
             dict(normal_vector=[], onehot_vector=[])
 
-        for choice in model.values():
-            assert len(self.search_groups[index]) == 1
-            choices = self.search_groups[index][0].choices
-            onehot = np.zeros(len(choices), dtype=np.int)
-            _chosen_index = choices.index(choice)
+        for key, choice in model.items():
+            if isinstance(choice, DumpChosen):
+                assert choice.meta is not None, (
+                    f'`DumpChosen.meta` of current {key} should not be None '
+                    'when converting the search space.')
+                onehot = np.zeros(
+                    len(choice.meta['all_choices']), dtype=np.int)
+                _chosen_index = choice.meta['all_choices'].index(choice.chosen)
+            else:
+                assert len(self.search_groups[index]) == 1
+                choices = self.search_groups[index][0].choices
+                onehot = np.zeros(len(choices), dtype=np.int)
+                _chosen_index = choices.index(choice)
             onehot[_chosen_index] = 1
 
             vector_dict['normal_vector'].extend([_chosen_index])
