@@ -83,12 +83,14 @@ class GeneralQuant(BaseAlgorithm):
     def prepare(self, mode='tensor'):
         assert mode in ['tensor', 'loss', 'predict']
         if mode == 'tensor':
-            graph = self.graph_tensor
+            self.graph_tensor = self.quantizer.prepare(self.architecture,
+                                                       self.graph_tensor)
         elif mode == 'loss':
-            graph = self.graph_loss
+            self.graph_loss = self.quantizer.prepare(self.architecture,
+                                                     self.graph_loss)
         else:
-            graph = self.graph_predict
-        self.architecture = self.quantizer.prepare(self.architecture, graph)
+            self.graph_predict = self.quantizer.prepare(
+                self.architecture, self.graph_predict)
 
     def convert(self):
         self.architecture = self.quantizer.convert(self.architecture)
