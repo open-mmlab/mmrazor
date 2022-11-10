@@ -80,13 +80,28 @@ class Autoformer(BaseAlgorithm):
         """Random sample subnet by mutator."""
         subnet_dict = dict()
         for name, mutator in self.mutators.items():
-            subnet_dict[name] = mutator.sample_choices()
+            if name == 'value_mutator':
+                subnet_dict.update(
+                    dict((str(group_id), value) for group_id, value in
+                         mutator.sample_choices().items()))
+            else:
+                subnet_dict.update(mutator.sample_choices())
         return subnet_dict
 
     def set_subnet(self, subnet_dict: Dict) -> None:
         """Set the subnet sampled by :meth:sample_subnet."""
         for name, mutator in self.mutators.items():
-            mutator.set_choices(subnet_dict[name])
+            if name == 'value_mutator':
+                value_subnet = dict((int(group_id), value)
+                                    for group_id, value in subnet_dict.items()
+                                    if isinstance(group_id, str))
+                mutator.set_choices(value_subnet)
+            else:
+                channel_subnet = dict(
+                    (group_id, value)
+                    for group_id, value in subnet_dict.items()
+                    if isinstance(group_id, int))
+                mutator.set_choices(channel_subnet)
 
     def loss(
         self,

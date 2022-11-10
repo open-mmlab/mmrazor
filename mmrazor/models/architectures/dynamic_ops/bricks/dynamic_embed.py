@@ -104,7 +104,8 @@ class DynamicPatchEmbed(PatchEmbed, DynamicChannelMixin):
         static_patch_embed = self.static_op_factory(
             img_size=self.img_size,
             in_channels=3,
-            embed_dims=self.mutable_embed_dims.current_choice)
+            embed_dims=self.mutable_embed_dims.activated_channels)
+        # embed_dims=self.mutable_embed_dims.current_choice)
 
         static_patch_embed.projection.weight = nn.Parameter(weight.clone())
         static_patch_embed.projection.bias = nn.Parameter(bias.clone())

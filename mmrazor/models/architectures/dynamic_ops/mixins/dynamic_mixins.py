@@ -74,12 +74,16 @@ class DynamicMixin(ABC):
         Raises:
             RuntimeError: Error if a existing mutable is not fixed.
         """
+        from mmrazor.models.mutables import (DerivedMutable,
+                                             MutableChannelContainer)
 
         def check_fixed(mutable: Optional[BaseMutable]) -> None:
             if mutable is not None and not mutable.is_fixed:
                 raise RuntimeError(f'Mutable {type(mutable)} is not fixed.')
 
         for mutable in self.mutable_attrs.values():  # type: ignore
+            if isinstance(mutable, (MutableChannelContainer, DerivedMutable)):
+                continue
             check_fixed(mutable)
 
     def check_mutable_attr_valid(self, attr):

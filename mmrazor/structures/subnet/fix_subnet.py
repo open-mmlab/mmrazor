@@ -50,6 +50,8 @@ def load_fix_subnet(model: nn.Module,
         # The format of `chosen`` is different for each type of mutable.
         # In the corresponding mutable, it will check whether the `chosen`
         # format is correct.
+        if isinstance(module, (MutableChannelContainer, DerivedMutable)):
+            continue
         if isinstance(module, BaseMutable):
             if not module.is_fixed:
                 if getattr(module, 'alias', None):
