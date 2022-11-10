@@ -1,15 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import Dict, List
+from typing import Dict
 
 import torch.nn as nn
 from mmengine.model import BaseModule
 
 from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
-from mmrazor.structures.graph import ModuleGraph
-from mmrazor.structures.graph.channel_graph import ChannelGraph
-from mmrazor.structures.graph.channel_nodes import \
-    default_channel_node_converter
+from mmrazor.registry import TASK_UTILS
 
 
 class Channel(BaseModule):
@@ -179,22 +176,14 @@ class ChannelUnit(BaseModule):
         return mutable_unit
 
     @classmethod
-    def init_from_graph(cls,
-                        graph: ModuleGraph,
-                        num_input_channel=3) -> List['ChannelUnit']:
-        """Parse a module-graph and get ChannelUnits."""
-
-        graph.check(fix=True)
-        unit_graph = ChannelGraph.copy_from(graph,
-                                            default_channel_node_converter)
-        unit_graph.check(fix=True)
-        unit_graph.forward(num_input_channel)
-        units_config = unit_graph.generate_units_config()
-        units = [
-            cls.init_from_cfg(graph._model, unit_config)
-            for unit_config in units_config.values()
-        ]
-        return units
+    def init_from_prune_tracer(cls, model, tracer=None):
+        if tracer is None:
+            from mmrazor.models.task_modules.tracer import PruneTracer
+            tracer = PruneTracer()
+        if isinstance(tracer, dict):
+            tracer = TASK_UTILS.build(tracer)
+        unit_config = tracer.trace(model)
+        return [cls.init_from_cfg(model, cfg) for cfg in unit_config.values()]
 
     # tools
 

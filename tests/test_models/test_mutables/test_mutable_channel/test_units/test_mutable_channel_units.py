@@ -10,7 +10,6 @@ from mmrazor.models.mutables.mutable_channel import (
     L1MutableChannelUnit, MutableChannelUnit, SequentialMutableChannelUnit)
 from mmrazor.models.mutables.mutable_channel.units.channel_unit import \
     ChannelUnit  # noqa
-from mmrazor.structures.graph import ModuleGraph as ModuleGraph
 from .....data.models import SingleLineModel
 from .....data.tracer_passed_models import backward_passed_library
 
@@ -19,8 +18,6 @@ PARSE_CFG = dict(
     type='BackwardTracer',
     loss_calculator=dict(type='ImageClassifierPseudoLoss'))
 
-# DEVICE = torch.device('cuda:0') if torch.cuda.is_available() \
-#     else torch.device('cpu')
 DEVICE = torch.device('cpu')
 GROUPS: List[MutableChannelUnit] = [
     L1MutableChannelUnit, SequentialMutableChannelUnit
@@ -44,44 +41,11 @@ def _test_units(units: List[MutableChannelUnit], model):
     assert list(y.shape) == [2, 1000]
 
 
-def _test_a_graph(model, graph):
-    try:
-        units = DefaultChannelUnit.init_from_graph(graph)
-        _test_units(units, model)
-        return True, ''
-    except Exception as e:
-        return False, f'{e},{graph}'
-
-
-# def _test_a_model_from_fx_tracer(Model):
-#     print(f'test {Model}')
-#     model = Model()
-#     model.eval()
-#     model = model.to(DEVICE)
-#     graph = ModuleGraph.init_from_fx_tracer(
-#         model,
-#         fx_tracer=dict(
-#             type='RazorFxTracer',
-#             is_extra_leaf_module=is_dynamic_op_for_fx_tracer,
-#             concrete_args=dict(mode='tensor')))
-#     return _test_a_graph(model, graph)
-
-# def _test_a_model_from_backward_tracer(Model):
-#     print(f'test {Model}')
-#     model = Model()
-#     model.eval()
-#     model = model.to(DEVICE)
-#     graph = ModuleGraph.init_from_backward_tracer(model)
-#     return _test_a_graph(model, graph)
-
-
 class TestMutableChannelUnit(TestCase):
 
-    def test_init_from_graph(self):
+    def test_init_from_tracer(self):
         model = SingleLineModel()
-        # init using tracer
-        graph = ModuleGraph.init_from_backward_tracer(model)
-        units = DefaultChannelUnit.init_from_graph(graph)
+        units = DefaultChannelUnit.init_from_prune_tracer(model)
         _test_units(units, model)
 
     def test_init_from_cfg(self):
@@ -127,31 +91,11 @@ class TestMutableChannelUnit(TestCase):
     def test_init_from_channel_unit(self):
         model = SingleLineModel()
         # init using tracer
-        graph = ModuleGraph.init_from_backward_tracer(model)
-        units: List[ChannelUnit] = ChannelUnit.init_from_graph(graph)
+        units: List[ChannelUnit] = ChannelUnit.init_from_prune_tracer(model)
         mutable_units = [
             DefaultChannelUnit.init_from_channel_unit(unit) for unit in units
         ]
         _test_units(mutable_units, model)
-
-    # def test_with_fx_tracer(self):
-    #     test_models = FxPassedModelManager.include_models()
-    #     with SetTorchThread(1):
-    #         with mp.Pool() as p:
-    #             result = p.map(_test_a_model_from_fx_tracer, test_models)
-    #     for res, model_data in zip(result, test_models):
-    #         with self.subTest(model=model_data):
-    #             self.assertTrue(res[0], res[1])
-
-    # def test_with_backward_tracer(self):
-    #     test_models = BackwardPassedModelManager.include_models()
-    #     with SetTorchThread(1):
-    #         with mp.Pool() as p:
-    #             result = p.map(_test_a_model_from_backward_tracer\
-    # , test_models)
-    #     for res, model_data in zip(result, test_models):
-    #         with self.subTest(model=model_data):
-    #             self.assertTrue(res[0], res[1])
 
     def test_replace_with_dynamic_ops(self):
         model_datas = backward_passed_library.include_models()
@@ -159,9 +103,9 @@ class TestMutableChannelUnit(TestCase):
             for unit_type in GROUPS:
                 with self.subTest(model=model_data, unit=unit_type):
                     model: nn.Module = model_data()
-                    graph = ModuleGraph.init_from_backward_tracer(model)
                     units: List[
-                        MutableChannelUnit] = unit_type.init_from_graph(graph)
+                        MutableChannelUnit] = unit_type.init_from_prune_tracer(
+                            model)
                     for unit in units:
                         unit.prepare_for_pruning(model)
 
