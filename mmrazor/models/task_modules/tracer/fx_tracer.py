@@ -7,7 +7,6 @@ from types import FunctionType
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import torch
-import torch.nn as nn
 from torch._C import ScriptObject  # type: ignore[attr-defined]
 from torch.fx._symbolic_trace import (Tracer, _autowrap_check,
                                       _orig_module_call, _orig_module_getattr,
@@ -17,25 +16,16 @@ from torch.fx.node import Argument
 from torch.fx.proxy import Proxy
 
 
-class CostumFxTracer(Tracer):
+class FxTracer(Tracer):
     """CostumFxTracer allow user to indicate leaf module."""
 
     def __init__(self,
-                 is_extra_leaf_module: Callable[[nn.Module, str], bool] = None,
-                 warp_method={},
-                 concrete_args={}) -> None:
-        """
-        Args:
-            is_extra_leaf_module: Callable[[nn.Module, str], bool]: a function
-            to determine if a module is a leaf module except torch pre-defined
-            modules.
-        """
-        super().__init__(
-            param_shapes_constant=True,
-            autowrap_functions=[torch.arange],
-        )
-        self.extra_is_leaf_module = is_extra_leaf_module
-        self.concrete_args = concrete_args
+                 autowrap_modules: Tuple = (),
+                 autowrap_functions: Tuple[Callable, ...] = (),
+                 param_shapes_constant: bool = False) -> None:
+        super().__init__(autowrap_modules, autowrap_functions,
+                         param_shapes_constant)
+
         from mmdet.models.dense_heads.base_dense_head import BaseDenseHead
         from mmdet.models.dense_heads.rpn_head import RPNHead
         from mmdet.models.roi_heads import StandardRoIHead
@@ -64,7 +54,6 @@ class CostumFxTracer(Tracer):
         if concrete_args is None:
             concrete_args = {}
         concrete_args = copy.copy(concrete_args)
-        concrete_args.update(self.concrete_args)
         return self._trace(root, concrete_args)
 
     def _trace(self,
@@ -225,3 +214,30 @@ class CostumFxTracer(Tracer):
             return arg
         except Exception:
             return a
+
+
+class CustomFxTracer(FxTracer):
+
+    def __init__(
+            self,
+            autowrap_modules: Tuple = (),
+            autowrap_functions: Tuple[Callable, ...] = (),
+            param_shapes_constant: bool = False,
+            leaf_module: Tuple = (),
+    ) -> None:
+        super().__init__(autowrap_modules, autowrap_functions,
+                         param_shapes_constant)
+
+        self.leaf_module = leaf_module
+
+    def is_leaf_module(self, m: torch.nn.Module,
+                       module_qualified_name: str) -> bool:
+        is_torch_module = super().is_leaf_module(m, module_qualified_name)
+
+        is_leaf = False
+        for module_type in self.leaf_module:
+            if isinstance(m, module_type):
+                is_leaf = True
+                break
+
+        return is_leaf or is_torch_module

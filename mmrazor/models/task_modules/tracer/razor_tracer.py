@@ -10,7 +10,7 @@ from torch.fx.node import Node as FxNode
 
 from mmrazor.registry import TASK_UTILS
 from mmrazor.structures.graph.base_graph import BaseGraph, BaseNode
-from .fx_tracer import CostumFxTracer
+from .fx_tracer import FxTracer
 
 
 class FxBaseNode(BaseNode):
@@ -85,7 +85,7 @@ class FxBaseNode(BaseNode):
 
 
 @TASK_UTILS.register_module()
-class RazorFxTracer(CostumFxTracer):
+class RazorFxTracer(FxTracer):
     """A wapper for torch.fx.tracer."""
 
     def __init__(self,
@@ -93,9 +93,8 @@ class RazorFxTracer(CostumFxTracer):
                  concrete_args={}) -> None:
         if isinstance(is_extra_leaf_module, dict):
             is_extra_leaf_module = TASK_UTILS.build(is_extra_leaf_module)
-        super().__init__(
-            is_extra_leaf_module=is_extra_leaf_module,
-            concrete_args=concrete_args)
+
+        super().__init__()
 
     def add_node(self, graph: BaseGraph[FxBaseNode], fxnode: FxNode):
         """FxBaseNode: convert a torch FxNode to a FxBaseNode, and add it the

@@ -11,7 +11,7 @@ from mmrazor.structures.graph.module_graph import (FxTracerToGraphConverter,
                                                    PathToGraphConverter)
 from mmrazor.utils import get_placeholder
 from .backward_tracer import BackwardTracer
-from .fx_tracer import CostumFxTracer
+from .fx_tracer import CustomFxTracer
 from .loss_calculator.sum_loss_calculator import SumPseudoLoss
 from .razor_tracer import FxBaseNode, RazorFxTracer
 
@@ -24,22 +24,61 @@ try:
     from mmcls.models import ImageClassifier
 except Exception:
     ImageClassifier = get_placeholder('mmcls')
+"""
+- How to config PruneTracer using hard code
+  - fxtracer
+    - concrete args
+      - PruneTracer.default_concrete_args_fun
+    - leaf module
+      - PruneTracer.default_leaf_modules
+    - method
+      - None
+  - ChannelNode
+    - channel_nodes.py
+  - DynamicOp
+        ChannelUnits
+"""
+
+# concrete args
 
 
-def is_dynamic_op_fx(module, name):
-    from mmcv.cnn.bricks import Scale
+def default_mm_concrete_args(model, input_shape):
+    return {'mode': 'tensor'}
 
-    is_leaf = (
-        isinstance(module, DynamicChannelMixin)
-        or isinstance(module, nn.Conv2d) or isinstance(module, nn.Linear)
-        or isinstance(module, nn.modules.batchnorm._BatchNorm)
-        or isinstance(module, Scale))
 
-    return is_leaf
+def default_concrete_args(model, input_shape):
+    return {}
+
+
+def det_concrete_args(model, input_shape):
+    assert isinstance(model, BaseDetector)
+    from mmdet.testing._utils import demo_mm_inputs
+    data = demo_mm_inputs(1, [input_shape[1:]])
+    data = model.data_preprocessor(data, False)
+    data.pop('inputs')
+    return data
 
 
 @TASK_UTILS.register_module()
 class PruneTracer:
+    from mmcv.cnn.bricks import Scale
+
+    default_leaf_modules = (
+        # dynamic op
+        DynamicChannelMixin,
+        # torch
+        nn.Conv2d,
+        nn.Linear,
+        nn.modules.batchnorm._BatchNorm,
+        # mmcv
+        Scale,
+    )
+    default_concrete_args_fun = {
+        BaseDetector: det_concrete_args,
+        ImageClassifier: default_mm_concrete_args,
+        BaseModel: default_mm_concrete_args,
+        nn.Module: default_concrete_args
+    }
 
     def __init__(self,
                  input_shape=(1, 3, 224, 224),
@@ -53,7 +92,7 @@ class PruneTracer:
             self.tracer = BackwardTracer(
                 loss_calculator=SumPseudoLoss(input_shape=input_shape))
         elif tracer_type == 'FxTracer':
-            self.tracer = CostumFxTracer(is_extra_leaf_module=is_dynamic_op_fx)
+            self.tracer = CustomFxTracer(leaf_module=self.default_leaf_modules)
         else:
             raise NotImplementedError()
 
@@ -89,16 +128,15 @@ class PruneTracer:
         return unit_configs
 
     def _fx_trace(self, model):
-        if isinstance(model, BaseDetector):
-            data = self._det_input(model)
-        elif isinstance(model, ImageClassifier):
-            data = {'mode': 'tensor'}
-        elif isinstance(model, BaseModel):
-            data = {'mode': 'tensor'}
-        else:
-            data = {}
+        args = self.get_concrete_args(model)
+        return self.tracer.trace(model, concrete_args=args)
 
-        return self.tracer.trace(model, concrete_args=data)
+    def get_concrete_args(self, model):
+        for module_type, concrete_args_fun in self.default_concrete_args_fun.items(  # noqa
+        ):  # noqa
+            if isinstance(model, module_type):
+                return concrete_args_fun(model, self.input_shape)
+        return {}
 
     def _det_input(self, model):
         assert isinstance(model, BaseDetector)

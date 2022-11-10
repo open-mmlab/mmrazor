@@ -2,10 +2,11 @@
 
 import operator
 from abc import abstractmethod
-from typing import Dict, List, Type, Union
+from typing import List, Union
 
 import torch
 import torch.nn as nn
+from mmcv.cnn.bricks import Scale
 from mmengine import MMLogger
 
 from .channel_flow import ChannelTensor
@@ -442,20 +443,8 @@ class GroupNormNode(PassUnionChannelNode):
 
 # converter
 
-
-def default_channel_node_converter(node: ModuleNode) -> ChannelNode:
-    """The default node converter for ChannelNode."""
-
-    from mmcv.cnn.bricks import Scale
-
-    def warn(default='PassUnionChannelNode'):
-        logger = MMLogger.get_current_instance()
-        logger.info(
-            (f"{node.name}({node.module_name}) node can't find match type of"
-             'channel_nodes,'
-             f'replaced with {default} by default.'))
-
-    module_mapping = {
+channel_nodes_mapping = {
+    'module': {
         nn.Conv2d: ConvNode,
         nn.BatchNorm2d: BnNode,
         nn.Linear: LinearNode,
@@ -468,19 +457,36 @@ def default_channel_node_converter(node: ModuleNode) -> ChannelNode:
         nn.modules.pooling._AdaptiveMaxPoolNd: PassChannelNode,
         Scale: PassChannelNode,
         nn.modules.GroupNorm: GroupNormNode,
-    }
-    function_mapping = {
+    },
+    'function': {
         torch.add: BindChannelNode,
         torch.cat: CatChannelNode,
         operator.add: BindChannelNode,
-    }
-    name_mapping: Dict[str, Type[ChannelNode]] = {
+    },
+    'str': {
         'bind_placeholder': BindChannelNode,
         'pass_placeholder': PassUnionChannelNode,
         'cat_placeholder': CatChannelNode,
         'input_placeholder': InputChannelNode,
         'output_placeholder': EndNode
-    }
+    },
+}
+
+
+def default_channel_node_converter(
+        node: ModuleNode,
+        module_mapping=channel_nodes_mapping['module'],
+        function_mapping=channel_nodes_mapping['function'],
+        name_mapping=channel_nodes_mapping['str']) -> ChannelNode:
+    """The default node converter for ChannelNode."""
+
+    def warn(default='PassUnionChannelNode'):
+        logger = MMLogger.get_current_instance()
+        logger.info(
+            (f"{node.name}({node.module_name}) node can't find match type of"
+             'channel_nodes,'
+             f'replaced with {default} by default.'))
+
     if isinstance(node.val, nn.Module):
         # module_mapping
         for module_type in module_mapping:
@@ -491,7 +497,6 @@ def default_channel_node_converter(node: ModuleNode) -> ChannelNode:
         for module_type in name_mapping:
             if node.val == module_type:
                 return name_mapping[module_type].copy_from(node)
-
     else:
         for fun_type in function_mapping:
             if node.val == fun_type:
