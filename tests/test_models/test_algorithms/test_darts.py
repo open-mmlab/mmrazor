@@ -104,7 +104,11 @@ class TestDarts(TestCase):
         self.assertIsInstance(algo.mutator, DiffModuleMutator)
 
         # initiate darts when `fix_subnet` is not None
-        fix_subnet = {'normal': ['torch_conv2d_3x3', 'torch_conv2d_7x7']}
+        fix_subnet = {
+            'normal': {
+                'chosen': ['torch_conv2d_3x3', 'torch_conv2d_7x7']
+            }
+        }
         algo = Darts(model, mutator, fix_subnet=fix_subnet)
         self.assertEqual(algo.architecture.mutable.num_choices, 2)
 
@@ -124,7 +128,11 @@ class TestDarts(TestCase):
         self.assertIsInstance(loss, dict)
 
         # subnet
-        fix_subnet = {'normal': ['torch_conv2d_3x3', 'torch_conv2d_7x7']}
+        fix_subnet = {
+            'normal': {
+                'chosen': ['torch_conv2d_3x3', 'torch_conv2d_7x7']
+            }
+        }
         algo = Darts(model, fix_subnet=fix_subnet)
         loss = algo(inputs, mode='loss')
         self.assertIsInstance(loss, dict)

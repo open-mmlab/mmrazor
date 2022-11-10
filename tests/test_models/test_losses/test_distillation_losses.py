@@ -7,7 +7,7 @@ from mmengine.structures import BaseDataElement
 from mmrazor import digit_version
 from mmrazor.models import (ABLoss, ActivationLoss, ATLoss, CRDLoss, DKDLoss,
                             FBKDLoss, FTLoss, InformationEntropyLoss,
-                            KDSoftCELoss, OFDLoss, OnehotLikeLoss)
+                            KDSoftCELoss, OFDLoss, OnehotLikeLoss, PKDLoss)
 
 
 class TestLosses(TestCase):
@@ -179,3 +179,28 @@ class TestLosses(TestCase):
 
         fbkd_loss = fbkdloss(s_input, t_input)
         self.assertTrue(fbkd_loss.numel() == 1)
+
+    def test_pkdloss(self):
+        pkd_loss = PKDLoss(loss_weight=1.0)
+        feats_S, feats_T = torch.rand(2, 256, 4, 4), torch.rand(2, 256, 4, 4)
+        loss = pkd_loss(feats_S, feats_T)
+        self.assertTrue(loss.numel() == 1)
+        self.assertTrue(0. <= loss <= 1.)
+
+        num_stages = 4
+        feats_S = (torch.rand(2, 256, 4, 4) for _ in range(num_stages))
+        feats_T = (torch.rand(2, 256, 4, 4) for _ in range(num_stages))
+        loss = pkd_loss(feats_S, feats_T)
+        self.assertTrue(loss.numel() == 1)
+        self.assertTrue(0. <= loss <= num_stages * 1.)
+
+        feats_S, feats_T = torch.rand(2, 256, 2, 2), torch.rand(2, 256, 4, 4)
+        loss = pkd_loss(feats_S, feats_T)
+        self.assertTrue(loss.numel() == 1)
+        self.assertTrue(0. <= loss <= 1.)
+
+        pkd_loss = PKDLoss(loss_weight=1.0, resize_stu=False)
+        feats_S, feats_T = torch.rand(2, 256, 2, 2), torch.rand(2, 256, 4, 4)
+        loss = pkd_loss(feats_S, feats_T)
+        self.assertTrue(loss.numel() == 1)
+        self.assertTrue(0. <= loss <= 1.)
