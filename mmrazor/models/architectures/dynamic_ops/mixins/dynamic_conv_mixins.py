@@ -405,29 +405,12 @@ class FuseConvMixin(DynamicConvMixin):
 
     def set_forward_args(self, choice: Tensor) -> None:
         """Interface for modifying the arch_param using partial."""
-        forward_with_default_args: PartialType = \
-            partial(self.forward_mixin_choice, choice=choice)
-        static_with_default_args: PartialType = \
-            partial(self.to_static_op_choice, choice=choice)
         param_channel_with_default_args: PartialType = \
             partial(
                 self._get_dynamic_params_by_mutable_channels_choice,
                 choice=choice)
-        setattr(self, 'forward_mixin', forward_with_default_args)
-        setattr(self, 'to_static_op', static_with_default_args)
         setattr(self, '_get_dynamic_params_by_mutable_channels',
                 param_channel_with_default_args)
-
-    def forward_mixin_choice(self: _ConvNd, x: Tensor,
-                             choice: Tensor) -> Tensor:
-        """Forward of fuse conv2d OP."""
-        groups = self.groups
-        if self.groups == self.in_channels == self.out_channels:
-            groups = x.size(1)
-        weight, bias, padding = self.get_dynamic_params()
-
-        return self.conv_func(x, weight, bias, self.stride, padding,
-                              self.dilation, groups)
 
     def get_dynamic_params(
             self: _ConvNd) -> Tuple[Tensor, Optional[Tensor], Tuple[int]]:
@@ -497,7 +480,7 @@ class FuseConvMixin(DynamicConvMixin):
             fused_bias = self.bias
         return fused_weight, fused_bias
 
-    def to_static_op_choice(self: _ConvNd, choice: Tensor) -> nn.Conv2d:
+    def to_static_op(self: _ConvNd) -> nn.Conv2d:
         """Convert dynamic conv2d to :obj:`torch.nn.Conv2d`.
 
         Returns:

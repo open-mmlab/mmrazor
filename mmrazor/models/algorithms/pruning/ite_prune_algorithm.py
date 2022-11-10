@@ -130,6 +130,19 @@ class ItePruneAlgorithm(BaseAlgorithm):
             group_target_ratio = self.group_target_pruning_ratio(
                 target_pruning_ratio, self.mutator.search_groups)
 
+        # check step_freq & prune_times
+        # If step_freq legal, adjust prune_times by step_freq
+        # Or step_freq illegal, adjust step_freq by prune_times
+        # If both illegal, set step_freq = 1
+        if not (step_freq * prune_times == self._max_num):
+            if (step_freq > 0 and step_freq < self._max_num):
+                prune_times = self._max_num // step_freq
+            elif (prune_times > 0 and prune_times < self._max_num):
+                step_freq = self._max_num // prune_times
+            else:
+                step_freq = 1
+                prune_times = self._max_num // step_freq
+
         # config_manager
         self.prune_config_manager = ItePruneConfigManager(
             group_target_ratio,
