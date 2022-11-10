@@ -359,7 +359,7 @@ class TestEvolutionSearchLoopWithPredictor(TestCase):
         mock_flops.return_value = (0.5, 101)
         mock_export_fix_subnet.return_value = fake_subnet
         mock_model2vector.return_value = dict(
-            feats=[0, 1], onehot_feats=[0, 1, 0, 1])
+            normal_vector=[0, 1], onehot_vector=[0, 1, 0, 1])
 
         loop.run()
         assert os.path.exists(
