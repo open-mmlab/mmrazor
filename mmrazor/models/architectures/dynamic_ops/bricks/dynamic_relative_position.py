@@ -14,11 +14,15 @@ from ..mixins import DynamicChannelMixin
 class DynamicRelativePosition2D(RelativePosition2D, DynamicChannelMixin):
     """Searchable RelativePosition module.
 
-    Args:
-        head_dims (int/Int): Parallel attention heads.
-        head_dims ([int/Int]): embedding dims of relative position.
-        max_relative_position ([int]): The max relative position distance.
+    Note:
+        Arguments for ``__init__`` of ``DynamicRelativePosition2D`` is totally
+        same as :obj:`mmrazor.models.architectures.RelativePosition2D`.
+    Attributes:
+        mutable_attrs (ModuleDict[str, BaseMutable]): Mutable attributes,
+            such as `head_dims`. The key of the dict must in
+            ``accepted_mutable_attrs``.
     """
+
     mutable_attrs: nn.ModuleDict
     head_dims: int
     max_relative_position: int

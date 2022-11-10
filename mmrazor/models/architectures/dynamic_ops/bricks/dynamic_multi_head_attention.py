@@ -17,11 +17,16 @@ class DynamicMultiheadAttention(MultiheadAttention, DynamicChannelMixin):
     """Dynamic Multihead Attention with iRPE..
 
     Note:
-        `embed_dims` serve the in_dim of qkv and out_dim of proj
-        `q_embed_dims` serve the out_dim of qkv and in_dim of proj
-        `q_embed_dims` is a DerivedMutable derived from `num_heads`
-            with `num_heads` \times 64.
+        Arguments for ``__init__`` of ``DynamicMultiheadAttention`` is
+        totally same as
+        :obj:`mmrazor.models.architectures.MultiheadAttention`.
+    Attributes:
+        mutable_attrs (ModuleDict[str, BaseMutable]): Mutable attributes,
+            such as `num_heads`、 `embed_dims`、 `q_embed_dims`.
+            The key of the dict must in ``accepted_mutable_attrs``.
     """
+
+    mutable_attrs: nn.ModuleDict
     relative_position: bool
     max_relative_position: int
     w_qs: nn.Linear
@@ -31,11 +36,9 @@ class DynamicMultiheadAttention(MultiheadAttention, DynamicChannelMixin):
     q_embed_dims: int
     proj: nn.Linear
     attn_drop_rate: float
-
     accepted_mutable_attrs: Set[str] = {
         'num_heads', 'embed_dims', 'q_embed_dims'
     }
-
     attr_mappings: Dict[str, str] = {
         'in_channels': 'embed_dims',
         'out_channels': 'q_embed_dims',
@@ -44,8 +47,7 @@ class DynamicMultiheadAttention(MultiheadAttention, DynamicChannelMixin):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.mutable_attrs: Dict[str,
-                                 BaseMutable] = nn.ModuleDict()  # type: ignore
+        self.mutable_attrs: Dict[str, BaseMutable] = nn.ModuleDict()
 
         # dynamic image relative position encoding
         if self.relative_position:

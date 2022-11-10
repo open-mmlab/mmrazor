@@ -14,8 +14,6 @@ class TestPatchEmbed(TestCase):
         self.dynamic_embed = DynamicPatchEmbed(
             img_size=224, in_channels=3, embed_dims=100)
 
-        # mutable_embed_dims = OneShotMutableChannel(
-        #     100, candidate_choices=[10, 50, 100], candidate_mode='number')
         mutable_embed_dims = SquentialMutableChannel(num_channels=100)
 
         mutable_embed_dims.current_choice = 50

@@ -103,7 +103,6 @@ class Candidates(UserList):
                         value.setdefault(key, 0.)
                 return cond
             else:
-                # import pdb;pdb.set_trace()
                 return {str(cond): {}.fromkeys(self._indicators, -1)}
 
         if isinstance(data, UserList):

@@ -80,7 +80,6 @@ class TestDerivedMutable(TestCase):
             _ = DerivedMutable.derive_concat_mutable(ms)
 
     def test_mutable_channel_derived(self) -> None:
-        # mc = OneShotMutableChannel(num_channels=3)
         mc = SquentialMutableChannel(num_channels=3)
         mc_derived = mc * 3
         assert mc_derived.source_mutables == {mc}

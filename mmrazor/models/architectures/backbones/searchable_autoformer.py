@@ -40,6 +40,7 @@ class TransformerEncoderLayer(BaseBackbone):
         act_cfg (Dict, optional): The config for acitvation function.
             Defaults to dict(type='GELU').
         norm_cfg (Dict, optional): The config for normalization.
+            Defaults to dict(type='mmrazor.DynamicLayerNorm').
         init_cfg (Dict, optional): The config for initialization.
             Defaults to None.
     """
@@ -73,7 +74,6 @@ class TransformerEncoderLayer(BaseBackbone):
             norm_cfg, embed_dims, postfix=2)
         self.add_module(self.norm2_name, norm2)
 
-        # derived mutable
         middle_channels = int(embed_dims * mlp_ratio)
         self.fc1 = DynamicLinear(embed_dims, middle_channels)
         self.fc2 = DynamicLinear(middle_channels, embed_dims)
@@ -104,7 +104,6 @@ class TransformerEncoderLayer(BaseBackbone):
         # handle the mutable of FFN
         self.middle_channels = mutable_mlp_ratios * mutable_embed_dims
 
-        # mutablevalue
         self.attn.register_mutable_attr('num_heads', mutable_num_heads)
 
         # handle the mutable of the first dynamic LN
@@ -191,7 +190,6 @@ class AutoformerBackbone(BaseBackbone):
         init_cfg (Dict, optional): The config for initialization.
             Defaults to None.
     """
-    # search space
     mutable_settings: Dict[str, List] = {
         'mlp_ratios': [3.0, 3.5, 4.0],
         'num_heads': [8, 9, 10],

@@ -147,9 +147,7 @@ optim_wrapper = dict(
     paramwise_cfg=dict(custom_keys={
         '.cls_token': dict(decay_mult=0.0),
         '.pos_embed': dict(decay_mult=0.0)
-    }),
-    # clip_grad=dict(max_norm=1.0)
-)
+    }))
 
 # leanring policy
 param_scheduler = [

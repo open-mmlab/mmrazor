@@ -17,18 +17,16 @@ from ..mixins import DynamicChannelMixin
 class DynamicPatchEmbed(PatchEmbed, DynamicChannelMixin):
     """Dynamic Patch Embedding.
 
-    Args:
-        img_size (int, optional): The size of input image.
-            Defaults to 224.
-        in_channels (int, optional): The input channel of PatchEmbed.
-            Defaults to 3.
-        embed_dims ([type], optional): The embedding dimensions.
-            Defaults to None.
-        convcfg ([type], optional): The config for convolution layers.
-            Defaults to None.
+    Note:
+        Arguments for ``__init__`` of ``DynamicPatchEmbed`` is totally same as
+        :obj:`mmcls.models.utils.PatchEmbed`.
+    Attributes:
+        mutable_attrs (ModuleDict[str, BaseMutable]): Mutable attributes,
+            such as `embed_dims`. The key of the dict must in
+            ``accepted_mutable_attrs``.
     """
+
     mutable_attrs: nn.ModuleDict
-    accpeted_mutables = {'embed_dims'}
     accepted_mutable_attrs: Set[str] = {'embed_dims'}
     attr_mappings: Dict[str, str] = {
         'in_channels': 'embed_dims',
