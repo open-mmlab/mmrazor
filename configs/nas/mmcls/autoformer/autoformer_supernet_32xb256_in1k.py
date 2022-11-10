@@ -5,16 +5,18 @@ _base_ = [
 
 # data preprocessor
 data_preprocessor = dict(
-    type='mmcls.ClsDataPreprocessor',
+    _scope_='mmcls',
+    type='ClsDataPreprocessor',
     # RGB format normalization parameters
     mean=[123.675, 116.28, 103.53],
     std=[58.395, 57.12, 57.375],
     # convert image from BGR to RGB
     to_rgb=True,
+    num_classes=1000,
     batch_augments=dict(
         augments=[
-            dict(type='Mixup', alpha=0.2, num_classes=1000),
-            dict(type='CutMix', alpha=1.0, num_classes=1000)
+            dict(type='Mixup', alpha=0.2),
+            dict(type='CutMix', alpha=1.0)
         ],
         probs=[0.5, 0.5]))
 
