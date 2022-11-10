@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 from mmengine import fileio
+from mmengine.dist import broadcast_object_list
 from mmengine.evaluator import Evaluator
 from mmengine.runner import EpochBasedTrainLoop
 from mmengine.utils import is_list_of
@@ -212,19 +213,27 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         """Update candidate pool contains specified number of candicates."""
         candidates_resources = []
         init_candidates = len(self.candidates)
-        while len(self.candidates) < self.num_candidates:
-            candidate = self.model.sample_subnet()
-            is_pass, result = self._check_constraints(random_subnet=candidate)
-            if is_pass:
-                self.candidates.append(candidate)
-                candidates_resources.append(result)
-        self.candidates = Candidates(self.candidates.data)
+        if self.runner.rank == 0:
+            while len(self.candidates) < self.num_candidates:
+                candidate = self.model.sample_subnet()
+                is_pass, result = self._check_constraints(
+                    random_subnet=candidate)
+                if is_pass:
+                    self.candidates.append(candidate)
+                    candidates_resources.append(result)
+            self.candidates = Candidates(self.candidates.data)
+        else:
+            self.candidates = Candidates([dict(a=0)] * self.num_candidates)
+
         if len(candidates_resources) > 0:
             self.candidates.update_resources(
                 candidates_resources,
                 start=len(self.candidates.data) - len(candidates_resources))
-        assert init_candidates + len(
-            candidates_resources) == self.num_candidates
+            assert init_candidates + len(
+                candidates_resources) == self.num_candidates
+
+        # broadcast candidates to val with multi-GPUs.
+        broadcast_object_list(self.candidates.data)
 
     def update_candidates_scores(self) -> None:
         """Validate candicate one by one from the candicate pool, and update

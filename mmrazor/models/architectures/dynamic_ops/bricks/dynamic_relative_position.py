@@ -76,7 +76,6 @@ class DynamicRelativePosition2D(RelativePosition2D, DynamicChannelMixin):
         self.check_if_mutables_fixed()
         assert self.mutable_head_dims is not None
 
-        # self.current_head_dim = self.mutable_head_dims.current_choice
         self.current_head_dim = self.mutable_head_dims.activated_channels
         static_relative_position = self.static_op_factory(
             self.current_head_dim)

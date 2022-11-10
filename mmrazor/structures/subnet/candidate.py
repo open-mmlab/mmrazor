@@ -51,7 +51,7 @@ class Candidates(UserList):
     def scores(self) -> List[float]:
         """The scores of candidates."""
         return [
-            value.get('score', 0.) for item in self.data
+            round(value.get('score', 0.), 2) for item in self.data
             for _, value in item.items()
         ]
 
@@ -96,12 +96,14 @@ class Candidates(UserList):
         def _format_item(
                 cond: Union[Dict, Dict[str, Dict]]) -> Dict[str, Dict]:
             """Transform Dict to Dict[str, Dict]."""
-            if isinstance(list(cond.values())[0], dict):
+            if len(cond.values()) > 0 and isinstance(
+                    list(cond.values())[0], dict):
                 for value in list(cond.values()):
                     for key in list(self._indicators):
                         value.setdefault(key, 0.)
                 return cond
             else:
+                # import pdb;pdb.set_trace()
                 return {str(cond): {}.fromkeys(self._indicators, -1)}
 
         if isinstance(data, UserList):
