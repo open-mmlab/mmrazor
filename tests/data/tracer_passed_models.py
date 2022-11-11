@@ -243,39 +243,51 @@ class FxPassedModelManager(PassedModelManager):
     def mmseg_library(cls):
         # a common error: unet related models
         include = [
-            'deeplabv3',
-            'pspnet',
-            'cgnet',
-            'gcnet',
-            'fastfcn',
-            'dnl',
-            'icnet',
-            'erfnet',
-            'apcnet',
-            'fast',
-            'ocrnet',
-            'fcn',
-            'ccnet',
-            'dmnet',
-            'stdc',
-            'ann',
-            'nonlocal',
-            'isanet',
-            'danet',
-            'emanet',
-            'bisenetv1',
-            # 'bisenetv2', # error
-            # 'psanet', # error
-            # 'setr',  # error
-            # 'twins',  # error
-            # 'fpn',  # error
-            # 'upernet',  # error
-            # 'segformer',  # error
-            # 'segmenter',  # error
-            # 'encnet',  # error
-            # 'lraspp', # error
-            # 'dpt', # error
-            # 'pointrend', # error
+            'deeplabv3plus',
+            # '_base_',
+            # 'knet',
+            # 'sem',
+            # 'dnlnet',
+            # 'dmnet',
+            # 'icnet',
+            # 'apcnet',
+            # 'swin',
+            # 'isanet',
+            # 'fastfcn',
+            # 'poolformer',
+            # 'mae',
+            # 'segformer',
+            # 'ccnet',
+            # 'twins',
+            # 'emanet',
+            # 'upernet',
+            # 'beit',
+            # 'hrnet',
+            # 'bisenetv2',
+            # 'vit',
+            # 'setr',
+            # 'cgnet',
+            # 'ocrnet',
+            # 'ann',
+            # 'erfnet',
+            # 'point',
+            # 'bisenetv1',
+            # 'nonlocal',
+            # 'unet',
+            # 'danet',
+            # 'stdc',
+            # 'fcn',
+            # 'encnet',
+            # 'resnest',
+            # 'mobilenet',
+            # 'convnext',
+            # 'deeplabv3',
+            # 'pspnet',
+            # 'gcnet',
+            # 'fastscnn',
+            # 'segmenter',
+            # 'dpt',
+            # 'psanet',
         ]
         if cls._mmseg_library is None:
             cls._mmseg_library = MMSegModelLibrary(include=include)
