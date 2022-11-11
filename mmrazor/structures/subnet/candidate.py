@@ -97,8 +97,6 @@ class Candidates(UserList):
                 cond: Union[Dict, Dict[str, Dict]]) -> Dict[str, Dict]:
             """Transform Dict to Dict[str, Dict]."""
             if isinstance(list(cond.values())[0], dict):
-                # if len(cond.values()) > 0 and isinstance(
-                #         list(cond.values())[0], dict):
                 for value in list(cond.values()):
                     for key in list(self._indicators):
                         value.setdefault(key, 0.)
