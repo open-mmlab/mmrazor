@@ -88,6 +88,10 @@ class ModelGenerator(nn.Module):
         names = base_name.replace('-', '.').replace('_', '.').split('.')
         return names[0]
 
+    @property
+    def short_name(self):
+        return self.__class__.get_short_name(self.name)
+
 
 class MMModelGenerator(ModelGenerator):
 
@@ -175,8 +179,8 @@ class ModelLibrary:
     def short_names(self):
 
         short_names = set()
-        for name in self._models:
-            short_names.add(ModelGenerator.get_short_name(name))
+        for name in self.models:
+            short_names.add(self.models[name].short_name)
         return short_names
 
     def _classify_models(self, models: Dict):
@@ -506,45 +510,56 @@ class MMDetModelLibrary(MMModelLibrary):
 
 class MMSegModelLibrary(MMModelLibrary):
     default_includes: List = [
-        'cgnet',
-        'gcnet',
-        'setr',
-        'deeplabv3',
-        'twins',
-        'fastfcn',
-        'fpn',
-        'upernet',
-        'dnl',
-        'icnet',
-        'segmenter',
-        'encnet',
-        'erfnet',
-        'segformer',
-        'apcnet',
-        'fast',
-        'ocrnet',
-        'lraspp',
-        'dpt',
-        'fcn',
-        'psanet',
-        'bisenetv2',
-        'pointrend',
-        'ccnet',
-        'pspnet',
+        '_base_',
+        'knet',
+        'sem',
+        'dnlnet',
         'dmnet',
-        'stdc',
-        'ann',
-        'nonlocal',
+        'icnet',
+        'apcnet',
+        'swin',
         'isanet',
-        'danet',
+        'fastfcn',
+        'poolformer',
+        'mae',
+        'segformer',
+        'ccnet',
+        'twins',
         'emanet',
-        'deeplabv3plus',
+        'upernet',
+        'beit',
+        'hrnet',
+        'bisenetv2',
+        'vit',
+        'setr',
+        'cgnet',
+        'ocrnet',
+        'ann',
+        'erfnet',
+        'point',
         'bisenetv1',
+        'nonlocal',
+        'unet',
+        'danet',
+        'stdc',
+        'fcn',
+        'encnet',
+        'resnest',
+        'mobilenet',
+        'convnext',
+        'deeplabv3',
+        'pspnet',
+        'gcnet',
+        'fastscnn',
+        'segmenter',
+        'dpt',
+        'deeplabv3plus',
+        'psanet',
     ]
-    base_config_path = '_base_/models/'
+    base_config_path = '/'
     repo = 'mmsegmentation'
 
-    def __init__(self, include=default_includes, exclude=[]) -> None:
+    def __init__(self, include=default_includes, exclude=['_base_']) -> None:
         super().__init__(include, exclude)
 
     @classmethod
