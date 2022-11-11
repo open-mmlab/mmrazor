@@ -170,6 +170,7 @@ class AutoformerBackbone(BaseBackbone):
     <https://github.com/microsoft/Cream/blob/main/AutoFormer/>`.
 
     Args:
+        arch_setting (Dict[str, List]): Architecture settings.
         img_size (int, optional): The image size of input.
             Defaults to 224.
         patch_size (int, optional): The patch size of autoformer.
@@ -189,15 +190,19 @@ class AutoformerBackbone(BaseBackbone):
             Defaults to True.
         init_cfg (Dict, optional): The config for initialization.
             Defaults to None.
+
+    Excamples:
+        >>> arch_setting = dict(
+        ...     mlp_ratios=[3.0, 3.5, 4.0],
+        ...     num_heads=[8, 9, 10],
+        ...     depth=[14, 15, 16],
+        ...     embed_dims=[528, 576, 624]
+        ... )
+        >>> model = AutoformerBackbone(arch_setting=arch_setting)
     """
-    mutable_settings: Dict[str, List] = {
-        'mlp_ratios': [3.0, 3.5, 4.0],
-        'num_heads': [8, 9, 10],
-        'depth': [14, 15, 16],
-        'embed_dims': [528, 576, 624]
-    }
 
     def __init__(self,
+                 arch_setting: Dict[str, List],
                  img_size: int = 224,
                  patch_size: int = 16,
                  in_channels: int = 3,
@@ -211,6 +216,7 @@ class AutoformerBackbone(BaseBackbone):
 
         super().__init__(init_cfg)
 
+        self.arch_setting = arch_setting
         self.img_size = img_size
         self.patch_size = patch_size
         self.qkv_bias = qkv_bias
@@ -220,10 +226,10 @@ class AutoformerBackbone(BaseBackbone):
         self.act_cfg = act_cfg
 
         # adapt mutable settings
-        self.mlp_ratio_range: List = self.mutable_settings['mlp_ratios']
-        self.num_head_range: List = self.mutable_settings['num_heads']
-        self.depth_range: List = self.mutable_settings['depth']
-        self.embed_dim_range: List = self.mutable_settings['embed_dims']
+        self.mlp_ratio_range: List = self.arch_setting['mlp_ratios']
+        self.num_head_range: List = self.arch_setting['num_heads']
+        self.depth_range: List = self.arch_setting['depth']
+        self.embed_dim_range: List = self.arch_setting['embed_dims']
 
         # mutable variables of autoformer
         self.mutable_depth = OneShotMutableValue(

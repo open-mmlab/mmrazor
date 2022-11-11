@@ -235,15 +235,14 @@ class MutableChannelUnit(ChannelUnit):
         """register channel container for dynamic ops."""
         for module in model.modules():
             if isinstance(module, DynamicChannelMixin):
+                in_channels = getattr(module,
+                                      module.attr_mappings['in_channels'], 0)
                 if module.get_mutable_attr('in_channels') is None:
-                    in_channels = getattr(module,
-                                          module.attr_mappings['in_channels'])
-
                     module.register_mutable_attr('in_channels',
                                                  container_class(in_channels))
+                out_channels = getattr(module,
+                                       module.attr_mappings['out_channels'], 0)
                 if module.get_mutable_attr('out_channels') is None:
-                    out_channels = getattr(
-                        module, module.attr_mappings['out_channels'])
 
                     module.register_mutable_attr('out_channels',
                                                  container_class(out_channels))

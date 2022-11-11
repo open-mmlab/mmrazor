@@ -20,11 +20,20 @@ data_preprocessor = dict(
         ],
         probs=[0.5, 0.5]))
 
+arch_setting = dict(
+    mlp_ratios=[3.0, 3.5, 4.0],
+    num_heads=[8, 9, 10],
+    depth=[14, 15, 16],
+    embed_dims=[528, 576, 624])
+
 supernet = dict(
     _scope_='mmrazor',
     type='SearchableImageClassifier',
     data_preprocessor=data_preprocessor,
-    backbone=dict(_scope_='mmrazor', type='AutoformerBackbone'),
+    backbone=dict(
+        _scope_='mmrazor',
+        type='AutoformerBackbone',
+        arch_setting=arch_setting),
     neck=None,
     head=dict(
         type='DynamicLinearClsHead',

@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Dict, Optional
+
 import torch
 import torch.nn as nn
 from mmengine.model.weight_init import trunc_normal_
@@ -12,11 +14,11 @@ class RelativePosition2D(nn.Module):
     Image RPE (iRPE for short) methods are new relative position encoding
     methods dedicated to 2D images.
     Args:
-        head_dims (list[int]): embedding dims of relative position.
-        max_relative_position (list[int]): The max relative position distance.
+        head_dims (int): embedding dims of relative position.
+        max_relative_position (int): The max relative position distance.
     """
 
-    def __init__(self, head_dims, max_relative_position=14):
+    def __init__(self, head_dims: int, max_relative_position: int = 14):
         super().__init__()
 
         self.head_dims = head_dims
@@ -91,7 +93,7 @@ class MultiheadAttention(nn.Module):
             Defaults to ``dict(type='Dropout', drop_prob=0.)``.
         relative_position (bool, optional): Whether use relative position.
             Defaults to True.
-        max_relative_position (list[int]): The max relative position distance.
+        max_relative_position (int): The max relative position distance.
         qkv_bias (bool): If True, add a learnable bias to q, k, v.
             Defaults to True.
         qk_scale (float, optional): Override default qk scale of
@@ -106,19 +108,19 @@ class MultiheadAttention(nn.Module):
     """
 
     def __init__(self,
-                 embed_dims,
-                 num_heads,
-                 input_dims=None,
-                 attn_drop_rate=0.,
-                 proj_drop=0.,
-                 dropout_layer=dict(type='Dropout', drop_prob=0.),
-                 relative_position=True,
-                 max_relative_position=14,
-                 qkv_bias=True,
-                 qk_scale=None,
-                 proj_bias=True,
-                 v_shortcut=False,
-                 init_cfg=None):
+                 embed_dims: int,
+                 num_heads: int,
+                 input_dims: Optional[int] = None,
+                 attn_drop_rate: float = 0.,
+                 proj_drop: float = 0.,
+                 dropout_layer: Dict = dict(type='Dropout', drop_prob=0.),
+                 relative_position: Optional[bool] = True,
+                 max_relative_position: int = 14,
+                 qkv_bias: bool = True,
+                 qk_scale: Optional[float] = None,
+                 proj_bias: bool = True,
+                 v_shortcut: bool = False,
+                 init_cfg: Optional[dict] = None):
         super().__init__()
 
         self.input_dims = input_dims or embed_dims
