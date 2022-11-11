@@ -1,10 +1,16 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 
+import copy
+from typing import Dict, List
+
 import torch
 import torch.nn as nn
 from mmengine.utils.dl_utils import mmcv_full_available
 
 from mmrazor.models.architectures.dynamic_ops import DynamicChannelMixin
+from mmrazor.models.mutables.mutable_channel import (
+    MutableChannelUnit, SequentialMutableChannelUnit)
+from mmrazor.models.mutables.mutable_channel.units.utils import find_mutable
 from mmrazor.registry import TASK_UTILS
 from mmrazor.structures.graph import BaseGraph, ModuleGraph
 from mmrazor.structures.graph.channel_graph import (
@@ -140,7 +146,7 @@ class PruneTracer:
         channel_graph.forward(self.input_shape[1])
         unit_configs = channel_graph.generate_units_config()
 
-        return unit_configs
+        return self._find_mutable_units(model, unit_configs)
 
     def _fx_trace(self, model):
         args = demo_inputs(model, self.input_shape)
@@ -149,3 +155,30 @@ class PruneTracer:
             return self.tracer.trace(model, concrete_args=args)
         else:
             return self.tracer.trace(model)
+
+    def _find_mutable_units(self, model, units_config: Dict):
+        model = copy.deepcopy(model)
+        units: List[SequentialMutableChannelUnit] = [
+            SequentialMutableChannelUnit.init_from_cfg(model, cfg)
+            for cfg in units_config.values()
+        ]
+        for unit in units:
+            unit.prepare_for_pruning(model)
+        mutable_units = [unit for unit in units if unit.is_mutable]
+        inputs = demo_inputs(model, [1, 3, 224, 224])
+        model.eval()
+
+        if isinstance(inputs, dict):
+            inputs['mode'] = 'loss'
+            template_output = model(**inputs)
+        else:
+            template_output = model(inputs)
+
+        mutable_units = find_mutable(model, mutable_units, units,
+                                     template_output)
+        mutable_unit_config = {}
+        for unit in mutable_units:
+            mutable_unit_config[
+                unit.name] = MutableChannelUnit.config_template(
+                    unit, with_channels=True, with_init_args=True)
+        return mutable_unit_config

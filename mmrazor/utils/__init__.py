@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .demo_input import demo_inputs
+from .demo_inputs import demo_inputs
 from .index_dict import IndexDict
 from .misc import find_latest_checkpoint
 from .placeholder import get_placeholder
