@@ -8,8 +8,17 @@ class TestSearchableImageClassifier(TestCase):
 
     def test_init(self):
 
+        arch_setting = dict(
+            mlp_ratios=[3.0, 3.5, 4.0],
+            num_heads=[8, 9, 10],
+            depth=[14, 15, 16],
+            embed_dims=[528, 576, 624])
+
         supernet_kwargs = dict(
-            backbone=dict(_scope_='mmrazor', type='AutoformerBackbone'),
+            backbone=dict(
+                _scope_='mmrazor',
+                type='AutoformerBackbone',
+                arch_setting=arch_setting),
             neck=None,
             head=dict(
                 _scope_='mmrazor',

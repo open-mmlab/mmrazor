@@ -7,6 +7,12 @@ import torch
 from mmrazor.models import Autoformer
 from mmrazor.registry import MODELS
 
+arch_setting = dict(
+    mlp_ratios=[3.0, 3.5, 4.0],
+    num_heads=[8, 9, 10],
+    depth=[14, 15, 16],
+    embed_dims=[528, 576, 624])
+
 MUTATOR_CFG = dict(
     channel_mutator=dict(
         type='mmrazor.OneShotChannelMutator',
@@ -22,7 +28,10 @@ MUTATOR_CFG = dict(
 ARCHITECTURE_CFG = dict(
     _scope_='mmrazor',
     type='SearchableImageClassifier',
-    backbone=dict(_scope_='mmrazor', type='AutoformerBackbone'),
+    backbone=dict(
+        _scope_='mmrazor',
+        type='AutoformerBackbone',
+        arch_setting=arch_setting),
     neck=None,
     head=dict(
         type='DynamicLinearClsHead',

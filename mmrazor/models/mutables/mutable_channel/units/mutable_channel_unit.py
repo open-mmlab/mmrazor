@@ -74,7 +74,7 @@ class MutableChannelUnit(ChannelUnit):
                         mutable for mutable in source_mutables
                         if isinstance(mutable, MutableValue)
                     ]
-                    assert len(source_value_mutables) == 1, (
+                    assert len(source_value_mutables) <= 1, (
                         'only support one mutable value '
                         'used in DerivedMutable')
                     expand_ratio = int(

@@ -5,8 +5,15 @@ from mmrazor.models.architectures.dynamic_ops import (
 from mmrazor.models.mutables import MutableChannelContainer
 from mmrazor.registry import MODELS
 
+arch_setting = dict(
+    mlp_ratios=[3.0, 3.5, 4.0],
+    num_heads=[8, 9, 10],
+    depth=[14, 15, 16],
+    embed_dims=[528, 576, 624])
+
 BACKBONE_CFG = dict(
     type='mmrazor.AutoformerBackbone',
+    arch_setting=arch_setting,
     img_size=224,
     patch_size=16,
     in_channels=3,
@@ -17,10 +24,10 @@ BACKBONE_CFG = dict(
 def test_searchable_autoformer_mutable() -> None:
     backbone = MODELS.build(BACKBONE_CFG)
 
-    num_heads = backbone.mutable_settings['num_heads']
-    mlp_ratios = backbone.mutable_settings['mlp_ratios']
-    depth = backbone.mutable_settings['depth']
-    embed_dims = backbone.mutable_settings['embed_dims']
+    num_heads = backbone.arch_setting['num_heads']
+    mlp_ratios = backbone.arch_setting['mlp_ratios']
+    depth = backbone.arch_setting['depth']
+    embed_dims = backbone.arch_setting['embed_dims']
     embed_dims_expansion = [i * j for i in mlp_ratios for j in embed_dims]
     head_expansion = [i * 64 for i in num_heads]
 
