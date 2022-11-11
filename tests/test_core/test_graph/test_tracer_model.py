@@ -17,6 +17,7 @@ from mmrazor.models.mutables.mutable_channel.units import \
     SequentialMutableChannelUnit
 from mmrazor.models.task_modules.tracer.backward_tracer import BackwardTracer
 from mmrazor.models.task_modules.tracer.fx_tracer import CustomFxTracer
+from mmrazor.models.task_modules.tracer.prune_tracer import PruneTracer
 from mmrazor.models.task_modules.tracer.razor_tracer import (FxBaseNode,
                                                              RazorFxTracer)
 from mmrazor.structures.graph import BaseGraph, ModuleGraph
@@ -79,11 +80,12 @@ def time_limit(seconds, msg='', activated=(not DEBUG)):
 def forward_units(model: ModelGenerator,
                   try_units: List[SequentialMutableChannelUnit],
                   units: List[SequentialMutableChannelUnit], template_output):
+    model.eval()
     for unit in units:
         unit.current_choice = 1.0
     for unit in try_units:
         unit.current_choice = min(max(0.1, unit.sample_choice()), 0.9)
-    x = torch.rand([2, 3, 224, 224]).to(DEVICE)
+    x = torch.rand([1, 3, 224, 224]).to(DEVICE)
     tensors = model(x)
     model.assert_model_is_changed(template_output, tensors)
 
@@ -147,7 +149,7 @@ def is_dynamic_op_fx(module, name):
 def _test_tracer(model, tracer_type='fx'):
 
     def _test_fx_tracer(model):
-        tracer = CustomFxTracer()
+        tracer = CustomFxTracer(leaf_module=PruneTracer.default_leaf_modules)
         return tracer.trace(model)
 
     def _test_backward_tracer(model):
@@ -187,7 +189,8 @@ def _test_tracer_result_2_module_graph(model, tracer_res, tracer_type='fx'):
 
 
 def _test_units(units: List[SequentialMutableChannelUnit], model):
-    x = torch.rand([2, 3, 224, 224]).to(DEVICE)
+    x = torch.rand([1, 3, 224, 224]).to(DEVICE)
+    model.eval()
     tensors_org = model(x)
     # prune
     for unit in units:
