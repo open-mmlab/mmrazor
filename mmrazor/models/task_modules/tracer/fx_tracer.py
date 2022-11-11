@@ -38,16 +38,6 @@ class FxTracer(Tracer):
             torch: torch.arange,
         }
 
-    def is_leaf_module(self, m: torch.nn.Module,
-                       module_qualified_name: str) -> bool:
-        """Bool: determine if a module is a leaf module"""
-        is_torch_module = super().is_leaf_module(m, module_qualified_name)
-        if self.extra_is_leaf_module is None:
-            is_extra = False
-        else:
-            is_extra = self.extra_is_leaf_module(m, module_qualified_name)
-        return is_torch_module or is_extra
-
     def trace(self,
               root: Union[torch.nn.Module, Callable[..., Any]],
               concrete_args: Optional[Dict[str, Any]] = None) -> Graph:

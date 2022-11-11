@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+
 import torch.nn as nn
-from mmengine.model import BaseModel
+from mmengine.model import BaseModel, revert_sync_batchnorm
 
 from mmrazor.models.architectures.dynamic_ops import DynamicChannelMixin
 from mmrazor.registry import TASK_UTILS
@@ -97,6 +98,8 @@ class PruneTracer:
             raise NotImplementedError()
 
     def trace(self, model):
+        # model = copy.deepcopy(model)
+        model = revert_sync_batchnorm(model)
         model.eval()
         if self.tracer_type == 'BackwardTracer':
             path_list = self.tracer.trace(model)
