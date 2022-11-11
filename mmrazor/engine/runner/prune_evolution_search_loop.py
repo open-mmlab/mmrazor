@@ -83,6 +83,7 @@ class PruneEvolutionSearchLoop(EvolutionSearchLoop):
     def __init__(self,
                  runner,
                  dataloader: Union[DataLoader, Dict],
+                 bn_dataloader,
                  evaluator: Union[Evaluator, Dict, List],
                  max_epochs: int = 20,
                  max_keep_ckpts: int = 3,
@@ -96,10 +97,21 @@ class PruneEvolutionSearchLoop(EvolutionSearchLoop):
                  resource_estimator_cfg: Optional[dict] = None,
                  score_key: str = 'accuracy/top1',
                  init_candidates: Optional[str] = None) -> None:
+        if bn_dataloader['batch_size'] < 2:
+            bn_dataloader['batch_size'] = 2
+
         super().__init__(runner, dataloader, evaluator, max_epochs,
                          max_keep_ckpts, resume_from, num_candidates, top_k,
                          num_mutation, num_crossover, mutate_prob, flops_range,
                          resource_estimator_cfg, score_key, init_candidates)
+        if isinstance(bn_dataloader, dict):
+            # Determine whether or not different ranks use different seed.
+            diff_rank_seed = runner._randomness_cfg.get(
+                'diff_rank_seed', False)
+            self.bn_dataloader = runner.build_dataloader(
+                bn_dataloader, seed=runner.seed, diff_rank_seed=diff_rank_seed)
+        else:
+            self.bn_dataloader = bn_dataloader
         self.flops_range: Tuple[float, float] = self._update_flop_range()
 
     def run_epoch(self) -> None:
@@ -173,10 +185,14 @@ class PruneEvolutionSearchLoop(EvolutionSearchLoop):
     @torch.no_grad()
     def _val_candidate(self) -> Dict:
         # bn rescale
+        len_img = 0
         self.runner.model.train()
-        for _, data_batch in enumerate(self.dataloader):
-            data = self.runner.model.data_preprocessor(data_batch, False)
+        for _, data_batch in enumerate(self.bn_dataloader):
+            data = self.runner.model.data_preprocessor(data_batch, True)
             self.runner.model._run_forward(data, mode='tensor')  # type: ignore
+            len_img += len(data_batch['data_samples'])
+            if len_img > 1000:
+                break
         return super()._val_candidate()
 
     def _scale_and_check_subnet_constraints(

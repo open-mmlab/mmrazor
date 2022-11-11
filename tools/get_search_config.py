@@ -65,16 +65,24 @@ def wrap_search_config(config: Config, checkpoint_path: str,
 
     config['model'] = model_config
 
-    val_loader_config = config['val_dataloader']
-    val_loader_config['dataset']['type'] = config[
-        'default_scope'] + '.' + val_loader_config['dataset']['type']
     val_evaluator_config = config['val_evaluator']
     val_evaluator_config[
         'type'] = config['default_scope'] + '.' + val_evaluator_config['type']
 
+    def prepare_dataloader(val_loader_config):
+
+        val_loader_config['dataset']['type'] = config[
+            'default_scope'] + '.' + val_loader_config['dataset']['type']
+        return val_loader_config
+
+    val_loader_config = config['val_dataloader']
+    val_loader_config = prepare_dataloader(val_loader_config)
+    train_loader_config = prepare_dataloader(config['train_dataloader'])
+
     searcher_config = dict(
         type='mmrazor.PruneEvolutionSearchLoop',
         dataloader=val_loader_config,
+        bn_dataloader=train_loader_config,
         evaluator=val_evaluator_config,
         max_epochs=20,
         num_candidates=20,

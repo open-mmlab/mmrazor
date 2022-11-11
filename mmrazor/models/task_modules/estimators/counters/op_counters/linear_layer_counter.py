@@ -1,6 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
-import torch.nn as nn
 
 from mmrazor.registry import TASK_UTILS
 from ..flops_params_counter import get_model_parameters_number
@@ -23,11 +22,4 @@ class LinearCounter(BaseCounter):
 
 @TASK_UTILS.register_module()
 class DynamicLinearCounter(LinearCounter):
-
-    @staticmethod
-    def add_count_hook(module: nn.Linear, input, output):
-        module.in_features = module.get_mutable_attr(
-            'in_channels').activated_channels
-        module.out_features = module.get_mutable_attr(
-            'out_channels').activated_channels
-        LinearCounter.add_count_hook(module, input, output)
+    pass
