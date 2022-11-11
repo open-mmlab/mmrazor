@@ -2,11 +2,12 @@
 from unittest import TestCase
 
 import torch
+from mmengine.structures import BaseDataElement
 
 from mmrazor import digit_version
-from mmrazor.models import (ABLoss, ActivationLoss, ATLoss, DKDLoss, FBKDLoss,
-                            FTLoss, InformationEntropyLoss, KDSoftCELoss,
-                            OFDLoss, OnehotLikeLoss)
+from mmrazor.models import (ABLoss, ActivationLoss, ATLoss, CRDLoss, DKDLoss,
+                            FBKDLoss, FTLoss, InformationEntropyLoss,
+                            KDSoftCELoss, OFDLoss, OnehotLikeLoss, PKDLoss)
 
 
 class TestLosses(TestCase):
@@ -68,6 +69,34 @@ class TestLosses(TestCase):
         self.normal_test_1d(ab_loss)
         self.normal_test_2d(ab_loss)
         self.normal_test_3d(ab_loss)
+
+    def _mock_crd_data_sample(self, sample_idx_list):
+        data_samples = []
+        for _idx in sample_idx_list:
+            data_sample = BaseDataElement()
+            data_sample.set_data(dict(sample_idx=_idx))
+            data_samples.append(data_sample)
+        return data_samples
+
+    def test_crd_loss(self):
+        crd_loss = CRDLoss(**dict(neg_num=5, sample_n=10, dim_out=6))
+        sample_idx_list = torch.tensor(list(range(5)))
+        data_samples = self._mock_crd_data_sample(sample_idx_list)
+        loss = crd_loss.forward(self.feats_1d, self.feats_1d, data_samples)
+        self.assertTrue(loss.numel() == 1)
+
+        # test the calculation
+        s_feat_0 = torch.randn((5, 6))
+        t_feat_0 = torch.randn((5, 6))
+        crd_loss_num_0 = crd_loss.forward(s_feat_0, t_feat_0, data_samples)
+        assert crd_loss_num_0 != torch.tensor(0.0)
+
+        s_feat_1 = torch.randn((5, 6))
+        t_feat_1 = torch.rand((5, 6))
+        sample_idx_list_1 = torch.tensor(list(range(5)))
+        data_samples_1 = self._mock_crd_data_sample(sample_idx_list_1)
+        crd_loss_num_1 = crd_loss.forward(s_feat_1, t_feat_1, data_samples_1)
+        assert crd_loss_num_1 != torch.tensor(0.0)
 
     def test_dkd_loss(self):
         dkd_loss_cfg = dict(loss_weight=1.0)
@@ -150,3 +179,28 @@ class TestLosses(TestCase):
 
         fbkd_loss = fbkdloss(s_input, t_input)
         self.assertTrue(fbkd_loss.numel() == 1)
+
+    def test_pkdloss(self):
+        pkd_loss = PKDLoss(loss_weight=1.0)
+        feats_S, feats_T = torch.rand(2, 256, 4, 4), torch.rand(2, 256, 4, 4)
+        loss = pkd_loss(feats_S, feats_T)
+        self.assertTrue(loss.numel() == 1)
+        self.assertTrue(0. <= loss <= 1.)
+
+        num_stages = 4
+        feats_S = (torch.rand(2, 256, 4, 4) for _ in range(num_stages))
+        feats_T = (torch.rand(2, 256, 4, 4) for _ in range(num_stages))
+        loss = pkd_loss(feats_S, feats_T)
+        self.assertTrue(loss.numel() == 1)
+        self.assertTrue(0. <= loss <= num_stages * 1.)
+
+        feats_S, feats_T = torch.rand(2, 256, 2, 2), torch.rand(2, 256, 4, 4)
+        loss = pkd_loss(feats_S, feats_T)
+        self.assertTrue(loss.numel() == 1)
+        self.assertTrue(0. <= loss <= 1.)
+
+        pkd_loss = PKDLoss(loss_weight=1.0, resize_stu=False)
+        feats_S, feats_T = torch.rand(2, 256, 2, 2), torch.rand(2, 256, 4, 4)
+        loss = pkd_loss(feats_S, feats_T)
+        self.assertTrue(loss.numel() == 1)
+        self.assertTrue(0. <= loss <= 1.)

@@ -4,6 +4,7 @@ from unittest import TestCase
 
 import pytest
 import torch
+from mmcv.cnn.bricks import Conv2dAdaptivePadding
 from torch import Tensor
 from torch.nn import Conv2d, Module, Parameter
 
@@ -118,20 +119,29 @@ class TestResourceEstimator(TestCase):
 
     def test_estimate(self) -> None:
         fool_conv2d = FoolConv2d()
+        flops_params_cfg = dict(input_shape=(1, 3, 224, 224))
         results = estimator.estimate(
-            model=fool_conv2d,
-            resource_args=dict(input_shape=(1, 3, 224, 224)))
+            model=fool_conv2d, flops_params_cfg=flops_params_cfg)
         flops_count = results['flops']
         params_count = results['params']
 
-        self.assertGreater(flops_count, 0)
-        self.assertGreater(params_count, 0)
+        self.assertEqual(flops_count, 44.158)
+        self.assertEqual(params_count, 0.001)
+
+        fool_conv2d = Conv2dAdaptivePadding(3, 32, 3)
+        results = estimator.estimate(
+            model=fool_conv2d, flops_params_cfg=flops_params_cfg)
+        flops_count = results['flops']
+        params_count = results['params']
+
+        self.assertEqual(flops_count, 44.958)
+        self.assertEqual(params_count, 0.001)
 
     def test_register_module(self) -> None:
         fool_add_constant = FoolConvModule()
+        flops_params_cfg = dict(input_shape=(1, 3, 224, 224))
         results = estimator.estimate(
-            model=fool_add_constant,
-            resource_args=dict(input_shape=(1, 3, 224, 224)))
+            model=fool_add_constant, flops_params_cfg=flops_params_cfg)
         flops_count = results['flops']
         params_count = results['params']
 
@@ -140,46 +150,76 @@ class TestResourceEstimator(TestCase):
 
     def test_disable_sepc_counter(self) -> None:
         fool_add_constant = FoolConvModule()
+        flops_params_cfg = dict(
+            input_shape=(1, 3, 224, 224),
+            disabled_counters=['FoolAddConstantCounter'])
         rest_results = estimator.estimate(
-            model=fool_add_constant,
-            resource_args=dict(
-                input_shape=(1, 3, 224, 224),
-                disabled_counters=['FoolAddConstantCounter']))
+            model=fool_add_constant, flops_params_cfg=flops_params_cfg)
         rest_flops_count = rest_results['flops']
         rest_params_count = rest_results['params']
 
         self.assertLess(rest_flops_count, 45.158)
         self.assertLess(rest_params_count, 0.701)
 
-    def test_estimate_spec_modules(self) -> None:
+        fool_conv2d = Conv2dAdaptivePadding(3, 32, 3)
+        flops_params_cfg = dict(
+            input_shape=(1, 3, 224, 224), disabled_counters=['Conv2dCounter'])
+        rest_results = estimator.estimate(
+            model=fool_conv2d, flops_params_cfg=flops_params_cfg)
+        rest_flops_count = rest_results['flops']
+        rest_params_count = rest_results['params']
+
+        self.assertEqual(rest_flops_count, 0)
+        self.assertEqual(rest_params_count, 0)
+
+    def test_estimate_spec_module(self) -> None:
         fool_add_constant = FoolConvModule()
-        results = estimator.estimate_spec_modules(
-            model=fool_add_constant,
-            resource_args=dict(
-                input_shape=(1, 3, 224, 224), spec_modules=['add_constant']))
+        flops_params_cfg = dict(
+            input_shape=(1, 3, 224, 224),
+            spec_modules=['add_constant', 'conv2d'])
+        results = estimator.estimate(
+            model=fool_add_constant, flops_params_cfg=flops_params_cfg)
+        flops_count = results['flops']
+        params_count = results['params']
+
+        self.assertEqual(flops_count, 45.158)
+        self.assertEqual(params_count, 0.701)
+
+    def test_estimate_separation_modules(self) -> None:
+        fool_add_constant = FoolConvModule()
+        flops_params_cfg = dict(
+            input_shape=(1, 3, 224, 224), spec_modules=['add_constant'])
+        results = estimator.estimate_separation_modules(
+            model=fool_add_constant, flops_params_cfg=flops_params_cfg)
         self.assertGreater(results['add_constant']['flops'], 0)
 
         with pytest.raises(AssertionError):
-            results = estimator.estimate_spec_modules(
-                model=fool_add_constant,
-                resource_args=dict(
-                    input_shape=(1, 3, 224, 224), spec_modules=['backbone']))
+            flops_params_cfg = dict(
+                input_shape=(1, 3, 224, 224), spec_modules=['backbone'])
+            results = estimator.estimate_separation_modules(
+                model=fool_add_constant, flops_params_cfg=flops_params_cfg)
+
+        with pytest.raises(AssertionError):
+            flops_params_cfg = dict(
+                input_shape=(1, 3, 224, 224), spec_modules=[])
+            results = estimator.estimate_separation_modules(
+                model=fool_add_constant, flops_params_cfg=flops_params_cfg)
 
     def test_estimate_subnet(self) -> None:
-        resource_args = dict(input_shape=(1, 3, 224, 224))
+        flops_params_cfg = dict(input_shape=(1, 3, 224, 224))
         model = MODELS.build(BACKBONE_CFG)
         self.sample_choice(model)
         copied_model = copy.deepcopy(model)
 
         results = estimator.estimate(
-            model=copied_model, resource_args=resource_args)
+            model=copied_model, flops_params_cfg=flops_params_cfg)
         flops_count = results['flops']
         params_count = results['params']
 
         fix_subnet = export_fix_subnet(model)
         load_fix_subnet(copied_model, fix_subnet)
         subnet_results = estimator.estimate(
-            model=copied_model, resource_args=resource_args)
+            model=copied_model, flops_params_cfg=flops_params_cfg)
         subnet_flops_count = subnet_results['flops']
         subnet_params_count = subnet_results['params']
 
@@ -188,8 +228,8 @@ class TestResourceEstimator(TestCase):
 
         # test whether subnet estimate will affect original model
         copied_model = copy.deepcopy(model)
-        results_after_estimate = \
-            estimator.estimate(model=copied_model, resource_args=resource_args)
+        results_after_estimate = estimator.estimate(
+            model=copied_model, flops_params_cfg=flops_params_cfg)
         flops_count_after_estimate = results_after_estimate['flops']
         params_count_after_estimate = results_after_estimate['params']
 

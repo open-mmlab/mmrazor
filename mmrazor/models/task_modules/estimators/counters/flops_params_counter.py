@@ -1,26 +1,30 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import sys
 from functools import partial
+from typing import Dict, List
 
+import mmcv
 import torch
 import torch.nn as nn
 
 from mmrazor.registry import TASK_UTILS
 
 
-def get_model_complexity_info(model,
-                              input_shape=(1, 3, 224, 224),
-                              spec_modules=[],
-                              disabled_counters=[],
-                              print_per_layer_stat=False,
-                              as_strings=False,
-                              input_constructor=None,
-                              flush=False,
-                              ost=sys.stdout):
-    """Get complexity information of a model. This method can calculate FLOPs
-    and parameter counts of a model with corresponding input shape. It can also
-    print complexity information for each layer in a model. Supported layers
-    are listed as below:
+def get_model_flops_params(model,
+                           input_shape=(1, 3, 224, 224),
+                           spec_modules=[],
+                           disabled_counters=[],
+                           print_per_layer_stat=False,
+                           units=dict(flops='M', params='M'),
+                           as_strings=False,
+                           seperate_return: bool = False,
+                           input_constructor=None,
+                           flush=False,
+                           ost=sys.stdout):
+    """Get FLOPs and parameters of a model. This method can calculate FLOPs and
+    parameter counts of a model with corresponding input shape. It can also
+    print FLOPs and params for each layer in a model. Supported layers are
+    listed as below:
 
         - Convolutions: ``nn.Conv1d``, ``nn.Conv2d``, ``nn.Conv3d``.
         - Activations: ``nn.ReLU``, ``nn.PReLU``, ``nn.ELU``, ``nn.LeakyReLU``,
@@ -39,16 +43,20 @@ def get_model_complexity_info(model,
     Args:
         model (nn.Module): The model for complexity calculation.
         input_shape (tuple): Input shape (including batchsize) used for
-            calculation. Default to (1, 3, 224, 224)
+            calculation. Default to (1, 3, 224, 224).
         spec_modules (list): A list that contains the names of several spec
             modules, which users want to get resources infos of them.
             e.g., ['backbone', 'head'], ['backbone.layer1']. Default to [].
         disabled_counters (list): One can limit which ops' spec would be
             calculated. Default to [].
-        print_per_layer_stat (bool): Whether to print complexity information
+        print_per_layer_stat (bool): Whether to print FLOPs and params
             for each layer in a model. Default to True.
+        units (dict): A dict including converted FLOPs and params units.
+            Default to dict(flops='M', params='M').
         as_strings (bool): Output FLOPs and params counts in a string form.
             Default to True.
+        seperate_return (bool): Whether to return the resource information
+            separately. Default to False.
         input_constructor (None | callable): If specified, it takes a callable
             method that generates input. otherwise, it will generate a random
             tensor with input shape to calculate FLOPs. Default to None.
@@ -60,12 +68,16 @@ def get_model_complexity_info(model,
         tuple[float | str] | dict[str, float]: If `as_strings` is set to True,
             it will return FLOPs and parameter counts in a string format.
             Otherwise, it will return those in a float number format.
-            If len(spec_modules) > 0, it will return a resource info dict with
-            FLOPs and parameter counts of each spec module in float format.
+            NOTE: If seperate_return, it will return a resource info dict with
+            FLOPs & params counts of each spec module in float|string format.
     """
     assert type(input_shape) is tuple
     assert len(input_shape) >= 1
     assert isinstance(model, nn.Module)
+    if seperate_return and not len(spec_modules):
+        raise AssertionError('`seperate_return` can only be set to True when '
+                             '`spec_modules` are not empty.')
+
     flops_params_model = add_flops_params_counting_methods(model)
     flops_params_model.eval()
     flops_params_model.start_flops_params_count(disabled_counters)
@@ -96,34 +108,44 @@ def get_model_complexity_info(model,
             ost=ost,
             flush=flush)
 
+    if units is not None:
+        flops_count = params_units_convert(flops_count, units['flops'])
+        params_count = params_units_convert(params_count, units['params'])
+
+    if as_strings:
+        flops_suffix = ' ' + units['flops'] + 'FLOPs' if units else ' FLOPs'
+        params_suffix = ' ' + units['params'] if units else ''
+
     if len(spec_modules):
+        flops_count, params_count = 0.0, 0.0
         module_names = [name for name, _ in flops_params_model.named_modules()]
         for module in spec_modules:
             assert module in module_names, \
                 f'All modules in spec_modules should be in the measured ' \
-                f'flops_params_model. Got module {module} in spec_modules.'
-        spec_modules_resources = dict()
-        accumulate_sub_module_flops_params(flops_params_model)
+                f'flops_params_model. Got module `{module}` in spec_modules.'
+        spec_modules_resources: Dict[str, dict] = dict()
+        accumulate_sub_module_flops_params(flops_params_model, units=units)
         for name, module in flops_params_model.named_modules():
             if name in spec_modules:
                 spec_modules_resources[name] = dict()
                 spec_modules_resources[name]['flops'] = module.__flops__
                 spec_modules_resources[name]['params'] = module.__params__
+                flops_count += module.__flops__
+                params_count += module.__params__
                 if as_strings:
-                    spec_modules_resources[name]['flops'] = str(
-                        params_units_convert(module.__flops__,
-                                             'G')) + ' GFLOPs'
-                    spec_modules_resources[name]['params'] = str(
-                        params_units_convert(module.__params__, 'M')) + ' M'
+                    spec_modules_resources[name]['flops'] = \
+                        str(module.__flops__) + flops_suffix
+                    spec_modules_resources[name]['params'] = \
+                        str(module.__params__) + params_suffix
 
     flops_params_model.stop_flops_params_count()
 
-    if len(spec_modules):
+    if seperate_return:
         return spec_modules_resources
 
     if as_strings:
-        flops_string = str(params_units_convert(flops_count, 'G')) + ' GFLOPs'
-        params_string = str(params_units_convert(params_count, 'M')) + ' M'
+        flops_string = str(flops_count) + flops_suffix
+        params_string = str(params_count) + params_suffix
         return flops_string, params_string
 
     return flops_count, params_count
@@ -164,7 +186,7 @@ def params_units_convert(num_params, units='M', precision=3):
 def print_model_with_flops_params(model,
                                   total_flops,
                                   total_params,
-                                  units='G',
+                                  units=dict(flops='M', params='M'),
                                   precision=3,
                                   ost=sys.stdout,
                                   flush=False):
@@ -174,7 +196,9 @@ def print_model_with_flops_params(model,
         model (nn.Module): The model to be printed.
         total_flops (float): Total FLOPs of the model.
         total_params (float): Total parameter counts of the model.
-        units (str | None): Converted FLOPs units. Default to 'G'.
+        units (tuple | none): A tuple pair including converted FLOPs & params
+            units. e.g., ('G', 'M') stands for FLOPs as 'G' & params as 'M'.
+            Default to ('M', 'M').
         precision (int): Digit number after the decimal point. Default to 3.
         ost (stream): same as `file` param in :func:`print`.
             Default to sys.stdout.
@@ -200,8 +224,8 @@ def print_model_with_flops_params(model,
         >>>     return x
         >>> model = ExampleModel()
         >>> x = (3, 16, 16)
-        to print the complexity information state for each layer, you can use
-        >>> get_model_complexity_info(model, x)
+        to print the FLOPs and params state for each layer, you can use
+        >>> get_model_flops_params(model, x)
         or directly use
         >>> print_model_with_flops_params(model, 4579784.0, 37361)
         ExampleModel(
@@ -241,11 +265,11 @@ def print_model_with_flops_params(model,
         accumulated_flops_cost = self.accumulate_flops()
         flops_string = str(
             params_units_convert(
-                accumulated_flops_cost, units=units,
-                precision=precision)) + ' ' + units + 'FLOPs'
+                accumulated_flops_cost, units['flops'],
+                precision=precision)) + ' ' + units['flops'] + 'FLOPs'
         params_string = str(
-            params_units_convert(
-                accumulated_num_params, units='M', precision=precision)) + ' M'
+            params_units_convert(accumulated_num_params, units['params'],
+                                 precision)) + ' M'
         return ', '.join([
             params_string,
             '{:.3%} Params'.format(accumulated_num_params / total_params),
@@ -277,12 +301,15 @@ def print_model_with_flops_params(model,
     model.apply(del_extra_repr)
 
 
-def accumulate_sub_module_flops_params(model):
+def accumulate_sub_module_flops_params(model, units=None):
     """Accumulate FLOPs and params for each module in the model. Each module in
     the model will have the `__flops__` and `__params__` parameters.
 
     Args:
         model (nn.Module): The model to be accumulated.
+        units (tuple | none): A tuple pair including converted FLOPs & params
+            units. e.g., ('G', 'M') stands for FLOPs as 'G' & params as 'M'.
+            Default to None.
     """
 
     def accumulate_params(module):
@@ -310,6 +337,9 @@ def accumulate_sub_module_flops_params(model):
         _params = accumulate_params(module)
         module.__flops__ = _flops
         module.__params__ = _params
+        if units is not None:
+            module.__flops__ = params_units_convert(_flops, units['flops'])
+            module.__params__ = params_units_convert(_params, units['params'])
 
 
 def get_model_parameters_number(model):
@@ -468,9 +498,29 @@ def add_flops_params_counter_variable_or_reset(module):
         module.__params__ = 0
 
 
-def get_counter_type(module):
-    """Get counter type of the module based on the module class name."""
-    return module.__class__.__name__ + 'Counter'
+def get_counter_type(module) -> str:
+    """Get counter type of the module based on the module class name.
+
+    If the current module counter_type is not in TASK_UTILS._module_dict,
+    it will search the base classes of the module to see if it matches any
+    base class counter_type.
+
+    Returns:
+        str: Counter type (or the base counter type) of the current module.
+    """
+    counter_type = module.__class__.__name__ + 'Counter'
+    if counter_type not in TASK_UTILS._module_dict.keys():
+        old_counter_type = counter_type
+        assert nn.Module in module.__class__.mro()
+        for base_cls in module.__class__.mro():
+            if base_cls in get_modules_list():
+                counter_type = base_cls.__name__ + 'Counter'
+                from mmengine import MMLogger
+                logger = MMLogger.get_current_instance()
+                logger.warning(f'`{old_counter_type}` not in op_counters. '
+                               f'Using `{counter_type}` instead.')
+                break
+    return counter_type
 
 
 def is_supported_instance(module):
@@ -489,3 +539,54 @@ def remove_flops_params_counter_hook_function(module):
         del module.__flops__
     if hasattr(module, '__params__'):
         del module.__params__
+
+
+def get_modules_list() -> List:
+    return [
+        # convolutions
+        nn.Conv1d,
+        nn.Conv2d,
+        nn.Conv3d,
+        mmcv.cnn.bricks.Conv2d,
+        mmcv.cnn.bricks.Conv3d,
+        # activations
+        nn.ReLU,
+        nn.PReLU,
+        nn.ELU,
+        nn.LeakyReLU,
+        nn.ReLU6,
+        # poolings
+        nn.MaxPool1d,
+        nn.AvgPool1d,
+        nn.AvgPool2d,
+        nn.MaxPool2d,
+        nn.MaxPool3d,
+        nn.AvgPool3d,
+        mmcv.cnn.bricks.MaxPool2d,
+        mmcv.cnn.bricks.MaxPool3d,
+        nn.AdaptiveMaxPool1d,
+        nn.AdaptiveAvgPool1d,
+        nn.AdaptiveMaxPool2d,
+        nn.AdaptiveAvgPool2d,
+        nn.AdaptiveMaxPool3d,
+        nn.AdaptiveAvgPool3d,
+        # normalizations
+        nn.BatchNorm1d,
+        nn.BatchNorm2d,
+        nn.BatchNorm3d,
+        nn.GroupNorm,
+        nn.InstanceNorm1d,
+        nn.InstanceNorm2d,
+        nn.InstanceNorm3d,
+        nn.LayerNorm,
+        # FC
+        nn.Linear,
+        mmcv.cnn.bricks.Linear,
+        # Upscale
+        nn.Upsample,
+        nn.UpsamplingNearest2d,
+        nn.UpsamplingBilinear2d,
+        # Deconvolution
+        nn.ConvTranspose2d,
+        mmcv.cnn.bricks.ConvTranspose2d,
+    ]

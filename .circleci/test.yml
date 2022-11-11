@@ -26,7 +26,6 @@ jobs:
           command: |
             pip install interrogate
             interrogate -v --ignore-init-method --ignore-module --ignore-nested-functions --ignore-magic --ignore-regex "__repr__" --fail-under 80 mmrazor
-
   build_cpu:
     parameters:
       # The python version must match available image tags in
@@ -36,8 +35,6 @@ jobs:
       torch:
         type: string
       torchvision:
-        type: string
-      mmcv:
         type: string
     docker:
       - image: cimg/python:<< parameters.python >>
@@ -58,20 +55,21 @@ jobs:
           name: Install PyTorch
           command: |
             python -V
-            python -m pip install torch==<< parameters.torch >>+cpu torchvision==<< parameters.torchvision >>+cpu -f https://download.pytorch.org/whl/torch_stable.html
+            pip install torch==<< parameters.torch >>+cpu torchvision==<< parameters.torchvision >>+cpu -f https://download.pytorch.org/whl/torch_stable.html
       - when:
           condition:
-            equal: [ "3.9.0", << parameters.python >> ]
+            equal: ["3.9.0", << parameters.python >>]
           steps:
             - run: pip install "protobuf <= 3.20.1" && sudo apt-get update && sudo apt-get -y install libprotobuf-dev protobuf-compiler cmake
       - run:
           name: Install mmrazor dependencies
           command: |
-            python -m pip install git+ssh://git@github.com/open-mmlab/mmengine.git@main
-            python -m pip install << parameters.mmcv >>
-            python -m pip install git+ssh://git@github.com/open-mmlab/mmclassification.git@dev-1.x
-            python -m pip install git+ssh://git@github.com/open-mmlab/mmdetection.git@dev-3.x
-            python -m pip install git+ssh://git@github.com/open-mmlab/mmsegmentation.git@dev-1.x
+            pip install git+https://github.com/open-mmlab/mmengine.git@main
+            pip install -U openmim
+            mim install 'mmcv >= 2.0.0rc1'
+            pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
+            pip install git+https://github.com/open-mmlab/mmdetection.git@dev-3.x
+            pip install git+https://github.com/open-mmlab/mmsegmentation.git@dev-1.x
             pip install -r requirements.txt
       - run:
           name: Build and install
@@ -80,10 +78,9 @@ jobs:
       - run:
           name: Run unittests
           command: |
-            python -m coverage run --branch --source mmrazor -m pytest tests/
-            python -m coverage xml
-            python -m coverage report -m
-
+            coverage run --branch --source mmrazor -m pytest tests/
+            coverage xml
+            coverage report -m
   build_cuda:
     parameters:
       torch:
@@ -94,8 +91,6 @@ jobs:
       cudnn:
         type: integer
         default: 7
-      mmcv:
-        type: string
     machine:
       image: ubuntu-2004-cuda-11.4:202110-01
       # docker_layer_caching: true
@@ -103,13 +98,13 @@ jobs:
     steps:
       - checkout
       - run:
-          # CLoning repos in VM since Docker doesn't have access to the private key
+          # Cloning repos in VM since Docker doesn't have access to the private key
           name: Clone Repos
           command: |
-            git clone -b main --depth 1 ssh://git@github.com/open-mmlab/mmengine.git /home/circleci/mmengine
-            git clone -b dev-3.x --depth 1 ssh://git@github.com/open-mmlab/mmdetection.git /home/circleci/mmdetection
-            git clone -b dev-1.x --depth 1 ssh://git@github.com/open-mmlab/mmclassification.git /home/circleci/mmclassification
-            git clone -b dev-1.x --depth 1 ssh://git@github.com/open-mmlab/mmsegmentation.git /home/circleci/mmsegmentation
+            git clone -b main --depth 1 https://github.com/open-mmlab/mmengine.git /home/circleci/mmengine
+            git clone -b dev-3.x --depth 1 https://github.com/open-mmlab/mmdetection.git /home/circleci/mmdetection
+            git clone -b dev-1.x --depth 1 https://github.com/open-mmlab/mmclassification.git /home/circleci/mmclassification
+            git clone -b dev-1.x --depth 1 https://github.com/open-mmlab/mmsegmentation.git /home/circleci/mmsegmentation
       - run:
           name: Build Docker image
           command: |
@@ -117,10 +112,10 @@ jobs:
             docker run --gpus all -t -d -v /home/circleci/project:/mmrazor -v /home/circleci/mmengine:/mmengine -v /home/circleci/mmdetection:/mmdetection -v /home/circleci/mmclassification:/mmclassification -v /home/circleci/mmsegmentation:/mmsegmentation -w /mmrazor --name mmrazor mmrazor:gpu
       - run:
           name: Install mmrazor dependencies
-          # pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu101/torch${{matrix.torch_version}}/index.html
           command: |
             docker exec mmrazor pip install -e /mmengine
-            docker exec mmrazor pip install << parameters.mmcv >>
+            docker exec mmrazor pip install -U openmim
+            docker exec mmrazor mim install 'mmcv >= 2.0.0rc1'
             docker exec mmrazor pip install -e /mmdetection
             docker exec mmrazor pip install -e /mmclassification
             docker exec mmrazor pip install -e /mmsegmentation
@@ -132,7 +127,7 @@ jobs:
       - run:
           name: Run unittests
           command: |
-            docker exec mmrazor python -m pytest tests/
+            docker exec mmrazor pytest tests/
 
 workflows:
   pr_stage_lint:
@@ -144,10 +139,10 @@ workflows:
             branches:
               ignore:
                 - dev-1.x
+                - 1.x
   pr_stage_test:
     when:
-      not:
-        << pipeline.parameters.lint_only >>
+      not: << pipeline.parameters.lint_only >>
     jobs:
       - lint:
           name: lint
@@ -159,16 +154,14 @@ workflows:
           name: minimum_version_cpu
           torch: 1.6.0
           torchvision: 0.7.0
-          python: 3.6.9  # The lowest python 3.6.x version available on CircleCI images
-          mmcv: https://download.openmmlab.com/mmcv/dev-2.x/cpu/torch1.6.0/mmcv_full-2.0.0rc1-cp36-cp36m-manylinux1_x86_64.whl
+          python: 3.6.9 # The lowest python 3.6.x version available on CircleCI images
           requires:
             - lint
       - build_cpu:
           name: maximum_version_cpu
-          torch: 1.9.0
-          torchvision: 0.10.0
+          torch: 1.12.1
+          torchvision: 0.13.1
           python: 3.9.0
-          mmcv: https://download.openmmlab.com/mmcv/dev-2.x/cpu/torch1.9.0/mmcv_full-2.0.0rc1-cp39-cp39-manylinux1_x86_64.whl
           requires:
             - minimum_version_cpu
       - hold:
@@ -181,20 +174,17 @@ workflows:
           # Use double quotation mark to explicitly specify its type
           # as string instead of number
           cuda: "10.2"
-          mmcv: https://download.openmmlab.com/mmcv/dev-2.x/cu102/torch1.8.0/mmcv_full-2.0.0rc1-cp37-cp37m-manylinux1_x86_64.whl
           requires:
             - hold
   merge_stage_test:
     when:
-      not:
-        << pipeline.parameters.lint_only >>
+      not: << pipeline.parameters.lint_only >>
     jobs:
       - build_cuda:
           name: minimum_version_gpu
           torch: 1.6.0
           # Use double quotation mark to explicitly specify its type
           # as string instead of number
-          mmcv: https://download.openmmlab.com/mmcv/dev-2.x/cu101/torch1.6.0/mmcv_full-2.0.0rc1-cp37-cp37m-manylinux1_x86_64.whl
           cuda: "10.1"
           filters:
             branches:

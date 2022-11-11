@@ -3,12 +3,15 @@ import random
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from mmrazor.registry import MODELS
+from mmrazor.utils.typing import DumpChosen
 from ..base_mutable import BaseMutable
 from ..derived_mutable import DerivedMethodMixin, DerivedMutable
 
+Value = Union[int, float]
+
 
 @MODELS.register_module()
-class MutableValue(BaseMutable[Any, Dict], DerivedMethodMixin):
+class MutableValue(BaseMutable, DerivedMethodMixin):
     """Base class for mutable value.
 
     A mutable value is actually a mutable that adds some functionality to a
@@ -26,7 +29,7 @@ class MutableValue(BaseMutable[Any, Dict], DerivedMethodMixin):
     """
 
     def __init__(self,
-                 value_list: List[Any],
+                 value_list: List[Value],
                  default_value: Optional[Any] = None,
                  alias: Optional[str] = None,
                  init_cfg: Optional[Dict] = None) -> None:
@@ -59,7 +62,7 @@ class MutableValue(BaseMutable[Any, Dict], DerivedMethodMixin):
         """List of choices."""
         return self._value_list
 
-    def fix_chosen(self, chosen: Dict[str, Any]) -> None:
+    def fix_chosen(self, chosen: Value) -> None:
         """Fix mutable value with subnet config.
 
         Args:
@@ -68,24 +71,23 @@ class MutableValue(BaseMutable[Any, Dict], DerivedMethodMixin):
         if self.is_fixed:
             raise RuntimeError('MutableValue can not be fixed twice')
 
-        all_choices = chosen['all_choices']
-        current_choice = chosen['current_choice']
+        assert chosen in self.choices
 
-        assert all_choices == self.choices, \
-            f'Expect choices to be: {self.choices}, but got: {all_choices}'
-        assert current_choice in self.choices
-
-        self.current_choice = current_choice
+        self.current_choice = chosen
         self.is_fixed = True
 
-    def dump_chosen(self) -> Dict[str, Any]:
+    def dump_chosen(self) -> DumpChosen:
         """Dump information of chosen.
 
         Returns:
             Dict[str, Any]: Dumped information.
         """
-        return dict(
-            current_choice=self.current_choice, all_choices=self.choices)
+        chosen = self.export_chosen()
+        meta = dict(all_choices=self.choices)
+        return DumpChosen(chosen=chosen, meta=meta)
+
+    def export_chosen(self):
+        return self.current_choice
 
     @property
     def num_choices(self) -> int:
@@ -222,15 +224,15 @@ class OneShotMutableValue(MutableValue):
         """Overload `*` operator.
 
         Args:
-            other (int, OneShotMutableChannel): Expand ratio or
-                OneShotMutableChannel.
+            other (int, SquentialMutableChannel): Expand ratio or
+                SquentialMutableChannel.
 
         Returns:
             DerivedMutable: Derived expand mutable.
         """
-        from ..mutable_channel import OneShotMutableChannel
+        from ..mutable_channel import SquentialMutableChannel
 
-        if isinstance(other, OneShotMutableChannel):
+        if isinstance(other, SquentialMutableChannel):
             return other * self
 
         return super().__mul__(other)

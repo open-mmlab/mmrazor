@@ -15,6 +15,9 @@ Import:
   - configs/distill/mmdet/fbkd/metafile.yml
   - configs/distill/mmcls/factor_transfer/metafile.yml
   - configs/distill/mmcls/ofd/metafile.yml
-  - configs/pruning/mmcls/autoslim/metafile.yml
+  - configs/nas/mmcls/autoslim/metafile.yml
   - configs/nas/mmcls/darts/metafile.yml
   - configs/nas/mmdet/detnas/metafile.yml
+  - configs/distill/mmdet/pkd/metafile.yml
+  - configs/distill/mmdet3d/pkd/metafile.yml
+  - configs/distill/mmcls/deit/metafile.yml

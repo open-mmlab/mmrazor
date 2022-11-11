@@ -25,9 +25,9 @@ class DiffModuleMutator(ModuleMutator):
     """
 
     def __init__(self,
-                 custom_group: Optional[List[List[str]]] = None,
+                 custom_groups: Optional[List[List[str]]] = None,
                  init_cfg: Optional[Dict] = None) -> None:
-        super().__init__(custom_group=custom_group, init_cfg=init_cfg)
+        super().__init__(custom_groups=custom_groups, init_cfg=init_cfg)
 
     def build_arch_param(self, num_choices) -> nn.Parameter:
         """Build learnable architecture parameters."""
@@ -88,8 +88,8 @@ class DiffModuleMutator(ModuleMutator):
 
         choices = dict()
         for group_id, mutables in self.search_groups.items():
-            arch_parm = self.arch_params[str(group_id)]
-            choice = mutables[0].sample_choice(arch_parm)
+            arch_param = self.arch_params[str(group_id)]
+            choice = mutables[0].sample_choice(arch_param)
             choices[group_id] = choice
         return choices
 

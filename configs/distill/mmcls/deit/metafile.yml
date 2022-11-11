@@ -1,0 +1,34 @@
+Collections:
+  - Name: DEIT
+    Metadata:
+      Training Data:
+        - ImageNet-1k
+    Paper:
+      URL: https://arxiv.org/abs/2012.12877
+      Title: Training data-efficient image transformers & distillation through attention
+    README: configs/distill/mmcls/deit/README.md
+
+Models:
+  - Name: deit-base_regnety160_pt-16xb64_in1k
+    In Collection: DEIT
+    Metadata:
+      Student:
+        Config: mmcls::deit/deit-base_pt-16xb64_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/deit/deit-base_pt-16xb64_in1k_20220216-db63c16c.pth
+        Metrics:
+          Top 1 Accuracy: 81.76
+          Top 5 Accuracy: 95.81
+      Teacher:
+        Config: mmrazor::distill/mmcls/deit/deit-base_regnety160_pt-16xb64_in1k.py
+        Weights: https://dl.fbaipublicfiles.com/deit/regnety_160-a5fe301d.pth
+        Metrics:
+          Top 1 Accuracy: 82.83
+          Top 5 Accuracy: 96.42
+    Results:
+      - Task: Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 83.24
+          Top 5 Accuracy: 96.33
+    Weights: https://download.openmmlab.com/mmrazor/v1/deit/deit-base/deit-base_regnety160_pt-16xb64_in1k_20221011_113403-a67bf475.pth?versionId=CAEQThiBgMCFteW0oBgiIDdmMWY2NGRiOGY1YzRmZWZiOTExMzQ2NjNlMjk2Nzcz
+    Config: configs/distill/mmcls/deit/deit-base_regnety160_pt-16xb64_in1k.py

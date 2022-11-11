@@ -1,12 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
 from unittest import TestCase
 
 import pytest
 import torch
 
-from mmrazor.models.mutables import (MutableValue, OneShotMutableChannel,
-                                     OneShotMutableValue)
+from mmrazor.models.mutables import (MutableValue, OneShotMutableValue,
+                                     SquentialMutableChannel)
 
 
 class TestMutableValue(TestCase):
@@ -42,22 +41,13 @@ class TestMutableValue(TestCase):
     def test_fix_chosen(self) -> None:
         mv = MutableValue([2, 3, 4])
         chosen = mv.dump_chosen()
-        assert chosen == {
-            'current_choice': mv.current_choice,
-            'all_choices': mv.choices
-        }
+        assert chosen.chosen == mv.current_choice
+        assert chosen.meta['all_choices'] == mv.choices
 
-        chosen['current_choice'] = 5
         with pytest.raises(AssertionError):
-            mv.fix_chosen(chosen)
+            mv.fix_chosen(5)
 
-        chosen_copied = copy.deepcopy(chosen)
-        chosen_copied['all_choices'] = [1, 2, 3]
-        with pytest.raises(AssertionError):
-            mv.fix_chosen(chosen_copied)
-
-        chosen['current_choice'] = 3
-        mv.fix_chosen(chosen)
+        mv.fix_chosen(3)
         assert mv.current_choice == 3
 
         with pytest.raises(RuntimeError):
@@ -87,8 +77,7 @@ class TestMutableValue(TestCase):
             _ = mv * 1.2
 
         mv = MutableValue(value_list=[1, 2, 3], default_value=3)
-        mc = OneShotMutableChannel(
-            num_channels=4, candidate_choices=[2, 4], candidate_mode='number')
+        mc = SquentialMutableChannel(num_channels=4)
 
         with pytest.raises(TypeError):
             _ = mc * mv
