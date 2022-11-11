@@ -74,6 +74,9 @@ class MutableChannelUnit(ChannelUnit):
                         mutable for mutable in source_mutables
                         if isinstance(mutable, MutableValue)
                     ]
+                    assert len(source_value_mutables) == 1, (
+                        'only support one mutable value '
+                        'used in DerivedMutable')
                     expand_ratio = int(
                         list(source_value_mutables)
                         [0].current_choice) if source_value_mutables else 1
@@ -233,14 +236,12 @@ class MutableChannelUnit(ChannelUnit):
         for module in model.modules():
             if isinstance(module, DynamicChannelMixin):
                 if module.get_mutable_attr('in_channels') is None:
-                    in_channels = 0
                     in_channels = getattr(module,
                                           module.attr_mappings['in_channels'])
 
                     module.register_mutable_attr('in_channels',
                                                  container_class(in_channels))
                 if module.get_mutable_attr('out_channels') is None:
-                    out_channels = 0
                     out_channels = getattr(
                         module, module.attr_mappings['out_channels'])
 
