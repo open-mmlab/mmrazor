@@ -54,7 +54,6 @@ class DCFFChannelMutator(ChannelMutator[DCFFChannelUnit]):
         Returns:
             List[Dict[str, int]]: config of the subnets.
         """
-        """Prepare subnet config."""
         subnets: List[Dict[str, int]] = []
         num_subnets = 0
         for key in unit_cfg:

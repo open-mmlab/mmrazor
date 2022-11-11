@@ -176,7 +176,6 @@ class ItePruneAlgorithm(BaseAlgorithm):
                     unit_target = target[unit_name]
                     assert isinstance(unit_target, (float, int))
                     group_target[group_id] = unit_target
-        print('group_target', group_target)
         return group_target
 
     def check_prune_target(self, config: Dict):
@@ -189,7 +188,6 @@ class ItePruneAlgorithm(BaseAlgorithm):
                 data_samples: Optional[List[BaseDataElement]] = None,
                 mode: str = 'tensor') -> ForwardResults:
         """Forward."""
-        print(self._epoch, self._iteration)
         if self.prune_config_manager.is_prune_time(self._num,
                                                    self._current_iteration):
 
@@ -222,7 +220,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
 
     @property
     def _iteration(self):
-        """Get total iteration number."""
+        """Get current sum iteration number."""
         message_hub = MessageHub.get_current_instance()
         if 'iter' in message_hub.runtime_info:
             return message_hub.runtime_info['iter']
@@ -231,13 +229,15 @@ class ItePruneAlgorithm(BaseAlgorithm):
 
     @property
     def _current_iteration(self):
-        """Get iteration number in current epoch."""
+        """Get current iteration number in current epoch."""
         message_hub = MessageHub.get_current_instance()
-        if 'iter' in message_hub.runtime_info:
+        # Only by_epoch need to check current_iter in epoch
+        if 'iter' in message_hub.runtime_info and self.by_epoch:
             max_iter = message_hub.runtime_info['max_iters']
             max_epoch = message_hub.runtime_info['max_epochs']
             return self._iteration % (max_iter // max_epoch)
         else:
+            # IterRunner does not need in-epoch iter
             return 0
 
     @property
