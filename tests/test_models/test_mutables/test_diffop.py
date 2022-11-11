@@ -44,9 +44,6 @@ class TestDiffOP(TestCase):
         output = op.forward_arch_param(input, arch_param=arch_param)
         assert output is not None
 
-        output = op.forward_arch_param(input, arch_param=None)
-        assert output is not None
-
         # test when some element of arch_param is 0
         arch_param = nn.Parameter(torch.ones(op.num_choices))
         output = op.forward_arch_param(input, arch_param=arch_param)

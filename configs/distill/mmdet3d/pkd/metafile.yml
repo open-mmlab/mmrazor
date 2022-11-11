@@ -1,0 +1,22 @@
+Models:
+  - Name: pkd_fpn_fcos3d_r101_fcos3d_r50_8xb2-1x_nus-mono3d
+    In Collection: PKD
+    Metadata:
+      Location: FPN
+      Student:
+        Metrics:
+          box AP: 26.8
+        Config:
+        Weights:
+      Teacher:
+        Metrics:
+          box AP: 32.1
+        Config: mmdet3d::fcos3d/fcos3d_r101-caffe-dcn_fpn_head-gn_8xb2-1x_nus-mono3d_finetune.py
+        Weights: https://download.openmmlab.com/mmdetection3d/v0.1.0_models/fcos3d/fcos3d_r101_caffe_fpn_gn-head_dcn_2x8_1x_nus-mono3d_finetune/fcos3d_r101_caffe_fpn_gn-head_dcn_2x8_1x_nus-mono3d_finetune_20210717_095645-8d806dc2.pth
+    Results:
+      - Task: Object Detection
+        Dataset: COCO
+        Metrics:
+          box AP: 29.3
+    Config: configs/distill/mmdet3d/pkd/pkd_fpn_fcos3d_r101_fcos3d_r50_8xb2-1x_nus-mono3d.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/pkd/pkd_fcos3d_w10/pkd_fpn_fcos3d_r101_fcos3d_r50_8xb2-1x_nus-mono3d_20220928_234557-0b51b62e.json?versionId=CAEQThiBgIDrvdC0oBgiIDNmNGNkNDZhM2RmNjQ1MmI4ZDM0OGNmYmFkYjk5ZjFi

@@ -4,6 +4,8 @@ _base_ = [
     'mmcls::_base_/default_runtime.py'
 ]
 
+teacher_ckpt = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet34_8xb32_in1k_20210831-f257d4e6.pth'  # noqa: E501
+
 model = dict(
     _scope_='mmrazor',
     type='SingleTeacherDistill',
@@ -17,8 +19,8 @@ model = dict(
     architecture=dict(
         cfg_path='mmcls::resnet/resnet18_8xb32_in1k.py', pretrained=False),
     teacher=dict(
-        cfg_path='mmcls::resnet/resnet34_8xb32_in1k.py', pretrained=True),
-    teacher_ckpt='resnet34_8xb32_in1k_20210831-f257d4e6.pth',
+        cfg_path='mmcls::resnet/resnet34_8xb32_in1k.py', pretrained=False),
+    teacher_ckpt=teacher_ckpt,
     distiller=dict(
         type='ConfigurableDistiller',
         student_recorders=dict(
@@ -26,7 +28,7 @@ model = dict(
         teacher_recorders=dict(
             fc=dict(type='ModuleOutputs', source='head.fc')),
         distill_losses=dict(
-            loss_kl=dict(type='KLDivergence', tau=1, loss_weight=5)),
+            loss_kl=dict(type='KLDivergence', tau=1, loss_weight=3)),
         loss_forward_mappings=dict(
             loss_kl=dict(
                 preds_S=dict(from_student=True, recorder='fc'),

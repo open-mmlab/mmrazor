@@ -1,6 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Optional
 
+warn_once = False
+
 
 def make_divisible(value: int,
                    divisor: int,
@@ -24,6 +26,18 @@ def make_divisible(value: int,
 
     if min_value is None:
         min_value = divisor
+    if min_value < divisor:
+        global warn_once
+        if warn_once is False:
+            from mmengine import MMLogger
+            MMLogger.get_current_instance().warning(
+                (f'min_value=={min_value} should greater or equal to '
+                 f'divisor=={divisor}, '
+                 'so we make min_value equal divisor.'))
+            warn_once = True
+
+        min_value = divisor
+
     new_value = max(min_value, int(value + divisor / 2) // divisor * divisor)
     # Make sure that round down does not go down by more than (1-min_ratio).
     if new_value < min_ratio * value:

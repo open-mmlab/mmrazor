@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 
 import torch.nn as nn
 
-from mmrazor.models import ResourceEstimator
+from mmrazor.models.task_modules import ResourceEstimator
 from mmrazor.structures import export_fix_subnet, load_fix_subnet
 from mmrazor.utils import SupportRandomSubnet
 
