@@ -6,6 +6,7 @@ import torch
 from mmrazor.registry import MODELS
 from mmrazor.utils import IndexDict
 from ...architectures.dynamic_ops.mixins import DynamicChannelMixin
+from mmrazor.utils.typing import DumpChosen
 from .base_mutable_channel import BaseMutableChannel
 from .simple_mutable_channel import SimpleMutableChannel
 
@@ -122,12 +123,15 @@ class MutableChannelContainer(BaseMutableChannel):
                 SimpleMutableChannel(self.num_channels - last_end), last_end,
                 self.num_channels)
 
+    # todo: dump_chosen and fix_chosen are useless but necessary
+    #  as there is no mask attr in MutableChannelContainer
     def dump_chosen(self):
         chosen = 0
         for mutable in self.mutable_channels.values():
             chosen += mutable.current_choice * mutable.num_channels
+        meta = dict(max_channels=self.num_channels)
 
-        return chosen / self.num_channels
+        return DumpChosen(meta=meta, chosen=chosen / self.num_channels)
 
     def fix_chosen(self, chosen=None):
         self.is_fixed = True

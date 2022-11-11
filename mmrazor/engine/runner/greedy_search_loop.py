@@ -48,12 +48,14 @@ class GreedySearchLoop(TestLoop):
             self.model = runner.model
 
         assert hasattr(self.model, 'mutator')
+        search_groups = self.model.mutator.search_groups
         self.candidate_choices = {}
-        for unit in self.model.mutator.mutable_units:
-            self.candidate_choices[unit.name] = unit.candidate_choices
+        for group_id, modules in search_groups.items():
+            self.candidate_choices[group_id] = modules[0].candidate_choices
+
         self.max_subnet = {}
-        for unit_name, candidate_choices in self.candidate_choices.items():
-            self.max_subnet[unit_name] = len(candidate_choices)
+        for group_id, candidate_choices in self.candidate_choices.items():
+            self.max_subnet[group_id] = len(candidate_choices)
         self.current_subnet = self.max_subnet
 
         current_subnet_choices = self._channel_bins2choices(
