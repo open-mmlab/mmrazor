@@ -9,7 +9,8 @@ from mmrazor.models.mutables import (ChannelUnitType, MutableChannelUnit,
                                      SequentialMutableChannelUnit)
 from mmrazor.models.mutables.mutable_channel.units.channel_unit import \
     ChannelUnit
-from mmrazor.models.task_modules import PruneTracer
+from mmrazor.models.task_modules.tracer.prune_tracer import (
+    PruneTracer, revert_sync_batchnorm)
 from mmrazor.registry import MODELS, TASK_UTILS
 from ..base_mutator import BaseMutator
 
@@ -92,7 +93,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
         1. parse the model and get MutableChannelUnits.
         2. call unit.prepare_for_pruning for each unit.
         """
-
+        supernet = revert_sync_batchnorm(supernet)
         self._name2module = dict(supernet.named_modules())
 
         if 'Tracer' in self.parse_cfg['type']:
