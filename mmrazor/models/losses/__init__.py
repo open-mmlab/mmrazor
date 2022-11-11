@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .ab_loss import ABLoss
+from .adaround_loss import AdaRoundLoss
 from .at_loss import ATLoss
 from .crd_loss import CRDLoss
 from .cross_entropy_loss import CrossEntropyLoss
