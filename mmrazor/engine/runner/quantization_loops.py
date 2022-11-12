@@ -79,7 +79,8 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
         """Launch training."""
         self.runner.call_hook('before_train')
 
-        self.model.prepare()
+        for mode in ('tensor', 'loss', 'predict'):
+            self.model.prepare(mode=mode)
 
         if self.is_calibrate:
             self.model.state = (1, 0)
