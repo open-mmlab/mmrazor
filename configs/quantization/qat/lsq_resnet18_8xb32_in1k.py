@@ -1,4 +1,4 @@
-_base_ = ['mmcls::resnet/resnet18_8xb16_cifar10.py']
+_base_ = ['mmcls::resnet/resnet18_8xb32_in1k.py']
 
 train_cfg = dict(
     _delete_=True,
@@ -6,11 +6,15 @@ train_cfg = dict(
     max_epochs=_base_.train_cfg.max_epochs,
 )
 
+resnet = _base_.model
+ckpt = '/mnt/petrelfs/caoweihan.p/ckpt/resnet18_8xb32_in1k_20210831-fbbb1da6.pth'  # noqa: E501
+resnet.init_cfg = dict(type='Pretrained', checkpoint=ckpt)
+
 model = dict(
     _delete_=True,
     _scope_='mmrazor',
     type='GeneralQuant',
-    architecture={{_base_.model}},
+    architecture=resnet,
     quantizer=dict(
         type='TensorRTQuantizer',
         skipped_methods=[
@@ -24,14 +28,33 @@ model = dict(
             w_fake_quant=dict(type='mmrazor.LearnableFakeQuantize'),
             a_fake_quant=dict(type='mmrazor.LearnableFakeQuantize'),
             w_qscheme=dict(
-                bit=2,
+                bit=8,
                 is_symmetry=False,
                 is_per_channel=True,
                 is_pot_scale=False,
             ),
             a_qscheme=dict(
-                bit=4,
+                bit=8,
                 is_symmetry=False,
                 is_per_channel=False,
                 is_pot_scale=False),
         )))
+
+default_hooks = dict(
+    checkpoint=dict(
+        type='CheckpointHook',
+        interval=5,
+        max_keep_ckpts=3,
+        out_dir='/mnt/petrelfs/caoweihan.p/training_ckpt/quant'))
+
+optim_wrapper = dict(
+    optimizer=dict(type='SGD', lr=0.004, momentum=0.9, weight_decay=0.0001))
+
+# learning policy
+param_scheduler = dict(
+    _delete_=True,
+    type='CosineAnnealingLR',
+    T_max=100,
+    by_epoch=True,
+    begin=0,
+    end=100)
