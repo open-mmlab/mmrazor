@@ -6,9 +6,11 @@ from .efficientnet_series import ConvBnAct, DepthwiseSeparableConv
 from .gather_tensors import GatherTensors
 from .mobilenet_series import MBBlock
 from .shufflenet_series import ShuffleBlock, ShuffleXception
+from .transformer_series import MultiheadAttention, RelativePosition2D
 
 __all__ = [
     'ShuffleBlock', 'ShuffleXception', 'DartsPoolBN', 'DartsDilConv',
     'DartsSepConv', 'DartsSkipConnect', 'DartsZero', 'MBBlock', 'Identity',
-    'ConvBnAct', 'DepthwiseSeparableConv', 'GatherTensors'
+    'ConvBnAct', 'DepthwiseSeparableConv', 'GatherTensors',
+    'RelativePosition2D', 'MultiheadAttention'
 ]

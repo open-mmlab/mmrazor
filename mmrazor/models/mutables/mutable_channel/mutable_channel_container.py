@@ -3,9 +3,9 @@ import copy
 
 import torch
 
-from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
 from mmrazor.registry import MODELS
 from mmrazor.utils import IndexDict
+from ...architectures.dynamic_ops.mixins import DynamicChannelMixin
 from .base_mutable_channel import BaseMutableChannel
 from .simple_mutable_channel import SimpleMutableChannel
 
@@ -66,7 +66,7 @@ class MutableChannelContainer(BaseMutableChannel):
 
     def register_mutable(self, mutable_channel: BaseMutableChannel, start: int,
                          end: int):
-        """Register/Store BaseMutableChannel in the MutableChannelContainer  in
+        """Register/Store BaseMutableChannel in the MutableChannelContainer in
         the range [start,end)"""
 
         self.mutable_channels[(start, end)] = mutable_channel

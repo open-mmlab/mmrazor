@@ -10,7 +10,7 @@ from mmrazor.models.mutables.mutable_channel import (
     L1MutableChannelUnit, SequentialMutableChannelUnit)
 from mmrazor.models.mutators.channel_mutator import ChannelMutator
 from mmrazor.registry import MODELS
-from ...data.models import DynamicLinearModel
+from ...data.models import DynamicAttention, DynamicLinearModel
 from ...test_core.test_graph.test_graph import TestGraph
 
 sys.setrecursionlimit(2000)
@@ -134,6 +134,30 @@ class TestChannelMutator(unittest.TestCase):
                     parse_cfg={'type': 'Predefined'})
                 mutator.prepare_from_supernet(model)
                 self._test_a_mutator(mutator, model)
+
+    def test_models_with_predefined_dynamic_op_without_pruning(self):
+        for Model in [
+                DynamicAttention,
+        ]:
+            with self.subTest(model=Model):
+                model = Model()
+                mutator = ChannelMutator(
+                    channel_unit_cfg={
+                        'type': 'OneShotMutableChannelUnit',
+                        'default_args': {
+                            'unit_predefined': True
+                        }
+                    },
+                    parse_cfg={'type': 'Predefined'})
+                mutator.prepare_from_supernet(model)
+                choices = mutator.sample_choices()
+                mutator.set_choices(choices)
+                self.assertGreater(len(mutator.mutable_units), 0)
+                x = torch.rand([2, 3, 224, 224])
+                y = model(x)
+                self.assertEqual(
+                    list(y.shape),
+                    [2, list(mutator.current_choices.values())[0]])
 
     def test_custom_group(self):
         ARCHITECTURE_CFG = dict(

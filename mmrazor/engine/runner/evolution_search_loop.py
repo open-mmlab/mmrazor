@@ -223,16 +223,17 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                     candidates_resources.append(result)
             self.candidates = Candidates(self.candidates.data)
         else:
-            self.candidates = Candidates([dict()] * self.num_candidates)
+            self.candidates = Candidates([dict(a=0)] * self.num_candidates)
 
         if len(candidates_resources) > 0:
             self.candidates.update_resources(
                 candidates_resources,
                 start=len(self.candidates.data) - len(candidates_resources))
+            assert init_candidates + len(
+                candidates_resources) == self.num_candidates
+
         # broadcast candidates to val with multi-GPUs.
         broadcast_object_list(self.candidates.data)
-        assert init_candidates + len(
-            candidates_resources) == self.num_candidates
 
     def update_candidates_scores(self) -> None:
         """Validate candicate one by one from the candicate pool, and update

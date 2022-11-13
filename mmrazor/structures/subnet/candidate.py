@@ -51,7 +51,7 @@ class Candidates(UserList):
     def scores(self) -> List[float]:
         """The scores of candidates."""
         return [
-            value.get('score', 0.) for item in self.data
+            round(value.get('score', 0.), 2) for item in self.data
             for _, value in item.items()
         ]
 
