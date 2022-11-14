@@ -7,7 +7,7 @@ from mmrazor.registry import TASK_UTILS
 @TASK_UTILS.register_module()
 class BaseDemoInput():
 
-    def __init__(self, input_shape, training=False) -> None:
+    def __init__(self, input_shape=[1, 3, 224, 224], training=False) -> None:
         self.input_shape = input_shape
         self.training = training
 
@@ -61,7 +61,7 @@ class DefaultMMDetDemoInput(DefaultMMDemoInput):
         assert isinstance(model, BaseDetector)
 
         data = demo_mm_inputs(1, [input_shape[1:]])
-        data = model.data_preprocessor(data, False)
+        data = model.data_preprocessor(data, training)
         return data
 
 
@@ -73,4 +73,15 @@ class DefaultMMSegDemoInput(DefaultMMDemoInput):
         assert isinstance(model, BaseSegmentor)
         from .mmseg_demo_input import demo_mmseg_inputs
         data = demo_mmseg_inputs(model, input_shape)
+        return data
+
+
+@TASK_UTILS.register_module()
+class DefaultMMRotateDemoInput(DefaultMMDemoInput):
+
+    def get_mm_data(self, model, input_shape, training=False):
+        from mmrotate.testing._utils import demo_mm_inputs
+
+        data = demo_mm_inputs(1, [input_shape[1:]], use_box_type=True)
+        data = model.data_preprocessor(data, training)
         return data

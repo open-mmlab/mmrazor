@@ -6,7 +6,7 @@ from mmrazor.registry import TASK_UTILS
 from mmrazor.utils import get_placeholder
 from .demo_inputs import (BaseDemoInput, DefaultMMClsDemoInput,
                           DefaultMMDemoInput, DefaultMMDetDemoInput,
-                          DefaultMMSegDemoInput)
+                          DefaultMMRotateDemoInput, DefaultMMSegDemoInput)
 
 try:
     from mmdet.models import BaseDetector
@@ -23,20 +23,33 @@ try:
 except Exception:
     BaseSegmentor = get_placeholder('mmseg')
 
-default_concrete_args_fun = {
-    BaseDetector: DefaultMMDetDemoInput,
+default_demo_input_class = {
+    BaseDetector: DefaultMMRotateDemoInput,
     ImageClassifier: DefaultMMClsDemoInput,
     BaseSegmentor: DefaultMMSegDemoInput,
     BaseModel: DefaultMMDemoInput,
     nn.Module: BaseDemoInput
 }
+default_demo_input_class_for_scope = {
+    'mmcls': DefaultMMClsDemoInput,
+    'mmdet': DefaultMMDetDemoInput,
+    'mmseg': DefaultMMSegDemoInput,
+    'mmrotate': DefaultMMRotateDemoInput,
+    'torchvision': BaseDemoInput,
+}
 
 
-def defaul_demo_inputs(model, input_shape, training=False):
-    for module_type, demo_input_class in default_concrete_args_fun.items(  # noqa
+def defaul_demo_inputs(model, input_shape, training=False, scope=None):
+    if scope is not None:
+        for scope_name, demo_input in default_demo_input_class_for_scope.items(
+        ):
+            if scope == scope_name:
+                return demo_input(input_shape, training).get_data(model)
+
+    for module_type, demo_input in default_demo_input_class.items(  # noqa
     ):  # noqa
         if isinstance(model, module_type):
-            return demo_input_class(input_shape, training).get_data(model)
+            return demo_input(input_shape, training).get_data(model)
     # default
     return BaseDemoInput(input_shape, training).get_data(model)
 
@@ -44,5 +57,13 @@ def defaul_demo_inputs(model, input_shape, training=False):
 @TASK_UTILS.register_module()
 class DefaultDemoInput(BaseDemoInput):
 
+    def __init__(self,
+                 input_shape=[1, 3, 224, 224],
+                 training=False,
+                 scope=None) -> None:
+        super().__init__(input_shape, training)
+        self.scope = scope
+
     def get_data(self, model):
-        return defaul_demo_inputs(model, self.input_shape, self.training)
+        return defaul_demo_inputs(model, self.input_shape, self.training,
+                                  self.scope)
