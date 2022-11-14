@@ -6,7 +6,6 @@ import torch
 
 from mmrazor.models.mutables.mutable_channel.units import \
     SequentialMutableChannelUnit
-from mmrazor.utils import demo_inputs
 
 
 def assert_model_is_changed(tensors1, tensors2):
@@ -37,33 +36,32 @@ def get_shape(tensor, only_length=False):
 
 
 def forward_units(model, try_units: List[SequentialMutableChannelUnit],
-                  units: List[SequentialMutableChannelUnit], template_output):
+                  units: List[SequentialMutableChannelUnit], demo_input,
+                  template_output):
     model.eval()
     for unit in units:
         unit.current_choice = 1.0
     for unit in try_units:
         unit.current_choice = min(max(0.1, unit.sample_choice()), 0.9)
-    inputs = demo_inputs(model, [1, 3, 224, 224])
-    if isinstance(inputs, dict):
-        inputs['mode'] = 'loss'
-        tensors = model(**inputs)
+    if isinstance(demo_input, dict):
+        tensors = model(**demo_input)
     else:
-        tensors = model(inputs)
+        tensors = model(demo_input)
     assert_model_is_changed(template_output, tensors)
 
 
-def find_mutable(model, try_units, units, template_tensors):
+def find_mutable(model, try_units, units, demo_input, template_tensors):
     if len(try_units) == 0:
         return []
     try:
-        forward_units(model, try_units, units, template_tensors)
+        forward_units(model, try_units, units, demo_input, template_tensors)
         return try_units
     except Exception:
         if len(try_units) == 1:
             return []
         else:
             num = len(try_units)
-            return find_mutable(model, try_units[:num // 2], units,
+            return find_mutable(model, try_units[:num // 2], units, demo_input,
                                 template_tensors) + find_mutable(
                                     model, try_units[num // 2:], units,
-                                    template_tensors)
+                                    demo_input, template_tensors)

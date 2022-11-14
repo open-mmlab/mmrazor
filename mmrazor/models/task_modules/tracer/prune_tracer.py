@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 
 import copy
-from typing import Dict, List
+from typing import Dict, List, Tuple, Union
 
 import torch.nn as nn
 from mmcv.cnn.bricks import Scale
@@ -17,7 +17,7 @@ from mmrazor.structures.graph.channel_graph import (
     ChannelGraph, default_channel_node_converter)
 from mmrazor.structures.graph.module_graph import (FxTracerToGraphConverter,
                                                    PathToGraphConverter)
-from mmrazor.utils import demo_inputs
+from ..demo_inputs import BaseDemoInput, DefaultDemoInput
 from .backward_tracer import BackwardTracer
 from .fx_tracer import CustomFxTracer
 from .loss_calculator.sum_loss_calculator import SumPseudoLoss
@@ -57,16 +57,26 @@ class PruneTracer:
     )
 
     def __init__(self,
-                 input_shape=(1, 3, 224, 224),
+                 demo_input: Union[List, Dict, Tuple,
+                                   BaseDemoInput] = (1, 3, 224, 224),
                  tracer_type='BackwardTracer') -> None:
 
-        self.input_shape = input_shape
+        if isinstance(demo_input, dict):
+            self.demo_input = TASK_UTILS.build(demo_input)
+        elif isinstance(demo_input, list) or isinstance(demo_input, tuple):
+            self.demo_input = DefaultDemoInput(demo_input, False)
+        elif isinstance(demo_input, BaseDemoInput):
+            self.demo_input = demo_input
+        else:
+            raise NotImplementedError(f'{type(demo_input)},{demo_input}')
+
+        self.input_shape = demo_input
 
         assert tracer_type in ['BackwardTracer', 'FxTracer']
         self.tracer_type = tracer_type
         if tracer_type == 'BackwardTracer':
             self.tracer = BackwardTracer(
-                loss_calculator=SumPseudoLoss(input_shape=input_shape))
+                loss_calculator=SumPseudoLoss(input_shape=demo_input))
         elif tracer_type == 'FxTracer':
             self.tracer = CustomFxTracer(leaf_module=self.default_leaf_modules)
         else:
@@ -100,13 +110,13 @@ class PruneTracer:
         channel_graph.check(fix=True)
         channel_graph.check()
 
-        channel_graph.forward(self.input_shape[1])
+        channel_graph.forward(self.demo_input.input_shape[1])
         unit_configs = channel_graph.generate_units_config()
 
         return self._find_mutable_units(model, unit_configs)
 
     def _fx_trace(self, model):
-        args = demo_inputs(model, self.input_shape)
+        args = self.demo_input.get_data(model)
         if isinstance(args, dict):
             args.pop('inputs')
             return self.tracer.trace(model, concrete_args=args)
@@ -122,7 +132,7 @@ class PruneTracer:
         for unit in units:
             unit.prepare_for_pruning(model)
         mutable_units = [unit for unit in units if unit.is_mutable]
-        inputs = demo_inputs(model, [1, 3, 224, 224])
+        inputs = self.demo_input.get_data(model)
         model.eval()
 
         if isinstance(inputs, dict):
@@ -131,7 +141,7 @@ class PruneTracer:
         else:
             template_output = model(inputs)
 
-        mutable_units = find_mutable(model, mutable_units, units,
+        mutable_units = find_mutable(model, mutable_units, units, inputs,
                                      template_output)
         mutable_unit_config = {}
         for unit in mutable_units:
