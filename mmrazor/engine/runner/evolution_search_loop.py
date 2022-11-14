@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
 import os
 import os.path as osp
 import random
@@ -15,7 +14,6 @@ from mmengine.runner import EpochBasedTrainLoop
 from mmengine.utils import is_list_of
 from torch.utils.data import DataLoader
 
-from mmrazor.models.task_modules import ResourceEstimator
 from mmrazor.registry import LOOPS, TASK_UTILS
 from mmrazor.structures import Candidates, export_fix_subnet
 from mmrazor.utils import SupportRandomSubnet
@@ -46,8 +44,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         crossover_prob (float): The probability of crossover. Defaults to 0.5.
         constraints_range (Dict[str, Any]): Constraints to be used for
             screening candidates. Defaults to dict(flops=(0, 330)).
-        resource_estimator_cfg (dict, Optional): Used for building a
-            resource estimator. Defaults to None.
+        estimator_cfg (dict, Optional): Used for building a resource estimator.
+            Defaults to None.
         predictor_cfg (dict, Optional): Used for building a metric predictor.
             Defaults to None.
         score_key (str): Specify one metric in evaluation results to score
@@ -71,7 +69,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
                  mutate_prob: float = 0.1,
                  crossover_prob: float = 0.5,
                  constraints_range: Dict[str, Any] = dict(flops=(0., 330.)),
-                 resource_estimator_cfg: Optional[Dict] = None,
+                 estimator_cfg: Optional[Dict] = None,
                  predictor_cfg: Optional[Dict] = None,
                  score_key: str = 'accuracy/top1',
                  init_candidates: Optional[str] = None) -> None:
@@ -113,66 +111,26 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         else:
             self.model = runner.model
 
-        # Build resource estimator.
-        resource_estimator_cfg = dict(
-        ) if resource_estimator_cfg is None else resource_estimator_cfg
-        self.estimator = self.build_resource_estimator(resource_estimator_cfg)
+        # initialize estimator
+        estimator_cfg = dict() if estimator_cfg is None else estimator_cfg
+        if 'type' not in estimator_cfg:
+            estimator_cfg['type'] = 'mmrazor.ResourceEstimator'
+        self.estimator = TASK_UTILS.build(estimator_cfg)
 
+        # initialize predictor
         self.use_predictor = False
         self.predictor_cfg = predictor_cfg
-
-    def build_resource_estimator(
-        self, resource_estimator: Union[ResourceEstimator,
-                                        Dict]) -> ResourceEstimator:
-        """Build resource estimator for search loop.
-
-        Examples of ``resource_estimator``:
-
-            # `ResourceEstimator` will be used
-            resource_estimator = dict()
-
-            # custom resource_estimator
-            resource_estimator = dict(type='mmrazor.ResourceEstimator')
-
-        Args:
-            resource_estimator (ResourceEstimator or dict): A
-            resource_estimator or a dict to build resource estimator.
-            If ``resource_estimator`` is a resource estimator object,
-            just returns itself.
-
-        Returns:
-            :obj:`ResourceEstimator`: Resource estimator object build from
-            ``resource_estimator``.
-        """
-        if isinstance(resource_estimator, ResourceEstimator):
-            return resource_estimator
-        elif not isinstance(resource_estimator, dict):
-            raise TypeError(
-                'resource estimator should be a ResourceEstimator object or'
-                f'dict, but got {resource_estimator}')
-
-        resource_estimator_cfg = copy.deepcopy(
-            resource_estimator)  # type: ignore
-
-        if 'type' in resource_estimator_cfg:
-            estimator = TASK_UTILS.build(resource_estimator_cfg)
-        else:
-            estimator = ResourceEstimator(
-                **resource_estimator_cfg)  # type: ignore
-
-        return estimator  # type: ignore
+        if self.predictor_cfg is not None:
+            self.predictor_cfg['score_key'] = self.score_key
+            self.predictor_cfg['search_groups'] = \
+                self.model.mutator.search_groups
+            self.predictor = TASK_UTILS.build(self.predictor_cfg)
 
     def run(self) -> None:
         """Launch searching."""
         self.runner.call_hook('before_train')
 
         if self.predictor_cfg is not None:
-            # initialize predictor
-            self.predictor_cfg['score_key'] = self.score_key
-            self.predictor_cfg['search_groups'] = \
-                self.model.mutator.search_groups
-
-            self.predictor = TASK_UTILS.build(self.predictor_cfg)
             self._init_predictor()
 
         if self.resume_from:

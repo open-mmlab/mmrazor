@@ -7,7 +7,7 @@ from mmengine.hooks import Hook
 from mmengine.registry import HOOKS
 from mmengine.structures import BaseDataElement
 
-from mmrazor.models.task_modules import ResourceEstimator
+from mmrazor.registry import TASK_UTILS
 
 DATA_BATCH = Optional[Sequence[dict]]
 
@@ -23,7 +23,7 @@ class EstimateResourcesHook(Hook):
         by_epoch (bool): Saving checkpoints by epoch or by iteration.
             Default to True.
         estimator_cfg (Dict[str, Any]): Used for building a resource estimator.
-            Default to dict().
+            Default to None.
 
     Example:
     >>> add the `EstimatorResourcesHook` in custom_hooks as follows:
@@ -41,11 +41,14 @@ class EstimateResourcesHook(Hook):
     def __init__(self,
                  interval: int = -1,
                  by_epoch: bool = True,
-                 estimator_cfg: Dict[str, Any] = dict(),
+                 estimator_cfg: Dict[str, Any] = None,
                  **kwargs) -> None:
         self.interval = interval
         self.by_epoch = by_epoch
-        self.estimator = ResourceEstimator(**estimator_cfg)
+        estimator_cfg = dict() if estimator_cfg is None else estimator_cfg
+        if 'type' not in estimator_cfg:
+            estimator_cfg['type'] = 'mmrazor.ResourceEstimator'
+        self.estimator = TASK_UTILS.build(estimator_cfg)
 
     def after_val_epoch(self,
                         runner,

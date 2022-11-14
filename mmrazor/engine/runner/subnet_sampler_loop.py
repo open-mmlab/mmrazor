@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
 import math
 import os
 import random
@@ -13,7 +12,6 @@ from mmengine.runner import IterBasedTrainLoop
 from mmengine.utils import is_list_of
 from torch.utils.data import DataLoader
 
-from mmrazor.models.task_modules import ResourceEstimator
 from mmrazor.registry import LOOPS, TASK_UTILS
 from mmrazor.structures import Candidates
 from mmrazor.utils import SupportRandomSubnet
@@ -102,8 +100,8 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
             candidates. Defaults to 'accuracy_top-1'.
         constraints_range (Dict[str, Any]): Constraints to be used for
             screening candidates. Defaults to dict(flops=(0, 330)).
-        resource_estimator_cfg (dict, Optional): Used for building a
-            resource estimator. Defaults to None.
+        estimator_cfg (dict, Optional): Used for building a resource estimator.
+            Defaults to None.
         num_candidates (int): The number of the candidates consist of samples
             from supernet and itself. Defaults to 1000.
         num_samples (int): The number of sample in each sampling subnet.
@@ -138,7 +136,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
                  val_interval: int = 1000,
                  score_key: str = 'accuracy/top1',
                  constraints_range: Dict[str, Any] = dict(flops=(0, 330)),
-                 resource_estimator_cfg: Optional[Dict] = None,
+                 estimator_cfg: Optional[Dict] = None,
                  num_candidates: int = 1000,
                  num_samples: int = 10,
                  top_k: int = 5,
@@ -176,51 +174,11 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         self.candidates = Candidates()
         self.top_k_candidates = Candidates()
 
-        # Build resource estimator.
-        resource_estimator_cfg = dict(
-        ) if resource_estimator_cfg is None else resource_estimator_cfg
-        self.estimator = self.build_resource_estimator(resource_estimator_cfg)
-
-    def build_resource_estimator(
-        self, resource_estimator: Union[ResourceEstimator,
-                                        Dict]) -> ResourceEstimator:
-        """Build resource estimator for search loop.
-
-        Examples of ``resource_estimator``:
-
-            # `ResourceEstimator` will be used
-            resource_estimator = dict()
-
-            # custom resource_estimator
-            resource_estimator = dict(type='mmrazor.ResourceEstimator')
-
-        Args:
-            resource_estimator (ResourceEstimator or dict):
-            A resource_estimator or a dict to build resource estimator.
-            If ``resource_estimator`` is a resource estimator object,
-            just returns itself.
-
-        Returns:
-            :obj:`ResourceEstimator`: Resource estimator object build from
-            ``resource_estimator``.
-        """
-        if isinstance(resource_estimator, ResourceEstimator):
-            return resource_estimator
-        elif not isinstance(resource_estimator, dict):
-            raise TypeError(
-                'resource estimator should be a ResourceEstimator object or'
-                f'dict, but got {resource_estimator}')
-
-        resource_estimator_cfg = copy.deepcopy(
-            resource_estimator)  # type: ignore
-
-        if 'type' in resource_estimator_cfg:
-            estimator = TASK_UTILS.build(resource_estimator_cfg)
-        else:
-            estimator = ResourceEstimator(
-                **resource_estimator_cfg)  # type: ignore
-
-        return estimator  # type: ignore
+        # initialize estimator
+        estimator_cfg = dict() if estimator_cfg is None else estimator_cfg
+        if 'type' not in estimator_cfg:
+            estimator_cfg['type'] = 'mmrazor.ResourceEstimator'
+        self.estimator = TASK_UTILS.build(estimator_cfg)
 
     def run(self) -> None:
         """Launch training."""
