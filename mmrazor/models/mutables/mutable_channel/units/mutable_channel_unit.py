@@ -291,7 +291,7 @@ class MutableChannelUnit(ChannelUnit):
                             mutable_channel is mutable
                             for mutable in source_mutables
                         ]
-                        assert any(is_same)
+                        assert any(is_same), 'existed a mutable channel.'
 
                 else:
                     container.register_mutable(mutable_channel_, start, end)

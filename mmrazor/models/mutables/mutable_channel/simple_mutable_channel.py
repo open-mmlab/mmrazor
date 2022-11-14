@@ -30,6 +30,8 @@ class SimpleMutableChannel(BaseMutableChannel):
     @current_choice.setter
     def current_choice(self, choice: torch.Tensor):
         """Set current choice."""
+        if isinstance(choice, list):
+            choice = torch.Tensor(choice).bool()
         self.mask = choice.to(self.mask.device).bool()
 
     @property

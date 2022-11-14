@@ -11,7 +11,7 @@ from mmrazor.models.mutables.mutable_channel import (
 from mmrazor.models.mutators.channel_mutator import ChannelMutator
 from mmrazor.registry import MODELS
 from ...data.models import DynamicLinearModel
-from ...test_core.test_graph.test_graph import TestGraph
+from ...data.tracer_passed_models import backward_passed_library
 
 sys.setrecursionlimit(2000)
 
@@ -46,7 +46,7 @@ class TestChannelMutator(unittest.TestCase):
         self.assertEqual(list(y.shape), [2, 1000])
 
     def test_sample_subnet(self):
-        data_models = TestGraph.backward_tracer_passed_models()
+        data_models = backward_passed_library.include_models()[:2]
 
         for i, data in enumerate(data_models):
             with self.subTest(i=i, data=data):
@@ -60,7 +60,7 @@ class TestChannelMutator(unittest.TestCase):
                 self._test_a_mutator(mutator, model)
 
     def test_generic_support(self):
-        data_models = TestGraph.backward_tracer_passed_models()
+        data_models = backward_passed_library.include_models()
 
         for data_model in data_models[:1]:
             for unit_type in DATA_UNITS:
@@ -105,7 +105,7 @@ class TestChannelMutator(unittest.TestCase):
         self._test_a_mutator(mutator2, model2)
 
     def test_mix_config_tracer(self):
-        model = TestGraph.backward_tracer_passed_models()[0]()
+        model = backward_passed_library.include_models()[0]()
 
         model0 = copy.deepcopy(model)
         mutator0 = ChannelMutator()

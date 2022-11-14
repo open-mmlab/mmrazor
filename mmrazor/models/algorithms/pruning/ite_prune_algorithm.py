@@ -113,6 +113,13 @@ class ItePruneAlgorithm(BaseAlgorithm):
                  init_cfg: Optional[Dict] = None) -> None:
 
         super().__init__(architecture, data_preprocessor, init_cfg)
+        import torch.distributed as dist
+        if dist.is_initialized():
+            self.architecture = nn.SyncBatchNorm.convert_sync_batchnorm(
+                self.architecture)
+        else:
+            from mmengine.model import revert_sync_batchnorm
+            self.architecture = revert_sync_batchnorm(self.architecture)
 
         # mutator
         self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
@@ -136,7 +143,6 @@ class ItePruneAlgorithm(BaseAlgorithm):
                 data_samples: Optional[List[BaseDataElement]] = None,
                 mode: str = 'tensor') -> ForwardResults:
         """Forward."""
-        print(self._epoch, self._iteration)
         if self.prune_config_manager.is_prune_time(self._epoch,
                                                    self._iteration):
 

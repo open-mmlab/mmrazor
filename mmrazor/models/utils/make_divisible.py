@@ -23,7 +23,6 @@ def make_divisible(value: int,
     Returns:
         int: The modified output channel number
     """
-
     if min_value is None:
         min_value = divisor
     if min_value < divisor:

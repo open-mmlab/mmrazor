@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import argparse
 import json
+import sys
 
 import torch.nn as nn
 from mmengine import MODELS
@@ -8,6 +9,8 @@ from mmengine.config import Config
 
 from mmrazor.models import BaseAlgorithm
 from mmrazor.models.mutators import ChannelMutator
+
+sys.setrecursionlimit(int(pow(2, 20)))
 
 
 def parse_args():
