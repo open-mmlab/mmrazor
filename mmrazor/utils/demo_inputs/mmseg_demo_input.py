@@ -1,9 +1,16 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
 from mmengine.structures import PixelData
-from mmseg.models import SegDataPreProcessor
-from mmseg.structures import SegDataSample
 from torch import nn
+
+from ..placeholder import get_placeholder
+
+try:
+    from mmseg.models import SegDataPreProcessor
+    from mmseg.structures import SegDataSample
+except ImportError:
+    SegDataPreProcessor = get_placeholder('mmseg')
+    SegDataSample = get_placeholder('mmseg')
 
 
 def demo_mmseg_inputs(segmentor, input_shape, for_training=False):
