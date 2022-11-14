@@ -4,6 +4,7 @@ import torch.nn as nn
 from mmengine.model import BaseModel
 
 from ..placeholder import get_placeholder
+from .mmcls_demo_input import mmcls_demo_input
 
 try:
     from mmdet.models import BaseDetector
@@ -50,7 +51,7 @@ def det_concrete_args(model, input_shape):
 
 default_concrete_args_fun = {
     BaseDetector: det_concrete_args,
-    ImageClassifier: default_mm_concrete_args,
+    ImageClassifier: mmcls_demo_input,
     BaseSegmentor: seg_concrete_args,
     BaseModel: default_mm_concrete_args,
     nn.Module: default_concrete_args

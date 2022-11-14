@@ -1,13 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 # this file includes models for tesing.
-import copy
 import math
-from typing import List
-from typing import Dict, Callable
-from mmrazor.registry import MODELS
-from mmengine.config import Config
-import os
-from mmengine.utils import get_installed_path
 from torch.nn import Module
 from torch import Tensor
 import torch.nn as nn
@@ -19,8 +12,6 @@ from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables import BaseMutable
 from mmrazor.models.mutables import OneShotMutableChannelUnit, OneShotMutableChannel
-from mmrazor.registry import MODELS
-from mmengine.model import BaseModel
 # this file includes models for tesing.
 
 
@@ -242,7 +233,7 @@ class ResBlock(Module):
         return output
 
 
-class SingleLineModel(BaseModel):
+class SingleLineModel(nn.Module):
     """
         x
         |net0,net1
