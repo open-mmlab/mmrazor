@@ -43,13 +43,15 @@ def load_fix_subnet(model: nn.Module,
         raise RuntimeError('Root model can not be dynamic op.')
 
     # Avoid circular import
-    from mmrazor.models.mutables import DerivedMutable
+    from mmrazor.models.mutables import DerivedMutable, MutableChannelContainer
     from mmrazor.models.mutables.base_mutable import BaseMutable
 
     for name, module in model.named_modules():
         # The format of `chosen`` is different for each type of mutable.
         # In the corresponding mutable, it will check whether the `chosen`
         # format is correct.
+        if isinstance(module, (MutableChannelContainer, DerivedMutable)):
+            continue
         if isinstance(module, BaseMutable):
             if not module.is_fixed:
                 if getattr(module, 'alias', None):
@@ -61,8 +63,8 @@ def load_fix_subnet(model: nn.Module,
                     chosen = fix_mutable.get(alias, None)
                 else:
                     mutable_name = name.lstrip(prefix)
-                    if mutable_name not in fix_mutable and \
-                            not isinstance(module, DerivedMutable):
+                    if mutable_name not in fix_mutable and not isinstance(
+                            module, (DerivedMutable, MutableChannelContainer)):
                         raise RuntimeError(
                             f'The module name {mutable_name} is not in '
                             'fix_mutable, please check your `fix_mutable`.')
@@ -87,13 +89,15 @@ def export_fix_subnet(model: nn.Module,
             level=logging.WARNING)
 
     # Avoid circular import
-    from mmrazor.models.mutables import DerivedMutable
+    from mmrazor.models.mutables import DerivedMutable, MutableChannelContainer
     from mmrazor.models.mutables.base_mutable import BaseMutable
 
     fix_subnet = dict()
     for name, module in model.named_modules():
         if isinstance(module, BaseMutable):
-            if isinstance(module, DerivedMutable) and not dump_derived_mutable:
+            if isinstance(module,
+                          (MutableChannelContainer,
+                           DerivedMutable)) and not dump_derived_mutable:
                 continue
 
             if module.alias:

@@ -3,7 +3,7 @@ from torch.nn import Module
 from torch import Tensor
 import torch.nn as nn
 import torch
-from mmrazor.models.architectures.dynamic_ops import DynamicBatchNorm2d, DynamicConv2d, DynamicLinear, DynamicChannelMixin
+from mmrazor.models.architectures.dynamic_ops import DynamicBatchNorm2d, DynamicConv2d, DynamicLinear, DynamicChannelMixin, DynamicPatchEmbed, DynamicSequential
 from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
 from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables import DerivedMutable
@@ -12,6 +12,9 @@ from mmrazor.models.mutables import OneShotMutableChannelUnit, SquentialMutableC
 from mmrazor.registry import MODELS
 from mmengine.model import BaseModel
 # this file includes models for tesing.
+
+from mmrazor.models.mutables import OneShotMutableValue
+from mmrazor.models.architectures.backbones.searchable_autoformer import TransformerEncoderLayer
 
 
 class LinearHead(Module):
@@ -475,7 +478,7 @@ class DwConvModel(nn.Module):
 
 
 def register_mutable(module: DynamicChannelMixin,
-                     mutable: OneShotMutableChannelUnit,
+                     mutable: MutableChannelUnit,
                      is_out=True,
                      start=0,
                      end=-1):
@@ -579,6 +582,95 @@ class DynamicLinearModel(nn.Module):
             self.net[4], mutable2, True)
         MutableChannelContainer.register_mutable_channel_to_module(
             self.linear, mutable2, False)
+
+
+class DynamicAttention(nn.Module):
+    """
+        x 
+        |blocks: DynamicSequential(depth)
+        |(blocks)
+        x1
+        |fc (OneShotMutableChannel * OneShotMutableValue)
+        output
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.mutable_depth = OneShotMutableValue(
+            value_list=[1, 2], default_value=2)
+        self.mutable_embed_dims = OneShotMutableChannel(
+            num_channels=624, candidate_choices=[576, 624])
+        self.base_embed_dims = OneShotMutableChannel(
+            num_channels=64, candidate_choices=[64])
+        self.mutable_num_heads = [
+            OneShotMutableValue(
+                value_list=[8, 10],
+                default_value=10)
+            for _ in range(2)
+        ]
+        self.mutable_mlp_ratios = [
+            OneShotMutableValue(
+                value_list=[3.0, 3.5, 4.0],
+                default_value=4.0)
+            for _ in range(2)
+        ]
+        self.mutable_q_embed_dims = [
+            i * self.base_embed_dims for i in self.mutable_num_heads
+        ]
+
+        self.patch_embed = DynamicPatchEmbed(
+            img_size=224,
+            in_channels=3,
+            embed_dims=self.mutable_embed_dims.num_channels)
+
+        # cls token and pos embed
+        self.pos_embed = nn.Parameter(
+            torch.zeros(1, 197,
+                        self.mutable_embed_dims.num_channels))
+        self.cls_token = nn.Parameter(
+            torch.zeros(1, 1, self.mutable_embed_dims.num_channels))
+
+        layers = []
+        for i in range(self.mutable_depth.max_choice):
+            layer = TransformerEncoderLayer(
+                embed_dims=self.mutable_embed_dims.num_channels,
+                num_heads=self.mutable_num_heads[i].max_choice,
+                mlp_ratio=self.mutable_mlp_ratios[i].max_choice)
+            layers.append(layer)
+        self.blocks = DynamicSequential(*layers)
+
+        # OneShotMutableChannelUnit
+        OneShotMutableChannelUnit._register_channel_container(
+            self, MutableChannelContainer)
+
+        self.register_mutables()
+
+    def register_mutables(self):
+        # mutablevalue
+        self.blocks.register_mutable_attr('depth', self.mutable_depth)
+        # mutablechannel
+        MutableChannelContainer.register_mutable_channel_to_module(
+            self.patch_embed, self.mutable_embed_dims, True)
+
+        for i in range(self.mutable_depth.max_choice):
+            layer = self.blocks[i]
+            layer.register_mutables(
+                mutable_num_heads=self.mutable_num_heads[i],
+                mutable_mlp_ratios=self.mutable_mlp_ratios[i],
+                mutable_q_embed_dims=self.mutable_q_embed_dims[i],
+                mutable_head_dims=self.base_embed_dims,
+                mutable_embed_dims=self.mutable_embed_dims)
+
+    def forward(self, x: torch.Tensor):
+        B = x.shape[0]
+        x = self.patch_embed(x)
+        embed_dims = self.mutable_embed_dims.current_choice
+        cls_tokens = self.cls_token[..., :embed_dims].expand(B, -1, -1)
+        x = torch.cat((cls_tokens, x), dim=1)
+        x = x + self.pos_embed[..., :embed_dims]
+        x = self.blocks(x)
+        return torch.mean(x[:, 1:], dim=1)
 
 
 default_models = [
