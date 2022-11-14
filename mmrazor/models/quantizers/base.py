@@ -92,8 +92,9 @@ class CustomQuantizer(BaseModule):
             self.qconfig_dict,
             self.is_qat,
             self.tracer.node_name_to_scope,
-            prepare_custom_config_dict=self.prepare_custom_config_dict,
-            equalization_qconfig_dict=self.equalization_qconfig_dict
+            tuple(),
+            prepare_custom_config=self.prepare_custom_config_dict,
+            _equalization_config=self.equalization_qconfig_dict
         )  # type: ignore[operator]
 
         for attr_name in preserved_attributes:
@@ -104,9 +105,9 @@ class CustomQuantizer(BaseModule):
         quantized = _convert_fx(
             graph_module,
             is_reference=False,
-            convert_custom_config_dict=self.convert_custom_config_dict,
+            convert_custom_config=self.convert_custom_config_dict,
             _remove_qconfig=self._remove_qconfig,
-            qconfig_dict=self.qconfig_dict)
+            qconfig_mapping=self.qconfig_dict)
         return quantized
 
     def check_qconfig(self, qconfig):
@@ -189,6 +190,9 @@ class CustomQuantizer(BaseModule):
         return tracer
 
     def fuse_model(self, graph_module):
+        if not self.is_qat:
+            graph_module.eval()
+
         graph_module = _fuse_fx(graph_module, self.is_qat,
                                 self.prepare_custom_config_dict)
         return graph_module

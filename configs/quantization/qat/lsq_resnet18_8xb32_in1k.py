@@ -1,13 +1,12 @@
-_base_ = ['mmcls::resnet/resnet18_8xb32_in1k.py']
+_base_ = ['mmcls::resnet/resnet18_8xb16_cifar10.py']
 
 train_cfg = dict(
     _delete_=True,
     type='mmrazor.QATEpochBasedLoop',
-    max_epochs=_base_.train_cfg.max_epochs,
-)
+    max_epochs=_base_.train_cfg.max_epochs)
 
 resnet = _base_.model
-ckpt = '/mnt/petrelfs/caoweihan.p/ckpt/resnet18_8xb32_in1k_20210831-fbbb1da6.pth'  # noqa: E501
+ckpt = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_b16x8_cifar10_20210528-bd6371c8.pth'  # noqa: E501
 resnet.init_cfg = dict(type='Pretrained', checkpoint=ckpt)
 
 model = dict(
@@ -39,13 +38,6 @@ model = dict(
                 is_per_channel=False,
                 is_pot_scale=False),
         )))
-
-default_hooks = dict(
-    checkpoint=dict(
-        type='CheckpointHook',
-        interval=5,
-        max_keep_ckpts=3,
-        out_dir='/mnt/petrelfs/caoweihan.p/training_ckpt/quant'))
 
 optim_wrapper = dict(
     optimizer=dict(type='SGD', lr=0.004, momentum=0.9, weight_decay=0.0001))
