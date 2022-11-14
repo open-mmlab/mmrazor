@@ -378,6 +378,7 @@ class MMClsModelLibrary(MMModelLibrary):
         'seresnet',
         'repvgg',
         'seresnext',
+        'deit'
     ]
     base_config_path = '_base_/models/'
     repo = 'mmcls'

@@ -151,3 +151,4 @@ class TestDynamicSyncBn(unittest.TestCase):
 
         x = torch.rand([2, 4, 32, 32]).to(device)
         _ = norm(x)
+        dist.destroy_process_group()
