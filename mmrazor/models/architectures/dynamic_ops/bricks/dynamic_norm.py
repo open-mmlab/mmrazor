@@ -1,9 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from mmengine.model.utils import _BatchNormXd
 from torch import Tensor
+from torch.nn.modules._functions import SyncBatchNorm as sync_batch_norm
 from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
@@ -190,3 +193,135 @@ class SwitchableBatchNorm2d(DynamicBatchNorm2d):
     def static_op_factory(self):
         """Return initializer of static op."""
         return nn.BatchNorm2d
+
+
+class DynamicSyncBatchNorm(nn.SyncBatchNorm, DynamicBatchNormMixin):
+
+    def __init__(self,
+                 num_features: int,
+                 eps: float = 0.00001,
+                 momentum: float = 0.1,
+                 affine: bool = True,
+                 track_running_stats: bool = True,
+                 process_group: Optional[Any] = None,
+                 device=None,
+                 dtype=None) -> None:
+        super().__init__(num_features, eps, momentum, affine,
+                         track_running_stats, process_group, device, dtype)
+        self.mutable_attrs: Dict[str, Optional[BaseMutable]] = nn.ModuleDict()
+
+    @classmethod
+    def convert_from(cls, module):
+        return cls(module.num_features, module.eps, module.momentum,
+                   module.affine, module.track_running_stats,
+                   module.process_group)
+
+    @property
+    def static_op_factory(self):
+        return nn.SyncBatchNorm
+
+    def forward(self, input: Tensor) -> Tensor:
+        # currently only GPU input is supported
+        if not input.is_cuda:
+            raise ValueError(
+                'SyncBatchNorm expected input tensor to be on GPU')
+
+        self._check_input_dim(input)
+        self._check_non_zero_input_channels(input)
+
+        # exponential_average_factor is set to self.momentum
+        # (when it is available) only so that it gets updated
+        # in ONNX graph when this node is exported to ONNX.
+        if self.momentum is None:
+            exponential_average_factor = 0.0
+        else:
+            exponential_average_factor = self.momentum
+
+        if self.training and self.track_running_stats:
+            assert self.num_batches_tracked is not None
+            self.num_batches_tracked.add_(1)
+            if self.momentum is None:  # use cumulative moving average
+                exponential_average_factor = (1.0 /
+                                              self.num_batches_tracked.item())
+            else:  # use exponential moving average
+                exponential_average_factor = self.momentum
+        r"""
+        Decide whether the mini-batch stats should be used for normalization
+        rather than the buffers.
+        Mini-batch stats are used in training mode, and in eval mode when
+        buffers are None.
+        """
+        if self.training:
+            bn_training = True
+        else:
+            bn_training = (self.running_mean is None) and (self.running_var is
+                                                           None)
+        r"""
+        Buffers are only updated if they are to be tracked and we are in
+        training mode. Thus they only need to be
+        passed when the update should occur (i.e. in training mode when
+        they are tracked), or when buffer stats are
+        used for normalization (i.e. in eval mode when buffers are not None).
+        """
+        # If buffers are not to be tracked, ensure that they won't be updated
+        running_mean = (
+            self.running_mean
+            if not self.training or self.track_running_stats else None)
+        running_var = (
+            self.running_var
+            if not self.training or self.track_running_stats else None)
+
+        # Don't sync batchnorm stats in inference mode (model.eval()).
+        need_sync = (bn_training and self.training)
+        if need_sync:
+            process_group = torch.distributed.group.WORLD
+            if self.process_group:
+                process_group = self.process_group
+            world_size = torch.distributed.get_world_size(process_group)
+            need_sync = world_size > 1
+
+        running_mean, running_var, weight, bias = self.get_dynamic_params()
+
+        # fallback to framework BN when synchronization is not necessary
+        if not need_sync:
+            out = F.batch_norm(
+                input,
+                running_mean,
+                running_var,
+                weight,
+                bias,
+                bn_training,
+                exponential_average_factor,
+                self.eps,
+            )
+        else:
+            assert bn_training
+            out = sync_batch_norm.apply(
+                input,
+                weight,
+                bias,
+                running_mean,
+                running_var,
+                self.eps,
+                exponential_average_factor,
+                process_group,
+                world_size,
+            )
+
+        # copy changed running statistics
+        if self.training and self.track_running_stats:
+            out_mask = self._get_num_features_mask()
+            self.running_mean.masked_scatter_(out_mask, running_mean)
+            self.running_var.masked_scatter_(out_mask, running_var)
+
+        return out
+
+
+class DynamicBatchNormXd(_DynamicBatchNorm):
+
+    @property
+    def static_op_factory(self):
+        return _BatchNormXd
+
+    def _check_input_dim(self, input: torch.Tensor):
+        return

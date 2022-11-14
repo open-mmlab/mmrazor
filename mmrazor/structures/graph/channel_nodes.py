@@ -446,7 +446,7 @@ class GroupNormNode(PassUnionChannelNode):
 channel_nodes_mapping = {
     'module': {
         nn.Conv2d: ConvNode,
-        nn.BatchNorm2d: BnNode,
+        nn.modules.batchnorm._BatchNorm: BnNode,
         nn.Linear: LinearNode,
         nn.modules.ReLU: PassChannelNode,
         nn.modules.Hardtanh: PassChannelNode,

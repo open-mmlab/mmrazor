@@ -8,8 +8,6 @@ from mmengine.model import BaseModel
 from mmengine.structures import BaseDataElement
 
 from mmrazor.models.mutators import ChannelMutator
-from mmrazor.models.task_modules.tracer.prune_tracer import \
-    revert_sync_batchnorm
 from mmrazor.registry import MODELS
 from ..base import BaseAlgorithm
 
@@ -115,7 +113,14 @@ class ItePruneAlgorithm(BaseAlgorithm):
                  init_cfg: Optional[Dict] = None) -> None:
 
         super().__init__(architecture, data_preprocessor, init_cfg)
-        self.architecture = revert_sync_batchnorm(self.architecture)
+        import torch.distributed as dist
+        if dist.is_initialized():
+            self.architecture = nn.SyncBatchNorm.convert_sync_batchnorm(
+                self.architecture)
+        else:
+            from mmengine.model import revert_sync_batchnorm
+            self.architecture = revert_sync_batchnorm(self.architecture)
+
         # mutator
         self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
         self.mutator.prepare_from_supernet(self.architecture)
