@@ -48,6 +48,22 @@ class LearnableFakeQuantize(FakeQuantize):
                    self.scale if self.ch_axis == -1 else 'List[%s]' % str(self.scale.shape),  # noqa: E501
                    self.zero_point if self.ch_axis == -1 else 'List')
 
+    @torch.jit.export
+    def calculate_qparams(self):
+        self.scale.data.clamp_(min=self.eps.item())
+        scale = self.scale.detach()
+        zero_point = self.zero_point.detach().round().clamp(
+            self.quant_min, self.quant_max).long()
+        return scale, zero_point
+
+    def _save_to_state_dict(self, destination, prefix, keep_vars):
+        super(FakeQuantize, self)._save_to_state_dict(destination, prefix,
+                                                      keep_vars)
+        destination[prefix + 'scale'] = self.scale if keep_vars \
+            else self.scale.detach()
+        destination[prefix + 'zero_point'] = self.zero_point if keep_vars \
+            else self.zero_point.detach()
+
     def forward(self, X):
         # Learnable fake quantize have to zero_point.float()
         # to make it learnable.

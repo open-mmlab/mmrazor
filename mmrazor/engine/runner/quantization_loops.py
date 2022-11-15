@@ -154,10 +154,11 @@ class QATValLoop(ValLoop):
         for key, value in metrics.items():
             qat_key = 'qat.' + key
             convert_key = 'convert.' + key
-            qat_metrics[qat_key] = value
+            convert_metrics[convert_key] = value
             self.runner.message_hub.log_scalars.pop(f'val/{qat_key}', None)
         self.runner.call_hook('after_val_epoch', metrics=convert_metrics)
         self.runner.call_hook('after_val')
+        return convert_metrics
 
     @torch.no_grad()
     def run_iter(self, idx, data_batch: Sequence[dict], model):
@@ -181,7 +182,7 @@ class QATValLoop(ValLoop):
 
 
 @LOOPS.register_module()
-class CalibrateLoop(TestLoop):
+class PTQLoop(TestLoop):
     """`TestLoop` for Post Training Quantization.
 
     Args:
@@ -216,8 +217,21 @@ class CalibrateLoop(TestLoop):
         for idx, data_batch in enumerate(self.dataloader):
             self.run_iter(idx, data_batch)
 
-        self.runner.call_hook('after_test_epoch')
+        # compute metrics
+        metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+
+        self.runner.call_hook('after_test_epoch', metrics=metrics)
         self.runner.call_hook('after_test')
+
+        # todo: hard code to save checkpoint on disk
+        self.runner.save_checkpoint(
+            self.runner.work_dir,
+            'checkpoint_after_ptq.pth',
+            file_client_args=None,
+            save_optimizer=False,
+            save_param_scheduler=False)
+
+        return metrics
 
     @torch.no_grad()
     def run_iter(self, idx, data_batch: Sequence[dict]) -> None:

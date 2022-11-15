@@ -1,4 +1,4 @@
-_base_ = ['mmcls::resnet/resnet18_8xb16_cifar10.py']
+_base_ = ['mmcls::resnet/resnet18_8xb32_in1k.py']
 
 train_cfg = dict(
     _delete_=True,
@@ -6,7 +6,7 @@ train_cfg = dict(
     max_epochs=_base_.train_cfg.max_epochs)
 
 resnet = _base_.model
-ckpt = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_b16x8_cifar10_20210528-bd6371c8.pth'  # noqa: E501
+ckpt = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_8xb32_in1k_20210831-fbbb1da6.pth'  # noqa: E501
 resnet.init_cfg = dict(type='Pretrained', checkpoint=ckpt)
 
 model = dict(
@@ -29,7 +29,7 @@ model = dict(
             w_qscheme=dict(
                 bit=8,
                 is_symmetry=False,
-                is_per_channel=True,
+                is_per_channel=False,
                 is_pot_scale=False,
             ),
             a_qscheme=dict(
@@ -50,3 +50,15 @@ param_scheduler = dict(
     by_epoch=True,
     begin=0,
     end=100)
+
+default_hooks = dict(
+    checkpoint=dict(
+        type='CheckpointHook',
+        interval=5,
+        max_keep_ckpts=3,
+        out_dir='/mnt/petrelfs/caoweihan.p/training_ckpt/quant'))
+
+model_wrapper_cfg = dict(
+    type='mmrazor.GeneralQuantDDP',
+    broadcast_buffers=False,
+    find_unused_parameters=False)

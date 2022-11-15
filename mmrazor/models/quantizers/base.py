@@ -92,9 +92,8 @@ class CustomQuantizer(BaseModule):
             self.qconfig_dict,
             self.is_qat,
             self.tracer.node_name_to_scope,
-            tuple(),
-            prepare_custom_config=self.prepare_custom_config_dict,
-            _equalization_config=self.equalization_qconfig_dict
+            prepare_custom_config_dict=self.prepare_custom_config_dict,
+            equalization_qconfig_dict=self.equalization_qconfig_dict
         )  # type: ignore[operator]
 
         for attr_name in preserved_attributes:
