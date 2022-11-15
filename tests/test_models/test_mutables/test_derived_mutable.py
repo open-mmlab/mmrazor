@@ -123,6 +123,27 @@ class TestDerivedMutable(TestCase):
         mv.current_choice == 120
         assert mv_derived.current_choice == 16
 
+        mc_derived = mc // 8.0
+        assert mc_derived.source_mutables == {mc}
+
+        mc.current_choice = 128.
+        assert mc_derived.current_choice == 16
+        assert torch.equal(mc_derived.current_mask,
+                           torch.ones(16, dtype=torch.bool))
+        mc.current_choice = 120.
+        assert mc_derived.current_choice == 16
+        assert torch.equal(mc_derived.current_mask,
+                           torch.ones(16, dtype=torch.bool))
+
+        mv = OneShotMutableValue(value_list=[112, 120, 128])
+        mv_derived = mv // 8.0
+        assert mv_derived.source_mutables == {mv}
+
+        mv.current_choice == 128.
+        assert mv_derived.current_choice == 16
+        mv.current_choice == 120.
+        assert mv_derived.current_choice == 16
+
     def test_source_mutables(self) -> None:
 
         def useless_fn(x):
@@ -207,6 +228,43 @@ class TestDerivedMutable(TestCase):
             derived_e.current_mask,
             torch.tensor([1, 0, 1, 1, 1, 1, 0], dtype=torch.bool))
 
+    def test_mutable_channel_value_calculation(self) -> None:
+        mc = SquentialMutableChannel(num_channels=10)
+        mv = OneShotMutableValue(value_list=[2.0, 2.5, 3.0, 3.5])
+        derived_mutable = mc * mv
+        assert derived_mutable.source_mutables == {mv, mc}
+
+        mc.current_choice = 6
+        mv.current_choice = 3.5
+        assert derived_mutable.current_choice == 21
+
+        mc.current_choice = 9
+        mv.current_choice = 3.5
+        assert derived_mutable.current_choice == 31
+
+        mc.current_choice = 7
+        mv.current_choice = 2.5
+        assert derived_mutable.current_choice == 17
+
+        assert isinstance(derived_mutable, BaseMutable)
+        assert isinstance(derived_mutable, DerivedMutable)
+        assert not derived_mutable.is_fixed
+
+        mc.current_choice = mc.num_channels
+        mv.current_choice = mv.min_choice
+        assert derived_mutable.current_choice == \
+            mv.current_choice * mc.num_channels
+        mv.current_choice = mv.max_choice
+        assert derived_mutable.current_choice == \
+            mv.current_choice * mc.current_choice
+
+        with pytest.raises(RuntimeError):
+            derived_mutable.is_fixed = True
+        mc.fix_chosen(mc.dump_chosen().chosen)
+        assert not derived_mutable.is_fixed
+        mv.fix_chosen(mv.dump_chosen().chosen)
+        assert derived_mutable.is_fixed
+
 
 @pytest.mark.parametrize('expand_ratio', [1, 2, 3])
 def test_derived_expand_mutable(expand_ratio: int) -> None:
@@ -232,3 +290,29 @@ def test_derived_expand_mutable(expand_ratio: int) -> None:
 
     mv.current_choice = 5
     assert mv_derived.current_choice == 5 * expand_ratio
+
+
+@pytest.mark.parametrize('expand_ratio', [1.5, 2.0, 2.5])
+def test_derived_expand_mutable_float(expand_ratio: float) -> None:
+    mv = OneShotMutableValue(value_list=[3, 5, 7])
+
+    mv_derived = mv * expand_ratio
+    assert mv_derived.source_mutables == {mv}
+
+    assert isinstance(mv_derived, BaseMutable)
+    assert isinstance(mv_derived, DerivedMutable)
+    assert not mv_derived.is_fixed
+    assert mv_derived.num_choices == 1
+
+    mv.current_choice = mv.max_choice
+    assert mv_derived.current_choice == int(mv.current_choice * expand_ratio)
+    mv.current_choice = mv.min_choice
+    assert mv_derived.current_choice == int(mv.current_choice * expand_ratio)
+
+    with pytest.raises(RuntimeError):
+        mv_derived.current_choice = 123
+    with pytest.raises(RuntimeError):
+        _ = mv_derived.current_mask
+
+    mv.current_choice = 5
+    assert mv_derived.current_choice == int(5 * expand_ratio)

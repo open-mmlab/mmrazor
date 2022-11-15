@@ -13,5 +13,5 @@ train_cfg = dict(
     num_mutation=20,
     num_crossover=20,
     mutate_prob=0.1,
-    flops_range=(0., 300.),
+    constraints_range=dict(flops=(0, 330)),
     score_key='coco/bbox_mAP')

@@ -1,27 +1,42 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-# Copyrigforward_trainht (c) OpenMMLab. All rights reserved.
+from abc import abstractmethod
 from typing import Optional, Tuple
 
 import torch
+from mmcls.models import ClsHead
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
+from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
+from mmrazor.models.mutables.mutable_channel.units import \
+    OneShotMutableChannelUnit
 from mmrazor.registry import MODELS
-from ...dynamic_ops import DynamicLinear
-from .base import DynamicHead
+from ..bricks.dynamic_linear import DynamicLinear
 
-try:
-    from mmcls.models import ClsHead
-except ImportError:
-    from mmrazor.utils import get_placeholder
-    ClsHead = get_placeholder('mmcls')
+
+class DynamicHead:
+
+    @abstractmethod
+    def connect_with_backbone(self,
+                              backbone_output_mutable: BaseMutable) -> None:
+        """Connect with Dynamic Backbone."""
+        ...
 
 
 @MODELS.register_module()
 class DynamicLinearClsHead(ClsHead, DynamicHead):
+    """Dynamic Linear classification head for Autoformer.
+
+    Args:
+        num_classes (int): Number of classes.
+        in_channels (int): Number of input channels.
+        init_cfg (Optional[dict], optional): Init config.
+            Defaults to dict(type='Normal',
+                        layer='DynamicLinear', std=0.01).
+    """
 
     def __init__(self,
-                 num_classes: int,
-                 in_channels: int,
+                 num_classes: int = 1000,
+                 in_channels: int = 624,
                  init_cfg: Optional[dict] = dict(
                      type='Normal', layer='DynamicLinear', std=0.01),
                  **kwargs):
@@ -52,9 +67,14 @@ class DynamicLinearClsHead(ClsHead, DynamicHead):
         pre_logits = self.pre_logits(feats)
         # The final classification head.
         cls_score = self.fc(pre_logits)
-        # import pdb;pdb.set_trace() # 已经不一致了
         return cls_score
 
     def connect_with_backbone(self,
                               backbone_output_mutable: BaseMutable) -> None:
-        self.fc.register_mutable_attr('in_features', backbone_output_mutable)
+        """Connect dynamic backbone."""
+
+        OneShotMutableChannelUnit._register_channel_container(
+            self, MutableChannelContainer)
+
+        MutableChannelContainer.register_mutable_channel_to_module(
+            self.fc, backbone_output_mutable, False)

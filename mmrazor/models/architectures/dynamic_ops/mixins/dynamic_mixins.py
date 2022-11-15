@@ -74,12 +74,16 @@ class DynamicMixin(ABC):
         Raises:
             RuntimeError: Error if a existing mutable is not fixed.
         """
+        from mmrazor.models.mutables import (DerivedMutable,
+                                             MutableChannelContainer)
 
         def check_fixed(mutable: Optional[BaseMutable]) -> None:
             if mutable is not None and not mutable.is_fixed:
                 raise RuntimeError(f'Mutable {type(mutable)} is not fixed.')
 
         for mutable in self.mutable_attrs.values():  # type: ignore
+            if isinstance(mutable, (MutableChannelContainer, DerivedMutable)):
+                continue
             check_fixed(mutable)
 
     def check_mutable_attr_valid(self, attr):
@@ -114,6 +118,11 @@ class DynamicChannelMixin(DynamicMixin):
         All subclass should implement ``mutable_in_channels`` and
         ``mutable_out_channels`` APIs.
     """
+
+    attr_mappings: Dict[str, str] = {
+        'in_channels': 'in_channels',
+        'out_channels': 'out_channels',
+    }
 
     @staticmethod
     def check_mutable_channels(mutable_channels: BaseMutable) -> None:

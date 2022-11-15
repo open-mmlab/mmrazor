@@ -4,11 +4,12 @@ from typing import Dict, List, Optional
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
+from torch.nn import LayerNorm
 from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.registry import MODELS
-from ..mixins.dynamic_mixins import DynamicBatchNormMixin
+from ..mixins import DynamicBatchNormMixin, DynamicLayerNormMixin
 
 
 class _DynamicBatchNorm(_BatchNorm, DynamicBatchNormMixin):
@@ -91,6 +92,7 @@ class DynamicBatchNorm1d(_DynamicBatchNorm):
 
     @property
     def static_op_factory(self):
+        """Corresponding Pytorch OP."""
         return nn.BatchNorm1d
 
     def _check_input_dim(self, input: Tensor) -> None:
@@ -106,6 +108,7 @@ class DynamicBatchNorm2d(_DynamicBatchNorm):
 
     @property
     def static_op_factory(self):
+        """Corresponding Pytorch OP."""
         return nn.BatchNorm2d
 
     def _check_input_dim(self, input: Tensor) -> None:
@@ -121,6 +124,7 @@ class DynamicBatchNorm3d(_DynamicBatchNorm):
 
     @property
     def static_op_factory(self):
+        """Corresponding Pytorch OP."""
         return nn.BatchNorm3d
 
     def _check_input_dim(self, input: Tensor) -> None:
@@ -190,3 +194,61 @@ class SwitchableBatchNorm2d(DynamicBatchNorm2d):
     def static_op_factory(self):
         """Return initializer of static op."""
         return nn.BatchNorm2d
+
+
+@MODELS.register_module()
+class DynamicLayerNorm(LayerNorm, DynamicLayerNormMixin):
+    """Applies Layer Normalization over a mini-batch of inputs according to the
+    `mutable_num_channels` dynamically.
+
+    Note:
+        Arguments for ``__init__`` of ``DynamicLayerNorm`` is totally same as
+        :obj:`torch.nn.LayerNorm`.
+    Attributes:
+        mutable_attrs (ModuleDict[str, BaseMutable]): Mutable attributes,
+            such as `num_features`. The key of the dict must in
+            ``accepted_mutable_attrs``.
+    """
+    accepted_mutable_attrs = {'num_features'}
+
+    def __init__(self, *args, **kwargs):
+        super(DynamicLayerNorm, self).__init__(*args, **kwargs)
+
+        self.mutable_attrs: Dict[str, Optional[BaseMutable]] = nn.ModuleDict()
+
+    @property
+    def static_op_factory(self):
+        """Corresponding Pytorch OP."""
+        return LayerNorm
+
+    @classmethod
+    def convert_from(cls, module: LayerNorm):
+        """Convert a _BatchNorm module to a DynamicBatchNorm.
+
+        Args:
+            module (:obj:`torch.nn._BatchNorm`): The original BatchNorm module.
+        """
+        dynamic_ln = cls(
+            normalized_shape=module.normalized_shape,
+            eps=module.eps,
+            elementwise_affine=module.elementwise_affine)
+
+        return dynamic_ln
+
+    def forward(self, input: Tensor) -> Tensor:
+        """Slice the parameters according to `mutable_num_channels`, and
+        forward."""
+        self._check_input_dim(input)
+
+        weight, bias = self.get_dynamic_params()
+        self.normalized_shape = (
+            self.mutable_num_features.activated_channels, )
+
+        return F.layer_norm(input, self.normalized_shape, weight, bias,
+                            self.eps)
+
+    def _check_input_dim(self, input: Tensor) -> None:
+        """Check if input dimension is valid."""
+        if input.dim() != 3:
+            raise ValueError('expected 3D input (got {}D input)'.format(
+                input.dim()))

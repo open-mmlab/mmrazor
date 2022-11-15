@@ -358,4 +358,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
 
         units = self.unit_class.init_from_predefined_model(model)
 
+        for unit in units:
+            unit.unit_predefined = self.unit_default_args.pop(
+                'unit_predefined', False)
         return units
