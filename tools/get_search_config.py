@@ -68,17 +68,13 @@ def wrap_search_config(config: Config, checkpoint_path: str,
     config['model'] = model_config
 
     val_evaluator_config = config['val_evaluator']
-    val_evaluator_config[
-        'type'] = config['default_scope'] + '.' + val_evaluator_config['type']
+    val_evaluator_config['_scope_'] = default_scope
 
     def prepare_dataloader(val_loader_config):
-
-        val_loader_config['dataset']['type'] = config[
-            'default_scope'] + '.' + val_loader_config['dataset']['type']
+        val_loader_config['dataset']['_scope_'] = default_scope
         return val_loader_config
 
-    val_loader_config = config['val_dataloader']
-    val_loader_config = prepare_dataloader(val_loader_config)
+    val_loader_config = prepare_dataloader(config['val_dataloader'])
     train_loader_config = prepare_dataloader(config['train_dataloader'])
 
     searcher_config = dict(

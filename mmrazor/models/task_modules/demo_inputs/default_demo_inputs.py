@@ -24,7 +24,7 @@ except Exception:
     BaseSegmentor = get_placeholder('mmseg')
 
 default_demo_input_class = {
-    BaseDetector: DefaultMMRotateDemoInput,
+    BaseDetector: DefaultMMDetDemoInput,
     ImageClassifier: DefaultMMClsDemoInput,
     BaseSegmentor: DefaultMMSegDemoInput,
     BaseModel: DefaultMMDemoInput,
