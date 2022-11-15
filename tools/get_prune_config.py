@@ -86,9 +86,10 @@ if __name__ == '__main__':
 
     origin_config = Config.fromfile(config_path)
     origin_config = change_config(origin_config)
+    default_scope = origin_config['default_scope']
 
     # get subnet config
-    model = MODELS.build(origin_config['model'])
+    model = MODELS.build(copy.deepcopy(origin_config['model']))
     mutator: ChannelMutator = ChannelMutator(
         channel_unit_cfg=dict(
             type='L1MutableChannelUnit',
@@ -98,7 +99,7 @@ if __name__ == '__main__':
             'type': 'PruneTracer',
             'demo_input': {
                 'type': 'DefaultDemoInput',
-                'scope': origin_config['default_scope']
+                'scope': default_scope
             },
             'tracer_type': 'FxTracer'
         })
