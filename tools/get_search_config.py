@@ -32,8 +32,10 @@ def parse_args():
 def wrap_search_config(config: Config, checkpoint_path: str,
                        flop_range: Tuple):
     config = copy.deepcopy(config)
+    default_scope = config['default_scope']
 
     arch_config: Dict = config['model']
+    arch_config.update({'_scope_': default_scope})
 
     # deal with data_preprocessor
     if 'data_preprocessor' in config:
@@ -92,8 +94,12 @@ def wrap_search_config(config: Config, checkpoint_path: str,
         mutate_prob=0.2,
         flops_range=flop_range,
         resource_estimator_cfg=dict(
-            flops_params_cfg=dict(input_shape=(1, 3, 224, 224))),
-        score_key='accuracy/top1')
+            flops_params_cfg=dict(
+                input_shape=(1, 3, 224, 224),
+                input_constructor=dict(
+                    type='mmrazor.DefaultDemoInput', scope=default_scope)), ),
+        score_key='accuracy/top1',
+    )
     config['train_cfg'] = searcher_config
     return config
 
