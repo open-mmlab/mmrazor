@@ -107,4 +107,4 @@ def test_DCFF_channel_mutator() -> None:
     mutator.calc_information(1.0)
     out3 = model(imgs)
 
-    assert out3.shape == (16, 2, 224, 224)
+    assert out3.shape == (16, 8, 224, 224)
