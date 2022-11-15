@@ -39,6 +39,7 @@ class OneShotMutableChannelUnit(SequentialMutableChannelUnit):
                  min_ratio=0.9) -> None:
         super().__init__(num_channels, choice_mode, divisor, min_value,
                          min_ratio)
+
         candidate_choices = copy.copy(candidate_choices)
         if candidate_choices == []:
             candidate_choices.append(
@@ -49,6 +50,8 @@ class OneShotMutableChannelUnit(SequentialMutableChannelUnit):
         self.mutable_channel = OneShotMutableChannel(num_channels,
                                                      self.candidate_choices,
                                                      choice_mode)
+
+        self.unit_predefined = False
 
     @classmethod
     def init_from_mutable_channel(cls, mutable_channel: OneShotMutableChannel):
@@ -61,7 +64,8 @@ class OneShotMutableChannelUnit(SequentialMutableChannelUnit):
 
     def prepare_for_pruning(self, model: nn.Module):
         """Prepare for pruning."""
-        super().prepare_for_pruning(model)
+        if not self.unit_predefined:
+            super().prepare_for_pruning(model)
         self.current_choice = self.max_choice
 
     # ~

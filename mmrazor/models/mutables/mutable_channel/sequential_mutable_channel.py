@@ -82,7 +82,7 @@ class SquentialMutableChannel(SimpleMutableChannel):
                              mutable2: OneShotMutableValue) -> Callable:
 
             def fn():
-                return mutable1.current_choice * mutable2.current_choice
+                return int(mutable1.current_choice * mutable2.current_choice)
 
             return fn
 
@@ -93,9 +93,10 @@ class SquentialMutableChannel(SimpleMutableChannel):
                 mask = mutable1.current_mask
                 max_expand_ratio = mutable2.max_choice
                 current_expand_ratio = mutable2.current_choice
-                expand_num_channels = mask.size(0) * max_expand_ratio
+                expand_num_channels = int(mask.size(0) * max_expand_ratio)
 
-                expand_choice = mutable1.current_choice * current_expand_ratio
+                expand_choice = int(mutable1.current_choice *
+                                    current_expand_ratio)
                 expand_mask = torch.zeros(expand_num_channels).bool()
                 expand_mask[:expand_choice] = True
 
@@ -113,9 +114,16 @@ class SquentialMutableChannel(SimpleMutableChannel):
     def __floordiv__(self, other) -> DerivedMutable:
         if isinstance(other, int):
             return self.derive_divide_mutable(other)
+        elif isinstance(other, float):
+            return self.derive_divide_mutable(int(other))
         if isinstance(other, tuple):
             assert len(other) == 2
             return self.derive_divide_mutable(*other)
+
+        from ..mutable_value import OneShotMutableValue
+        if isinstance(other, OneShotMutableValue):
+            ratio = other.current_choice
+            return self.derive_divide_mutable(ratio)
 
         raise TypeError(f'Unsupported type {type(other)} for div!')
 
