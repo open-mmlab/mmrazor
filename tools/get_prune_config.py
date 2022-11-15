@@ -67,6 +67,13 @@ def wrap_prune_config(config: Config, prune_target: Dict,
     return config
 
 
+def change_config(config):
+
+    scope = config['default_scope']
+    config['model']['_scope_'] = scope
+    return config
+
+
 if __name__ == '__main__':
     args = parse_args()
     config_path = args.config
@@ -74,6 +81,7 @@ if __name__ == '__main__':
     target_path = args.o
 
     origin_config = Config.fromfile(config_path)
+    origin_config = change_config(origin_config)
 
     # get subnet config
     model = MODELS.build(origin_config['model'])
@@ -84,6 +92,10 @@ if __name__ == '__main__':
         ),
         parse_cfg={
             'type': 'PruneTracer',
+            'demo_input': {
+                'type': 'DefaultDemoInput',
+                'scope': origin_config['default_scope']
+            },
             'tracer_type': 'FxTracer'
         })
     mutator.prepare_from_supernet(model)
