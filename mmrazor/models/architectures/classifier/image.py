@@ -4,7 +4,7 @@ from typing import Dict, Optional
 from mmcls.models import ImageClassifier
 from torch import Tensor
 
-from mmrazor.models.architectures.dynamic_ops.bricks import DynamicInputResizer
+from mmrazor.models.architectures.dynamic_ops import DynamicInputResizer
 from mmrazor.models.mutables import OneShotMutableValue
 from mmrazor.registry import MODELS
 
@@ -34,8 +34,11 @@ class SearchableImageClassifier(ImageClassifier):
             input_resizer = None
         self.input_resizer = input_resizer
 
-    def extract_feat(self, batch_inputs: Tensor, stage='neck') -> Tensor:
-        if self.input_resizer is not None:
+    def extract_feat(self,
+                     batch_inputs: Tensor,
+                     stage='neck',
+                     input_resizer=True) -> Tensor:
+        if self.input_resizer is not None and input_resizer:
             batch_inputs = self.input_resizer(batch_inputs)
 
         return super().extract_feat(batch_inputs, stage)
@@ -57,3 +60,10 @@ class SearchableImageClassifier(ImageClassifier):
         input_resizer.register_mutable_attr('shape', mutable_shape)
 
         return input_resizer
+
+    def simple_test(self, img, img_metas=None, **kwargs):
+        """Test without augmentation."""
+        x = self.extract_feat(img, input_resizer=False)
+        res = self.head.simple_test(x, **kwargs)
+
+        return res

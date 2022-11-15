@@ -7,7 +7,7 @@ from torch import Tensor
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.registry import MODELS
-from .dynamic_mixins import DynamicSequentialMixin
+from ..mixins.dynamic_mixins import DynamicSequentialMixin
 
 
 @MODELS.register_module()

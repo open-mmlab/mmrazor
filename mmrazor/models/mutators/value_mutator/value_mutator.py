@@ -82,6 +82,10 @@ class ValueMutator(BaseMutator[MUTABLE_TYPE]):
         for name, module in supernet.named_modules():
             if isinstance(module, self.mutable_class_type):
                 name2mutable[name] = module
+            elif hasattr(module, 'source_mutables'):
+                for each_mutables in module.source_mutables:
+                    if isinstance(each_mutables, self.mutable_class_type):
+                        name2mutable[name] = each_mutables
         return name2mutable
 
     def _build_alias_names_mapping(self,
@@ -95,6 +99,17 @@ class ValueMutator(BaseMutator[MUTABLE_TYPE]):
                         alias2mutable_names[module.alias] = [name]
                     else:
                         alias2mutable_names[module.alias].append(name)
+            elif hasattr(module, 'source_mutables'):
+                for each_mutables in module.source_mutables:
+                    if isinstance(each_mutables, self.mutable_class_type):
+                        if each_mutables.alias is not None:
+                            if each_mutables.alias not in alias2mutable_names:
+                                alias2mutable_names[each_mutables.alias] = [
+                                    name
+                                ]
+                            else:
+                                alias2mutable_names[
+                                    each_mutables.alias].append(name)
 
         return alias2mutable_names
 
@@ -212,6 +227,14 @@ class ValueMutator(BaseMutator[MUTABLE_TYPE]):
                 else:
                     search_groups[current_group_nums] = [module]
                     current_group_nums += 1
+            elif hasattr(module, 'source_mutables'):
+                for each_mutables in module.source_mutables:
+                    if isinstance(each_mutables, self.mutable_class_type):
+                        if name in grouped_mutable_names:
+                            continue
+                        else:
+                            search_groups[current_group_nums] = [each_mutables]
+                            current_group_nums += 1
 
         grouped_counter = Counter(grouped_mutable_names)
 

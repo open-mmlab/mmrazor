@@ -7,7 +7,7 @@ import torch.nn as nn
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.registry import MODELS
 from ...ops import InputResizer
-from .dynamic_mixins import DynamicResizeMixin
+from ..mixins.dynamic_mixins import DynamicResizeMixin
 
 
 # TODO

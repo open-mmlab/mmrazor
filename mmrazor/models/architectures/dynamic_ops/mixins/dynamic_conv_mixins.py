@@ -70,6 +70,8 @@ class DynamicConvMixin(DynamicChannelMixin):
             self._register_mutable_in_channels(mutable)
         elif attr == 'out_channels':
             self._register_mutable_out_channels(mutable)
+        elif attr == 'groups':
+            self._register_mutable_groups(mutable)
         else:
             raise NotImplementedError
 
@@ -115,6 +117,17 @@ class DynamicConvMixin(DynamicChannelMixin):
 
         self.mutable_attrs['out_channels'] = mutable_out_channels
 
+    def _register_mutable_groups(self: _ConvNd,
+                                 mutable_groups: BaseMutable) -> None:
+        assert hasattr(self, 'groups')
+        self.check_mutable_channels(mutable_groups)
+        mask_size = mutable_groups.current_mask.size(0)
+        if mask_size != self.groups:
+            raise ValueError(
+                f'Expect mask size of mutable to be {self.in_channels} as '
+                f'`in_channels`, but got: {mask_size}.')
+        self.mutable_attrs['groups'] = mutable_groups
+
     @property
     def mutable_in_channels(self: _ConvNd) -> Optional[BaseMutable]:
         """Mutable related to input."""
@@ -126,6 +139,12 @@ class DynamicConvMixin(DynamicChannelMixin):
         """Mutable related to output."""
         assert hasattr(self, 'mutable_attrs')
         return getattr(self.mutable_attrs, 'out_channels', None)  # type:ignore
+
+    @property
+    def mutable_groups(self: _ConvNd) -> Optional[BaseMutable]:
+        """Mutable related to output."""
+        assert hasattr(self, 'mutable_attrs')
+        return getattr(self.mutable_attrs, 'groups', None)  # type:ignore
 
     def get_dynamic_params(
             self: _ConvNd) -> Tuple[Tensor, Optional[Tensor], Tuple[int]]:
@@ -166,6 +185,14 @@ class DynamicConvMixin(DynamicChannelMixin):
         else:
             out_mask = torch.ones(weight.size(0)).bool().to(weight.device)
 
+        if 'groups' in self.mutable_attrs:
+            mutable_groups = self.mutable_attrs['groups']
+            num_channels_ = mutable_groups.current_choice
+            origin_choices = max(mutable_groups.choices)
+            mask_ = torch.zeros(origin_choices).bool()
+            mask_[0:num_channels_] = True
+            out_mask = mask_.to(weight.device)
+
         if self.groups == 1:
             weight = weight[out_mask][:, in_mask]
         elif self.groups == self.in_channels == self.out_channels:
@@ -176,8 +203,11 @@ class DynamicConvMixin(DynamicChannelMixin):
                 'Current `ChannelMutator` only support pruning the depth-wise '
                 '`nn.Conv2d` or `nn.Conv2d` module whose group number equals '
                 f'to one, but got {self.groups}.')
-        bias = self.bias[out_mask] if self.bias is not None else None
-        return weight, bias
+
+        bias = self.bias[out_mask].contiguous(
+        ) if self.bias is not None else None
+
+        return weight.contiguous(), bias
 
     def forward_mixin(self: _ConvNd, x: Tensor) -> Tensor:
         """Forward of dynamic conv2d OP."""
@@ -238,6 +268,8 @@ class BigNasConvMixin(DynamicConvMixin):
             self._register_mutable_out_channels(mutable)
         elif attr == 'kernel_size':
             self._register_mutable_kernel_size(mutable)
+        elif attr == 'groups':
+            self._register_mutable_groups(mutable)
         else:
             raise NotImplementedError
 
@@ -281,9 +313,11 @@ class BigNasConvMixin(DynamicConvMixin):
             Tuple[Tensor, Optional[Tensor], Tuple[int]]: Sliced weight, bias
                 and padding.
         """
+        is_depthwise = True if 'groups' in self.mutable_attrs else False
+
         # 1. slice kernel size of weight according to kernel size mutable
         weight, padding = self._get_dynamic_params_by_mutable_kernel_size(
-            self.weight)
+            self.weight, is_depthwise=is_depthwise)
 
         # 2. slice in/out channel of weight according to mutable in_channels
         # and mutable out channels.
@@ -292,7 +326,8 @@ class BigNasConvMixin(DynamicConvMixin):
         return weight, bias, padding
 
     def _get_dynamic_params_by_mutable_kernel_size(
-            self: _ConvNd, weight: Tensor) -> Tuple[Tensor, Tuple[int]]:
+            self: _ConvNd, weight: Tensor,
+            is_depthwise: bool) -> Tuple[Tensor, Tuple[int]]:
         """Get sliced weight and bias according to ``mutable_in_channels`` and
         ``mutable_out_channels``."""
         if 'kernel_size' not in self.mutable_attrs \
@@ -312,6 +347,9 @@ class BigNasConvMixin(DynamicConvMixin):
         start_offset, end_offset = _get_current_kernel_pos(
             source_kernel_size=self.kernel_size[0],
             target_kernel_size=current_kernel_size)
+        if is_depthwise == True:
+            start_offset, end_offset = 0, 5
+            current_padding = (2, 2)
         current_weight = \
             weight[:, :, start_offset:end_offset, start_offset:end_offset]
 

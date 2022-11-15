@@ -93,7 +93,9 @@ class BigNasConv2d(nn.Conv2d, BigNasConvMixin):
             such as `in_channels`. The key of the dict must in
             ``accepted_mutable_attrs``.
     """
-    accepted_mutable_attrs = {'in_channels', 'out_channels', 'kernel_size'}
+    accepted_mutable_attrs = {
+        'in_channels', 'out_channels', 'kernel_size', 'groups'
+    }
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
