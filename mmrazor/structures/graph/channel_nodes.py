@@ -405,7 +405,8 @@ class BnNode(PassUnionChannelNode):
                  val: Union[nn.Module, str],
                  module_name='') -> None:
         super().__init__(name, val, module_name)
-        assert isinstance(self.val, nn.BatchNorm2d)
+        assert isinstance(self.val,
+                          nn.modules.batchnorm._BatchNorm), f'{type(self.val)}'
 
     @property
     def _in_channels(self) -> int:
