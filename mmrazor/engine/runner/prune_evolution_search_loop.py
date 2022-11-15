@@ -113,6 +113,15 @@ class PruneEvolutionSearchLoop(EvolutionSearchLoop):
         else:
             self.bn_dataloader = bn_dataloader
         self.flops_range: Tuple[float, float] = self._update_flop_range()
+        self.min_flops = self._min_flops()
+        assert self.min_flops < self.flops_range[0], 'Cannot reach flop targe.'
+
+    def _min_flops(self):
+        subnet = self.model.sample_subnet()
+        for key in subnet:
+            subnet[key] = 0.001
+        flops = get_flops(self.model, subnet, self.estimator)
+        return flops
 
     def run_epoch(self) -> None:
         super().run_epoch()

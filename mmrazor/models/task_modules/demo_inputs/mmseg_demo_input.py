@@ -3,7 +3,7 @@ import torch
 from mmengine.structures import PixelData
 from torch import nn
 
-from ..placeholder import get_placeholder
+from mmrazor.utils import get_placeholder
 
 try:
     from mmseg.models import SegDataPreProcessor

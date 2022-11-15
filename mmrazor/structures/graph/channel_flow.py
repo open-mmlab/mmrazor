@@ -11,7 +11,15 @@ sys.setrecursionlimit(int(pow(2, 20)))
 
 class ChannelElem:
 
-    def __init__(self, owning_tensor, index_in_tensor) -> None:
+    def __init__(self, owning_tensor: 'ChannelTensor',
+                 index_in_tensor: int) -> None:
+        """A ChannelElem represents a channel in channelflow.
+
+        Args:
+            owning_tensor (ChannelTensor): the ChannelTensor which the
+                ChannelElem belongs to.
+            index_in_tensor (int): the index  in the owning_tensor.
+        """
         self._parent: Union[None, 'ChannelElem'] = None
         self._subs: Set[ChannelElem] = set()
         self.owing_tensor = owning_tensor
@@ -106,6 +114,11 @@ class ChannelElem:
 class ChannelTensor:
 
     def __init__(self, num_channel_elem: int) -> None:
+        """ChannelTensor works as a proxy of a tensor.
+
+        Args:
+            num_channel_elem (int): number of channels(ChannelElems)
+        """
         self.elems = [ChannelElem(self, i) for i in range(num_channel_elem)]
 
     # tensor operations

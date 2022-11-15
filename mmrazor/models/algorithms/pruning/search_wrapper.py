@@ -30,6 +30,14 @@ class SearchWrapper(BaseAlgorithm):
 
         super().__init__(architecture, data_preprocessor, init_cfg)
 
+        import torch.distributed as dist
+        if dist.is_initialized():
+            self.architecture = nn.SyncBatchNorm.convert_sync_batchnorm(
+                self.architecture)
+        else:
+            from mmengine.model import revert_sync_batchnorm
+            self.architecture = revert_sync_batchnorm(self.architecture)
+
         # mutator
         self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
         self.mutator.prepare_from_supernet(self.architecture)

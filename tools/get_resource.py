@@ -22,10 +22,16 @@ if __name__ == '__main__':
     H = args.H
     W = args.W
 
+    default_scope = config['default_scope']
     model_config = config['model']
+    model_config['_scope_'] = default_scope
     model = MODELS.build(model_config)
 
     estimator = ResourceEstimator(
-        flops_params_cfg={'input_shape': (1, 3, H, W)})
+        flops_params_cfg=dict(
+            input_shape=(1, 3, H, W),
+            print_per_layer_stat=True,
+            input_constructor=dict(
+                type='mmrazor.DefaultDemoInput', scope=default_scope)), )
     result = estimator.estimate(model)
     print(result)

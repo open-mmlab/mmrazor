@@ -32,8 +32,10 @@ def parse_args():
 def wrap_search_config(config: Config, checkpoint_path: str,
                        flop_range: Tuple):
     config = copy.deepcopy(config)
+    default_scope = config['default_scope']
 
     arch_config: Dict = config['model']
+    arch_config.update({'_scope_': default_scope})
 
     # deal with data_preprocessor
     if 'data_preprocessor' in config:
@@ -61,22 +63,24 @@ def wrap_search_config(config: Config, checkpoint_path: str,
             channel_unit_cfg=dict(
                 type='L1MutableChannelUnit',
                 default_args=dict(choice_mode='ratio')),
-            parse_cfg=dict(type='PruneTracer', tracer_type='FxTracer')))
+            parse_cfg=dict(
+                type='PruneTracer',
+                tracer_type='FxTracer',
+                demo_input=dict(
+                    type='mmrazor.DefaultDemoInput',
+                    scope=default_scope,
+                ))))
 
     config['model'] = model_config
 
     val_evaluator_config = config['val_evaluator']
-    val_evaluator_config[
-        'type'] = config['default_scope'] + '.' + val_evaluator_config['type']
+    val_evaluator_config['_scope_'] = default_scope
 
     def prepare_dataloader(val_loader_config):
-
-        val_loader_config['dataset']['type'] = config[
-            'default_scope'] + '.' + val_loader_config['dataset']['type']
+        val_loader_config['dataset']['_scope_'] = default_scope
         return val_loader_config
 
-    val_loader_config = config['val_dataloader']
-    val_loader_config = prepare_dataloader(val_loader_config)
+    val_loader_config = prepare_dataloader(config['val_dataloader'])
     train_loader_config = prepare_dataloader(config['train_dataloader'])
 
     searcher_config = dict(
@@ -92,8 +96,12 @@ def wrap_search_config(config: Config, checkpoint_path: str,
         mutate_prob=0.2,
         flops_range=flop_range,
         resource_estimator_cfg=dict(
-            flops_params_cfg=dict(input_shape=(1, 3, 224, 224))),
-        score_key='accuracy/top1')
+            flops_params_cfg=dict(
+                input_shape=(1, 3, 224, 224),
+                input_constructor=dict(
+                    type='mmrazor.DefaultDemoInput', scope=default_scope)), ),
+        score_key='accuracy/top1',
+    )
     config['train_cfg'] = searcher_config
     return config
 

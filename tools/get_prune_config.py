@@ -30,7 +30,7 @@ def parse_args():
 def wrap_prune_config(config: Config, prune_target: Dict,
                       checkpoint_path: str):
     config = copy.deepcopy(config)
-
+    default_scope = config['default_scope']
     arch_config: Dict = config['model']
 
     # update checkpoint_path
@@ -61,9 +61,20 @@ def wrap_prune_config(config: Config, prune_target: Dict,
             channel_unit_cfg=dict(
                 type='L1MutableChannelUnit',
                 default_args=dict(choice_mode='ratio')),
-            parse_cfg=dict(type='PruneTracer', tracer_type='FxTracer')))
+            parse_cfg=dict(
+                type='PruneTracer',
+                tracer_type='FxTracer',
+                demo_input=dict(type='DefaultDemoInput',
+                                scope=default_scope))))
     config['model'] = algorithm_config
 
+    return config
+
+
+def change_config(config):
+
+    scope = config['default_scope']
+    config['model']['_scope_'] = scope
     return config
 
 
@@ -74,9 +85,11 @@ if __name__ == '__main__':
     target_path = args.o
 
     origin_config = Config.fromfile(config_path)
+    origin_config = change_config(origin_config)
+    default_scope = origin_config['default_scope']
 
     # get subnet config
-    model = MODELS.build(origin_config['model'])
+    model = MODELS.build(copy.deepcopy(origin_config['model']))
     mutator: ChannelMutator = ChannelMutator(
         channel_unit_cfg=dict(
             type='L1MutableChannelUnit',
@@ -84,6 +97,10 @@ if __name__ == '__main__':
         ),
         parse_cfg={
             'type': 'PruneTracer',
+            'demo_input': {
+                'type': 'DefaultDemoInput',
+                'scope': default_scope
+            },
             'tracer_type': 'FxTracer'
         })
     mutator.prepare_from_supernet(model)
