@@ -15,15 +15,33 @@ DEVICE = torch.device('cuda:0') if torch.cuda.is_available() \
 
 class TestDCFFChannelUnit(TestCase):
 
-    def test_init(self):
-        unit = DCFFChannelUnit(48, [20], choice_mode='number')
-        self.assertSequenceEqual(unit.candidate_choices, [20])
+    def test_num(self):
+        unit = DCFFChannelUnit(48, choice_mode='number')
+        unit.current_choice = 24
+        self.assertEqual(unit.current_choice, 24)
 
-        unit = DCFFChannelUnit(48, [0.5], choice_mode='ratio')
-        self.assertSequenceEqual(unit.candidate_choices, [0.5])
+        unit.current_choice = 0.5
+        self.assertEqual(unit.current_choice, 24)
+
+    def test_ratio(self):
+        unit = DCFFChannelUnit(48, choice_mode='ratio')
+        unit.current_choice = 0.5
+        self.assertEqual(unit.current_choice, 0.5)
+        unit.current_choice = 24
+        self.assertEqual(unit.current_choice, 0.5)
+
+    def test_divisor(self):
+        unit = DCFFChannelUnit(48, choice_mode='number', divisor=8)
+        unit.current_choice = 20
+        self.assertEqual(unit.current_choice, 24)
+        self.assertTrue(unit.sample_choice() % 8 == 0)
+
+        unit = DCFFChannelUnit(48, choice_mode='ratio', divisor=8)
+        unit.current_choice = 0.3
+        self.assertEqual(unit.current_choice, 1 / 3)
 
     def test_config_template(self):
-        unit = DCFFChannelUnit(48, [0.5], choice_mode='ratio', divisor=8)
+        unit = DCFFChannelUnit(48, choice_mode='ratio', divisor=8)
         config = unit.config_template(with_init_args=True)
         unit2 = DCFFChannelUnit.init_from_cfg(None, config)
         self.assertDictEqual(

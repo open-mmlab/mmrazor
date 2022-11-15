@@ -64,7 +64,6 @@ data_preprocessor = {'type': 'mmcls.ClsDataPreprocessor'}
 
 # model settings
 model = dict(
-    _delete_=True,
     _scope_='mmrazor',
     type='DCFF',
     architecture=dict(
@@ -72,10 +71,10 @@ model = dict(
     mutator_cfg=dict(
         type='DCFFChannelMutator',
         channel_unit_cfg=dict(
-            type='DCFFChannelUnit', default_args=dict(choice_mode='ratio'))),
-    parse_cfg=dict(
-        type='BackwardTracer',
-        loss_calculator=dict(type='ImageClassifierPseudoLoss')),
+            type='DCFFChannelUnit', default_args=dict(choice_mode='ratio')),
+        parse_cfg=dict(
+            type='BackwardTracer',
+            loss_calculator=dict(type='ImageClassifierPseudoLoss'))),
     target_pruning_ratio=target_pruning_ratio,
     step_freq=1,
     prune_times=120,

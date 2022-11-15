@@ -78,7 +78,6 @@ target_pruning_ratio = {
 
 # model settings
 model = dict(
-    _delete_=True,
     _scope_='mmrazor',
     type='DCFF',
     architecture=dict(
@@ -87,10 +86,10 @@ model = dict(
         type='DCFFChannelMutator',
         channel_unit_cfg=dict(
             type='DCFFChannelUnit',
-            units='configs/pruning/mmseg/dcff/resnet_seg.json')),
-    parse_cfg=dict(
-        type='BackwardTracer',
-        loss_calculator=dict(type='CascadeEncoderDecoderPseudoLoss')),
+            units='configs/pruning/mmseg/dcff/resnet_seg.json'),
+        parse_cfg=dict(
+            type='BackwardTracer',
+            loss_calculator=dict(type='CascadeEncoderDecoderPseudoLoss'))),
     target_pruning_ratio=target_pruning_ratio,
     step_freq=200,
     prune_times=800,

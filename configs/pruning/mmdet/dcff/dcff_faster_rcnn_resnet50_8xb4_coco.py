@@ -70,7 +70,6 @@ train_cfg = dict(max_epochs=120, val_interval=1)
 # data preprocessor
 
 model = dict(
-    _delete_=True,
     _scope_='mmrazor',
     type='DCFF',
     architecture=_base_.architecture,
@@ -78,10 +77,10 @@ model = dict(
         type='DCFFChannelMutator',
         channel_unit_cfg=dict(
             type='DCFFChannelUnit',
-            units='configs/pruning/mmdet/dcff/resnet_det.json')),
-    parse_cfg=dict(
-        type='BackwardTracer',
-        loss_calculator=dict(type='TwoStageDetectorPseudoLoss')),
+            units='configs/pruning/mmdet/dcff/resnet_det.json'),
+        parse_cfg=dict(
+            type='BackwardTracer',
+            loss_calculator=dict(type='TwoStageDetectorPseudoLoss'))),
     target_pruning_ratio=target_pruning_ratio,
     step_freq=1,
     prune_times=120,

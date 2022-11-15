@@ -6,11 +6,11 @@ import torch.nn as nn
 from mmrazor.models.architectures import dynamic_ops
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
-from .one_shot_mutable_channel_unit import OneShotMutableChannelUnit
+from .sequential_mutable_channel_unit import SequentialMutableChannelUnit
 
 
 @MODELS.register_module()
-class DCFFChannelUnit(OneShotMutableChannelUnit):
+class DCFFChannelUnit(SequentialMutableChannelUnit):
     """``DCFFChannelUnit`` is for supernet DCFF and based on
     OneShotMutableChannelUnit. In DCFF supernet, each module only has one
     choice. The channel choice is fixed before training.
@@ -35,8 +35,8 @@ class DCFFChannelUnit(OneShotMutableChannelUnit):
                  divisor: int = 1,
                  min_value: int = 1,
                  min_ratio: float = 0.9) -> None:
-        super().__init__(num_channels, candidate_choices, choice_mode, divisor,
-                         min_value, min_ratio)
+        super().__init__(num_channels, choice_mode, divisor, min_value,
+                         min_ratio)
 
     def prepare_for_pruning(self, model: nn.Module):
         """In ``DCFFChannelGroup`` nn.Conv2d is replaced with FuseConv2d."""

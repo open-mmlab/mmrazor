@@ -1,10 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import os
-from os.path import dirname
-
 import torch
 from mmcls.models import *  # noqa: F401,F403
-from mmengine import fileio
 from torch import Tensor, nn
 from torch.nn import Module
 
@@ -93,24 +89,22 @@ class ResBlock(Module):
 
 def test_DCFF_channel_mutator() -> None:
     imgs = torch.randn(16, 3, 224, 224)
-    root_path = dirname(dirname(dirname(__file__)))
 
     # ResBlock
-    channel_cfgs = \
-        os.path.join(root_path, 'data/test_models/test_mutator/subnet1.json')
-    channel_cfgs = fileio.load(channel_cfgs)
-
     mutator = DCFFChannelMutator(
-        channel_unit_cfg=dict(type='DCFFChannelUnit', units=channel_cfgs),
+        channel_unit_cfg=dict(type='DCFFChannelUnit'),
         parse_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss')))
 
+    target_pruning_ratio = {
+        0: 0.5,
+    }
+
     model = ResBlock()
     mutator.prepare_from_supernet(model)
-    choice = mutator.sample_choices()
-    mutator.set_choices(choice)
+    mutator.set_choices(target_pruning_ratio)
     mutator.calc_information(1.0)
     out3 = model(imgs)
 
-    assert out3.shape == (16, 8, 224, 224)
+    assert out3.shape == (16, 2, 224, 224)

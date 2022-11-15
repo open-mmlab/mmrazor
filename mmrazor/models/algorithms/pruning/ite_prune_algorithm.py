@@ -29,18 +29,22 @@ class ItePruneConfigManager:
         prune_step (int, optional): The prune step of epoch/iter to prune.
             Defaults to 1.
         times (int, optional): The times to prune. Defaults to 1.
+        linear_scheduel (bool, optional): flag to set ratio scheduel.
+            Defaults to True.
     """
 
     def __init__(self,
                  target: Dict[str, Union[int, float]],
                  supernet: Dict[str, Union[int, float]],
                  prune_step=1,
-                 times=1) -> None:
+                 times=1,
+                 linear_scheduel=False) -> None:
 
         self.supernet = supernet
         self.target = target
         self.prune_step = prune_step
         self.prune_times = times
+        self.linear_scheduel = linear_scheduel
 
         self.delta: Dict = self._get_delta_each_epoch(self.target,
                                                       self.supernet,
@@ -60,8 +64,11 @@ class ItePruneConfigManager:
         ratio = times / self.prune_times
 
         for key in self.target:
-            prune_current[key] = (self.target[key] - self.supernet[key]
-                                  ) * ratio + self.supernet[key]
+            if self.linear_scheduel:
+                prune_current[key] = (self.target[key] - self.supernet[key]
+                                      ) * ratio + self.supernet[key]
+            else:
+                prune_current[key] = self.target[key]
             if isinstance(self.supernet[key], int):
                 prune_current[key] = int(prune_current[key])
         return prune_current
@@ -130,10 +137,12 @@ class ItePruneAlgorithm(BaseAlgorithm):
             group_target_ratio = self.group_target_pruning_ratio(
                 target_pruning_ratio, self.mutator.search_groups)
 
+        # TO DO: message_hub['max_epoch'] unaccessible when init
         # check step_freq & prune_times
         # If step_freq legal, adjust prune_times by step_freq
         # Or step_freq illegal, adjust step_freq by prune_times
         # If both illegal, set step_freq = 1
+        """
         if not (step_freq * prune_times == self._max_num):
             if (step_freq > 0 and step_freq < self._max_num):
                 prune_times = self._max_num // step_freq
@@ -142,6 +151,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
             else:
                 step_freq = 1
                 prune_times = self._max_num // step_freq
+        """
 
         # config_manager
         self.prune_config_manager = ItePruneConfigManager(

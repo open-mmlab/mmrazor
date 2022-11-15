@@ -96,12 +96,12 @@ class DCFF(ItePruneAlgorithm):
         """Forward."""
         if self.prune_config_manager.is_prune_time(self._num,
                                                    self._current_iteration):
+            config = self.prune_config_manager.prune_at(self._num)
+            self.mutator.set_choices(config)
+
             # calc fusion channel
             temperature = self._calc_temperature(self._num, self._max_num)
             self.mutator.calc_information(temperature)
-
-            config = self.prune_config_manager.prune_at(self._num)
-            self.mutator.set_choices(config)
 
             logger = MMLogger.get_current_instance()
             if (self.by_epoch):
