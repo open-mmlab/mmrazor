@@ -1,5 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+"""ChannelNodes are basic node type of ChannelGraph.
 
+Different ChannelNodes represent different modules.
+"""
 import operator
 from abc import abstractmethod
 from typing import List, Union
@@ -12,6 +15,8 @@ from mmengine import MMLogger
 from .channel_flow import ChannelTensor
 from .module_graph import ModuleNode
 
+# error types
+
 
 class ChannelDismatchError(Exception):
     pass
@@ -20,6 +25,9 @@ class ChannelDismatchError(Exception):
 def assert_channel(condition, node):
     if not condition:
         raise ChannelDismatchError(node.name)
+
+
+# ChannelNode
 
 
 class ChannelNode(ModuleNode):
@@ -307,8 +315,6 @@ class EndNode(ChannelNode):
     def check_channel(self):
         pass
 
-
-# class StackChannelNode(ChannelNode):
 
 # module nodes
 
