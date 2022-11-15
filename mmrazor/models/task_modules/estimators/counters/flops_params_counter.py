@@ -82,7 +82,9 @@ def get_model_flops_params(model,
     flops_params_model.eval()
     flops_params_model.start_flops_params_count(disabled_counters)
     if input_constructor:
-        input = input_constructor(input_shape)
+        if isinstance(input_constructor, dict):
+            input_constructor = TASK_UTILS.build(input_constructor)
+        input = input_constructor(model, input_shape)
         _ = flops_params_model(**input)
     else:
         try:

@@ -17,30 +17,39 @@ class BaseDemoInput():
         if training is None:
             training = self.training
 
-        return torch.rand(self.input_shape)
+        return self._get_data(model, input_shape, training)
+
+    def _get_data(self, model, input_shape, training):
+        return torch.rand(input_shape)
+
+    def __call__(self,
+                 model=None,
+                 input_shape=[1, 3, 224, 224],
+                 training=False):
+        return self.get_data(model, input_shape, training)
 
 
 @TASK_UTILS.register_module()
 class DefaultMMDemoInput(BaseDemoInput):
 
-    def get_data(self, model, input_shape=None, training=None):
+    def _get_data(self, model, input_shape=None, training=None):
         if input_shape is None:
             input_shape = self.input_shape
         if training is None:
             training = self.training
 
-        data = self.get_mm_data(model, input_shape, training)
+        data = self._get_mm_data(model, input_shape, training)
         data['mode'] = 'tensor'
         return data
 
-    def get_mm_data(self, model, input_shape, training=False):
+    def _get_mm_data(self, model, input_shape, training=False):
         return {'inputs': torch.rand(input_shape), 'data_samples': None}
 
 
 @TASK_UTILS.register_module()
 class DefaultMMClsDemoInput(DefaultMMDemoInput):
 
-    def get_mm_data(self, model, input_shape, training=False):
+    def _get_mm_data(self, model, input_shape, training=False):
         from mmcls.structures import ClsDataSample
         x = torch.rand(input_shape)
         mm_inputs = {
@@ -55,7 +64,7 @@ class DefaultMMClsDemoInput(DefaultMMDemoInput):
 @TASK_UTILS.register_module()
 class DefaultMMDetDemoInput(DefaultMMDemoInput):
 
-    def get_mm_data(self, model, input_shape, training=False):
+    def _get_mm_data(self, model, input_shape, training=False):
         from mmdet.models import BaseDetector
         from mmdet.testing._utils import demo_mm_inputs
         assert isinstance(model, BaseDetector)
@@ -68,7 +77,7 @@ class DefaultMMDetDemoInput(DefaultMMDemoInput):
 @TASK_UTILS.register_module()
 class DefaultMMSegDemoInput(DefaultMMDemoInput):
 
-    def get_mm_data(self, model, input_shape, training=False):
+    def _get_mm_data(self, model, input_shape, training=False):
         from mmseg.models import BaseSegmentor
         assert isinstance(model, BaseSegmentor)
         from .mmseg_demo_input import demo_mmseg_inputs
@@ -79,7 +88,7 @@ class DefaultMMSegDemoInput(DefaultMMDemoInput):
 @TASK_UTILS.register_module()
 class DefaultMMRotateDemoInput(DefaultMMDemoInput):
 
-    def get_mm_data(self, model, input_shape, training=False):
+    def _get_mm_data(self, model, input_shape, training=False):
         from mmrotate.testing._utils import demo_mm_inputs
 
         data = demo_mm_inputs(1, [input_shape[1:]], use_box_type=True)

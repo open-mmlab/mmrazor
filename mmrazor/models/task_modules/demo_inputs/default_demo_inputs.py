@@ -64,6 +64,5 @@ class DefaultDemoInput(BaseDemoInput):
         super().__init__(input_shape, training)
         self.scope = scope
 
-    def get_data(self, model):
-        return defaul_demo_inputs(model, self.input_shape, self.training,
-                                  self.scope)
+    def _get_data(self, model, input_shape, training):
+        return defaul_demo_inputs(model, input_shape, training, self.scope)
