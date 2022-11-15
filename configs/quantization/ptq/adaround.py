@@ -1,7 +1,7 @@
 _base_ = ['mmcls::resnet/resnet18_8xb16_cifar10.py']
 
 test_cfg = dict(
-    type='mmrazor.CalibrateLoop',
+    type='mmrazor.PTQLoop',
 
     # reconstruction_cfg=dict(
     #     pattern='layer',

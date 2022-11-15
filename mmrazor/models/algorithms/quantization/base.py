@@ -55,6 +55,27 @@ class GeneralQuant(BaseAlgorithm):
 
     def _build_qmodels(self, model, trace_modes):
 
+        def _get_shared_fake_quantized(prefix, module):
+            for name, child in module._modules.items():
+                if module is None:
+                    continue
+                module_name = f'{prefix}{name}'
+                if isinstance(child, FakeQuantizeBase):
+                    share_fake_quantizes[module_name] = child
+                else:
+                    _get_shared_fake_quantized(f'{module_name}.', child)
+
+        def _replace_fake_quantizes(prefix, module):
+            for name, child in module._modules.items():
+                if module is None:
+                    continue
+                module_name = f'{prefix}{name}'
+                if isinstance(child, FakeQuantizeBase):
+                    new_module = share_fake_quantizes[module_name]
+                    setattr(module, name, new_module)
+                else:
+                    _replace_fake_quantizes(f'{module_name}.', child)
+
         qmodels = nn.ModuleDict()
 
         self.quantizer._swap_ff_with_fxff(model)
@@ -66,26 +87,16 @@ class GeneralQuant(BaseAlgorithm):
                 model, tracer.trace(model, concrete_args=concrete_args))
             qmodels[mode] = self.quantizer.prepare(model, qmodel)
 
+        #  different modes of qmodels share the same fake_quantizes, so that
+        #  the scale and zero_point in fake_quantizes are the same among
+        #  different mode.
         share_fake_quantizes = dict()
-        for name, module in qmodels[self.export_mode].named_modules():
-            if isinstance(module, FakeQuantizeBase):
-                share_fake_quantizes[name] = module
-
-        def _replace_fake_quantizes(module: nn.Module, prefix: str,
-                                    mode) -> None:
-            for name, child in module.named_children():
-                module_name = f'{prefix}{name}'
-                if isinstance(child, FakeQuantizeBase):
-                    new_module = share_fake_quantizes[module_name]
-                    setattr(module, name, new_module)
-                else:
-                    _replace_fake_quantizes(child, f'{module_name}.', mode)
+        _get_shared_fake_quantized('', qmodels[self.export_mode])
 
         for mode, qmodel in qmodels.items():
             if mode == self.export_mode:
                 continue
-
-            _replace_fake_quantizes(qmodel, '', mode)
+            _replace_fake_quantizes('', qmodel)
 
         return qmodels
 
@@ -114,7 +125,7 @@ class GeneralQuant(BaseAlgorithm):
         return (self._observers_enabled, self._fake_quants_enabled)
 
     @state.setter
-    def state(self, state: Tuple[bool]):
+    def state(self, state: Tuple[bool, bool]):
         observers_enabled, fake_quants_enabled = state
         qmodel = self.qmodels[self.export_mode]
         for submodule in qmodel.modules():
