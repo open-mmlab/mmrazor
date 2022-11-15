@@ -30,7 +30,7 @@ def parse_args():
 def wrap_prune_config(config: Config, prune_target: Dict,
                       checkpoint_path: str):
     config = copy.deepcopy(config)
-
+    default_scope = config['default_scope']
     arch_config: Dict = config['model']
 
     # update checkpoint_path
@@ -61,7 +61,11 @@ def wrap_prune_config(config: Config, prune_target: Dict,
             channel_unit_cfg=dict(
                 type='L1MutableChannelUnit',
                 default_args=dict(choice_mode='ratio')),
-            parse_cfg=dict(type='PruneTracer', tracer_type='FxTracer')))
+            parse_cfg=dict(
+                type='PruneTracer',
+                tracer_type='FxTracer',
+                demo_input=dict(type='DefaultDemoInput',
+                                scope=default_scope))))
     config['model'] = algorithm_config
 
     return config
