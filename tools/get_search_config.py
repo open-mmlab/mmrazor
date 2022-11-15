@@ -63,7 +63,13 @@ def wrap_search_config(config: Config, checkpoint_path: str,
             channel_unit_cfg=dict(
                 type='L1MutableChannelUnit',
                 default_args=dict(choice_mode='ratio')),
-            parse_cfg=dict(type='PruneTracer', tracer_type='FxTracer')))
+            parse_cfg=dict(
+                type='PruneTracer',
+                tracer_type='FxTracer',
+                demo_input=dict(
+                    type='mmrazor.DefaultDemoInput',
+                    scope=default_scope,
+                ))))
 
     config['model'] = model_config
 

@@ -43,11 +43,26 @@ def parse_args():
 def main():
     args = parse_args()
     config = Config.fromfile(args.config)
+    default_scope = config['default_scope']
+    config['model']['_scope_'] = default_scope
+
     model = MODELS.build(config['model'])
     if isinstance(model, BaseAlgorithm):
         mutator = model.mutator
     elif isinstance(model, nn.Module):
-        mutator = ChannelMutator()
+        mutator: ChannelMutator = ChannelMutator(
+            channel_unit_cfg=dict(
+                type='L1MutableChannelUnit',
+                default_args=dict(choice_mode='ratio'),
+            ),
+            parse_cfg={
+                'type': 'PruneTracer',
+                'demo_input': {
+                    'type': 'DefaultDemoInput',
+                    'scope': default_scope
+                },
+                'tracer_type': 'FxTracer'
+            })
         mutator.prepare_from_supernet(model)
     if args.choice:
         config = mutator.choice_template
