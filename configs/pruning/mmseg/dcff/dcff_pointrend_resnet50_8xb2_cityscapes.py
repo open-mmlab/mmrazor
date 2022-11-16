@@ -92,7 +92,6 @@ model = dict(
             loss_calculator=dict(type='CascadeEncoderDecoderPseudoLoss'))),
     target_pruning_ratio=target_pruning_ratio,
     step_freq=200,
-    prune_times=800,
     by_epoch=False,
     is_deployed=False)
 

@@ -51,8 +51,8 @@ class DCFF(ItePruneAlgorithm):
                      channel_unit_cfg=dict(type='DCFFChannelUnit')),
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  target_pruning_ratio: Optional[Dict[str, float]] = None,
-                 step_freq=1,
-                 prune_times=1,
+                 step_freq=-1,
+                 prune_times=-1,
                  init_cfg: Optional[Dict] = None,
                  by_epoch=True,
                  is_deployed=False) -> None:
@@ -94,6 +94,8 @@ class DCFF(ItePruneAlgorithm):
                 data_samples: Optional[List[BaseDataElement]] = None,
                 mode: str = 'tensor') -> ForwardResults:
         """Forward."""
+        if not hasattr(self, 'prune_config_manager'):
+            self.prune_config_manager = self._init_prune_config_manager()
         if self.prune_config_manager.is_prune_time(self._num,
                                                    self._current_iteration):
             config = self.prune_config_manager.prune_at(self._num)

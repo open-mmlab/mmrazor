@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, List, Type, Union
+from typing import Type, Union
 
 from mmrazor.models.architectures.dynamic_ops import FuseConv2d
 from mmrazor.models.mutables import DCFFChannelUnit
@@ -18,6 +18,7 @@ class DCFFChannelMutator(ChannelMutator[DCFFChannelUnit]):
         parse_cfg (Dict): The config of the tracer to parse the model.
             Defaults to dict( type='BackwardTracer',
                 loss_calculator=dict(type='ImageClassifierPseudoLoss')).
+            Change loss_calculator according to task and backbone.
     """
 
     def __init__(self,
@@ -28,47 +29,6 @@ class DCFFChannelMutator(ChannelMutator[DCFFChannelUnit]):
                      loss_calculator=dict(type='ImageClassifierPseudoLoss')),
                  **kwargs) -> None:
         super().__init__(channel_unit_cfg, parse_cfg, **kwargs)
-        self._channel_cfgs = channel_unit_cfg
-        self._subnets = self._prepare_subnets(self.units_cfg)
-
-    @property
-    def subnets(self):
-        return self._subnets
-
-    def _prepare_subnets(self, unit_cfg: Dict) -> List[Dict[str, int]]:
-        """Prepare subnet config.
-
-        Args:
-            unit_cfg (Dict[str, Dict[str]]): Config of the units.
-                unit_cfg follows the below template:
-                    {
-                        'xx_unit_name':{
-                            'init_args':{
-                                'candidate_choices':[c],...
-                            },...
-                        },...
-                    }
-                The candidate in the list of candidate_choices with the same
-                position compose a subnet.
-
-        Returns:
-            List[Dict[str, int]]: config of the subnets.
-        """
-        subnets: List[Dict[str, int]] = []
-        num_subnets = 0
-        for key in unit_cfg:
-            num_subnets = len(unit_cfg[key]['init_args']['candidate_choices'])
-            break
-        for _ in range(num_subnets):
-            subnets.append({})
-        for key in unit_cfg:
-            assert num_subnets == len(
-                unit_cfg[key]['init_args']['candidate_choices'])
-            for i, value in enumerate(
-                    unit_cfg[key]['init_args']['candidate_choices']):
-                subnets[i][key] = value
-
-        return subnets
 
     def calc_information(self, tau: float):
         """Calculate channel's kl and apply softmax pooling on channel to solve

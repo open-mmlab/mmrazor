@@ -52,5 +52,4 @@ model = dict(
             default_args=dict(choice_mode='ratio'))),
     target_pruning_ratio=target_pruning_ratio,
     step_freq=1,
-    prune_times=1,
 )

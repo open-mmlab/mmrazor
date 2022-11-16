@@ -119,21 +119,35 @@ class TestItePruneAlgorithm(unittest.TestCase):
 
         epoch = 10
         epoch_step = 2
-        times = 3
+        times = 5
 
         algorithm = ItePruneAlgorithm(
             MODEL_CFG,
             target_pruning_ratio=prune_target,
             mutator_cfg=MUTATOR_CONFIG_FLOAT,
             step_freq=epoch_step,
-            prune_times=times).to(DEVICE)
+            by_epoch=True).to(DEVICE)
+
+        algorithm_prune_time = ItePruneAlgorithm(
+            MODEL_CFG,
+            target_pruning_ratio=prune_target,
+            mutator_cfg=MUTATOR_CONFIG_FLOAT,
+            prune_times=times,
+            by_epoch=True).to(DEVICE)
 
         for e in range(epoch):
-            for ite in range(5):
-                self._set_epoch_ite(e, ite, 5)
+            for ite in range(10):
+                self._set_epoch_ite(e, ite, epoch)
 
                 algorithm.forward(
                     data['inputs'], data['data_samples'], mode='loss')
+                algorithm_prune_time.forward(
+                    data['inputs'], data['data_samples'], mode='loss')
+                self.assertEqual(algorithm.step_freq,
+                                 algorithm_prune_time.step_freq)
+                self.assertEqual(algorithm.prune_times,
+                                 algorithm_prune_time.prune_times)
+                self.assertEqual(times, algorithm.prune_times)
 
         current_choices = algorithm.mutator.current_choices
         group_prune_target = algorithm.group_target_pruning_ratio(
@@ -143,7 +157,6 @@ class TestItePruneAlgorithm(unittest.TestCase):
                 current_choices[key], group_prune_target[key], delta=0.1)
 
     def test_load_pretrained(self):
-        epoch_step = 2
         times = 3
         data = self.fake_cifar_data()
 
@@ -162,11 +175,12 @@ class TestItePruneAlgorithm(unittest.TestCase):
             model_cfg,
             mutator_cfg=MUTATOR_CONFIG_NUM,
             target_pruning_ratio=None,
-            step_freq=epoch_step,
             prune_times=times,
         ).to(DEVICE)
         algorithm.init_weights()
+        self._set_epoch_ite(4, 5, 6)
         algorithm.forward(data['inputs'], data['data_samples'], mode='loss')
+        self.assertEqual(algorithm.step_freq, 2)
 
         # delete checkpoint
         os.remove(checkpoint_path)
@@ -187,26 +201,36 @@ class TestItePruneAlgorithm(unittest.TestCase):
         mutator_cfg['custom_groups'] = custom_groups
 
         epoch_step = 2
-        times = 3
+        epoch = 6
+        data = self.fake_cifar_data()
 
         prune_target['backbone.layer1.0.conv1_(0, 64)_64'] = 0.1
         prune_target['backbone.layer1.1.conv1_(0, 64)_64'] = 0.1
 
-        _ = ItePruneAlgorithm(
+        algorithm = ItePruneAlgorithm(
             MODEL_CFG,
             target_pruning_ratio=prune_target,
             mutator_cfg=mutator_cfg,
-            step_freq=epoch_step,
-            prune_times=times).to(DEVICE)
+            step_freq=epoch_step).to(DEVICE)
+
+        algorithm.init_weights()
+        self._set_epoch_ite(1, 2, epoch)
+        algorithm.forward(data['inputs'], data['data_samples'], mode='loss')
+        self.assertEqual(algorithm.step_freq, 2)
 
         prune_target['backbone.layer1.0.conv1_(0, 64)_64'] = 0.1
         prune_target['backbone.layer1.1.conv1_(0, 64)_64'] = 0.2
 
         with self.assertRaises(ValueError):
 
-            _ = ItePruneAlgorithm(
+            algorithm = ItePruneAlgorithm(
                 MODEL_CFG,
                 target_pruning_ratio=prune_target,
                 mutator_cfg=mutator_cfg,
-                step_freq=epoch_step,
-                prune_times=times).to(DEVICE)
+                step_freq=epoch_step).to(DEVICE)
+
+            algorithm.init_weights()
+            self._set_epoch_ite(1, 2, epoch)
+            algorithm.forward(
+                data['inputs'], data['data_samples'], mode='loss')
+            self.assertEqual(algorithm.step_freq, 2)

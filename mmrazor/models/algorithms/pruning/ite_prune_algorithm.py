@@ -29,7 +29,7 @@ class ItePruneConfigManager:
         prune_step (int, optional): The prune step of epoch/iter to prune.
             Defaults to 1.
         times (int, optional): The times to prune. Defaults to 1.
-        linear_scheduel (bool, optional): flag to set ratio scheduel.
+        linear_schedule (bool, optional): flag to set linear ratio schedule.
             Defaults to True.
     """
 
@@ -38,13 +38,13 @@ class ItePruneConfigManager:
                  supernet: Dict[str, Union[int, float]],
                  prune_step=1,
                  times=1,
-                 linear_scheduel=False) -> None:
+                 linear_schedule=True) -> None:
 
         self.supernet = supernet
         self.target = target
         self.prune_step = prune_step
         self.prune_times = times
-        self.linear_scheduel = linear_scheduel
+        self.linear_schedule = linear_schedule
 
         self.delta: Dict = self._get_delta_each_epoch(self.target,
                                                       self.supernet,
@@ -64,7 +64,8 @@ class ItePruneConfigManager:
         ratio = times / self.prune_times
 
         for key in self.target:
-            if self.linear_scheduel:
+            if self.linear_schedule:
+                # TO DO: add scheduler for more pruning rate schedule
                 prune_current[key] = (self.target[key] - self.supernet[key]
                                       ) * ratio + self.supernet[key]
             else:
@@ -103,8 +104,11 @@ class ItePruneAlgorithm(BaseAlgorithm):
             of the prune-target can be get by calling
             mutator.choice_template(). Defaults to {}.
         step_freq (int, optional): The step between two pruning operations.
-            Defaults to 1.
-        prune_times (int, optional): The times to prune a model. Defaults to 1.
+            Defaults to -1. Legal input includes [1, self._max_num]
+            One and only one of (step_freq, prune_times) is set to legal int.
+        prune_times (int, optional): The total times to prune a model.
+            Defaults to -1. Legal input includes [1, self._max_num]
+            One and only one of (step_freq, prune_times) is set to legal int.
         init_cfg (Optional[Dict], optional): init config for architecture.
             Defaults to None.
     """
@@ -117,8 +121,8 @@ class ItePruneAlgorithm(BaseAlgorithm):
                          type='SequentialMutableChannelUnit')),
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  target_pruning_ratio: Optional[Dict[str, float]] = None,
-                 step_freq=1,
-                 prune_times=1,
+                 step_freq=-1,
+                 prune_times=-1,
                  init_cfg: Optional[Dict] = None,
                  by_epoch=True) -> None:
 
@@ -126,39 +130,49 @@ class ItePruneAlgorithm(BaseAlgorithm):
 
         # decided by EpochBasedRunner or IterBasedRunner
         self.by_epoch = by_epoch
+        self.target_pruning_ratio = target_pruning_ratio
+        self.step_freq = step_freq
+        self.prune_times = prune_times
 
         # mutator
         self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
         self.mutator.prepare_from_supernet(self.architecture)
 
-        if target_pruning_ratio is None:
+    def _init_prune_config_manager(self):
+        """init prune_config_manager and check step_freq & prune_times.
+
+        message_hub['max_epoch/iter'] unaccessible when initiation.
+        """
+        if self.target_pruning_ratio is None:
             group_target_ratio = self.mutator.current_choices
         else:
             group_target_ratio = self.group_target_pruning_ratio(
-                target_pruning_ratio, self.mutator.search_groups)
+                self.target_pruning_ratio, self.mutator.search_groups)
 
-        # TO DO: message_hub['max_epoch'] unaccessible when init
         # check step_freq & prune_times
+        if ((self.step_freq != -1) == (self.prune_times != -1)):
+            raise RuntimeError('One and only one of (step_freq, prune_times)'
+                               'can be set to legal int.')
         # If step_freq legal, adjust prune_times by step_freq
-        # Or step_freq illegal, adjust step_freq by prune_times
+        # Or prune_times legal, adjust step_freq by prune_times
         # If both illegal, set step_freq = 1
-        """
-        if not (step_freq * prune_times == self._max_num):
-            if (step_freq > 0 and step_freq < self._max_num):
-                prune_times = self._max_num // step_freq
-            elif (prune_times > 0 and prune_times < self._max_num):
-                step_freq = self._max_num // prune_times
-            else:
-                step_freq = 1
-                prune_times = self._max_num // step_freq
-        """
+        if (self.step_freq > 0 and self.step_freq < self._max_num):
+            self.prune_times = self._max_num // self.step_freq
+        elif (self.prune_times > 0 and self.prune_times < self._max_num):
+            self.step_freq = self._max_num // self.prune_times
+        else:
+            self.step_freq = 1
+            self.prune_times = self._max_num // self.step_freq
 
-        # config_manager
-        self.prune_config_manager = ItePruneConfigManager(
+        # config_manager move to forward.
+        # message_hub['max_epoch'] unaccessible when init
+        prune_config_manager = ItePruneConfigManager(
             group_target_ratio,
             self.mutator.current_choices,
-            step_freq,
-            times=prune_times)
+            self.step_freq,
+            times=self.prune_times)
+
+        return prune_config_manager
 
     def group_target_pruning_ratio(
         self, target: Dict[str, float],
@@ -198,6 +212,8 @@ class ItePruneAlgorithm(BaseAlgorithm):
                 data_samples: Optional[List[BaseDataElement]] = None,
                 mode: str = 'tensor') -> ForwardResults:
         """Forward."""
+        if not hasattr(self, 'prune_config_manager'):
+            self.prune_config_manager = self._init_prune_config_manager()
         if self.prune_config_manager.is_prune_time(self._num,
                                                    self._current_iteration):
 

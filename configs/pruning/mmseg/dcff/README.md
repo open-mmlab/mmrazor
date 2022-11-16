@@ -55,7 +55,7 @@ python tools/get_channel_units.py
   -c -i --output-path=configs/pruning/mmseg/dcff/resnet_seg.json
 ```
 
-Then set layers' pruning rates `choice` in `resnet_seg.json`.
+Then set layers' pruning rates `target_pruning_ratio` by `resnet_seg.json`.
 
 ### Train DCFF
 
