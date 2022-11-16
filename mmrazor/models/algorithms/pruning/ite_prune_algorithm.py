@@ -111,6 +111,10 @@ class ItePruneAlgorithm(BaseAlgorithm):
             One and only one of (step_freq, prune_times) is set to legal int.
         init_cfg (Optional[Dict], optional): init config for architecture.
             Defaults to None.
+        linear_schedule (bool, optional): flag to set linear ratio schedule.
+            Defaults to True.
+        by_epoch (bool, optional): flag to set epoch/iter algorithm.
+            Defaults to True.
     """
 
     def __init__(self,
@@ -124,6 +128,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
                  step_freq=-1,
                  prune_times=-1,
                  init_cfg: Optional[Dict] = None,
+                 linear_schedule=True,
                  by_epoch=True) -> None:
 
         super().__init__(architecture, data_preprocessor, init_cfg)
@@ -133,6 +138,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
         self.target_pruning_ratio = target_pruning_ratio
         self.step_freq = step_freq
         self.prune_times = prune_times
+        self.linear_schedule = linear_schedule
 
         # mutator
         self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
@@ -170,7 +176,8 @@ class ItePruneAlgorithm(BaseAlgorithm):
             group_target_ratio,
             self.mutator.current_choices,
             self.step_freq,
-            times=self.prune_times)
+            times=self.prune_times,
+            linear_schedule=self.linear_schedule)
 
         return prune_config_manager
 

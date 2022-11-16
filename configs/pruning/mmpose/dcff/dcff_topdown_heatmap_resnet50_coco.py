@@ -120,6 +120,7 @@ model = dict(
             loss_calculator=dict(type='TopdownPoseEstimatorPseudoLoss'))),
     target_pruning_ratio=target_pruning_ratio,
     step_freq=1,
+    linear_schedule=False,
     by_epoch=True,
     is_deployed=False)
 

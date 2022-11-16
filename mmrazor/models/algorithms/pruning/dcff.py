@@ -29,19 +29,28 @@ class DCFF(ItePruneAlgorithm):
 
     Args:
         architecture (Union[BaseModel, Dict]): The model to be pruned.
-        mutator_cfg (Union[Dict, DCFFChannelMutator], optional): The config
-            of a mutator. Defaults to dict( type='DCFFChannelMutator',
-            channel_unit_cfg=dict( type='DCFFChannelUnit')).
+        mutator_cfg (Union[Dict, ChannelMutator], optional): The config
+            of a mutator. Defaults to dict( type='ChannelMutator',
+            channel_unit_cfg=dict( type='SequentialMutableChannelUnit')).
         data_preprocessor (Optional[Union[Dict, nn.Module]], optional):
             Defaults to None.
         target_pruning_ratio (dict, optional): The prune-target. The template
             of the prune-target can be get by calling
             mutator.choice_template(). Defaults to {}.
         step_freq (int, optional): The step between two pruning operations.
-            Defaults to 1.
-        prune_times (int, optional): The times to prune a model. Defaults to 1.
+            Defaults to -1. Legal input includes [1, self._max_num]
+            One and only one of (step_freq, prune_times) is set to legal int.
+        prune_times (int, optional): The total times to prune a model.
+            Defaults to -1. Legal input includes [1, self._max_num]
+            One and only one of (step_freq, prune_times) is set to legal int.
         init_cfg (Optional[Dict], optional): init config for architecture.
             Defaults to None.
+        linear_schedule (bool, optional): flag to set linear ratio schedule.
+            Defaults to True.
+        by_epoch (bool, optional): flag to set epoch/iter algorithm.
+            Defaults to True.
+        is_deployed (bool, optional): flag to set deployed algorithm.
+            Defaults to False.
     """
 
     def __init__(self,
