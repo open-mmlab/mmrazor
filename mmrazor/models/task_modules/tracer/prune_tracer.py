@@ -76,7 +76,8 @@ class PruneTracer:
         self.tracer_type = tracer_type
         if tracer_type == 'BackwardTracer':
             self.tracer = BackwardTracer(
-                loss_calculator=SumPseudoLoss(input_shape=demo_input))
+                loss_calculator=SumPseudoLoss(
+                    input_shape=self.demo_input.input_shape))
         elif tracer_type == 'FxTracer':
             self.tracer = CustomFxTracer(leaf_module=self.default_leaf_modules)
         else:
