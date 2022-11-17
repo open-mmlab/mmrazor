@@ -327,7 +327,7 @@ train_pipeline = [
     dict(type='mmcls.LoadImageFromFile'),
     dict(type='mmcls.RandomResizedCrop', scale=224, backend='pillow'),
     dict(type='mmcls.RandomFlip', prob=0.5, direction='horizontal'),
-    dict(type='mmcls.AutoAugmentV2', policies=policies),
+    # dict(type='mmcls.AutoAugmentV2', policies=policies),
     dict(type='mmcls.PackClsInputs'),
 ]
 
@@ -391,7 +391,7 @@ param_scheduler = [
     dict(
         type='LinearLR',
         start_factor=0.001,
-        by_epoch=False,
+        by_epoch=True,
         begin=0,
         end=warmup_epochs,
         # update by iter

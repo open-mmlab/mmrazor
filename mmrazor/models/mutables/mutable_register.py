@@ -3,7 +3,9 @@ from typing import Optional, Sequence, Tuple
 
 from mmrazor.models.architectures.ops.gml_mobilenet_series import (GMLMBBlock,
                                                                    GMLSELayer)
+from mmrazor.models.mutables.mutable_value import MutableValue
 from .base_mutable import BaseMutable
+from .derived_mutable import DerivedMutable
 from .mutable_channel import MutableChannelContainer
 
 
@@ -14,15 +16,42 @@ def mutate_conv_module(
         mutable_kernel_size: Optional[Tuple[BaseMutable,
                                             Sequence[int]]] = None):
     """Mutate a conv module."""
+
+    def get_end_channels(mutable_num):
+        """Get end channels based on ratio & mutable_num's current_choice."""
+        if isinstance(mutable_num, DerivedMutable):
+            source_mutables = mutable_num._trace_source_mutables()
+            source_value_mutables = [
+                mutable for mutable in source_mutables
+                if isinstance(mutable, MutableValue)
+            ]
+            ratio = int(source_value_mutables[0].current_choice) \
+                if len(source_value_mutables) > 0 else 1
+            end_channels = mutable_num.current_choice * ratio
+        else:
+            end_channels = -1
+        return end_channels
+
     if mutable_in_channels is not None:
         MutableChannelContainer.register_mutable_channel_to_module(
-            conv_module.conv, mutable_in_channels, False)
+            conv_module.conv,
+            mutable_in_channels,
+            False,
+            end=get_end_channels(mutable_in_channels))
+
     if mutable_out_channels is not None:
         MutableChannelContainer.register_mutable_channel_to_module(
-            conv_module.conv, mutable_out_channels, True)
+            conv_module.conv,
+            mutable_out_channels,
+            True,
+            end=get_end_channels(mutable_out_channels))
+
         if hasattr(conv_module, 'bn'):
             MutableChannelContainer.register_mutable_channel_to_module(
-                conv_module.bn, mutable_out_channels, False)
+                conv_module.bn,
+                mutable_out_channels,
+                False,
+                end=get_end_channels(mutable_out_channels))
 
     if mutable_kernel_size is not None:
         conv_module.conv.register_mutable_attr('kernel_size',
