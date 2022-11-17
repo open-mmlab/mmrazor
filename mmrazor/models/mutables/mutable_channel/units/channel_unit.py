@@ -263,7 +263,9 @@ class ChannelUnit(BaseModule):
         """Add a Channel which is output related."""
         assert channel.is_output_channel
         assert self.num_channels == \
-            int(channel.num_channels // channel.expand_ratio)
+            int(channel.num_channels // channel.expand_ratio), (
+                f'channel mismatch: {self.num_channels} != '
+                f'{channel.num_channels} // {channel.expand_ratio}')
         if channel not in self.output_related:
             self.output_related.append(channel)
 
@@ -271,7 +273,9 @@ class ChannelUnit(BaseModule):
         """Add a Channel which is input related."""
         assert channel.is_output_channel is False
         assert self.num_channels == \
-            int(channel.num_channels // channel.expand_ratio)
+            int(channel.num_channels // channel.expand_ratio), (
+                f'channel mismatch: {self.num_channels} != '
+                f'{channel.num_channels} // {channel.expand_ratio}')
         if channel not in self.input_related:
             self.input_related.append(channel)
 
