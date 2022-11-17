@@ -85,7 +85,10 @@ def get_model_flops_params(model,
         if isinstance(input_constructor, dict):
             input_constructor = TASK_UTILS.build(input_constructor)
         input = input_constructor(model, input_shape)
-        _ = flops_params_model(**input)
+        if isinstance(input, dict):
+            _ = flops_params_model(**input)
+        else:
+            flops_params_model(input)
     else:
         try:
             batch = torch.ones(()).new_empty(
