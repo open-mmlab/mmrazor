@@ -8,9 +8,9 @@ from mmcv.cnn import ConvModule
 from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.architectures.dynamic_ops.bricks import DynamicSequential
+from mmrazor.models.architectures.ops import MBBlock
 from mmrazor.models.mutables import OneShotMutableChannel, OneShotMutableValue
 from mmrazor.models.mutables.base_mutable import BaseMutable
-from mmrazor.models.ops import MBBlock
 from mmrazor.registry import MODELS
 
 
@@ -46,7 +46,7 @@ class BigNASMobileNet(BaseBackbone):
     # Parameters to build layers. 5 parameters are needed to construct a
     # layer, from left to right:
     # expand_ratio, channels, num_blocks, kernel_size, stride
-    arch_settings = [
+    arch_setting = [
         [1, 24, 2, 3, 1],
         [6, 32, 3, 3, 2],
         [6, 48, 3, 5, 2],
@@ -121,7 +121,7 @@ class BigNASMobileNet(BaseBackbone):
             act_cfg=self.act_cfg)
 
         self.layers = []
-        for i, layer_cfg in enumerate(self.arch_settings):
+        for i, layer_cfg in enumerate(self.arch_setting):
             print(f'stage {i + 1}: {layer_cfg}')
             expand_ratio, channels, num_blocks, \
                 kernel_size, stride = layer_cfg

@@ -51,12 +51,12 @@ class MutableChannelUnit(ChannelUnit):
         """Initialize units using the model with pre-defined dynamicops and
         mutable-channels."""
 
-        def process_container(contanier: MutableChannelContainer,
+        def process_container(container: MutableChannelContainer,
                               module,
                               module_name,
                               mutable2units,
                               is_output=True):
-            for index, mutable in contanier.mutable_channels.items():
+            for index, mutable in container.mutable_channels.items():
                 expand_ratio = 1
                 if isinstance(mutable, DerivedMutable):
                     source_mutables: Set = \
@@ -68,7 +68,7 @@ class MutableChannelUnit(ChannelUnit):
                     assert len(source_channel_mutables) == 1, (
                         'only support one mutable channel '
                         'used in DerivedMutable')
-                    mutable = list(source_channel_mutables)[0]
+                    mutable = source_channel_mutables[0]
 
                     source_value_mutables = [
                         mutable for mutable in source_mutables
@@ -77,9 +77,9 @@ class MutableChannelUnit(ChannelUnit):
                     assert len(source_value_mutables) <= 1, (
                         'only support one mutable value '
                         'used in DerivedMutable')
-                    expand_ratio = int(
-                        list(source_value_mutables)
-                        [0].current_choice) if source_value_mutables else 1
+                    if source_value_mutables:
+                        expand_ratio = int(
+                            source_value_mutables[0].current_choice)
 
                 if mutable not in mutable2units:
                     mutable2units[mutable] = cls.init_from_mutable_channel(
