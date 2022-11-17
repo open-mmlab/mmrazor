@@ -17,6 +17,7 @@ from mmrazor.models.task_modules import (ModuleInputsRecorder,
                                          RecorderManager)
 from mmrazor.registry import LOOPS
 from .utils import extract_blocks, extract_layers, extract_subgraph
+from mmengine.model import is_model_wrapper
 
 _ADAROUND_SUPPORT_TYPE = (torch.nn.Conv2d, torch.nn.Linear)
 
@@ -142,7 +143,19 @@ class QATValLoop(ValLoop):
         self.runner.call_hook('after_val_epoch', metrics=qat_metrics)
 
         self.runner.call_hook('before_val_epoch')
+        # todo: hardcode to make
+        if is_model_wrapper(self.runner.model):
+            quantizer = self.runner.model.module.quantizer
+            self.runner.model.module.quantizer = None
+        else:
+            quantizer = self.runner.model.quantizer
+            self.runner.model.quantizer = None
+
         quantized_model = copy.deepcopy(self.runner.model)
+        if is_model_wrapper(self.runner.model):
+            self.runner.model.module.quantizer = quantizer
+        else:
+            self.runner.model.quantizer = quantizer
         quantized_model.eval()
         quantized_eval_model = quantized_model.convert()
         for idx, data_batch in enumerate(self.dataloader):

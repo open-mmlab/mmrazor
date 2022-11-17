@@ -62,3 +62,6 @@ model_wrapper_cfg = dict(
     type='mmrazor.GeneralQuantDDP',
     broadcast_buffers=False,
     find_unused_parameters=False)
+
+val_cfg = dict(_delete_=True, type='mmrazor.QATValLoop')
+test_cfg = val_cfg

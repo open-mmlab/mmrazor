@@ -40,7 +40,7 @@ class GeneralQuant(BaseAlgorithm):
                  export_mode: str = 'predict',
                  qmodel_modes: List[str] = ['tensor', 'predict', 'loss'],
                  data_preprocessor=None,
-                 init_cfg=None):
+                 init_cfg=None, sync=True):
 
         if data_preprocessor is None:
             data_preprocessor = {}
@@ -51,7 +51,9 @@ class GeneralQuant(BaseAlgorithm):
         self._observers_enabled = True
         self._fake_quants_enabled = True
         self.export_mode = export_mode
-        self.qmodels = self._build_qmodels(self.architecture, qmodel_modes)
+        self.sync = sync
+        import copy
+        self.qmodels = self._build_qmodels(copy.deepcopy(self.architecture), qmodel_modes)
 
     def _build_qmodels(self, model, trace_modes):
 
@@ -94,7 +96,7 @@ class GeneralQuant(BaseAlgorithm):
         _get_shared_fake_quantized('', qmodels[self.export_mode])
 
         for mode, qmodel in qmodels.items():
-            if mode == self.export_mode:
+            if mode == self.export_mode or not self.sync:
                 continue
             _replace_fake_quantizes('', qmodel)
 
@@ -168,3 +170,6 @@ class GeneralQuantDDP(MMDistributedDataParallel):
     @state.setter
     def state(self, state: Tuple[bool]):
         self.module.state = state
+
+    def convert(self):
+        return self.module.convert()
