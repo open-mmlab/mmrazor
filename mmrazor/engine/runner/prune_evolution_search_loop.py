@@ -116,6 +116,11 @@ class PruneEvolutionSearchLoop(EvolutionSearchLoop):
         self.min_flops = self._min_flops()
         assert self.min_flops < self.flops_range[0], 'Cannot reach flop targe.'
 
+        if self.runner.distributed:
+            self.search_wrapper = runner.model.module
+        else:
+            self.search_wrapper = runner.model
+
     def _min_flops(self):
         subnet = self.model.sample_subnet()
         for key in subnet:
@@ -194,20 +199,22 @@ class PruneEvolutionSearchLoop(EvolutionSearchLoop):
     @torch.no_grad()
     def _val_candidate(self) -> Dict:
         # bn rescale
-        len_img = 0
-        self.runner.model.train()
+        max_iter = 100
+        iter = 0
+        self.search_wrapper.train()
         for _, data_batch in enumerate(self.bn_dataloader):
-            data = self.runner.model.data_preprocessor(data_batch, True)
-            self.runner.model._run_forward(data, mode='tensor')  # type: ignore
-            len_img += len(data_batch['data_samples'])
-            if len_img > 1000:
+            data = self.search_wrapper.data_preprocessor(data_batch, True)
+            self.search_wrapper._run_forward(
+                data, mode='tensor')  # type: ignore
+            iter += 1
+            if iter > max_iter:
                 break
         return super()._val_candidate()
 
     def _scale_and_check_subnet_constraints(
             self,
             random_subnet: SupportRandomSubnet,
-            auto_scale_times=5) -> Tuple[bool, SupportRandomSubnet]:
+            auto_scale_times=20) -> Tuple[bool, SupportRandomSubnet]:
         """Check whether is beyond constraints.
 
         Returns:
@@ -225,7 +232,14 @@ class PruneEvolutionSearchLoop(EvolutionSearchLoop):
                     random_subnet,
                     (self.flops_range[1] + self.flops_range[0]) / 2, flops)
                 continue
-
+        if is_pass:
+            from mmengine import MMLogger
+            MMLogger.get_current_instance().info(
+                f'sample a net,{flops},{self.flops_range}')
+        else:
+            from mmengine import MMLogger
+            MMLogger.get_current_instance().info(
+                f'sample a net failed,{flops},{self.flops_range}')
         return is_pass, random_subnet
 
     def _update_flop_range(self):
