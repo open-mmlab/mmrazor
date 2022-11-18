@@ -27,16 +27,16 @@ from .razor_tracer import FxBaseNode, RazorFxTracer
 """
 - How to config PruneTracer using hard code
   - fxtracer
-    - concrete args
-      - demo_inputs
+    - demo_inputs
+        ./mmrazor/models/task_modules/demo_inputs/default_demo_inputs.py
     - leaf module
       - PruneTracer.default_leaf_modules
     - method
-      - None
+      - ./mmrazor/models/task_modules/tracer/fx_tracer.py
   - ChannelNode
-    - channel_nodes.py
+    - ./mmrazor/structures/graph/channel_nodes.py
   - DynamicOp
-        ChannelUnits
+        ./mmrazor/models/architectures/dynamic_ops/bricks/dynamic_conv.py
 """
 
 # concrete args
