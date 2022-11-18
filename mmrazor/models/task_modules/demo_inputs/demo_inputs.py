@@ -67,7 +67,7 @@ class DefaultMMDetDemoInput(DefaultMMDemoInput):
         from mmdet.testing._utils import demo_mm_inputs
         assert isinstance(model, BaseDetector)
 
-        data = demo_mm_inputs(1, [input_shape[1:]])
+        data = demo_mm_inputs(1, [input_shape[1:]], with_mask=True)
         data = model.data_preprocessor(data, training)
         return data
 

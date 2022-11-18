@@ -120,6 +120,7 @@ class PruneTracer:
         args = self.demo_input.get_data(model)
         if isinstance(args, dict):
             args.pop('inputs')
+            args['mode'] = 'tensor'
             return self.tracer.trace(model, concrete_args=args)
         else:
             return self.tracer.trace(model)

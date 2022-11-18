@@ -61,6 +61,7 @@ class ModelGenerator(nn.Module):
 
     def init_model(self):
         self._model = self.model_src()
+        return self._model
 
     def forward(self, x):
         assert self._model is not None
@@ -91,6 +92,10 @@ class ModelGenerator(nn.Module):
     @property
     def short_name(self):
         return self.__class__.get_short_name(self.name)
+
+    @property
+    def scope(self):
+        return self.name.split('.')[0]
 
 
 class MMModelGenerator(ModelGenerator):
@@ -378,14 +383,15 @@ class MMClsModelLibrary(MMModelLibrary):
         'seresnet',
         'repvgg',
         'seresnext',
-        'deit'
+        'deit',
     ]
     base_config_path = '_base_/models/'
     repo = 'mmcls'
 
-    def __init__(self,
-                 include=default_includes,
-                 exclude=['cutmix', 'cifar', 'gem']) -> None:
+    def __init__(
+            self,
+            include=default_includes,
+            exclude=['cutmix', 'cifar', 'gem', 'efficientformer']) -> None:
         super().__init__(include=include, exclude=exclude)
 
 
@@ -506,7 +512,7 @@ class MMDetModelLibrary(MMModelLibrary):
 
     @classmethod
     def generator_type(cls):
-        return MMDetModelGenerator
+        return MMModelGenerator
 
 
 class MMSegModelLibrary(MMModelLibrary):
