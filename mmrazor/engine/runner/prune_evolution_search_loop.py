@@ -209,7 +209,10 @@ class PruneEvolutionSearchLoop(EvolutionSearchLoop):
             iter += 1
             if iter > max_iter:
                 break
-        return super()._val_candidate()
+        if self.score_key == 'loss':
+            return self._val_by_loss()
+        else:
+            return super()._val_candidate()
 
     def _scale_and_check_subnet_constraints(
             self,
@@ -251,3 +254,16 @@ class PruneEvolutionSearchLoop(EvolutionSearchLoop):
     def check_subnet_flops(self, flops):
         return self.flops_range[0] <= flops <= self.flops_range[
             1]  # type: ignore
+
+    def _val_by_loss(self):
+        from mmengine.dist import all_reduce
+        self.runner.model.eval()
+        sum_loss = 0
+        for data_batch in self.dataloader:
+            data = self.search_wrapper.data_preprocessor(data_batch)
+            losses = self.search_wrapper.forward(**data, mode='loss')
+            parsed_losses, _ = self.search_wrapper.parse_losses(
+                losses)  # type: ignore
+            sum_loss = sum_loss + parsed_losses
+        all_reduce(sum_loss)
+        return {'loss': sum_loss.item()}
