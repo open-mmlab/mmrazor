@@ -266,4 +266,4 @@ class PruneEvolutionSearchLoop(EvolutionSearchLoop):
                 losses)  # type: ignore
             sum_loss = sum_loss + parsed_losses
         all_reduce(sum_loss)
-        return {'loss': sum_loss.item()}
+        return {'loss': sum_loss.item() * -1}
