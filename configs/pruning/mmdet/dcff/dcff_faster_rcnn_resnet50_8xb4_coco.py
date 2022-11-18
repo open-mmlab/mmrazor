@@ -84,7 +84,6 @@ model = dict(
     target_pruning_ratio=target_pruning_ratio,
     step_freq=1,
     linear_schedule=False,
-    by_epoch=True,
     is_deployed=False)
 
 model_wrapper = dict(

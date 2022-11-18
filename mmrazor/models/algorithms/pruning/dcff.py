@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
-from mmengine import MMLogger
+from mmengine import MessageHub, MMLogger
 from mmengine.model import BaseModel
 from mmengine.structures import BaseDataElement
 
@@ -12,7 +12,7 @@ from mmrazor.models.mutables import BaseMutable
 from mmrazor.models.mutators import DCFFChannelMutator
 from mmrazor.registry import MODELS
 from mmrazor.structures.subnet.fix_subnet import _dynamic_to_static
-from .ite_prune_algorithm import ItePruneAlgorithm
+from .ite_prune_algorithm import ItePruneAlgorithm, ItePruneConfigManager
 
 LossResults = Dict[str, torch.Tensor]
 TensorResults = Union[Tuple[torch.Tensor], torch.Tensor]
@@ -38,15 +38,15 @@ class DCFF(ItePruneAlgorithm):
             of the prune-target can be get by calling
             mutator.choice_template(). Defaults to {}.
         step_freq (int, optional): The step between two pruning operations.
-            Defaults to -1. Legal input includes [1, self._max_num]
+            Defaults to 1. Legal input includes [1, self._max_num]
             One and only one of (step_freq, prune_times) is set to legal int.
         prune_times (int, optional): The total times to prune a model.
-            Defaults to -1. Legal input includes [1, self._max_num]
+            Defaults to 0. Legal input includes [1, self._max_num]
             One and only one of (step_freq, prune_times) is set to legal int.
         init_cfg (Optional[Dict], optional): init config for architecture.
             Defaults to None.
         linear_schedule (bool, optional): flag to set linear ratio schedule.
-            Defaults to True.
+            Defaults to False due to dcff fixed pruning rate.
         by_epoch (bool, optional): flag to set epoch/iter algorithm.
             Defaults to True.
         is_deployed (bool, optional): flag to set deployed algorithm.
@@ -60,14 +60,15 @@ class DCFF(ItePruneAlgorithm):
                      channel_unit_cfg=dict(type='DCFFChannelUnit')),
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  target_pruning_ratio: Optional[Dict[str, float]] = None,
-                 step_freq=-1,
-                 prune_times=-1,
+                 step_freq=0,
+                 prune_times=0,
                  init_cfg: Optional[Dict] = None,
-                 by_epoch=True,
+                 linear_schedule=False,
                  is_deployed=False) -> None:
+        # invalid param prune_times, reset after message_hub get [max_epoch]
         super().__init__(architecture, mutator_cfg, data_preprocessor,
                          target_pruning_ratio, step_freq, prune_times,
-                         init_cfg, by_epoch)
+                         init_cfg, linear_schedule)
         self.is_deployed = is_deployed
         if (self.is_deployed):
             # To static ops for loaded pruned network.
@@ -80,7 +81,7 @@ class DCFF(ItePruneAlgorithm):
                     module.fix_chosen(None)
 
     def _deploy(self):
-        config = self.prune_config_manager.prune_at(self._num)
+        config = self.prune_config_manager.prune_at(self._iteration)
         self.mutator.set_choices(config)
         self.mutator.fix_channel_mutables()
         self._fix_archtecture()
@@ -98,27 +99,75 @@ class DCFF(ItePruneAlgorithm):
         t = 1 / T
         return t
 
+    def _legal_freq_time(self, freq_time):
+        """check whether step_freq or prune_times belongs to legal range:
+
+            [1, self._max_num]
+
+        Args:
+            freq_time (Int): step_freq or prune_times.
+        """
+        return (freq_time > 0) and (freq_time < self._max_iteration)
+
+    def _init_prune_config_manager(self):
+        """init prune_config_manager and check step_freq & prune_times.
+
+        message_hub['max_epoch/iter'] unaccessible when initiation. In DCFF,
+        prune_times is set by step_freq and self._max_iteration
+        """
+        if self.target_pruning_ratio is None:
+            group_target_ratio = self.mutator.current_choices
+        else:
+            group_target_ratio = self.group_target_pruning_ratio(
+                self.target_pruning_ratio, self.mutator.search_groups)
+
+        if self.by_epoch:
+            # step_freq based on iterations
+            self.step_freq *= self._iter_per_epoch
+
+        self.prune_times = self._max_iteration / self.step_freq
+
+        # config_manager move to forward.
+        # message_hub['max_epoch'] unaccessible when init
+        prune_config_manager = ItePruneConfigManager(
+            group_target_ratio,
+            self.mutator.current_choices,
+            self.step_freq,
+            times=self.prune_times,
+            linear_schedule=self.linear_schedule)
+
+        return prune_config_manager
+
     def forward(self,
                 inputs: torch.Tensor,
                 data_samples: Optional[List[BaseDataElement]] = None,
                 mode: str = 'tensor') -> ForwardResults:
         """Forward."""
+        # In DCFF prune_message is related to total_num
+        # Set self.prune_config_manager after message_hub has['max_epoch/iter']
         if not hasattr(self, 'prune_config_manager'):
+            # iter num per epoch only available after initiation
             self.prune_config_manager = self._init_prune_config_manager()
-        if self.prune_config_manager.is_prune_time(self._num,
-                                                   self._current_iteration):
-            config = self.prune_config_manager.prune_at(self._num)
+        if self.prune_config_manager.is_prune_time(self._iteration):
+            config = self.prune_config_manager.prune_at(self._iteration)
             self.mutator.set_choices(config)
 
             # calc fusion channel
-            temperature = self._calc_temperature(self._num, self._max_num)
+            temperature = self._calc_temperature(self._iteration,
+                                                 self._max_iteration)
             self.mutator.calc_information(temperature)
 
             logger = MMLogger.get_current_instance()
+            message_hub = MessageHub.get_current_instance()
+            max_epoch = message_hub.runtime_info['max_epochs']
+            logger.info(f'max_epoch: {max_epoch}.')
+            max_iter = message_hub.runtime_info['max_iters']
+            logger.info(f'max_iter: {max_iter}.')
             if (self.by_epoch):
                 logger.info(
-                    f'The model is pruned at {self._num}th epoch once.')
+                    f'The model is pruned at {self._iteration}th epoch once.')
             else:
-                logger.info(f'The model is pruned at {self._num}th iter once.')
+                logger.info(
+                    f'The model is pruned at {self._iteration}th iter once.')
 
         return super().forward(inputs, data_samples, mode)
