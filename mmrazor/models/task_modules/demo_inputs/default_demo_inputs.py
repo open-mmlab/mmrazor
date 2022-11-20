@@ -6,7 +6,8 @@ from mmrazor.registry import TASK_UTILS
 from mmrazor.utils import get_placeholder
 from .demo_inputs import (BaseDemoInput, DefaultMMClsDemoInput,
                           DefaultMMDemoInput, DefaultMMDetDemoInput,
-                          DefaultMMRotateDemoInput, DefaultMMSegDemoInput)
+                          DefaultMMRotateDemoInput, DefaultMMSegDemoInput,
+                          DefaultMMYoloDemoInput)
 
 try:
     from mmdet.models import BaseDetector
@@ -35,32 +36,39 @@ default_demo_input_class_for_scope = {
     'mmdet': DefaultMMDetDemoInput,
     'mmseg': DefaultMMSegDemoInput,
     'mmrotate': DefaultMMRotateDemoInput,
+    'mmyolo': DefaultMMYoloDemoInput,
     'torchvision': BaseDemoInput,
 }
 
 
-def defaul_demo_inputs(model, input_shape, training=False, scope=None):
+def get_default_demo_input_class(model, scope):
+
     if scope is not None:
         for scope_name, demo_input in default_demo_input_class_for_scope.items(
         ):
             if scope == scope_name:
-                return demo_input(input_shape, training).get_data(model)
+                return demo_input
 
     for module_type, demo_input in default_demo_input_class.items(  # noqa
     ):  # noqa
         if isinstance(model, module_type):
-            return demo_input(input_shape, training).get_data(model)
+            return demo_input
     # default
-    return BaseDemoInput(input_shape, training).get_data(model)
+    return BaseDemoInput
+
+
+def defaul_demo_inputs(model, input_shape, training=False, scope=None):
+    demo_input = get_default_demo_input_class(model, scope)
+    return demo_input().get_data(model, input_shape, training)
 
 
 @TASK_UTILS.register_module()
 class DefaultDemoInput(BaseDemoInput):
 
-    def __init__(self,
-                 input_shape=[1, 3, 224, 224],
-                 training=False,
-                 scope=None) -> None:
+    def __init__(self, input_shape=None, training=False, scope=None) -> None:
+        default_demo_input_class = get_default_demo_input_class(None, scope)
+        if input_shape is None:
+            input_shape = default_demo_input_class.default_shape
         super().__init__(input_shape, training)
         self.scope = scope
 

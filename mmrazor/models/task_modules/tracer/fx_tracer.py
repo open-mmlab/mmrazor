@@ -36,6 +36,7 @@ class FxTracer(Tracer):
         }
         self.warp_fn = {
             torch: torch.arange,
+            torch: torch.linspace,
         }
 
     def trace(self,

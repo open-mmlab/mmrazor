@@ -6,8 +6,9 @@ from mmrazor.registry import TASK_UTILS
 
 @TASK_UTILS.register_module()
 class BaseDemoInput():
+    default_shape = (1, 3, 224, 224)
 
-    def __init__(self, input_shape=[1, 3, 224, 224], training=False) -> None:
+    def __init__(self, input_shape=default_shape, training=None) -> None:
         self.input_shape = input_shape
         self.training = training
 
@@ -33,10 +34,6 @@ class BaseDemoInput():
 class DefaultMMDemoInput(BaseDemoInput):
 
     def _get_data(self, model, input_shape=None, training=None):
-        if input_shape is None:
-            input_shape = self.input_shape
-        if training is None:
-            training = self.training
 
         data = self._get_mm_data(model, input_shape, training)
         data['mode'] = 'tensor'
@@ -58,6 +55,7 @@ class DefaultMMClsDemoInput(DefaultMMDemoInput):
             'data_samples':
             [ClsDataSample().set_gt_label(1) for _ in range(input_shape[0])],
         }
+        mm_inputs = model.data_preprocessor(mm_inputs, training)
         return mm_inputs
 
 
@@ -69,7 +67,7 @@ class DefaultMMDetDemoInput(DefaultMMDemoInput):
         from mmdet.testing._utils import demo_mm_inputs
         assert isinstance(model, BaseDetector)
 
-        data = demo_mm_inputs(1, [input_shape[1:]])
+        data = demo_mm_inputs(1, [input_shape[1:]], with_mask=True)
         data = model.data_preprocessor(data, training)
         return data
 
@@ -94,3 +92,8 @@ class DefaultMMRotateDemoInput(DefaultMMDemoInput):
         data = demo_mm_inputs(1, [input_shape[1:]], use_box_type=True)
         data = model.data_preprocessor(data, training)
         return data
+
+
+@TASK_UTILS.register_module()
+class DefaultMMYoloDemoInput(DefaultMMDetDemoInput):
+    default_shape = (1, 3, 125, 320)

@@ -2,14 +2,26 @@
 import os
 import shutil
 import subprocess
-from typing import List
 from unittest import TestCase
 
-config_paths: List = [
-    'mmcls::resnet/resnet34_8xb32_in1k.py',
-    'mmdet::retinanet/retinanet_r18_fpn_1x_coco.py',
-    'mmseg::deeplabv3plus/deeplabv3plus_r50-d8_4xb4-20k_voc12aug-512x512.py',
-]
+config_paths = []
+
+
+def add_config_path(repo_name, path):
+    try:
+        __import__(repo_name)
+        config_paths.append(path)
+    except Exception:
+        pass
+
+
+add_config_path('mmcls', 'mmcls::resnet/resnet34_8xb32_in1k.py')
+add_config_path('mmdet', 'mmdet::retinanet/retinanet_r18_fpn_1x_coco.py')
+add_config_path(
+    'mmseg',
+    'mmseg::deeplabv3plus/deeplabv3plus_r50-d8_4xb4-20k_voc12aug-512x512.py')
+add_config_path(
+    'mmyolo', 'mmyolo::yolov5/yolov5_m-p6-v62_syncbn_fast_8xb16-300e_coco.py')
 
 
 class TestTools(TestCase):

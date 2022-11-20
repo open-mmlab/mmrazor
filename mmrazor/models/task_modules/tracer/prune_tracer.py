@@ -27,16 +27,16 @@ from .razor_tracer import FxBaseNode, RazorFxTracer
 """
 - How to config PruneTracer using hard code
   - fxtracer
-    - concrete args
-      - demo_inputs
+    - demo_inputs
+        ./mmrazor/models/task_modules/demo_inputs/default_demo_inputs.py
     - leaf module
       - PruneTracer.default_leaf_modules
     - method
-      - None
+      - ./mmrazor/models/task_modules/tracer/fx_tracer.py
   - ChannelNode
-    - channel_nodes.py
+    - ./mmrazor/structures/graph/channel_nodes.py
   - DynamicOp
-        ChannelUnits
+        ./mmrazor/models/architectures/dynamic_ops/bricks/dynamic_conv.py
 """
 
 # concrete args
@@ -76,7 +76,8 @@ class PruneTracer:
         self.tracer_type = tracer_type
         if tracer_type == 'BackwardTracer':
             self.tracer = BackwardTracer(
-                loss_calculator=SumPseudoLoss(input_shape=demo_input))
+                loss_calculator=SumPseudoLoss(
+                    input_shape=self.demo_input.input_shape))
         elif tracer_type == 'FxTracer':
             self.tracer = CustomFxTracer(leaf_module=self.default_leaf_modules)
         else:
@@ -119,6 +120,7 @@ class PruneTracer:
         args = self.demo_input.get_data(model)
         if isinstance(args, dict):
             args.pop('inputs')
+            args['mode'] = 'tensor'
             return self.tracer.trace(model, concrete_args=args)
         else:
             return self.tracer.trace(model)
