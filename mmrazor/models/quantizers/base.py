@@ -87,7 +87,6 @@ class CustomQuantizer(BaseModule):
 
         graph_module = self.fuse_model(graph_module)
 
-        # print(model.head)
         prepared = prepare(
             graph_module,
             self.qconfig_dict,
@@ -96,7 +95,6 @@ class CustomQuantizer(BaseModule):
             prepare_custom_config_dict=self.prepare_custom_config_dict,
             equalization_qconfig_dict=self.equalization_qconfig_dict
         )  # type: ignore[operator]
-        # print(model.head)
 
         for attr_name in preserved_attributes:
             setattr(prepared, attr_name, getattr(model, attr_name))

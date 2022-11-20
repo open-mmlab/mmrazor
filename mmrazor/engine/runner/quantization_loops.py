@@ -17,7 +17,6 @@ from mmrazor.models.task_modules import (ModuleInputsRecorder,
                                          RecorderManager)
 from mmrazor.registry import LOOPS
 from .utils import extract_blocks, extract_layers, extract_subgraph
-from mmengine.model import is_model_wrapper
 
 _ADAROUND_SUPPORT_TYPE = (torch.nn.Conv2d, torch.nn.Linear)
 
@@ -72,6 +71,7 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
             if (self.runner.val_loop is not None
                     and self._epoch >= self.val_begin
                     and self._epoch % self.val_interval == 0):
+                self.runner.model.sync_param()
                 self.runner.val_loop.run()
 
         self.runner.call_hook('after_train')
@@ -127,6 +127,7 @@ class QATValLoop(ValLoop):
         """Launch validation."""
         self.runner.call_hook('before_val')
         self.runner.call_hook('before_val_epoch')
+        # self.runner.model.train()
         self.runner.model.eval()
         for idx, data_batch in enumerate(self.dataloader):
             self.run_iter(idx, data_batch, self.runner.model)
@@ -142,36 +143,42 @@ class QATValLoop(ValLoop):
 
         self.runner.call_hook('after_val_epoch', metrics=qat_metrics)
 
-        self.runner.call_hook('before_val_epoch')
-        # todo: hardcode to make
-        if is_model_wrapper(self.runner.model):
-            quantizer = self.runner.model.module.quantizer
-            self.runner.model.module.quantizer = None
-        else:
-            quantizer = self.runner.model.quantizer
-            self.runner.model.quantizer = None
-
-        quantized_model = copy.deepcopy(self.runner.model)
-        if is_model_wrapper(self.runner.model):
-            self.runner.model.module.quantizer = quantizer
-        else:
-            self.runner.model.quantizer = quantizer
-        quantized_model.eval()
-        quantized_eval_model = quantized_model.convert()
-        for idx, data_batch in enumerate(self.dataloader):
-            self.run_iter(idx, data_batch, quantized_eval_model)
-
-        # compute metrics
-        metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
-        convert_metrics = dict()
-        for key, value in metrics.items():
-            qat_key = 'qat.' + key
-            convert_key = 'convert.' + key
-            convert_metrics[convert_key] = value
-            self.runner.message_hub.log_scalars.pop(f'val/{qat_key}', None)
-        self.runner.call_hook('after_val_epoch', metrics=convert_metrics)
+        # self.runner.call_hook('before_val_epoch')
+        # # todo: hardcode to make
+        # if is_model_wrapper(self.runner.model):
+        #     quantizer = self.runner.model.module.quantizer
+        #     self.runner.model.module.quantizer = None
+        # else:
+        #     quantizer = self.runner.model.quantizer
+        #     self.runner.model.quantizer = None
+        #
+        # quantized_model = copy.deepcopy(self.runner.model)
+        # if is_model_wrapper(self.runner.model):
+        #     self.runner.model.module.quantizer = quantizer
+        #     quantized_model.module.quantizer = quantizer
+        # else:
+        #     self.runner.model.quantizer = quantizer
+        #     quantized_model.quantizer = quantizer
+        # quantized_model.eval()
+        # quantized_model.convert(mode='predict')
+        # for name, param in quantized_model.named_parameters():
+        #     if param.device == torch.device('cpu'):
+        #         print(name)
+        # # quantized_eval_model = quantized_model.convert()
+        # for idx, data_batch in enumerate(self.dataloader):
+        #     self.run_iter(idx, data_batch, quantized_model)
+        #
+        # # compute metrics
+        # metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+        # convert_metrics = dict()
+        # for key, value in metrics.items():
+        #     qat_key = 'qat.' + key
+        #     convert_key = 'convert.' + key
+        #     convert_metrics[convert_key] = value
+        #     self.runner.message_hub.log_scalars.pop(f'val/{qat_key}', None)
+        # self.runner.call_hook('after_val_epoch', metrics=convert_metrics)
         self.runner.call_hook('after_val')
-        return convert_metrics
+        return qat_metrics
 
     @torch.no_grad()
     def run_iter(self, idx, data_batch: Sequence[dict], model):
