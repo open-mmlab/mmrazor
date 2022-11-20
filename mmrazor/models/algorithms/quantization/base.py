@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 from mmengine.model import MMDistributedDataParallel
+from mmengine.runner import load_checkpoint
 from mmengine.structures import BaseDataElement
 from torch import nn
 from torch.ao.quantization import FakeQuantizeBase
@@ -40,65 +41,81 @@ class GeneralQuant(BaseAlgorithm):
                  export_mode: str = 'predict',
                  qmodel_modes: List[str] = ['tensor', 'predict', 'loss'],
                  data_preprocessor=None,
-                 init_cfg=None, sync=True):
+                 pretrained_ckpt: Optional[str] = None,
+                 init_cfg=None):
 
         if data_preprocessor is None:
             data_preprocessor = {}
         # The build process is in MMEngine, so we need to add scope here.
         data_preprocessor.setdefault('type', 'mmcls.ClsDataPreprocessor')
         super().__init__(architecture, data_preprocessor, init_cfg)
+        if pretrained_ckpt:
+            _ = load_checkpoint(self.architecture, pretrained_ckpt)
+            self.architecture._is_init = True
         self.quantizer = MODELS.build(quantizer)
         self._observers_enabled = True
         self._fake_quants_enabled = True
         self.export_mode = export_mode
-        self.sync = sync
-        import copy
-        self.qmodels = self._build_qmodels(copy.deepcopy(self.architecture), qmodel_modes)
+        self.qmodel_modes = qmodel_modes
+        self.qmodels = self._build_qmodels(self.architecture)
 
-    def _build_qmodels(self, model, trace_modes):
+    def sync_param(self):
 
-        def _get_shared_fake_quantized(prefix, module):
+        def traverse(module, prefix):
             for name, child in module._modules.items():
                 if module is None:
                     continue
                 module_name = f'{prefix}{name}'
                 if isinstance(child, FakeQuantizeBase):
-                    share_fake_quantizes[module_name] = child
+                    for name, param in child.named_parameters():
+                        param.data.copy_(self.qmodels['loss'].state_dict()
+                                         [f'{module_name}.{name}'])
+                    for name, buffer in child.named_buffers():
+                        buffer.data.copy_(self.qmodels['loss'].state_dict()
+                                          [f'{module_name}.{name}'])
                 else:
-                    _get_shared_fake_quantized(f'{module_name}.', child)
+                    traverse(child, f'{module_name}.')
 
-        def _replace_fake_quantizes(prefix, module):
-            for name, child in module._modules.items():
-                if module is None:
-                    continue
-                module_name = f'{prefix}{name}'
-                if isinstance(child, FakeQuantizeBase):
-                    new_module = share_fake_quantizes[module_name]
-                    setattr(module, name, new_module)
-                else:
-                    _replace_fake_quantizes(f'{module_name}.', child)
+        for mode in self.qmodel_modes:
+            if mode == 'loss':
+                continue
+            traverse(self.qmodels[mode], '')
+
+    def _build_qmodels(self, model):
+
+        def _prepare_module_dict(graph: torch.fx.Graph, model: nn.Module):
+
+            def _get_attrs(target, attrs):
+                attrs = attrs.split('.')
+                for att in attrs:
+                    target = getattr(target, att)
+                return target
+
+            module_dict = dict()
+            for node in graph.nodes:
+                if node.op == 'get_attr':
+                    attr = _get_attrs(model, node.target)
+                    if isinstance(attr, nn.Module):
+                        module_dict[node.target] = nn.Module()
+            return module_dict
 
         qmodels = nn.ModuleDict()
 
         self.quantizer._swap_ff_with_fxff(model)
         tracer = self.quantizer.tracer
 
-        for mode in trace_modes:
+        for mode in self.qmodel_modes:
             concrete_args = {'mode': mode}
-            qmodel = GraphModule(
-                model, tracer.trace(model, concrete_args=concrete_args))
+            traced_graph = tracer.trace(model, concrete_args=concrete_args)
+            modules = dict(model.named_modules())
+            module_dict = _prepare_module_dict(traced_graph, model)
+            modules.update(module_dict)
+            qmodel = GraphModule(modules, traced_graph)
+            if mode == 'loss':
+                qmodel.head._get_loss = model.head._get_loss
+            elif mode == 'predict':
+                qmodel.head._get_predictions = model.head._get_predictions
             qmodels[mode] = self.quantizer.prepare(model, qmodel)
-
-        #  different modes of qmodels share the same fake_quantizes, so that
-        #  the scale and zero_point in fake_quantizes are the same among
-        #  different mode.
-        share_fake_quantizes = dict()
-        _get_shared_fake_quantized('', qmodels[self.export_mode])
-
-        for mode, qmodel in qmodels.items():
-            if mode == self.export_mode or not self.sync:
-                continue
-            _replace_fake_quantizes('', qmodel)
 
         return qmodels
 
@@ -118,9 +135,9 @@ class GeneralQuant(BaseAlgorithm):
         self.state = (1, 0)
         return self._run_forward(data, mode='tensor')
 
-    def convert(self):
+    def convert(self, mode='predict'):
         qmodel = self.qmodels[self.export_mode]
-        return self.quantizer.convert(qmodel)
+        self.qmodels[mode] = self.quantizer.convert(qmodel)
 
     @property
     def state(self):
@@ -171,5 +188,8 @@ class GeneralQuantDDP(MMDistributedDataParallel):
     def state(self, state: Tuple[bool]):
         self.module.state = state
 
-    def convert(self):
-        return self.module.convert()
+    def convert(self, mode='predict'):
+        self.module.convert(mode)
+
+    def sync_param(self):
+        self.module.sync_param()

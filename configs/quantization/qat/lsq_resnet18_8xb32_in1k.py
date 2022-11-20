@@ -13,6 +13,14 @@ model = dict(
     _delete_=True,
     _scope_='mmrazor',
     type='GeneralQuant',
+    # data_preprocessor = dict(
+    #     num_classes=1000,
+    #     # RGB format normalization parameters
+    #     mean=[123.675, 116.28, 103.53],
+    #     std=[58.395, 57.12, 57.375],
+    #     # convert image from BGR to RGB
+    #     to_rgb=True,
+    # ),
     architecture=resnet,
     quantizer=dict(
         type='TensorRTQuantizer',
