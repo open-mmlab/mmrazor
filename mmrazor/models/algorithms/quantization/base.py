@@ -8,8 +8,8 @@ from mmengine.runner import load_checkpoint
 from mmengine.structures import BaseDataElement
 from torch import nn
 from torch.ao.quantization import FakeQuantizeBase
-from torch.fx import GraphModule
 
+from mmrazor.models.task_modules import prepare_graph_module
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
 from ..base import BaseAlgorithm
 
@@ -83,22 +83,6 @@ class GeneralQuant(BaseAlgorithm):
 
     def _build_qmodels(self, model):
 
-        def _prepare_module_dict(graph: torch.fx.Graph, model: nn.Module):
-
-            def _get_attrs(target, attrs):
-                attrs = attrs.split('.')
-                for att in attrs:
-                    target = getattr(target, att)
-                return target
-
-            module_dict = dict()
-            for node in graph.nodes:
-                if node.op == 'get_attr':
-                    attr = _get_attrs(model, node.target)
-                    if isinstance(attr, nn.Module):
-                        module_dict[node.target] = nn.Module()
-            return module_dict
-
         qmodels = nn.ModuleDict()
 
         self.quantizer._swap_ff_with_fxff(model)
@@ -107,14 +91,9 @@ class GeneralQuant(BaseAlgorithm):
         for mode in self.qmodel_modes:
             concrete_args = {'mode': mode}
             traced_graph = tracer.trace(model, concrete_args=concrete_args)
-            modules = dict(model.named_modules())
-            module_dict = _prepare_module_dict(traced_graph, model)
-            modules.update(module_dict)
-            qmodel = GraphModule(modules, traced_graph)
-            if mode == 'loss':
-                qmodel.head._get_loss = model.head._get_loss
-            elif mode == 'predict':
-                qmodel.head._get_predictions = model.head._get_predictions
+
+            qmodel = prepare_graph_module(model, traced_graph)
+            print(qmodel.graph)
             qmodels[mode] = self.quantizer.prepare(model, qmodel)
 
         return qmodels
@@ -175,6 +154,10 @@ class GeneralQuantDDP(MMDistributedDataParallel):
             if os.environ.get('LOCAL_RANK') is not None:
                 device_ids = [int(os.environ['LOCAL_RANK'])]
         super().__init__(device_ids=device_ids, **kwargs)
+        # After moving all model parameters and buffers to the GPU
+        # (`model.cuda()`), the buffers in model are different.
+        self.module.qmodels = self.module._build_qmodels(
+            self.module.architecture)
 
     def calibrate_step(self, data):
         return self.module.calibrate_step(data)
@@ -190,6 +173,7 @@ class GeneralQuantDDP(MMDistributedDataParallel):
 
     def convert(self, mode='predict'):
         self.module.convert(mode)
+        self.module.qmodels['predict'].cuda()
 
     def sync_param(self):
         self.module.sync_param()
