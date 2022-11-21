@@ -2,7 +2,6 @@
 import os
 from typing import Dict, List, Optional, Union
 
-import mmengine.dist as dist
 import torch
 from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper
@@ -14,7 +13,7 @@ from mmrazor.models.mutators.base_mutator import BaseMutator
 from mmrazor.models.utils import (add_prefix,
                                   reinitialize_optim_wrapper_count_status)
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
-from mmrazor.structures.subnet import load_fix_subnet
+from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm
 
 VALID_MUTATOR_TYPE = Union[BaseMutator, Dict]
@@ -25,7 +24,7 @@ VALID_DISTILLER_TYPE = Union[ConfigurableDistiller, Dict]
 @MODELS.register_module()
 class BigNAS(BaseAlgorithm):
 
-    strategy_groups = {
+    strategy_groups: Dict[str, List] = {
         'sandwich2': ['max', 'min'],
         'sandwich3': ['max', 'random', 'min'],
         'sandwich4': ['max', 'random', 'random1', 'min'],
@@ -38,21 +37,29 @@ class BigNAS(BaseAlgorithm):
                  mutators: VALID_MUTATORS_TYPE,
                  distiller: VALID_DISTILLER_TYPE,
                  architecture: Union[BaseModel, Dict],
+                 fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  strategy: str = 'sandwich4',
                  init_cfg: Optional[Dict] = None,
                  num_samples: int = 2,
-                 drop_prob: float = 0.2,
-                 subnet_dict: Optional[str] = None) -> None:
+                 drop_prob: float = 0.2) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
 
-        built_mutators = dict()
-        for name, mutator in mutators.items():
-            mutator = self._build_mutator(mutator)
-            built_mutators[name] = mutator
-            # `prepare_from_supernet` must be called before distiller initialized  # noqa: E501
-            mutator.prepare_from_supernet(self.architecture)
-        self.mutators = built_mutators
+        if isinstance(mutators, dict):
+            built_mutators: Dict = dict()
+            for name, mutator_cfg in mutators.items():
+                if 'parse_cfg' in mutator_cfg and isinstance(
+                        mutator_cfg['parse_cfg'], dict):
+                    assert mutator_cfg['parse_cfg'][
+                        'type'] == 'Predefined', \
+                            'autoformer only support predefined.'
+                mutator: BaseMutator = MODELS.build(mutator_cfg)
+                built_mutators[name] = mutator
+                mutator.prepare_from_supernet(self.architecture)
+            self.mutators = built_mutators
+        else:
+            raise TypeError('mutator should be a `dict` but got '
+                            f'{type(mutator)}')
 
         self.strategy = strategy
         self.distiller = self._build_distiller(distiller)
@@ -61,11 +68,18 @@ class BigNAS(BaseAlgorithm):
 
         self.num_samples = num_samples
         self.drop_prob = drop_prob
-
+        self.is_supernet = True
         self._optim_wrapper_count_status_reinitialized = False
 
-        if subnet_dict is not None:
-            load_fix_subnet(self, subnet_dict)
+        # BigNAS supports supernet training and subnet retraining.
+        # fix_subnet is not None, means subnet retraining.
+        if fix_subnet:
+            # Avoid circular import
+            from mmrazor.structures import load_fix_subnet
+
+            # According to fix_subnet, delete the unchosen part of supernet
+            load_fix_subnet(self.architecture, fix_subnet)
+            self.is_supernet = False
 
     def _build_mutator(self, mutator: VALID_MUTATOR_TYPE) -> BaseMutator:
         """build mutator."""
@@ -90,25 +104,41 @@ class BigNAS(BaseAlgorithm):
         return distiller
 
     def sample_subnet(self) -> Dict:
+        """Random sample subnet by mutator."""
         subnet_dict = dict()
-
         for name, mutator in self.mutators.items():
-            subnet_dict[name] = mutator.sample_choices()
-        dist.broadcast_object_list([subnet_dict])
-
+            if name == 'value_mutator':
+                subnet_dict.update(
+                    dict((str(group_id), value) for group_id, value in
+                         mutator.sample_choices().items()))
+            else:
+                subnet_dict.update(mutator.sample_choices())
         return subnet_dict
 
     def set_subnet(self, subnet_dict: Dict) -> None:
+        """Set the subnet sampled by :meth:sample_subnet."""
         for name, mutator in self.mutators.items():
-            mutator.set_choices(subnet_dict[name])
+            if name == 'value_mutator':
+                value_subnet = dict((int(group_id), value)
+                                    for group_id, value in subnet_dict.items()
+                                    if isinstance(group_id, str))
+                mutator.set_choices(value_subnet)
+            else:
+                channel_subnet = dict(
+                    (group_id, value)
+                    for group_id, value in subnet_dict.items()
+                    if isinstance(group_id, int))
+                mutator.set_choices(channel_subnet)
 
     def set_max_subnet(self) -> None:
+        """Set max subnet."""
         for mutator in self.mutators.values():
-            mutator.set_max_choices()
+            mutator.set_choices(mutator.max_choices)
 
     def set_min_subnet(self) -> None:
+        """Set min subnet."""
         for mutator in self.mutators.values():
-            mutator.set_min_choices()
+            mutator.set_choices(mutator.min_choices)
 
     @property
     def search_groups(self) -> Dict:
@@ -122,7 +152,7 @@ class BigNAS(BaseAlgorithm):
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
 
-        selectes = self.strategy_groups[self.strategy]
+        selects: List = self.strategy_groups[self.strategy]
 
         def distill_step(
                 batch_inputs: torch.Tensor, data_samples: List[BaseDataElement]
@@ -130,10 +160,9 @@ class BigNAS(BaseAlgorithm):
             subnet_losses = dict()
             with optim_wrapper.optim_context(
                     self), self.distiller.student_recorders:  # type: ignore
-                hard_loss = self(batch_inputs, data_samples, mode='loss')
+                _ = self(batch_inputs, data_samples, mode='loss')
                 soft_loss = self.distiller.compute_distill_losses()
 
-                # subnet_losses.update(hard_loss)
                 subnet_losses.update(soft_loss)
 
                 parsed_subnet_losses, _ = self.parse_losses(subnet_losses)
@@ -154,7 +183,7 @@ class BigNAS(BaseAlgorithm):
 
         total_losses = dict()
 
-        for kind in selectes:
+        for kind in selects:
             if kind in ('max'):
                 self.set_max_subnet()
                 self.architecture.backbone.set_dropout(self.drop_prob)
@@ -208,10 +237,9 @@ class BigNASDDP(MMDistributedDataParallel):
             with optim_wrapper.optim_context(
                     self
             ), self.module.distiller.student_recorders:  # type: ignore
-                hard_loss = self(batch_inputs, data_samples, mode='loss')
+                _ = self(batch_inputs, data_samples, mode='loss')
                 soft_loss = self.module.distiller.compute_distill_losses()
 
-                # subnet_losses.update(hard_loss)
                 subnet_losses.update(soft_loss)
 
                 parsed_subnet_losses, _ = self.module.parse_losses(

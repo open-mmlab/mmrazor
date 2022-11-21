@@ -87,6 +87,8 @@ class AttentiveMobileNet(BaseBackbone):
         self.num_channels_list = [[
             make_divisible(c * widen_factor, 8) for c in channels
         ] for channels in self.num_channels_list]
+        self.num_se_channels_list = [[int(c / 4) for c in channel]
+                                     for channel in self.num_channels_list]
 
         self.first_out_channels_list = self.num_channels_list.pop(0)
         self.last_out_channels_list = self.num_channels_list.pop(-1)
@@ -145,11 +147,9 @@ class AttentiveMobileNet(BaseBackbone):
     def make_layers(self):
         """Build multiple mobilenet layers."""
         layers = []
-        self.se_cfg = []
         for i, (num_blocks, kernel_sizes, expand_ratios, num_channels) in \
             enumerate(zip(self.num_blocks_list, self.kernel_size_list,
                           self.expand_ratio_list, self.num_channels_list)):
-            self.se_cfg.append([])
             inverted_res_layer = self._make_single_layer(
                 layer_index=i,
                 out_channels=num_channels,
@@ -188,7 +188,6 @@ class AttentiveMobileNet(BaseBackbone):
                     use_avgpool=False)
             else:
                 se_cfg = None  # type: ignore
-            self.se_cfg[layer_index].append(se_cfg)
 
             mb_layer = GMLMBBlock(
                 in_channels=self.in_channels,
@@ -222,6 +221,7 @@ class AttentiveMobileNet(BaseBackbone):
             kernel_sizes = self.kernel_size_list[i]
             expand_ratios = self.expand_ratio_list[i]
             out_channels = self.num_channels_list[i]
+            se_channels = self.num_se_channels_list[i]
 
             mutable_kernel_size = OneShotMutableValue(
                 value_list=kernel_sizes, default_value=max(kernel_sizes))
@@ -229,12 +229,16 @@ class AttentiveMobileNet(BaseBackbone):
                 value_list=expand_ratios, default_value=max(expand_ratios))
             mutable_out_channels = OneShotMutableChannel(
                 num_channels=max(out_channels), candidate_choices=out_channels)
+            mutable_se_channels = OneShotMutableChannel(
+                num_channels=max(se_channels), candidate_choices=se_channels)
 
             for k in range(max(self.num_blocks_list[i])):
                 mutate_mobilenet_layer(layer[k], self.last_mutable,
                                        mutable_out_channels,
+                                       mutable_se_channels,
                                        mutable_expand_value,
-                                       mutable_kernel_size, self.se_cfg[i][k])
+                                       mutable_kernel_size)
+                self.last_mutable = mutable_out_channels
 
             mutable_depth = OneShotMutableValue(
                 value_list=num_blocks, default_value=max(num_blocks))
@@ -259,9 +263,7 @@ class AttentiveMobileNet(BaseBackbone):
 
         x = self.first_conv(x)
         outs = []
-        for i, layer_name in enumerate(self.layers):
-            layer = getattr(self, layer_name)
-
+        for i, layer in enumerate(self.layers):
             x = layer(x)
 
             if i in self.out_indices:
@@ -275,8 +277,7 @@ class AttentiveMobileNet(BaseBackbone):
         # drop_path_ratio is set for last two mobile_layer.
         total_block_nums = sum(len(blocks) for blocks in self.blocks[:-1]) + 1
         visited_block_nums = 0
-        for idx, layer_name in enumerate(self.blocks, start=1):
-            layer = getattr(self, layer_name)
+        for idx, layer in enumerate(self.blocks, start=1):
             assert isinstance(layer, DynamicSequential)
             visited_block_nums += len(layer)
             if idx < self.dropout_stages:
@@ -288,9 +289,6 @@ class AttentiveMobileNet(BaseBackbone):
                              mb_idx) / total_block_nums
                     mb_drop_prob = drop_prob * ratio
                     mb_layer.drop_prob = mb_drop_prob
-
-                    logger.debug(f'set drop prob `{mb_drop_prob}` '
-                                 f'to layer: {layer_name}.{mb_idx}')
 
     def train(self, mode=True):
         super().train(mode)

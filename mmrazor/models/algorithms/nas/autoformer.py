@@ -46,7 +46,7 @@ class Autoformer(BaseAlgorithm):
                  init_cfg: Optional[dict] = None):
         super().__init__(architecture, data_preprocessor, init_cfg)
 
-        # Autoformer support supernet training and subnet retraining.
+        # Autoformer supports supernet training and subnet retraining.
         # fix_subnet is not None, means subnet retraining.
         if fix_subnet:
             # Avoid circular import
