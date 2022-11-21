@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from mmengine.evaluator import Evaluator
 from mmengine.registry import MODELS
-from mmengine.runner import EpochBasedTrainLoop, TestLoop, ValLoop
+from mmengine.runner import EpochBasedTrainLoop, TestLoop, ValLoop, autocast
 from torch.ao.quantization import disable_observer
 from torch.nn.intrinsic.qat import freeze_bn_stats
 from torch.utils.data import DataLoader
@@ -30,12 +30,13 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
         dataloader (Dataloader or dict): An iterator to generate one batch of
             dataset each iteration.
         max_epochs (int): Total training epochs.
-        calibrate_dataloader (Dataloader or dict, optional): A dataloader
-            object or a dict to build a dataloader for calibration. Defaults
-            to None.
         val_begin (int): The epoch that begins validating.
             Defaults to 1.
         val_interval (int): Validation interval. Defaults to 1.
+        disable_observer_begin (int): The number of total epochs to update
+            observers.
+        freeze_bn_begin (int): The number of total epochs to update batch norm
+            stats.
         dynamic_intervals (List[Tuple[int, int]], optional): The
             first element in the tuple is a milestone and the second
             element is a interval. The interval is used after the
@@ -61,16 +62,18 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
     def run(self) -> None:
         """Launch training."""
         self.runner.call_hook('before_train')
-        # state: observer_enabled, fakequant_enabled
-        self.runner.model.state = (True, True)
 
         while self._epoch < self._max_epochs:
+            # state: observer_enabled, fakequant_enabled
+            self.runner.model.state = (True, True)
             self.run_epoch()
 
             self._decide_current_val_interval()
             if (self.runner.val_loop is not None
                     and self._epoch >= self.val_begin
                     and self._epoch % self.val_interval == 0):
+                # observer disabled during evaluation
+                self.runner.model.state = (False, True)
                 self.runner.model.sync_param()
                 self.runner.val_loop.run()
 
@@ -122,12 +125,24 @@ class QATValLoop(ValLoop):
                  evaluator: Union[Evaluator, Dict, List],
                  fp16: bool = False) -> None:
         super().__init__(runner, dataloader, evaluator, fp16)
+        if self.runner.distributed:
+            assert hasattr(self.runner.model.module, 'architecture')
+            # TODO: remove hard code after mmcls add data_preprocessor
+            data_preprocessor = self.runner.model.module.data_preprocessor
+            self.architecture = self.runner.model.module.architecture
+            self.architecture.data_preprocessor = data_preprocessor
+
+        else:
+            assert hasattr(self.runner.model, 'architecture')
+            # TODO: remove hard code after mmcls add data_preprocessor
+            data_preprocessor = self.runner.model.data_preprocessor
+            self.architecture = self.runner.model.architecture
+            self.architecture.data_preprocessor = data_preprocessor
 
     def run(self) -> dict:
         """Launch validation."""
         self.runner.call_hook('before_val')
         self.runner.call_hook('before_val_epoch')
-        # self.runner.model.train()
         self.runner.model.eval()
         for idx, data_batch in enumerate(self.dataloader):
             self.run_iter(idx, data_batch, self.runner.model)
@@ -137,46 +152,28 @@ class QATValLoop(ValLoop):
         qat_metrics = dict()
         for key, value in metrics.items():
             qat_key = 'qat.' + key
-            convert_key = 'convert.' + key
+            ori_key = 'original.' + key
             qat_metrics[qat_key] = value
-            self.runner.message_hub.log_scalars.pop(f'val/{convert_key}', None)
+            self.runner.message_hub.log_scalars.pop(f'val/{ori_key}', None)
 
         self.runner.call_hook('after_val_epoch', metrics=qat_metrics)
 
-        # self.runner.call_hook('before_val_epoch')
-        # # todo: hardcode to make
-        # if is_model_wrapper(self.runner.model):
-        #     quantizer = self.runner.model.module.quantizer
-        #     self.runner.model.module.quantizer = None
-        # else:
-        #     quantizer = self.runner.model.quantizer
-        #     self.runner.model.quantizer = None
-        #
-        # quantized_model = copy.deepcopy(self.runner.model)
-        # if is_model_wrapper(self.runner.model):
-        #     self.runner.model.module.quantizer = quantizer
-        #     quantized_model.module.quantizer = quantizer
-        # else:
-        #     self.runner.model.quantizer = quantizer
-        #     quantized_model.quantizer = quantizer
-        # quantized_model.eval()
-        # quantized_model.convert(mode='predict')
-        # for name, param in quantized_model.named_parameters():
-        #     if param.device == torch.device('cpu'):
-        #         print(name)
-        # # quantized_eval_model = quantized_model.convert()
-        # for idx, data_batch in enumerate(self.dataloader):
-        #     self.run_iter(idx, data_batch, quantized_model)
-        #
-        # # compute metrics
-        # metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
-        # convert_metrics = dict()
-        # for key, value in metrics.items():
-        #     qat_key = 'qat.' + key
-        #     convert_key = 'convert.' + key
-        #     convert_metrics[convert_key] = value
-        #     self.runner.message_hub.log_scalars.pop(f'val/{qat_key}', None)
-        # self.runner.call_hook('after_val_epoch', metrics=convert_metrics)
+        self.runner.call_hook('before_val_epoch')
+        self.runner.model.eval()
+        for idx, data_batch in enumerate(self.dataloader):
+            self.run_iter(idx, data_batch, self.architecture)
+
+        # compute metrics
+        metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+        qat_metrics = dict()
+        for key, value in metrics.items():
+            qat_key = 'qat.' + key
+            ori_key = 'original.' + key
+            qat_metrics[ori_key] = value
+            self.runner.message_hub.log_scalars.pop(f'val/{qat_key}', None)
+
+        self.runner.call_hook('after_val_epoch', metrics=qat_metrics)
+
         self.runner.call_hook('after_val')
         return qat_metrics
 
@@ -191,8 +188,8 @@ class QATValLoop(ValLoop):
         self.runner.call_hook(
             'before_val_iter', batch_idx=idx, data_batch=data_batch)
         # outputs should be sequence of BaseDataElement
-
-        outputs = model.val_step(data_batch)
+        with autocast(enabled=self.fp16):
+            outputs = model.val_step(data_batch)
         self.evaluator.process(data_samples=outputs, data_batch=data_batch)
         self.runner.call_hook(
             'after_val_iter',
