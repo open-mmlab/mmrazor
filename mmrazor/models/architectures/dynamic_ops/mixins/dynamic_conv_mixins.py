@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import abstractmethod
 from itertools import repeat
-from typing import Callable, Iterable, Optional, Tuple
+from typing import Callable, Iterable, Optional, Tuple, Union
 
 import torch
 import torch.nn.functional as F
@@ -313,11 +313,9 @@ class BigNasConvMixin(DynamicConvMixin):
             Tuple[Tensor, Optional[Tensor], Tuple[int]]: Sliced weight, bias
                 and padding.
         """
-        is_depthwise = True if 'groups' in self.mutable_attrs else False
-
         # 1. slice kernel size of weight according to kernel size mutable
         weight, padding = self._get_dynamic_params_by_mutable_kernel_size(
-            self.weight, is_depthwise=is_depthwise)
+            self.weight)
 
         # 2. slice in/out channel of weight according to mutable in_channels
         # and mutable out channels.
@@ -326,10 +324,11 @@ class BigNasConvMixin(DynamicConvMixin):
         return weight, bias, padding
 
     def _get_dynamic_params_by_mutable_kernel_size(
-            self: _ConvNd, weight: Tensor,
-            is_depthwise: bool) -> Tuple[Tensor, Tuple[int]]:
+            self: _ConvNd, weight: Tensor) -> Tuple[Tensor, Tuple]:
         """Get sliced weight and bias according to ``mutable_in_channels`` and
         ``mutable_out_channels``."""
+        is_depthwise = True if 'groups' in self.mutable_attrs else False
+
         if 'kernel_size' not in self.mutable_attrs \
                 or self.kernel_size_list is None:
             return weight, self.padding
@@ -338,7 +337,8 @@ class BigNasConvMixin(DynamicConvMixin):
         current_kernel_size = self.get_current_choice(mutable_kernel_size)
 
         n_dims = len(self.weight.shape) - 2
-        current_padding = _get_same_padding(current_kernel_size, n_dims)
+        current_padding: Union[Tuple[int], Tuple[int, int]] = \
+            _get_same_padding(current_kernel_size, n_dims)
 
         _pair = _ntuple(len(self.weight.shape) - 2)
         if _pair(current_kernel_size) == self.kernel_size:
@@ -347,7 +347,7 @@ class BigNasConvMixin(DynamicConvMixin):
         start_offset, end_offset = _get_current_kernel_pos(
             source_kernel_size=self.kernel_size[0],
             target_kernel_size=current_kernel_size)
-        if is_depthwise == True:
+        if is_depthwise:
             start_offset, end_offset = 0, 5
             current_padding = (2, 2)
         current_weight = \
@@ -400,7 +400,7 @@ class OFAConvMixin(BigNasConvMixin):
         return f'trans_matrix_{src}to{tar}'
 
     def _get_dynamic_params_by_mutable_kernel_size(
-            self: _ConvNd, weight: Tensor) -> Tuple[Tensor, Tuple[int]]:
+            self: _ConvNd, weight: Tensor) -> Tuple[Tensor, Tuple]:
         """Get sliced weight and bias according to ``mutable_in_channels`` and
         ``mutable_out_channels``."""
 
@@ -411,7 +411,8 @@ class OFAConvMixin(BigNasConvMixin):
         current_kernel_size = self.get_current_choice(mutable_kernel_size)
 
         n_dims = len(self.weight.shape) - 2
-        current_padding = _get_same_padding(current_kernel_size, n_dims)
+        current_padding: Union[Tuple[int], Tuple[int, int]] = \
+            _get_same_padding(current_kernel_size, n_dims)
 
         _pair = _ntuple(len(self.weight.shape) - 2)
         if _pair(current_kernel_size) == self.kernel_size:
