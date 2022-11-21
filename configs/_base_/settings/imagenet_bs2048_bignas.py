@@ -27,127 +27,127 @@ extra_params = dict(
 policies = [
     [
         dict(
-            type='mmcls.EqualizeV2',
+            type='mmrazor.EqualizeV2',
             prob=0.8,
             magnitude=1,
             extra_params=extra_params),
         dict(
-            type='mmcls.ShearY',
+            type='mmrazor.ShearY',
             prob=0.8,
             magnitude=4,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.Color',
+            type='mmrazor.Color',
             prob=0.4,
             magnitude=9,
             extra_params=extra_params),
         dict(
-            type='mmcls.EqualizeV2',
+            type='mmrazor.EqualizeV2',
             prob=0.6,
             magnitude=3,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.Color',
+            type='mmrazor.Color',
             prob=0.4,
             magnitude=1,
             extra_params=extra_params),
         dict(
-            type='mmcls.RotateV2',
+            type='mmrazor.RotateV2',
             prob=0.6,
             magnitude=8,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.SolarizeV2',
+            type='mmrazor.SolarizeV2',
             prob=0.8,
             magnitude=3,
             extra_params=extra_params),
         dict(
-            type='mmcls.EqualizeV2',
+            type='mmrazor.EqualizeV2',
             prob=0.4,
             magnitude=7,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.SolarizeV2',
+            type='mmrazor.SolarizeV2',
             prob=0.4,
             magnitude=2,
             extra_params=extra_params),
         dict(
-            type='mmcls.SolarizeV2',
+            type='mmrazor.SolarizeV2',
             prob=0.6,
             magnitude=2,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.Color',
+            type='mmrazor.Color',
             prob=0.2,
             magnitude=0,
             extra_params=extra_params),
         dict(
-            type='mmcls.EqualizeV2',
+            type='mmrazor.EqualizeV2',
             prob=0.8,
             magnitude=8,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.EqualizeV2',
+            type='mmrazor.EqualizeV2',
             prob=0.4,
             magnitude=8,
             extra_params=extra_params),
         dict(
-            type='mmcls.SolarizeAddV2',
+            type='mmrazor.SolarizeAddV2',
             prob=0.8,
             magnitude=3,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.ShearX',
+            type='mmrazor.ShearX',
             prob=0.2,
             magnitude=9,
             extra_params=extra_params),
         dict(
-            type='mmcls.RotateV2',
+            type='mmrazor.RotateV2',
             prob=0.6,
             magnitude=8,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.Color',
+            type='mmrazor.Color',
             prob=0.6,
             magnitude=1,
             extra_params=extra_params),
         dict(
-            type='mmcls.EqualizeV2',
+            type='mmrazor.EqualizeV2',
             prob=1.0,
             magnitude=2,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.InvertV2',
+            type='mmrazor.InvertV2',
             prob=0.4,
             magnitude=9,
             extra_params=extra_params),
         dict(
-            type='mmcls.RotateV2',
+            type='mmrazor.RotateV2',
             prob=0.6,
             magnitude=0,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.EqualizeV2',
+            type='mmrazor.EqualizeV2',
             prob=1.0,
             magnitude=9,
             extra_params=extra_params),
@@ -155,168 +155,168 @@ policies = [
     ],
     [
         dict(
-            type='mmcls.Color',
+            type='mmrazor.Color',
             prob=0.4,
             magnitude=7,
             extra_params=extra_params),
         dict(
-            type='mmcls.EqualizeV2',
+            type='mmrazor.EqualizeV2',
             prob=0.6,
             magnitude=0,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.PosterizeV2',
+            type='mmrazor.PosterizeV2',
             prob=0.4,
             magnitude=6,
             extra_params=extra_params),
         dict(
-            type='mmcls.AutoContrastV2',
+            type='mmrazor.AutoContrastV2',
             prob=0.4,
             magnitude=7,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.SolarizeV2',
+            type='mmrazor.SolarizeV2',
             prob=0.6,
             magnitude=8,
             extra_params=extra_params),
         dict(
-            type='mmcls.Color',
+            type='mmrazor.Color',
             prob=0.6,
             magnitude=9,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.SolarizeV2',
+            type='mmrazor.SolarizeV2',
             prob=0.2,
             magnitude=4,
             extra_params=extra_params),
         dict(
-            type='mmcls.RotateV2',
+            type='mmrazor.RotateV2',
             prob=0.8,
             magnitude=9,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.RotateV2',
+            type='mmrazor.RotateV2',
             prob=1.0,
             magnitude=7,
             extra_params=extra_params),
         dict(
-            type='mmcls.TranslateYRel',
+            type='mmrazor.TranslateYRel',
             prob=0.8,
             magnitude=9,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.ShearX',
+            type='mmrazor.ShearX',
             prob=0.0,
             magnitude=0,
             extra_params=extra_params),
         dict(
-            type='mmcls.SolarizeV2',
+            type='mmrazor.SolarizeV2',
             prob=0.8,
             magnitude=4,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.ShearY',
+            type='mmrazor.ShearY',
             prob=0.8,
             magnitude=0,
             extra_params=extra_params),
         dict(
-            type='mmcls.Color',
+            type='mmrazor.Color',
             prob=0.6,
             magnitude=4,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.Color',
+            type='mmrazor.Color',
             prob=1.0,
             magnitude=0,
             extra_params=extra_params),
         dict(
-            type='mmcls.RotateV2',
+            type='mmrazor.RotateV2',
             prob=0.6,
             magnitude=2,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.EqualizeV2',
+            type='mmrazor.EqualizeV2',
             prob=0.8,
             magnitude=4,
             extra_params=extra_params),
         dict(
-            type='mmcls.EqualizeV2',
+            type='mmrazor.EqualizeV2',
             prob=0.0,
             magnitude=8,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.EqualizeV2',
+            type='mmrazor.EqualizeV2',
             prob=1.0,
             magnitude=4,
             extra_params=extra_params),
         dict(
-            type='mmcls.AutoContrastV2',
+            type='mmrazor.AutoContrastV2',
             prob=0.6,
             magnitude=2,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.ShearY',
+            type='mmrazor.ShearY',
             prob=0.4,
             magnitude=7,
             extra_params=extra_params),
         dict(
-            type='mmcls.SolarizeAddV2',
+            type='mmrazor.SolarizeAddV2',
             prob=0.6,
             magnitude=7,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.PosterizeV2',
+            type='mmrazor.PosterizeV2',
             prob=0.8,
             magnitude=2,
             extra_params=extra_params),
         dict(
-            type='mmcls.SolarizeV2',
+            type='mmrazor.SolarizeV2',
             prob=0.6,
             magnitude=10,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.SolarizeV2',
+            type='mmrazor.SolarizeV2',
             prob=0.6,
             magnitude=8,
             extra_params=extra_params),
         dict(
-            type='mmcls.EqualizeV2',
+            type='mmrazor.EqualizeV2',
             prob=0.6,
             magnitude=1,
             extra_params=extra_params),
     ],
     [
         dict(
-            type='mmcls.Color',
+            type='mmrazor.Color',
             prob=0.8,
             magnitude=6,
             extra_params=extra_params),
         dict(
-            type='mmcls.RotateV2',
+            type='mmrazor.RotateV2',
             prob=0.4,
             magnitude=5,
             extra_params=extra_params),
@@ -327,7 +327,7 @@ train_pipeline = [
     dict(type='mmcls.LoadImageFromFile'),
     dict(type='mmcls.RandomResizedCrop', scale=224, backend='pillow'),
     dict(type='mmcls.RandomFlip', prob=0.5, direction='horizontal'),
-    # dict(type='mmcls.AutoAugmentV2', policies=policies),
+    dict(type='mmrazor.AutoAugmentV2', policies=policies),
     dict(type='mmcls.PackClsInputs'),
 ]
 
@@ -379,7 +379,7 @@ num_samples = 2
 optim_wrapper = dict(
     optimizer=dict(
         type='SGD', lr=0.8, momentum=0.9, weight_decay=0.00001, nesterov=True),
-    clip_grad=dict(clip_value=1.0),
+    # clip_grad=dict(clip_value=1.0),
     paramwise_cfg=dict(bias_decay_mult=0., norm_decay_mult=0.),
     accumulative_counts=num_samples + 2)
 

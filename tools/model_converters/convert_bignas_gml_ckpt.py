@@ -42,8 +42,6 @@ def main():
         new_state_dict[new_key] = value
 
     checkpoint['state_dict'] = new_state_dict
-    import pdb
-    pdb.set_trace()
     if args.inplace:
         torch.save(checkpoint, args.checkpoint)
     else:
