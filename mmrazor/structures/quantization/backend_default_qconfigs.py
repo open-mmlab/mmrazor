@@ -43,4 +43,4 @@ TensorRT = dict(
     w_observer=dict(type='MinMaxObserver'),
     a_observer=dict(type='EMAMinMaxObserver'))
 
-DefalutQconfigs = dict(default=Default, tensorrt=TensorRT)
+DefaultQconfigs = dict(default=Default, tensorrt=TensorRT)
