@@ -6,7 +6,7 @@ import torch.fx as fx
 from mmengine.config import Config
 from mmengine.registry import MODELS
 
-from mmrazor.models.task_modules.tracer import custom_symbolic_tracer
+from mmrazor.models.task_modules.tracer import custom_symbolic_trace
 
 cfg_path = 'configs/quantization/ptq/demo.py'
 _ADAROUND_SUPPORT_TYPE = (torch.nn.Conv2d, torch.nn.Linear)
@@ -73,7 +73,7 @@ def main():
     # load config
     cfg = Config.fromfile(cfg_path)
     model = MODELS.build(cfg.model)
-    symbolic_traced = custom_symbolic_tracer(
+    symbolic_traced = custom_symbolic_trace(
         model, concrete_args={'mode': 'tensor'})
     # block_slices = extract_blocks(symbolic_traced)
     block_slices = extract_layers(
