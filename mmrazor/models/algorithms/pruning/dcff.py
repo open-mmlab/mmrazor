@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
-from mmengine import MessageHub, MMLogger
+from mmengine import MMLogger
 from mmengine.model import BaseModel
 from mmengine.structures import BaseDataElement
 
@@ -38,17 +38,15 @@ class DCFF(ItePruneAlgorithm):
             of the prune-target can be get by calling
             mutator.choice_template(). Defaults to {}.
         step_freq (int, optional): The step between two pruning operations.
-            Defaults to 1. Legal input includes [1, self._max_num]
+            Defaults to 1. Legal input includes [1, self._max_iters]
             One and only one of (step_freq, prune_times) is set to legal int.
         prune_times (int, optional): The total times to prune a model.
-            Defaults to 0. Legal input includes [1, self._max_num]
+            Defaults to 0. Legal input includes [1, self._max_iters]
             One and only one of (step_freq, prune_times) is set to legal int.
         init_cfg (Optional[Dict], optional): init config for architecture.
             Defaults to None.
         linear_schedule (bool, optional): flag to set linear ratio schedule.
             Defaults to False due to dcff fixed pruning rate.
-        by_epoch (bool, optional): flag to set epoch/iter algorithm.
-            Defaults to True.
         is_deployed (bool, optional): flag to set deployed algorithm.
             Defaults to False.
     """
@@ -60,7 +58,7 @@ class DCFF(ItePruneAlgorithm):
                      channel_unit_cfg=dict(type='DCFFChannelUnit')),
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  target_pruning_ratio: Optional[Dict[str, float]] = None,
-                 step_freq=0,
+                 step_freq=1,
                  prune_times=0,
                  init_cfg: Optional[Dict] = None,
                  linear_schedule=False,
@@ -81,7 +79,7 @@ class DCFF(ItePruneAlgorithm):
                     module.fix_chosen(None)
 
     def _deploy(self):
-        config = self.prune_config_manager.prune_at(self._iteration)
+        config = self.prune_config_manager.prune_at(self._iter)
         self.mutator.set_choices(config)
         self.mutator.fix_channel_mutables()
         self._fix_archtecture()
@@ -102,18 +100,17 @@ class DCFF(ItePruneAlgorithm):
     def _legal_freq_time(self, freq_time):
         """check whether step_freq or prune_times belongs to legal range:
 
-            [1, self._max_num]
+            [1, self._max_iters]
 
         Args:
             freq_time (Int): step_freq or prune_times.
         """
-        return (freq_time > 0) and (freq_time < self._max_iteration)
+        return (freq_time > 0) and (freq_time < self._max_iters)
 
     def _init_prune_config_manager(self):
         """init prune_config_manager and check step_freq & prune_times.
 
-        message_hub['max_epoch/iter'] unaccessible when initiation. In DCFF,
-        prune_times is set by step_freq and self._max_iteration
+        In DCFF, prune_times is set by step_freq and self._max_iters.
         """
         if self.target_pruning_ratio is None:
             group_target_ratio = self.mutator.current_choices
@@ -123,9 +120,17 @@ class DCFF(ItePruneAlgorithm):
 
         if self.by_epoch:
             # step_freq based on iterations
-            self.step_freq *= self._iter_per_epoch
+            self.step_freq *= self._iters_per_epoch
 
-        self.prune_times = self._max_iteration / self.step_freq
+        if self._legal_freq_time(self.step_freq) ^ self._legal_freq_time(
+                self.prune_times):
+            if self._legal_freq_time(self.step_freq):
+                self.prune_times = self._max_iters // self.step_freq
+            else:
+                self.step_freq = self._max_iters // self.prune_times
+        else:
+            raise RuntimeError('One and only one of (step_freq, prune_times)'
+                               'can be set to legal int.')
 
         # config_manager move to forward.
         # message_hub['max_epoch'] unaccessible when init
@@ -133,7 +138,7 @@ class DCFF(ItePruneAlgorithm):
             group_target_ratio,
             self.mutator.current_choices,
             self.step_freq,
-            times=self.prune_times,
+            prune_times=self.prune_times,
             linear_schedule=self.linear_schedule)
 
         return prune_config_manager
@@ -148,26 +153,20 @@ class DCFF(ItePruneAlgorithm):
         if not hasattr(self, 'prune_config_manager'):
             # iter num per epoch only available after initiation
             self.prune_config_manager = self._init_prune_config_manager()
-        if self.prune_config_manager.is_prune_time(self._iteration):
-            config = self.prune_config_manager.prune_at(self._iteration)
+        if self.prune_config_manager.is_prune_time(self._iter):
+            config = self.prune_config_manager.prune_at(self._iter)
             self.mutator.set_choices(config)
 
             # calc fusion channel
-            temperature = self._calc_temperature(self._iteration,
-                                                 self._max_iteration)
+            temperature = self._calc_temperature(self._iter, self._max_iters)
             self.mutator.calc_information(temperature)
 
             logger = MMLogger.get_current_instance()
-            message_hub = MessageHub.get_current_instance()
-            max_epoch = message_hub.runtime_info['max_epochs']
-            logger.info(f'max_epoch: {max_epoch}.')
-            max_iter = message_hub.runtime_info['max_iters']
-            logger.info(f'max_iter: {max_iter}.')
             if (self.by_epoch):
                 logger.info(
-                    f'The model is pruned at {self._iteration}th epoch once.')
+                    f'The model is pruned at {self._epoch}th epoch once.')
             else:
                 logger.info(
-                    f'The model is pruned at {self._iteration}th iter once.')
+                    f'The model is pruned at {self._iter}th iter once.')
 
         return super().forward(inputs, data_samples, mode)

@@ -26,9 +26,9 @@ class ItePruneConfigManager:
         target (Dict[str, Union[int, float]]): The target structure to prune.
         supernet (Dict[str, Union[int, float]]): The sturecture of the
             supernet.
-        prune_step (int, optional): The prune step of epoch/iter to prune.
+        step_freq (int, optional): The prune step of epoch/iter to prune.
             Defaults to 1.
-        times (int, optional): The times to prune. Defaults to 1.
+        prune_times (int, optional): The times to prune. Defaults to 1.
         linear_schedule (bool, optional): flag to set linear ratio schedule.
             Defaults to True.
     """
@@ -36,14 +36,14 @@ class ItePruneConfigManager:
     def __init__(self,
                  target: Dict[str, Union[int, float]],
                  supernet: Dict[str, Union[int, float]],
-                 prune_step=1,
-                 times=1,
+                 step_freq=1,
+                 prune_times=1,
                  linear_schedule=True) -> None:
 
         self.supernet = supernet
         self.target = target
-        self.prune_step = prune_step
-        self.prune_times = times
+        self.step_freq = step_freq
+        self.prune_times = prune_times
         self.linear_schedule = linear_schedule
 
         self.delta: Dict = self._get_delta_each_iter(self.target,
@@ -52,12 +52,12 @@ class ItePruneConfigManager:
 
     def is_prune_time(self, iteration):
         """Is the time to prune during training process."""
-        return iteration % self.prune_step == 0 \
-            and iteration // self.prune_step < self.prune_times
+        return iteration % self.step_freq == 0 \
+            and iteration // self.step_freq < self.prune_times
 
     def prune_at(self, iteration):
         """Get the pruning structure in a time(iteration)."""
-        times = iteration // self.prune_step + 1
+        times = iteration // self.step_freq + 1
         assert times <= self.prune_times
         prune_current = {}
         ratio = times / self.prune_times
@@ -109,8 +109,6 @@ class ItePruneAlgorithm(BaseAlgorithm):
         init_cfg (Optional[Dict], optional): init config for architecture.
             Defaults to None.
         linear_schedule (bool, optional): flag to set linear ratio schedule.
-            Defaults to True.
-        by_epoch (bool, optional): flag to set epoch/iter algorithm.
             Defaults to True.
     """
 
@@ -185,7 +183,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
 
         if self.by_epoch:
             # step_freq based on iterations
-            self.step_freq *= self._iter_per_epoch
+            self.step_freq *= self._iters_per_epoch
 
         # config_manager move to forward.
         # message_hub['max_epoch'] unaccessible when init
@@ -193,7 +191,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
             group_target_ratio,
             self.mutator.current_choices,
             self.step_freq,
-            times=self.prune_times,
+            prune_times=self.prune_times,
             linear_schedule=self.linear_schedule)
 
         return prune_config_manager
@@ -204,12 +202,12 @@ class ItePruneAlgorithm(BaseAlgorithm):
                 mode: str = 'tensor') -> ForwardResults:
         """Forward."""
         if not hasattr(self, 'prune_config_manager'):
-            # iter num per epoch only available after initiation
+            # self._iters_per_epoch() only available after initiation
             self.prune_config_manager = self._init_prune_config_manager()
 
-        if self.prune_config_manager.is_prune_time(self._iteration):
+        if self.prune_config_manager.is_prune_time(self._iter):
 
-            config = self.prune_config_manager.prune_at(self._iteration)
+            config = self.prune_config_manager.prune_at(self._iter)
 
             self.mutator.set_choices(config)
 
@@ -219,7 +217,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
                     f'The model is pruned at {self._epoch}th epoch once.')
             else:
                 logger.info(
-                    f'The model is pruned at {self._iteration}th iter once.')
+                    f'The model is pruned at {self._iter}th iter once.')
 
         return super().forward(inputs, data_samples, mode)
 
@@ -233,7 +231,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
         """Get epoch/iter based train loop."""
         # IterBasedTrainLoop max_epochs default to 1
         # TO DO: Add by_epoch params or change default max_epochs?
-        return self._max_epoch != 1
+        return self._max_epochs != 1
 
     @property
     def _epoch(self):
@@ -246,7 +244,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
                                'epoch is inited in before_run_epoch().')
 
     @property
-    def _iteration(self):
+    def _iter(self):
         """Get current sum iteration number."""
         message_hub = MessageHub.get_current_instance()
         if 'iter' in message_hub.runtime_info:
@@ -256,7 +254,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
                                'iter is inited in before_run_iter().')
 
     @property
-    def _max_epoch(self):
+    def _max_epochs(self):
         """Get max epoch number.
 
         Default 1 for IterTrainLoop
@@ -269,7 +267,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
                                'max_epochs is inited in before_run_epoch().')
 
     @property
-    def _max_iteration(self):
+    def _max_iters(self):
         """Get max iteration number."""
         message_hub = MessageHub.get_current_instance()
         if 'max_iters' in message_hub.runtime_info:
@@ -279,6 +277,6 @@ class ItePruneAlgorithm(BaseAlgorithm):
                                'max_iters is inited in before_run_iter().')
 
     @property
-    def _iter_per_epoch(self):
-        """Get iter num per based train loop."""
-        return self._max_iteration / self._max_epoch
+    def _iters_per_epoch(self):
+        """Get iter num per epoch."""
+        return self._max_iters / self._max_epochs
