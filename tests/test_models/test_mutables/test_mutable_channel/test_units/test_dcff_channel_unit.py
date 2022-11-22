@@ -49,13 +49,14 @@ class TestDCFFChannelUnit(TestCase):
             config['init_args'])
 
     def test_init_from_channel_unit(self):
-        model = LineModel().to(DEVICE)
         # init using tracer
+        model = LineModel()
         graph = ModuleGraph.init_from_backward_tracer(model)
         units: List[DCFFChannelUnit] = DCFFChannelUnit.init_from_graph(graph)
         mutable_units = [
             DCFFChannelUnit.init_from_channel_unit(unit) for unit in units
         ]
+        model = model.to(DEVICE)
         self._test_units(mutable_units, model)
 
     def _test_units(self, units: List[DCFFChannelUnit], model):
