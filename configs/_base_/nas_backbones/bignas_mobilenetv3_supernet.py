@@ -26,6 +26,7 @@ arch_setting = dict(
         [4, 6, 1],
         [6, 6, 1],
         [6, 6, 1],
+        [6, 6, 1],  # last layer
     ],
     num_out_channels=[  # [min_channel, max_channel, step]
         [16, 24, 8],  # first layer

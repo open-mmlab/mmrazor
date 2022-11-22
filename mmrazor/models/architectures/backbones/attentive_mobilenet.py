@@ -33,7 +33,6 @@ class AttentiveMobileNet(BaseBackbone):
 
     def __init__(self,
                  arch_setting,
-                 last_expand_ratio=6,
                  widen_factor=1.,
                  out_indices=(7, ),
                  frozen_stages=-1,
@@ -48,7 +47,6 @@ class AttentiveMobileNet(BaseBackbone):
 
         super().__init__(init_cfg)
 
-        self.last_expand_ratio = last_expand_ratio
         self.widen_factor = widen_factor
         self.out_indices = out_indices
         for index in out_indices:
@@ -92,6 +90,7 @@ class AttentiveMobileNet(BaseBackbone):
 
         self.first_out_channels_list = self.num_channels_list.pop(0)
         self.last_out_channels_list = self.num_channels_list.pop(-1)
+        self.last_expand_ratio_list = self.expand_ratio_list.pop(-1)
         assert len(self.kernel_size_list) == len(self.num_blocks_list) == \
             len(self.expand_ratio_list) == len(self.num_channels_list)
 
@@ -114,30 +113,30 @@ class AttentiveMobileNet(BaseBackbone):
 
         self.layers = self.make_layers()
 
+        last_expand_channels = \
+            self.in_channels * max(self.last_expand_ratio_list)
         self.out_channels = max(self.last_out_channels_list)
         last_layers = Sequential(
-            OrderedDict([
-                ('final_expand_layer',
-                 ConvModule(
-                     in_channels=self.in_channels,
-                     out_channels=self.in_channels * last_expand_ratio,
-                     kernel_size=1,
-                     padding=0,
-                     conv_cfg=self.conv_cfg,
-                     norm_cfg=self.norm_cfg,
-                     act_cfg=self.act_cfg)),
-                ('pool', nn.AdaptiveAvgPool2d((1, 1))),
-                ('feature_mix_layer',
-                 ConvModule(
-                     in_channels=self.in_channels * last_expand_ratio,
-                     out_channels=self.out_channels,
-                     kernel_size=1,
-                     padding=0,
-                     bias=False,
-                     conv_cfg=self.conv_cfg,
-                     norm_cfg=None,
-                     act_cfg=self.act_cfg))
-            ]))
+            OrderedDict([('final_expand_layer',
+                          ConvModule(
+                              in_channels=self.in_channels,
+                              out_channels=last_expand_channels,
+                              kernel_size=1,
+                              padding=0,
+                              conv_cfg=self.conv_cfg,
+                              norm_cfg=self.norm_cfg,
+                              act_cfg=self.act_cfg)),
+                         ('pool', nn.AdaptiveAvgPool2d((1, 1))),
+                         ('feature_mix_layer',
+                          ConvModule(
+                              in_channels=last_expand_channels,
+                              out_channels=self.out_channels,
+                              kernel_size=1,
+                              padding=0,
+                              bias=False,
+                              conv_cfg=self.conv_cfg,
+                              norm_cfg=None,
+                              act_cfg=self.act_cfg))]))
         self.add_module('last_conv', last_layers)
         self.layers.append(last_layers)
         self.blocks = self.layers[:-1]
@@ -213,9 +212,11 @@ class AttentiveMobileNet(BaseBackbone):
         OneShotMutableChannelUnit._register_channel_container(
             self, MutableChannelContainer)
 
+        # mutate the first conv
         mutate_conv_module(
             self.first_conv, mutable_out_channels=self.last_mutable)
 
+        # mutate the built mobilenet layers
         for i, layer in enumerate(self.layers[:-1]):
             num_blocks = self.num_blocks_list[i]
             kernel_sizes = self.kernel_size_list[i]
@@ -247,7 +248,10 @@ class AttentiveMobileNet(BaseBackbone):
         mutable_out_channels = OneShotMutableChannel(
             num_channels=self.out_channels,
             candidate_choices=self.last_out_channels_list)
-        derived_expand_channels = self.last_mutable * self.last_expand_ratio
+        last_mutable_expand_value = OneShotMutableValue(
+            value_list=self.last_expand_ratio_list,
+            default_value=max(self.last_expand_ratio_list))
+        derived_expand_channels = self.last_mutable * last_mutable_expand_value
         mutate_conv_module(
             self.layers[-1].final_expand_layer,
             mutable_in_channels=self.last_mutable,
