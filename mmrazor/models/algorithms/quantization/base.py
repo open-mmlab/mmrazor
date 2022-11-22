@@ -93,7 +93,6 @@ class GeneralQuant(BaseAlgorithm):
             traced_graph = tracer.trace(model, concrete_args=concrete_args)
 
             qmodel = prepare_graph_module(model, traced_graph)
-            print(qmodel.graph)
             qmodels[mode] = self.quantizer.prepare(model, qmodel)
 
         return qmodels
