@@ -1,6 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Callable, Dict
-from xmlrpc.client import Boolean
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -207,7 +206,6 @@ class FuseConv2d(nn.Conv2d, FuseConvMixin):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.mutable_attrs: Dict[str, BaseMutable] = nn.ModuleDict()
-        self.mutable_attrs_modified: Dict[str, Boolean] = {}
 
     @classmethod
     def convert_from(cls, module: nn.Conv2d) -> 'FuseConv2d':
