@@ -83,11 +83,50 @@ def _prepare_module_dict(model: nn.Module, fx_graph: torch.fx.Graph):
     tracer, a ``call_method`` ``Node`` will be inserted into the ``Graph`` in
     ``CustomTracer``.
 
-    Args:
-        model:
-        fx_graph:
+    For example,
+    ```
+        >>> class Model:
+        ...     def __init__(self):
+        ...         self.head = ClsHead()
+        ...
+        >>> class ClsHead(nn.Module):
+        ...     def forward(self, feats: Tuple[torch.Tensor]) -> torch.Tensor:
+        ...         return feats[-1]
+        ...
+        ...     def loss(self, feats: Tuple[torch.Tensor],
+        ...              data_samples: List[ClsDataSample], **kwargs) -> dict:
+        ...         cls_score = self(feats)
+        ...         # The part can not be traced by torch.fx
+        ...         losses = self._get_loss(cls_score, data_samples, **kwargs)
+        ...         return losses
+        ...
+        ...     def _get_loss(self, cls_score: torch.Tensor,
+        ...                   data_samples: List[ClsDataSample], **kwargs):
+        ...         if 'score' in data_samples[0].gt_label:
+        ...             xxx
+        ...         else:
+        ...             xxx
+        ...         losses = xxx
+        ...         return losses
+    ```
+    As the ``_get_loss`` can not be traced by torch.fx, ``Toy._get_loss`` need
+    to be added to ``skipped_methods`` in ``CustomTracer``. Hence the code
+    above will product the following Graph::
 
-    Returns:
+    .. code-block:: text
+        ... ...
+        %head : [#users=1] = get_attr[target=head]
+        %_get_loss : [#users=1] = call_method[target=_get_loss](args = (%head, %head_fc, %data_samples), kwargs = {})  # noqa: E501
+        return _get_loss
+
+    Hence, the head module in the ``GraphModule`` and that in the original
+    model are the same one (refer to https://github.com/pytorch/pytorch/blob/master/torch/fx/graph_module.py#L346).  # noqa: E501
+    So changes made to the graph module (in ``prepare()``) will also modify
+    the original model.
+
+    Args:
+        model (nn.Module): The original model.
+        fx_graph (torch.fx.Graph): The fx Graph traced by fx tracer.
     """
 
     def _get_attrs(target, attrs):
