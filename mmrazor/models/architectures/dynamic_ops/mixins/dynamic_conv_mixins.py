@@ -327,7 +327,6 @@ class BigNasConvMixin(DynamicConvMixin):
             self: _ConvNd, weight: Tensor) -> Tuple[Tensor, Tuple]:
         """Get sliced weight and bias according to ``mutable_in_channels`` and
         ``mutable_out_channels``."""
-        is_depthwise = True if 'groups' in self.mutable_attrs else False
 
         if 'kernel_size' not in self.mutable_attrs \
                 or self.kernel_size_list is None:
@@ -347,7 +346,7 @@ class BigNasConvMixin(DynamicConvMixin):
         start_offset, end_offset = _get_current_kernel_pos(
             source_kernel_size=self.kernel_size[0],
             target_kernel_size=current_kernel_size)
-        if is_depthwise:
+        if self.groups == self.in_channels == self.out_channels:
             start_offset, end_offset = 0, 5
             current_padding = (2, 2)
         current_weight = \
