@@ -9,7 +9,8 @@ import torch
 from torch import nn
 
 from mmrazor.models.architectures.dynamic_ops import (BigNasConv2d,
-                                                      DynamicConv2d, OFAConv2d)
+                                                      DynamicConv2d,
+                                                      FuseConv2d, OFAConv2d)
 from mmrazor.models.mutables import (OneShotMutableValue,
                                      SquentialMutableChannel)
 from mmrazor.structures.subnet import export_fix_subnet, load_fix_subnet
@@ -72,12 +73,30 @@ class TestDynamicConv2d(TestCase):
         assert torch.equal(out1, out2)
 
 
+def mock_layeri_choice(d_conv2d: FuseConv2d) -> None:
+    # mock selected out channel proxy for `FuseConv2d`
+    c_out, _, _, _ = d_conv2d.weight.size()
+    print('d_conv2d.mutable_attrs:', d_conv2d.mutable_attrs)
+    if ('out_channels' in d_conv2d.mutable_attrs):
+        c_current_out = \
+            d_conv2d.mutable_attrs['out_channels'].current_mask.sum().item()
+    else:
+        c_current_out = c_out
+    device = d_conv2d.weight.device
+    layeri_mock = torch.rand(c_current_out, c_out).to(device)
+    d_conv2d.set_forward_args(choice=layeri_mock)
+
+
+@pytest.mark.parametrize('dynamic_class',
+                         [BigNasConv2d, DynamicConv2d, FuseConv2d, OFAConv2d])
 @pytest.mark.parametrize('bias', [True, False])
-def test_dynamic_conv2d(bias: bool) -> None:
-    d_conv2d = DynamicConv2d(
+def test_dynamic_conv2d(bias: bool, dynamic_class: Type[nn.Conv2d]) -> None:
+    d_conv2d = dynamic_class(
         in_channels=4, out_channels=10, kernel_size=3, stride=1, bias=bias)
 
     x_max = torch.rand(10, 4, 224, 224)
+    if (isinstance(d_conv2d, FuseConv2d)):
+        mock_layeri_choice(d_conv2d)
     out_before_mutate = d_conv2d(x_max)
 
     mutable_in_channels = SquentialMutableChannel(4)
@@ -91,6 +110,8 @@ def test_dynamic_conv2d(bias: bool) -> None:
     d_conv2d.get_mutable_attr('in_channels').current_choice = 4
     d_conv2d.mutate_out_channels = 10
 
+    if (isinstance(d_conv2d, FuseConv2d)):
+        mock_layeri_choice(d_conv2d)
     out_max = d_conv2d(x_max)
     assert torch.equal(out_before_mutate, out_max)
 
@@ -98,6 +119,8 @@ def test_dynamic_conv2d(bias: bool) -> None:
     d_conv2d.mutable_out_channels.current_choice = 4
 
     x = torch.rand(10, 3, 224, 224)
+    if (isinstance(d_conv2d, FuseConv2d)):
+        mock_layeri_choice(d_conv2d)
     out1 = d_conv2d(x)
     assert out1.size(1) == 4
 
@@ -116,13 +139,15 @@ def test_dynamic_conv2d(bias: bool) -> None:
     assert torch.equal(out1, out2)
 
 
+@pytest.mark.parametrize('dynamic_class',
+                         [BigNasConv2d, DynamicConv2d, FuseConv2d, OFAConv2d])
 @pytest.mark.parametrize(
     ['is_mutate_in_channels', 'in_channels', 'out_channels'], [(True, 6, 10),
                                                                (False, 10, 4)])
-def test_dynamic_conv2d_mutable_single_channels(is_mutate_in_channels: bool,
-                                                in_channels: int,
-                                                out_channels: int) -> None:
-    d_conv2d = DynamicConv2d(
+def test_dynamic_conv2d_mutable_single_channels(
+        is_mutate_in_channels: bool, in_channels: int, out_channels: int,
+        dynamic_class: Type[nn.Conv2d]) -> None:
+    d_conv2d = dynamic_class(
         in_channels=10, out_channels=10, kernel_size=3, stride=1, bias=True)
     mutable_channels = SquentialMutableChannel(10)
 
@@ -131,6 +156,8 @@ def test_dynamic_conv2d_mutable_single_channels(is_mutate_in_channels: bool,
     else:
         d_conv2d.register_mutable_attr('out_channels', mutable_channels)
 
+    if (isinstance(d_conv2d, FuseConv2d)):
+        mock_layeri_choice(d_conv2d)
     with pytest.raises(RuntimeError):
         d_conv2d.to_static_op()
 
@@ -142,6 +169,8 @@ def test_dynamic_conv2d_mutable_single_channels(is_mutate_in_channels: bool,
         assert d_conv2d.get_mutable_attr('in_channels') is None
 
     x = torch.rand(3, in_channels, 224, 224)
+    if (isinstance(d_conv2d, FuseConv2d)):
+        mock_layeri_choice(d_conv2d)
     out1 = d_conv2d(x)
 
     assert out1.size(1) == out_channels
@@ -203,6 +232,8 @@ def test_kernel_dynamic_conv2d(dynamic_class: Type[nn.Conv2d],
         d_conv2d.mutable_attrs['kernel_size'].current_choice = kernel_size
 
     x = torch.rand(3, 8, 224, 224)
+    if (isinstance(d_conv2d, FuseConv2d)):
+        mock_layeri_choice(d_conv2d)
     out1 = d_conv2d(x)
     assert out1.size(1) == 8
 
@@ -245,6 +276,8 @@ def test_mutable_kernel_dynamic_conv2d_grad(
 
     for kernel_size in kernel_size_list:
         mutable_kernel_size.current_choice = kernel_size
+        if (isinstance(d_conv2d, FuseConv2d)):
+            mock_layeri_choice(d_conv2d)
         out = d_conv2d(x).sum()
         out.backward()
 

@@ -6,6 +6,7 @@ from typing import Union
 
 import torch
 
+# from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables.mutable_channel import (
     L1MutableChannelUnit, SequentialMutableChannelUnit)
 from mmrazor.models.mutators.channel_mutator import ChannelMutator

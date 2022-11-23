@@ -70,6 +70,7 @@ jobs:
             pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
             pip install git+https://github.com/open-mmlab/mmdetection.git@dev-3.x
             pip install git+https://github.com/open-mmlab/mmsegmentation.git@dev-1.x
+            python -m pip install git+ssh://git@github.com/open-mmlab/mmpose.git@dev-1.x
             pip install -r requirements.txt
       - run:
           name: Build and install
@@ -163,7 +164,7 @@ workflows:
           torchvision: 0.13.1
           python: 3.9.0
           requires:
-            - minimum_version_cpu
+            - lint
       - hold:
           type: approval
           requires:

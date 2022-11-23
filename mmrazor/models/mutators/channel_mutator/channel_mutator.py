@@ -1,7 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import (Any, Callable, Dict, Generic, List, Optional, Tuple, Type,
-                    Union)
+from typing import Any, Dict, Generic, List, Optional, Tuple, Type, Union
 
 from mmengine import fileio
 from torch.nn import Module, ModuleList
@@ -229,9 +228,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
 
         return random_choices
 
-    def set_choices(
-            self, choices: Union[Dict[int, Any],
-                                 Callable[[], Dict[Any, Any]]]) -> None:
+    def set_choices(self, choices: Dict[int, Any]) -> None:
         """Set mutables' current choice according to choices sample by
         :func:`sample_choices`.
 
@@ -241,7 +238,10 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
                 corresponding to this group.
         """
         for group_id, modules in self.search_groups.items():
-            choice = choices[group_id]  # type: ignore
+            if group_id not in choices:
+                # allow optional target_prune_ratio
+                continue
+            choice = choices[group_id]
             for module in modules:
                 module.current_choice = choice
 
