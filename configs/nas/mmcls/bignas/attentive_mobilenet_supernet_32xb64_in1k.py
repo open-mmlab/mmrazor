@@ -8,7 +8,7 @@ supernet = dict(
     _scope_='mmrazor',
     type='SearchableImageClassifier',
     backbone=dict(
-        type='AttentiveMobileNet',
+        type='SearchableMobileNetV3',
         arch_setting=_base_.arch_setting,
         dropout_stages=6,
         norm_cfg=dict(type='DynamicBatchNorm2d', momentum=0.0),
@@ -37,7 +37,7 @@ model = dict(
     _scope_='mmrazor',
     type='BigNAS',
     num_samples=_base_.num_samples,
-    drop_prob=0.2,
+    drop_path_rate=0.2,
     architecture=supernet,
     data_preprocessor=_base_.data_preprocessor,
     distiller=dict(

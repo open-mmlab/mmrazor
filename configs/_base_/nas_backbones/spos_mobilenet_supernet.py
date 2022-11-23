@@ -58,7 +58,7 @@ arch_setting = [
 
 nas_backbone = dict(
     _scope_='mmrazor',
-    type='SearchableMobileNet',
+    type='SearchableMobileNetV2',
     first_channels=40,
     last_channels=1728,
     widen_factor=1.0,

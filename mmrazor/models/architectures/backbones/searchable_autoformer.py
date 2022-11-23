@@ -287,7 +287,7 @@ class AutoformerBackbone(BaseBackbone):
                                self.mutable_depth.max_choice)
 
         # main body
-        self.blocks = self.make_layers(
+        self.blocks = self._make_layer(
             embed_dims=self.mutable_embed_dims.num_channels,
             depth=self.mutable_depth.max_choice)
 
@@ -306,7 +306,7 @@ class AutoformerBackbone(BaseBackbone):
         """The first normalization."""
         return getattr(self, self.norm1_name)
 
-    def make_layers(self, embed_dims, depth):
+    def _make_layer(self, embed_dims, depth):
         """Build multiple TransformerEncoderLayers."""
         layers = []
         for i in range(depth):

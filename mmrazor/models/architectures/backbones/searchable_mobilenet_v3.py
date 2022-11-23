@@ -14,13 +14,13 @@ from torch.nn.modules.batchnorm import _BatchNorm
 from mmrazor.models.architectures.dynamic_ops import (BigNasConv2d,
                                                       DynamicBatchNorm2d)
 from mmrazor.models.architectures.dynamic_ops.bricks import DynamicSequential
-from mmrazor.models.architectures.ops.gml_mobilenet_series import GMLMBBlock
+from mmrazor.models.architectures.ops.mobilenet_series import MBBlock
+from mmrazor.models.architectures.utils.mutable_register import (
+    mutate_conv_module, mutate_mobilenet_layer)
 from mmrazor.models.mutables import (MutableChannelContainer,
                                      OneShotMutableChannel,
                                      OneShotMutableChannelUnit,
                                      OneShotMutableValue)
-from mmrazor.models.mutables.mutable_register import (mutate_conv_module,
-                                                      mutate_mobilenet_layer)
 from mmrazor.models.utils.parse_values import parse_values
 from mmrazor.registry import MODELS
 
@@ -28,7 +28,7 @@ logger = MMLogger.get_current_instance()
 
 
 @MODELS.register_module()
-class AttentiveMobileNet(BaseBackbone):
+class SearchableMobileNetV3(BaseBackbone):
     """Searchable MobileNetV3 backbone defined by AttentiveNAS."""
 
     def __init__(self,
@@ -94,7 +94,15 @@ class AttentiveMobileNet(BaseBackbone):
         assert len(self.kernel_size_list) == len(self.num_blocks_list) == \
             len(self.expand_ratio_list) == len(self.num_channels_list)
 
+        self.layers = self._make_layer()
+
+        self.register_mutables()
+
+    def _make_layer(self):
+        """Build multiple mobilenet layers."""
+        layers = []
         self.in_channels = max(self.first_out_channels_list)
+
         self.first_conv = Sequential(
             OrderedDict([('conv',
                           BigNasConv2d(
@@ -111,7 +119,19 @@ class AttentiveMobileNet(BaseBackbone):
             num_channels=self.in_channels,
             candidate_choices=self.first_out_channels_list)
 
-        self.layers = self.make_layers()
+        for i, (num_blocks, kernel_sizes, expand_ratios, num_channels) in \
+            enumerate(zip(self.num_blocks_list, self.kernel_size_list,
+                          self.expand_ratio_list, self.num_channels_list)):
+            inverted_res_layer = self._make_single_layer(
+                out_channels=num_channels,
+                num_blocks=num_blocks,
+                kernel_sizes=kernel_sizes,
+                expand_ratios=expand_ratios,
+                stride=self.stride[i],
+                use_se=self.with_se_cfg[i])
+            layer_name = f'layer{i + 1}'
+            self.add_module(layer_name, inverted_res_layer)
+            layers.append(inverted_res_layer)
 
         last_expand_channels = \
             self.in_channels * max(self.last_expand_ratio_list)
@@ -138,34 +158,12 @@ class AttentiveMobileNet(BaseBackbone):
                               norm_cfg=None,
                               act_cfg=self.act_cfg))]))
         self.add_module('last_conv', last_layers)
-        self.layers.append(last_layers)
-        self.blocks = self.layers[:-1]
-
-        self.register_mutables()
-
-    def make_layers(self):
-        """Build multiple mobilenet layers."""
-        layers = []
-        for i, (num_blocks, kernel_sizes, expand_ratios, num_channels) in \
-            enumerate(zip(self.num_blocks_list, self.kernel_size_list,
-                          self.expand_ratio_list, self.num_channels_list)):
-            inverted_res_layer = self._make_single_layer(
-                layer_index=i,
-                out_channels=num_channels,
-                num_blocks=num_blocks,
-                kernel_sizes=kernel_sizes,
-                expand_ratios=expand_ratios,
-                stride=self.stride[i],
-                use_se=self.with_se_cfg[i])
-            layer_name = f'layer{i + 1}'
-            self.add_module(layer_name, inverted_res_layer)
-            layers.append(inverted_res_layer)
-
+        layers.append(last_layers)
         return layers
 
-    def _make_single_layer(self, layer_index: int, out_channels: List,
-                           num_blocks: List, kernel_sizes: List,
-                           expand_ratios: List, stride: int, use_se: bool):
+    def _make_single_layer(self, out_channels: List, num_blocks: List,
+                           kernel_sizes: List, expand_ratios: List,
+                           stride: int, use_se: bool):
         """Stack InvertedResidual blocks to build a layer for MobileNetV2.
 
         Args:
@@ -183,12 +181,11 @@ class AttentiveMobileNet(BaseBackbone):
                 se_cfg = dict(
                     act_cfg=(dict(type='ReLU'), dict(type='HSigmoid')),
                     ratio=4,
-                    conv_cfg=self.conv_cfg,
-                    use_avgpool=False)
+                    conv_cfg=self.conv_cfg)
             else:
                 se_cfg = None  # type: ignore
 
-            mb_layer = GMLMBBlock(
+            mb_layer = MBBlock(
                 in_channels=self.in_channels,
                 out_channels=max(out_channels),
                 kernel_size=max(kernel_sizes),
@@ -277,23 +274,6 @@ class AttentiveMobileNet(BaseBackbone):
 
         return tuple(outs)
 
-    def set_dropout(self, drop_prob: float) -> None:
-        # drop_path_ratio is set for last two mobile_layer.
-        total_block_nums = sum(len(blocks) for blocks in self.blocks[:-1]) + 1
-        visited_block_nums = 0
-        for idx, layer in enumerate(self.blocks, start=1):
-            assert isinstance(layer, DynamicSequential)
-            visited_block_nums += len(layer)
-            if idx < self.dropout_stages:
-                continue
-
-            for mb_idx, mb_layer in enumerate(layer):
-                if isinstance(mb_layer, GMLMBBlock):
-                    ratio = (visited_block_nums - len(layer) +
-                             mb_idx) / total_block_nums
-                    mb_drop_prob = drop_prob * ratio
-                    mb_layer.drop_prob = mb_drop_prob
-
     def train(self, mode=True):
         super().train(mode)
         self._freeze_stages()
@@ -307,7 +287,7 @@ class AttentiveMobileNet(BaseBackbone):
 
         if self.zero_init_residual:
             for name, module in self.named_modules():
-                if isinstance(module, GMLMBBlock):
+                if isinstance(module, MBBlock):
                     if module.with_res_shortcut or \
                             module.with_attentive_shortcut:
                         norm_layer = module.linear_conv.norm

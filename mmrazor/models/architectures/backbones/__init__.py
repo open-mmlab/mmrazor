@@ -1,13 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .attentive_mobilenet import AttentiveMobileNet
-from .bignas_mobilenet import BigNASMobileNet
 from .darts_backbone import DartsBackbone
 from .searchable_autoformer import AutoformerBackbone
-from .searchable_mobilenet import SearchableMobileNet
+from .searchable_mobilenet_v2 import SearchableMobileNetV2
+from .searchable_mobilenet_v3 import SearchableMobileNetV3
 from .searchable_shufflenet_v2 import SearchableShuffleNetV2
 from .wideresnet import WideResNet
 
 __all__ = [
-    'SearchableMobileNet', 'SearchableShuffleNetV2', 'DartsBackbone',
-    'WideResNet', 'AttentiveMobileNet', 'AutoformerBackbone', 'BigNASMobileNet'
+    'DartsBackbone', 'AutoformerBackbone', 'SearchableMobileNetV2',
+    'SearchableMobileNetV3', 'SearchableShuffleNetV2', 'WideResNet'
 ]

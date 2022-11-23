@@ -8,6 +8,7 @@ from mmengine.optim import OptimWrapper
 from mmengine.structures import BaseDataElement
 from torch import nn
 
+from mmrazor.models.architectures.utils import set_dropout
 from mmrazor.models.distillers import ConfigurableDistiller
 from mmrazor.models.mutators.base_mutator import BaseMutator
 from mmrazor.models.utils import (add_prefix,
@@ -42,7 +43,7 @@ class BigNAS(BaseAlgorithm):
                  strategy: str = 'sandwich4',
                  init_cfg: Optional[Dict] = None,
                  num_samples: int = 2,
-                 drop_prob: float = 0.2) -> None:
+                 drop_path_rate: float = 0.2) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
 
         if isinstance(mutators, dict):
@@ -67,7 +68,7 @@ class BigNAS(BaseAlgorithm):
         self.distiller.prepare_from_student(self.architecture)
 
         self.num_samples = num_samples
-        self.drop_prob = drop_prob
+        self.drop_path_rate = drop_path_rate
         self.is_supernet = True
         self._optim_wrapper_count_status_reinitialized = False
 
@@ -105,30 +106,27 @@ class BigNAS(BaseAlgorithm):
 
     def sample_subnet(self) -> Dict:
         """Random sample subnet by mutator."""
-        subnet_dict = dict()
+        value_subnet = dict()
+        channel_subnet = dict()
         for name, mutator in self.mutators.items():
             if name == 'value_mutator':
-                subnet_dict.update(
-                    dict((str(group_id), value) for group_id, value in
-                         mutator.sample_choices().items()))
+                value_subnet.update(mutator.sample_choices())
+            elif name == 'channel_mutator':
+                channel_subnet.update(mutator.sample_choices())
             else:
-                subnet_dict.update(mutator.sample_choices())
-        return subnet_dict
+                raise NotImplementedError
+        return dict(value_subnet=value_subnet, channel_subnet=channel_subnet)
 
-    def set_subnet(self, subnet_dict: Dict) -> None:
+    def set_subnet(self, subnet: Dict[str, Dict[int, Union[int,
+                                                           list]]]) -> None:
         """Set the subnet sampled by :meth:sample_subnet."""
         for name, mutator in self.mutators.items():
             if name == 'value_mutator':
-                value_subnet = dict((int(group_id), value)
-                                    for group_id, value in subnet_dict.items()
-                                    if isinstance(group_id, str))
-                mutator.set_choices(value_subnet)
+                mutator.set_choices(subnet['value_subnet'])
+            elif name == 'channel_mutator':
+                mutator.set_choices(subnet['channel_subnet'])
             else:
-                channel_subnet = dict(
-                    (group_id, value)
-                    for group_id, value in subnet_dict.items()
-                    if isinstance(group_id, int))
-                mutator.set_choices(channel_subnet)
+                raise NotImplementedError
 
     def set_max_subnet(self) -> None:
         """Set max subnet."""
@@ -186,7 +184,10 @@ class BigNAS(BaseAlgorithm):
         for kind in selects:
             if kind in ('max'):
                 self.set_max_subnet()
-                self.architecture.backbone.set_dropout(self.drop_prob)
+                set_dropout(
+                    layers=self.architecture.backbone.layers[:-1],
+                    dropout_stages=[6, 7],
+                    drop_path_rate=self.drop_path_rate)
                 with optim_wrapper.optim_context(
                         self
                 ), self.distiller.teacher_recorders:  # type: ignore
@@ -199,7 +200,10 @@ class BigNAS(BaseAlgorithm):
                     add_prefix(max_subnet_losses, 'max_subnet'))
             elif kind in ('min'):
                 self.set_min_subnet()
-                self.architecture.backbone.set_dropout(0.)
+                set_dropout(
+                    layers=self.architecture.backbone.layers[:-1],
+                    dropout_stages=[6, 7],
+                    drop_path_rate=0.)
                 min_subnet_losses = distill_step(batch_inputs, data_samples)
                 total_losses.update(
                     add_prefix(min_subnet_losses, 'min_subnet'))
@@ -260,8 +264,10 @@ class BigNASDDP(MMDistributedDataParallel):
 
         total_losses = dict()
         self.module.set_max_subnet()
-        # TODO
-        self.module.architecture.backbone.set_dropout(self.module.drop_prob)
+        set_dropout(
+            layers=self.module.architecture.backbone.layers[:-1],
+            dropout_stages=[6, 7],
+            drop_path_rate=self.module.drop_path_rate)
         with optim_wrapper.optim_context(
                 self), self.module.distiller.teacher_recorders:  # type: ignore
             max_subnet_losses = self(batch_inputs, data_samples, mode='loss')
@@ -271,8 +277,10 @@ class BigNASDDP(MMDistributedDataParallel):
         total_losses.update(add_prefix(max_subnet_losses, 'max_subnet'))
 
         self.module.set_min_subnet()
-        # TODO
-        self.module.architecture.backbone.set_dropout(0.)
+        set_dropout(
+            layers=self.module.architecture.backbone.layers[:-1],
+            dropout_stages=[6, 7],
+            drop_path_rate=0.)
         min_subnet_losses = distill_step(batch_inputs, data_samples)
         total_losses.update(add_prefix(min_subnet_losses, 'min_subnet'))
 

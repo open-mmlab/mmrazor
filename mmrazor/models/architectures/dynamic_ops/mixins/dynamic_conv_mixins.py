@@ -73,8 +73,6 @@ class DynamicConvMixin(DynamicChannelMixin):
             self._register_mutable_in_channels(mutable)
         elif attr == 'out_channels':
             self._register_mutable_out_channels(mutable)
-        elif attr == 'groups':
-            self._register_mutable_groups(mutable)
         else:
             raise NotImplementedError
 
@@ -120,17 +118,6 @@ class DynamicConvMixin(DynamicChannelMixin):
 
         self.mutable_attrs['out_channels'] = mutable_out_channels
 
-    def _register_mutable_groups(self: _ConvNd,
-                                 mutable_groups: BaseMutable) -> None:
-        assert hasattr(self, 'groups')
-        self.check_mutable_channels(mutable_groups)
-        mask_size = mutable_groups.current_mask.size(0)
-        if mask_size != self.groups:
-            raise ValueError(
-                f'Expect mask size of mutable to be {self.in_channels} as '
-                f'`in_channels`, but got: {mask_size}.')
-        self.mutable_attrs['groups'] = mutable_groups
-
     @property
     def mutable_in_channels(self: _ConvNd) -> Optional[BaseMutable]:
         """Mutable related to input."""
@@ -142,12 +129,6 @@ class DynamicConvMixin(DynamicChannelMixin):
         """Mutable related to output."""
         assert hasattr(self, 'mutable_attrs')
         return getattr(self.mutable_attrs, 'out_channels', None)  # type:ignore
-
-    @property
-    def mutable_groups(self: _ConvNd) -> Optional[BaseMutable]:
-        """Mutable related to output."""
-        assert hasattr(self, 'mutable_attrs')
-        return getattr(self.mutable_attrs, 'groups', None)  # type:ignore
 
     def get_dynamic_params(
             self: _ConvNd) -> Tuple[Tensor, Optional[Tensor], Tuple[int]]:
@@ -187,14 +168,6 @@ class DynamicConvMixin(DynamicChannelMixin):
             out_mask = mutable_out_channels.current_mask.to(weight.device)
         else:
             out_mask = torch.ones(weight.size(0)).bool().to(weight.device)
-
-        if 'groups' in self.mutable_attrs:
-            mutable_groups = self.mutable_attrs['groups']
-            num_channels_ = mutable_groups.current_choice
-            origin_choices = max(mutable_groups.choices)
-            mask_ = torch.zeros(origin_choices).bool()
-            mask_[0:num_channels_] = True
-            out_mask = mask_.to(weight.device)
 
         if self.groups == 1:
             weight = weight[out_mask][:, in_mask]
@@ -271,8 +244,6 @@ class BigNasConvMixin(DynamicConvMixin):
             self._register_mutable_out_channels(mutable)
         elif attr == 'kernel_size':
             self._register_mutable_kernel_size(mutable)
-        elif attr == 'groups':
-            self._register_mutable_groups(mutable)
         else:
             raise NotImplementedError
 

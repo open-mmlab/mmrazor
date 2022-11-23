@@ -1,8 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import torch.nn as nn
+from typing import Dict
+
+import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 from mmcv.cnn import ConvModule
-from mmcv.cnn.bricks import DropPath
+from mmcv.cnn.bricks import build_conv_layer
+from mmcv.cnn.bricks.drop import drop_path
+from mmengine.model import BaseModule
+from torch import Tensor
 
 from mmrazor.registry import MODELS
 from .base import BaseOP
@@ -12,6 +17,46 @@ try:
 except ImportError:
     from mmrazor.utils import get_placeholder
     SELayer = get_placeholder('mmcls')
+
+
+class ShortcutLayer(BaseModule):
+
+    def __init__(self,
+                 in_channels: int,
+                 out_channels: int,
+                 reduction: int = 1,
+                 conv_cfg: Dict = dict(type='Conv2d'),
+                 init_cfg=None):
+        super().__init__(init_cfg)
+
+        assert reduction in [1, 2]
+        self.reduction = reduction
+
+        self.with_conv = in_channels != out_channels
+        # conv module can be removed if in_channels equal to out_channels
+        self.conv = build_conv_layer(
+            conv_cfg,
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=1,
+            stride=1,
+            bias=False)
+
+    def forward(self, x: Tensor) -> Tensor:
+        if self.reduction > 1:
+            padding = x.size(-1) & 1
+            x = F.avg_pool2d(x, self.reduction, padding=padding)
+
+        # HACK
+        mutable_in_channels = self.conv.mutable_in_channels
+        mutable_out_channels = self.conv.mutable_out_channels
+        if mutable_out_channels is not None and \
+                mutable_in_channels is not None:
+            if mutable_out_channels.current_mask.sum().item() != \
+                    mutable_in_channels.current_mask.sum().item():
+                x = self.conv(x)
+
+        return x
 
 
 @MODELS.register_module()
@@ -39,31 +84,39 @@ class MBBlock(BaseOP):
     """
 
     def __init__(self,
-                 kernel_size,
-                 expand_ratio,
-                 se_cfg=None,
-                 conv_cfg=None,
-                 norm_cfg=dict(type='BN'),
-                 act_cfg=dict(type='ReLU'),
-                 drop_path_rate=0.,
-                 with_cp=False,
+                 kernel_size: int,
+                 expand_ratio: int,
+                 se_cfg: Dict = None,
+                 conv_cfg: Dict = dict(type='Conv2d'),
+                 norm_cfg: Dict = dict(type='BN'),
+                 act_cfg: Dict = dict(type='ReLU'),
+                 drop_path_rate: float = 0.,
+                 with_cp: bool = False,
+                 with_attentive_shortcut: bool = False,
                  **kwargs):
 
-        super(MBBlock, self).__init__(**kwargs)
+        super().__init__(**kwargs)
+        if with_attentive_shortcut:
+            self.shortcut = ShortcutLayer(
+                in_channels=self.in_channels,
+                out_channels=self.out_channels,
+                reduction=self.stride,
+                conv_cfg=conv_cfg)
+        self.with_attentive_shortcut = with_attentive_shortcut
+
         self.with_res_shortcut = (
-            self.stride == 1 and self.in_channels == self.out_channels)
+            self.stride == 1 and self.in_channels == self.out_channels
+            and not with_attentive_shortcut)
         assert self.stride in [1, 2]
         self.kernel_size = kernel_size
         self.conv_cfg = conv_cfg
         self.norm_cfg = norm_cfg
         self.act_cfg = act_cfg
         self.with_cp = with_cp
-        self.drop_path = DropPath(
-            drop_path_rate) if drop_path_rate > 0 else nn.Identity()
+        self.drop_path_rate = drop_path_rate
         self.with_se = se_cfg is not None
         self.mid_channels = self.in_channels * expand_ratio
         self.with_expand_conv = (self.mid_channels != self.in_channels)
-        self.expand_ratio = expand_ratio
 
         if self.with_se:
             assert isinstance(se_cfg, dict)
@@ -123,7 +176,18 @@ class MBBlock(BaseOP):
             out = self.linear_conv(out)
 
             if self.with_res_shortcut:
-                return x + self.drop_path(out)
+                if self.drop_path_rate > 0.:
+                    out = drop_path(out, self.drop_path_rate, self.training)
+                return x + out
+
+            elif self.with_attentive_shortcut:
+                sx = self.shortcut(x)
+                if self.drop_path_rate > 0. and \
+                        x.size(1) == sx.size(1) and \
+                        self.shortcut.reduction == 1:
+                    out = drop_path(out, self.drop_path_rate, self.training)
+                return sx + out
+
             else:
                 return out
 

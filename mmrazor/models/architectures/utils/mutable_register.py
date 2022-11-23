@@ -1,9 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Optional, Sequence, Tuple
 
-from mmrazor.models.architectures.ops.gml_mobilenet_series import GMLMBBlock
-from .base_mutable import BaseMutable
-from .mutable_channel import MutableChannelContainer
+from mmrazor.models.architectures.ops.mobilenet_series import MBBlock
+from ...mutables.base_mutable import BaseMutable
+from ...mutables.mutable_channel import MutableChannelContainer
 
 
 def mutate_conv_module(
@@ -30,7 +30,7 @@ def mutate_conv_module(
                                                mutable_kernel_size)
 
 
-def mutate_mobilenet_layer(mb_layer: GMLMBBlock, mutable_in_channels,
+def mutate_mobilenet_layer(mb_layer: MBBlock, mutable_in_channels,
                            mutable_out_channels, mutable_se_channels,
                            mutable_expand_value, mutable_kernel_size):
     """Mutate MobileNet layers."""
