@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 import torch.nn as nn
 
 from mmrazor.registry import MODELS
-from ..oneshot_mutalbe_channel import OneShotMutableChannel
+from ..oneshot_mutable_channel import OneShotMutableChannel
 from .sequential_mutable_channel_unit import SequentialMutableChannelUnit
 
 

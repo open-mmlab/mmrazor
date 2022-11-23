@@ -8,8 +8,9 @@ from mmcls.structures import ClsDataSample
 from mmengine import MessageHub
 from mmengine.model import BaseModel
 
-from mmrazor.models.algorithms.pruning.ite_prune_algorithm import (
-    ItePruneAlgorithm, ItePruneConfigManager)
+from mmrazor.models.algorithms.pruning.dcff import DCFF
+from mmrazor.models.algorithms.pruning.ite_prune_algorithm import \
+    ItePruneConfigManager
 from mmrazor.registry import MODELS
 
 
@@ -43,17 +44,17 @@ MODEL_CFG = dict(
     ))
 
 MUTATOR_CONFIG_NUM = dict(
-    type='ChannelMutator',
+    type='DCFFChannelMutator',
     channel_unit_cfg={
-        'type': 'SequentialMutableChannelUnit',
+        'type': 'DCFFChannelUnit',
         'default_args': {
             'choice_mode': 'number'
         }
     })
 MUTATOR_CONFIG_FLOAT = dict(
-    type='ChannelMutator',
+    type='DCFFChannelMutator',
     channel_unit_cfg={
-        'type': 'SequentialMutableChannelUnit',
+        'type': 'DCFFChannelUnit',
         'default_args': {
             'choice_mode': 'ratio'
         }
@@ -65,14 +66,14 @@ else:
     DEVICE = torch.device('cpu')
 
 
-class TestItePruneAlgorithm(unittest.TestCase):
+class TestDCFFAlgorithm(unittest.TestCase):
 
     def _set_epoch_ite(self, epoch, ite, max_epoch):
         iter_per_epoch = 10
         message_hub = MessageHub.get_current_instance()
         message_hub.update_info('epoch', epoch)
         message_hub.update_info('max_epochs', max_epoch)
-        message_hub.update_info('max_iters', max_epoch * 10)
+        message_hub.update_info('max_iters', max_epoch * iter_per_epoch)
         message_hub.update_info('iter', ite + iter_per_epoch * epoch)
 
     def fake_cifar_data(self):
@@ -124,14 +125,13 @@ class TestItePruneAlgorithm(unittest.TestCase):
         iter_per_epoch = 10
         epoch = 10
         epoch_step = 2
-        times = 3
+        times = 5
 
-        algorithm = ItePruneAlgorithm(
+        algorithm = DCFF(
             MODEL_CFG,
             target_pruning_ratio=prune_target,
             mutator_cfg=MUTATOR_CONFIG_FLOAT,
-            step_freq=epoch_step,
-            prune_times=times).to(DEVICE)
+            step_freq=epoch_step).to(DEVICE)
 
         for e in range(epoch):
             for ite in range(10):
@@ -152,8 +152,7 @@ class TestItePruneAlgorithm(unittest.TestCase):
 
     def test_load_pretrained(self):
         iter_per_epoch = 10
-        epoch_step = 2
-        times = 3
+        epoch_step = 20
         data = self.fake_cifar_data()
 
         # prepare checkpoint
@@ -167,15 +166,13 @@ class TestItePruneAlgorithm(unittest.TestCase):
             'type': 'Pretrained',
             'checkpoint': checkpoint_path
         }
-        algorithm = ItePruneAlgorithm(
+        algorithm = DCFF(
             model_cfg,
-            mutator_cfg=MUTATOR_CONFIG_NUM,
+            mutator_cfg=MUTATOR_CONFIG_FLOAT,
             target_pruning_ratio=None,
-            step_freq=epoch_step,
-            prune_times=times,
-        ).to(DEVICE)
+            step_freq=epoch_step).to(DEVICE)
         algorithm.init_weights()
-        self._set_epoch_ite(4, 5, 6)
+        self._set_epoch_ite(10, 5, 200)
         algorithm.forward(data['inputs'], data['data_samples'], mode='loss')
         self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
 
@@ -199,19 +196,17 @@ class TestItePruneAlgorithm(unittest.TestCase):
 
         iter_per_epoch = 10
         epoch_step = 2
-        time = 2
         epoch = 6
         data = self.fake_cifar_data()
 
         prune_target['backbone.layer1.0.conv1_(0, 64)_64'] = 0.1
         prune_target['backbone.layer1.1.conv1_(0, 64)_64'] = 0.1
 
-        algorithm = ItePruneAlgorithm(
+        algorithm = DCFF(
             MODEL_CFG,
             target_pruning_ratio=prune_target,
             mutator_cfg=mutator_cfg,
-            step_freq=epoch_step,
-            prune_times=time).to(DEVICE)
+            step_freq=epoch_step).to(DEVICE)
 
         algorithm.init_weights()
         self._set_epoch_ite(1, 2, epoch)
@@ -223,12 +218,11 @@ class TestItePruneAlgorithm(unittest.TestCase):
 
         with self.assertRaises(ValueError):
 
-            algorithm = ItePruneAlgorithm(
+            algorithm = DCFF(
                 MODEL_CFG,
                 target_pruning_ratio=prune_target,
                 mutator_cfg=mutator_cfg,
-                step_freq=epoch_step,
-                prune_times=time).to(DEVICE)
+                step_freq=epoch_step).to(DEVICE)
 
             algorithm.init_weights()
             self._set_epoch_ite(1, 2, epoch)

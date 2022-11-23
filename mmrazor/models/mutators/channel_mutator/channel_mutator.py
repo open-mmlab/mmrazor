@@ -238,6 +238,9 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
                 corresponding to this group.
         """
         for group_id, modules in self.search_groups.items():
+            if group_id not in choices:
+                # allow optional target_prune_ratio
+                continue
             choice = choices[group_id]
             for module in modules:
                 module.current_choice = choice
