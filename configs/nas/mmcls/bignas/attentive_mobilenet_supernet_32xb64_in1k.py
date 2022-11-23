@@ -10,7 +10,6 @@ supernet = dict(
     backbone=dict(
         type='SearchableMobileNetV3',
         arch_setting=_base_.arch_setting,
-        dropout_stages=6,
         norm_cfg=dict(type='DynamicBatchNorm2d', momentum=0.0),
         act_cfg=dict(type='Swish')),
     head=dict(
@@ -38,6 +37,7 @@ model = dict(
     type='BigNAS',
     num_samples=_base_.num_samples,
     drop_path_rate=0.2,
+    backbone_dropout_stages=[6, 7],
     architecture=supernet,
     data_preprocessor=_base_.data_preprocessor,
     distiller=dict(

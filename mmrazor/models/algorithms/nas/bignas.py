@@ -24,6 +24,43 @@ VALID_DISTILLER_TYPE = Union[ConfigurableDistiller, Dict]
 
 @MODELS.register_module()
 class BigNAS(BaseAlgorithm):
+    """Implementation of `BigNas <https://arxiv.org/pdf/2003.11142>`_
+
+    BigNAS is a NAS algorithm which searches the following items in MobileNetV3
+    with the one-shot paradigm: kernel_sizes, out_channels, expand_ratios,
+    block_depth and input sizes.
+
+    BigNAS uses a `sandwich` strategy to sample subnets from the supernet,
+    which includes the max subnet, min subnet and N random subnets. It doesn't
+    require retraining, therefore we can directly get well-trained subnets
+    after supernet training.
+
+    The logic of the search part is implemented in
+    :class:`mmrazor.engine.EvolutionSearchLoop`
+
+    Args:
+        architecture (dict|:obj:`BaseModel`): The config of :class:`BaseModel`
+            or built model. Corresponding to supernet in NAS algorithm.
+        mutators (VALID_MUTATORS_TYPE): Configs to build different mutators.
+        distiller (VALID_DISTILLER_TYPE): Configs to build a distiller.
+        fix_subnet (str | dict | :obj:`FixSubnet`): The path of yaml file or
+            loaded dict or built :obj:`FixSubnet`. Defaults to None.
+        data_preprocessor (Optional[Union[dict, nn.Module]]): The pre-process
+            config of :class:`BaseDataPreprocessor`. Defaults to None.
+        strategy (str): The sampling strategy. Defaults to `sandwich4`.
+        num_samples (int): Nums of the base samples. Defaults to 2.
+        drop_path_rate (float): Stochastic depth rate. Defaults to 0.2.
+        backbone_dropout_stages (List): Stages to be set dropout. Defaults to
+            [6, 7].
+        init_cfg (Optional[dict]): Init config for ``BaseModule``.
+            Defaults to None.
+
+    Note:
+        BigNAS uses two mutators which are ``DynamicValueMutator`` and
+        ``ChannelMutator``. `DynamicValueMutator` handle the mutable object
+        ``OneShotMutableValue`` in BigNAS while ChannelMutator handle
+        the mutable object ``OneShotMutableChannel`` in BigNAS.
+    """
 
     strategy_groups: Dict[str, List] = {
         'sandwich2': ['max', 'min'],
@@ -35,15 +72,16 @@ class BigNAS(BaseAlgorithm):
     }
 
     def __init__(self,
+                 architecture: Union[BaseModel, Dict],
                  mutators: VALID_MUTATORS_TYPE,
                  distiller: VALID_DISTILLER_TYPE,
-                 architecture: Union[BaseModel, Dict],
                  fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  strategy: str = 'sandwich4',
-                 init_cfg: Optional[Dict] = None,
                  num_samples: int = 2,
-                 drop_path_rate: float = 0.2) -> None:
+                 drop_path_rate: float = 0.2,
+                 backbone_dropout_stages: List = [6, 7],
+                 init_cfg: Optional[Dict] = None) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
 
         if isinstance(mutators, dict):
@@ -53,7 +91,7 @@ class BigNAS(BaseAlgorithm):
                         mutator_cfg['parse_cfg'], dict):
                     assert mutator_cfg['parse_cfg'][
                         'type'] == 'Predefined', \
-                            'autoformer only support predefined.'
+                            'BigNAS only support predefined.'
                 mutator: BaseMutator = MODELS.build(mutator_cfg)
                 built_mutators[name] = mutator
                 mutator.prepare_from_supernet(self.architecture)
@@ -62,18 +100,18 @@ class BigNAS(BaseAlgorithm):
             raise TypeError('mutator should be a `dict` but got '
                             f'{type(mutator)}')
 
-        self.strategy = strategy
         self.distiller = self._build_distiller(distiller)
         self.distiller.prepare_from_teacher(self.architecture)
         self.distiller.prepare_from_student(self.architecture)
 
+        self.strategy = strategy
         self.num_samples = num_samples
         self.drop_path_rate = drop_path_rate
+        self.backbone_dropout_stages = backbone_dropout_stages
+
         self.is_supernet = True
         self._optim_wrapper_count_status_reinitialized = False
 
-        # BigNAS supports supernet training and subnet retraining.
-        # fix_subnet is not None, means subnet retraining.
         if fix_subnet:
             # Avoid circular import
             from mmrazor.structures import load_fix_subnet
@@ -186,7 +224,7 @@ class BigNAS(BaseAlgorithm):
                 self.set_max_subnet()
                 set_dropout(
                     layers=self.architecture.backbone.layers[:-1],
-                    dropout_stages=[6, 7],
+                    dropout_stages=self.backbone_dropout_stages,
                     drop_path_rate=self.drop_path_rate)
                 with optim_wrapper.optim_context(
                         self
@@ -202,7 +240,7 @@ class BigNAS(BaseAlgorithm):
                 self.set_min_subnet()
                 set_dropout(
                     layers=self.architecture.backbone.layers[:-1],
-                    dropout_stages=[6, 7],
+                    dropout_stages=self.backbone_dropout_stages,
                     drop_path_rate=0.)
                 min_subnet_losses = distill_step(batch_inputs, data_samples)
                 total_losses.update(
@@ -266,7 +304,7 @@ class BigNASDDP(MMDistributedDataParallel):
         self.module.set_max_subnet()
         set_dropout(
             layers=self.module.architecture.backbone.layers[:-1],
-            dropout_stages=[6, 7],
+            dropout_stages=self.module.backbone_dropout_stages,
             drop_path_rate=self.module.drop_path_rate)
         with optim_wrapper.optim_context(
                 self), self.module.distiller.teacher_recorders:  # type: ignore
@@ -279,7 +317,7 @@ class BigNASDDP(MMDistributedDataParallel):
         self.module.set_min_subnet()
         set_dropout(
             layers=self.module.architecture.backbone.layers[:-1],
-            dropout_stages=[6, 7],
+            dropout_stages=self.module.backbone_dropout_stages,
             drop_path_rate=0.)
         min_subnet_losses = distill_step(batch_inputs, data_samples)
         total_losses.update(add_prefix(min_subnet_losses, 'min_subnet'))

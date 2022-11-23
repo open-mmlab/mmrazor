@@ -20,6 +20,7 @@ class Autoformer(BaseAlgorithm):
     supernet training.
     The logic of the search part is implemented in
     :class:`mmrazor.engine.EvolutionSearchLoop`
+
     Args:
         architecture (dict|:obj:`BaseModel`): The config of :class:`BaseModel`
             or built model. Corresponding to supernet in NAS algorithm.
@@ -31,6 +32,7 @@ class Autoformer(BaseAlgorithm):
             config of :class:`BaseDataPreprocessor`. Defaults to None.
         init_cfg (Optional[dict]): Init config for ``BaseModule``.
             Defaults to None.
+
     Note:
         Autoformer uses two mutators which are ``DynamicValueMutator`` and
         ``ChannelMutator``. `DynamicValueMutator` handle the mutable object

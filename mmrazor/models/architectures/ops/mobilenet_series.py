@@ -70,14 +70,16 @@ class MBBlock(BaseOP):
         se_cfg (dict, optional): Config dict for se layer. Defaults to None,
             which means no se layer.
         conv_cfg (dict, optional): Config dict for convolution layer.
-            Default: None, which means using conv2d.
+            Defaults to None, which means using conv2d.
         norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='BN').
+            Defaults to dict(type='BN').
         act_cfg (dict): Config dict for activation layer.
-            Default: dict(type='ReLU').
+            Defaults to dict(type='ReLU').
         drop_path_rate (float): stochastic depth rate. Defaults to 0.
         with_cp (bool): Use checkpoint or not. Using checkpoint will save some
-            memory while slowing down the training speed. Default: False.
+            memory while slowing down the training speed. Defaults to False.
+        with_attentive_shortcut (bool): Use shortcut in AttentiveNAS or not.
+            Defaults to False.
 
     Returns:
         Tensor: The output tensor.

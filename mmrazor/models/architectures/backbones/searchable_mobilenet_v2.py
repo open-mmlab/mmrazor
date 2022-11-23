@@ -20,7 +20,7 @@ except ImportError:
 
 @MODELS.register_module()
 class SearchableMobileNetV2(BaseBackbone):
-    """Searchable MobileNet backbone.
+    """Searchable MobileNetV2 backbone.
 
     Args:
         arch_setting (list[list]): Architecture settings.

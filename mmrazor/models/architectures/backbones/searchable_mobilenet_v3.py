@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from collections import OrderedDict
-from typing import List
+from typing import Dict, List, Optional, Sequence, Union
 
 import torch
 import torch.nn as nn
@@ -29,24 +29,51 @@ logger = MMLogger.get_current_instance()
 
 @MODELS.register_module()
 class SearchableMobileNetV3(BaseBackbone):
-    """Searchable MobileNetV3 backbone defined by AttentiveNAS."""
+    """Searchable MobileNetV3 backbone.
+
+    Args:
+        arch_setting (list[list]): Architecture settings.
+        widen_factor (float): Width multiplier, multiply number of
+            channels in each layer by this amount. Default: 1.0.
+        out_indices (Sequence[int]): Output from which stages.
+            Default: (7, ).
+        frozen_stages (int): Stages to be frozen (all param fixed).
+            Default: -1, which means not freezing any parameters.
+        conv_cfg (dict, optional): Config dict for convolution layer.
+            Default: None, which means using conv2d.
+        norm_cfg (dict): Config dict for normalization layer.
+            Default: dict(type='BN').
+        act_cfg (dict): Config dict for activation layer.
+            Default: dict(type='ReLU6').
+        norm_eval (bool): Whether to set norm layers to eval mode, namely,
+            freeze running stats (mean and var). Note: Effect on Batch Norm
+            and its variants only. Default: False.
+        with_cp (bool): Use checkpoint or not. Using checkpoint will save some
+            memory while slowing down the training speed. Default: False.
+        zero_init_residual (bool): Zero norm param in linear conv of MBBlock
+            or not when there is a shortcut. Default: True.
+        init_cfg (dict | list[dict], optional): initialization configuration
+            dict to define initializer. OpenMMLab has implemented
+            6 initializers, including ``Constant``, ``Xavier``, ``Normal``,
+            ``Uniform``, ``Kaiming``, and ``Pretrained``.
+    """
 
     def __init__(self,
-                 arch_setting,
-                 widen_factor=1.,
-                 out_indices=(7, ),
-                 frozen_stages=-1,
-                 dropout_stages=6,
-                 conv_cfg=dict(type='BigNasConv2d'),
-                 norm_cfg=dict(type='DynamicBatchNorm2d'),
-                 act_cfg=dict(type='MemoryEfficientSwish'),
-                 norm_eval=False,
-                 zero_init_residual=True,
-                 with_cp=False,
-                 init_cfg=None):
+                 arch_setting: Dict[str, List],
+                 widen_factor: float = 1.,
+                 out_indices: Sequence[int] = (7, ),
+                 frozen_stages: int = -1,
+                 conv_cfg: Dict = dict(type='BigNasConv2d'),
+                 norm_cfg: Dict = dict(type='DynamicBatchNorm2d'),
+                 act_cfg: Dict = dict(type='MemoryEfficientSwish'),
+                 norm_eval: bool = False,
+                 with_cp: bool = False,
+                 zero_init_residual: bool = True,
+                 init_cfg: Optional[Union[Dict, List[Dict]]] = None):
 
         super().__init__(init_cfg)
 
+        self.arch_setting = arch_setting
         self.widen_factor = widen_factor
         self.out_indices = out_indices
         for index in out_indices:
@@ -56,14 +83,9 @@ class SearchableMobileNetV3(BaseBackbone):
         if frozen_stages not in range(-1, 8):
             raise ValueError('frozen_stages must be in range(-1, 8). '
                              f'But received {frozen_stages}')
-        if dropout_stages not in range(-1, 8):
-            raise ValueError('dropout_stages must be in range(-1, 8). '
-                             f'But received {dropout_stages}')
         self.out_indices = out_indices
         self.frozen_stages = frozen_stages
-        self.dropout_stages = dropout_stages
 
-        self.arch_setting = arch_setting
         self.conv_cfg = conv_cfg
         self.norm_cfg = norm_cfg
         self.act_cfg = act_cfg
@@ -164,14 +186,17 @@ class SearchableMobileNetV3(BaseBackbone):
     def _make_single_layer(self, out_channels: List, num_blocks: List,
                            kernel_sizes: List, expand_ratios: List,
                            stride: int, use_se: bool):
-        """Stack InvertedResidual blocks to build a layer for MobileNetV2.
+        """Stack InvertedResidual blocks (MBBlocks) to build a layer for
+        MobileNetV3.
 
         Args:
-            out_channels (int): out_channels of block.
-            num_blocks (int): number of blocks.
-            stride (int): stride of the first block. Default: 1
-            expand_ratio (int): Expand the number of channels of the
-                hidden layer in InvertedResidual by this ratio. Default: 6.
+            out_channels (List): out_channels of block.
+            num_blocks (List): num of blocks.
+            kernel_sizes (List): num of kernel sizes.
+            expand_ratios (int): Expand the number of channels of the
+                hidden layer in InvertedResidual by this ratio.
+            stride (int): stride of the first block.
+            use_se (bool): Use SE layer in MBBlock or not.
         """
         _layers = []
         for i in range(max(num_blocks)):
