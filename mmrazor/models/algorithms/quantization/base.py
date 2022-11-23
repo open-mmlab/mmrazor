@@ -24,13 +24,17 @@ class GeneralQuant(BaseAlgorithm):
     """General quantization.
 
     Args:
-        Args:
         architecture (dict | :obj:`BaseModel`): The config of
             :class:`BaseModel` or built model.
         quantizer (dict | :obj:`BaseModel`): The config of
             :class:`BaseQuantizer` or built model.
+        export_mode (str): The mode of the model to be exported. Defaults to
+            predict.
+        qmodel_modes (list): The available mode of runner.
         data_preprocessor (dict | torch.nn.Module | None): The pre-process
             config of :class:`BaseDataPreprocessor`. Defaults to None.
+        pretrained_ckpt (str, Optional): The path of pretrained checkpoint.
+            Defaults to None.
         init_cfg (dict): The weight initialized config for
             :class:`BaseModule`.
     """
@@ -110,7 +114,6 @@ class GeneralQuant(BaseAlgorithm):
 
     def calibrate_step(self, data):
         data = self.data_preprocessor(data, False)
-        self.state = (1, 0)
         return self._run_forward(data, mode='tensor')
 
     def convert(self, mode='predict'):
@@ -143,7 +146,7 @@ class GeneralQuant(BaseAlgorithm):
 
 @MODEL_WRAPPERS.register_module()
 class GeneralQuantDDP(MMDistributedDataParallel):
-    """DDPwapper for autoslim."""
+    """DDPwapper for GeneralQuant."""
 
     def __init__(self,
                  *,
@@ -172,7 +175,7 @@ class GeneralQuantDDP(MMDistributedDataParallel):
 
     def convert(self, mode='predict'):
         self.module.convert(mode)
-        self.module.qmodels['predict'].cuda()
+        self.module.qmodels[mode].cuda()
 
     def sync_param(self):
         self.module.sync_param()

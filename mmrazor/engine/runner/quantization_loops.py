@@ -106,17 +106,9 @@ class QATValLoop(ValLoop):
         runner (Runner): A reference of runner
         dataloader (Dataloader or dict): An iterator to generate one batch of
             dataset each iteration.
-        max_epochs (int): Total training epochs.
-        calibrate_dataloader (Dataloader or dict, optional): A dataloader
-            object or a dict to build a dataloader for calibration. Defaults
-            to None.
-        val_begin (int): The epoch that begins validating.
-            Defaults to 1.
-        val_interval (int): Validation interval. Defaults to 1.
-        dynamic_intervals (List[Tuple[int, int]], optional): The
-            first element in the tuple is a milestone and the second
-            element is a interval. The interval is used after the
-            corresponding milestone. Defaults to None.
+        evaluator (Evaluator or dict or list): Used for computing metrics.
+        fp16 (bool): Whether to enable fp16 validation. Defaults to
+            False.
     """
 
     def __init__(self,
@@ -207,13 +199,6 @@ class PTQLoop(TestLoop):
         dataloader (Dataloader or dict): An iterator to generate one batch of
             dataset each iteration.
         evaluator (Evaluator or dict or list): Used for computing metrics.
-        calibrate_dataloader (Dataloader or dict, optional): A dataloader
-            object or a dict to build a dataloader for calibration. Defaults
-            to None.
-        batch_num (Optional[int], optional): Total calibration batches.
-            Defaults to None.
-        reconstruction_cfg (Optional[Dict], optional): Model reconstruction
-            configuration. Defaults to None.
         fp16 (bool, optional): Enable FP16 training mode. Defaults to False.
     """
 
@@ -224,12 +209,12 @@ class PTQLoop(TestLoop):
                  fp16: bool = False):
         super().__init__(runner, dataloader, evaluator, fp16)
 
-    def run(self) -> None:
+    def run(self) -> dict:
         """Launch test."""
         self.runner.call_hook('before_test')
         self.runner.call_hook('before_test_epoch')
         self.runner.model.eval()
-        self.runner.model.state = (1, 0)
+        self.runner.model.state = (True, False)
 
         for idx, data_batch in enumerate(self.dataloader):
             self.run_iter(idx, data_batch)
