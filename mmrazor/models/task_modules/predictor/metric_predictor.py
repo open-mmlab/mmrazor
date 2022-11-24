@@ -2,7 +2,11 @@
 from typing import Dict, List, Union
 
 import numpy as np
-import scipy.stats as stats
+
+try:
+    import scipy.stats as stats
+except ImportError:
+    stats = None
 
 from mmrazor.registry import TASK_UTILS
 from mmrazor.structures import export_fix_subnet
@@ -150,6 +154,9 @@ class MetricPredictor:
                 and ground-truth label.
         """
         rmse = np.sqrt(((prediction - label)**2).mean())
+        if stats is None:
+            raise ImportError('Please run "pip install scipy" '
+                              'to install scipy first.')
         rho, _ = stats.spearmanr(prediction, label)
         tau, _ = stats.kendalltau(prediction, label)
         return [rmse, rho, tau]

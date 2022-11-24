@@ -1,7 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
-from pySOT.surrogate import (ConstantTail, CubicKernel, Kernel, LinearTail,
-                             RBFInterpolant, Tail, TPSKernel)
+
+try:
+    import pySOT
+except ImportError:
+    pySOT = None
 
 from mmrazor.registry import TASK_UTILS
 from .base_handler import BaseHandler
@@ -16,10 +19,17 @@ class RBFHandler(BaseHandler):
         kernel (str): RBF kernel object. Defaults to 'tps'.
         tail (str): RBF polynomial tail object. Defaults to 'linear'.
     """
-    kernel_mapping = {'cubic': CubicKernel, 'tps': TPSKernel}
-    tail_mapping = {'linear': LinearTail, 'constant': ConstantTail}
 
     def __init__(self, kernel: str = 'tps', tail: str = 'linear'):
+        if pySOT is None:
+            raise ImportError('Please run "pip install pySOT==0.2.3" '
+                              'to install pySOT first.')
+        from pySOT.surrogate import (ConstantTail, CubicKernel, Kernel,
+                                     LinearTail, Tail, TPSKernel)
+
+        self.kernel_mapping = {'cubic': CubicKernel, 'tps': TPSKernel}
+        self.tail_mapping = {'linear': LinearTail, 'constant': ConstantTail}
+
         assert kernel in self.kernel_mapping.keys(), (
             f'Got unknown RBF kernel `{kernel}`.')
         self.kernel: Kernel = self.kernel_mapping[kernel]
@@ -40,6 +50,7 @@ class RBFHandler(BaseHandler):
                              f'{train_data.shape[0]}) should be larger than '
                              f'dim 1 of data (got {train_data.shape[1]}).')
 
+        from pySOT.surrogate import RBFInterpolant
         self.model = RBFInterpolant(
             dim=train_data.shape[1],
             kernel=self.kernel(),
