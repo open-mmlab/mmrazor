@@ -125,6 +125,7 @@ class DynamicPatchEmbed(PatchEmbed, DynamicChannelMixin):
             norm_cfg=None,
             conv_cfg=None,
             init_cfg=None)
+        dynamic_patch_embed.norm = module.norm
 
         return dynamic_patch_embed
 
@@ -138,5 +139,8 @@ class DynamicPatchEmbed(PatchEmbed, DynamicChannelMixin):
             stride=16,
             padding=self.projection.padding,
             dilation=self.projection.dilation).flatten(2).transpose(1, 2)
+
+        if self.norm is not None:
+            x = self.norm(x)
 
         return x
