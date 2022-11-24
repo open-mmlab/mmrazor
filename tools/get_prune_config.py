@@ -3,7 +3,7 @@ import argparse
 import copy
 from typing import Dict
 
-from mmengine import Config
+from mmengine import Config, fileio
 
 from mmrazor.models.mutators import ChannelMutator
 from mmrazor.registry import MODELS
@@ -18,6 +18,11 @@ def parse_args():
         default=None,
         type=str,
         help='checkpoint path of the model')
+    parser.add_argument(
+        '--subnet',
+        default=None,
+        type=str,
+        help='pruning structure for the model')
     parser.add_argument(
         '-o',
         type=str,
@@ -104,7 +109,16 @@ if __name__ == '__main__':
             'tracer_type': 'FxTracer'
         })
     mutator.prepare_from_supernet(model)
-    choice_template = mutator.choice_template
+    if args.subnet is None:
+        choice_template = mutator.choice_template
+    else:
+        input_choices = fileio.load(args.subnet)
+        try:
+            mutator.set_choices(input_choices)
+            choice_template = input_choices
+        except Exception as e:
+            print(f'error when apply input subnet: {e}')
+            choice_template = mutator.choice_template
 
     # prune and finetune
 
