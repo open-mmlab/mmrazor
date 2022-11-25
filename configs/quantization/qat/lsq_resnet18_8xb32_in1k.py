@@ -23,7 +23,7 @@ model = dict(
     # ),
     architecture=resnet,
     quantizer=dict(
-        type='TensorRTQuantizer',
+        type='CustomQuantizer',
         skipped_methods=[
             'mmcls.models.heads.ClsHead._get_loss',
             'mmcls.models.heads.ClsHead._get_predictions'
