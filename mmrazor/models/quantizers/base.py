@@ -13,7 +13,7 @@ from mmrazor.models.utils import (check_is_valid_convert_custom_config_dict,
                                   check_is_valid_qconfig_dict,
                                   get_custom_module_class_keys)
 from mmrazor.registry import MODELS
-from mmrazor.structures.quantization import (CheckArgs, DefalutQconfigs,
+from mmrazor.structures.quantization import (CheckArgs, DefaultQconfigs,
                                              QuantizeScheme, SupportQtypes)
 
 
@@ -22,7 +22,7 @@ class CustomQuantizer(BaseModule):
     """Configurable quantizer, base class of quantizers.
 
     Args:
-        qconfig (Dict, optional): QConfig. Defaults to DefalutQconfigs['default'].  # noqa: E501
+        qconfig (Dict, optional): QConfig. Defaults to DefaultQconfigs['default'].  # noqa: E501
         is_qat (bool, optional): Is QAT ro not. Defaults to True.
         skipped_methods (List, optional): Skipped methods list for tracer.
             Defaults to None.
@@ -38,7 +38,7 @@ class CustomQuantizer(BaseModule):
     """
 
     def __init__(self,
-                 qconfig: Dict = DefalutQconfigs['default'],
+                 qconfig: Dict = DefaultQconfigs['default'],
                  is_qat: bool = True,
                  skipped_methods: List = None,
                  prepare_custom_config_dict: Dict = None,
@@ -189,6 +189,9 @@ class CustomQuantizer(BaseModule):
         return tracer
 
     def fuse_model(self, graph_module):
+        if not self.is_qat:
+            graph_module.eval()
+
         graph_module = _fuse_fx(graph_module, self.is_qat,
                                 self.prepare_custom_config_dict)
         return graph_module

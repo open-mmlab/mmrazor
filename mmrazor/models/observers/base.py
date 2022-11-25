@@ -6,9 +6,8 @@ from torch.ao.quantization.observer import UniformQuantizationObserverBase
 
 from mmrazor.models.utils import pot_quantization, sync_tensor
 
-# from mmengine.model import BaseModule
 
-
+# todo: We only support per-tensor quantization currently.
 class BaseObserver(UniformQuantizationObserverBase):
     """Modified torch quantization observer.
 

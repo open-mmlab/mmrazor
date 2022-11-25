@@ -4,6 +4,7 @@ from types import FunctionType, MethodType
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import torch
+import torch.nn as nn
 from mmengine.utils import import_modules_from_strings
 from torch._C import ScriptObject  # type: ignore[attr-defined]
 from torch.ao.quantization.quantize_fx import QuantizationTracer
@@ -14,7 +15,6 @@ from torch.fx.proxy import Proxy
 
 _orig_module_call: Callable = torch.nn.Module.__call__
 _orig_module_getattr: Callable = torch.nn.Module.__getattr__
-# _orig_module_forward_train: Callable = models.BaseDenseHead.forward_train
 
 
 class UntracedMethodRegistry:
@@ -76,6 +76,92 @@ def custom_symbolic_trace(
     name = root.__class__.__name__ if isinstance(
         root, torch.nn.Module) else root.__name__
     return GraphModule(tracer.root, graph, name)
+
+
+def _prepare_module_dict(model: nn.Module, fx_graph: torch.fx.Graph):
+    """If there is a class method that can not be traced by the symbolic
+    tracer, a ``call_method`` ``Node`` will be inserted into the ``Graph`` in
+    ``CustomTracer``.
+
+    For example,
+    ```
+        >>> class Model:
+        ...     def __init__(self):
+        ...         self.head = ClsHead()
+        ...
+        >>> class ClsHead(nn.Module):
+        ...     def forward(self, feats: Tuple[torch.Tensor]) -> torch.Tensor:
+        ...         return feats[-1]
+        ...
+        ...     def loss(self, feats: Tuple[torch.Tensor],
+        ...              data_samples: List[ClsDataSample], **kwargs) -> dict:
+        ...         cls_score = self(feats)
+        ...         # The part can not be traced by torch.fx
+        ...         losses = self._get_loss(cls_score, data_samples, **kwargs)
+        ...         return losses
+        ...
+        ...     def _get_loss(self, cls_score: torch.Tensor,
+        ...                   data_samples: List[ClsDataSample], **kwargs):
+        ...         if 'score' in data_samples[0].gt_label:
+        ...             xxx
+        ...         else:
+        ...             xxx
+        ...         losses = xxx
+        ...         return losses
+    ```
+    As the ``_get_loss`` can not be traced by torch.fx, ``Toy._get_loss`` need
+    to be added to ``skipped_methods`` in ``CustomTracer``. Hence the code
+    above will product the following Graph::
+
+    .. code-block:: text
+        ... ...
+        %head : [#users=1] = get_attr[target=head]
+        %_get_loss : [#users=1] = call_method[target=_get_loss](args = (%head, %head_fc, %data_samples), kwargs = {})  # noqa: E501
+        return _get_loss
+
+    Hence, the head module in the ``GraphModule`` and that in the original
+    model are the same one (refer to https://github.com/pytorch/pytorch/blob/master/torch/fx/graph_module.py#L346).  # noqa: E501
+    So changes made to the graph module (in ``prepare()``) will also modify
+    the original model.
+
+    Args:
+        model (nn.Module): The original model.
+        fx_graph (torch.fx.Graph): The fx Graph traced by fx tracer.
+    """
+
+    def _get_attrs(target, attrs):
+        attrs = attrs.split('.')
+        for att in attrs:
+            target = getattr(target, att)
+        return target
+
+    module_dict = dict()
+    special_nodes = []
+
+    for node in fx_graph.nodes:
+        if node.op == 'get_attr':
+            attr = _get_attrs(model, node.target)
+            if isinstance(attr, nn.Module):
+                module_dict[node.target] = nn.Module()
+                special_nodes.append(node)
+        elif node.op == 'call_method':
+            for special_node in special_nodes:
+                if special_node in node.args or \
+                        special_node in node.kwargs.values():
+                    origin_module = getattr(model, special_node.target)
+                    setattr(module_dict[special_node.target], node.target,
+                            getattr(origin_module, node.target))
+
+    return module_dict
+
+
+def build_graphmodule(model: nn.Module, 
+                      fx_graph: torch.fx.Graph, 
+                      name: str = 'GraphModule'):
+    modules = dict(model.named_modules())
+    module_dict = _prepare_module_dict(model, fx_graph)
+    modules.update(module_dict)
+    return GraphModule(modules, fx_graph, name)
 
 
 class CustomTracer(QuantizationTracer):

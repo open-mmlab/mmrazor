@@ -1,13 +1,15 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
 import os
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
 from mmengine.evaluator import Evaluator
 from mmengine.registry import MODELS
-from mmengine.runner import EpochBasedTrainLoop, TestLoop
+from mmengine.runner import EpochBasedTrainLoop, TestLoop, ValLoop, autocast
+from torch.ao.quantization import disable_observer
+from torch.nn.intrinsic.qat import freeze_bn_stats
 from torch.utils.data import DataLoader
 
 from mmrazor.models.task_modules import (ModuleInputsRecorder,
@@ -28,12 +30,13 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
         dataloader (Dataloader or dict): An iterator to generate one batch of
             dataset each iteration.
         max_epochs (int): Total training epochs.
-        calibrate_dataloader (Dataloader or dict, optional): A dataloader
-            object or a dict to build a dataloader for calibration. Defaults
-            to None.
         val_begin (int): The epoch that begins validating.
             Defaults to 1.
         val_interval (int): Validation interval. Defaults to 1.
+        disable_observer_begin (int): The number of total epochs to update
+            observers.
+        freeze_bn_begin (int): The number of total epochs to update batch norm
+            stats.
         dynamic_intervals (List[Tuple[int, int]], optional): The
             first element in the tuple is a milestone and the second
             element is a interval. The interval is used after the
@@ -45,66 +48,294 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
             runner,
             dataloader: Union[DataLoader, Dict],
             max_epochs: int,
-            calibrate_dataloader: Union[DataLoader, Dict] = None,
             val_begin: int = 1,
             val_interval: int = 1,
+            disable_observer_begin: int = 3,
+            freeze_bn_begin: int = 3,
             dynamic_intervals: Optional[List[Tuple[int, int]]] = None) -> None:
         super().__init__(runner, dataloader, max_epochs, val_begin,
                          val_interval, dynamic_intervals)
-        if isinstance(calibrate_dataloader, dict):
-            # Determine whether or not different ranks use different seed.
-            diff_rank_seed = runner._randomness_cfg.get(
-                'diff_rank_seed', False)
-            self.calibrate_dataloader = runner.build_dataloader(
-                calibrate_dataloader,
-                seed=runner.seed,
-                diff_rank_seed=diff_rank_seed)
-        else:
-            self.calibrate_dataloader = calibrate_dataloader
 
-        self.is_calibrate = True if calibrate_dataloader is not None else False
+        self.disable_observer_begin = disable_observer_begin
+        self.freeze_bn_begin = freeze_bn_begin
 
-        if self.runner.distributed:
-            self.model = runner.model.module
-        else:
-            self.model = runner.model
-
-    def calibrate(self, calibrate_dataloader) -> None:
-        self.model.eval()
-        with torch.no_grad():
-            for batch_data in calibrate_dataloader:
-                self.model(batch_data)
-
-    def run(self) -> None:
-        """Launch training."""
-        self.runner.call_hook('before_train')
-
-        self.model.prepare()
-
-        if self.is_calibrate:
-            self.model.state = (1, 0)
-            self.calibrate(self.calibrate_dataloader)
-
-        self.model.state = (1, 1)
+        # compute metrics
+        metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+        qat_metrics = dict()
+        for key, value in metrics.items():
+            qat_key = 'qat.' + key
+            ori_key = 'original.' + key
+            qat_metrics[qat_key] = value
+            self.runner.message_hub.log_scalars.pop(f'val/{ori_key}', None)
 
         while self._epoch < self._max_epochs:
+            # state: observer_enabled, fakequant_enabled
+            self.runner.model.state = (True, True)
             self.run_epoch()
 
             self._decide_current_val_interval()
             if (self.runner.val_loop is not None
                     and self._epoch >= self.val_begin
                     and self._epoch % self.val_interval == 0):
+                # observer disabled during evaluation
+                self.runner.model.state = (False, True)
+                self.runner.model.sync_param()
                 self.runner.val_loop.run()
 
-        self.model.convert()
-
-        # self.runner.val_loop.run()
-
         self.runner.call_hook('after_train')
+
+    def run_epoch(self) -> None:
+        """Iterate one epoch."""
+        self.runner.call_hook('before_train_epoch')
+        self.runner.model.train()
+
+        # TODO freeze bn
+        if self._epoch >= self.disable_observer_begin:
+            self.runner.model.apply(disable_observer)
+
+        if self._epoch >= self.freeze_bn_begin:
+            self.runner.model.apply(freeze_bn_stats)
+
+        for idx, data_batch in enumerate(self.dataloader):
+            self.run_iter(idx, data_batch)
+
+        self.runner.call_hook('after_train_epoch')
+        self._epoch += 1
+
+
+@LOOPS.register_module()
+class QATValLoop(ValLoop):
+    """`ValLoop` for `QuantizationAwareTraining`
+
+    Args:
+        runner (Runner): A reference of runner
+        dataloader (Dataloader or dict): An iterator to generate one batch of
+            dataset each iteration.
+        evaluator (Evaluator or dict or list): Used for computing metrics.
+        fp16 (bool): Whether to enable fp16 validation. Defaults to
+            False.
+    """
+
+    def __init__(self,
+                 runner,
+                 dataloader: Union[DataLoader, Dict],
+                 evaluator: Union[Evaluator, Dict, List],
+                 fp16: bool = False) -> None:
+        super().__init__(runner, dataloader, evaluator, fp16)
+        if self.runner.distributed:
+            assert hasattr(self.runner.model.module, 'architecture')
+            # TODO: remove hard code after mmcls add data_preprocessor
+            data_preprocessor = self.runner.model.module.data_preprocessor
+            self.architecture = self.runner.model.module.architecture
+            self.architecture.data_preprocessor = data_preprocessor
+
+        else:
+            assert hasattr(self.runner.model, 'architecture')
+            # TODO: remove hard code after mmcls add data_preprocessor
+            data_preprocessor = self.runner.model.data_preprocessor
+            self.architecture = self.runner.model.architecture
+            self.architecture.data_preprocessor = data_preprocessor
+
+    def run(self) -> dict:
+        """Launch validation."""
+        self.runner.call_hook('before_val')
+        self.runner.call_hook('before_val_epoch')
+        self.runner.model.eval()
+        for idx, data_batch in enumerate(self.dataloader):
+            self.run_iter(idx, data_batch, self.runner.model)
+
+        # compute metrics
+        metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+        qat_metrics = dict()
+        for key, value in metrics.items():
+            qat_key = 'qat.' + key
+            ori_key = 'original.' + key
+            qat_metrics[qat_key] = value
+            self.runner.message_hub.log_scalars.pop(f'val/{ori_key}', None)
+
+        self.runner.call_hook('after_val_epoch', metrics=qat_metrics)
+
+        self.runner.call_hook('before_val_epoch')
+        self.runner.model.eval()
+        for idx, data_batch in enumerate(self.dataloader):
+            self.run_iter(idx, data_batch, self.architecture)
+
+        # compute metrics
+        metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+        qat_metrics = dict()
+        for key, value in metrics.items():
+            qat_key = 'qat.' + key
+            ori_key = 'original.' + key
+            qat_metrics[ori_key] = value
+            self.runner.message_hub.log_scalars.pop(f'val/{qat_key}', None)
+
+        self.runner.call_hook('after_val_epoch', metrics=qat_metrics)
+
+        self.runner.call_hook('after_val')
+        return qat_metrics
+
+    @torch.no_grad()
+    def run_iter(self, idx, data_batch: Sequence[dict], model):
+        """Iterate one mini-batch.
+
+        Args:
+            data_batch (Sequence[dict]): Batch of data
+                from dataloader.
+        """
+        self.runner.call_hook(
+            'before_val_iter', batch_idx=idx, data_batch=data_batch)
+        # outputs should be sequence of BaseDataElement
+        with autocast(enabled=self.fp16):
+            outputs = model.val_step(data_batch)
+        self.evaluator.process(data_samples=outputs, data_batch=data_batch)
+        self.runner.call_hook(
+            'after_val_iter',
+            batch_idx=idx,
+            data_batch=data_batch,
+            outputs=outputs)
 
 
 @LOOPS.register_module()
 class PTQLoop(TestLoop):
+    """`TestLoop` for Post Training Quantization.
+
+    Args:
+        runner (Runner): A reference of runner
+        dataloader (Dataloader or dict): An iterator to generate one batch of
+            dataset each iteration.
+        evaluator (Evaluator or dict or list): Used for computing metrics.
+        fp16 (bool, optional): Enable FP16 training mode. Defaults to False.
+    """
+
+    def __init__(self,
+                 runner,
+                 dataloader: Union[DataLoader, Dict],
+                 evaluator: Union[Evaluator, Dict, List],
+                 fp16: bool = False):
+        super().__init__(runner, dataloader, evaluator, fp16)
+
+    def run(self) -> dict:
+        """Launch test."""
+        self.runner.call_hook('before_test')
+        self.runner.call_hook('before_test_epoch')
+        self.runner.model.eval()
+        self.runner.model.state = (True, False)
+
+        for idx, data_batch in enumerate(self.dataloader):
+            self.run_iter(idx, data_batch)
+
+        # compute metrics
+        metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+
+        self.runner.call_hook('after_test_epoch', metrics=metrics)
+        self.runner.call_hook('after_test')
+
+        # todo: hard code to save checkpoint on disk
+        self.runner.save_checkpoint(
+            self.runner.work_dir,
+            'checkpoint_after_ptq.pth',
+            file_client_args=None,
+            save_optimizer=False,
+            save_param_scheduler=False)
+
+        return metrics
+
+    @torch.no_grad()
+    def run_iter(self, idx, data_batch: Sequence[dict]) -> None:
+        """Iterate one mini-batch.
+
+        Args:
+            data_batch (Sequence[dict]): Batch of data from dataloader.
+        """
+        self.runner.call_hook(
+            'before_test_iter', batch_idx=idx, data_batch=data_batch)
+        # predictions should be sequence of BaseDataElement
+
+        outputs = self.runner.model.calibrate_step(data_batch)
+
+        self.runner.call_hook(
+            'after_test_iter',
+            batch_idx=idx,
+            data_batch=data_batch,
+            outputs=outputs)
+
+
+# TODO refactor to supoort DDP
+@LOOPS.register_module()
+class AdaRoundLoop(TestLoop):
+    """`TestLoop` for Post Training Quantization.
+
+    Args:
+        runner (Runner): A reference of runner
+        dataloader (Dataloader or dict): An iterator to generate one batch of
+            dataset each iteration.
+        evaluator (Evaluator or dict or list): Used for computing metrics.
+        calibrate_dataloader (Dataloader or dict, optional): A dataloader
+            object or a dict to build a dataloader for calibration. Defaults
+            to None.
+        batch_num (Optional[int], optional): Total calibration batches.
+            Defaults to None.
+        reconstruction_cfg (Optional[Dict], optional): Model reconstruction
+            configuration. Defaults to None.
+        fp16 (bool, optional): Enable FP16 training mode. Defaults to False.
+    """
+
+    def __init__(self,
+                 runner,
+                 dataloader: Union[DataLoader, Dict],
+                 evaluator: Union[Evaluator, Dict, List],
+                 fp16: bool = False):
+        super().__init__(runner, dataloader, evaluator, fp16)
+
+    def run(self) -> None:
+        """Launch test."""
+        self.runner.call_hook('before_test')
+        self.runner.call_hook('before_test_epoch')
+        self.runner.model.eval()
+        self.runner.model.state = (1, 0)
+
+        for idx, data_batch in enumerate(self.dataloader):
+            self.run_iter(idx, data_batch)
+
+        # compute metrics
+        metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+
+        self.runner.call_hook('after_test_epoch', metrics=metrics)
+        self.runner.call_hook('after_test')
+
+        # todo: hard code to save checkpoint on disk
+        self.runner.save_checkpoint(
+            self.runner.work_dir,
+            'checkpoint_after_ptq.pth',
+            file_client_args=None,
+            save_optimizer=False,
+            save_param_scheduler=False)
+
+        return metrics
+
+    @torch.no_grad()
+    def run_iter(self, idx, data_batch: Sequence[dict]) -> None:
+        """Iterate one mini-batch.
+
+        Args:
+            data_batch (Sequence[dict]): Batch of data from dataloader.
+        """
+        self.runner.call_hook(
+            'before_test_iter', batch_idx=idx, data_batch=data_batch)
+        # predictions should be sequence of BaseDataElement
+
+        outputs = self.runner.model.calibrate_step(data_batch)
+
+        self.runner.call_hook(
+            'after_test_iter',
+            batch_idx=idx,
+            data_batch=data_batch,
+            outputs=outputs)
+
+
+# TODO refactor to supoort DDP
+@LOOPS.register_module()
+class AdaRoundLoop(TestLoop):
     """`TestLoop` for Post Training Quantization.
 
     Args:
