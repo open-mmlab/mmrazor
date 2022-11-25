@@ -28,7 +28,7 @@ logger = MMLogger.get_current_instance()
 
 
 @MODELS.register_module()
-class SearchableMobileNetV3(BaseBackbone):
+class AttentiveMobileNetV3(BaseBackbone):
     """Searchable MobileNetV3 backbone.
 
     Args:
