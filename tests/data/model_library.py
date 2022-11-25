@@ -488,6 +488,8 @@ class MMDetModelLibrary(MMModelLibrary):
         'dynamic',
         'yolox',
         'albu',
+        'misc',
+        'crowddet',
     ]
     base_config_path = '/'
     repo = 'mmdet'
