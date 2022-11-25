@@ -22,6 +22,6 @@ __all__ = [
     'ChannelWiseDivergence', 'KLDivergence', 'AngleWiseRKD', 'DistanceWiseRKD',
     'WSLD', 'L2Loss', 'ABLoss', 'DKDLoss', 'KDSoftCELoss', 'ActivationLoss',
     'OnehotLikeLoss', 'InformationEntropyLoss', 'FTLoss', 'ATLoss', 'OFDLoss',
-    'L1Loss', 'FBKDLoss', 'CRDLoss', 'AdaRoundLoss', 'CrossEntropyLoss',
-    'PKDLoss'
+    'L1Loss', 'FBKDLoss', 'CRDLoss', 'AdaRoundLoss', 'PKDLoss',
+    'CrossEntropyLoss'
 ]

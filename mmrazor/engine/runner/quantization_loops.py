@@ -59,9 +59,14 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
         self.disable_observer_begin = disable_observer_begin
         self.freeze_bn_begin = freeze_bn_begin
 
-    def run(self) -> None:
-        """Launch training."""
-        self.runner.call_hook('before_train')
+        # compute metrics
+        metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+        qat_metrics = dict()
+        for key, value in metrics.items():
+            qat_key = 'qat.' + key
+            ori_key = 'original.' + key
+            qat_metrics[qat_key] = value
+            self.runner.message_hub.log_scalars.pop(f'val/{ori_key}', None)
 
         while self._epoch < self._max_epochs:
             # state: observer_enabled, fakequant_enabled
@@ -106,17 +111,9 @@ class QATValLoop(ValLoop):
         runner (Runner): A reference of runner
         dataloader (Dataloader or dict): An iterator to generate one batch of
             dataset each iteration.
-        max_epochs (int): Total training epochs.
-        calibrate_dataloader (Dataloader or dict, optional): A dataloader
-            object or a dict to build a dataloader for calibration. Defaults
-            to None.
-        val_begin (int): The epoch that begins validating.
-            Defaults to 1.
-        val_interval (int): Validation interval. Defaults to 1.
-        dynamic_intervals (List[Tuple[int, int]], optional): The
-            first element in the tuple is a milestone and the second
-            element is a interval. The interval is used after the
-            corresponding milestone. Defaults to None.
+        evaluator (Evaluator or dict or list): Used for computing metrics.
+        fp16 (bool): Whether to enable fp16 validation. Defaults to
+            False.
     """
 
     def __init__(self,
@@ -200,6 +197,72 @@ class QATValLoop(ValLoop):
 
 @LOOPS.register_module()
 class PTQLoop(TestLoop):
+    """`TestLoop` for Post Training Quantization.
+
+    Args:
+        runner (Runner): A reference of runner
+        dataloader (Dataloader or dict): An iterator to generate one batch of
+            dataset each iteration.
+        evaluator (Evaluator or dict or list): Used for computing metrics.
+        fp16 (bool, optional): Enable FP16 training mode. Defaults to False.
+    """
+
+    def __init__(self,
+                 runner,
+                 dataloader: Union[DataLoader, Dict],
+                 evaluator: Union[Evaluator, Dict, List],
+                 fp16: bool = False):
+        super().__init__(runner, dataloader, evaluator, fp16)
+
+    def run(self) -> dict:
+        """Launch test."""
+        self.runner.call_hook('before_test')
+        self.runner.call_hook('before_test_epoch')
+        self.runner.model.eval()
+        self.runner.model.state = (True, False)
+
+        for idx, data_batch in enumerate(self.dataloader):
+            self.run_iter(idx, data_batch)
+
+        # compute metrics
+        metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+
+        self.runner.call_hook('after_test_epoch', metrics=metrics)
+        self.runner.call_hook('after_test')
+
+        # todo: hard code to save checkpoint on disk
+        self.runner.save_checkpoint(
+            self.runner.work_dir,
+            'checkpoint_after_ptq.pth',
+            file_client_args=None,
+            save_optimizer=False,
+            save_param_scheduler=False)
+
+        return metrics
+
+    @torch.no_grad()
+    def run_iter(self, idx, data_batch: Sequence[dict]) -> None:
+        """Iterate one mini-batch.
+
+        Args:
+            data_batch (Sequence[dict]): Batch of data from dataloader.
+        """
+        self.runner.call_hook(
+            'before_test_iter', batch_idx=idx, data_batch=data_batch)
+        # predictions should be sequence of BaseDataElement
+
+        outputs = self.runner.model.calibrate_step(data_batch)
+
+        self.runner.call_hook(
+            'after_test_iter',
+            batch_idx=idx,
+            data_batch=data_batch,
+            outputs=outputs)
+
+
+# TODO refactor to supoort DDP
+@LOOPS.register_module()
+class AdaRoundLoop(TestLoop):
     """`TestLoop` for Post Training Quantization.
 
     Args:
