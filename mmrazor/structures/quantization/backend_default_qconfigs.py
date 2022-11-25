@@ -19,8 +19,8 @@ Default = dict(
         is_pot_scale=False,
         bit=8,
         symmetric_range=True),
-    w_fake_quant=dict(type='BaseFakeQuantize'),
-    a_fake_quant=dict(type='BaseFakeQuantize'),
+    w_fake_quant=dict(type='FakeQuantize'),
+    a_fake_quant=dict(type='FakeQuantize'),
     w_observer=dict(type='MinMaxObserver'),
     a_observer=dict(type='MinMaxObserver'))
 
@@ -43,4 +43,4 @@ TensorRT = dict(
     w_observer=dict(type='MinMaxObserver'),
     a_observer=dict(type='EMAMinMaxObserver'))
 
-DefalutQconfigs = dict(default=Default, tensorrt=TensorRT)
+DefaultQconfigs = dict(default=Default, tensorrt=TensorRT)
