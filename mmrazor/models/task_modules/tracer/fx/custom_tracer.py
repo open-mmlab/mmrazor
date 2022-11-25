@@ -155,11 +155,13 @@ def _prepare_module_dict(model: nn.Module, fx_graph: torch.fx.Graph):
     return module_dict
 
 
-def prepare_graph_module(model: nn.Module, fx_graph: torch.fx.Graph):
+def build_graphmodule(model: nn.Module, 
+                      fx_graph: torch.fx.Graph, 
+                      name: str = 'GraphModule'):
     modules = dict(model.named_modules())
     module_dict = _prepare_module_dict(model, fx_graph)
     modules.update(module_dict)
-    return GraphModule(modules, fx_graph)
+    return GraphModule(modules, fx_graph, name)
 
 
 class CustomTracer(QuantizationTracer):

@@ -9,7 +9,7 @@ from mmengine.structures import BaseDataElement
 from torch import nn
 from torch.ao.quantization import FakeQuantizeBase
 
-from mmrazor.models.task_modules import prepare_graph_module
+from mmrazor.models.task_modules import build_graphmodule
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
 from ..base import BaseAlgorithm
 
@@ -96,7 +96,7 @@ class GeneralQuant(BaseAlgorithm):
             concrete_args = {'mode': mode}
             traced_graph = tracer.trace(model, concrete_args=concrete_args)
 
-            qmodel = prepare_graph_module(model, traced_graph)
+            qmodel = build_graphmodule(model, traced_graph)
             qmodels[mode] = self.quantizer.prepare(model, qmodel)
 
         return qmodels
