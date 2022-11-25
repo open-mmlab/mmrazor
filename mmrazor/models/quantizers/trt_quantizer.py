@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from mmrazor.registry import MODELS
-from mmrazor.structures.quantization import DefalutQconfigs
+from mmrazor.structures.quantization import DefaultQconfigs
 from .base import CustomQuantizer
 
 
@@ -9,7 +9,7 @@ class TensorRTQuantizer(CustomQuantizer):
     """Quantizer for TensorRT backend."""
 
     def __init__(self,
-                 qconfig=DefalutQconfigs['tensorrt'],
+                 qconfig=DefaultQconfigs['tensorrt'],
                  is_qat=True,
                  skipped_methods=None,
                  prepare_custom_config_dict=None,

@@ -45,8 +45,8 @@ class MinMaxObserver(BaseObserver):
             min_val_cur, max_val_cur = torch._aminmax(y, 1)
         min_val = torch.min(self.min_val, min_val_cur)
         max_val = torch.max(self.max_val, max_val_cur)
-        self.min_val.copy_(min_val)
-        self.max_val.copy_(max_val)
+        self.min_val = min_val
+        self.max_val = max_val
 
         return x
 

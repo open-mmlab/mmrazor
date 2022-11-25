@@ -1,12 +1,8 @@
-_base_ = ['mmcls::resnet/resnet18_8xb32_in1k.py']
+_base_ = ['mmcls::resnet/resnet18_8xb16_cifar10.py']
 
 test_cfg = dict(
-    _delete_=True,
     type='mmrazor.PTQLoop',
-    dataloader=_base_.test_dataloader,
-    evaluator=_base_.test_evaluator,
-    calibrate_dataloader=_base_.train_dataloader,
-    batch_num=32,
+
     # reconstruction_cfg=dict(
     #     pattern='layer',
     #     loss=dict(

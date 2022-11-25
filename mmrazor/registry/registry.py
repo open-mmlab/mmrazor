@@ -30,6 +30,7 @@ from mmengine.registry import VISUALIZERS as MMENGINE_VISUALIZERS
 from mmengine.registry import \
     WEIGHT_INITIALIZERS as MMENGINE_WEIGHT_INITIALIZERS
 from mmengine.registry import Registry, build_from_cfg
+from mmengine.runner import load_checkpoint
 
 
 def build_razor_model_from_cfg(
