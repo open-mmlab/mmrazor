@@ -1,20 +1,68 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+# this file includes models for tesing.
+import math
 from torch.nn import Module
 from torch import Tensor
 import torch.nn as nn
+import torch.nn.functional as F
 import torch
 from mmrazor.models.architectures.dynamic_ops import DynamicBatchNorm2d, DynamicConv2d, DynamicLinear, DynamicChannelMixin, DynamicPatchEmbed, DynamicSequential
 from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
 from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables import BaseMutable
-from mmrazor.models.mutables import OneShotMutableChannelUnit, SquentialMutableChannel, OneShotMutableChannel
-from mmrazor.registry import MODELS
-from mmengine.model import BaseModel
+from mmrazor.models.mutables import OneShotMutableChannelUnit, OneShotMutableChannel
 # this file includes models for tesing.
 
 from mmrazor.models.mutables import OneShotMutableValue
 from mmrazor.models.architectures.backbones.searchable_autoformer import TransformerEncoderLayer
+
+
+class subnet(Module):
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def forward(self, x):
+        add = torch.arange(x.shape[-1]).unsqueeze(0)
+        # add = torch.arange(1000).unsqueeze(0)
+        end = torch.add(x, add)
+        return end
+
+
+class UnTracableModel(Module):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Conv2d(3, 8, 3, 1, 1), nn.BatchNorm2d(8), nn.ReLU(),
+            nn.Conv2d(8, 16, 3, 1, 1), nn.BatchNorm2d(16),
+            nn.AdaptiveAvgPool2d(1))
+        self.linear = nn.Linear(16, 1000)
+        self.end = subnet()
+
+    def forward(self, x):
+        x1 = self.net(x)
+        x1 = x1.reshape([x1.shape[0], -1])
+        logit = self.linear(x1)
+        return self.end(logit)
+
+
+class ConvAttnModel(Module):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.conv = nn.Conv2d(3, 8, 3, 1, 1)
+        self.pool = nn.AdaptiveAvgPool2d(1)
+        self.conv2 = nn.Conv2d(8, 16, 3, 1, 1)
+        self.head = LinearHead(16, 1000)
+
+    def forward(self, x):
+        x1 = self.conv(x)
+        attn = F.sigmoid(self.pool(x1))
+        x_attn = x1 * attn
+        x_last = self.conv2(x_attn)
+        return self.head(x_last)
 
 
 class LinearHead(Module):
@@ -188,7 +236,7 @@ class ResBlock(Module):
         return output
 
 
-class LineModel(BaseModel):
+class SingleLineModel(nn.Module):
     """
         x
         |net0,net1
@@ -474,6 +522,48 @@ class DwConvModel(nn.Module):
         return self.head(self.net(x))
 
 
+class SelfAttention(nn.Module):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.stem = nn.Conv2d(3, 32, 4, 4, 4)
+
+        self.num_head = 4
+        self.qkv = nn.Linear(32, 32 * 3)
+        self.proj = nn.Linear(32, 32)
+
+        self.head = LinearHead(32, 1000)
+
+    def forward(self, x: torch.Tensor):
+        x = self.stem(x)
+        h, w = x.shape[-2:]
+        x = self._to_token(x)
+        x = x + self._forward_attention(x)
+        x = self._to_img(x, h, w)
+        return self.head(x)
+
+    def _to_img(self, x, h, w):
+        x = x.reshape([x.shape[0], h, w, x.shape[2]])
+        x = x.permute(0, 3, 1, 2)
+        return x
+
+    def _to_token(self, x):
+        x = x.flatten(2).transpose(-1, -2)
+        return x
+
+    def _forward_attention(self, x: torch.Tensor):
+        qkv = self.qkv(x)
+        qkv = qkv.reshape([
+            x.shape[0], x.shape[1], 3, self.num_head,
+            x.shape[2] // self.num_head
+        ]).permute(2, 0, 3, 1, 4).contiguous()
+        q, k, v = qkv
+        attn = q @ k.transpose(-1, -2) / math.sqrt(32 // self.num_head)
+        y = attn @ v  # B H N h
+        y = y.permute(0, 2, 1, 3).flatten(-2)
+        return self.proj(y)
+
+
 # models with dynamicop
 
 
@@ -532,8 +622,6 @@ class SampleExpandDerivedMutable(BaseMutable):
     @current_choice.setter
     def current_choice(self, choice):
         super().current_choice(choice)
-
-    
 
 
 class DynamicLinearModel(nn.Module):
@@ -604,15 +692,11 @@ class DynamicAttention(nn.Module):
         self.base_embed_dims = OneShotMutableChannel(
             num_channels=64, candidate_choices=[64])
         self.mutable_num_heads = [
-            OneShotMutableValue(
-                value_list=[8, 10],
-                default_value=10)
+            OneShotMutableValue(value_list=[8, 10], default_value=10)
             for _ in range(2)
         ]
         self.mutable_mlp_ratios = [
-            OneShotMutableValue(
-                value_list=[3.0, 3.5, 4.0],
-                default_value=4.0)
+            OneShotMutableValue(value_list=[3.0, 3.5, 4.0], default_value=4.0)
             for _ in range(2)
         ]
         self.mutable_q_embed_dims = [
@@ -626,8 +710,7 @@ class DynamicAttention(nn.Module):
 
         # cls token and pos embed
         self.pos_embed = nn.Parameter(
-            torch.zeros(1, 197,
-                        self.mutable_embed_dims.num_channels))
+            torch.zeros(1, 197, self.mutable_embed_dims.num_channels))
         self.cls_token = nn.Parameter(
             torch.zeros(1, 1, self.mutable_embed_dims.num_channels))
 
@@ -674,7 +757,7 @@ class DynamicAttention(nn.Module):
 
 
 default_models = [
-    LineModel,
+    SingleLineModel,
     ResBlock,
     AddCatModel,
     ConcatModel,

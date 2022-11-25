@@ -7,9 +7,10 @@ from .single_stage_detector_loss_calculator import \
 from .top_down_pose_estimator_loss_calculator import \
     TopdownPoseEstimatorPseudoLoss
 from .two_stage_detector_loss_calculator import TwoStageDetectorPseudoLoss
+from .sum_loss_calculator import SumPseudoLoss
 
 __all__ = [
     'ImageClassifierPseudoLoss', 'SingleStageDetectorPseudoLoss',
     'TwoStageDetectorPseudoLoss', 'TopdownPoseEstimatorPseudoLoss',
-    'CascadeEncoderDecoderPseudoLoss'
+    'CascadeEncoderDecoderPseudoLoss', 'SumPseudoLoss'
 ]

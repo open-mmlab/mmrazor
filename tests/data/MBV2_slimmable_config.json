@@ -373,20 +373,5 @@
             "choice_mode": "number"
         },
         "choice": 1920
-    },
-    "head.fc_(0, 1000)_1000": {
-        "init_args": {
-            "num_channels": 1000,
-            "divisor": 1,
-            "min_value": 1,
-            "min_ratio": 0.9,
-            "candidate_choices": [
-                1000,
-                1000,
-                1000
-            ],
-            "choice_mode": "number"
-        },
-        "choice": 1000
     }
 }

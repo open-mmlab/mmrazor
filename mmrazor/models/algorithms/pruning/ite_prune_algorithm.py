@@ -126,6 +126,13 @@ class ItePruneAlgorithm(BaseAlgorithm):
                  linear_schedule=True) -> None:
 
         super().__init__(architecture, data_preprocessor, init_cfg)
+        import torch.distributed as dist
+        if dist.is_initialized():
+            self.architecture = nn.SyncBatchNorm.convert_sync_batchnorm(
+                self.architecture)
+        else:
+            from mmengine.model import revert_sync_batchnorm
+            self.architecture = revert_sync_batchnorm(self.architecture)
 
         # decided by EpochBasedRunner or IterBasedRunner
         self.target_pruning_ratio = target_pruning_ratio

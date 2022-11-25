@@ -5,19 +5,14 @@ from typing import Any, Dict, Generic, List, Optional, Tuple, Type, Union
 from mmengine import fileio
 from torch.nn import Module, ModuleList
 
-from mmrazor.models.architectures.dynamic_ops import DynamicChannelMixin
 from mmrazor.models.mutables import (ChannelUnitType, MutableChannelUnit,
                                      SequentialMutableChannelUnit)
 from mmrazor.models.mutables.mutable_channel.units.channel_unit import \
     ChannelUnit
-from mmrazor.registry import MODELS
-from mmrazor.structures.graph import ModuleGraph
+from mmrazor.models.task_modules.tracer.prune_tracer import PruneTracer
+from mmrazor.registry import MODELS, TASK_UTILS
 from ..base_mutator import BaseMutator
 from ..group_mixin import GroupMixin
-
-
-def is_dynamic_op_for_fx_tracer(module, name):
-    return isinstance(module, DynamicChannelMixin)
 
 
 @MODELS.register_module()
@@ -73,18 +68,16 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
                      dict,
                      Type[MutableChannelUnit]] = SequentialMutableChannelUnit,
                  parse_cfg: Dict = dict(
-                     type='BackwardTracer',
-                     loss_calculator=dict(type='ImageClassifierPseudoLoss')),
-                 custom_groups: Optional[List[List[str]]] = None,
+                     type='PruneTracer',
+                     demo_input=(1, 3, 224, 224),
+                     tracer_type='BackwardTracer'),
                  init_cfg: Optional[Dict] = None) -> None:
 
         super().__init__(init_cfg)
 
         # tracer
         if isinstance(parse_cfg, dict):
-            assert parse_cfg['type'] in [
-                'RazorFxTracer', 'BackwardTracer', 'Config', 'Predefined'
-            ]
+            assert parse_cfg['type'] in ['PruneTracer', 'Config', 'Predefined']
         self.parse_cfg = parse_cfg
 
         # units
@@ -108,7 +101,6 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
         1. parse the model and get MutableChannelUnits.
         2. call unit.prepare_for_pruning for each unit.
         """
-
         self._name2module = dict(supernet.named_modules())
 
         if 'Tracer' in self.parse_cfg['type']:
@@ -319,20 +311,18 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
 
     def _prepare_from_tracer(self, model: Module, parse_cfg: Dict):
         """Initialize units using a tracer."""
-        if 'num_input_channel' in parse_cfg:
-            num_input_channel = parse_cfg.pop('num_input_channel')
+
+        if isinstance(parse_cfg, Dict):
+            tracer: PruneTracer = TASK_UTILS.build(parse_cfg)
         else:
-            num_input_channel = 3
-        if self.parse_cfg['type'] == 'BackwardTracer':
-            graph = ModuleGraph.init_from_backward_tracer(model, parse_cfg)
-        elif self.parse_cfg['type'] == 'RazorFxTracer':
-            graph = ModuleGraph.init_from_fx_tracer(model, fx_tracer=parse_cfg)
-        else:
-            raise NotImplementedError()
-        self._graph = graph
+            tracer = parse_cfg
+        unit_configs = tracer.trace(model)
+
         # get ChannelUnits
-        units = ChannelUnit.init_from_graph(
-            graph, num_input_channel=num_input_channel)
+        units = [
+            ChannelUnit.init_from_cfg(model, cfg)
+            for cfg in unit_configs.values()
+        ]
         # convert to MutableChannelUnits
         units = self._convert_channel_unit_to_mutable(units)
         return units
