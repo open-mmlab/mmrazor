@@ -18,7 +18,7 @@ from mmrazor.models.mutables import OneShotMutableValue
 from mmrazor.models.architectures.backbones.searchable_autoformer import TransformerEncoderLayer
 
 
-class subnet(Module):
+class arrange_subnet(Module):
 
     def __init__(self) -> None:
         super().__init__()
@@ -39,7 +39,7 @@ class UnTracableModel(Module):
             nn.Conv2d(8, 16, 3, 1, 1), nn.BatchNorm2d(16),
             nn.AdaptiveAvgPool2d(1))
         self.linear = nn.Linear(16, 1000)
-        self.end = subnet()
+        self.end = arrange_subnet()
 
     def forward(self, x):
         x1 = self.net(x)

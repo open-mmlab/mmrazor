@@ -126,6 +126,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
                  linear_schedule=True) -> None:
 
         super().__init__(architecture, data_preprocessor, init_cfg)
+        # using sync bn or normal bn
         import torch.distributed as dist
         if dist.is_initialized():
             self.architecture = nn.SyncBatchNorm.convert_sync_batchnorm(

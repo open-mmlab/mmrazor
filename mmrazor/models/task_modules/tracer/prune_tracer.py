@@ -22,10 +22,8 @@ from .backward_tracer import BackwardTracer
 from .fx_tracer import CustomFxTracer
 from .loss_calculator.sum_loss_calculator import SumPseudoLoss
 from .razor_tracer import FxBaseNode, RazorFxTracer
-
-# where to config prune tracer
 """
-- How to config PruneTracer using hard code
+- How to config PruneTracer by hard code
   - fxtracer
     - demo_inputs
         ./mmrazor/models/task_modules/demo_inputs/default_demo_inputs.py
@@ -44,7 +42,17 @@ from .razor_tracer import FxBaseNode, RazorFxTracer
 
 @TASK_UTILS.register_module()
 class PruneTracer:
+    """The tracer for pruning. It return the configs of MutableChannelUnits as
+    result.
 
+    Args:
+        demo_input (Union[List, Dict, Tuple, BaseDemoInput], optional):
+            The demo input for the model. demo_input can be one of
+            input_shape(list), config of a demo input generator, a demoinput
+            generator. Defaults to (1, 3, 224, 224).
+        tracer_type (str, optional): str indicates which basic tracer to use.
+            Defaults to 'BackwardTracer'.
+    """
     default_leaf_modules = (
         # dynamic op
         DynamicChannelMixin,
@@ -84,6 +92,7 @@ class PruneTracer:
             raise NotImplementedError()
 
     def trace(self, model):
+        """Tracer the model, and return configs of channel dependency."""
         model = copy.deepcopy(model)
         model = revert_sync_batchnorm(model)
         model.eval()
@@ -117,6 +126,7 @@ class PruneTracer:
         return self._find_mutable_units(model, unit_configs)
 
     def _fx_trace(self, model):
+        """Tracer the model using fx tracer."""
         args = self.demo_input.get_data(model)
         if isinstance(args, dict):
             args.pop('inputs')
@@ -126,6 +136,7 @@ class PruneTracer:
             return self.tracer.trace(model)
 
     def _find_mutable_units(self, model, units_config: Dict):
+        """Test the tracer result and filter unforwardable units."""
         model = copy.deepcopy(model)
         units: List[SequentialMutableChannelUnit] = [
             SequentialMutableChannelUnit.init_from_cfg(model, cfg)
