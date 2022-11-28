@@ -125,17 +125,15 @@ class AttentiveMobileNetV3(BaseBackbone):
         layers = []
         self.in_channels = max(self.first_out_channels_list)
 
-        self.first_conv = Sequential(
-            OrderedDict([('conv',
-                          BigNasConv2d(
-                              in_channels=3,
-                              out_channels=self.in_channels,
-                              kernel_size=3,
-                              stride=2,
-                              padding=1)),
-                         ('bn',
-                          DynamicBatchNorm2d(num_features=self.in_channels)),
-                         ('act', build_activation_layer(self.act_cfg))]))
+        self.first_conv = ConvModule(
+            in_channels=3,
+            out_channels=self.in_channels, # 24
+            kernel_size=3,
+            stride=2,
+            padding=1,
+            conv_cfg=self.conv_cfg,
+            norm_cfg=self.norm_cfg,
+            act_cfg=self.act_cfg)
 
         self.last_mutable = OneShotMutableChannel(
             num_channels=self.in_channels,
@@ -252,8 +250,10 @@ class AttentiveMobileNetV3(BaseBackbone):
                 value_list=expand_ratios, default_value=max(expand_ratios))
             mutable_out_channels = OneShotMutableChannel(
                 num_channels=max(out_channels), candidate_choices=out_channels)
-            mutable_se_channels = OneShotMutableChannel(
-                num_channels=max(se_channels), candidate_choices=se_channels)
+
+            se_ratios = [i / 4 for i in expand_ratios]
+            mutable_se_channels = OneShotMutableValue(
+                value_list=se_ratios, default_value=max(se_ratios))
 
             for k in range(max(self.num_blocks_list[i])):
                 mutate_mobilenet_layer(layer[k], self.last_mutable,
@@ -291,7 +291,6 @@ class AttentiveMobileNetV3(BaseBackbone):
         outs = []
         for i, layer in enumerate(self.layers):
             x = layer(x)
-
             if i in self.out_indices:
                 x = torch.squeeze(x, dim=-1)
                 x = torch.squeeze(x, dim=-1)

@@ -171,7 +171,6 @@ class MBBlock(BaseOP):
                 out = self.expand_conv(out)
 
             out = self.depthwise_conv(out)
-
             if self.with_se:
                 out = self.se(out)
 

@@ -1,5 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 
+from typing import Union
+
 import torch
 
 from mmrazor.registry import MODELS
@@ -39,7 +41,7 @@ class SimpleMutableChannel(BaseMutableChannel):
 
     # basic extension
 
-    def expand_mutable_channel(self, expand_ratio: int) -> DerivedMutable:
+    def expand_mutable_channel(self, expand_ratio: Union[int, float]) -> DerivedMutable:
         """Get a derived SimpleMutableChannel with expanded mask."""
 
         def _expand_mask():

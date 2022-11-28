@@ -57,6 +57,7 @@ class MutableChannelUnit(ChannelUnit):
                               mutable2units,
                               is_output=True):
             for index, mutable in container.mutable_channels.items():
+                range = mutable.current_choice
                 expand_ratio = 1
                 if isinstance(mutable, DerivedMutable):
                     source_mutables: Set = \
@@ -69,6 +70,7 @@ class MutableChannelUnit(ChannelUnit):
                         'only support one mutable channel '
                         'used in DerivedMutable')
                     mutable = source_channel_mutables[0]
+                    channel_range = mutable.current_choice
 
                     source_value_mutables = [
                         mutable for mutable in source_mutables
@@ -80,6 +82,10 @@ class MutableChannelUnit(ChannelUnit):
                     if source_value_mutables:
                         expand_ratio = int(
                             source_value_mutables[0].current_choice)
+
+                    if not range / channel_range == expand_ratio:
+                        x = range / channel_range / expand_ratio
+                        expand_ratio = expand_ratio * x
 
                 if mutable not in mutable2units:
                     mutable2units[mutable] = cls.init_from_mutable_channel(
@@ -267,6 +273,7 @@ class MutableChannelUnit(ChannelUnit):
                     start = channel.start
                     end = channel.end
                 elif channel.num_channels > self.num_channels:
+                    
                     if channel.num_channels % self.num_channels == 0:
                         mutable_channel_ = \
                             mutable_channel.expand_mutable_channel(
@@ -274,7 +281,12 @@ class MutableChannelUnit(ChannelUnit):
                         start = channel.start
                         end = channel.end
                     else:
-                        raise NotImplementedError()
+                        mutable_channel_ = \
+                            mutable_channel.expand_mutable_channel(
+                                channel.num_channels / self.num_channels)
+                        start = channel.start
+                        end = channel.end
+                        # raise NotImplementedError()
                 else:
                     raise NotImplementedError()
 
