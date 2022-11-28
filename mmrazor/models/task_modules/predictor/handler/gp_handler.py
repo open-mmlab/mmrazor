@@ -2,21 +2,19 @@
 import numpy as np
 
 try:
-    import pydacefit
     from pydacefit.dace import DACE
+    from pydacefit.fit import fit
 except ImportError:
-    pydacefit = None
-    DACE = object
+    from mmrazor.utils import get_placeholder
+    DACE = get_placeholder('pydacefit')
+    fit = get_placeholder('pydacefit')
 
 from mmrazor.registry import TASK_UTILS
 from .base_handler import BaseHandler
 
 
 def get_pydacefit_func():
-    if pydacefit is None:
-        raise RuntimeError('Please run "pip install pydacefit" '
-                           'to install pydacefit first.')
-
+    """Build a function map from pydacefit."""
     from pydacefit.corr import (corr_cubic, corr_exp, corr_expg, corr_gauss,
                                 corr_spherical, corr_spline)
     from pydacefit.dace import regr_linear, regr_quadratic
@@ -71,8 +69,7 @@ class DACE_with_smooth(DACE):
             self.boxmin()
             self.model = self.itpar['best']
         else:
-            from pydacefit.fit import fit as pydace_fit
-            self.model = pydace_fit(nX, nY, self.regr, self.kernel, self.theta)
+            self.model = fit(nX, nY, self.regr, self.kernel, self.theta)
 
         self.model = {
             **self.model, 'mX': mX,

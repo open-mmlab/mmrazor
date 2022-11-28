@@ -8,7 +8,8 @@ import torch.nn as nn
 try:
     from scipy.stats import norm
 except ImportError:
-    norm = None
+    from mmrazor.utils import get_placeholder
+    norm = get_placeholder('norm')
 
 from mmrazor.registry import MODELS
 from ..architectures.connectors import OFDTeacherConnector
@@ -69,9 +70,6 @@ class OFDDistiller(ConfigurableDistiller):
         for (s, m) in zip(std, mean):
             s = abs(s.item())
             m = m.item()
-            if norm is None:
-                raise ImportError('Please run "pip install scipy" '
-                                  'to install scipy first.')
             if norm.cdf(-m / s) > 0.001:
                 margin.append(-s * math.exp(-(m / s)**2 / 2) /
                               math.sqrt(2 * math.pi) / norm.cdf(-m / s) + m)

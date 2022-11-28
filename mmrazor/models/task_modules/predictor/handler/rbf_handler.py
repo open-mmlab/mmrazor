@@ -2,9 +2,10 @@
 import numpy as np
 
 try:
-    import pySOT
+    from pySOT.surrogate import RBFInterpolant
 except ImportError:
-    pySOT = None
+    from mmrazor.utils import get_placeholder
+    RBFInterpolant = get_placeholder('pySOT')
 
 from mmrazor.registry import TASK_UTILS
 from .base_handler import BaseHandler
@@ -21,9 +22,6 @@ class RBFHandler(BaseHandler):
     """
 
     def __init__(self, kernel: str = 'tps', tail: str = 'linear'):
-        if pySOT is None:
-            raise ImportError('Please run "pip install pySOT==0.2.3" '
-                              'to install pySOT first.')
         from pySOT.surrogate import (ConstantTail, CubicKernel, Kernel,
                                      LinearTail, Tail, TPSKernel)
 
@@ -50,7 +48,6 @@ class RBFHandler(BaseHandler):
                              f'{train_data.shape[0]}) should be larger than '
                              f'dim 1 of data (got {train_data.shape[1]}).')
 
-        from pySOT.surrogate import RBFInterpolant
         self.model = RBFInterpolant(
             dim=train_data.shape[1],
             kernel=self.kernel(),
