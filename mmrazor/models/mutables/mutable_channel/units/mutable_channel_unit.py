@@ -273,20 +273,16 @@ class MutableChannelUnit(ChannelUnit):
                     start = channel.start
                     end = channel.end
                 elif channel.num_channels > self.num_channels:
-                    
+
                     if channel.num_channels % self.num_channels == 0:
-                        mutable_channel_ = \
-                            mutable_channel.expand_mutable_channel(
-                                channel.num_channels // self.num_channels)
-                        start = channel.start
-                        end = channel.end
+                        ratio = channel.num_channels // self.num_channels
                     else:
-                        mutable_channel_ = \
-                            mutable_channel.expand_mutable_channel(
-                                channel.num_channels / self.num_channels)
-                        start = channel.start
-                        end = channel.end
-                        # raise NotImplementedError()
+                        ratio = channel.num_channels / self.num_channels
+
+                    mutable_channel_ = \
+                        mutable_channel.expand_mutable_channel(ratio)
+                    start = channel.start
+                    end = channel.end
                 else:
                     raise NotImplementedError()
 

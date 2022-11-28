@@ -169,12 +169,12 @@ class BigNAS(BaseAlgorithm):
     def set_max_subnet(self) -> None:
         """Set max subnet."""
         for mutator in self.mutators.values():
-            mutator.set_choices(mutator.max_choices)
+            mutator.set_choices(mutator.max_choice)
 
     def set_min_subnet(self) -> None:
         """Set min subnet."""
         for mutator in self.mutators.values():
-            mutator.set_choices(mutator.min_choices)
+            mutator.set_choices(mutator.min_choice)
 
     @property
     def search_groups(self) -> Dict:

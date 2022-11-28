@@ -6,13 +6,11 @@ import torch
 import torch.nn as nn
 from mmcls.models.backbones.base_backbone import BaseBackbone
 from mmcls.models.utils import make_divisible
-from mmcv.cnn import ConvModule, build_activation_layer
+from mmcv.cnn import ConvModule
 from mmengine.logging import MMLogger
 from mmengine.model import Sequential, constant_init
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.architectures.dynamic_ops import (BigNasConv2d,
-                                                      DynamicBatchNorm2d)
 from mmrazor.models.architectures.dynamic_ops.bricks import DynamicSequential
 from mmrazor.models.architectures.ops.mobilenet_series import MBBlock
 from mmrazor.models.architectures.utils.mutable_register import (
@@ -107,8 +105,6 @@ class AttentiveMobileNetV3(BaseBackbone):
         self.num_channels_list = [[
             make_divisible(c * widen_factor, 8) for c in channels
         ] for channels in self.num_channels_list]
-        self.num_se_channels_list = [[int(c / 4) for c in channel]
-                                     for channel in self.num_channels_list]
 
         self.first_out_channels_list = self.num_channels_list.pop(0)
         self.last_out_channels_list = self.num_channels_list.pop(-1)
@@ -127,7 +123,7 @@ class AttentiveMobileNetV3(BaseBackbone):
 
         self.first_conv = ConvModule(
             in_channels=3,
-            out_channels=self.in_channels, # 24
+            out_channels=self.in_channels,  # 24
             kernel_size=3,
             stride=2,
             padding=1,
@@ -242,7 +238,6 @@ class AttentiveMobileNetV3(BaseBackbone):
             kernel_sizes = self.kernel_size_list[i]
             expand_ratios = self.expand_ratio_list[i]
             out_channels = self.num_channels_list[i]
-            se_channels = self.num_se_channels_list[i]
 
             mutable_kernel_size = OneShotMutableValue(
                 value_list=kernel_sizes, default_value=max(kernel_sizes))

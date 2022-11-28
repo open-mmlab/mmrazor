@@ -73,12 +73,12 @@ class GroupMixin():
         """Mapping module name to mutable."""
         name2mutable: Dict[str, BaseMutable] = dict()
         for name, module in supernet.named_modules():
-            if isinstance(module, self.mutable_class_type): 
-            # if isinstance(module, support_mutables):
+            if isinstance(module, support_mutables):
+                # if isinstance(module, support_mutables):
                 name2mutable[name] = module
             elif hasattr(module, 'source_mutables'):
                 for each_mutables in module.source_mutables:
-                    if isinstance(each_mutables, self.mutable_class_type): 
+                    if isinstance(each_mutables, support_mutables):
                         name2mutable[name] = each_mutables
 
         self._name2mutable = name2mutable
@@ -90,23 +90,23 @@ class GroupMixin():
             support_mutables: Type) -> Dict[str, List[str]]:
         """Mapping alias to module names."""
         alias2mutable_names: Dict[str, List[str]] = dict()
+
+        def _append(key, dict, name):
+            if key not in dict:
+                dict[key] = [name]
+            else:
+                dict[key].append(name)
+
         for name, module in supernet.named_modules():
             if isinstance(module, support_mutables):
-
                 if module.alias is not None:
-                    if module.alias not in alias2mutable_names:
-                        alias2mutable_names[module.alias] = [name]
-                    else:
-                        alias2mutable_names[module.alias].append(name)
+                    _append(module.alias, alias2mutable_names, name)
                 elif hasattr(module, 'source_mutables'):
                     for each_mutables in module.source_mutables:
-                        if isinstance(each_mutables, self.mutable_class_type): 
+                        if isinstance(each_mutables, support_mutables):
                             if each_mutables.alias is not None:
-                                if each_mutables.alias not in alias2mutable_names:
-                                    alias2mutable_names[each_mutables.alias] = [name]
-                                else:
-                                    alias2mutable_names[each_mutables.alias].append(name)
-
+                                _append(each_mutables.alias,
+                                        alias2mutable_names, name)
 
         return alias2mutable_names
 
@@ -188,13 +188,12 @@ class GroupMixin():
                     current_group_nums += 1
             elif hasattr(module, 'source_mutables'):
                 for each_mutables in module.source_mutables:
-                    if isinstance(each_mutables, self.mutable_class_type): 
+                    if isinstance(each_mutables, support_mutables):
                         if name in grouped_mutable_names:
                             continue
                         else:
                             search_groups[current_group_nums] = [each_mutables]
                             current_group_nums += 1
-
 
         grouped_counter = Counter(grouped_mutable_names)
 
@@ -281,17 +280,17 @@ class OneShotSampleMixin:
 class DynamicSampleMixin(OneShotSampleMixin):
 
     @property
-    def max_choices(self: MutatorProtocol) -> Dict:
-        max_choices = dict()
+    def max_choice(self: MutatorProtocol) -> Dict:
+        max_choice = dict()
         for group_id, modules in self.search_groups.items():
-            max_choices[group_id] = modules[0].max_choice
+            max_choice[group_id] = modules[0].max_choice
 
-        return max_choices
+        return max_choice
 
     @property
-    def min_choices(self: MutatorProtocol) -> Dict:
-        min_choices = dict()
+    def min_choice(self: MutatorProtocol) -> Dict:
+        min_choice = dict()
         for group_id, modules in self.search_groups.items():
-            min_choices[group_id] = modules[0].min_choice
+            min_choice[group_id] = modules[0].min_choice
 
-        return min_choices
+        return min_choice
