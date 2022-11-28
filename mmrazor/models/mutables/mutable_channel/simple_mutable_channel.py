@@ -41,7 +41,8 @@ class SimpleMutableChannel(BaseMutableChannel):
 
     # basic extension
 
-    def expand_mutable_channel(self, expand_ratio: Union[int, float]) -> DerivedMutable:
+    def expand_mutable_channel(
+            self, expand_ratio: Union[int, float]) -> DerivedMutable:
         """Get a derived SimpleMutableChannel with expanded mask."""
 
         def _expand_mask():

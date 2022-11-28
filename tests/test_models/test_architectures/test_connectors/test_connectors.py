@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models import (BYOTConnector, ConvModuleConncetor, CRDConnector,
+from mmrazor.models import (BYOTConnector, ConvModuleConnector, CRDConnector,
                             FBKDStudentConnector, FBKDTeacherConnector,
                             Paraphraser, TorchFunctionalConnector,
                             TorchNNConnector, Translator)
@@ -19,26 +19,26 @@ class TestConnector(TestCase):
     def test_convmodule_connector(self):
         convmodule_connector_cfg = dict(
             in_channel=1, out_channel=3, norm_cfg=dict(type='BN'))
-        convmodule_connector = ConvModuleConncetor(**convmodule_connector_cfg)
+        convmodule_connector = ConvModuleConnector(**convmodule_connector_cfg)
 
         output = convmodule_connector.forward_train(self.s_feat)
         assert output.size() == self.t_feat.size()
 
         convmodule_connector_cfg['order'] = ('conv', 'norm')
         with self.assertRaises(AssertionError):
-            _ = ConvModuleConncetor(**convmodule_connector_cfg)
+            _ = ConvModuleConnector(**convmodule_connector_cfg)
 
         convmodule_connector_cfg['act_cfg'] = 'ReLU'
         with self.assertRaises(AssertionError):
-            _ = ConvModuleConncetor(**convmodule_connector_cfg)
+            _ = ConvModuleConnector(**convmodule_connector_cfg)
 
         convmodule_connector_cfg['norm_cfg'] = 'BN'
         with self.assertRaises(AssertionError):
-            _ = ConvModuleConncetor(**convmodule_connector_cfg)
+            _ = ConvModuleConnector(**convmodule_connector_cfg)
 
         convmodule_connector_cfg['conv_cfg'] = 'conv2d'
         with self.assertRaises(AssertionError):
-            _ = ConvModuleConncetor(**convmodule_connector_cfg)
+            _ = ConvModuleConnector(**convmodule_connector_cfg)
 
     def test_crd_connector(self):
         dim_out = 128

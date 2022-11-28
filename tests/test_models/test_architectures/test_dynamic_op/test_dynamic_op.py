@@ -6,13 +6,11 @@ import pytest
 import torch
 from torch import nn
 
-from mmrazor.models.architectures import (CenterCropDynamicConv2d,
-                                          DynamicBatchNorm1d,
+from mmrazor.models.architectures import (DynamicBatchNorm1d,
                                           DynamicBatchNorm2d,
                                           DynamicBatchNorm3d, DynamicConv2d,
-                                          DynamicLinear, DynamicSequential,
-                                          ProgressiveDynamicConv2d)
-from mmrazor.models.architectures.dynamic_op import DynamicOP
+                                          DynamicInputResizer, DynamicLinear,
+                                          DynamicSequential)
 from mmrazor.models.mutables import OneShotMutableChannel, OneShotMutableValue
 from mmrazor.structures.subnet import export_fix_subnet, load_fix_subnet
 
@@ -162,13 +160,13 @@ class TestDynamicOP(TestCase):
         with pytest.raises(RuntimeError):
             load_fix_subnet(d_linear, fix_mutables)
         assert isinstance(d_linear, nn.Linear)
-        assert isinstance(d_linear, DynamicOP)
+        assert isinstance(d_linear, DynamicLinear)
 
         s_linear = d_linear.to_static_op()
         assert s_linear.weight.size(0) == 4
         assert s_linear.weight.size(1) == 8
         assert s_linear.bias.size(0) == 4
-        assert not isinstance(s_linear, DynamicOP)
+        assert not isinstance(s_linear, DynamicLinear)
         assert isinstance(s_linear, nn.Linear)
         out2 = s_linear(x)
 
@@ -212,6 +210,38 @@ class TestDynamicOP(TestCase):
         out3 = s_seq(x)
         assert torch.equal(out3, out2)
 
+    def test_dynamic_input_resizer(self) -> None:
+        d_ir = DynamicInputResizer(size=(320, 320))
+
+        x = torch.rand(3, 3, 224, 224)
+        out_before_mutate = d_ir(x)
+        assert tuple(out_before_mutate.shape) == (3, 3, 320, 320)
+
+        mutable_shape = OneShotMutableValue(
+            value_list=[(192, 192), (224, 224), (288, 288), (320, 320)])
+        d_ir.mutate_shape(mutable_shape)
+
+        with pytest.raises(RuntimeError):
+            d_ir.to_static_op()
+
+        d_ir.mutable_shape.current_choice = (320, 320)
+
+        out = d_ir(x)
+        assert torch.equal(out_before_mutate, out)
+
+        d_ir.mutable_shape.current_choice = (288, 288)
+        out1 = d_ir(x)
+
+        fix_mutables = export_fix_subnet(d_ir)
+        with pytest.raises(RuntimeError):
+            load_fix_subnet(d_ir, fix_mutables)
+
+        s_ir = d_ir.to_static_op()
+        assert s_ir._size == (288, 288)
+        out2 = s_ir(x)
+
+        assert torch.equal(out1, out2)
+
 
 # TODO
 # unittest not support parametrize
@@ -239,22 +269,21 @@ def test_dynamic_bn(dynamic_class: nn.Module, input_shape: Tuple[int]) -> None:
     with pytest.raises(RuntimeError):
         load_fix_subnet(d_bn, fix_mutables)
     assert isinstance(d_bn, dynamic_class)
-    assert isinstance(d_bn, DynamicOP)
+    assert isinstance(d_bn, DynamicLinear)
 
     s_bn = d_bn.to_static_op()
     assert s_bn.weight.size(0) == 8
     assert s_bn.bias.size(0) == 8
     assert s_bn.running_mean.size(0) == 8
     assert s_bn.running_var.size(0) == 8
-    assert not isinstance(s_bn, DynamicOP)
+    assert not isinstance(s_bn, DynamicLinear)
     assert isinstance(s_bn, getattr(nn, d_bn.batch_norm_type))
     out2 = s_bn(x)
 
     assert torch.equal(out1, out2)
 
 
-@pytest.mark.parametrize('dynamic_class',
-                         [ProgressiveDynamicConv2d, CenterCropDynamicConv2d])
+@pytest.mark.parametrize('dynamic_class', DynamicConv2d)
 @pytest.mark.parametrize('mutate_kernel_size', [True, False])
 def test_kernel_dynamic_conv2d(dynamic_class: nn.Module,
                                mutate_kernel_size: bool) -> None:

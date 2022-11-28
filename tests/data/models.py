@@ -3,16 +3,13 @@ from torch.nn import Module
 from torch import Tensor
 import torch.nn as nn
 import torch
+from mmengine.model import BaseModel
 from mmrazor.models.architectures.dynamic_ops import DynamicBatchNorm2d, DynamicConv2d, DynamicLinear, DynamicChannelMixin, DynamicPatchEmbed, DynamicSequential
 from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
 from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables import BaseMutable
-from mmrazor.models.mutables import OneShotMutableChannelUnit, SquentialMutableChannel, OneShotMutableChannel
-from mmrazor.registry import MODELS
-from mmengine.model import BaseModel
-# this file includes models for tesing.
-
+from mmrazor.models.mutables import OneShotMutableChannelUnit, OneShotMutableChannel
 from mmrazor.models.mutables import OneShotMutableValue
 from mmrazor.models.architectures.backbones.searchable_autoformer import TransformerEncoderLayer
 
