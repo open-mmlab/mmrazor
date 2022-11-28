@@ -98,7 +98,7 @@ class BigNAS(BaseAlgorithm):
             self.mutators = built_mutators
         else:
             raise TypeError('mutator should be a `dict` but got '
-                            f'{type(mutator)}')
+                            f'{type(mutators)}')
 
         self.distiller = self._build_distiller(distiller)
         self.distiller.prepare_from_teacher(self.architecture)
