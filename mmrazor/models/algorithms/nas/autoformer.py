@@ -80,30 +80,27 @@ class Autoformer(BaseAlgorithm):
 
     def sample_subnet(self) -> Dict:
         """Random sample subnet by mutator."""
-        subnet_dict = dict()
+        value_subnet = dict()
+        channel_subnet = dict()
         for name, mutator in self.mutators.items():
             if name == 'value_mutator':
-                subnet_dict.update(
-                    dict((str(group_id), value) for group_id, value in
-                         mutator.sample_choices().items()))
+                value_subnet.update(mutator.sample_choices())
+            elif name == 'channel_mutator':
+                channel_subnet.update(mutator.sample_choices())
             else:
-                subnet_dict.update(mutator.sample_choices())
-        return subnet_dict
+                raise NotImplementedError
+        return dict(value_subnet=value_subnet, channel_subnet=channel_subnet)
 
-    def set_subnet(self, subnet_dict: Dict) -> None:
+    def set_subnet(self, subnet: Dict[str, Dict[int, Union[int,
+                                                           list]]]) -> None:
         """Set the subnet sampled by :meth:sample_subnet."""
         for name, mutator in self.mutators.items():
             if name == 'value_mutator':
-                value_subnet = dict((int(group_id), value)
-                                    for group_id, value in subnet_dict.items()
-                                    if isinstance(group_id, str))
-                mutator.set_choices(value_subnet)
+                mutator.set_choices(subnet['value_subnet'])
+            elif name == 'channel_mutator':
+                mutator.set_choices(subnet['channel_subnet'])
             else:
-                channel_subnet = dict(
-                    (group_id, value)
-                    for group_id, value in subnet_dict.items()
-                    if isinstance(group_id, int))
-                mutator.set_choices(channel_subnet)
+                raise NotImplementedError
 
     def loss(
         self,
