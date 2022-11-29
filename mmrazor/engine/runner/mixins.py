@@ -43,7 +43,7 @@ class CalibrateBNMixin:
     @torch.no_grad()
     def calibrate_bn_statistics(self,
                                 dataloader: DataLoader,
-                                calibrated_sample_nums: int = 2000) -> None:
+                                calibrated_sample_num: int = 2000) -> None:
 
         def record_input_statistics_hook(bn_module: _BatchNorm, input: Tensor,
                                          output: Tensor) -> None:
@@ -73,8 +73,8 @@ class CalibrateBNMixin:
         self.runner.model.train()
         self.runner.logger.info('start calibrating batch norm statistics')
         self.runner.logger.info(
-            f'total sample numbers for calibration: {calibrated_sample_nums}')
-        remaining = calibrated_sample_nums
+            f'total sample number for calibration: {calibrated_sample_num}')
+        remaining = calibrated_sample_num
         for data_batch in dataloader:
             if len(data_batch) >= remaining:
                 data_batch = data_batch[:remaining]
