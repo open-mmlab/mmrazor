@@ -4,8 +4,6 @@ from typing import Dict, List, Optional, Sequence, Union
 
 import torch
 import torch.nn as nn
-from mmcls.models.backbones.base_backbone import BaseBackbone
-from mmcls.models.utils import make_divisible
 from mmcv.cnn import ConvModule
 from mmengine.logging import MMLogger
 from mmengine.model import Sequential, constant_init
@@ -21,6 +19,14 @@ from mmrazor.models.mutables import (MutableChannelContainer,
                                      OneShotMutableValue)
 from mmrazor.models.utils.parse_values import parse_values
 from mmrazor.registry import MODELS
+
+try:
+    from mmcls.models.backbones.base_backbone import BaseBackbone
+    from mmcls.models.utils import make_divisible
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    BaseBackbone = get_placeholder('mmcls')
+    make_divisible = get_placeholder('mmcls')
 
 logger = MMLogger.get_current_instance()
 
