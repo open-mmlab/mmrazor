@@ -1,5 +1,18 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-
+"""
+- How to config PruneTracer by hard code
+  - fxtracer
+    - demo_inputs
+        ./mmrazor/models/task_modules/demo_inputs/default_demo_inputs.py
+    - leaf module
+      - PruneTracer.default_leaf_modules
+    - method
+      - ./mmrazor/models/task_modules/tracer/fx_tracer.py
+  - ChannelNode
+    - ./mmrazor/structures/graph/channel_nodes.py
+  - DynamicOp
+        ./mmrazor/models/architectures/dynamic_ops/bricks/dynamic_conv.py
+"""
 import copy
 from typing import Dict, List, Tuple, Union
 
@@ -22,22 +35,6 @@ from .backward_tracer import BackwardTracer
 from .fx_tracer import CustomFxTracer
 from .loss_calculator.sum_loss_calculator import SumPseudoLoss
 from .razor_tracer import FxBaseNode, RazorFxTracer
-"""
-- How to config PruneTracer by hard code
-  - fxtracer
-    - demo_inputs
-        ./mmrazor/models/task_modules/demo_inputs/default_demo_inputs.py
-    - leaf module
-      - PruneTracer.default_leaf_modules
-    - method
-      - ./mmrazor/models/task_modules/tracer/fx_tracer.py
-  - ChannelNode
-    - ./mmrazor/structures/graph/channel_nodes.py
-  - DynamicOp
-        ./mmrazor/models/architectures/dynamic_ops/bricks/dynamic_conv.py
-"""
-
-# concrete args
 
 
 @TASK_UTILS.register_module()

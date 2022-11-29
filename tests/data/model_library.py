@@ -384,6 +384,10 @@ class MMClsModelLibrary(MMModelLibrary):
         'repvgg',
         'seresnext',
         'deit',
+        'replknet',
+        'hornet',
+        'mobilevit',
+        'davit',
     ]
     base_config_path = '_base_/models/'
     repo = 'mmcls'
@@ -490,6 +494,7 @@ class MMDetModelLibrary(MMModelLibrary):
         'albu',
         'misc',
         'crowddet',
+        'condins',
     ]
     base_config_path = '/'
     repo = 'mmdet'
