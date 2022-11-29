@@ -30,11 +30,12 @@ class TransformerEncoderLayer(BaseBackbone):
         embed_dims (int): Number of input channels.
         num_heads (int): Number of attention heads.
         mlp_ratio (List): Ratio of ffn.
-        drop_rate (float): Probability of an element to be zeroed
-            after the feed forward layer. Defaults to 0.
-        attn_drop_rate (float): The drop path rate after attention.
-            Defaults to 0.
-        drop_path_rate (float): Stochastic depth rate. Defaults to 0.
+        attn_drop_rate (float): Dropout rate of the dropout layer after the
+            attention calculation of query and key. Defaults to 0.
+        proj_drop_rate (float): Dropout rate of the dropout layer after the
+            output projection. Defaults to 0.
+        out_drop_rate (dict): Dropout rate of the dropout layer before adding
+            the shortcut. Defaults to 0.
         qkv_bias (bool, optional): Whether to keep bias of qkv.
             Defaults to True.
         act_cfg (Dict, optional): The config for acitvation function.
@@ -49,9 +50,9 @@ class TransformerEncoderLayer(BaseBackbone):
                  embed_dims: int,
                  num_heads: int,
                  mlp_ratio: float,
-                 drop_rate: float = 0.,
+                 proj_drop_rate: float = 0.,
                  attn_drop_rate: float = 0.,
-                 drop_path_rate: float = 0.,
+                 out_drop_rate: float = 0.,
                  qkv_bias: bool = True,
                  act_cfg: Dict = dict(type='GELU'),
                  norm_cfg: Dict = dict(type='mmrazor.DynamicLayerNorm'),
@@ -66,8 +67,8 @@ class TransformerEncoderLayer(BaseBackbone):
             embed_dims=embed_dims,
             num_heads=num_heads,
             attn_drop_rate=attn_drop_rate,
-            proj_drop=drop_rate,
-            dropout_layer=dict(type='DropPath', drop_prob=drop_path_rate),
+            proj_drop_rate=proj_drop_rate,
+            out_drop_rate=out_drop_rate,
             qkv_bias=qkv_bias)
 
         self.norm2_name, norm2 = build_norm_layer(
@@ -314,8 +315,8 @@ class AutoformerBackbone(BaseBackbone):
                 embed_dims=embed_dims,
                 num_heads=self.mutable_num_heads[i].max_choice,
                 mlp_ratio=self.mutable_mlp_ratios[i].max_choice,
-                drop_rate=self.drop_rate,
-                drop_path_rate=self.dpr[i],
+                proj_drop_rate=self.drop_rate,
+                out_drop_rate=self.dpr[i],
                 qkv_bias=self.qkv_bias,
                 act_cfg=self.act_cfg)
             layers.append(layer)
