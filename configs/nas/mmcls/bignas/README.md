@@ -11,20 +11,25 @@ Neural architecture search (NAS) has shown promising results discovering models 
 ## Introduction
 
 ### Step 1: Supernet pre-training on ImageNet
+
 ```bash
-sh tools/slurm_train.sh $PARTION $JOB_NAME \
+sh tools/slurm_train.sh $PARTITION $JOB_NAME \
   configs/nas/mmcls/bignas/attentive_mobilenet_supernet_32xb64_in1k.py \
   $WORK_DIR
 ```
+
 ### Step 2: Search for subnet on the trained supernet
+
 ```bash
-sh tools/slurm_train.sh $PARTION $JOB_NAME \
+sh tools/slurm_train.sh $PARTITION $JOB_NAME \
   configs/nas/mmcls/bignas/attentive_mobilenet_search_8xb128_in1k.py \
   --checkpoint $STEP1_CKPT --work-dir $WORK_DIR
 ```
+
 ### Step 3: Subnet test on ImageNet
+
 ```bash
-sh tools/slurm_test.sh $PARTION $JOB_NAME \
+sh tools/slurm_test.sh $PARTITION $JOB_NAME \
   configs/nas/mmcls/bignas/attentive_mobilenet_subnet_8xb256_in1k.py \
   $STEP2_CKPT --work-dir $WORK_DIR --eval accuracy \
   --cfg-options algorithm.mutable_cfg=$STEP2_SUBNET_YAML
@@ -32,9 +37,9 @@ sh tools/slurm_test.sh $PARTION $JOB_NAME \
 
 ## Results and models
 
-| Dataset |      Supernet      |                                                                                                              Subnet                                                                                                               |   Params(M)    |    Flops(G)    | Top-1  |                           Config                            |                                                                                                                                                                                                                                                                                                               Download                                                                                                                                                                                                                                                                                                               |     Remarks      |
-| :-----: | :----------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :------------: | :------------: | :--: | :---------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------: |
-|  ImageNet   | AttentiveMobileNetV3 | [mutable](https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco_bbox_backbone_flops-0.34M_mAP-37.5_20211222-67fea61f_mutable_cfg.yaml) | 8.9(min) / 23.3(max) | 203(min) / 1939(max) | 77.29(min) / 81.65(max)  | [config](./detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco.py) | [pretrain](https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_shufflenetv2_8xb128_in1k_acc-74.08_20211223-92e9b66a.pth) \|[model](https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco_bbox_backbone_flops-0.34M_mAP-37.5_20211222-67fea61f.pth) \| [log](https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco_bbox_backbone_flops-0.34M_mAP-37.5_20211222-67fea61f.log.json) | MMRazor searched |
+| Dataset  |       Supernet       |                                                                                                              Subnet                                                                                                               |      Params(M)       |       Flops(G)       |          Top-1          |                           Config                            |                                                                                                                                                                                                                                                                                                               Download                                                                                                                                                                                                                                                                                                               |     Remarks      |
+| :------: | :------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------: | :------------------: | :---------------------: | :---------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------: |
+| ImageNet | AttentiveMobileNetV3 | [mutable](https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco_bbox_backbone_flops-0.34M_mAP-37.5_20211222-67fea61f_mutable_cfg.yaml) | 8.9(min) / 23.3(max) | 203(min) / 1939(max) | 77.29(min) / 81.65(max) | [config](./detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco.py) | [pretrain](https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_shufflenetv2_8xb128_in1k_acc-74.08_20211223-92e9b66a.pth) \|[model](https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco_bbox_backbone_flops-0.34M_mAP-37.5_20211222-67fea61f.pth) \| [log](https://download.openmmlab.com/mmrazor/v0.1/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco_bbox_backbone_flops-0.34M_mAP-37.5_20211222-67fea61f.log.json) | MMRazor searched |
 
 ## Citation
 
