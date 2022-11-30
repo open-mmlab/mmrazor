@@ -1,24 +1,16 @@
 _base_ = ['mmcls::resnet/resnet18_8xb16_cifar10.py']
 
 resnet = _base_.model
-pretrained_ckpt = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_b16x8_cifar10_20210528-bd6371c8.pth'  # noqa: E501
+float_ckpt = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_b16x8_cifar10_20210528-bd6371c8.pth'  # noqa: E501
 
 model = dict(
     _delete_=True,
     _scope_='mmrazor',
-    type='GeneralQuant',
-    data_preprocessor=dict(
-        type='mmcls.ClsDataPreprocessor',
-        num_classes=10,
-        # RGB format normalization parameters
-        mean=[125.307, 122.961, 113.8575],
-        std=[51.5865, 50.847, 51.255],
-        # loaded images are already RGB format
-        to_rgb=False),
+    type='MMArchitectureQuant',
     architecture=resnet,
-    pretrained_ckpt=pretrained_ckpt,
+    float_checkpoint=float_ckpt,
     quantizer=dict(
-        type='CustomQuantizer',
+        type='OpenvinoQuantizer',
         skipped_methods=[
             'mmcls.models.heads.ClsHead._get_loss',
             'mmcls.models.heads.ClsHead._get_predictions'
@@ -31,8 +23,8 @@ model = dict(
             a_fake_quant=dict(type='mmrazor.LearnableFakeQuantize'),
             w_qscheme=dict(
                 bit=8,
-                is_symmetry=False,
-                is_per_channel=False,
+                is_symmetry=True,
+                is_per_channel=True,
                 is_pot_scale=False,
             ),
             a_qscheme=dict(
@@ -55,7 +47,7 @@ param_scheduler = dict(
     end=100)
 
 model_wrapper_cfg = dict(
-    type='mmrazor.GeneralQuantDDP',
+    type='mmrazor.MMArchitectureQuantDDP',
     broadcast_buffers=False,
     find_unused_parameters=True)
 
@@ -63,8 +55,7 @@ model_wrapper_cfg = dict(
 train_cfg = dict(
     _delete_=True,
     type='mmrazor.QATEpochBasedLoop',
-    by_epoch=True,
     max_epochs=100,
     val_interval=1)
 val_cfg = dict(_delete_=True, type='mmrazor.QATValLoop')
-test_cfg = val_cfg
+# test_cfg = val_cfg
