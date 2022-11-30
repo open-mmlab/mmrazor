@@ -7,7 +7,12 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from mmcv.cnn.bricks import build_activation_layer
-from mmdet.models.losses import SmoothL1Loss
+
+try:
+    from mmdet.models.losses import SmoothL1Loss
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    SmoothL1Loss = get_placeholder('mmdet')
 from mmengine.model import BaseModule
 from mmengine.optim.scheduler import CosineAnnealingLR
 

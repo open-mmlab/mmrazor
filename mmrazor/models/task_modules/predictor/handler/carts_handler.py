@@ -2,7 +2,12 @@
 from typing import List
 
 import numpy as np
-from sklearn.tree import DecisionTreeRegressor
+
+try:
+    from sklearn.tree import DecisionTreeRegressor
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    DecisionTreeRegressor = get_placeholder('sklearn')
 
 from mmrazor.registry import TASK_UTILS
 from .base_handler import BaseHandler

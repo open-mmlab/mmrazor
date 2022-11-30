@@ -2,7 +2,12 @@
 from typing import Dict, List, Union
 
 import numpy as np
-import scipy.stats as stats
+
+try:
+    import scipy.stats as stats
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    stats = get_placeholder('scipy')
 
 from mmrazor.registry import TASK_UTILS
 from mmrazor.structures import export_fix_subnet

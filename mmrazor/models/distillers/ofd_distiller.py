@@ -4,7 +4,12 @@ from operator import attrgetter
 
 import torch
 import torch.nn as nn
-from scipy.stats import norm
+
+try:
+    from scipy.stats import norm
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    norm = get_placeholder('norm')
 
 from mmrazor.registry import MODELS
 from ..architectures.connectors import OFDTeacherConnector

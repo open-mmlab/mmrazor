@@ -17,6 +17,6 @@ def get_placeholder(string: str) -> object:
 
         def __init__(self, *args, **kwargs) -> None:
             raise ImportError(
-                f'`{string}` is not installed properly, plz check.')
+                f'`{string}` is not installed properly, please check.')
 
     return PlaceHolder
