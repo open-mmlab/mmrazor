@@ -25,16 +25,16 @@ from mmrazor.models.mutables.mutable_channel import (
     MutableChannelUnit, SequentialMutableChannelUnit)
 from mmrazor.models.mutables.mutable_channel.units.utils import find_mutable
 from mmrazor.registry import TASK_UTILS
-from mmrazor.structures.graph import BaseGraph, ModuleGraph
+from mmrazor.structures.graph import ModuleGraph
 from mmrazor.structures.graph.channel_graph import (
     ChannelGraph, default_channel_node_converter)
 from mmrazor.structures.graph.module_graph import (FxTracerToGraphConverter,
                                                    PathToGraphConverter)
+from mmrazor.structures.graph.pseudo_fx_graph import parse_torch_graph
 from ..demo_inputs import BaseDemoInput, DefaultDemoInput
 from .backward_tracer import BackwardTracer
 from .fx_tracer import CustomFxTracer
 from .loss_calculator.sum_loss_calculator import SumPseudoLoss
-from .razor_tracer import FxBaseNode, RazorFxTracer
 
 
 @TASK_UTILS.register_module()
@@ -100,8 +100,7 @@ class PruneTracer:
         elif self.tracer_type == 'FxTracer':
             fx_graph = self._fx_trace(model)
             fx_graph.owning_module = model
-            fx_graph.graph = BaseGraph[FxBaseNode]()
-            base_graph = RazorFxTracer().parse_torch_graph(fx_graph)
+            base_graph = parse_torch_graph(fx_graph)
 
             module_graph = FxTracerToGraphConverter(base_graph, model).graph
             module_graph._model = model

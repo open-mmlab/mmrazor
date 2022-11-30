@@ -16,10 +16,9 @@ from mmrazor.models.task_modules.tracer.loss_calculator import \
     ImageClassifierPseudoLoss
 from mmrazor.models.task_modules.tracer.path import (Path, PathConcatNode,
                                                      PathList, PathNode)
-from mmrazor.models.task_modules.tracer.razor_tracer import (FxBaseNode,
-                                                             RazorFxTracer)
 from mmrazor.registry import TASK_UTILS
 from .base_graph import BaseGraph, BaseNode
+from .pseudo_fx_graph import FxBaseNode
 
 
 # ModuleNode && ModuleGraph
@@ -188,23 +187,6 @@ class ModuleGraph(BaseGraph[MODULENODE]):
             backward_tracer = TASK_UTILS.build(backward_tracer)
         path_lists = backward_tracer.trace(model)
         converter = PathToGraphConverter(path_lists, model)
-        converter.graph.refresh_module_name()
-        return converter.graph
-
-    @staticmethod
-    def init_from_fx_tracer(model: Module,
-                            fx_tracer={'type': 'RazorFxTracer'}):
-        """init module graph using torch fx tracer."""
-        if isinstance(fx_tracer, dict):
-            tracer: RazorFxTracer = TASK_UTILS.build(fx_tracer)
-        else:
-            tracer = fx_tracer
-
-        base_graph = tracer.trace(model)
-
-        converter = FxTracerToGraphConverter(base_graph, model)
-
-        converter.graph._model = model
         converter.graph.refresh_module_name()
         return converter.graph
 
