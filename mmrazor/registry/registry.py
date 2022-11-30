@@ -30,7 +30,6 @@ from mmengine.registry import VISUALIZERS as MMENGINE_VISUALIZERS
 from mmengine.registry import \
     WEIGHT_INITIALIZERS as MMENGINE_WEIGHT_INITIALIZERS
 from mmengine.registry import Registry, build_from_cfg
-from mmengine.runner import load_checkpoint
 
 
 def build_razor_model_from_cfg(
@@ -44,26 +43,7 @@ def build_razor_model_from_cfg(
         model = get_model(**cfg)  # type: ignore
         return model
 
-    from mmrazor.structures import load_fix_subnet
-
     model = build_from_cfg(cfg, registry, default_args)
-    if cfg.get('_fix_subnet_', None):
-        fix_subnet = cfg.pop('_fix_subnet_')
-        # model is a mutable model
-        model = build_from_cfg(cfg, registry, default_args)
-        # after load_fix_subnet, model is a fixed model
-        load_fix_subnet(model, fix_subnet)
-
-    if cfg.get('_export_compressed_', False):
-
-        if cfg.get('_compressed_checkpoint_', None):
-            _ = load_checkpoint(model, cfg.get('_compressed_checkpoint_'))
-
-        from mmrazor.models import GeneralQuant
-        if isinstance(model, GeneralQuant):
-            model = model.convert()
-
-        model = model.architecture
 
     return model
 
