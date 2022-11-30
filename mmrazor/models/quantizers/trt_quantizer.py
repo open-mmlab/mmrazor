@@ -31,7 +31,7 @@ class TensorRTQuantizer(CustomQuantizer):
                          convert_custom_config_dict, equalization_qconfig_dict,
                          _remove_qconfig, init_cfg)
 
-    def prepare_for_mmdeploy(self, model):
+    def prepare_for_mmdeploy(self, model, dummy_input=None, checkpoint=None)
 
         graph = self.tracer.trace(model)
         graph_module = build_graphmodule(model, graph)
@@ -40,6 +40,9 @@ class TensorRTQuantizer(CustomQuantizer):
         observed_model(torch.randn(1, 3, 224, 224))
 
         self.post_process_weight_fakequant(observed_model)
+        if dummy_input is not None:
+            observed_model(dummy_input)
+
         observed_model.apply(disable_observer)
 
         return observed_model

@@ -33,7 +33,7 @@ class OpenvinoQuantizer(CustomQuantizer):
         
 
 
-    def prepare_for_mmdeploy(self, model, checkpoint=None):
+    def prepare_for_mmdeploy(self, model, dummy_input=None, checkpoint=None):
         
 
         self._swap_ff_with_fxff(model)
@@ -44,6 +44,9 @@ class OpenvinoQuantizer(CustomQuantizer):
         
         self.post_process_weight_fakequant(observed_model, keep_fake_quant=True)
         
+        if dummy_input is not None:
+            observed_model(dummy_input)
+
         observed_model.apply(disable_observer)
 
 
