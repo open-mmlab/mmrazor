@@ -16,7 +16,7 @@ from .models import (AddCatModel, ConcatModel, ConvAttnModel, DwConvModel,
 import json
 # model generator
 from mmdet.testing._utils import demo_mm_inputs
-
+import string
 # helper functions
 
 
@@ -80,9 +80,13 @@ class ModelGenerator(nn.Module):
 
     @classmethod
     def get_short_name(cls, name: str):
+        scope = name.split('.')[0]
         base_name = cls.get_base_name(name)
         names = base_name.replace('-', '.').replace('_', '.').split('.')
-        return names[0]
+        name = names[0]
+        name = name.rstrip(string.digits)
+
+        return f'{scope}.{name}'
 
     @property
     def short_name(self):

@@ -92,7 +92,7 @@ def _test_a_model(Model, tracer_type='fx'):
                 'type': 'DefaultDemoInput',
                 'scope': Model.scope
             })
-        with time_limit(100):
+        with time_limit(60):
             unit_configs = tracer.trace(model)
 
         out = len(unit_configs)
@@ -167,16 +167,24 @@ class TestTraceModel(TestCase):
                 self.assertTrue(passed, msg)
 
         print('UnTest:')
-        for model in model_manager.uninclude_models(full_test=FULL_TEST):
+        untest_models = model_manager.uninclude_models(full_test=FULL_TEST)
+        for model in untest_models:
             print(f'\t{model}')
 
         # short summary
-        print('Short Summary:')
         short_passed = set(
             [ModelGenerator.get_short_name(res[0]) for res in passd_test])
 
-        print('Passed\n', short_passed)
-
         short_unpassed = set(
             [ModelGenerator.get_short_name(res[0]) for res in unpassd_test])
+
+        short_untest = set([model.short_name for model in untest_models])
+
+        for name in short_unpassed:
+            if name in short_passed:
+                short_passed.remove(name)
+
+        print('Short Summary:')
+        print('Passed\n', short_passed)
         print('Unpassed\n', short_unpassed)
+        print('Untest\n', short_untest)
