@@ -4,7 +4,12 @@ from typing import Dict, Set, Tuple
 
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcls.models.utils import PatchEmbed
+
+try:
+    from mmcls.models.utils import PatchEmbed
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    PatchEmbed = get_placeholder('mmcls')
 from mmengine import print_log
 from torch import Tensor
 

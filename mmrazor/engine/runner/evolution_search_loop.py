@@ -72,7 +72,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                  num_crossover: int = 25,
                  mutate_prob: float = 0.1,
                  crossover_prob: float = 0.5,
-                 calibrated_sample_nums: int = -1,
+                 calibrate_sample_num: int = -1,
                  constraints_range: Dict[str, Any] = dict(flops=(0., 330.)),
                  estimator_cfg: Optional[Dict] = None,
                  predictor_cfg: Optional[Dict] = None,
@@ -94,7 +94,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         self.num_candidates = num_candidates
         self.top_k = top_k
         self.constraints_range = constraints_range
-        self.calibrated_sample_nums = calibrated_sample_nums
+        self.calibrate_sample_num = calibrate_sample_num
         self.score_key = score_key
         self.num_mutation = num_mutation
         self.num_crossover = num_crossover
@@ -332,9 +332,9 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
             assert self.predictor is not None
             metrics = self.predictor.predict(self.model)
         else:
-            if calibrated_sample_nums > 0:
+            if self.calibrate_sample_num > 0:
                 self.calibrate_bn_statistics(self.runner.train_dataloader,
-                                            self.calibrated_sample_nums)
+                                             self.calibrate_sample_num)
             self.runner.model.eval()
             for data_batch in self.dataloader:
                 outputs = self.runner.model.val_step(data_batch)

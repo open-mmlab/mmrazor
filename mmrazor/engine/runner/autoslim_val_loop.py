@@ -18,7 +18,7 @@ class AutoSlimValLoop(ValLoop, CalibrateBNMixin):
                  dataloader: Union[DataLoader, Dict],
                  evaluator: Union[Evaluator, Dict, List],
                  fp16: bool = False,
-                 calibrated_sample_nums: int = 2000) -> None:
+                 calibrated_sample_num: int = 2000) -> None:
         super().__init__(runner, dataloader, evaluator, fp16)
 
         if self.runner.distributed:
@@ -28,7 +28,7 @@ class AutoSlimValLoop(ValLoop, CalibrateBNMixin):
 
         # just for convenience
         self._model = model
-        self.calibrated_sample_nums = calibrated_sample_nums
+        self.calibrated_sample_num = calibrated_sample_num
 
     def run(self):
         """Launch validation."""
@@ -38,20 +38,20 @@ class AutoSlimValLoop(ValLoop, CalibrateBNMixin):
 
         self._model.set_max_subnet()
         self.calibrate_bn_statistics(self.runner.train_dataloader,
-                                     self.calibrated_sample_nums)
+                                     self.calibrated_sample_num)
         metrics = self._evaluate_once()
         all_metrics.update(add_prefix(metrics, 'max_subnet'))
 
         self._model.set_min_subnet()
         self.calibrate_bn_statistics(self.runner.train_dataloader,
-                                     self.calibrated_sample_nums)
+                                     self.calibrated_sample_num)
         metrics = self._evaluate_once()
         all_metrics.update(add_prefix(metrics, 'min_subnet'))
 
         for subnet_idx in range(self._model.num_samples):
             self._model.set_subnet(self._model.sample_subnet())
             self.calibrate_bn_statistics(self.runner.train_dataloader,
-                                         self.calibrated_sample_nums)
+                                         self.calibrated_sample_num)
             # compute student metrics
             metrics = self._evaluate_once()
             all_metrics.update(

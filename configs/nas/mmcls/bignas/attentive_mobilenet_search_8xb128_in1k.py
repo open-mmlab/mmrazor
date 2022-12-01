@@ -11,6 +11,6 @@ train_cfg = dict(
     num_mutation=25,
     num_crossover=25,
     mutate_prob=0.1,
-    calibrated_sample_nums=4096,
+    calibrate_sample_num=4096,
     constraints_range=dict(flops=(0., 700.)),
     score_key='accuracy/top1')

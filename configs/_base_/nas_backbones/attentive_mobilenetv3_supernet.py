@@ -40,15 +40,14 @@ arch_setting = dict(
         [1792, 1984, 1984 - 1792],  # last layer
     ])
 
-_INPUT_MUTABLE=dict(
+_INPUT_MUTABLE = dict(
     input_resizer=dict(type='DynamicInputResizer'),
     mutable_shape=dict(
         type='OneShotMutableValue',
         value_list=[[192, 192], [224, 224], [256, 256], [288, 288]],
         default_value=[224, 224]))
 
-nas_backbone=dict(
+nas_backbone = dict(
     type='AttentiveMobileNetV3',
     arch_setting=arch_setting,
-    norm_cfg=dict(type='DynamicBatchNorm2d', momentum=0.0),
-    act_cfg=dict(type='Swish'))
+    norm_cfg=dict(type='DynamicBatchNorm2d', momentum=0.0))
