@@ -65,8 +65,12 @@ class DefaultMMClsDemoInput(DefaultMMDemoInput):
         mm_inputs = {
             'inputs':
             x,
-            'data_samples':
-            [ClsDataSample().set_gt_label(1) for _ in range(input_shape[0])],
+            'data_samples': [
+                ClsDataSample(
+                    metainfo=dict(img_shape=input_shape[i],
+                                  num_classes=1000)).set_gt_label(1)
+                for i in range(input_shape[0])
+            ],
         }
         mm_inputs = model.data_preprocessor(mm_inputs, training)
         return mm_inputs

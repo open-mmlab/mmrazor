@@ -219,15 +219,15 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
                 try:
                     raise e
                 except NoOutputError as e:
-                    MMLogger.get_current_instance().warn(
+                    MMLogger.get_current_instance().debug(
                         f'add a output after {node}, error: {e}')
                     self._add_output_after(node)
                 except NoInputError as e:
-                    MMLogger.get_current_instance().warn(
+                    MMLogger.get_current_instance().debug(
                         f'add a input before {node}, error: {e}')
                     self._add_input_before(node)
                 except ChannelDismatchError as e:
-                    MMLogger.get_current_instance().warn(
+                    MMLogger.get_current_instance().debug(
                         (f'{node} has channel error, so'
                          f'we convert it to a EndNode. error: {e}'))
                     self._convert_a_node_to_end_node(node)

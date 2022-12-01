@@ -1,12 +1,16 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import multiprocessing as mp
 import os
+import signal
 import sys
 import time
+from concurrent.futures import ProcessPoolExecutor
+from contextlib import contextmanager
 from functools import partial
 from unittest import TestCase
 
 import torch
+from mmengine import MMLogger
 
 from mmrazor.models.task_modules.tracer.prune_tracer import PruneTracer
 from ...data.model_library import ModelGenerator
@@ -20,14 +24,22 @@ sys.setrecursionlimit(int(pow(2, 20)))
 
 DEVICE = torch.device('cpu')
 FULL_TEST = os.getenv('FULL_TEST') == 'true'
-MP = os.getenv('MP') == 'true'
+try:
+    MP = int(os.getenv('MP'))
+except Exception:
+    MP = 1
 
 DEBUG = os.getenv('DEBUG') == 'true'
+if DEBUG:
+    import logging
+    logger = MMLogger.get_current_instance()
+    logger.handlers[0].setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG)
 
-if MP:
-    POOL_SIZE = mp.cpu_count()
-    TORCH_THREAD_SIZE = 1
-    # torch.set_num_interop_threads(1)
+if MP > 1:
+    POOL_SIZE = MP
+    TORCH_THREAD_SIZE = mp.cpu_count() // POOL_SIZE
+    torch.set_num_interop_threads(TORCH_THREAD_SIZE)
 else:
     POOL_SIZE = 1
     TORCH_THREAD_SIZE = -1
@@ -42,10 +54,29 @@ print(f'TORCH_THREAD_SIZE: {TORCH_THREAD_SIZE}')
 # test functions for mp
 
 
+@contextmanager
+def time_limit(seconds, msg='', activated=(not DEBUG)):
+
+    class TimeoutException(Exception):
+        pass
+
+    def signal_handler(signum, frame):
+        if activated:
+            raise TimeoutException(f'{msg} run over {seconds} s!')
+
+    signal.signal(signal.SIGALRM, signal_handler)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+
+
 def _test_a_model(Model, tracer_type='fx'):
     start = time.time()
 
     try:
+        print(f'test {Model}.')
         model = Model.init_model()
         model.eval()
         if tracer_type == 'fx':
@@ -55,14 +86,18 @@ def _test_a_model(Model, tracer_type='fx'):
         else:
             raise NotImplementedError()
 
-        unit_configs = PruneTracer(
+        tracer = PruneTracer(
             tracer_type=tracer_type,
             demo_input={
                 'type': 'DefaultDemoInput',
                 'scope': Model.scope
-            }).trace(model)
+            })
+        with time_limit(100):
+            unit_configs = tracer.trace(model)
+
         out = len(unit_configs)
         print(f'test {Model} successful.')
+
         return Model.name, True, '', time.time() - start, out
     except Exception as e:
         if DEBUG:
@@ -79,21 +114,24 @@ class TestTraceModel(TestCase):
 
     def test_init_from_fx_tracer(self) -> None:
         TestData = fx_passed_library.include_models(FULL_TEST)
+
         with SetTorchThread(TORCH_THREAD_SIZE):
             if POOL_SIZE != 1:
-                with mp.Pool(POOL_SIZE) as p:
+                with ProcessPoolExecutor(POOL_SIZE) as p:
                     result = p.map(
                         partial(_test_a_model, tracer_type='fx'), TestData)
+
             else:
                 result = map(
                     partial(_test_a_model, tracer_type='fx'), TestData)
+        result = list(result)
         self.report(result, fx_passed_library, 'fx')
 
     def test_init_from_backward_tracer(self) -> None:
         TestData = backward_passed_library.include_models(FULL_TEST)
         with SetTorchThread(TORCH_THREAD_SIZE):
             if POOL_SIZE != 1:
-                with mp.Pool(POOL_SIZE) as p:
+                with ProcessPoolExecutor(POOL_SIZE) as p:
                     result = p.map(
                         partial(_test_a_model, tracer_type='backward'),
                         TestData)

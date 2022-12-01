@@ -53,15 +53,10 @@ class ModelGenerator(nn.Module):
         self._model = None
 
     def __call__(self, *args, **kwargs):
-        if len(args) == 0 and len(kwargs) == 0:
-            self.init_model()
-            return self
-        else:
-            return self.forward(*args, **kwargs)
+        return self.init_model()
 
     def init_model(self):
-        self._model = self.model_src()
-        return self._model
+        return self.model_src()
 
     def forward(self, x):
         assert self._model is not None
