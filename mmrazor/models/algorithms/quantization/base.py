@@ -20,7 +20,7 @@ ForwardResults = Union[LossResults, TensorResults, PredictResults]
 
 
 @MODELS.register_module()
-class GeneralQuant(BaseAlgorithm):
+class MMArchitectureQuant(BaseAlgorithm):
     """General quantization.
 
     Args:
@@ -39,13 +39,15 @@ class GeneralQuant(BaseAlgorithm):
             :class:`BaseModule`.
     """
 
+    
+
     def __init__(self,
                  architecture,
                  quantizer,
-                 export_mode: str = 'predict',
-                 qmodel_modes: List[str] = ['tensor', 'predict', 'loss'],
                  data_preprocessor=None,
-                 pretrained_ckpt: Optional[str] = None,
+                 forward_modes = ('tensor', 'predict', 'loss'),
+                 float_checkpoint: Optional[str] = None,
+                 input_shapes=(1, 3, 224, 224),
                  init_cfg=None):
 
         if data_preprocessor is None:
@@ -53,35 +55,50 @@ class GeneralQuant(BaseAlgorithm):
         # The build process is in MMEngine, so we need to add scope here.
         data_preprocessor.setdefault('type', 'mmcls.ClsDataPreprocessor')
         super().__init__(architecture, data_preprocessor, init_cfg)
-        if pretrained_ckpt:
-            _ = load_checkpoint(self.architecture, pretrained_ckpt)
+        if float_checkpoint:
+            _ = load_checkpoint(self.architecture, float_checkpoint)
             self.architecture._is_init = True
         self.quantizer = MODELS.build(quantizer)
-        self._observers_enabled = True
-        self._fake_quants_enabled = True
-        self.export_mode = export_mode
-        self.qmodel_modes = qmodel_modes
+        self.input_shapes = input_shapes
+        self.forward_modes = forward_modes
+
         self.qmodels = self._build_qmodels(self.architecture)
 
-    def sync_param(self):
+        self.sync_param('tensor')
+
+    def sync_param(self, src_mode):
 
         def traverse(module, prefix):
             for name, child in module._modules.items():
                 if module is None:
                     continue
-                module_name = f'{prefix}{name}'
+                child_name = f'{prefix}{name}'
                 if isinstance(child, FakeQuantizeBase):
                     for name, param in child.named_parameters():
-                        param.data.copy_(self.qmodels['loss'].state_dict()
-                                         [f'{module_name}.{name}'])
+                        param_name = f'{child_name}.{name}'
+                        src_param = src_state_dict[param_name]
+                        if src_param.shape == param.shape:
+                            param.data.copy_(src_param)
+                        else:
+                            requirs_grad = param.requires_grad
+                            param.requires_grad = False
+                            param.resize_(src_param.shape)
+                            param.requires_grad = requirs_grad
+                            param.data.copy_(src_param)
                     for name, buffer in child.named_buffers():
-                        buffer.data.copy_(self.qmodels['loss'].state_dict()
-                                          [f'{module_name}.{name}'])
+                        buffer_name = f'{child_name}.{name}'
+                        src_buffer = src_state_dict[buffer_name]
+                        if src_buffer.shape == buffer.shape:
+                            buffer.data.copy_(src_buffer)
+                        else:
+                            buffer.resize_(src_buffer.shape)
+                            buffer.data.copy_(src_buffer)
                 else:
-                    traverse(child, f'{module_name}.')
+                    traverse(child, f'{child_name}.')
 
-        for mode in self.qmodel_modes:
-            if mode == 'loss':
+        src_state_dict = self.qmodels[src_mode].state_dict()
+        for mode in self.forward_modes:
+            if mode == src_mode:
                 continue
             traverse(self.qmodels[mode], '')
 
@@ -92,12 +109,17 @@ class GeneralQuant(BaseAlgorithm):
         self.quantizer._swap_ff_with_fxff(model)
         tracer = self.quantizer.tracer
 
-        for mode in self.qmodel_modes:
+        for mode in self.forward_modes:
             concrete_args = {'mode': mode}
             traced_graph = tracer.trace(model, concrete_args=concrete_args)
 
-            qmodel = build_graphmodule(model, traced_graph)
-            qmodels[mode] = self.quantizer.prepare(model, qmodel)
+            graph_mopdule = build_graphmodule(model, traced_graph)
+            observed_module = self.quantizer.prepare(model, graph_mopdule)
+
+            qmodels[mode] = observed_module
+
+        dummy_input = torch.randn(self.input_shapes)
+        qmodels['predict'](dummy_input, None, 'predict')
 
         return qmodels
 
@@ -114,39 +136,11 @@ class GeneralQuant(BaseAlgorithm):
 
     def calibrate_step(self, data):
         data = self.data_preprocessor(data, False)
-        self.state = (1, 0)
         return self._run_forward(data, mode='tensor')
-
-    def convert(self, mode='predict'):
-        qmodel = self.qmodels[self.export_mode]
-        self.qmodels[mode] = self.quantizer.convert(qmodel)
-
-    @property
-    def state(self):
-        return (self._observers_enabled, self._fake_quants_enabled)
-
-    @state.setter
-    def state(self, state: Tuple[bool, bool]):
-        observers_enabled, fake_quants_enabled = state
-        qmodel = self.qmodels[self.export_mode]
-        for submodule in qmodel.modules():
-            if isinstance(submodule, torch.quantization.FakeQuantize):
-                if observers_enabled:
-                    submodule.enable_observer()
-                else:
-                    submodule.disable_observer()
-
-                if fake_quants_enabled:
-                    submodule.enable_fake_quant()
-                else:
-                    submodule.disable_fake_quant()
-
-        self._observers_enabled = observers_enabled
-        self._fake_quants_enabled = fake_quants_enabled
 
 
 @MODEL_WRAPPERS.register_module()
-class GeneralQuantDDP(MMDistributedDataParallel):
+class MMArchitectureQuantDDP(MMDistributedDataParallel):
     """DDPwapper for GeneralQuant."""
 
     def __init__(self,
@@ -165,18 +159,5 @@ class GeneralQuantDDP(MMDistributedDataParallel):
     def calibrate_step(self, data):
         return self.module.calibrate_step(data)
 
-    @property
-    def state(self):
-        return (self.module._observers_enabled,
-                self.module._fake_quants_enabled)
-
-    @state.setter
-    def state(self, state: Tuple[bool]):
-        self.module.state = state
-
-    def convert(self, mode='predict'):
-        self.module.convert(mode)
-        self.module.qmodels[mode].cuda()
-
-    def sync_param(self):
-        self.module.sync_param()
+    def sync_param(self, src):
+        self.module.sync_param(src)

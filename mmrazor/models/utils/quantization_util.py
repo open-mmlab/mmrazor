@@ -3,6 +3,7 @@ from functools import partial
 from typing import Any, Dict, List, Optional, Set
 
 import torch
+import torch.distributed as dist
 
 
 class PerChannelLoadHook:
@@ -40,25 +41,15 @@ class PerChannelLoadHook:
         self.hook.remove()
 
 
-USE_LINK = False
 USE_DDP = False
 
-try:
-    import spring.linklink as link
-    assert link.is_initialized()
-    USE_LINK = True
-except (ModuleNotFoundError, AssertionError):
-    import torch.distributed as dist
-    if torch.distributed.is_initialized():
-        USE_DDP = True
+if torch.distributed.is_initialized():
+    USE_DDP = True
 
 
 def sync_tensor(tensor):
-    if USE_LINK:
-        if tensor.is_cuda is True:
-            tensor.data = tensor.data / link.get_world_size()
-            link.allreduce(tensor.data)
-    elif USE_DDP:
+
+    if USE_DDP:
         tensor.data = tensor.data / dist.get_world_size()
         dist.all_reduce(tensor.data)
     return tensor
