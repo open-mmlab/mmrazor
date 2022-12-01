@@ -1,17 +1,13 @@
 _base_ = [
     'mmcls::_base_/default_runtime.py',
     'mmrazor::_base_/settings/imagenet_bs2048_bignas.py',
-    'mmrazor::_base_/nas_backbones/bignas_mobilenetv3_supernet.py',
+    'mmrazor::_base_/nas_backbones/attentive_mobilenetv3_supernet.py',
 ]
 
 supernet = dict(
     _scope_='mmrazor',
     type='SearchableImageClassifier',
-    backbone=dict(
-        type='AttentiveMobileNetV3',
-        arch_setting=_base_.arch_setting,
-        norm_cfg=dict(type='DynamicBatchNorm2d', momentum=0.0),
-        act_cfg=dict(type='Swish')),
+    backbone=_base_.nas_backbone,
     head=dict(
         type='DynamicLinearClsHead',
         num_classes=1000,
@@ -23,19 +19,14 @@ supernet = dict(
             mode='original',
             loss_weight=1.0),
         topk=(1, 5)),
-    input_resizer_cfg=dict(
-        input_resizer=dict(type='DynamicInputResizer'),
-        mutable_shape=dict(
-            type='OneShotMutableValue',
-            value_list=[[192, 192], [224, 224], [256, 256], [288, 288]],
-            default_value=[224, 224])),
+    input_resizer_cfg=_base_._INPUT_MUTABLE,
     connect_head=dict(connect_with_backbone='backbone.last_mutable'),
 )
 
 model = dict(
     _scope_='mmrazor',
     type='BigNAS',
-    num_samples=_base_.num_samples,
+    strategy='sandwich4',
     drop_path_rate=0.2,
     backbone_dropout_stages=[6, 7],
     architecture=supernet,
@@ -64,7 +55,13 @@ model = dict(
             parse_cfg={'type': 'Predefined'}),
         value_mutator=dict(type='DynamicValueMutator')))
 
+optim_wrapper = dict(accumulative_counts=4)
+
 model_wrapper_cfg = dict(
     type='mmrazor.BigNASDDP',
     broadcast_buffers=False,
     find_unused_parameters=True)
+
+default_hooks = dict(
+    checkpoint=dict(
+        type='CheckpointHook', interval=1, max_keep_ckpts=1, save_best='auto'))

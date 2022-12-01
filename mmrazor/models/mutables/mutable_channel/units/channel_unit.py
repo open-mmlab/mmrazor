@@ -259,7 +259,7 @@ class ChannelUnit(BaseModule):
 
     # node operations
 
-    def add_ouptut_related(self, channel: Channel):
+    def add_output_related(self, channel: Channel):
         """Add a Channel which is output related."""
         assert channel.is_output_channel
         assert self.num_channels == \

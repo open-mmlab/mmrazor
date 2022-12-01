@@ -23,7 +23,7 @@ class DynamicInputResizer(InputResizer, DynamicResizeMixin):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         self._size = self.get_dynamic_shape()
 
-        return super().forward(x)
+        return super().forward(x, self._size)
 
     @property
     def static_op_factory(self):

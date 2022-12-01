@@ -12,18 +12,12 @@ class InputResizer(Module):
     }
 
     def __init__(self,
-                 size: Optional[Tuple[int, int]] = None,
                  interpolation_type: str = 'bicubic',
                  align_corners: bool = False,
                  scale_factor: Optional[Union[float, List[float]]] = None,
                  recompute_scale_factor: Optional[bool] = None) -> None:
         super().__init__()
 
-        if size is not None:
-            if len(size) != 2:
-                raise ValueError('Length of size must be 2, '
-                                 f'but got: {len(size)}')
-        self._size = size
         if interpolation_type not in self.valid_interpolation_type:
             raise ValueError(
                 'Expect `interpolation_type` be '
@@ -34,8 +28,8 @@ class InputResizer(Module):
         self._align_corners = align_corners
         self._recompute_scale_factor = recompute_scale_factor
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if self._size is None:
+    def forward(self, x: torch.Tensor, size=Optional[Tuple[int, int]]) -> torch.Tensor:
+        if size is None:
             return x
 
         return functional.interpolate(

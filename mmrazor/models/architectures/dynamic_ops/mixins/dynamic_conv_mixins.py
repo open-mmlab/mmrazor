@@ -320,9 +320,6 @@ class BigNasConvMixin(DynamicConvMixin):
         start_offset, end_offset = _get_current_kernel_pos(
             source_kernel_size=self.kernel_size[0],
             target_kernel_size=current_kernel_size)
-        if self.groups == self.in_channels == self.out_channels:
-            start_offset, end_offset = 0, 5
-            current_padding = (2, 2)
         current_weight = \
             weight[:, :, start_offset:end_offset, start_offset:end_offset]
 

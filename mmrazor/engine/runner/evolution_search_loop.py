@@ -43,6 +43,9 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
             Defaults to 25.
         mutate_prob (float): The probability of mutation. Defaults to 0.1.
         crossover_prob (float): The probability of crossover. Defaults to 0.5.
+        calibrated_sample_nums (int): The number of images to compute the true
+            average of per-batch mean/variance instead of the running average.
+            Defaults to -1.
         constraints_range (Dict[str, Any]): Constraints to be used for
             screening candidates. Defaults to dict(flops=(0, 330)).
         estimator_cfg (dict, Optional): Used for building a resource estimator.
@@ -69,7 +72,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                  num_crossover: int = 25,
                  mutate_prob: float = 0.1,
                  crossover_prob: float = 0.5,
-                 calibrated_sample_nums: int = 4096,
+                 calibrated_sample_nums: int = -1,
                  constraints_range: Dict[str, Any] = dict(flops=(0., 330.)),
                  estimator_cfg: Optional[Dict] = None,
                  predictor_cfg: Optional[Dict] = None,
@@ -329,8 +332,9 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
             assert self.predictor is not None
             metrics = self.predictor.predict(self.model)
         else:
-            self.calibrate_bn_statistics(self.runner.train_dataloader,
-                                         self.calibrated_sample_nums)
+            if calibrated_sample_nums > 0:
+                self.calibrate_bn_statistics(self.runner.train_dataloader,
+                                            self.calibrated_sample_nums)
             self.runner.model.eval()
             for data_batch in self.dataloader:
                 outputs = self.runner.model.val_step(data_batch)
