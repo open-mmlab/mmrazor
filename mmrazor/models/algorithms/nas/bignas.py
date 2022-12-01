@@ -64,10 +64,7 @@ class BigNAS(BaseAlgorithm):
     strategy_groups: Dict[str, List] = {
         'sandwich2': ['max', 'min'],
         'sandwich3': ['max', 'random', 'min'],
-        'sandwich4': ['max', 'random', 'random1', 'min'],
-        'batch-sandwich4': [['max', 'random', 'random', 'min']],
-        'batch-sandwich4_distill': [['max'],
-                                    ['max', 'random', 'random', 'min']]
+        'sandwich4': ['max', 'random', 'random1', 'min']
     }
 
     def __init__(self,

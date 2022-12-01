@@ -74,7 +74,6 @@ class GroupMixin():
         name2mutable: Dict[str, BaseMutable] = dict()
         for name, module in supernet.named_modules():
             if isinstance(module, support_mutables):
-                # if isinstance(module, support_mutables):
                 name2mutable[name] = module
             elif hasattr(module, 'source_mutables'):
                 for each_mutables in module.source_mutables:
@@ -101,12 +100,12 @@ class GroupMixin():
             if isinstance(module, support_mutables):
                 if module.alias is not None:
                     _append(module.alias, alias2mutable_names, name)
-                elif hasattr(module, 'source_mutables'):
-                    for each_mutables in module.source_mutables:
-                        if isinstance(each_mutables, support_mutables):
-                            if each_mutables.alias is not None:
-                                _append(each_mutables.alias,
-                                        alias2mutable_names, name)
+            elif hasattr(module, 'source_mutables'):
+                for each_mutables in module.source_mutables:
+                    if isinstance(each_mutables, support_mutables):
+                        if each_mutables.alias is not None:
+                            _append(each_mutables.alias,
+                                    alias2mutable_names, name)
 
         return alias2mutable_names
 
