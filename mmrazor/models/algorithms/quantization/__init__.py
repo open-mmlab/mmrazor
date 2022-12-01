@@ -1,4 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .base import GeneralQuant
+from .base import MMArchitectureQuant, MMArchitectureQuantDDP
 
-__all__ = ['GeneralQuant']
+__all__ = ['MMArchitectureQuant', 'MMArchitectureQuantDDP']

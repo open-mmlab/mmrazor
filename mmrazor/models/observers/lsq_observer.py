@@ -33,7 +33,7 @@ class LSQObserver(BaseObserver):
         x = x_orig.to(self.min_val.dtype)
         if self.ch_axis == -1:
             self.tensor_norm = x.abs().mean()
-            self.min_val, self.max_val = torch._aminmax(x)
+            self.min_val, self.max_val = torch.aminmax(x)
         else:
             # compute channel-wise mean
             x_dim = x.size()
