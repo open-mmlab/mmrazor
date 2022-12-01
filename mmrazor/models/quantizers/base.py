@@ -3,7 +3,7 @@ from typing import Dict, List
 
 import torch
 from mmengine.model import BaseModule
-from torch.ao.quantization import QConfig
+from torch.ao.quantization import QConfig, enable_fake_quant
 from torch.ao.quantization.fx import prepare
 from torch.ao.quantization.quantize_fx import _convert_fx, _fuse_fx
 from torch.nn.intrinsic.qat import modules as qat_fused_modules
@@ -44,7 +44,6 @@ class CustomQuantizer(BaseModule):
 
     Args:
         qconfig (Dict, optional): QConfig. Defaults to DefaultQconfigs['default'].  # noqa: E501
-        is_qat (bool, optional): Is QAT ro not. Defaults to True.
         skipped_methods (List, optional): Skipped methods list for tracer.
             Defaults to None.
         prepare_custom_config_dict (Dict, optional): `PrepareCustomConfig`
@@ -60,7 +59,6 @@ class CustomQuantizer(BaseModule):
 
     def __init__(self,
                  qconfig: Dict = DefaultQconfigs['default'],
-                 is_qat: bool = True,
                  skipped_methods: List = None,
                  prepare_custom_config_dict: Dict = None,
                  convert_custom_config_dict: Dict = None,
@@ -94,7 +92,6 @@ class CustomQuantizer(BaseModule):
             self.convert_custom_config_dict)
         check_is_valid_qconfig_dict(self.equalization_qconfig_dict)
 
-        self.is_qat = is_qat
         self.skipped_methods = skipped_methods
         self._remove_qconfig = _remove_qconfig
         self.tracer = self.build_tracer()
@@ -209,9 +206,6 @@ class CustomQuantizer(BaseModule):
         return tracer
 
     def fuse_model(self, graph_module):
-        # if not self.is_qat:
-        #     graph_module.eval()
-
         graph_module = _fuse_fx(graph_module, True,
                                 self.prepare_custom_config_dict)
         return graph_module
@@ -245,7 +239,7 @@ class CustomQuantizer(BaseModule):
                     setattr(module, name, new_child)
                 else:
                     traverse(child)
-
+        observed_module.apply(enable_fake_quant)
         traverse(observed_module)
 
     def prepare_for_mmdeploy(self, model):

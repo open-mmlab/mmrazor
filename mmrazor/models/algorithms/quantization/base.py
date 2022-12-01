@@ -39,12 +39,13 @@ class MMArchitectureQuant(BaseAlgorithm):
             :class:`BaseModule`.
     """
 
-    forward_modes = ('tensor', 'predict', 'loss')
+    
 
     def __init__(self,
                  architecture,
                  quantizer,
                  data_preprocessor=None,
+                 forward_modes = ('tensor', 'predict', 'loss'),
                  float_checkpoint: Optional[str] = None,
                  input_shapes=(1, 3, 224, 224),
                  init_cfg=None):
@@ -59,6 +60,7 @@ class MMArchitectureQuant(BaseAlgorithm):
             self.architecture._is_init = True
         self.quantizer = MODELS.build(quantizer)
         self.input_shapes = input_shapes
+        self.forward_modes = forward_modes
 
         self.qmodels = self._build_qmodels(self.architecture)
 
