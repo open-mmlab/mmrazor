@@ -71,9 +71,8 @@ class MSEObserver(BaseObserver):
             new_max = x_max * (1.0 - (i * 0.01))
             scale, zero_point = self._calculate_qparams(new_min, new_max)
             x_q = torch.fake_quantize_per_channel_affine(
-                x, scale,
-                zero_point.long() if _version_under_1100 else zero_point,
-                ch_axis, self.quant_min, self.quant_max)
+                x, scale, zero_point.int(), ch_axis, self.quant_min,
+                self.quant_max)
             score = self.lp_loss(x_q, x, reduce_dim)
             update_idx = (score < best_score)
             best_score[update_idx] = score[update_idx]
@@ -87,7 +86,7 @@ class MSEObserver(BaseObserver):
             return x_orig
         x = x_orig.clone().detach().to(self.min_val.dtype)
         if self.ch_axis == -1:
-            min_val_cur, max_val_cur = torch._aminmax(x)
+            min_val_cur, max_val_cur = torch.aminmax(x)
             min_val_cur, max_val_cur = self.mse(
                 x, min_val_cur, max_val_cur, iter=95)
         else:
@@ -131,7 +130,7 @@ class EMAMSEObserver(MSEObserver):
             return x_orig
         x = x_orig.clone().detach().to(self.min_val.dtype)
         if self.ch_axis == -1:
-            min_val_cur, max_val_cur = torch._aminmax(x)
+            min_val_cur, max_val_cur = torch.aminmax(x)
             min_val_cur, max_val_cur = self.mse(
                 x, min_val_cur, max_val_cur, iter=95)
         else:

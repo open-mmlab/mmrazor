@@ -3,9 +3,11 @@ from typing import Dict, List
 
 import torch
 from mmengine.model import BaseModule
-from torch.ao.quantization import QConfig
+from torch.ao.quantization import QConfig, enable_fake_quant
 from torch.ao.quantization.fx import prepare
 from torch.ao.quantization.quantize_fx import _convert_fx, _fuse_fx
+from torch.nn.intrinsic.qat import modules as qat_fused_modules
+from torch.nn.qat import modules as qat_modules
 
 from mmrazor.models.task_modules.tracer import CustomTracer
 from mmrazor.models.utils import (check_is_valid_convert_custom_config_dict,
@@ -16,6 +18,25 @@ from mmrazor.registry import MODELS
 from mmrazor.structures.quantization import (CheckArgs, DefaultQconfigs,
                                              QuantizeScheme, SupportQtypes)
 
+SUPPORT_QAT_MODULES = (
+    qat_fused_modules.ConvBn1d, qat_fused_modules.ConvBn2d,
+    qat_fused_modules.ConvBn3d, qat_fused_modules.ConvBnReLU1d,
+    qat_fused_modules.ConvBnReLU2d, qat_fused_modules.ConvBnReLU3d,
+    qat_fused_modules.ConvReLU1d, qat_fused_modules.ConvReLU2d,
+    qat_fused_modules.ConvReLU3d, qat_fused_modules.LinearBn1d,
+    qat_fused_modules.LinearReLU, qat_modules.Conv1d, qat_modules.Conv2d,
+    qat_modules.Conv3d, qat_modules.Linear)
+
+MERGE_BN_MAPPINGS = {
+    qat_fused_modules.ConvBn1d: qat_modules.Conv1d,
+    qat_fused_modules.ConvBn2d: qat_modules.Conv2d,
+    qat_fused_modules.ConvBn3d: qat_modules.Conv3d,
+    qat_fused_modules.ConvBnReLU1d: qat_fused_modules.ConvReLU1d,
+    qat_fused_modules.ConvBnReLU2d: qat_fused_modules.ConvReLU2d,
+    qat_fused_modules.ConvBnReLU3d: qat_fused_modules.ConvReLU3d,
+    qat_fused_modules.LinearBn1d: qat_modules.Linear
+}
+
 
 @MODELS.register_module()
 class CustomQuantizer(BaseModule):
@@ -23,7 +44,6 @@ class CustomQuantizer(BaseModule):
 
     Args:
         qconfig (Dict, optional): QConfig. Defaults to DefaultQconfigs['default'].  # noqa: E501
-        is_qat (bool, optional): Is QAT ro not. Defaults to True.
         skipped_methods (List, optional): Skipped methods list for tracer.
             Defaults to None.
         prepare_custom_config_dict (Dict, optional): `PrepareCustomConfig`
@@ -39,7 +59,6 @@ class CustomQuantizer(BaseModule):
 
     def __init__(self,
                  qconfig: Dict = DefaultQconfigs['default'],
-                 is_qat: bool = True,
                  skipped_methods: List = None,
                  prepare_custom_config_dict: Dict = None,
                  convert_custom_config_dict: Dict = None,
@@ -73,7 +92,6 @@ class CustomQuantizer(BaseModule):
             self.convert_custom_config_dict)
         check_is_valid_qconfig_dict(self.equalization_qconfig_dict)
 
-        self.is_qat = is_qat
         self.skipped_methods = skipped_methods
         self._remove_qconfig = _remove_qconfig
         self.tracer = self.build_tracer()
@@ -90,9 +108,8 @@ class CustomQuantizer(BaseModule):
         prepared = prepare(
             graph_module,
             self.qconfig_dict,
-            self.is_qat,
+            True,
             self.tracer.node_name_to_scope,
-            prepare_custom_config_dict=self.prepare_custom_config_dict,
             equalization_qconfig_dict=self.equalization_qconfig_dict
         )  # type: ignore[operator]
 
@@ -189,9 +206,41 @@ class CustomQuantizer(BaseModule):
         return tracer
 
     def fuse_model(self, graph_module):
-        if not self.is_qat:
-            graph_module.eval()
-
-        graph_module = _fuse_fx(graph_module, self.is_qat,
+        graph_module = _fuse_fx(graph_module, True,
                                 self.prepare_custom_config_dict)
         return graph_module
+
+    def post_process_weight_fakequant(self,
+                                      observed_module,
+                                      keep_fake_quant=False):
+
+        def traverse(module):
+
+            for name, child in module.named_children():
+                if isinstance(child, SUPPORT_QAT_MODULES):
+                    weight_fakequant = child.weight_fake_quant
+                    child.weight.data = weight_fakequant(child.weight.data)
+
+                    float_child = child.to_float()
+
+                    if keep_fake_quant:
+                        for m in float_child.modules():
+                            setattr(m, 'qconfig', self.qconfig_dict[''])
+
+                        if type(child) in MERGE_BN_MAPPINGS:
+                            cls = MERGE_BN_MAPPINGS[type(child)]
+                            new_child = cls.from_float(float_child)
+                        else:
+                            new_child = child.from_float(float_child)
+
+                        new_child.weight_fake_quant(new_child.weight)
+                    else:
+                        new_child = float_child
+                    setattr(module, name, new_child)
+                else:
+                    traverse(child)
+        observed_module.apply(enable_fake_quant)
+        traverse(observed_module)
+
+    def prepare_for_mmdeploy(self, model):
+        raise NotImplementedError
