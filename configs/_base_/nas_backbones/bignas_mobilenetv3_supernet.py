@@ -39,3 +39,8 @@ arch_setting = dict(
         [216, 224, 8],
         [1792, 1984, 1984 - 1792],  # last layer
     ])
+
+nas_backbone = dict(
+    type='mmrazor.AttentiveMobileNetV3',
+    arch_setting=arch_setting,
+    norm_cfg=dict(type='mmrazor.DynamicBatchNorm2d', momentum=0.0))

@@ -7,11 +7,7 @@ _base_ = [
 supernet = dict(
     _scope_='mmrazor',
     type='SearchableImageClassifier',
-    backbone=dict(
-        type='AttentiveMobileNetV3',
-        arch_setting=_base_.arch_setting,
-        norm_cfg=dict(type='DynamicBatchNorm2d', momentum=0.0),
-        act_cfg=dict(type='Swish')),
+    backbone=_base_.nas_backbone,
     head=dict(
         type='DynamicLinearClsHead',
         num_classes=1000,

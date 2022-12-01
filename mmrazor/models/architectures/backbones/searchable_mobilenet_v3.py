@@ -67,12 +67,15 @@ class AttentiveMobileNetV3(BaseBackbone):
                  widen_factor: float = 1.,
                  out_indices: Sequence[int] = (7, ),
                  frozen_stages: int = -1,
+                 act_list: List = None,
+                 stride_list: List = None,
+                 with_se_list: List = None,
                  conv_cfg: Dict = dict(type='BigNasConv2d'),
                  norm_cfg: Dict = dict(type='DynamicBatchNorm2d'),
-                 act_cfg: Dict = dict(type='MemoryEfficientSwish'),
                  norm_eval: bool = False,
                  with_cp: bool = False,
                  zero_init_residual: bool = True,
+                 with_attentive_shortcut: bool = True,
                  init_cfg: Optional[Union[Dict, List[Dict]]] = None):
 
         super().__init__(init_cfg)
@@ -92,13 +95,17 @@ class AttentiveMobileNetV3(BaseBackbone):
 
         self.conv_cfg = conv_cfg
         self.norm_cfg = norm_cfg
-        self.act_cfg = act_cfg
         self.norm_eval = norm_eval
         self.zero_init_residual = zero_init_residual
         self.with_cp = with_cp
+        self.with_attentive_shortcut = with_attentive_shortcut
 
-        self.stride = [1, 2, 2, 2, 1, 2, 1]
-        self.with_se_cfg = [False, False, True, False, True, True, True]
+        self.act_list = act_list if act_list is not None \
+            else ['Swish'] * 7
+        self.stride_list = stride_list if stride_list is not None \
+            else [1, 2, 2, 2, 1, 2, 1]
+        self.with_se_list = with_se_list if with_se_list is not None \
+            else [False, False, True, False, True, True, True]
 
         # adapt mutable settings
         self.kernel_size_list = parse_values(self.arch_setting['kernel_size'])
@@ -129,13 +136,13 @@ class AttentiveMobileNetV3(BaseBackbone):
 
         self.first_conv = ConvModule(
             in_channels=3,
-            out_channels=self.in_channels,  # 24
+            out_channels=self.in_channels,
             kernel_size=3,
             stride=2,
             padding=1,
             conv_cfg=self.conv_cfg,
             norm_cfg=self.norm_cfg,
-            act_cfg=self.act_cfg)
+            act_cfg=dict(type='Swish'))
 
         self.last_mutable = OneShotMutableChannel(
             num_channels=self.in_channels,
@@ -149,8 +156,9 @@ class AttentiveMobileNetV3(BaseBackbone):
                 num_blocks=num_blocks,
                 kernel_sizes=kernel_sizes,
                 expand_ratios=expand_ratios,
-                stride=self.stride[i],
-                use_se=self.with_se_cfg[i])
+                act_cfg=self.act_list[i],
+                stride=self.stride_list[i],
+                use_se=self.with_se_list[i])
             layer_name = f'layer{i + 1}'
             self.add_module(layer_name, inverted_res_layer)
             layers.append(inverted_res_layer)
@@ -167,7 +175,7 @@ class AttentiveMobileNetV3(BaseBackbone):
                               padding=0,
                               conv_cfg=self.conv_cfg,
                               norm_cfg=self.norm_cfg,
-                              act_cfg=self.act_cfg)),
+                              act_cfg=dict(type='Swish'))),
                          ('pool', nn.AdaptiveAvgPool2d((1, 1))),
                          ('feature_mix_layer',
                           ConvModule(
@@ -178,14 +186,14 @@ class AttentiveMobileNetV3(BaseBackbone):
                               bias=False,
                               conv_cfg=self.conv_cfg,
                               norm_cfg=None,
-                              act_cfg=self.act_cfg))]))
+                              act_cfg=dict(type='Swish')))]))
         self.add_module('last_conv', last_layers)
         layers.append(last_layers)
         return layers
 
     def _make_single_layer(self, out_channels: List, num_blocks: List,
                            kernel_sizes: List, expand_ratios: List,
-                           stride: int, use_se: bool):
+                           act_cfg: str, stride: int, use_se: bool):
         """Stack InvertedResidual blocks (MBBlocks) to build a layer for
         MobileNetV3.
 
@@ -218,10 +226,10 @@ class AttentiveMobileNetV3(BaseBackbone):
                 expand_ratio=max(expand_ratios),
                 conv_cfg=self.conv_cfg,
                 norm_cfg=self.norm_cfg,
-                act_cfg=self.act_cfg,
+                act_cfg=dict(type=act_cfg),
                 with_cp=self.with_cp,
                 se_cfg=se_cfg,
-                with_attentive_shortcut=True)
+                with_attentive_shortcut=self.with_attentive_shortcut)
 
             _layers.append(mb_layer)
             self.in_channels = max(out_channels)
