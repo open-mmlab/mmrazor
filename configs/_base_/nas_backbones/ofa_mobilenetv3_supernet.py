@@ -41,7 +41,6 @@ nas_backbone = dict(
     type='mmrazor.AttentiveMobileNetV3',
     arch_setting=arch_setting,
     out_indices=(6, ),
-    widen_factor=1.2,
     stride_list=[1, 2, 2, 2, 1, 2],
     act_list=['ReLU', 'ReLU', 'ReLU', 'Swish', 'Swish', 'Swish'],
     with_se_list=[False, False, True, False, True, True],
