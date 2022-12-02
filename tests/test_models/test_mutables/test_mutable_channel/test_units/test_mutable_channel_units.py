@@ -15,8 +15,9 @@ from .....data.tracer_passed_models import backward_passed_library
 
 MUTABLE_CFG = dict(type='SimpleMutablechannel')
 PARSE_CFG = dict(
-    type='BackwardTracer',
-    loss_calculator=dict(type='ImageClassifierPseudoLoss'))
+    type='PruneTracer',
+    demo_input=(1, 3, 224, 224),
+    tracer_type='BackwardTracer')
 
 DEVICE = torch.device('cpu')
 GROUPS: List[MutableChannelUnit] = [

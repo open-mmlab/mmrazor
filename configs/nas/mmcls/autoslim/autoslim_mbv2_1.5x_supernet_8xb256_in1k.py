@@ -50,8 +50,9 @@ model = dict(
                 choice_mode='ratio',
                 divisor=8)),
         parse_cfg=dict(
-            type='BackwardTracer',
-            loss_calculator=dict(type='ImageClassifierPseudoLoss'))))
+            type='PruneTracer',
+            demo_input=(1, 3, 224, 224),
+            tracer_type='BackwardTracer')))
 
 model_wrapper_cfg = dict(
     type='mmrazor.AutoSlimDDP',
