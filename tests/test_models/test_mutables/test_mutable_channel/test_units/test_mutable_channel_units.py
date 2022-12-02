@@ -10,7 +10,6 @@ from mmrazor.models.mutables.mutable_channel import (
     L1MutableChannelUnit, MutableChannelUnit, SequentialMutableChannelUnit)
 from mmrazor.models.mutables.mutable_channel.units.channel_unit import \
     ChannelUnit
-from mmrazor.structures.graph import ModuleGraph as ModuleGraph
 from .....data.models import SingleLineModel
 from .....data.tracer_passed_models import backward_passed_library
 

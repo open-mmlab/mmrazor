@@ -223,6 +223,8 @@ class FuseConv2d(nn.Conv2d, FuseConvMixin):
     def forward(self, x: Tensor) -> Tensor:
         """Forward of fused conv2d."""
         return self.forward_mixin(x)
+
+
 class DynamicConv2dAdaptivePadding(DynamicConv2d):
     """Dynamic version of mmcv.cnn.bricks.Conv2dAdaptivePadding."""
 

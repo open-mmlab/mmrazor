@@ -255,6 +255,8 @@ class DynamicLayerNorm(LayerNorm, DynamicLayerNormMixin):
         if input.dim() != 3:
             raise ValueError('expected 3D input (got {}D input)'.format(
                 input.dim()))
+
+
 class DynamicSyncBatchNorm(nn.SyncBatchNorm, DynamicBatchNormMixin):
     """DynamicOp for sync bn."""
 
