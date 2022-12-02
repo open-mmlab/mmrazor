@@ -9,12 +9,20 @@ from mmrazor.models.mutables.mutable_channel.units import \
 
 
 def assert_model_is_changed(tensors1, tensors2):
+    """Return if the tensors has the same shape (length)."""
     shape1 = get_shape(tensors1, only_length=True)
     shape2 = get_shape(tensors2, only_length=True)
     assert shape1 == shape2, f'{shape1}!={shape2}'
 
 
 def get_shape(tensor, only_length=False):
+    """Get the shape of a tensor list/tuple/dict.
+
+    Args:
+        tensor (Union[List,Tuple,Dict,Tensor]): input tensors.
+        only_length (bool, optional): If only return the length of the tensors.
+            Defaults to False.
+    """
     if isinstance(tensor, torch.Tensor):
         if only_length:
             return len(tensor.shape)
@@ -38,6 +46,8 @@ def get_shape(tensor, only_length=False):
 def forward_units(model, try_units: List[SequentialMutableChannelUnit],
                   units: List[SequentialMutableChannelUnit], demo_input,
                   template_output):
+    """Forward a model with MutableChannelUnits and assert if the result
+    changed."""
     model.eval()
     for unit in units:
         unit.current_choice = 1.0
@@ -51,6 +61,7 @@ def forward_units(model, try_units: List[SequentialMutableChannelUnit],
 
 
 def find_mutable(model, try_units, units, demo_input, template_tensors):
+    """Find really mutable MutableChannelUnits in some MutableChannelUnits."""
     if len(try_units) == 0:
         return []
     try:

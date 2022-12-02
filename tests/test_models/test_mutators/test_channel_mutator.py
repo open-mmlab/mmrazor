@@ -1,6 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-import sys
 import unittest
 from typing import Union
 
@@ -12,8 +11,6 @@ from mmrazor.models.mutators.channel_mutator import ChannelMutator
 from mmrazor.registry import MODELS
 from ...data.models import DynamicLinearModel
 from ...data.tracer_passed_models import backward_passed_library
-
-sys.setrecursionlimit(2000)
 
 
 @MODELS.register_module()

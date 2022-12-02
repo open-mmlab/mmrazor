@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import os
 import unittest
 
 import torch
@@ -10,26 +11,38 @@ from .data.models import SingleLineModel
 from .data.tracer_passed_models import (BackwardPassedModelManager,
                                         FxPassedModelManager)
 
+TEST_DATA = os.getenv('TEST_DATA') == 'true'
+
 
 class TestModelLibrary(unittest.TestCase):
 
     def test_mmcls(self):
+        if not TEST_DATA:
+            self.skipTest('not test data to save time.')
         library = MMClsModelLibrary(exclude=['cutmax', 'cifar'])
         self.assertTrue(library.is_default_includes_cover_all_models())
 
     def test_defaul_library(self):
+        if not TEST_DATA:
+            self.skipTest('not test data to save time.')
         library = DefaultModelLibrary()
         self.assertTrue(library.is_default_includes_cover_all_models())
 
     def test_torchlibrary(self):
+        if not TEST_DATA:
+            self.skipTest('not test data to save time.')
         library = TorchModelLibrary()
         self.assertTrue(library.is_default_includes_cover_all_models())
 
     def test_mmdet(self):
+        if not TEST_DATA:
+            self.skipTest('not test data to save time.')
         library = MMDetModelLibrary()
         self.assertTrue(library.is_default_includes_cover_all_models())
 
     def test_mmseg(self):
+        if not TEST_DATA:
+            self.skipTest('not test data to save time.')
         library = MMSegModelLibrary()
         self.assertTrue(library.is_default_includes_cover_all_models())
 

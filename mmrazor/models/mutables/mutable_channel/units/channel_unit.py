@@ -177,6 +177,8 @@ class ChannelUnit(BaseModule):
 
     @classmethod
     def init_from_prune_tracer(cls, model, tracer=None):
+        """Init MutableChannelUnits from a PruneTracer."""
+
         if tracer is None:
             from mmrazor.models.task_modules.tracer import PruneTracer
             tracer = PruneTracer()

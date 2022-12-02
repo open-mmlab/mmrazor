@@ -1,31 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-
-import copy
-from typing import Dict, List, Tuple, Union
-
-import torch.nn as nn
-from mmcv.cnn.bricks import Scale
-from mmengine.model.utils import revert_sync_batchnorm
-
-from mmrazor.models.architectures.dynamic_ops import DynamicChannelMixin
-from mmrazor.models.mutables.mutable_channel import (
-    MutableChannelUnit, SequentialMutableChannelUnit)
-from mmrazor.models.mutables.mutable_channel.units.utils import find_mutable
-from mmrazor.registry import TASK_UTILS
-from mmrazor.structures.graph import BaseGraph, ModuleGraph
-from mmrazor.structures.graph.channel_graph import (
-    ChannelGraph, default_channel_node_converter)
-from mmrazor.structures.graph.module_graph import (FxTracerToGraphConverter,
-                                                   PathToGraphConverter)
-from ..demo_inputs import BaseDemoInput, DefaultDemoInput
-from .backward_tracer import BackwardTracer
-from .fx_tracer import CustomFxTracer
-from .loss_calculator.sum_loss_calculator import SumPseudoLoss
-from .razor_tracer import FxBaseNode, RazorFxTracer
-
-# where to config prune tracer
 """
-- How to config PruneTracer using hard code
+- How to config PruneTracer by hard code
   - fxtracer
     - demo_inputs
         ./mmrazor/models/task_modules/demo_inputs/default_demo_inputs.py
@@ -38,13 +13,44 @@ from .razor_tracer import FxBaseNode, RazorFxTracer
   - DynamicOp
         ./mmrazor/models/architectures/dynamic_ops/bricks/dynamic_conv.py
 """
+import copy
+from typing import Dict, List, Tuple, Union
 
-# concrete args
+import torch
+import torch.nn as nn
+from mmcv.cnn.bricks import Scale
+from mmengine.model.utils import revert_sync_batchnorm
+
+from mmrazor.models.architectures.dynamic_ops import DynamicChannelMixin
+from mmrazor.models.mutables.mutable_channel import (
+    MutableChannelUnit, SequentialMutableChannelUnit)
+from mmrazor.models.mutables.mutable_channel.units.utils import find_mutable
+from mmrazor.registry import TASK_UTILS
+from mmrazor.structures.graph import ModuleGraph
+from mmrazor.structures.graph.channel_graph import (
+    ChannelGraph, default_channel_node_converter)
+from mmrazor.structures.graph.module_graph import (FxTracerToGraphConverter,
+                                                   PathToGraphConverter)
+from mmrazor.structures.graph.pseudo_fx_graph import parse_torch_graph
+from ..demo_inputs import BaseDemoInput, DefaultDemoInput
+from .backward_tracer import BackwardTracer
+from .fx_tracer import CustomFxTracer
+from .loss_calculator.sum_loss_calculator import SumPseudoLoss
 
 
 @TASK_UTILS.register_module()
 class PruneTracer:
+    """The tracer for pruning. It return the configs of MutableChannelUnits as
+    result.
 
+    Args:
+        demo_input (Union[List, Dict, Tuple, BaseDemoInput], optional):
+            The demo input for the model. demo_input can be one of
+            input_shape(list), config of a demo input generator, a demoinput
+            generator. Defaults to (1, 3, 224, 224).
+        tracer_type (str, optional): str indicates which basic tracer to use.
+            Defaults to 'BackwardTracer'.
+    """
     default_leaf_modules = (
         # dynamic op
         DynamicChannelMixin,
@@ -79,11 +85,16 @@ class PruneTracer:
                 loss_calculator=SumPseudoLoss(
                     input_shape=self.demo_input.input_shape))
         elif tracer_type == 'FxTracer':
+            from mmrazor import digit_version
+            assert digit_version(torch.__version__) >= digit_version(
+                '1.12.0'
+            ), 'Please install torch>=1.12.0, if you want to use fx tracer.'
             self.tracer = CustomFxTracer(leaf_module=self.default_leaf_modules)
         else:
             raise NotImplementedError()
 
     def trace(self, model):
+        """Tracer the model, and return configs of channel dependency."""
         model = copy.deepcopy(model)
         model = revert_sync_batchnorm(model)
         model.eval()
@@ -94,8 +105,7 @@ class PruneTracer:
         elif self.tracer_type == 'FxTracer':
             fx_graph = self._fx_trace(model)
             fx_graph.owning_module = model
-            fx_graph.graph = BaseGraph[FxBaseNode]()
-            base_graph = RazorFxTracer().parse_torch_graph(fx_graph)
+            base_graph = parse_torch_graph(fx_graph)
 
             module_graph = FxTracerToGraphConverter(base_graph, model).graph
             module_graph._model = model
@@ -117,6 +127,7 @@ class PruneTracer:
         return self._find_mutable_units(model, unit_configs)
 
     def _fx_trace(self, model):
+        """Tracer the model using fx tracer."""
         args = self.demo_input.get_data(model)
         if isinstance(args, dict):
             args.pop('inputs')
@@ -126,6 +137,7 @@ class PruneTracer:
             return self.tracer.trace(model)
 
     def _find_mutable_units(self, model, units_config: Dict):
+        """Test the tracer result and filter unforwardable units."""
         model = copy.deepcopy(model)
         units: List[SequentialMutableChannelUnit] = [
             SequentialMutableChannelUnit.init_from_cfg(model, cfg)

@@ -42,7 +42,7 @@ default_demo_input_class_for_scope = {
 
 
 def get_default_demo_input_class(model, scope):
-
+    """Get demo input generator according to a model and scope."""
     if scope is not None:
         for scope_name, demo_input in default_demo_input_class_for_scope.items(
         ):
@@ -58,14 +58,26 @@ def get_default_demo_input_class(model, scope):
 
 
 def defaul_demo_inputs(model, input_shape, training=False, scope=None):
+    """Get demo input according to a model and scope."""
     demo_input = get_default_demo_input_class(model, scope)
     return demo_input().get_data(model, input_shape, training)
 
 
 @TASK_UTILS.register_module()
 class DefaultDemoInput(BaseDemoInput):
+    """Default demo input generator.
 
-    def __init__(self, input_shape=None, training=False, scope=None) -> None:
+    Args:
+        input_shape: default input shape . Defaults to None.
+        training (bool, optional): Whether is training mode. Defaults to False.
+        scope (str, optional): mm scope name. Defaults to None.
+    """
+
+    def __init__(self,
+                 input_shape=None,
+                 training=False,
+                 scope: str = None) -> None:
+
         default_demo_input_class = get_default_demo_input_class(None, scope)
         if input_shape is None:
             input_shape = default_demo_input_class.default_shape
@@ -73,4 +85,5 @@ class DefaultDemoInput(BaseDemoInput):
         self.scope = scope
 
     def _get_data(self, model, input_shape, training):
+        """Helper for get_data, including core logic to generate demo input."""
         return defaul_demo_inputs(model, input_shape, training, self.scope)

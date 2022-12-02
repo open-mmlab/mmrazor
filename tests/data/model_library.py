@@ -16,7 +16,7 @@ from .models import (AddCatModel, ConcatModel, ConvAttnModel, DwConvModel,
 import json
 # model generator
 from mmdet.testing._utils import demo_mm_inputs
-
+import string
 # helper functions
 
 
@@ -53,15 +53,10 @@ class ModelGenerator(nn.Module):
         self._model = None
 
     def __call__(self, *args, **kwargs):
-        if len(args) == 0 and len(kwargs) == 0:
-            self.init_model()
-            return self
-        else:
-            return self.forward(*args, **kwargs)
+        return self.init_model()
 
     def init_model(self):
-        self._model = self.model_src()
-        return self._model
+        return self.model_src()
 
     def forward(self, x):
         assert self._model is not None
@@ -85,9 +80,13 @@ class ModelGenerator(nn.Module):
 
     @classmethod
     def get_short_name(cls, name: str):
+        scope = name.split('.')[0]
         base_name = cls.get_base_name(name)
         names = base_name.replace('-', '.').replace('_', '.').split('.')
-        return names[0]
+        name = names[0]
+        name = name.rstrip(string.digits)
+
+        return f'{scope}.{name}'
 
     @property
     def short_name(self):
@@ -384,6 +383,10 @@ class MMClsModelLibrary(MMModelLibrary):
         'repvgg',
         'seresnext',
         'deit',
+        'replknet',
+        'hornet',
+        'mobilevit',
+        'davit',
     ]
     base_config_path = '_base_/models/'
     repo = 'mmcls'
@@ -488,6 +491,9 @@ class MMDetModelLibrary(MMModelLibrary):
         'dynamic',
         'yolox',
         'albu',
+        'misc',
+        'crowddet',
+        'condins',
     ]
     base_config_path = '/'
     repo = 'mmdet'

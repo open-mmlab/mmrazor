@@ -6,8 +6,8 @@ from mmrazor.registry import TASK_UTILS
 
 @TASK_UTILS.register_module()
 class SumPseudoLoss:
-    """Calculate the pseudo loss to trace the topology of a `ImageClassifier`
-    in MMClassification with `BackwardTracer`.
+    """Calculate the pseudo loss to trace the topology by summing all output
+    tensors.
 
     Args:
         input_shape (Tuple): The shape of the pseudo input. Defaults to
@@ -24,7 +24,7 @@ class SumPseudoLoss:
         return self._sum_of_output(pseudo_output)
 
     def _sum_of_output(self, tensor):
-
+        """Get a loss by summing all tensors."""
         if isinstance(tensor, torch.Tensor):
             return tensor.sum()
         elif isinstance(tensor, list) or isinstance(tensor, tuple):

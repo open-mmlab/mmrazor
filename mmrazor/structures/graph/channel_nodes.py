@@ -39,8 +39,6 @@ class ChannelNode(ModuleNode):
     Args:
         name (str): The name of the node.
         val (Union[nn.Module, str]): value of the node.
-        expand_ratio (int, optional): expand_ratio compare with channel
-            mask. Defaults to 1.
         module_name (str, optional): the module name of the module of the
             node.
     """
@@ -113,23 +111,28 @@ class ChannelNode(ModuleNode):
             return self._get_out_channel_by_in_channels(self.in_channels)
 
     def check_channel(self):
+        """Check if the node has a channel error."""
         for node in self.prev_nodes:
             assert_channel(node.out_channels == self.in_channels, self)
 
     @property
     def _in_channels(self) -> int:
+        """Get in channel number of by the module self."""
         raise NotImplementedError(
             f'{self.name}({self.__class__.__name__}) has no _in_channels')
 
     @property
     def _out_channels(self) -> int:
+        """Get out channel number of by the module self."""
         raise NotImplementedError(
             f'{self.name}({self.__class__.__name__}) has no _out_channels')
 
     def _get_out_channel_by_in_channels(self, in_channels):
+        """Get output channel number by the input channel number."""
         return in_channels
 
     def _get_in_channels_by_prev_nodes(self, prev_nodes):
+        """Get input channel numbers by previous nodes."""
         if len(prev_nodes) == 0:
             from mmengine import MMLogger
             MMLogger.get_current_instance().debug(
@@ -520,6 +523,7 @@ def default_channel_node_converter(
 
 
 def group_union(tensor: ChannelTensor, groups: int, group_tensor=None):
+    """Group-wise union for ChannelTensor."""
     c_per_group = len(tensor) // groups
     if group_tensor is None:
         group_tensor = ChannelTensor(c_per_group)

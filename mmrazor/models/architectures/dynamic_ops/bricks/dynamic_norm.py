@@ -196,6 +196,7 @@ class SwitchableBatchNorm2d(DynamicBatchNorm2d):
 
 
 class DynamicSyncBatchNorm(nn.SyncBatchNorm, DynamicBatchNormMixin):
+    """DynamicOp for sync bn."""
 
     def __init__(self,
                  num_features: int,
@@ -203,11 +204,9 @@ class DynamicSyncBatchNorm(nn.SyncBatchNorm, DynamicBatchNormMixin):
                  momentum: float = 0.1,
                  affine: bool = True,
                  track_running_stats: bool = True,
-                 process_group: Optional[Any] = None,
-                 device=None,
-                 dtype=None) -> None:
+                 process_group: Optional[Any] = None) -> None:
         super().__init__(num_features, eps, momentum, affine,
-                         track_running_stats, process_group, device, dtype)
+                         track_running_stats, process_group)
         self.mutable_attrs: Dict[str, Optional[BaseMutable]] = nn.ModuleDict()
 
     @classmethod
@@ -227,7 +226,8 @@ class DynamicSyncBatchNorm(nn.SyncBatchNorm, DynamicBatchNormMixin):
                 'SyncBatchNorm expected input tensor to be on GPU')
 
         self._check_input_dim(input)
-        self._check_non_zero_input_channels(input)
+        if hasattr(self, '_check_non_zero_input_channels'):
+            self._check_non_zero_input_channels(input)
 
         # exponential_average_factor is set to self.momentum
         # (when it is available) only so that it gets updated
@@ -318,6 +318,7 @@ class DynamicSyncBatchNorm(nn.SyncBatchNorm, DynamicBatchNormMixin):
 
 
 class DynamicBatchNormXd(_DynamicBatchNorm):
+    """Dynamic op for _DynamicBatchNorm."""
 
     @property
     def static_op_factory(self):

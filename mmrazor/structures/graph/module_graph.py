@@ -16,14 +16,14 @@ from mmrazor.models.task_modules.tracer.loss_calculator import \
     ImageClassifierPseudoLoss
 from mmrazor.models.task_modules.tracer.path import (Path, PathConcatNode,
                                                      PathList, PathNode)
-from mmrazor.models.task_modules.tracer.razor_tracer import (FxBaseNode,
-                                                             RazorFxTracer)
 from mmrazor.registry import TASK_UTILS
 from .base_graph import BaseGraph, BaseNode
+from .pseudo_fx_graph import FxBaseNode
 
 
 # ModuleNode && ModuleGraph
 class NoOutputError(Exception):
+    """An error occurs when no output node for a leaf node."""
 
     def __init__(self, node, *args: object) -> None:
         super().__init__(f'{node}', *args)
@@ -33,6 +33,7 @@ class NoOutputError(Exception):
 
 
 class NoInputError(Exception):
+    """An error occurs when no input node for a leaf node."""
 
     def __init__(self, node, *args: object) -> None:
         super().__init__(f'{node}', *args)
@@ -40,6 +41,7 @@ class NoInputError(Exception):
 
 
 def my_assert(condiion, exception):
+    """assert helper function."""
     if not condiion:
         raise exception
 
@@ -74,9 +76,6 @@ class ModuleNode(BaseNode):
             >>> assert node.out_channels == node.in_channels*4
         """
 
-        # assert (isinstance(val, Module)
-        #         or val in self.__class__.pre_defined_node_val_str
-        #         ), f'{val} node is not allowed'
         super().__init__(name, val)
         self.module_name = module_name
 
@@ -84,6 +83,7 @@ class ModuleNode(BaseNode):
 
     @property
     def is_module(self):
+        """Whether the node includes a module."""
         return isinstance(self.val, nn.Module)
 
     def __repr__(self) -> str:
@@ -144,13 +144,15 @@ class ModuleNode(BaseNode):
         return self.basic_type in ['conv2d', 'linear', 'gwconv2d']
 
     def is_input(self):
+        """Whether the node is an input node."""
         return self.val == 'input_placeholder'
 
     def is_output(self):
+        """Whether the node is an output node."""
         return self.val == 'output_placeholder'
 
     def check(self):
-
+        """Check whether the node has any error."""
         if self.is_input():
             assert len(self.prev_nodes) == 0, f'{self}'
             my_assert(len(self.next_nodes) > 0, NoOutputError(self))
@@ -189,23 +191,6 @@ class ModuleGraph(BaseGraph[MODULENODE]):
         return converter.graph
 
     @staticmethod
-    def init_from_fx_tracer(model: Module,
-                            fx_tracer={'type': 'RazorFxTracer'}):
-        """init module graph using torch fx tracer."""
-        if isinstance(fx_tracer, dict):
-            tracer: RazorFxTracer = TASK_UTILS.build(fx_tracer)
-        else:
-            tracer = fx_tracer
-
-        base_graph = tracer.trace(model)
-
-        converter = FxTracerToGraphConverter(base_graph, model)
-
-        converter.graph._model = model
-        converter.graph.refresh_module_name()
-        return converter.graph
-
-    @staticmethod
     def init_from_model(model: Module):
         """init module graph from a model which uses connect_module to record
         the relation among modules."""
@@ -213,6 +198,7 @@ class ModuleGraph(BaseGraph[MODULENODE]):
 
     # others
     def refresh_module_name(self):
+        """Refresh the module name."""
         module2name = {}
         for name, module in self._model.named_modules():
             module2name[module] = name
@@ -222,10 +208,12 @@ class ModuleGraph(BaseGraph[MODULENODE]):
                 node.module_name = module2name[node.val]
 
     def check(self, fix=False):
+        """Check whether the Graph has any error."""
         for node in copy.copy(list(self.topo_traverse())):
             self._check(node, fix=fix)
 
     def _check(self, node, fix=False):
+        """Helper method for self.check."""
         try:
             node.check()
         except Exception as e:
@@ -235,25 +223,27 @@ class ModuleGraph(BaseGraph[MODULENODE]):
                 try:
                     raise e
                 except NoOutputError as e:
-                    MMLogger.get_current_instance().warn(
+                    MMLogger.get_current_instance().debug(
                         f'add a output after {node}, error: {e}')
                     self._add_output_after(node)
                 except NoInputError as e:
-                    MMLogger.get_current_instance().warn(
+                    MMLogger.get_current_instance().debug(
                         f'add a input before {node}, error: {e}')
                     self._add_input_before(node)
 
                 self._check(node, fix=True)
 
-    def _add_input_before(self, node: MODULENODE):
-        input_node: MODULENODE = ModuleNode(
-            'auto_input', 'input_placeholder')  # type: ignore
+    def _add_input_before(self, node):
+        """Add an input node before a node."""
+        input_node = ModuleNode('auto_input',
+                                'input_placeholder')  # type: ignore
         input_node = self.add_or_find_node(input_node)
         self.connect(input_node, node)
 
-    def _add_output_after(self, node: MODULENODE):
-        output_node: MODULENODE = ModuleNode(
-            'auto_output', 'output_placeholder')  # type: ignore
+    def _add_output_after(self, node):
+        """Add an output node after a node."""
+        output_node = ModuleNode('auto_output',
+                                 'output_placeholder')  # type: ignore
         output_node = self.add_or_find_node(output_node)
         self.connect(node, output_node)
 

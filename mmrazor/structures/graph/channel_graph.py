@@ -31,7 +31,8 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
         return channel_graph
 
     def generate_units_config(self) -> Dict:
-        """Collect channel units in the graph.
+        """Generate configs of MutableChannelUnits according to the Graph.
+
         "hash"{
             'init_args':{
                 'num_channels': 10
@@ -50,7 +51,8 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
                     ...
                 ]
             }
-        }"""
+        }
+        """
 
         chanel_config_template: Dict = {
             'init_args': {
@@ -120,34 +122,10 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
                 node.forward()
         self._merge_same_module()
 
-    def _check(self, node: ChannelNode, fix=False):
-
-        try:
-            node.check_channel()
-            node.check()
-        except Exception as e:
-            if not fix:
-                raise e
-            else:
-                try:
-                    raise e
-                except NoOutputError as e:
-                    MMLogger.get_current_instance().warn(
-                        f'add a output after {node}, error: {e}')
-                    self._add_output_after(node)
-                except NoInputError as e:
-                    MMLogger.get_current_instance().warn(
-                        f'add a input before {node}, error: {e}')
-                    self._add_input_before(node)
-                except ChannelDismatchError as e:
-                    MMLogger.get_current_instance().warn(
-                        (f'{node} has channel error, so'
-                         f'we convert it to a EndNode. error: {e}'))
-                    self._convert_a_node_to_end_node(node)
-
-                self._check(node, fix=True)
+    # graph modification
 
     def _add_input_before(self, node: ChannelNode):
+        """Add a input node before a ChannelNode."""
         try:
             in_channels = node.in_channels
         except Exception:
@@ -160,12 +138,15 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
         self.connect(input_node, node)
 
     def _add_output_after(self, node: ChannelNode):
+        """Add a output node after a ChannelNode."""
+
         output_node = EndNode('auto_output',
                               'output_placeholder')  # type: ignore
         output_node = self.add_or_find_node(output_node)
         self.connect(node, output_node)
 
     def _convert_a_node_to_end_node(self, node: ChannelNode):
+        """Convert a node to end node."""
 
         end_node = EndNode('auto_end', 'output_placeholder')
         end_node = self.add_or_find_node(end_node)
@@ -195,6 +176,7 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
                     nodes[0].out_channel_tensor.union(node.out_channel_tensor)
 
     def _insert_expand_node(self):
+        """Insert expand nodes in the graph."""
         num_expand_nodes = 0
         nodes: List[ChannelNode] = copy.copy(list(self.topo_traverse()))
         for node in nodes:
@@ -222,7 +204,38 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
                         self.connect(new_node, node)
                         self.disconnect(pre_node, node)
 
+    # others
+
+    def _check(self, node: ChannelNode, fix=False):
+        """Helper for self.check, including check whether the Graph has any
+        error and fix errors."""
+        try:
+            node.check_channel()
+            node.check()
+        except Exception as e:
+            if not fix:
+                raise e
+            else:
+                try:
+                    raise e
+                except NoOutputError as e:
+                    MMLogger.get_current_instance().debug(
+                        f'add a output after {node}, error: {e}')
+                    self._add_output_after(node)
+                except NoInputError as e:
+                    MMLogger.get_current_instance().debug(
+                        f'add a input before {node}, error: {e}')
+                    self._add_input_before(node)
+                except ChannelDismatchError as e:
+                    MMLogger.get_current_instance().debug(
+                        (f'{node} has channel error, so'
+                         f'we convert it to a EndNode. error: {e}'))
+                    self._convert_a_node_to_end_node(node)
+
+                self._check(node, fix=True)
+
     def _reset_channel_elem_cache(self):
+        """Reset hash cache of ChannelTensors."""
         # may has bug, as some tensor not recorded by node.xxxx_tensors
         for node in self.topo_traverse():
             assert (node.in_channel_tensor is not None

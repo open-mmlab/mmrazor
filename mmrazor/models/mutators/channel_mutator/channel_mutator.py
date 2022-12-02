@@ -40,8 +40,10 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
         parse_cfg (Dict, optional):
             The config to parse the model.
             Defaults to
-                dict( type='BackwardTracer',
-                loss_calculator=dict(type='ImageClassifierPseudoLoss')).
+                dict(
+                     type='PruneTracer',
+                     demo_input=(1, 3, 224, 224),
+                     tracer_type='BackwardTracer')
 
         init_cfg (dict, optional): initialization configuration dict for
             BaseModule.
@@ -49,7 +51,8 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
     Note:
         There are three ways used in ChannelMutator to parse a model and
         get MutableChannelUnits.
-        1. Using tracer. It needs parse_cfg to be the config of a tracer.
+        1. Using tracer. It needs parse_cfg to be the config of the
+        PruneTracer.
         2. Using config. When parse_cfg['type']='Config'. It needs that
         channel_unit_cfg['unit']['xxx_unit_name] has a key 'channels'.
         3. Using the model with pre-defined dynamic-ops and mutablechannels:

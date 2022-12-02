@@ -1,4 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+"""Include functions to generate mmsegementation demo inputs.
+
+Modified from mmseg.
+"""
 import torch
 from mmengine.structures import PixelData
 from torch import nn

@@ -63,6 +63,8 @@ class MutableChannelContainer(BaseMutableChannel):
                     continue
                 else:
                     mutable.current_choice = choice
+        else:
+            raise NotImplementedError(f'Unsuppported type {choices}')
 
     def dump_chosen(self):
         chosen = []

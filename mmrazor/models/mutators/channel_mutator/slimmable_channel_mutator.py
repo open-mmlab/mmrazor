@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from mmrazor.models.mutables import SlimmableChannelUnit
 from mmrazor.registry import MODELS
@@ -24,9 +24,10 @@ class SlimmableChannelMutator(ChannelMutator[SlimmableChannelUnit]):
     def __init__(self,
                  channel_unit_cfg=dict(type='SlimmableChannelUnit', units={}),
                  parse_cfg=dict(
-                     type='BackwardTracer',
-                     loss_calculator=dict(type='ImageClassifierPseudoLoss')),
-                 init_cfg: Optional[Dict] = None) -> None:
+                     type='PruneTracer',
+                     demo_input=(1, 3, 224, 224),
+                     tracer_type='BackwardTracer'),
+                 init_cfg=None) -> None:
 
         super().__init__(channel_unit_cfg, parse_cfg, init_cfg)
 

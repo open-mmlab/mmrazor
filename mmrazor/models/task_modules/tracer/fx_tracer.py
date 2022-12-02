@@ -1,61 +1,223 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """This module define FxTracer and related classes."""
-
-import copy
+# flake8: noqa
 import functools
-from types import FunctionType
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+import inspect
+import sys
+import types
+from types import FunctionType, ModuleType
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
 
 import torch
+import torch.nn as nn
+from mmengine import MMLogger
 from torch._C import ScriptObject  # type: ignore[attr-defined]
-from torch.fx._symbolic_trace import (Tracer, _autowrap_check,
-                                      _orig_module_call, _orig_module_getattr,
-                                      _patch_wrapped_functions, _Patcher)
-from torch.fx.graph import Graph
-from torch.fx.node import Argument
-from torch.fx.proxy import Proxy
+
+from mmrazor.utils import get_placeholder
+
+try:
+    from torch.fx._symbolic_trace import (Tracer, _find_proxy,
+                                          _orig_module_call,
+                                          _orig_module_getattr,
+                                          _patch_wrapped_functions, _Patcher)
+    from torch.fx.graph import Graph
+    from torch.fx.node import Argument
+    from torch.fx.proxy import Proxy
+except ImportError:
+    Tracer = get_placeholder('torch>=1.12')
+    _find_proxy = get_placeholder('torch>=1.12')
+    _orig_module_call = get_placeholder('torch>=1.12')
+    _orig_module_getattr = get_placeholder('torch>=1.12')
+    _patch_wrapped_functions = get_placeholder('torch>=1.12')
+    _Patcher = get_placeholder('torch>=1.12')
+    Graph = get_placeholder('torch>=1.12')
+    Argument = get_placeholder('torch>=1.12')
+    Proxy = get_placeholder('torch>=1.12')
+
+from mmrazor import digit_version
+
+sys.setrecursionlimit(int(pow(2, 20)))
+
+logger = MMLogger.get_current_instance()
+
+
+def _autowrap_check(patcher: _Patcher, frame_dict: Dict[str, Any],
+                    function_ids: Set[int]):
+    auto_wrapper = AutoWrapper(patcher)
+    auto_wrapper.wrap(None, '', frame_dict)
+
+
+def auto_wrap(patcher, owner):
+    auto_wrapper = AutoWrapper(patcher)
+    auto_wrapper.wrap(None, '', owner)
+
+
+class AutoWrapper:
+
+    def __init__(self, patcher) -> None:
+        self.patcher: _Patcher = patcher
+
+    # wrap
+
+    def wrap(self, owner, name, val):
+
+        def is_method(val):
+            return (inspect.ismethod(val) or inspect.isfunction(val)
+                    or isinstance(val, types.BuiltinFunctionType)
+                    or isinstance(val, staticmethod)
+                    or isinstance(val, classmethod))
+
+        if owner is None and isinstance(val, dict):
+            self.wrap_frame(owner, name, val)
+        else:
+            # class
+            if inspect.isclass(val):
+                self.wrap_class(owner, name, val)
+            # method
+            elif inspect.isclass(owner) and is_method(val):
+                self.wrap_method(owner, name, val)
+            # function
+            elif inspect.isfunction(val) or isinstance(
+                    val, types.BuiltinFunctionType):
+                self.wrap_function(owner, name, val)
+            # package
+            elif isinstance(val, ModuleType):
+                self.wrap_module(owner, name, val)
+            # instance
+            elif isinstance(val, object):
+                self.wrap_class(None, '', type(val))
+            # else
+            else:
+                logger.debug(f'unsupported type to wrap: {name}/{type(val)}')
+
+    def wrap_frame(self, owner, name: str, val: dict):
+        assert isinstance(val, dict)
+
+        if self.patcher.visit_once(val):
+            frame_name = val['__name__'] if '__name__' in val else ''
+            logger.debug(f'wrap a frame {frame_name}')
+            for key in val:
+                self.wrap(val, key, val[key])
+
+    def wrap_module(self, owner, name, val):
+        if self.visit_once(val):
+            if val in [torch]:
+                logger.debug(f'wrap a module {owner[name]}')
+                self.wrap(None, '', val.__dict__)
+
+    def wrap_class(self, owner, name, val):
+        assert inspect.isclass(val)
+        if issubclass(val, nn.Module):
+            if self.visit_once(val):
+                logger.debug(f'wrap a class {val}')
+                for key in val.__dict__:
+                    key: str
+                    if not (key.startswith('__')):
+                        self.wrap(val, key, val.__dict__[key])
+
+    def wrap_function(self, owner, name, val):
+        if self.visit_once(val):
+            self.patcher.patch(owner, name, self.func_wapper(val))
+            logger.debug(f'wrap a function {name}')
+
+    def wrap_method(self, owner, name, val):
+        assert inspect.isclass(owner)
+        if self.visit_once(val):
+            try:
+                if isinstance(val, staticmethod):
+                    pass
+                    logger.debug(f'wrap a staticmethod {name} (unimplement)')
+                elif isinstance(val, classmethod):
+                    pass
+                    logger.debug(f'wrap a classmethod {name} (unimplement)')
+                else:
+                    self.patcher.patch_method(owner, name,
+                                              self.method_wrapper(val))
+                    logger.debug(f'wrap an instance method {name}')
+            except Exception:
+                self.patcher.patches_made.pop()
+
+    # wrapper
+    def func_wapper(self, orig_fn):
+
+        @functools.wraps(orig_fn)
+        def wrapped(*args, **kwargs):
+            """Given an closed-over ``orig_function`` to invoke, search the
+            args and kwargs for a Proxy object.
+
+            If there is one, emit a ``call_function`` node to preserve the call
+            to this leaf function directly. Otherwise, just return the results
+            of this function call, as this function is not being traced.
+            """
+            _autowrap_check(self.patcher, getattr(orig_fn, '__globals__', {}),
+                            set())
+            try:
+                end = orig_fn(*args, **kwargs)
+                return end
+            except Exception:
+                logger.debug(f'auto wrap {orig_fn}')
+                proxy = _find_proxy(args, kwargs)
+                if proxy is not None:
+                    return_proxy = proxy.tracer.create_proxy(
+                        'call_function', orig_fn, args, kwargs)
+                    return_proxy.node.meta['is_wrapped'] = True
+                    return return_proxy
+                else:
+                    return orig_fn(*args, **kwargs)
+
+        return wrapped
+
+    def method_wrapper(self, orig_fn):
+
+        @functools.wraps(orig_fn)
+        def wrapped(*args, **kwargs):
+            """Given an closed-over ``orig_function`` to invoke, search the
+            args and kwargs for a Proxy object.
+
+            If there is one, emit a ``call_function`` node to preserve the call
+            to this leaf function directly. Otherwise, just return the results
+            of this function call, as this function is not being traced.
+            """
+            _autowrap_check(self.patcher, getattr(orig_fn, '__globals__', {}),
+                            set())
+            # logger.debug(f'call method {orig_fn}')
+            try:
+                end = orig_fn(*args, **kwargs)
+                return end
+            except Exception:
+                logger.debug(f'auto wrap {orig_fn}')
+                proxy: Proxy = _find_proxy(args, kwargs)
+                if proxy is not None:
+                    return_proxy = proxy.tracer.create_proxy(
+                        'call_method', orig_fn.__name__, args, kwargs)
+                    return_proxy.node.meta['is_wrapped'] = True
+                    return return_proxy
+                else:
+                    return orig_fn(*args, **kwargs)
+
+        return wrapped
+
+    # others
+    def visit_once(self, obj):
+        return self.patcher.visit_once(obj)
+
+    def is_visited(self, obj):
+        id_ = id(obj)
+        return id_ in self.patcher.visited
 
 
 class FxTracer(Tracer):
-    """CostumFxTracer allow user to indicate leaf module."""
-
-    def __init__(self,
-                 autowrap_modules: Tuple = (),
-                 autowrap_functions: Tuple[Callable, ...] = (),
-                 param_shapes_constant: bool = False) -> None:
-        super().__init__(autowrap_modules, autowrap_functions,
-                         param_shapes_constant)
-
-        from mmdet.models.dense_heads.base_dense_head import BaseDenseHead
-        from mmdet.models.dense_heads.rpn_head import RPNHead
-        from mmdet.models.roi_heads import StandardRoIHead
-        self.warp_method = {
-            RPNHead: RPNHead.predict_by_feat,
-            BaseDenseHead: BaseDenseHead.predict_by_feat,
-            StandardRoIHead: StandardRoIHead.forward,
-        }
-        self.warp_fn = {
-            torch: torch.arange,
-            torch: torch.linspace,
-        }
 
     def trace(self,
               root: Union[torch.nn.Module, Callable[..., Any]],
               concrete_args: Optional[Dict[str, Any]] = None) -> Graph:
-        if concrete_args is None:
-            concrete_args = {}
-        concrete_args = copy.copy(concrete_args)
-        return self._trace(root, concrete_args)
-
-    def _trace(self,
-               root: Union[torch.nn.Module, Callable[..., Any]],
-               concrete_args: Optional[Dict[str, Any]] = None) -> Graph:
+        """Please refer to torch.fx._symbolic_trace.Tracer."""
         if isinstance(root, torch.nn.Module):
             self.root = root
 
             assert hasattr(type(root), self.traced_func_name), (
-                f"traced_func_name={self.traced_func_name} doesn't exist in"
-                ' {type(root).__name__}')
+                f"traced_func_name={self.traced_func_name} doesn't exist in {type(root).__name__}"  # noqa
+            )  # noqa
 
             fn = getattr(type(root), self.traced_func_name)
             self.submodule_paths = {
@@ -69,12 +231,9 @@ class FxTracer(Tracer):
         tracer_cls: Optional[Type['Tracer']] = getattr(self, '__class__', None)
         self.graph = Graph(tracer_cls=tracer_cls)
 
-        # When we encounter a Tensor value that's not a parameter, we look
-        # if it
-        # is some other attribute on the model. Construct a dict mapping
-        # Tensor
-        # values to the qualified name here for efficiency. This is used
-        # downstream
+        # When we encounter a Tensor value that's not a parameter, we look if it
+        # is some other attribute on the model. Construct a dict mapping Tensor
+        # values to the qualified name here for efficiency. This is used downstream
         # in create_arg
         self.tensor_attrs: Dict[Union[torch.Tensor, ScriptObject], str] = {}
 
@@ -97,15 +256,18 @@ class FxTracer(Tracer):
         parameter_proxy_cache: Dict[str, Proxy] = {
         }  # Reduce number of get_attr calls
 
-        # Method dispatch on parameters is not recorded unless it's directly
-        # used.
-        # Thus, we need to insert a proxy when __getattr__ requests a
-        # parameter.
+        # Method dispatch on parameters is not recorded unless it's directly used.
+        # Thus, we need to insert a proxy when __getattr__ requests a parameter.
         @functools.wraps(_orig_module_getattr)
         def module_getattr_wrapper(mod, attr):
             attr_val = _orig_module_getattr(mod, attr)
-            return self._module_getattr(attr, attr_val, parameter_proxy_cache)
-
+            ########################################################################
+            if digit_version(torch.__version__) >= digit_version('1.13.0'):
+                return self.getattr(attr, attr_val, parameter_proxy_cache)
+            else:
+                return self._module_getattr(attr, attr_val,
+                                            parameter_proxy_cache)
+            ########################################################################
         @functools.wraps(_orig_module_call)
         def module_call_wrapper(mod, *args, **kwargs):
 
@@ -116,6 +278,10 @@ class FxTracer(Tracer):
                 patcher,
                 getattr(getattr(mod, 'forward', mod), '__globals__', {}),
                 self._autowrap_function_ids)
+            ########################################################################
+            auto_wrap(patcher, mod)
+            ########################################################################
+
             return self.call_module(mod, forward, args, kwargs)
 
         with _Patcher() as patcher:
@@ -130,19 +296,11 @@ class FxTracer(Tracer):
                 '__call__',
                 module_call_wrapper,
                 deduplicate=False)
-            for obj, mth in self.warp_method.items():
-                patcher.patch_method(
-                    obj,
-                    mth.__name__,
-                    self.warp_a_method(obj, mth),
-                    deduplicate=False)
-            for obj, mth in self.warp_fn.items():
-                patcher.patch_method(
-                    obj,
-                    mth.__name__,
-                    self.warp_a_function(obj, mth),
-                    deduplicate=False)
             _patch_wrapped_functions(patcher)
+            ########################################################################
+            patcher.visit_once(globals())
+            auto_wrap(patcher, self.root)
+            ########################################################################
             _autowrap_check(patcher, fn_globals, self._autowrap_function_ids)
             for module in self._autowrap_search:
                 _autowrap_check(patcher, module.__dict__,
@@ -152,50 +310,17 @@ class FxTracer(Tracer):
                 'output', (self.create_arg(fn(*args)), ), {},
                 type_expr=fn.__annotations__.get('return', None))
 
-        self.submodule_paths = None  # type: ignore
+        self.submodule_paths = None  # type:ignore
 
         return self.graph
 
-    def call_method(self, origin_fn, name, args: tuple, kwargs):
-        args = args[1:]
-        return self.create_proxy('call_function', origin_fn, args, kwargs,
-                                 name)
-
-    def call_function(self, origin_fn, name, args, kwargs):
-        return self.create_proxy('call_function', origin_fn, args, kwargs,
-                                 name)
-
-    def warp_a_method(self, obj, origin_fn):
-
-        @functools.wraps(origin_fn)
-        def fn_wrapper(*args, **kwargs):
-            return self.call_method(origin_fn, origin_fn.__name__, args,
-                                    kwargs)
-
-        return fn_wrapper
-
-    def warp_a_function(self, obj, origin_fn):
-
-        @functools.wraps(origin_fn)
-        def fn_wrapper(*args, **kwargs):
-            return self.call_function(origin_fn, origin_fn.__name__, args,
-                                      kwargs)
-
-        return fn_wrapper
-
     def call_module(self, m: torch.nn.Module, forward: Callable[..., Any],
                     args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Any:
-        module_qualified_name = self.path_of_module(m)
+
         try:
-            proxy = super().call_module(m, forward, args, kwargs)
-            return proxy
-        except Exception as e:
+            return super().call_module(m, forward, args, kwargs)
+        except Exception:
             module_qualified_name = self.path_of_module(m)
-            from mmengine import MMLogger
-            MMLogger.get_current_instance().warning(
-                f'{module_qualified_name}({type(m)}) encounter error when'
-                ' tracing. '
-                f'It will be treated as a leaf module.\n {e}')
             return self.create_proxy('call_module', module_qualified_name,
                                      args, kwargs)
 

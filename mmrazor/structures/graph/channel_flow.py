@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+"""Including modules for ChannelFlow to analyze channel dependency."""
 import copy
 import itertools
 import sys
@@ -10,6 +11,7 @@ sys.setrecursionlimit(int(pow(2, 20)))
 
 
 class ChannelElem:
+    """A ChannelElem represents a channel in ChannelFlow."""
 
     def __init__(self, owning_tensor: 'ChannelTensor',
                  index_in_tensor: int) -> None:
@@ -31,27 +33,32 @@ class ChannelElem:
 
     @classmethod
     def union_two(cls, elem1: 'ChannelElem', elem2: 'ChannelElem'):
+        """Bind two ChannelElems."""
         root1 = elem1.root
         root2 = elem2.root
         if root1 is not root2:
             root2._set_parent(root1)
 
     def union(self, elem: 'ChannelElem'):
+        """Bind with anther ChannelElem."""
         ChannelElem.union_two(self, elem)
 
-    # unit related
+    # hash related
 
     @property
     def owing_elem_set(self):
+        """Get ChannelElem set representation."""
         root = self.root
         return root.subs
 
     def reset_cache(self):
+        """Reset hash cache."""
         self._hash_cache = None
         self._min_elem_set_index_cache = None
 
     @property
     def elem_set_hash(self):
+        """Get the hash of the owning ChannelElems set."""
         if self._hash_cache is not None:
             return self._hash_cache
         else:
@@ -66,6 +73,7 @@ class ChannelElem:
 
     @property
     def min_elem_set_index(self):
+        """Minimal index in ChannelTensors."""
         if self._min_elem_set_index_cache is not None:
             return self._min_elem_set_index_cache
         else:
@@ -82,6 +90,7 @@ class ChannelElem:
 
     @property
     def root(self) -> 'ChannelElem':
+        """Get root of the owing ChannelElem set."""
         if self._parent is None:
             return self
         else:
@@ -92,6 +101,7 @@ class ChannelElem:
 
     @property
     def subs(self):
+        """Get all Elements in the set."""
         subs = copy.copy(self._subs)
         subs.add(self)
         for elem in self._subs:
@@ -99,12 +109,14 @@ class ChannelElem:
         return subs
 
     def _set_parent(self, parent: 'ChannelElem'):
+        """Set parent for the ChannelElem."""
         assert self._parent is None
         assert parent.root is not self
         self._parent = parent
         parent._subs.add(self)
 
     def _unset_parent(self):
+        """Unset parent of the ChannelElem."""
         assert self._parent is not None
         old_parent = self._parent
         old_parent._subs.remove(self)
@@ -112,6 +124,7 @@ class ChannelElem:
 
 
 class ChannelTensor:
+    """The ChannelTensor in ChannelFlow."""
 
     def __init__(self, num_channel_elem: int) -> None:
         """ChannelTensor works as a proxy of a tensor.
@@ -124,22 +137,26 @@ class ChannelTensor:
     # tensor operations
 
     def union(self, tensor: 'ChannelTensor'):
+        """Bind with another ChannelTensor."""
         return self.__class__.union_two(self, tensor)
 
     @classmethod
     def union_two(cls, tensor1: 'ChannelTensor', tensor2: 'ChannelTensor'):
+        """Bind two ChannelTensors."""
         assert len(tensor1) == len(tensor2), f'{len(tensor1)}!={len(tensor2)}'
         for e1, e2 in zip(tensor1, tensor2):
             ChannelElem.union_two(e1, e2)
 
     @classmethod
     def cat(cls, tensors: List['ChannelTensor']):
+        """Cat multiple ChannelTensors."""
         elems = list(itertools.chain(*[t.elems for t in tensors]))
         new_tensor = ChannelTensor(len(elems))
         new_tensor.elems = elems
         return new_tensor
 
     def expand(self, expand_ratio: int):
+        """Expand self ChannelTensor."""
         new_tensor = ChannelTensor(expand_ratio * len(self))
 
         for i in range(len(self)):
@@ -147,16 +164,18 @@ class ChannelTensor:
                 self[i].union(new_tensor[i * expand_ratio + j])
         return new_tensor
 
-    # unit operation
+    # hash operation
 
     @property
     def elems_hash_with_index(self):
+        """Return hash of the ChannelElems in the ChannelTensor with index."""
         elem_hashes = [(elem.elem_set_hash, elem.min_elem_set_index)
                        for elem in self.elems]
         return elem_hashes
 
     @property
     def elems_hash_dict(self):
+        """Return hash of the ChannelElems in the ChannelTensor."""
         elem_hash_with_index = self.elems_hash_with_index
         unit_dict = IndexDict()
         start = 0
@@ -193,6 +212,9 @@ class ChannelTensor:
     def __add__(self, tensor: 'ChannelTensor'):
         return ChannelTensor.cat([self, tensor])
 
+    # others
+
     def _reset_channel_elem_cache(self):
+        """Reset hash of all ChannelElems in the ChannelTensor."""
         for elem in self.elems:
             elem.reset_cache()
