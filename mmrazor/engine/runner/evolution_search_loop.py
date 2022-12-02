@@ -96,6 +96,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop):
         self.crossover_prob = crossover_prob
         self.max_keep_ckpts = max_keep_ckpts
         self.resume_from = resume_from
+        self.trade_off = dict(max_score_key=40)
 
         if init_candidates is None:
             self.candidates = Candidates()

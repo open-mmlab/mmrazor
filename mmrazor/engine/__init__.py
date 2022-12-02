@@ -4,12 +4,13 @@ from .optimizers import SeparateOptimWrapperConstructor
 from .runner import (AutoSlimValLoop, DartsEpochBasedTrainLoop,
                      DartsIterBasedTrainLoop, EvolutionSearchLoop,
                      GreedySamplerTrainLoop, SelfDistillValLoop,
-                     SingleTeacherDistillValLoop, SlimmableValLoop)
+                     SingleTeacherDistillValLoop, SlimmableValLoop,
+                     NSGA2SearchLoop)
 
 __all__ = [
     'SeparateOptimWrapperConstructor', 'DumpSubnetHook',
     'SingleTeacherDistillValLoop', 'DartsEpochBasedTrainLoop',
     'DartsIterBasedTrainLoop', 'SlimmableValLoop', 'EvolutionSearchLoop',
     'GreedySamplerTrainLoop', 'AutoSlimValLoop', 'EstimateResourcesHook',
-    'SelfDistillValLoop'
+    'SelfDistillValLoop', 'NSGA2SearchLoop'
 ]

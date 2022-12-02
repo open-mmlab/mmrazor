@@ -132,7 +132,7 @@ class MetricPredictor:
             if self.encoding_type == 'onehot':
                 index = np.where(vector[start:start +
                                         len(value[0].choices)] == 1)[0][0]
-                start += len(value)
+                start += len(value[0].choices)
             else:
                 index = vector[start]
                 start += 1
