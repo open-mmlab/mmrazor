@@ -233,17 +233,17 @@ class ModuleGraph(BaseGraph[MODULENODE]):
 
                 self._check(node, fix=True)
 
-    def _add_input_before(self, node: MODULENODE):
+    def _add_input_before(self, node):
         """Add an input node before a node."""
-        input_node: MODULENODE = ModuleNode(
-            'auto_input', 'input_placeholder')  # type: ignore
+        input_node = ModuleNode('auto_input',
+                                'input_placeholder')  # type: ignore
         input_node = self.add_or_find_node(input_node)
         self.connect(input_node, node)
 
-    def _add_output_after(self, node: MODULENODE):
+    def _add_output_after(self, node):
         """Add an output node after a node."""
-        output_node: MODULENODE = ModuleNode(
-            'auto_output', 'output_placeholder')  # type: ignore
+        output_node = ModuleNode('auto_output',
+                                 'output_placeholder')  # type: ignore
         output_node = self.add_or_find_node(output_node)
         self.connect(node, output_node)
 

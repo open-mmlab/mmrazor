@@ -16,6 +16,7 @@
 import copy
 from typing import Dict, List, Tuple, Union
 
+import torch
 import torch.nn as nn
 from mmcv.cnn.bricks import Scale
 from mmengine.model.utils import revert_sync_batchnorm
@@ -84,6 +85,10 @@ class PruneTracer:
                 loss_calculator=SumPseudoLoss(
                     input_shape=self.demo_input.input_shape))
         elif tracer_type == 'FxTracer':
+            from mmrazor import digit_version
+            assert digit_version(torch.__version__) >= digit_version(
+                '1.12.0'
+            ), 'Please install torch>=1.12.0, if you want to use fx tracer.'
             self.tracer = CustomFxTracer(leaf_module=self.default_leaf_modules)
         else:
             raise NotImplementedError()

@@ -12,12 +12,27 @@ import torch
 import torch.nn as nn
 from mmengine import MMLogger
 from torch._C import ScriptObject  # type: ignore[attr-defined]
-from torch.fx._symbolic_trace import (Tracer, _find_proxy, _orig_module_call,
-                                      _orig_module_getattr,
-                                      _patch_wrapped_functions, _Patcher)
-from torch.fx.graph import Graph
-from torch.fx.node import Argument
-from torch.fx.proxy import Proxy
+
+from mmrazor.utils import get_placeholder
+
+try:
+    from torch.fx._symbolic_trace import (Tracer, _find_proxy,
+                                          _orig_module_call,
+                                          _orig_module_getattr,
+                                          _patch_wrapped_functions, _Patcher)
+    from torch.fx.graph import Graph
+    from torch.fx.node import Argument
+    from torch.fx.proxy import Proxy
+except ImportError:
+    Tracer = get_placeholder('torch>=1.12')
+    _find_proxy = get_placeholder('torch>=1.12')
+    _orig_module_call = get_placeholder('torch>=1.12')
+    _orig_module_getattr = get_placeholder('torch>=1.12')
+    _patch_wrapped_functions = get_placeholder('torch>=1.12')
+    _Patcher = get_placeholder('torch>=1.12')
+    Graph = get_placeholder('torch>=1.12')
+    Argument = get_placeholder('torch>=1.12')
+    Proxy = get_placeholder('torch>=1.12')
 
 from mmrazor import digit_version
 

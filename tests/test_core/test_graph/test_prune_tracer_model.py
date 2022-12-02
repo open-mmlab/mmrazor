@@ -113,6 +113,9 @@ def _test_a_model(Model, tracer_type='fx'):
 class TestTraceModel(TestCase):
 
     def test_init_from_fx_tracer(self) -> None:
+        from mmrazor import digit_version
+        if digit_version(torch.__version__) < digit_version('1.12.0'):
+            self.skipTest('version of torch < 1.12.0')
         TestData = fx_passed_library.include_models(FULL_TEST)
 
         with SetTorchThread(TORCH_THREAD_SIZE):
