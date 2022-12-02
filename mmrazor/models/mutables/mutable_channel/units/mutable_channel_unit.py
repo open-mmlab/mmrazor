@@ -10,7 +10,6 @@ from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables.mutable_channel import (BaseMutableChannel,
                                                      MutableChannelContainer)
-from mmrazor.models.mutables.mutable_value import MutableValue
 from .channel_unit import Channel, ChannelUnit
 
 
@@ -57,7 +56,6 @@ class MutableChannelUnit(ChannelUnit):
                               mutable2units,
                               is_output=True):
             for index, mutable in contanier.mutable_channels.items():
-                expand_ratio = 1
                 if isinstance(mutable, DerivedMutable):
                     source_mutables: Set = \
                         mutable._trace_source_mutables()
@@ -70,17 +68,6 @@ class MutableChannelUnit(ChannelUnit):
                         'used in DerivedMutable')
                     mutable = list(source_channel_mutables)[0]
 
-                    source_value_mutables = [
-                        mutable for mutable in source_mutables
-                        if isinstance(mutable, MutableValue)
-                    ]
-                    assert len(source_value_mutables) <= 1, (
-                        'only support one mutable value '
-                        'used in DerivedMutable')
-                    expand_ratio = int(
-                        list(source_value_mutables)
-                        [0].current_choice) if source_value_mutables else 1
-
                 if mutable not in mutable2units:
                     mutable2units[mutable] = cls.init_from_mutable_channel(
                         mutable)
@@ -92,16 +79,14 @@ class MutableChannelUnit(ChannelUnit):
                             module_name,
                             module,
                             index,
-                            is_output_channel=is_output,
-                            expand_ratio=expand_ratio))
+                            is_output_channel=is_output))
                 else:
                     unit.add_input_related(
                         Channel(
                             module_name,
                             module,
                             index,
-                            is_output_channel=is_output,
-                            expand_ratio=expand_ratio))
+                            is_output_channel=is_output))
 
         mutable2units: Dict = {}
         for name, module in model.named_modules():

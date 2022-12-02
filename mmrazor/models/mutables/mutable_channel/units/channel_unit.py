@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import Dict
+from typing import Dict, List
 
 import torch.nn as nn
 from mmengine.model import BaseModule

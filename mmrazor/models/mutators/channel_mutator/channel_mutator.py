@@ -71,6 +71,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
                      type='PruneTracer',
                      demo_input=(1, 3, 224, 224),
                      tracer_type='BackwardTracer'),
+                 custom_groups: Optional[List[List[str]]] = None,
                  init_cfg: Optional[Dict] = None) -> None:
 
         super().__init__(init_cfg)

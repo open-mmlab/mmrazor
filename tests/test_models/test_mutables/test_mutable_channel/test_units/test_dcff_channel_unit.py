@@ -6,8 +6,8 @@ import torch
 
 from mmrazor.models.architectures.dynamic_ops import FuseConv2d
 from mmrazor.models.mutables import DCFFChannelUnit
-from mmrazor.structures.graph import ModuleGraph as ModuleGraph
-from .....data.models import LineModel
+from mmrazor.models.task_modules import PruneTracer
+from .....data.models import SingleLineModel
 
 DEVICE = torch.device('cpu')
 
@@ -49,14 +49,15 @@ class TestDCFFChannelUnit(TestCase):
 
     def test_init_from_channel_unit(self):
         # init using tracer
-        model = LineModel()
-        graph = ModuleGraph.init_from_backward_tracer(model)
-        units: List[DCFFChannelUnit] = DCFFChannelUnit.init_from_graph(graph)
-        mutable_units = [
-            DCFFChannelUnit.init_from_channel_unit(unit) for unit in units
+        model = SingleLineModel()
+        unit_configs = PruneTracer().trace(model)
+        units = [
+            DCFFChannelUnit.init_from_cfg(model, unit_config)
+            for unit_config in unit_configs.values()
         ]
+
         model = model.to(DEVICE)
-        self._test_units(mutable_units, model)
+        self._test_units(units, model)
 
     def _test_units(self, units: List[DCFFChannelUnit], model):
         for unit in units:
