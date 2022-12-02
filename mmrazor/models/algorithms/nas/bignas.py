@@ -101,7 +101,7 @@ class BigNAS(BaseAlgorithm):
 
         self.strategy = strategy
         self.selects = self.strategy_groups[self.strategy]
-        self.random_samples = len([s for s in self.selects if 'random' in s])
+        self.samples = len([s for s in self.selects if 'random' in s])
         self.is_supernet = True if len(self.selects) > 1 else False
         self.drop_path_rate = drop_path_rate
         self.backbone_dropout_stages = backbone_dropout_stages
@@ -230,7 +230,7 @@ class BigNAS(BaseAlgorithm):
                     total_losses.update(
                         add_prefix(min_subnet_losses, 'min_subnet'))
                 elif kind in ('random', 'random1'):
-                    for sample_idx in range(self.random_samples):
+                    for sample_idx in range(self.samples):
                         self.set_subnet(self.sample_subnet())
                         random_subnet_losses = distill_step(
                             batch_inputs, data_samples)
@@ -310,7 +310,7 @@ class BigNASDDP(MMDistributedDataParallel):
             min_subnet_losses = distill_step(batch_inputs, data_samples)
             total_losses.update(add_prefix(min_subnet_losses, 'min_subnet'))
 
-            for sample_idx in range(self.module.random_samples):
+            for sample_idx in range(self.module.samples):
                 self.module.set_subnet(self.module.sample_subnet())
                 random_subnet_losses = distill_step(batch_inputs, data_samples)
                 total_losses.update(

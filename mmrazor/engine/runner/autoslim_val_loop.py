@@ -48,7 +48,7 @@ class AutoSlimValLoop(ValLoop, CalibrateBNMixin):
         metrics = self._evaluate_once()
         all_metrics.update(add_prefix(metrics, 'min_subnet'))
 
-        for subnet_idx in range(self._model.num_samples):
+        for subnet_idx in range(self._model.samples):
             self._model.set_subnet(self._model.sample_subnet())
             self.calibrate_bn_statistics(self.runner.train_dataloader,
                                          self.calibrated_sample_num)

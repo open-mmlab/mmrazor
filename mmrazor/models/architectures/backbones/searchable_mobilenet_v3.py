@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Sequence, Union
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from mmcv.cnn import ConvModule
 from mmengine.logging import MMLogger
 from mmengine.model import Sequential, constant_init
@@ -56,6 +57,7 @@ class AttentiveMobileNetV3(BaseBackbone):
             memory while slowing down the training speed. Default: False.
         zero_init_residual (bool): Zero norm param in linear conv of MBBlock
             or not when there is a shortcut. Default: True.
+        drop_ratio (float): Dropout rate. Defaults to 0.2.
         init_cfg (dict | list[dict], optional): initialization configuration
             dict to define initializer. OpenMMLab has implemented
             6 initializers, including ``Constant``, ``Xavier``, ``Normal``,
@@ -76,6 +78,7 @@ class AttentiveMobileNetV3(BaseBackbone):
                  with_cp: bool = False,
                  zero_init_residual: bool = True,
                  with_attentive_shortcut: bool = True,
+                 drop_ratio: float = 0.2,
                  init_cfg: Optional[Union[Dict, List[Dict]]] = None):
 
         super().__init__(init_cfg)
@@ -99,6 +102,7 @@ class AttentiveMobileNetV3(BaseBackbone):
         self.zero_init_residual = zero_init_residual
         self.with_cp = with_cp
         self.with_attentive_shortcut = with_attentive_shortcut
+        self.drop_ratio = drop_ratio
 
         self.act_list = act_list if act_list is not None \
             else ['Swish'] * 7
@@ -301,11 +305,18 @@ class AttentiveMobileNetV3(BaseBackbone):
         for i, layer in enumerate(self.layers):
             x = layer(x)
             if i in self.out_indices:
-                x = torch.squeeze(x, dim=-1)
-                x = torch.squeeze(x, dim=-1)
                 outs.append(x)
 
-        return tuple(outs)
+        if self.last_conv in self.layers:
+            if self.training and self.drop_ratio > 0:
+                x = F.dropout(x, p=self.drop_ratio)
+            x = torch.squeeze(x, dim=-1)
+            x = torch.squeeze(x, dim=-1)
+
+        if len(outs) > 1:
+            return tuple(outs)
+        else:
+            return tuple([x])
 
     def train(self, mode=True):
         super().train(mode)
