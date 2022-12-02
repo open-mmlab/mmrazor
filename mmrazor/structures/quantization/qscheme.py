@@ -12,20 +12,16 @@ class QuantizeScheme(object):
             to True.
         is_per_channel (bool, optional): Is per-channel quantization or not.
             Defaults to False.
-        is_pot_scale (bool, optional):  Indicate whether scale is power of two.
-            Defaults to False.
     """
 
     def __init__(self,
                  bit=8,
                  is_symmetry=True,
                  is_per_channel=False,
-                 is_pot_scale=False,
                  **kwargs):
         self.bit = bit
         self.is_symmetry = is_symmetry
         self.is_per_channel = is_per_channel
-        self.is_pot_scale = is_pot_scale
 
         if self.is_per_channel:
             self.torch_qscheme = torch.per_channel_symmetric \
@@ -54,7 +50,6 @@ class QuantizeScheme(object):
             'quant_min': quant_min,
             'quant_max': quant_max,
             'dtype': torch.qint8 if self.is_symmetry else torch.quint8,
-            'is_pot_scale': self.is_pot_scale,
             'qscheme': self.torch_qscheme,
             'reduce_range': False,
             'ch_axis': 0 if self.is_per_channel else -1
@@ -64,5 +59,5 @@ class QuantizeScheme(object):
 
     def __str__(self):
         return f'bit: {self.bit} / is_symmetry: {self.is_symmetry} / \
-                is_per_channel: {self.is_per_channel} / is_pot_scale: \
-                {self.is_pot_scale} / extra_kwargs: {self.kwargs}'
+                is_per_channel: {self.is_per_channel} \
+                / extra_kwargs: {self.kwargs}'

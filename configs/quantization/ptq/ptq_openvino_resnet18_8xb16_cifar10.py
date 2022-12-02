@@ -16,20 +16,16 @@ model = dict(
             'mmcls.models.heads.ClsHead._get_predictions'
         ],
         qconfig=dict(
-            qtype='affine',
-            w_observer=dict(type='mmrazor.MSEObserver'),
-            a_observer=dict(type='mmrazor.EMAMSEObserver'),
+            w_observer=dict(type='mmrazor.MovingAveragePerChannelMinMaxObserver'),
+            a_observer=dict(type='mmrazor.MovingAverageMinMaxObserver'),
             w_fake_quant=dict(type='mmrazor.FakeQuantize'),
             a_fake_quant=dict(type='mmrazor.FakeQuantize'),
             w_qscheme=dict(
+                dtype='uint',
                 bit=8,
-                is_symmetry=True,
-                is_per_channel=True,
-                is_pot_scale=False,
-            ),
+                is_symmetry=True),
             a_qscheme=dict(
+                dtype='uint',
                 bit=8,
-                is_symmetry=False,
-                is_per_channel=False,
-                is_pot_scale=False),
+                is_symmetry=False),
         )))

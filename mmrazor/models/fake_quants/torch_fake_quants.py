@@ -3,6 +3,13 @@ import inspect
 from typing import List
 from mmrazor.registry import MODELS
 
+TORCH_fake_quants = register_torch_fake_quants()
+# TORCH_fake_quants including:
+# FakeQuantize
+# FakeQuantizeBase
+# FixedQParamsFakeQuantize
+# FusedMovingAvgObsFakeQuantize
+
 def register_torch_fake_quants() -> List[str]:
     """Register fake_quants in ``torch.ao.quantization.fake_quantize`` to the 
     ``MODELS`` registry.
@@ -22,10 +29,3 @@ def register_torch_fake_quants() -> List[str]:
                 MODELS.register_module(module=_fake_quant)
                 torch_fake_quants.append(module_name)
     return torch_fake_quants
-
-TORCH_fake_quants = register_torch_fake_quants()
-# TORCH_fake_quants including:
-# FakeQuantize
-# FakeQuantizeBase
-# FixedQParamsFakeQuantize
-# FusedMovingAvgObsFakeQuantize
