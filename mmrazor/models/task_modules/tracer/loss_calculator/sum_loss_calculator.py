@@ -6,8 +6,8 @@ from mmrazor.registry import TASK_UTILS
 
 @TASK_UTILS.register_module()
 class SumPseudoLoss:
-    """Calculate the pseudo loss to trace the topology of a `ImageClassifier`
-    in MMClassification with `BackwardTracer`.
+    """Calculate the pseudo loss to trace the topology by summing all output
+    tensors.
 
     Args:
         input_shape (Tuple): The shape of the pseudo input. Defaults to
