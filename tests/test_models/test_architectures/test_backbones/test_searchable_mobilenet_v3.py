@@ -51,8 +51,7 @@ BACKBONE_CFG = dict(
     arch_setting=arch_setting,
     out_indices=(4, ),
     conv_cfg=dict(type='mmrazor.BigNasConv2d'),
-    norm_cfg=dict(type='mmrazor.DynamicBatchNorm2d', momentum=0.0),
-    act_cfg=dict(type='ReLU'))
+    norm_cfg=dict(type='mmrazor.DynamicBatchNorm2d', momentum=0.0))
 
 
 def test_attentive_mobilenet_mutable() -> None:

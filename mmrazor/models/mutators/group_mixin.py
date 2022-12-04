@@ -104,8 +104,8 @@ class GroupMixin():
                 for each_mutables in module.source_mutables:
                     if isinstance(each_mutables, support_mutables):
                         if each_mutables.alias is not None:
-                            _append(each_mutables.alias,
-                                    alias2mutable_names, name)
+                            _append(each_mutables.alias, alias2mutable_names,
+                                    name)
 
         return alias2mutable_names
 
@@ -278,7 +278,7 @@ class OneShotSampleMixin:
 
 class DynamicSampleMixin(OneShotSampleMixin):
 
-    def sample_choices(self: MutatorProtocol, kind: str='random') -> Dict:
+    def sample_choices(self: MutatorProtocol, kind: str = 'random') -> Dict:
         random_choices = dict()
         for group_id, modules in self.search_groups.items():
             if kind == 'max':

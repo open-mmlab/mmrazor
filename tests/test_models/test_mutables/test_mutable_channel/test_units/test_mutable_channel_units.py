@@ -11,8 +11,8 @@ from mmrazor.models.mutables.mutable_channel import (
 from mmrazor.models.mutables.mutable_channel.units.channel_unit import (  # noqa
     Channel, ChannelUnit)
 from mmrazor.structures.graph import ModuleGraph as ModuleGraph
-from .....data.models import LineModel
-from .....test_core.test_graph.test_graph import TestGraph
+from tests.data.models import LineModel
+from tests.test_core.test_graph.test_graph import TestGraph
 
 MUTABLE_CFG = dict(type='SimpleMutablechannel')
 PARSE_CFG = dict(

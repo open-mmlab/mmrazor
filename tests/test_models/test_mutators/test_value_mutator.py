@@ -5,7 +5,7 @@ import torch
 
 from mmrazor.models.mutables import MutableValue
 from mmrazor.models.mutators import DynamicValueMutator
-from ...data.models import DynamicAttention
+from tests.data.models import DynamicAttention
 
 
 class TestValueMutator(unittest.TestCase):

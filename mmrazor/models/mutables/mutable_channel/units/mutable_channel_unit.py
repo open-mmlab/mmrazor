@@ -15,6 +15,7 @@ from .channel_unit import Channel, ChannelUnit
 
 expand_ratio_warning_list = []
 
+
 class MutableChannelUnit(ChannelUnit):
     # init methods
     def __init__(self, num_channels: int, **kwargs) -> None:
@@ -60,7 +61,7 @@ class MutableChannelUnit(ChannelUnit):
                               mutable2units,
                               is_output=True):
             for index, mutable in container.mutable_channels.items():
-                derived_current_choice = mutable.current_choice
+                derived_choices = mutable.current_choice
                 expand_ratio = 1
                 if isinstance(mutable, DerivedMutable):
                     source_mutables: Set = \
@@ -73,7 +74,7 @@ class MutableChannelUnit(ChannelUnit):
                         'only support one mutable channel '
                         'used in DerivedMutable')
                     mutable = source_channel_mutables[0]
-                    channel_range = mutable.current_choice
+                    subchannel = mutable.current_choice
 
                     source_value_mutables = [
                         mutable for mutable in source_mutables
@@ -86,19 +87,24 @@ class MutableChannelUnit(ChannelUnit):
                         expand_ratio = int(
                             source_value_mutables[0].current_choice)
 
-                    assert len(source_mutables) == len(source_channel_mutables) + len(source_value_mutables), 'DerivedMutable can only be composed of value_mutable and channel_mutable.'
-                    
-                    if not derived_current_choice / channel_range == expand_ratio:
-                        x = derived_current_choice / channel_range / expand_ratio
+                    assert len(
+                        source_mutables) == len(source_channel_mutables) + len(
+                            source_value_mutables
+                        ), 'DerivedMutable can only be composed of '
+                    'value_mutable and channel_mutable.'
+
+                    if not derived_choices / subchannel == expand_ratio:
+                        x = derived_choices / subchannel / expand_ratio
                         expand_ratio = expand_ratio * x
                         if expand_ratio not in expand_ratio_warning_list:
                             from mmengine import MMLogger
                             logger = MMLogger.get_current_instance()
-                            logger.warning('Trying to recompute the expand_ratio. '
-                                        f'align {expand_ratio:.2f}*{channel_range}={derived_current_choice} to the related channel. '
-                                        f'which will have no effect. ')
+                            logger.warning(
+                                'Trying to recompute the expand_ratio. '
+                                f'align {expand_ratio:.2f}*{subchannel} '
+                                f'={derived_choices} to the related channel. '
+                                f'which will have no effect. ')
                             expand_ratio_warning_list.append(expand_ratio)
-
 
                 if mutable not in mutable2units:
                     mutable2units[mutable] = cls.init_from_mutable_channel(

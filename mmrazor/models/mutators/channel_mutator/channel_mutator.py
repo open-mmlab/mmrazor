@@ -222,17 +222,10 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
         Returns:
             Dict[int, Any]: Random choices dict.
         """
-        # assert kind=='random', f'unsupported the {kind} sample method.'
+        assert kind == 'random', f'unsupported the {kind} sample method.'
         random_choices = dict()
         for group_id, modules in self.search_groups.items():
-            if kind == 'max':
-                random_choices[group_id] = modules[0].max_choice
-            elif kind == 'min':
-                random_choices[group_id] = modules[0].min_choice
-            else:
-                random_choices[group_id] = modules[0].sample_choice()
-
-            # random_choices[group_id] = modules[0].sample_choice()
+            random_choices[group_id] = modules[0].sample_choice()
 
         return random_choices
 

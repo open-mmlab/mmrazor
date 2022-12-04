@@ -143,7 +143,7 @@ class BigNAS(BaseAlgorithm):
         channel_subnet = dict()
         for name, mutator in self.mutators.items():
             if name == 'value_mutator':
-                value_subnet.update(mutator.sample_choices(kind)) 
+                value_subnet.update(mutator.sample_choices(kind))
             elif name == 'channel_mutator':
                 channel_subnet.update(mutator.sample_choices(kind))
             else:
@@ -176,11 +176,12 @@ class BigNAS(BaseAlgorithm):
         if self.is_supernet:
 
             def distill_step(
-                    batch_inputs: torch.Tensor, data_samples: List[BaseDataElement]
+                batch_inputs: torch.Tensor, data_samples: List[BaseDataElement]
             ) -> Dict[str, torch.Tensor]:
                 subnet_losses = dict()
                 with optim_wrapper.optim_context(
-                        self), self.distiller.student_recorders:  # type: ignore
+                        self
+                ), self.distiller.student_recorders:  # type: ignore
                     _ = self(batch_inputs, data_samples, mode='loss')
                     soft_loss = self.distiller.compute_distill_losses()
 
@@ -226,7 +227,8 @@ class BigNAS(BaseAlgorithm):
                         layers=self.architecture.backbone.layers[:-1],
                         dropout_stages=self.backbone_dropout_stages,
                         drop_path_rate=0.)
-                    min_subnet_losses = distill_step(batch_inputs, data_samples)
+                    min_subnet_losses = distill_step(batch_inputs,
+                                                     data_samples)
                     total_losses.update(
                         add_prefix(min_subnet_losses, 'min_subnet'))
                 elif kind in ('random', 'random1'):
@@ -236,7 +238,7 @@ class BigNAS(BaseAlgorithm):
                             batch_inputs, data_samples)
                         total_losses.update(
                             add_prefix(random_subnet_losses,
-                                    f'random_subnet_{sample_idx}'))
+                                       f'random_subnet_{sample_idx}'))
 
             return total_losses
         else:
@@ -255,13 +257,12 @@ class BigNASDDP(MMDistributedDataParallel):
                 device_ids = [int(os.environ['LOCAL_RANK'])]
         super().__init__(device_ids=device_ids, **kwargs)
 
-
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
         if self.module.is_supernet:
 
             def distill_step(
-                    batch_inputs: torch.Tensor, data_samples: List[BaseDataElement]
+                batch_inputs: torch.Tensor, data_samples: List[BaseDataElement]
             ) -> Dict[str, torch.Tensor]:
                 subnet_losses = dict()
                 with optim_wrapper.optim_context(
@@ -295,8 +296,10 @@ class BigNASDDP(MMDistributedDataParallel):
                 dropout_stages=self.module.backbone_dropout_stages,
                 drop_path_rate=self.module.drop_path_rate)
             with optim_wrapper.optim_context(
-                    self), self.module.distiller.teacher_recorders:  # type: ignore
-                max_subnet_losses = self(batch_inputs, data_samples, mode='loss')
+                    self
+            ), self.module.distiller.teacher_recorders:  # type: ignore
+                max_subnet_losses = self(
+                    batch_inputs, data_samples, mode='loss')
                 parsed_max_subnet_losses, _ = self.module.parse_losses(
                     max_subnet_losses)
                 optim_wrapper.update_params(parsed_max_subnet_losses)
@@ -315,7 +318,7 @@ class BigNASDDP(MMDistributedDataParallel):
                 random_subnet_losses = distill_step(batch_inputs, data_samples)
                 total_losses.update(
                     add_prefix(random_subnet_losses,
-                            f'random_subnet_{sample_idx}'))
+                               f'random_subnet_{sample_idx}'))
 
             return total_losses
         else:

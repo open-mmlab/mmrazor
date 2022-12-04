@@ -11,8 +11,8 @@ from mmrazor.models.mutables.mutable_channel import (
     L1MutableChannelUnit, SequentialMutableChannelUnit)
 from mmrazor.models.mutators.channel_mutator import ChannelMutator
 from mmrazor.registry import MODELS
-from ...data.models import DynamicAttention, DynamicLinearModel
-from ...test_core.test_graph.test_graph import TestGraph
+from tests.data.models import DynamicAttention, DynamicLinearModel
+from tests.test_core.test_graph.test_graph import TestGraph
 
 sys.setrecursionlimit(2000)
 

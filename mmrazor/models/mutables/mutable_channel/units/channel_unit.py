@@ -185,7 +185,7 @@ class ChannelUnit(BaseModule):
                     Channel.init_from_cfg(model, channel_config))
             for channel_config in channels['output_related']:
                 auto_fill_channel_config(channel_config, True)
-                unit.add_ouptut_related(
+                unit.add_output_related(
                     Channel.init_from_cfg(model, channel_config))
         return unit
 
