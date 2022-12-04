@@ -4,6 +4,7 @@ import abc
 from collections import Set
 from typing import Dict, List, Type, TypeVar
 
+import torch
 import torch.nn as nn
 
 from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
@@ -62,6 +63,8 @@ class MutableChannelUnit(ChannelUnit):
                               is_output=True):
             for index, mutable in container.mutable_channels.items():
                 derived_choices = mutable.current_choice
+                if isinstance(derived_choices, torch.Tensor):
+                    derived_choices = derived_choices.sum().item()
                 expand_ratio = 1
                 if isinstance(mutable, DerivedMutable):
                     source_mutables: Set = \
@@ -88,13 +91,14 @@ class MutableChannelUnit(ChannelUnit):
                             source_value_mutables[0].current_choice)
 
                     assert len(
-                        source_mutables) == len(source_channel_mutables) + len(
+                        source_mutables) >= len(source_channel_mutables) + len(
                             source_value_mutables
                         ), 'DerivedMutable can only be composed of '
                     'value_mutable and channel_mutable.'
 
-                    if not derived_choices / subchannel == expand_ratio:
-                        x = derived_choices / subchannel / expand_ratio
+                    expected_ratio = derived_choices / subchannel
+                    if expected_ratio != expand_ratio:
+                        x = expected_ratio / expand_ratio
                         expand_ratio = expand_ratio * x
                         if expand_ratio not in expand_ratio_warning_list:
                             from mmengine import MMLogger

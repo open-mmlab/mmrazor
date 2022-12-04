@@ -78,7 +78,10 @@ class CalibrateBNMixin:
         for data_batch in dataloader:
             if len(data_batch) >= remaining:
                 data_batch = data_batch[:remaining]
-            data_batch_nums = len(data_batch['inputs'])
+            if isinstance(data_batch, torch.Tensor):
+                data_batch_nums = len(data_batch)
+            else:
+                data_batch_nums = len(data_batch['inputs'])
             if dist.is_initialized() and dist.is_available():
                 data_batch_tensor = torch.tensor(
                     [data_batch_nums], device=self.runner.model.device)

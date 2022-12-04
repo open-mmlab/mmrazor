@@ -25,6 +25,10 @@ class TestValueMutator(unittest.TestCase):
                 for mutable_value, module in model.named_modules():
                     if isinstance(module, MutableValue):
                         mutable_value_space.append(mutable_value)
+                    elif hasattr(module, 'source_mutables'):
+                        for each_mutables in module.source_mutables:
+                            if isinstance(each_mutables, MutableValue):
+                                mutable_value_space.append(each_mutables)
                 assert len(
                     value_mutator.search_groups) == len(mutable_value_space)
 
