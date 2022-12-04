@@ -44,15 +44,11 @@ class FakeDataset(Dataset):
                  random_nums: int = 64,
                  x_shape: Sequence[int] = (3, 224, 224)) -> None:
         self.random_x = torch.normal(1, 100, size=(random_nums, *x_shape))
-        # self.random_x = {
-        #     'inputs': torch.normal(1, 100, size=(random_nums, *x_shape))
-        # }
         self.random_nums = random_nums
         self.x_shape = list(x_shape)
 
     def __getitem__(self, index: int) -> Tensor:
         return self.random_x[index]
-        # return {'inputs': self.random_x[index]}
 
     def __len__(self) -> int:
         return self.random_nums
