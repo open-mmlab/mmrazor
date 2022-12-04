@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -10,18 +10,23 @@ from ...ops import InputResizer
 from ..mixins.dynamic_mixins import DynamicResizeMixin
 
 
-# TODO
-# consider use data preprocessor
 @MODELS.register_module()
 class DynamicInputResizer(InputResizer, DynamicResizeMixin):
+
+    mutable_attrs: nn.ModuleDict
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         self.mutable_attrs: Dict[str, Optional[BaseMutable]] = nn.ModuleDict()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self,
+                x: torch.Tensor,
+                size=Optional[Tuple[int, int]]) -> torch.Tensor:
         self._size = self.get_dynamic_shape()
+
+        if not self._size:
+            self._size = size
 
         return super().forward(x, self._size)
 
@@ -39,10 +44,8 @@ class DynamicInputResizer(InputResizer, DynamicResizeMixin):
                 module.
         """
         dynamic_seq = cls(
-            size=module._size,
             interpolation_type=module._interpolation_type,
             align_corners=module._align_corners,
-            scale_factor=module._scale_factor,
-            recompute_scale_factor=module._recompute_scale_factor)
+            scale_factor=module._scale_factor)
 
         return dynamic_seq

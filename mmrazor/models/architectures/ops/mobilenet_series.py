@@ -1,13 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict
 
-import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 from mmcv.cnn import ConvModule
-from mmcv.cnn.bricks import build_conv_layer
 from mmcv.cnn.bricks.drop import drop_path
-from mmengine.model import BaseModule
-from torch import Tensor
 
 from mmrazor.registry import MODELS
 from .base import BaseOP
@@ -17,46 +13,6 @@ try:
 except ImportError:
     from mmrazor.utils import get_placeholder
     SELayer = get_placeholder('mmcls')
-
-
-class ShortcutLayer(BaseModule):
-
-    def __init__(self,
-                 in_channels: int,
-                 out_channels: int,
-                 reduction: int = 1,
-                 conv_cfg: Dict = dict(type='Conv2d'),
-                 init_cfg=None):
-        super().__init__(init_cfg)
-
-        assert reduction in [1, 2]
-        self.reduction = reduction
-
-        self.with_conv = in_channels != out_channels
-        # conv module can be removed if in_channels equal to out_channels
-        self.conv = build_conv_layer(
-            conv_cfg,
-            in_channels=in_channels,
-            out_channels=out_channels,
-            kernel_size=1,
-            stride=1,
-            bias=False)
-
-    def forward(self, x: Tensor) -> Tensor:
-        if self.reduction > 1:
-            padding = x.size(-1) & 1
-            x = F.avg_pool2d(x, self.reduction, padding=padding)
-
-        # HACK
-        mutable_in_channels = self.conv.mutable_in_channels
-        mutable_out_channels = self.conv.mutable_out_channels
-        if mutable_out_channels is not None and \
-                mutable_in_channels is not None:
-            if mutable_out_channels.current_mask.sum().item() != \
-                    mutable_in_channels.current_mask.sum().item():
-                x = self.conv(x)
-
-        return x
 
 
 @MODELS.register_module()
@@ -78,8 +34,8 @@ class MBBlock(BaseOP):
         drop_path_rate (float): stochastic depth rate. Defaults to 0.
         with_cp (bool): Use checkpoint or not. Using checkpoint will save some
             memory while slowing down the training speed. Defaults to False.
-        with_attentive_shortcut (bool): Use shortcut in AttentiveNAS or not.
-            Defaults to False.
+        short_cfg (dict, optional): Use shortcut in AttentiveNAS or not.
+            Defaults to None.
 
     Returns:
         Tensor: The output tensor.
@@ -94,21 +50,24 @@ class MBBlock(BaseOP):
                  act_cfg: Dict = dict(type='ReLU'),
                  drop_path_rate: float = 0.,
                  with_cp: bool = False,
-                 with_attentive_shortcut: bool = False,
+                 short_cfg: Dict = None,
                  **kwargs):
 
         super().__init__(**kwargs)
-        if with_attentive_shortcut:
-            self.shortcut = ShortcutLayer(
+
+        if short_cfg is None:
+            self.with_attentive_shortcut = False
+        else:
+            self.with_attentive_shortcut = True
+            short_cfg.update(
                 in_channels=self.in_channels,
                 out_channels=self.out_channels,
                 reduction=self.stride,
                 conv_cfg=conv_cfg)
-        self.with_attentive_shortcut = with_attentive_shortcut
-
+            self.shortcut = MODELS.build(short_cfg)
         self.with_res_shortcut = (
             self.stride == 1 and self.in_channels == self.out_channels
-            and not with_attentive_shortcut)
+            and not self.with_attentive_shortcut)
         assert self.stride in [1, 2]
         self.kernel_size = kernel_size
         self.conv_cfg = conv_cfg

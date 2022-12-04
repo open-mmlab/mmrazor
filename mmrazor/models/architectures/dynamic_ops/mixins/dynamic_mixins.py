@@ -442,5 +442,4 @@ class DynamicResizeMixin(DynamicMixin):
         return self.static_op_factory(
             interpolation_type=self._interpolation_type,  # type:ignore
             align_corners=self._align_corners,  # type:ignore
-            scale_factor=self._scale_factor,  # type:ignore
-            recompute_scale_factor=self._recompute_scale_factor)  # type:ignore
+            scale_factor=self._scale_factor)  # type:ignore

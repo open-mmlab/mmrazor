@@ -24,7 +24,7 @@ def set_dropout(layers, dropout_stages: List[int],
             continue
 
         for block_idx, block in enumerate(layer):
-            if isinstance(block, MBBlock):
+            if isinstance(block, MBBlock) and hasattr(block, 'drop_path_rate'):
                 ratio = (visited_block_nums - len(layer) +
                          block_idx) / total_block_nums
                 block.drop_path_rate = drop_path_rate * ratio

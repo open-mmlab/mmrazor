@@ -2,9 +2,7 @@
 from collections import OrderedDict
 from typing import Dict, List, Optional, Sequence, Union
 
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from mmcv.cnn import ConvModule
 from mmengine.logging import MMLogger
 from mmengine.model import Sequential, constant_init
@@ -57,7 +55,8 @@ class AttentiveMobileNetV3(BaseBackbone):
             memory while slowing down the training speed. Default: False.
         zero_init_residual (bool): Zero norm param in linear conv of MBBlock
             or not when there is a shortcut. Default: True.
-        drop_ratio (float): Dropout rate. Defaults to 0.2.
+        with_attentive_shortcut (bool): Use shortcut in AttentiveNAS or not.
+            Defaults to True.
         init_cfg (dict | list[dict], optional): initialization configuration
             dict to define initializer. OpenMMLab has implemented
             6 initializers, including ``Constant``, ``Xavier``, ``Normal``,
@@ -78,7 +77,6 @@ class AttentiveMobileNetV3(BaseBackbone):
                  with_cp: bool = False,
                  zero_init_residual: bool = True,
                  with_attentive_shortcut: bool = True,
-                 drop_ratio: float = 0.2,
                  init_cfg: Optional[Union[Dict, List[Dict]]] = None):
 
         super().__init__(init_cfg)
@@ -102,7 +100,6 @@ class AttentiveMobileNetV3(BaseBackbone):
         self.zero_init_residual = zero_init_residual
         self.with_cp = with_cp
         self.with_attentive_shortcut = with_attentive_shortcut
-        self.drop_ratio = drop_ratio
 
         self.act_list = act_list if act_list is not None \
             else ['Swish'] * 7
@@ -222,6 +219,9 @@ class AttentiveMobileNetV3(BaseBackbone):
             else:
                 se_cfg = None  # type: ignore
 
+            short_cfg = dict(type='DynamicShortcutLayer'
+                             ) if self.with_attentive_shortcut else None
+
             mb_layer = MBBlock(
                 in_channels=self.in_channels,
                 out_channels=max(out_channels),
@@ -233,7 +233,7 @@ class AttentiveMobileNetV3(BaseBackbone):
                 act_cfg=dict(type=act_cfg),
                 with_cp=self.with_cp,
                 se_cfg=se_cfg,
-                with_attentive_shortcut=self.with_attentive_shortcut)
+                short_cfg=short_cfg)
 
             _layers.append(mb_layer)
             self.in_channels = max(out_channels)
@@ -299,7 +299,6 @@ class AttentiveMobileNetV3(BaseBackbone):
         self.last_mutable = mutable_out_channels
 
     def forward(self, x):
-
         x = self.first_conv(x)
         outs = []
         for i, layer in enumerate(self.layers):
@@ -307,16 +306,7 @@ class AttentiveMobileNetV3(BaseBackbone):
             if i in self.out_indices:
                 outs.append(x)
 
-        if self.last_conv in self.layers:
-            if self.training and self.drop_ratio > 0:
-                x = F.dropout(x, p=self.drop_ratio)
-            x = torch.squeeze(x, dim=-1)
-            x = torch.squeeze(x, dim=-1)
-
-        if len(outs) > 1:
-            return tuple(outs)
-        else:
-            return tuple([x])
+        return tuple(outs)
 
     def train(self, mode=True):
         super().train(mode)

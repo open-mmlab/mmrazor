@@ -3,6 +3,7 @@ from abc import abstractmethod
 from typing import Optional, Tuple
 
 import torch
+import torch.nn.functional as F
 
 try:
     from mmcls.models import ClsHead
@@ -34,6 +35,7 @@ class DynamicLinearClsHead(ClsHead, DynamicHead):
     Args:
         num_classes (int): Number of classes.
         in_channels (int): Number of input channels.
+        drop_ratio (float): Dropout rate. Defaults to 0.2.
         init_cfg (Optional[dict], optional): Init config.
             Defaults to dict(type='Normal',
                         layer='DynamicLinear', std=0.01).
@@ -42,6 +44,7 @@ class DynamicLinearClsHead(ClsHead, DynamicHead):
     def __init__(self,
                  num_classes: int = 1000,
                  in_channels: int = 624,
+                 drop_ratio: float = 0.2,
                  init_cfg: Optional[dict] = dict(
                      type='Normal', layer='DynamicLinear', std=0.01),
                  **kwargs):
@@ -49,6 +52,7 @@ class DynamicLinearClsHead(ClsHead, DynamicHead):
 
         self.in_channels = in_channels
         self.num_classes = num_classes
+        self.drop_ratio = drop_ratio
 
         if self.num_classes <= 0:
             raise ValueError(
@@ -70,6 +74,8 @@ class DynamicLinearClsHead(ClsHead, DynamicHead):
     def forward(self, feats: Tuple[torch.Tensor]) -> torch.Tensor:
         """The forward process."""
         pre_logits = self.pre_logits(feats)
+        if self.training and self.drop_ratio > 0:
+            pre_logits = F.dropout(pre_logits, p=self.drop_ratio)
         # The final classification head.
         cls_score = self.fc(pre_logits)
         return cls_score

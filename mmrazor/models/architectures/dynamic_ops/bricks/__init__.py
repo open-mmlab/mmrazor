@@ -9,11 +9,12 @@ from .dynamic_norm import (DynamicBatchNorm1d, DynamicBatchNorm2d,
                            DynamicBatchNorm3d, DynamicLayerNorm,
                            SwitchableBatchNorm2d)
 from .dynamic_relative_position import DynamicRelativePosition2D
+from .dynamic_shortcut import DynamicShortcutLayer
 
 __all__ = [
     'BigNasConv2d', 'DynamicConv2d', 'OFAConv2d', 'DynamicLinear',
     'DynamicBatchNorm1d', 'DynamicBatchNorm2d', 'DynamicBatchNorm3d',
     'SwitchableBatchNorm2d', 'DynamicSequential', 'DynamicPatchEmbed',
     'DynamicMultiheadAttention', 'DynamicInputResizer', 'FuseConv2d',
-    'DynamicLayerNorm', 'DynamicRelativePosition2D'
+    'DynamicLayerNorm', 'DynamicRelativePosition2D', 'DynamicShortcutLayer'
 ]

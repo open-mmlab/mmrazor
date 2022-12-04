@@ -26,6 +26,7 @@ class DynamicConv2d(nn.Conv2d, DynamicConvMixin):
             such as `in_channels`. The key of the dict must in
             ``accepted_mutable_attrs``.
     """
+    mutable_attrs: nn.ModuleDict
     accepted_mutable_attrs = {'in_channels', 'out_channels'}
 
     def __init__(self, *args, **kwargs) -> None:
@@ -52,7 +53,7 @@ class DynamicConv2d(nn.Conv2d, DynamicConvMixin):
                      'DynamicConvs.'))
                 GroupWiseConvWarned = True
 
-            return module
+            return module  # type:ignore
         else:
             return cls(
                 in_channels=module.in_channels,
@@ -93,9 +94,8 @@ class BigNasConv2d(nn.Conv2d, BigNasConvMixin):
             such as `in_channels`. The key of the dict must in
             ``accepted_mutable_attrs``.
     """
-    accepted_mutable_attrs = {
-        'in_channels', 'out_channels', 'kernel_size', 'groups'
-    }
+    mutable_attrs: nn.ModuleDict
+    accepted_mutable_attrs = {'in_channels', 'out_channels', 'kernel_size'}
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -152,6 +152,7 @@ class OFAConv2d(nn.Conv2d, OFAConvMixin):
             such as `in_channels`. The key of the dict must in
             ``accepted_mutable_attrs``.
     """
+    mutable_attrs: nn.ModuleDict
     accepted_mutable_attrs = {'in_channels', 'out_channels'}
 
     def __init__(self, *args, **kwargs) -> None:
@@ -203,6 +204,7 @@ class FuseConv2d(nn.Conv2d, FuseConvMixin):
             such as `in_channels`. The key of the dict must in
             ``accepted_mutable_attrs``.
     """
+    mutable_attrs: nn.ModuleDict
     accepted_mutable_attrs = {'in_channels', 'out_channels'}
 
     def __init__(self, *args, **kwargs) -> None:
