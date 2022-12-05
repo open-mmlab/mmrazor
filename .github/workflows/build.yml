@@ -29,7 +29,8 @@ concurrency:
 jobs:
   test_linux:
     runs-on: ubuntu-latest
-    matrix:
+    strategy:
+      matrix:
         python-version: [3.7]
         torch: [1.6.0, 1.7.0, 1.8.0, 1.9.0, 1.10.0, 1.11.0, 1.12.0, 1.13.0]
         include:
