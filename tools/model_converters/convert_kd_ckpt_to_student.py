@@ -10,6 +10,8 @@ def parse_args():
         description='Process a checkpoint to be published')
     parser.add_argument('checkpoint', help='input checkpoint filename')
     parser.add_argument(
+        '--model-only', action='store_true', help='only save model')
+    parser.add_argument(
         '--inplace', action='store_true', help='replace origin ckpt')
     args = parser.parse_args()
     return args
@@ -24,6 +26,9 @@ def main():
         if key.startswith('architecture.'):
             new_key = key.replace('architecture.', '')
             new_state_dict[new_key] = value
+
+    if args.model_only:
+        checkpoint = dict()
 
     checkpoint['state_dict'] = new_state_dict
 
