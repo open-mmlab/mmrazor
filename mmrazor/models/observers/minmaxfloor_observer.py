@@ -8,7 +8,17 @@ from ..utils import sync_tensor, _is_float_qparams, _is_symmetric_quant
 
 @MODELS.register_module()
 class MinMaxFloorObserver(UniformQuantizationObserverBase):
-    """Calculate minmax of whole calibration dataset with floor but round."""
+    """Calculate minmax of whole calibration dataset with floor but round.
+
+    Args:
+        dtype: Quantized data type.
+        qscheme: Quantization scheme to be used.
+        reduce_range: Reduces the range of the quantized data type by 1 bit.
+                      This is sometimes required to avoid instruction overflow.
+        quant_min: Minimum quantization value. If unspecified, it will follow the 8-bit setup.
+        quant_max: Maximum quantization value. If unspecified, it will follow the 8-bit setup.
+        eps: Epsilon value for float32, Defaults to `torch.finfo(torch.float32).eps`.
+    """
     min_val: torch.Tensor
     max_val: torch.Tensor
 
