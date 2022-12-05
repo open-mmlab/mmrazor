@@ -6,7 +6,6 @@ import torch
 from mmrazor.registry import MODELS
 from mmrazor.utils import IndexDict
 from ...architectures.dynamic_ops.mixins import DynamicChannelMixin
-from ..derived_mutable import DerivedMutable
 from .base_mutable_channel import BaseMutableChannel
 from .simple_mutable_channel import SimpleMutableChannel
 
@@ -49,28 +48,14 @@ class MutableChannelContainer(BaseMutableChannel):
             return mask.bool()
 
     @current_choice.setter
-    def current_choice(self, choices):
+    def current_choice(self, choice):
         """Set current choices.
 
         However, MutableChannelContainer doesn't support directly set mask. You
         can change the mask of MutableChannelContainer by changing its stored
         BaseMutableChannel.
         """
-        if isinstance(choices, list):
-            for choice, mutable in zip(choices,
-                                       self.mutable_channels.values()):
-                if isinstance(mutable, DerivedMutable):
-                    continue
-                else:
-                    mutable.current_choice = choice
-        else:
-            raise NotImplementedError(f'Unsuppported type {choices}')
-
-    def dump_chosen(self):
-        chosen = []
-        for mutable in self.mutable_channels.values():
-            chosen.append(mutable.dump_chosen())
-        return chosen
+        raise NotImplementedError()
 
     @property
     def current_mask(self) -> torch.Tensor:
