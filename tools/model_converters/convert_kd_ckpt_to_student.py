@@ -23,7 +23,7 @@ def main():
     for key, value in checkpoint['state_dict'].items():
         if key.startswith('architecture.'):
             new_key = key.replace('architecture.', '')
-        new_state_dict[new_key] = value
+            new_state_dict[new_key] = value
 
     checkpoint['state_dict'] = new_state_dict
 
