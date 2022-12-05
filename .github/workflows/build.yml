@@ -29,35 +29,62 @@ concurrency:
 jobs:
   test_linux:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        torch:
-          [1.5.1+cpu, 1.6.0+cpu, 1.7.1+cpu, 1.8.0+cpu, 1.9.0+cpu, 1.10.1+cpu]
+    matrix:
+        python-version: [3.7]
+        torch: [1.6.0, 1.7.0, 1.8.0, 1.9.0, 1.10.0, 1.11.0, 1.12.0, 1.13.0]
         include:
-          - torch: 1.5.1+cpu
-            torchvision: 0.6.1+cpu
-            mmcv_link: cpu/torch1.5
-            python-version: 3.7
-          - torch: 1.6.0+cpu
-            torchvision: 0.7.0+cpu
-            mmcv_link: cpu/torch1.6
-            python-version: 3.7
-          - torch: 1.7.1+cpu
-            torchvision: 0.8.2+cpu
-            mmcv_link: cpu/torch1.7
-            python-version: 3.7
-          - torch: 1.8.0+cpu
-            torchvision: 0.9.0+cpu
-            mmcv_link: cpu/torch1.8
+          - torch: 1.6.0
+            torch_version: 1.6
+            torchvision: 0.7.0
+          - torch: 1.7.0
+            torch_version: 1.7
+            torchvision: 0.8.1
+          - torch: 1.7.0
+            torch_version: 1.7
+            torchvision: 0.8.1
             python-version: 3.8
-          - torch: 1.9.0+cpu
-            torchvision: 0.10.0+cpu
-            mmcv_link: cpu/torch1.9
+          - torch: 1.8.0
+            torch_version: 1.8
+            torchvision: 0.9.0
+          - torch: 1.8.0
+            torch_version: 1.8
+            torchvision: 0.9.0
             python-version: 3.8
-          - torch: 1.10.1+cpu
-            torchvision: 0.11.2+cpu
-            mmcv_link: cpu/torch1.10
-            python-version: 3.9
+          - torch: 1.9.0
+            torch_version: 1.9
+            torchvision: 0.10.0
+          - torch: 1.9.0
+            torch_version: 1.9
+            torchvision: 0.10.0
+            python-version: 3.8
+          - torch: 1.10.0
+            torch_version: 1.10
+            torchvision: 0.11.0
+          - torch: 1.10.0
+            torch_version: 1.10
+            torchvision: 0.11.0
+            python-version: 3.8
+          - torch: 1.11.0
+            torch_version: 1.11
+            torchvision: 0.12.0
+          - torch: 1.11.0
+            torch_version: 1.11
+            torchvision: 0.12.0
+            python-version: 3.8
+          - torch: 1.12.0
+            torch_version: 1.12
+            torchvision: 0.13.0
+          - torch: 1.12.0
+            torch_version: 1.12
+            torchvision: 0.13.0
+            python-version: 3.8
+          - torch: 1.13.0
+            torch_version: 1.13
+            torchvision: 0.14.0
+          - torch: 1.13.0
+            torch_version: 1.13
+            torchvision: 0.14.0
+            python-version: 3.8
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
