@@ -129,6 +129,8 @@ class ItePruneAlgorithm(BaseAlgorithm):
         # using sync bn or normal bn
         import torch.distributed as dist
         if dist.is_initialized():
+            from mmengine import MMLogger
+            MMLogger.get_current_instance().info('Convert Bn to SyncBn.')
             self.architecture = nn.SyncBatchNorm.convert_sync_batchnorm(
                 self.architecture)
         else:
