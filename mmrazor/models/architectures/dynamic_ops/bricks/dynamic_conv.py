@@ -245,3 +245,38 @@ class DynamicConv2dAdaptivePadding(DynamicConv2d):
                 pad_w // 2, pad_w - pad_w // 2, pad_h // 2, pad_h - pad_h // 2
             ])
         return super().forward(x)
+
+    @property
+    def static_op_factory(self):
+        from mmcv.cnn.bricks import Conv2dAdaptivePadding
+        return Conv2dAdaptivePadding
+
+    def to_static_op(self) -> nn.Conv2d:
+        self.check_if_mutables_fixed()
+
+        weight, bias, padding = self.get_dynamic_params()
+        groups = self.groups
+        if groups == self.in_channels == self.out_channels and \
+                self.mutable_in_channels is not None:
+            mutable_in_channels = self.mutable_attrs['in_channels']
+            groups = mutable_in_channels.current_mask.sum().item()
+        out_channels = weight.size(0)
+        in_channels = weight.size(1) * groups
+
+        kernel_size = tuple(weight.shape[2:])
+
+        static_conv = self.static_op_factory(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=self.stride,
+            padding=padding,
+            dilation=self.dilation,
+            groups=groups,
+            bias=True if bias is not None else False)
+
+        static_conv.weight = nn.Parameter(weight)
+        if bias is not None:
+            static_conv.bias = nn.Parameter(bias)
+
+        return static_conv

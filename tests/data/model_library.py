@@ -232,8 +232,19 @@ class DefaultModelLibrary(ModelLibrary):
         'yolo'
     ]
 
-    def __init__(self, include=default_includes, exclude=[]) -> None:
+    def __init__(self,
+                 include=default_includes,
+                 exclude=[],
+                 with_mm_models=False) -> None:
+        self.with_mm_models = with_mm_models
         super().__init__(include, exclude)
+
+    @property
+    def models(self):
+        models = super().models
+        if self.with_mm_models:
+            models.update(self.get_mm_models())
+        return models
 
     @classmethod
     def get_models(cls):
@@ -258,7 +269,6 @@ class DefaultModelLibrary(ModelLibrary):
         for model in models:
             model_dict[model.__name__] = ModelGenerator(
                 'default.' + model.__name__, model)
-        model_dict.update(cls.get_mm_models())
         return model_dict
 
     @classmethod
