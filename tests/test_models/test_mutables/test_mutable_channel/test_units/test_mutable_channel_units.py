@@ -30,6 +30,9 @@ DefaultChannelUnit = SequentialMutableChannelUnit
 def _test_units(units: List[MutableChannelUnit], model):
     for unit in units:
         unit.prepare_for_pruning(model)
+    for unit in units:
+        _ = unit.current_choice
+
     mutable_units = [unit for unit in units if unit.is_mutable]
     assert len(mutable_units) >= 1, \
         'len of mutable units should greater or equal than 0.'
@@ -43,11 +46,6 @@ def _test_units(units: List[MutableChannelUnit], model):
 
 
 class TestMutableChannelUnit(TestCase):
-
-    def test_init_from_tracer(self):
-        model = SingleLineModel()
-        units = DefaultChannelUnit.init_from_prune_tracer(model)
-        _test_units(units, model)
 
     def test_init_from_cfg(self):
         model = SingleLineModel()
@@ -89,7 +87,7 @@ class TestMutableChannelUnit(TestCase):
         units = [DefaultChannelUnit.init_from_cfg(model, config)]
         _test_units(units, model)
 
-    def test_init_from_channel_unit(self):
+    def test_init(self):
 
         def test_units(units, model):
             mutable_units = [
@@ -108,6 +106,8 @@ class TestMutableChannelUnit(TestCase):
         units: List[ChannelUnit] = ChannelUnit.init_from_prune_tracer(
             model, tracer=dict(type='PruneTracer'))
         test_units(units, model)
+
+        print(units)
 
     def test_replace_with_dynamic_ops(self):
         model_datas = backward_passed_library.include_models()

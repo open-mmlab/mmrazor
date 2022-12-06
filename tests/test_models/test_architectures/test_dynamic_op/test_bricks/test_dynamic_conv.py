@@ -11,7 +11,7 @@ from torch import nn
 from mmrazor.models.architectures.dynamic_ops import (
     BigNasConv2d, DynamicConv2d, DynamicConv2dAdaptivePadding, FuseConv2d,
     OFAConv2d)
-from mmrazor.models.mutables import (OneShotMutableValue,
+from mmrazor.models.mutables import (OneShotMutableValue, SimpleMutableChannel,
                                      SquentialMutableChannel)
 from mmrazor.structures.subnet import export_fix_subnet, load_fix_subnet
 from ..utils import fix_dynamic_op
@@ -292,3 +292,23 @@ def test_mutable_kernel_dynamic_conv2d_grad(
         assert d_conv2d.weight.grad[mask].norm().item() == 0
 
         d_conv2d.weight.grad.zero_()
+
+
+def test_dynamic_group_wise_conv():
+    conv = DynamicConv2d(8, 16, 3, 1, 1, groups=4)
+    in_mutable = SimpleMutableChannel(8)
+    out_mutable = SimpleMutableChannel(16)
+    in_mutable.current_choice = torch.tensor([0, 1] * 4).bool()
+    out_mutable.current_choice = torch.tensor([0, 1, 1, 0] * 4).bool()
+    conv.register_mutable_attr('in_channels', in_mutable)
+    conv.register_mutable_attr('out_channels', out_mutable)
+
+    input = torch.rand([2, 4, 32, 32])
+    y1 = conv(input)
+    assert list(y1.shape) == [2, 8, 32, 32]
+
+    in_mutable.fix_chosen()
+    out_mutable.fix_chosen()
+    static_conv = conv.to_static_op()
+    y2 = static_conv(input)
+    assert torch.equal(y1, y2)
