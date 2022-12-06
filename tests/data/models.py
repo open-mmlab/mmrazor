@@ -20,7 +20,7 @@ from mmrazor.models.utils.parse_values import parse_values
 from mmrazor.models.architectures.ops.mobilenet_series import MBBlock
 from mmcv.cnn import ConvModule
 from mmengine.model import Sequential
-from mmrazor.models.architectures.utils.mutable_register import (short_cfg
+from mmrazor.models.architectures.utils.mutable_register import (
     mutate_conv_module, mutate_mobilenet_layer)
 
 class LinearHead(Module):
