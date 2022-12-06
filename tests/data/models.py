@@ -20,7 +20,7 @@ from mmrazor.models.utils.parse_values import parse_values
 from mmrazor.models.architectures.ops.mobilenet_series import MBBlock
 from mmcv.cnn import ConvModule
 from mmengine.model import Sequential
-from mmrazor.models.architectures.utils.mutable_register import (
+from mmrazor.models.architectures.utils.mutable_register import (short_cfg
     mutate_conv_module, mutate_mobilenet_layer)
 
 class LinearHead(Module):
@@ -814,9 +814,6 @@ class DynamicMMBlock(nn.Module):
             else:
                 se_cfg = None  # type: ignore
 
-            short_cfg = dict(type='DynamicShortcutLayer'
-                             ) if self.with_attentive_shortcut else None
-
             mb_layer = MBBlock(
                 in_channels=self.in_channels,
                 out_channels=max(out_channels),
@@ -827,7 +824,7 @@ class DynamicMMBlock(nn.Module):
                 norm_cfg=self.norm_cfg,
                 act_cfg=dict(type=act_cfg),
                 se_cfg=se_cfg,
-                short_cfg=short_cfg)
+                with_attentive_shortcut=self.with_attentive_shortcut)
 
             _layers.append(mb_layer)
             self.in_channels = max(out_channels)
