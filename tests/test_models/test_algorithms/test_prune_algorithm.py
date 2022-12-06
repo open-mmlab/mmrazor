@@ -238,6 +238,8 @@ class TestItePruneAlgorithm(unittest.TestCase):
             self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
 
     def test_dist_init(self):
+        if DEVICE != torch.device('cuda:0'):
+            self.skipTest('not use cuda')
         with SetDistEnv(DEVICE == torch.device('cuda:0')):
             iter_per_epoch = 10
             epoch_step = 2
