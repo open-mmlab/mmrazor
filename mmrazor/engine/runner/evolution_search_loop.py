@@ -102,6 +102,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         self.crossover_prob = crossover_prob
         self.max_keep_ckpts = max_keep_ckpts
         self.resume_from = resume_from
+        self.fp16 = False
 
         if init_candidates is None:
             self.candidates = Candidates()
@@ -195,7 +196,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         init_candidates = len(self.candidates)
         if self.runner.rank == 0:
             while len(self.candidates) < self.num_candidates:
-                candidate = self.model.sample_subnet()
+                # candidate = self.model.sample_subnet()
+                candidate = self.model.sample_subnet('max')
                 is_pass, result = self._check_constraints(
                     random_subnet=candidate)
                 if is_pass:
@@ -306,18 +308,53 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
             self.runner.logger.info(f'Resume from epoch: {epoch_start}')
             self.runner.logger.info('#' * 100)
 
+    def export_model(self, model, subnet_cfg, wrap=True):
+        """Export slimmed model according to subnet_cfg and wrap it."""
+
+        import copy
+        import time
+
+        from mmrazor.structures import load_fix_subnet
+        copied_model = copy.deepcopy(model)
+        load_fix_subnet(copied_model, subnet_cfg)
+        if next(copied_model.parameters()).is_cuda:
+            copied_model.cuda()
+
+        timestamp_subnet = time.strftime('%Y%m%d_%H%M', time.localtime())
+        model_save_name = f'final_subnet_{timestamp_subnet}.pth'
+        state_dict = copied_model.state_dict()
+        new_state_dict = {}
+        for k, v in state_dict.items():
+            # new_k = k.replace('module', 'model', 1)
+            # new_state_dict[new_k] = v
+            new_state_dict[k] = v
+        torch.save(
+            {
+                'state_dict': new_state_dict,
+                'meta': {}
+            },
+            osp.join(
+                '/mnt/lustre/sunyue1/autolink/workspace-547/0802_mmrazor/.vscode/mmrazor_bignas_pr/save_ckpt',
+                model_save_name))
+        return
+
     def _save_best_fix_subnet(self):
         """Save best subnet in searched top-k candidates."""
         if self.runner.rank == 0:
             best_random_subnet = self.top_k_candidates.subnets[0]
             self.model.set_subnet(best_random_subnet)
+
             best_fix_subnet = export_fix_subnet(self.model)
             save_name = 'best_fix_subnet.yaml'
             fileio.dump(best_fix_subnet,
                         osp.join(self.runner.work_dir, save_name))
+
+            model_to_save = self.export_model(self.model, best_fix_subnet)
+
             self.runner.logger.info(
                 'Search finished and '
-                f'{save_name} saved in {self.runner.work_dir}.')
+                f'{save_name} and {model_to_save} saved in {self.runner.work_dir}.'
+            )
 
     @torch.no_grad()
     def _val_candidate(self, use_predictor: bool = False) -> Dict:

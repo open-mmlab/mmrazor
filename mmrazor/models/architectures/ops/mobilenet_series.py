@@ -97,13 +97,14 @@ class MBBlock(BaseOP):
 
         super().__init__(**kwargs)
 
-        self.with_attentive_shortcut = with_attentive_shortcut
         if with_attentive_shortcut:
             self.shortcut = ShortcutLayer(
                 in_channels=self.in_channels,
                 out_channels=self.out_channels,
                 reduction=self.stride,
                 conv_cfg=conv_cfg)
+        self.with_attentive_shortcut = with_attentive_shortcut
+
         self.with_res_shortcut = (
             self.stride == 1 and self.in_channels == self.out_channels
             and not self.with_attentive_shortcut)
