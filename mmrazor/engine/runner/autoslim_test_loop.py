@@ -42,11 +42,11 @@ class AutoSlimTestLoop(TestLoop, CalibrateBNMixin):
         metrics = self._evaluate_once()
         all_metrics.update(add_prefix(metrics, 'max_subnet'))
 
-        self._model.set_min_subnet()
-        self.calibrate_bn_statistics(self.runner.train_dataloader,
-                                     self.calibrate_sample_num)
-        metrics = self._evaluate_once()
-        all_metrics.update(add_prefix(metrics, 'min_subnet'))
+        # self._model.set_min_subnet()
+        # self.calibrate_bn_statistics(self.runner.train_dataloader,
+        #                              self.calibrate_sample_num)
+        # metrics = self._evaluate_once()
+        # all_metrics.update(add_prefix(metrics, 'min_subnet'))
 
         self.runner.call_hook('after_test_epoch', metrics=all_metrics)
         self.runner.call_hook('after_test')

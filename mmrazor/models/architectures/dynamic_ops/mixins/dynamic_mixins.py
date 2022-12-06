@@ -439,7 +439,13 @@ class DynamicResizeMixin(DynamicMixin):
     def to_static_op(self) -> nn.Module:
         self.check_if_mutables_fixed()
 
-        return self.static_op_factory(
+        input_resizer = self.static_op_factory(
             interpolation_type=self._interpolation_type,  # type:ignore
             align_corners=self._align_corners,  # type:ignore
             scale_factor=self._scale_factor)  # type:ignore
+
+        size = self.get_dynamic_shape()
+        if size is not None:
+            input_resizer._size = size
+
+        return input_resizer

@@ -26,13 +26,12 @@ class InputResizer(Module):
         self._interpolation_type = interpolation_type
         self._scale_factor = scale_factor
         self._align_corners = align_corners
+        self._size = None
 
     def forward(self,
                 x: torch.Tensor,
                 size: Optional[Tuple[int, int]] = None) -> torch.Tensor:
-
-        if size is None:
-            return x
+        size = size if size is not None else self._size
 
         return functional.interpolate(
             input=x,
