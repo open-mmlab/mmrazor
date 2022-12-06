@@ -71,9 +71,9 @@ class CalibrateBNMixin:
                 hook_handles.append(handle)
 
         self.runner.model.train()
-        self.runner.logger.info('start calibrating batch norm statistics')
+        self.runner.logger.info('Start calibrating batch norm statistics')
         self.runner.logger.info(
-            f'total sample number for calibration: {calibrate_sample_num}')
+            f'Total sample number for calibration: {calibrate_sample_num}')
         remaining = calibrate_sample_num
         for data_batch in dataloader:
             if len(data_batch) >= remaining:
@@ -91,7 +91,7 @@ class CalibrateBNMixin:
             remaining -= data_batch_nums
 
             self.runner.logger.debug(
-                f'remaining samples for calibration: {remaining}')
+                f'Remaining samples for calibration: {remaining}')
             with autocast(enabled=self.fp16):
                 self.runner.model.test_step(data_batch)
 
@@ -135,7 +135,7 @@ class CalibrateBNMixin:
                 del module.__mean_average_meter__
                 del module.__var_average_meter__
 
-        self.runner.logger.debug('remove all hooks for calibration')
-        self.runner.logger.info('calibrate batch norm statistics done')
+        self.runner.logger.debug('Remove all hooks for calibration')
+        self.runner.logger.info('Calibrate batch norm statistics done')
         for handle in hook_handles:
             handle.remove()
