@@ -312,12 +312,24 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
             best_random_subnet = self.top_k_candidates.subnets[0]
             self.model.set_subnet(best_random_subnet)
             best_fix_subnet = export_fix_subnet(self.model)
+            best_fix_subnet = self.convert_fix_subnet(best_fix_subnet)
             save_name = 'best_fix_subnet.yaml'
             fileio.dump(best_fix_subnet,
                         osp.join(self.runner.work_dir, save_name))
             self.runner.logger.info(
                 'Search finished and '
                 f'{save_name} saved in {self.runner.work_dir}.')
+
+    def convert_fix_subnet(self, fix_subnet: Dict[str, Any]):
+        """Convert the fixed subnet to avoid python typing error."""
+        from mmrazor.utils.typing import DumpChosen
+
+        converted_fix_subnet = dict()
+        for k, v in fix_subnet.items():
+            assert isinstance(v, DumpChosen)
+            converted_fix_subnet[k] = dict(chosen=v.chosen)
+
+        return converted_fix_subnet
 
     @torch.no_grad()
     def _val_candidate(self, use_predictor: bool = False) -> Dict:

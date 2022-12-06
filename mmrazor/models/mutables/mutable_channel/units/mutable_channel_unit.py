@@ -105,8 +105,8 @@ class MutableChannelUnit(ChannelUnit):
                             logger = MMLogger.get_current_instance()
                             logger.warning(
                                 'Trying to recompute the expand_ratio. '
-                                f'align {expand_ratio:.2f}*{subchannel} '
-                                f'={derived_choices} to the related channel. '
+                                f'Align {expand_ratio:.2f}*{subchannel} '
+                                f'= {derived_choices} to the related channel. '
                                 f'which will have no effect. ')
                             expand_ratio_warning_list.append(expand_ratio)
 
