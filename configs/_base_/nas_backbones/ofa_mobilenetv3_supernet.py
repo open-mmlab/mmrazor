@@ -42,7 +42,6 @@ nas_backbone = dict(
     arch_setting=arch_setting,
     out_indices=(6, ),
     stride_list=[1, 2, 2, 2, 1, 2],
-    act_list=['ReLU', 'ReLU', 'ReLU', 'Swish', 'Swish', 'Swish'],
     with_se_list=[False, False, True, False, True, True],
     conv_cfg=dict(type='OFAConv2d'),
     norm_cfg=dict(type='mmrazor.DynamicBatchNorm2d', momentum=0.0),

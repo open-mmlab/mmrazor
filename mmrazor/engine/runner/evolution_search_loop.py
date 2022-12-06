@@ -19,8 +19,7 @@ from torch.utils.data import DataLoader
 from mmrazor.registry import LOOPS, TASK_UTILS
 from mmrazor.structures import Candidates, export_fix_subnet, load_fix_subnet
 from mmrazor.utils import SupportRandomSubnet
-from .mixins import CalibrateBNMixin
-from .utils import check_subnet_resources, crossover
+from .utils import CalibrateBNMixin, check_subnet_resources, crossover
 
 
 @LOOPS.register_module()

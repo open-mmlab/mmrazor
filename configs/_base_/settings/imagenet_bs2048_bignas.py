@@ -392,5 +392,5 @@ param_scheduler = [
 
 # train, val, test setting
 train_cfg = dict(by_epoch=True, max_epochs=max_epochs, val_interval=1)
-val_cfg = dict(type='mmrazor.AutoSlimValLoop', calibrate_sample_num=4096)
-test_cfg = dict(type='mmrazor.AutoSlimTestLoop', calibrate_sample_num=4096)
+val_cfg = dict(type='mmrazor.SubnetValLoop', calibrate_sample_num=4096)
+test_cfg = dict(type='mmrazor.SubnetValLoop', calibrate_sample_num=4096)
