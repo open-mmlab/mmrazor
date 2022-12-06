@@ -178,11 +178,11 @@ class ChannelUnit(BaseModule):
 
     @classmethod
     def init_from_prune_tracer(cls, model, tracer=None):
-        """Init MutableChannelUnits from a PruneTracer."""
+        """Init MutableChannelUnits from a ChannelAnalyzer."""
 
         if tracer is None:
-            from mmrazor.models.task_modules.tracer import PruneTracer
-            tracer = PruneTracer()
+            from mmrazor.models.task_modules.tracer import ChannelAnalyzer
+            tracer = ChannelAnalyzer()
         if isinstance(tracer, dict):
             tracer = TASK_UTILS.build(tracer)
         unit_config = tracer.trace(model)

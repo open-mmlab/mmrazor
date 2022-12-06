@@ -25,7 +25,7 @@ class DCFFChannelMutator(ChannelMutator[DCFFChannelUnit]):
                  channel_unit_cfg: Union[dict, Type[ChannelUnitType]] = dict(
                      type='DCFFChannelUnit', units={}),
                  parse_cfg=dict(
-                     type='PruneTracer',
+                     type='ChannelAnalyzer',
                      demo_input=(1, 3, 224, 224),
                      tracer_type='BackwardTracer'),
                  **kwargs) -> None:

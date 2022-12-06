@@ -1,11 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """
-- How to config PruneTracer by hard code
+- How to config ChannelAnalyzer by hard code
   - fxtracer
     - demo_inputs
         ./mmrazor/models/task_modules/demo_inputs/default_demo_inputs.py
     - leaf module
-      - PruneTracer.default_leaf_modules
+      - ChannelAnalyzer.default_leaf_modules
     - method
       - ./mmrazor/models/task_modules/tracer/fx_tracer.py
   - ChannelNode
@@ -39,7 +39,7 @@ from .loss_calculator.sum_loss_calculator import SumPseudoLoss
 
 
 @TASK_UTILS.register_module()
-class PruneTracer:
+class ChannelAnalyzer:
     """The tracer for pruning. It return the configs of MutableChannelUnits as
     result.
 

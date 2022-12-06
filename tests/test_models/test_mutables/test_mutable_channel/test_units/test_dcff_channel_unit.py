@@ -6,7 +6,7 @@ import torch
 
 from mmrazor.models.architectures.dynamic_ops import FuseConv2d
 from mmrazor.models.mutables import DCFFChannelUnit
-from mmrazor.models.task_modules import PruneTracer
+from mmrazor.models.task_modules import ChannelAnalyzer
 from .....data.models import SingleLineModel
 
 DEVICE = torch.device('cpu')
@@ -50,7 +50,7 @@ class TestDCFFChannelUnit(TestCase):
     def test_init_from_channel_unit(self):
         # init using tracer
         model = SingleLineModel()
-        unit_configs = PruneTracer().trace(model)
+        unit_configs = ChannelAnalyzer().trace(model)
         units = [
             DCFFChannelUnit.init_from_cfg(model, unit_config)
             for unit_config in unit_configs.values()

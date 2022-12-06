@@ -12,7 +12,7 @@ from unittest import TestCase
 import torch
 from mmengine import MMLogger
 
-from mmrazor.models.task_modules.tracer.prune_tracer import PruneTracer
+from mmrazor.models.task_modules.tracer.prune_tracer import ChannelAnalyzer
 from ...data.model_library import ModelGenerator
 from ...data.tracer_passed_models import (PassedModelManager,
                                           backward_passed_library,
@@ -86,7 +86,7 @@ def _test_a_model(Model, tracer_type='fx'):
         else:
             raise NotImplementedError()
 
-        tracer = PruneTracer(
+        tracer = ChannelAnalyzer(
             tracer_type=tracer_type,
             demo_input={
                 'type': 'DefaultDemoInput',

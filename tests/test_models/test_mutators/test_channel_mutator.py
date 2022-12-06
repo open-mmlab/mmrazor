@@ -9,7 +9,7 @@ import torch
 from mmrazor.models.mutables.mutable_channel import (
     L1MutableChannelUnit, SequentialMutableChannelUnit)
 from mmrazor.models.mutators.channel_mutator import ChannelMutator
-from mmrazor.models.task_modules import PruneTracer
+from mmrazor.models.task_modules import ChannelAnalyzer
 from mmrazor.registry import MODELS
 from ...data.models import DynamicAttention, DynamicLinearModel
 from ...data.tracer_passed_models import backward_passed_library
@@ -46,7 +46,7 @@ class TestChannelMutator(unittest.TestCase):
 
     def test_init(self):
         model = backward_passed_library.include_models()[0]()
-        mutator = ChannelMutator(parse_cfg=PruneTracer())
+        mutator = ChannelMutator(parse_cfg=ChannelAnalyzer())
         mutator.prepare_from_supernet(model)
         self.assertGreaterEqual(len(mutator.mutable_units), 1)
         self._test_a_mutator(mutator, model)

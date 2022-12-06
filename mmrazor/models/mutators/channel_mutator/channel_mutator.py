@@ -9,7 +9,7 @@ from mmrazor.models.mutables import (ChannelUnitType, MutableChannelUnit,
                                      SequentialMutableChannelUnit)
 from mmrazor.models.mutables.mutable_channel.units.channel_unit import \
     ChannelUnit
-from mmrazor.models.task_modules.tracer.prune_tracer import PruneTracer
+from mmrazor.models.task_modules.tracer.prune_tracer import ChannelAnalyzer
 from mmrazor.registry import MODELS, TASK_UTILS
 from ..base_mutator import BaseMutator
 from ..group_mixin import GroupMixin
@@ -42,7 +42,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
             The config to parse the model.
             Defaults to
                 dict(
-                     type='PruneTracer',
+                     type='ChannelAnalyzer',
                      demo_input=(1, 3, 224, 224),
                      tracer_type='BackwardTracer')
 
@@ -57,7 +57,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
         There are three ways used in ChannelMutator to parse a model and
         get MutableChannelUnits.
         1. Using tracer. It needs parse_cfg to be the config of the
-        PruneTracer.
+        ChannelAnalyzer.
         2. Using config. When parse_cfg['type']='Config'. It needs that
         channel_unit_cfg['unit']['xxx_unit_name] has a key 'channels'.
         3. Using the model with pre-defined dynamic-ops and mutablechannels:
@@ -71,7 +71,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
                      dict,
                      Type[MutableChannelUnit]] = SequentialMutableChannelUnit,
                  parse_cfg: Dict = dict(
-                     type='PruneTracer',
+                     type='ChannelAnalyzer',
                      demo_input=(1, 3, 224, 224),
                      tracer_type='BackwardTracer'),
                  custom_groups: Optional[List[List[str]]] = None,
@@ -81,7 +81,9 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
 
         # tracer
         if isinstance(parse_cfg, dict):
-            assert parse_cfg['type'] in ['PruneTracer', 'Config', 'Predefined']
+            assert parse_cfg['type'] in [
+                'ChannelAnalyzer', 'Config', 'Predefined'
+            ]
         self.parse_cfg = parse_cfg
 
         # units
@@ -108,7 +110,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
         self._name2module = dict(supernet.named_modules())
 
         if isinstance(self.parse_cfg,
-                      PruneTracer) or 'Tracer' in self.parse_cfg['type']:
+                      ChannelAnalyzer) or 'Tracer' in self.parse_cfg['type']:
             units = self._prepare_from_tracer(supernet, self.parse_cfg)
         elif self.parse_cfg['type'] == 'Config':
             units = self._prepare_from_cfg(supernet, self.units_cfg)
@@ -318,7 +320,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
         """Initialize units using a tracer."""
 
         if isinstance(parse_cfg, Dict):
-            tracer: PruneTracer = TASK_UTILS.build(parse_cfg)
+            tracer: ChannelAnalyzer = TASK_UTILS.build(parse_cfg)
         else:
             tracer = parse_cfg
         unit_configs = tracer.trace(model)

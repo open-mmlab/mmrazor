@@ -75,7 +75,7 @@ mutator = ChannelMutator(
         units={},
     ),
     parse_cfg=dict(
-        type='PruneTracer',
+        type='ChannelAnalyzer',
         demo_input=(1, 3, 224, 224),
         tracer_type='BackwardTracer'))
 # init the ChannelMutator object with a model
@@ -102,7 +102,7 @@ print(config)
 #         }
 #     },
 #     'parse_cfg': {
-#         type='PruneTracer',
+#         type='ChannelAnalyzer',
 #         demo_input=(1, 3, 224, 224),
 #         tracer_type='BackwardTracer'
 #     }
@@ -160,7 +160,7 @@ python ./tools/get_channel_units.py ./configs/pruning/mmcls/autoslim/autoslim_mb
 #         }
 #     },
 #     "parse_cfg":{
-#          type='PruneTracer',
+#          type='ChannelAnalyzer',
 #          demo_input=(1, 3, 224, 224),
 #          tracer_type='BackwardTracer'
 #         }
@@ -196,7 +196,7 @@ python ./tools/get_channel_units.py -i ./configs/pruning/mmcls/autoslim/autoslim
 #         }
 #     },
 #     "parse_cfg":{
-#           type='PruneTracer',
+#           type='ChannelAnalyzer',
 #           demo_input=(1, 3, 224, 224),
 #           tracer_type='BackwardTracer'
 #         }

@@ -15,7 +15,7 @@ from .....data.tracer_passed_models import backward_passed_library
 
 MUTABLE_CFG = dict(type='SimpleMutablechannel')
 PARSE_CFG = dict(
-    type='PruneTracer',
+    type='ChannelAnalyzer',
     demo_input=(1, 3, 224, 224),
     tracer_type='BackwardTracer')
 
@@ -107,7 +107,7 @@ class TestMutableChannelUnit(TestCase):
                 # init using tracer config
                 model = SingleLineModel()
                 units: List[ChannelUnit] = ChannelUnit.init_from_prune_tracer(
-                    model, tracer=dict(type='PruneTracer'))
+                    model, tracer=dict(type='ChannelAnalyzer'))
                 test_units(units, model)
 
                 print(units)
