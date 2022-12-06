@@ -17,6 +17,7 @@ import json
 # model generator
 from mmdet.testing._utils import demo_mm_inputs
 import string
+import copy
 # helper functions
 
 
@@ -209,6 +210,7 @@ class ModelLibrary:
 
 
 class DefaultModelLibrary(ModelLibrary):
+    _mm_models = None
 
     default_includes: List = [
         'SingleLineModel',
@@ -241,10 +243,16 @@ class DefaultModelLibrary(ModelLibrary):
 
     @property
     def models(self):
-        models = super().models
+        models = copy.copy(super().models)
         if self.with_mm_models:
-            models.update(self.get_mm_models())
+            models.update(self.mm_models)
         return models
+
+    @property
+    def mm_models(self):
+        if self.__class__._mm_models is None:
+            self.__class__._mm_models = self.get_mm_models()
+        return self.__class__._mm_models
 
     @classmethod
     def get_models(cls):
