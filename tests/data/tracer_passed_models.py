@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .model_library import (MMClsModelLibrary, MMDetModelLibrary, ModelLibrary,
+from .model_library import (MMClsModelLibrary, MMDetModelLibrary,
                             DefaultModelLibrary, TorchModelLibrary,
                             MMSegModelLibrary)
 
@@ -63,6 +63,10 @@ class FxPassedModelManager(PassedModelManager):
                 'MultiBindModel',
                 'DwConvModel',
                 'ConvAttnModel',
+                # mm models
+                'resnet',
+                'pspnet',
+                'yolo'
             ])
 
         return cls._default_library

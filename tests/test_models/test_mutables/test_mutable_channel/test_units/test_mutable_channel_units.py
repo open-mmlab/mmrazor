@@ -20,7 +20,7 @@ PARSE_CFG = dict(
     tracer_type='BackwardTracer')
 
 DEVICE = torch.device('cpu')
-GROUPS: List[MutableChannelUnit] = [
+UNITS: List[MutableChannelUnit] = [
     L1MutableChannelUnit, SequentialMutableChannelUnit
 ]
 
@@ -90,18 +90,29 @@ class TestMutableChannelUnit(TestCase):
         _test_units(units, model)
 
     def test_init_from_channel_unit(self):
-        model = SingleLineModel()
+
+        def test_units(units, model):
+            mutable_units = [
+                DefaultChannelUnit.init_from_channel_unit(unit)
+                for unit in units
+            ]
+            _test_units(mutable_units, model)
+
         # init using tracer
+        model = SingleLineModel()
         units: List[ChannelUnit] = ChannelUnit.init_from_prune_tracer(model)
-        mutable_units = [
-            DefaultChannelUnit.init_from_channel_unit(unit) for unit in units
-        ]
-        _test_units(mutable_units, model)
+        test_units(units, model)
+
+        # init using tracer config
+        model = SingleLineModel()
+        units: List[ChannelUnit] = ChannelUnit.init_from_prune_tracer(
+            model, tracer=dict(type='PruneTracer'))
+        test_units(units, model)
 
     def test_replace_with_dynamic_ops(self):
         model_datas = backward_passed_library.include_models()
         for model_data in model_datas:
-            for unit_type in GROUPS:
+            for unit_type in UNITS:
                 with self.subTest(model=model_data, unit=unit_type):
                     model: nn.Module = model_data()
                     units: List[

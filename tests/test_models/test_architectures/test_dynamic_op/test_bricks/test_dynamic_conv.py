@@ -8,9 +8,9 @@ import pytest
 import torch
 from torch import nn
 
-from mmrazor.models.architectures.dynamic_ops import (BigNasConv2d,
-                                                      DynamicConv2d,
-                                                      FuseConv2d, OFAConv2d)
+from mmrazor.models.architectures.dynamic_ops import (
+    BigNasConv2d, DynamicConv2d, DynamicConv2dAdaptivePadding, FuseConv2d,
+    OFAConv2d)
 from mmrazor.models.mutables import (OneShotMutableValue,
                                      SquentialMutableChannel)
 from mmrazor.structures.subnet import export_fix_subnet, load_fix_subnet
@@ -87,8 +87,10 @@ def mock_layeri_choice(d_conv2d: FuseConv2d) -> None:
     d_conv2d.set_forward_args(choice=layeri_mock)
 
 
-@pytest.mark.parametrize('dynamic_class',
-                         [BigNasConv2d, DynamicConv2d, FuseConv2d, OFAConv2d])
+@pytest.mark.parametrize('dynamic_class', [
+    BigNasConv2d, DynamicConv2d, FuseConv2d, OFAConv2d,
+    DynamicConv2dAdaptivePadding
+])
 @pytest.mark.parametrize('bias', [True, False])
 def test_dynamic_conv2d(bias: bool, dynamic_class: Type[nn.Conv2d]) -> None:
     d_conv2d = dynamic_class(
