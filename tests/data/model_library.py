@@ -89,6 +89,10 @@ class ModelGenerator(nn.Module):
         return f'{scope}.{name}'
 
     @property
+    def base_name(self):
+        return self.__class__.get_base_name(self.name)
+
+    @property
     def short_name(self):
         return self.__class__.get_short_name(self.name)
 
@@ -181,7 +185,6 @@ class ModelLibrary:
         return is_covered
 
     def short_names(self):
-
         short_names = set()
         for name in self.models:
             short_names.add(self.models[name].short_name)
@@ -223,6 +226,10 @@ class DefaultModelLibrary(ModelLibrary):
         'DwConvModel',
         'ConvAttnModel',
         'SelfAttention',
+        # mm models
+        'resnet',
+        'pspnet',
+        'yolo'
     ]
 
     def __init__(self, include=default_includes, exclude=[]) -> None:
@@ -251,7 +258,21 @@ class DefaultModelLibrary(ModelLibrary):
         for model in models:
             model_dict[model.__name__] = ModelGenerator(
                 'default.' + model.__name__, model)
+        model_dict.update(cls.get_mm_models())
         return model_dict
+
+    @classmethod
+    def get_mm_models(cls):
+        paths = [
+            'mmcls::resnet/resnet34_8xb32_in1k.py',
+            'mmseg::pspnet/pspnet_r18-d8_4xb4-80k_potsdam-512x512.py',
+            'mmdet::yolo/yolov3_d53_8xb8-320-273e_coco.py'
+        ]
+        models = {}
+        for path in paths:
+            Model = MMModelLibrary.get_model_from_path(path)
+            models[Model.base_name] = Model
+        return models
 
 
 class TorchModelLibrary(ModelLibrary):
@@ -327,7 +348,7 @@ class MMModelLibrary(ModelLibrary):
     @classmethod
     def get_model_name_from_path(cls, config_path, scope_path):
         import os
-        dirpath = os.path.dirname(config_path)+'/'
+        dirpath = os.path.dirname(config_path) + '/'
         filename = os.path.basename(config_path)
 
         model_type_name = '_'.join(dirpath.replace(scope_path, '').split('/'))
@@ -339,14 +360,18 @@ class MMModelLibrary(ModelLibrary):
     @classmethod
     def get_model_from_path(cls, config_path):
         path, scope = Config._get_cfg_path(config_path, '')
+        if scope is None:
+            scope = 'mmrazor'
         config = Config.fromfile(path)['model']
         config = cls._config_process(config=config)
         config['_scope_'] = scope
         name = cls.get_model_name_from_path(path, cls._scope_path(scope))
-        return cls.generator_type()(name, config)
+        return cls.generator_type()(scope + '.' + name, config)
 
     @staticmethod
     def _scope_path(scope):
+        if scope == 'mmseg':
+            scope = 'mmsegmentation'
         repo_path = get_installed_path(scope)
         path = repo_path + '/.mim/configs/'
         return path
