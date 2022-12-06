@@ -5,7 +5,8 @@ import torch
 from mmengine.hub import get_model
 
 from mmrazor.models.task_modules.tracer import (ImageClassifierPseudoLoss,
-                                                SingleStageDetectorPseudoLoss)
+                                                SingleStageDetectorPseudoLoss,
+                                                SumPseudoLoss)
 
 
 class TestLossCalculator(TestCase):
@@ -21,5 +22,18 @@ class TestLossCalculator(TestCase):
         model = get_model(
             'mmdet::retinanet/retinanet_r50_fpn_1x_coco.py', pretrained=False)
         loss_calculator = SingleStageDetectorPseudoLoss()
+        loss = loss_calculator(model)
+        assert isinstance(loss, torch.Tensor) and loss.dim() == 0
+
+    def test_sumloss(self):
+        model = get_model(
+            'mmdet::retinanet/retinanet_r50_fpn_1x_coco.py', pretrained=False)
+        loss_calculator = SumPseudoLoss()
+        loss = loss_calculator(model)
+        assert isinstance(loss, torch.Tensor) and loss.dim() == 0
+
+        model = get_model(
+            'mmcls::resnet/resnet34_8xb32_in1k.py', pretrained=False)
+        loss_calculator = SumPseudoLoss()
         loss = loss_calculator(model)
         assert isinstance(loss, torch.Tensor) and loss.dim() == 0
