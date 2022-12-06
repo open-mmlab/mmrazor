@@ -289,16 +289,15 @@ class MMModelLibrary(ModelLibrary):
         super().__init__(include, exclude)
 
     @classmethod
-    def config_path(cls):
-        repo_path = get_installed_path(cls.repo)
-        path = repo_path + '/.mim/configs/' + cls.base_config_path
+    def scope_path(cls):
+        path = cls._scope_path(cls.repo) + cls.base_config_path
         return path
 
     @classmethod
     def get_models(cls):
         models = {}
         added_models = set()
-        for dirpath, dirnames, filenames in os.walk(cls.config_path()):
+        for dirpath, dirnames, filenames in os.walk(cls.scope_path()):
             for filename in filenames:
                 if filename.endswith('.py'):
 
@@ -310,11 +309,8 @@ class MMModelLibrary(ModelLibrary):
                     if 'model' in config:
 
                         # get model_name
-                        model_type_name = '_'.join(
-                            dirpath.replace(cls.config_path(), '').split('/'))
-                        model_type_name = model_type_name if model_type_name == '' else model_type_name + '_'
-                        model_name = model_type_name + \
-                            os.path.basename(filename).split('.')[0]
+                        model_name = cls.get_model_name_from_path(
+                            cfg_path, cls.scope_path())
 
                         model_cfg = config['model']
                         model_cfg = cls._config_process(model_cfg)
@@ -327,6 +323,33 @@ class MMModelLibrary(ModelLibrary):
     @classmethod
     def generator_type(cls):
         return MMModelGenerator
+
+    @classmethod
+    def get_model_name_from_path(cls, config_path, scope_path):
+        import os
+        dirpath = os.path.dirname(config_path)+'/'
+        filename = os.path.basename(config_path)
+
+        model_type_name = '_'.join(dirpath.replace(scope_path, '').split('/'))
+        model_type_name = model_type_name if model_type_name == '' else model_type_name + '_'
+        model_name = model_type_name + \
+            os.path.basename(filename).split('.')[0]
+        return model_name
+
+    @classmethod
+    def get_model_from_path(cls, config_path):
+        path, scope = Config._get_cfg_path(config_path, '')
+        config = Config.fromfile(path)['model']
+        config = cls._config_process(config=config)
+        config['_scope_'] = scope
+        name = cls.get_model_name_from_path(path, cls._scope_path(scope))
+        return cls.generator_type()(name, config)
+
+    @staticmethod
+    def _scope_path(scope):
+        repo_path = get_installed_path(scope)
+        path = repo_path + '/.mim/configs/'
+        return path
 
     @classmethod
     def _config_process(cls, config: Dict):

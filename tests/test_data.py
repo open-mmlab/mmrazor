@@ -5,8 +5,9 @@ import unittest
 import torch
 
 from .data.model_library import (DefaultModelLibrary, MMClsModelLibrary,
-                                 MMDetModelLibrary, MMSegModelLibrary,
-                                 ModelGenerator, TorchModelLibrary)
+                                 MMDetModelLibrary, MMModelLibrary,
+                                 MMSegModelLibrary, ModelGenerator,
+                                 TorchModelLibrary)
 from .data.models import SingleLineModel
 from .data.tracer_passed_models import (BackwardPassedModelManager,
                                         FxPassedModelManager)
@@ -45,6 +46,11 @@ class TestModelLibrary(unittest.TestCase):
             self.skipTest('not test data to save time.')
         library = MMSegModelLibrary()
         self.assertTrue(library.is_default_includes_cover_all_models())
+
+    def test_get_model_by_config(self):
+        config = 'mmcls::resnet/resnet34_8xb32_in1k.py'
+        Model = MMModelLibrary.get_model_from_path(config)
+        _ = Model()
 
     def test_passed_models(self):
         try:
