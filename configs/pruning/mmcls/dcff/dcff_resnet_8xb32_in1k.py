@@ -75,7 +75,11 @@ model = dict(
         parse_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss'))),
+    fix_subnet=None,
+    data_preprocessor=None,
     target_pruning_ratio=target_pruning_ratio,
     step_freq=1,
     linear_schedule=False,
     is_deployed=False)
+
+val_cfg = dict(_delete_=True, type='mmrazor.ItePruneValLoop')

@@ -80,13 +80,11 @@ target_pruning_ratio = {
 model = dict(
     _scope_='mmrazor',
     type='DCFF',
-    architecture=dict(
-        cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False),
+    architecture=_base_.architecture,
     mutator_cfg=dict(
         type='DCFFChannelMutator',
         channel_unit_cfg=dict(
-            type='DCFFChannelUnit',
-            units='configs/pruning/mmseg/dcff/resnet_seg.json'),
+            type='DCFFChannelUnit', default_args=dict(choice_mode='ratio')),
         parse_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='CascadeEncoderDecoderPseudoLoss'))),
@@ -97,3 +95,5 @@ model = dict(
 
 model_wrapper = dict(
     type='mmcv.MMDistributedDataParallel', find_unused_parameters=True)
+
+val_cfg = dict(_delete_=True, type='mmrazor.ItePruneValLoop')

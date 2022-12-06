@@ -10,6 +10,7 @@ from mmengine.structures import BaseDataElement
 from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutators import ChannelMutator
 from mmrazor.registry import MODELS
+from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm
 
 LossResults = Dict[str, torch.Tensor]
@@ -97,6 +98,8 @@ class ItePruneAlgorithm(BaseAlgorithm):
         mutator_cfg (Union[Dict, ChannelMutator], optional): The config
             of a mutator. Defaults to dict( type='ChannelMutator',
             channel_unit_cfg=dict( type='SequentialMutableChannelUnit')).
+        fix_subnet (str | dict | :obj:`FixSubnet`): The path of yaml file or
+            loaded dict or built :obj:`FixSubnet`. Defaults to None.
         data_preprocessor (Optional[Union[Dict, nn.Module]], optional):
             Defaults to None.
         target_pruning_ratio (dict, optional): The prune-target. The template
@@ -110,6 +113,8 @@ class ItePruneAlgorithm(BaseAlgorithm):
             Defaults to None.
         linear_schedule (bool, optional): flag to set linear ratio schedule.
             Defaults to True.
+        is_deployed (bool, optional): flag to set deployed algorithm.
+            Defaults to False.
     """
 
     def __init__(self,
@@ -118,12 +123,14 @@ class ItePruneAlgorithm(BaseAlgorithm):
                      type='ChannelMutator',
                      channel_unit_cfg=dict(
                          type='SequentialMutableChannelUnit')),
+                 fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  target_pruning_ratio: Optional[Dict[str, float]] = None,
-                 step_freq=-1,
-                 prune_times=-1,
+                 step_freq=1,
+                 prune_times=1,
                  init_cfg: Optional[Dict] = None,
-                 linear_schedule=True) -> None:
+                 linear_schedule=True,
+                 is_deployed=False) -> None:
 
         super().__init__(architecture, data_preprocessor, init_cfg)
 
@@ -132,10 +139,17 @@ class ItePruneAlgorithm(BaseAlgorithm):
         self.step_freq = step_freq
         self.prune_times = prune_times
         self.linear_schedule = linear_schedule
+        self.is_deployed = is_deployed
 
-        # mutator
-        self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
-        self.mutator.prepare_from_supernet(self.architecture)
+        if self.is_deployed:
+            assert fix_subnet is not None
+            # Avoid circular import
+            from mmrazor.structures import load_fix_subnet
+            load_fix_subnet(self.architecture, fix_subnet)
+        else:
+            # init mutator
+            self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
+            self.mutator.prepare_from_supernet(self.architecture)
 
     def group_target_pruning_ratio(
         self, target: Dict[str, float],

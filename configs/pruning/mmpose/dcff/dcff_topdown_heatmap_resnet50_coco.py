@@ -108,13 +108,11 @@ target_pruning_ratio = {
 model = dict(
     _scope_='mmrazor',
     type='DCFF',
-    architecture=dict(
-        cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False),
+    architecture=architecture,
     mutator_cfg=dict(
         type='DCFFChannelMutator',
         channel_unit_cfg=dict(
-            type='DCFFChannelUnit',
-            units='configs/pruning/mmpose/dcff/resnet_pose.json'),
+            type='DCFFChannelUnit', default_args=dict(choice_mode='ratio')),
         parse_cfg=dict(
             type='BackwardTracer',
             loss_calculator=dict(type='TopdownPoseEstimatorPseudoLoss'))),
@@ -125,7 +123,7 @@ model = dict(
 
 dataset_type = 'CocoDataset'
 data_mode = 'topdown'
-data_root = 'data/coco'
+data_root = 'data/coco/'
 
 file_client_args = dict(backend='disk')
 
@@ -186,3 +184,5 @@ val_evaluator = dict(
     type='mmpose.CocoMetric',
     ann_file=data_root + 'annotations/person_keypoints_val2017.json')
 test_evaluator = val_evaluator
+
+val_cfg = dict(_delete_=True, type='mmrazor.ItePruneValLoop')
