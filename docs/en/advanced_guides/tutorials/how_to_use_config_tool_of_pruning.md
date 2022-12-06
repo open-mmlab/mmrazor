@@ -75,9 +75,9 @@ mutator = ChannelMutator(
         units={},
     ),
     parse_cfg=dict(
-         type='PruneTracer',
-                     demo_input=(1, 3, 224, 224),
-                     tracer_type='BackwardTracer'))
+        type='PruneTracer',
+        demo_input=(1, 3, 224, 224),
+        tracer_type='BackwardTracer'))
 # init the ChannelMutator object with a model
 mutator.prepare_from_supernet(model)
 config=mutator.config_template(with_unit_init_args=True)
@@ -103,8 +103,8 @@ print(config)
 #     },
 #     'parse_cfg': {
 #         type='PruneTracer',
-            demo_input=(1, 3, 224, 224),
-            tracer_type='BackwardTracer'
+#         demo_input=(1, 3, 224, 224),
+#         tracer_type='BackwardTracer'
 #     }
 # }
 ```
@@ -160,9 +160,9 @@ python ./tools/get_channel_units.py ./configs/pruning/mmcls/autoslim/autoslim_mb
 #         }
 #     },
 #     "parse_cfg":{
-            type='PruneTracer',
-            demo_input=(1, 3, 224, 224),
-            tracer_type='BackwardTracer'
+#          type='PruneTracer',
+#          demo_input=(1, 3, 224, 224),
+#          tracer_type='BackwardTracer'
 #         }
 #     }
 # }
@@ -196,9 +196,9 @@ python ./tools/get_channel_units.py -i ./configs/pruning/mmcls/autoslim/autoslim
 #         }
 #     },
 #     "parse_cfg":{
-             type='PruneTracer',
-            demo_input=(1, 3, 224, 224),
-            tracer_type='BackwardTracer'
+#           type='PruneTracer',
+#           demo_input=(1, 3, 224, 224),
+#           tracer_type='BackwardTracer'
 #         }
 #     }
 # }
