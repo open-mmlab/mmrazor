@@ -38,7 +38,7 @@ class AverageMeter:
 
 class CalibrateBNMixin:
     runner: Runner
-    fp16: bool
+    fp16: bool = False
 
     @torch.no_grad()
     def calibrate_bn_statistics(self,

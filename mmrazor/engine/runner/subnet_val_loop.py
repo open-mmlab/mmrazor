@@ -13,6 +13,21 @@ from .utils import CalibrateBNMixin
 
 @LOOPS.register_module()
 class SubnetValLoop(ValLoop, CalibrateBNMixin):
+    """Loop for subnet validation in NAS with BN re-calibration.
+
+    Args:
+        runner (Runner): A reference of runner.
+        dataloader (Dataloader or dict): A dataloader object or a dict to
+            build a dataloader.
+        evaluator (Evaluator or dict or list): Used for computing metrics.
+        fp16 (bool): Whether to enable fp16 validation. Defaults to
+            False.
+        evaluate_fixed_subnet (bool): Whether to evaluate a fixed subnet only
+            or not. Defaults to False.
+        calibrate_sample_num (int): The number of images to compute the true
+            average of per-batch mean/variance instead of the running average.
+            Defaults to 4096.
+    """
 
     def __init__(self,
                  runner,
