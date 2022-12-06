@@ -69,6 +69,9 @@ def find_mutable(model, try_units, units, demo_input, template_tensors):
         return try_units
     except Exception:
         if len(try_units) == 1:
+            from mmengine import MMLogger
+            MMLogger.get_current_instance().debug(
+                f'Find an unmutable unit {try_units[0]}')
             return []
         else:
             num = len(try_units)

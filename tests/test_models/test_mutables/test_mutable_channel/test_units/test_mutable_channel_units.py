@@ -88,26 +88,29 @@ class TestMutableChannelUnit(TestCase):
         _test_units(units, model)
 
     def test_init(self):
+        for UnitClass in UNITS:
+            with self.subTest(unit_class=UnitClass):
 
-        def test_units(units, model):
-            mutable_units = [
-                DefaultChannelUnit.init_from_channel_unit(unit)
-                for unit in units
-            ]
-            _test_units(mutable_units, model)
+                def test_units(units, model):
+                    mutable_units = [
+                        UnitClass.init_from_channel_unit(unit)
+                        for unit in units
+                    ]
+                    _test_units(mutable_units, model)
 
-        # init using tracer
-        model = SingleLineModel()
-        units: List[ChannelUnit] = ChannelUnit.init_from_prune_tracer(model)
-        test_units(units, model)
+                # init using tracer
+                model = SingleLineModel()
+                units: List[ChannelUnit] = ChannelUnit.init_from_prune_tracer(
+                    model)
+                test_units(units, model)
 
-        # init using tracer config
-        model = SingleLineModel()
-        units: List[ChannelUnit] = ChannelUnit.init_from_prune_tracer(
-            model, tracer=dict(type='PruneTracer'))
-        test_units(units, model)
+                # init using tracer config
+                model = SingleLineModel()
+                units: List[ChannelUnit] = ChannelUnit.init_from_prune_tracer(
+                    model, tracer=dict(type='PruneTracer'))
+                test_units(units, model)
 
-        print(units)
+                print(units)
 
     def test_replace_with_dynamic_ops(self):
         model_datas = backward_passed_library.include_models()
