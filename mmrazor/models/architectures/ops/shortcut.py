@@ -19,6 +19,7 @@ class ShortcutLayer(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.reduction = reduction
+        self.conv_cfg = conv_cfg
 
         self.conv = build_conv_layer(
             conv_cfg,
