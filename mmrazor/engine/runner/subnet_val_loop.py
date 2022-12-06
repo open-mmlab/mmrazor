@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import LOOPS
-from .mixins import CalibrateBNMixin
+from .utils import CalibrateBNMixin
 
 
 @LOOPS.register_module()
@@ -33,12 +33,11 @@ class SubnetValLoop(ValLoop, CalibrateBNMixin):
         self.evaluate_fixed_subnet = evaluate_fixed_subnet
         self.calibrate_sample_num = calibrate_sample_num
 
-        # remove CheckpointHook to avoid extra problems when testing.
-        if self.evaluate_fixed_subnet:
-            for hook in self.runner._hooks:
-                if isinstance(hook, CheckpointHook):
-                    self.runner._hooks.remove(hook)
-                    break
+        # remove CheckpointHook to avoid extra problems.
+        for hook in self.runner._hooks:
+            if isinstance(hook, CheckpointHook):
+                self.runner._hooks.remove(hook)
+                break
 
     def run(self):
         """Launch validation."""

@@ -7,7 +7,7 @@ import torch
 from torch import Tensor, nn
 from torch.utils.data import DataLoader, Dataset
 
-from mmrazor.engine.runner.mixins import CalibrateBNMixin
+from mmrazor.engine.runner.utils import CalibrateBNMixin
 
 
 class ToyModel(nn.Module):
