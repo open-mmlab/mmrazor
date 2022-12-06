@@ -2,16 +2,17 @@
 import unittest
 
 from mmrazor.models.task_modules.demo_inputs import DefaultDemoInput
-from ....data.tracer_passed_models import BackwardPassedModelManager
+from ....data.tracer_passed_models import FxPassedModelManager
 
 
 class TestDemoInputs(unittest.TestCase):
 
     def test_demo_inputs(self):
-        for Model in BackwardPassedModelManager().include_models():
+        for Model in FxPassedModelManager().include_models():
             with self.subTest(model=Model):
-                demo_input = DefaultDemoInput()
+                demo_input = DefaultDemoInput(input_shape=[1, 3, 224, 224])
                 model = Model()
+                model.eval()
                 try:
                     demo_input(model)
                     input = demo_input.get_data(model)

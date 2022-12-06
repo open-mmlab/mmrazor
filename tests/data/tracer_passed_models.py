@@ -67,7 +67,7 @@ class FxPassedModelManager(PassedModelManager):
                 'resnet',
                 'pspnet',
                 'yolo'
-            ])
+            ],with_mm_models=True)
 
         return cls._default_library
 
