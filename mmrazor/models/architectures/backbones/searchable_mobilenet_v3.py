@@ -221,9 +221,6 @@ class AttentiveMobileNetV3(BaseBackbone):
             else:
                 se_cfg = None  # type: ignore
 
-            short_cfg = dict(type='DynamicShortcutLayer'
-                             ) if self.with_attentive_shortcut else None
-
             mb_layer = MBBlock(
                 in_channels=self.in_channels,
                 out_channels=max(out_channels),
@@ -235,7 +232,7 @@ class AttentiveMobileNetV3(BaseBackbone):
                 act_cfg=self.act_cfg,
                 with_cp=self.with_cp,
                 se_cfg=se_cfg,
-                short_cfg=short_cfg)
+                with_attentive_shortcut=self.with_attentive_shortcut)
 
             _layers.append(mb_layer)
             self.in_channels = max(out_channels)

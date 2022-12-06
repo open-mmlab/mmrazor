@@ -6,13 +6,15 @@ from ..dynamic_ops.bricks import DynamicSequential
 
 def set_dropout(layers, module, dropout_stages: List[int],
                 drop_path_rate: float) -> None:
-    """Set dropout for layers in MobileNet series network.
+    """Dynamically set dropout rate for layers by depth.
 
     Args:
         layers: Layers in MobileNet-style networks.
+        module: Specific module to set a different ratio.
         dropout_stages (List[int]): Stages to be set dropout.
         drop_path_rate (float): Drop path rate for layers.
     """
+    assert hasattr(module, 'drop_path_rate')
     visited_block_nums = 0
     total_block_nums = sum(len(layer) for layer in layers) + 1
 

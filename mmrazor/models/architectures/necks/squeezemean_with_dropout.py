@@ -24,10 +24,16 @@ class SqueezeMeanPoolingWithDropout(BaseModule):
         super(SqueezeMeanPoolingWithDropout, self).__init__()
         self.drop_ratio = drop_ratio
 
-    def dimension_reduction(self, x: torch.Tensor):
-        assert len(x.shape) == 4, 'SqueezeMean only support B C H W input.'
-        x = x.mean(3, keepdim=True).mean(2, keepdim=True)
-        return torch.squeeze(x)
+    def dimension_reduction(self, x: torch.Tensor, dim: int = 2):
+        assert len(x.shape) > 1, 'SqueezeMean only support (B, C, *) input.'
+        'to B C*H*W output if dim = 2'
+        outs = []
+        for i in range(len(x.shape) - 1, 0, -1):
+            x = x.mean(i, keepdim=True)
+            x = torch.squeeze(x, -1)
+            if dim == i:
+                outs.append(x)
+        return outs[-1]
 
     def forward(
             self, inputs: Union[Tuple,
