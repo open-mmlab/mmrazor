@@ -3,21 +3,6 @@ import inspect
 from typing import List
 from mmrazor.registry import MODELS
 
-TORCH_observers = register_torch_observers()
-# TORCH_observers including:
-# FixedQParamsObserver
-# HistogramObserver
-# MinMaxObserver
-# MovingAverageMinMaxObserver
-# MovingAveragePerChannelMinMaxObserver
-# NoopObserver
-# ObserverBase
-# PerChannelMinMaxObserver
-# PlaceholderObserver
-# RecordingObserver
-# ReuseInputObserver
-# UniformQuantizationObserverBase
-
 def register_torch_observers() -> List[str]:
     """Register observers in ``torch.ao.quantization.observer`` to the 
     ``MODELS`` registry.
@@ -38,4 +23,17 @@ def register_torch_observers() -> List[str]:
                 torch_observers.append(module_name)
     return torch_observers
 
-
+TORCH_observers = register_torch_observers()
+# TORCH_observers including:
+# FixedQParamsObserver
+# HistogramObserver
+# MinMaxObserver
+# MovingAverageMinMaxObserver
+# MovingAveragePerChannelMinMaxObserver
+# NoopObserver
+# ObserverBase
+# PerChannelMinMaxObserver
+# PlaceholderObserver
+# RecordingObserver
+# ReuseInputObserver
+# UniformQuantizationObserverBase

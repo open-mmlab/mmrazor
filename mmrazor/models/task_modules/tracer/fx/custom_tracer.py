@@ -12,6 +12,7 @@ from torch.fx import GraphModule, Tracer
 from torch.fx._symbolic_trace import (Graph, _autowrap_check,
                                       _patch_wrapped_functions, _Patcher)
 from torch.fx.proxy import Proxy
+from mmrazor.registry import TASK_UTILS
 
 _orig_module_call: Callable = torch.nn.Module.__call__
 _orig_module_getattr: Callable = torch.nn.Module.__getattr__
@@ -163,7 +164,7 @@ def build_graphmodule(model: nn.Module,
     modules.update(module_dict)
     return GraphModule(modules, fx_graph, name)
 
-
+@TASK_UTILS.register_module()
 class CustomTracer(QuantizationTracer):
 
     def __init__(self,
