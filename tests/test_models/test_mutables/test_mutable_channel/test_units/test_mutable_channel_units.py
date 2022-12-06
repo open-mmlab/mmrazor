@@ -8,8 +8,8 @@ import torch.nn as nn
 from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
 from mmrazor.models.mutables.mutable_channel import (
     L1MutableChannelUnit, MutableChannelUnit, SequentialMutableChannelUnit)
-from mmrazor.models.mutables.mutable_channel.units.channel_unit import (  # noqa
-    Channel, ChannelUnit)
+from mmrazor.models.mutables.mutable_channel.units.channel_unit import \
+    ChannelUnit
 from mmrazor.structures.graph import ModuleGraph as ModuleGraph
 from tests.data.models import LineModel
 from tests.test_core.test_graph.test_graph import TestGraph
@@ -19,8 +19,6 @@ PARSE_CFG = dict(
     type='BackwardTracer',
     loss_calculator=dict(type='ImageClassifierPseudoLoss'))
 
-# DEVICE = torch.device('cuda:0') if torch.cuda.is_available() \
-#     else torch.device('cpu')
 DEVICE = torch.device('cpu')
 GROUPS: List[MutableChannelUnit] = [
     L1MutableChannelUnit, SequentialMutableChannelUnit

@@ -1,28 +1,41 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
-from pydacefit.corr import (corr_cubic, corr_exp, corr_expg, corr_gauss,
-                            corr_spherical, corr_spline)
-from pydacefit.dace import DACE, regr_linear, regr_quadratic
-from pydacefit.fit import fit as pydace_fit
-from pydacefit.regr import regr_constant
+
+try:
+    from pydacefit.dace import DACE
+    from pydacefit.fit import fit
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    DACE = get_placeholder('pydacefit')
+    fit = get_placeholder('pydacefit')
 
 from mmrazor.registry import TASK_UTILS
 from .base_handler import BaseHandler
 
-REGR = {
-    'linear': regr_linear,
-    'constant': regr_constant,
-    'quadratic': regr_quadratic
-}
 
-CORR = {
-    'gauss': corr_gauss,
-    'cubic': corr_cubic,
-    'exp': corr_exp,
-    'expg': corr_expg,
-    'spline': corr_spline,
-    'spherical': corr_spherical
-}
+def get_pydacefit_func():
+    """Build a function map from pydacefit."""
+    from pydacefit.corr import (corr_cubic, corr_exp, corr_expg, corr_gauss,
+                                corr_spherical, corr_spline)
+    from pydacefit.dace import regr_linear, regr_quadratic
+    from pydacefit.regr import regr_constant
+
+    REGR = {
+        'linear': regr_linear,
+        'constant': regr_constant,
+        'quadratic': regr_quadratic
+    }
+
+    CORR = {
+        'gauss': corr_gauss,
+        'cubic': corr_cubic,
+        'exp': corr_exp,
+        'expg': corr_expg,
+        'spline': corr_spline,
+        'spherical': corr_spherical
+    }
+
+    return REGR, CORR
 
 
 class DACE_with_smooth(DACE):
@@ -56,7 +69,7 @@ class DACE_with_smooth(DACE):
             self.boxmin()
             self.model = self.itpar['best']
         else:
-            self.model = pydace_fit(nX, nY, self.regr, self.kernel, self.theta)
+            self.model = fit(nX, nY, self.regr, self.kernel, self.theta)
 
         self.model = {
             **self.model, 'mX': mX,
@@ -80,6 +93,7 @@ class GaussProcessHandler(BaseHandler):
     """
 
     def __init__(self, regr: str = 'linear', corr: str = 'gauss'):
+        REGR, CORR = get_pydacefit_func()
         assert regr in REGR, \
             ValueError(f'`regr` should be in `REGR`. Got `{regr}`.')
         assert corr in CORR, \
