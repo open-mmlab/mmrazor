@@ -43,7 +43,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
             Defaults to 25.
         mutate_prob (float): The probability of mutation. Defaults to 0.1.
         crossover_prob (float): The probability of crossover. Defaults to 0.5.
-        calibrated_sample_nums (int): The number of images to compute the true
+        calibrate_sample_num (int): The number of images to compute the true
             average of per-batch mean/variance instead of the running average.
             Defaults to -1.
         constraints_range (Dict[str, Any]): Constraints to be used for
@@ -102,7 +102,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         self.crossover_prob = crossover_prob
         self.max_keep_ckpts = max_keep_ckpts
         self.resume_from = resume_from
-        self.fp16 = False
 
         if init_candidates is None:
             self.candidates = Candidates()

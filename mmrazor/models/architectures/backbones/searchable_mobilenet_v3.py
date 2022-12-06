@@ -42,12 +42,16 @@ class AttentiveMobileNetV3(BaseBackbone):
             Default: (7, ).
         frozen_stages (int): Stages to be frozen (all param fixed).
             Default: -1, which means not freezing any parameters.
+        stride_list (list[list]): stride setting in each stage.
+            Default: None
+        with_se_list (list[list]): Whether to use se-layer in each stage.
+            Default: None
         conv_cfg (dict, optional): Config dict for convolution layer.
             Default: None, which means using conv2d.
         norm_cfg (dict): Config dict for normalization layer.
             Default: dict(type='BN').
         act_cfg (dict): Config dict for activation layer.
-            Default: dict(type='ReLU6').
+            Default: dict(type='Swish').
         norm_eval (bool): Whether to set norm layers to eval mode, namely,
             freeze running stats (mean and var). Note: Effect on Batch Norm
             and its variants only. Default: False.
@@ -68,11 +72,11 @@ class AttentiveMobileNetV3(BaseBackbone):
                  widen_factor: float = 1.,
                  out_indices: Sequence[int] = (7, ),
                  frozen_stages: int = -1,
-                 act_list: List = None,
                  stride_list: List = None,
                  with_se_list: List = None,
                  conv_cfg: Dict = dict(type='BigNasConv2d'),
                  norm_cfg: Dict = dict(type='DynamicBatchNorm2d'),
+                 act_cfg: Dict = dict(type='Swish'),
                  norm_eval: bool = False,
                  with_cp: bool = False,
                  zero_init_residual: bool = True,
@@ -96,13 +100,12 @@ class AttentiveMobileNetV3(BaseBackbone):
 
         self.conv_cfg = conv_cfg
         self.norm_cfg = norm_cfg
+        self.act_cfg = act_cfg
         self.norm_eval = norm_eval
         self.zero_init_residual = zero_init_residual
         self.with_cp = with_cp
         self.with_attentive_shortcut = with_attentive_shortcut
 
-        self.act_list = act_list if act_list is not None \
-            else ['Swish'] * 7
         self.stride_list = stride_list if stride_list is not None \
             else [1, 2, 2, 2, 1, 2, 1]
         self.with_se_list = with_se_list if with_se_list is not None \
@@ -157,7 +160,6 @@ class AttentiveMobileNetV3(BaseBackbone):
                 num_blocks=num_blocks,
                 kernel_sizes=kernel_sizes,
                 expand_ratios=expand_ratios,
-                act_cfg=self.act_list[i],
                 stride=self.stride_list[i],
                 use_se=self.with_se_list[i])
             layer_name = f'layer{i + 1}'
@@ -194,7 +196,7 @@ class AttentiveMobileNetV3(BaseBackbone):
 
     def _make_single_layer(self, out_channels: List, num_blocks: List,
                            kernel_sizes: List, expand_ratios: List,
-                           act_cfg: str, stride: int, use_se: bool):
+                           stride: int, use_se: bool):
         """Stack InvertedResidual blocks (MBBlocks) to build a layer for
         MobileNetV3.
 
@@ -230,7 +232,7 @@ class AttentiveMobileNetV3(BaseBackbone):
                 expand_ratio=max(expand_ratios),
                 conv_cfg=self.conv_cfg,
                 norm_cfg=self.norm_cfg,
-                act_cfg=dict(type=act_cfg),
+                act_cfg=self.act_cfg,
                 with_cp=self.with_cp,
                 se_cfg=se_cfg,
                 short_cfg=short_cfg)

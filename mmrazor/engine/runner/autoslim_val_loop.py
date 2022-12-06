@@ -18,7 +18,7 @@ class AutoSlimValLoop(ValLoop, CalibrateBNMixin):
                  dataloader: Union[DataLoader, Dict],
                  evaluator: Union[Evaluator, Dict, List],
                  fp16: bool = False,
-                 calibrated_sample_num: int = 2000) -> None:
+                 calibrate_sample_num: int = 2000) -> None:
         super().__init__(runner, dataloader, evaluator, fp16)
 
         if self.runner.distributed:
@@ -28,7 +28,7 @@ class AutoSlimValLoop(ValLoop, CalibrateBNMixin):
 
         # just for convenience
         self._model = model
-        self.calibrated_sample_num = calibrated_sample_num
+        self.calibrate_sample_num = calibrate_sample_num
 
     def run(self):
         """Launch validation."""
@@ -38,20 +38,22 @@ class AutoSlimValLoop(ValLoop, CalibrateBNMixin):
 
         self._model.set_max_subnet()
         self.calibrate_bn_statistics(self.runner.train_dataloader,
-                                     self.calibrated_sample_num)
+                                     self.calibrate_sample_num)
         metrics = self._evaluate_once()
         all_metrics.update(add_prefix(metrics, 'max_subnet'))
 
         self._model.set_min_subnet()
         self.calibrate_bn_statistics(self.runner.train_dataloader,
-                                     self.calibrated_sample_num)
+                                     self.calibrate_sample_num)
         metrics = self._evaluate_once()
         all_metrics.update(add_prefix(metrics, 'min_subnet'))
 
-        for subnet_idx in range(self._model.samples):
+        sample_nums = self._model.random_samples if hasattr(
+            self._model, 'random_samples') else self._model.samples
+        for subnet_idx in range(sample_nums):
             self._model.set_subnet(self._model.sample_subnet())
             self.calibrate_bn_statistics(self.runner.train_dataloader,
-                                         self.calibrated_sample_num)
+                                         self.calibrate_sample_num)
             # compute student metrics
             metrics = self._evaluate_once()
             all_metrics.update(

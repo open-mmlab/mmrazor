@@ -14,6 +14,16 @@ from ..mixins import DynamicChannelMixin
 
 @MODELS.register_module()
 class DynamicShortcutLayer(ShortcutLayer, DynamicChannelMixin):
+    """Dynamic Shortcut Module.
+
+    Note:
+        Arguments for ``__init__`` of ``DynamicShortcutLayer`` is totally same
+        as :obj:`mmrazor.models.architectures.ShortcutLayer`.
+    Attributes:
+        mutable_attrs (ModuleDict[str, BaseMutable]): Mutable attributes,
+            such as `ShortcutLayer`. The key of the dict must in
+            ``accepted_mutable_attrs``.
+    """
 
     mutable_attrs: nn.ModuleDict
     accepted_mutable_attrs = {'in_channels', 'out_channels'}
@@ -41,7 +51,7 @@ class DynamicShortcutLayer(ShortcutLayer, DynamicChannelMixin):
         shortcut = cls(
             in_channels=module.in_channels,
             out_channels=module.out_channels,
-        )
+            conv_cfg=module.conv_cfg)
         return shortcut
 
     def register_mutable_attr(self, attr: str, mutable: BaseMutable):
@@ -94,8 +104,8 @@ class DynamicShortcutLayer(ShortcutLayer, DynamicChannelMixin):
 
         self.mutable_attrs['out_channels'] = mutable_out_channels
 
-    def _get_dynamic_params(self: ShortcutLayer):
-        """Get mask of ``ShortcutLayer``"""
+    def _get_dynamic_attrs(self: ShortcutLayer):
+        """Get attr of ``ShortcutLayer``"""
         mutable_in_channels = self.conv.mutable_in_channels
         mutable_out_channels = self.conv.mutable_out_channels
         return mutable_in_channels, mutable_out_channels
@@ -113,7 +123,7 @@ class DynamicShortcutLayer(ShortcutLayer, DynamicChannelMixin):
             out_channels=self.conv.mutable_out_channels)  # type:ignore
 
     def forward(self, x: Tensor) -> Tensor:
-        mutable_in_channels, mutable_out_channels = self._get_dynamic_params()
+        mutable_in_channels, mutable_out_channels = self._get_dynamic_attrs()
 
         self.in_channels = mutable_in_channels.current_mask.sum().item()
         self.out_channels = mutable_out_channels.current_mask.sum().item()

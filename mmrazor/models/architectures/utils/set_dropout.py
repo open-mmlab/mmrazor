@@ -2,10 +2,9 @@
 from typing import List
 
 from ..dynamic_ops.bricks import DynamicSequential
-from ..ops.mobilenet_series import MBBlock
 
 
-def set_dropout(layers, dropout_stages: List[int],
+def set_dropout(layers, module, dropout_stages: List[int],
                 drop_path_rate: float) -> None:
     """Set dropout for layers in MobileNet series network.
 
@@ -24,7 +23,7 @@ def set_dropout(layers, dropout_stages: List[int],
             continue
 
         for block_idx, block in enumerate(layer):
-            if isinstance(block, MBBlock) and hasattr(block, 'drop_path_rate'):
+            if isinstance(block, module) and hasattr(block, 'drop_path_rate'):
                 ratio = (visited_block_nums - len(layer) +
                          block_idx) / total_block_nums
                 block.drop_path_rate = drop_path_rate * ratio

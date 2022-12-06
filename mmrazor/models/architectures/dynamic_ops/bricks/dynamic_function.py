@@ -12,6 +12,16 @@ from ..mixins.dynamic_mixins import DynamicResizeMixin
 
 @MODELS.register_module()
 class DynamicInputResizer(InputResizer, DynamicResizeMixin):
+    """Dynamic InputResizer Module.
+
+    Note:
+        Arguments for ``__init__`` of ``DynamicInputResizer`` is totally same
+        as :obj:`mmrazor.models.architectures.InputResizer`.
+    Attributes:
+        mutable_attrs (ModuleDict[str, BaseMutable]): Mutable attributes,
+            such as `InputResizer`. The key of the dict must in
+            ``accepted_mutable_attrs``.
+    """
 
     mutable_attrs: nn.ModuleDict
 
@@ -37,11 +47,11 @@ class DynamicInputResizer(InputResizer, DynamicResizeMixin):
 
     @classmethod
     def convert_from(cls, module: InputResizer):
-        """Convert a Sequential module to a DynamicSequential.
+        """Convert a InputResizer to a DynamicInputResizer.
 
         Args:
-            module (:obj:`torch.nn.Sequential`): The original Sequential
-                module.
+            module (:obj:`mmrazor.models.architectures.InputResizer`):
+            The original InputResizer module.
         """
         dynamic_seq = cls(
             interpolation_type=module._interpolation_type,

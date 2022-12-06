@@ -8,7 +8,7 @@ supernet = dict(
     _scope_='mmrazor',
     type='SearchableImageClassifier',
     backbone=_base_.nas_backbone,
-    neck=dict(type='mmcls.GlobalAveragePooling'),
+    neck=dict(type='SqueezeMeanPoolingWithDropout', drop_ratio=0.2),
     head=dict(
         type='DynamicLinearClsHead',
         num_classes=1000,
