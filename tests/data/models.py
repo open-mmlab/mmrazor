@@ -16,36 +16,84 @@ from mmrazor.models.mutables import OneShotMutableChannelUnit, OneShotMutableCha
 
 from mmrazor.models.mutables import OneShotMutableValue
 from mmrazor.models.architectures.backbones.searchable_autoformer import TransformerEncoderLayer
+from mmrazor.registry import MODELS
 
 
-class arrange_subnet(Module):
+# models to test fx tracer
+
+
+def untracable_function(x: torch.Tensor):
+    if x.sum() > 0:
+        x = x - 1
+    else:
+        x = x + 1
+    return x
+
+
+class UntracableModule(nn.Module):
+
+    def __init__(self, in_channel, out_channel) -> None:
+        super().__init__()
+        self.conv = nn.Conv2d(in_channel, out_channel, 3, 1, 1)
+        self.conv2 = nn.Conv2d(out_channel, out_channel, 3, 1, 1)
+
+    def forward(self, x: torch.Tensor):
+        x = self.conv(x)
+        if x.sum() > 0:
+            x = x * 2
+        else:
+            x = x * -2
+        x = self.conv2(x)
+        return x
+
+
+class ModuleWithUntracableMethod(nn.Module):
+
+    def __init__(self, in_channel, out_channel) -> None:
+        super().__init__()
+        self.conv = nn.Conv2d(in_channel, out_channel, 3, 1, 1)
+        self.conv2 = nn.Conv2d(out_channel, out_channel, 3, 1, 1)
+
+    def forward(self, x: torch.Tensor):
+        x = self.conv(x)
+        x = self.untracable_method(x)
+        x = self.conv2(x)
+        return x
+
+    def untracable_method(self, x):
+        if x.sum() > 0:
+            x = x * 2
+        else:
+            x = x * -2
+        return x
+
+@MODELS.register_module()
+class UntracableBackBone(nn.Module):
 
     def __init__(self) -> None:
         super().__init__()
+        self.conv = nn.Conv2d(3, 16, 3, 2)
+        self.untracable_module = UntracableModule(16, 8)
+        self.module_with_untracable_method = ModuleWithUntracableMethod(8, 16)
 
     def forward(self, x):
-        add = torch.arange(x.shape[-1]).unsqueeze(0)
-        # add = torch.arange(1000).unsqueeze(0)
-        end = torch.add(x, add)
-        return end
+        x = self.conv(x)
+        x = untracable_function(x)
+        x = self.untracable_module(x)
+        x = self.module_with_untracable_method(x)
+        return x
 
 
-class UnTracableModel(Module):
+class UntracableModel(nn.Module):
 
     def __init__(self) -> None:
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Conv2d(3, 8, 3, 1, 1), nn.BatchNorm2d(8), nn.ReLU(),
-            nn.Conv2d(8, 16, 3, 1, 1), nn.BatchNorm2d(16),
-            nn.AdaptiveAvgPool2d(1))
-        self.linear = nn.Linear(16, 1000)
-        self.end = arrange_subnet()
+        self.backbone = UntracableBackBone()
+        self.head = LinearHeadForTest(16, 1000)
 
     def forward(self, x):
-        x1 = self.net(x)
-        x1 = x1.reshape([x1.shape[0], -1])
-        logit = self.linear(x1)
-        return self.end(logit)
+        return self.head(self.backbone(x))
+
 
 
 class ConvAttnModel(Module):
@@ -55,7 +103,7 @@ class ConvAttnModel(Module):
         self.conv = nn.Conv2d(3, 8, 3, 1, 1)
         self.pool = nn.AdaptiveAvgPool2d(1)
         self.conv2 = nn.Conv2d(8, 16, 3, 1, 1)
-        self.head = LinearHead(16, 1000)
+        self.head = LinearHeadForTest(16, 1000)
 
     def forward(self, x):
         x1 = self.conv(x)
@@ -64,8 +112,8 @@ class ConvAttnModel(Module):
         x_last = self.conv2(x_attn)
         return self.head(x_last)
 
-
-class LinearHead(Module):
+@MODELS.register_module()
+class LinearHeadForTest(Module):
 
     def __init__(self, in_channel, num_class=1000) -> None:
         super().__init__()
@@ -497,7 +545,7 @@ class MultiBindModel(Module):
         self.conv1 = nn.Conv2d(3, 8, 3, 1, 1)
         self.conv2 = nn.Conv2d(3, 8, 3, 1, 1)
         self.conv3 = nn.Conv2d(8, 8, 3, 1, 1)
-        self.head = LinearHead(8, 1000)
+        self.head = LinearHeadForTest(8, 1000)
 
     def forward(self, x):
         x1 = self.conv1(x)
@@ -516,7 +564,7 @@ class DwConvModel(nn.Module):
             nn.Conv2d(3, 48, 3, 1, 1), nn.BatchNorm2d(48), nn.ReLU(),
             nn.Conv2d(48, 48, 3, 1, 1, groups=48), nn.BatchNorm2d(48),
             nn.ReLU())
-        self.head = LinearHead(48, 1000)
+        self.head = LinearHeadForTest(48, 1000)
 
     def forward(self, x):
         return self.head(self.net(x))
@@ -532,7 +580,7 @@ class SelfAttention(nn.Module):
         self.qkv = nn.Linear(32, 32 * 3)
         self.proj = nn.Linear(32, 32)
 
-        self.head = LinearHead(32, 1000)
+        self.head = LinearHeadForTest(32, 1000)
 
     def forward(self, x: torch.Tensor):
         x = self.stem(x)
@@ -754,95 +802,3 @@ class DynamicAttention(nn.Module):
         x = x + self.pos_embed[..., :embed_dims]
         x = self.blocks(x)
         return torch.mean(x[:, 1:], dim=1)
-
-
-default_models = [
-    SingleLineModel,
-    ResBlock,
-    AddCatModel,
-    ConcatModel,
-    MultiConcatModel,
-    MultiConcatModel2,
-    GroupWiseConvModel,
-    Xmodel,
-    MultipleUseModel,
-    Icep,
-    ExpandLineModel,
-    DwConvModel,
-]
-
-
-class ModelLibrary:
-
-    # includes = [
-    #     'alexnet',        # pass
-    #     'densenet',       # pass
-    #     # 'efficientnet',   # pass
-    #     # 'googlenet',      # pass.
-    #     #   googlenet return a tuple when training,
-    #     #   so it should trace in eval mode
-    #     # 'inception',      # failed
-    #     # 'mnasnet',        # pass
-    #     # 'mobilenet',      # pass
-    #     # 'regnet',         # failed
-    #     # 'resnet',         # pass
-    #     # 'resnext',        # failed
-    #     # 'shufflenet',     # failed
-    #     # 'squeezenet',     # pass
-    #     # 'vgg',            # pass
-    #     # 'wide_resnet',    # pass
-    # ]
-
-    def __init__(self, include=[]) -> None:
-
-        self.include_key = include
-
-        self.model_creator = self.get_torch_models()
-
-    def __repr__(self) -> str:
-        s = f'model: {len(self.model_creator)}\n'
-        for creator in self.model_creator:
-            s += creator.__name__ + '\n'
-        return s
-
-    def get_torch_models(self):
-        from inspect import isfunction
-
-        import torchvision
-
-        attrs = dir(torchvision.models)
-        models = []
-        for name in attrs:
-            module = getattr(torchvision.models, name)
-            if isfunction(module):
-                models.append(module)
-        return models
-
-    def export_models(self):
-        models = []
-        for creator in self.model_creator:
-            if self.is_include(creator.__name__):
-                models.append(creator)
-        return models
-
-    def is_include(self, name):
-        for key in self.include_key:
-            if key in name:
-                return True
-        return False
-
-    def include(self):
-        include = []
-        for creator in self.model_creator:
-            for key in self.include_key:
-                if key in creator.__name__:
-                    include.append(creator)
-        return include
-
-    def uninclude(self):
-        include = self.include()
-        uninclude = []
-        for creator in self.model_creator:
-            if creator not in include:
-                uninclude.append(creator)
-        return uninclude
