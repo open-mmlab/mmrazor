@@ -21,7 +21,8 @@ supernet = dict(
             loss_weight=1.0),
         topk=(1, 5)),
     input_resizer_cfg=_base_._INPUT_MUTABLE,
-    connect_head=dict(connect_with_backbone='backbone.last_mutable'),
+    connect_head=dict(
+        connect_with_backbone='backbone.last_mutable_out_channels'),
 )
 
 model = dict(
