@@ -39,13 +39,11 @@ class MMArchitectureQuant(BaseAlgorithm):
             :class:`BaseModule`.
     """
 
-    
-
     def __init__(self,
                  architecture,
                  quantizer,
                  data_preprocessor=None,
-                 forward_modes = ('tensor', 'predict', 'loss'),
+                 forward_modes=('tensor', 'predict', 'loss'),
                  float_checkpoint: Optional[str] = None,
                  input_shapes=(1, 3, 224, 224),
                  init_cfg=None):
@@ -118,7 +116,15 @@ class MMArchitectureQuant(BaseAlgorithm):
 
             qmodels[mode] = observed_module
 
-        dummy_input = torch.randn(self.input_shapes)
+        device = next(qmodels.parameters()).device
+        dummy_input = torch.randn(self.input_shapes).to(device)
+        # Originally, the steps to train a qat model is as follows:
+        # 1. build qmodels 2. convert the model to ddpmodel 3. forward backward
+        # The shape of `scale` and `zero_point` can be modified during forward.
+        # We initialize these parameters with per-tensor mode by default for
+        # convenience. Their shape will be modified during forward if
+        # per-channel mode is used. It's hacky. Hence we need to input a
+        # dummy input to make sure the shape has been modified.
         qmodels['predict'](dummy_input, None, 'predict')
 
         return qmodels

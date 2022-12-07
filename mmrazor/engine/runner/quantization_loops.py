@@ -12,6 +12,49 @@ from torch.utils.data import DataLoader
 from mmrazor.registry import LOOPS
 
 
+def enable_calibration(model):
+    for name, submodule in model.named_modules():
+        if isinstance(submodule, torch.quantization.FakeQuantizeBase):
+            submodule.enable_observer()
+            submodule.disable_fake_quant()
+
+
+def enable_calibration_woquantization(model, quantizer_type='fake_quant'):
+    for name, submodule in model.named_modules():
+        if isinstance(submodule, torch.quantization.FakeQuantizeBase):
+            if quantizer_type not in name:
+                submodule.disable_observer()
+                submodule.disable_fake_quant()
+                continue
+            submodule.enable_observer()
+            submodule.disable_fake_quant()
+
+
+def enable_calibration_quantization(model, quantizer_type='fake_quant'):
+    for name, submodule in model.named_modules():
+        if isinstance(submodule, torch.quantization.FakeQuantizeBase):
+            if quantizer_type not in name:
+                submodule.disable_observer()
+                submodule.disable_fake_quant()
+                continue
+            submodule.enable_observer()
+            submodule.enable_fake_quant()
+
+
+def enable_quantization(model):
+    for name, submodule in model.named_modules():
+        if isinstance(submodule, torch.quantization.FakeQuantizeBase):
+            submodule.disable_observer()
+            submodule.enable_fake_quant()
+
+
+def disable_all(model):
+    for name, submodule in model.named_modules():
+        if isinstance(submodule, torch.quantization.FakeQuantizeBase):
+            submodule.disable_observer()
+            submodule.disable_fake_quant()
+
+
 @LOOPS.register_module()
 class QATEpochBasedLoop(EpochBasedTrainLoop):
     """`EpochBasedLoop` for `QuantizationAwareTraining`
@@ -65,6 +108,7 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
                     and self._epoch >= self.val_begin
                     and self._epoch % self.val_interval == 0):
                 # observer disabled during evaluation
+                self.runner.model.sync_param('loss')
                 self.runner.model.apply(enable_fake_quant)
                 self.runner.model.apply(disable_observer)
                 self.runner.val_loop.run()
@@ -198,20 +242,35 @@ class PTQLoop(TestLoop):
                  runner,
                  dataloader: Union[DataLoader, Dict],
                  evaluator: Union[Evaluator, Dict, List],
-                 fp16: bool = False):
+                 fp16: bool = False,
+                 num_cali_batch=32):
         super().__init__(runner, dataloader, evaluator, fp16)
+        self.num_cali_batch = num_cali_batch
 
     def run(self) -> dict:
         """Launch test."""
         self.runner.call_hook('before_test')
         self.runner.call_hook('before_test_epoch')
         self.runner.model.eval()
-        self.runner.model.apply(enable_fake_quant)
-        self.runner.model.apply(enable_observer)
+
+        enable_calibration_woquantization(
+            self.runner.model, quantizer_type='activation_post_process')
+
+        # self.runner.model.apply(enable_fake_quant)
+        # self.runner.model.apply(enable_observer)
 
         for idx, data_batch in enumerate(self.dataloader):
+            if idx == self.num_cali_batch:
+                break
             self.run_iter(idx, data_batch)
 
+        enable_calibration_woquantization(
+            self.runner.model, quantizer_type='weight_fake_quant')
+        for idx, data_batch in enumerate(self.dataloader):
+            self.run_iter(idx, data_batch)
+            break
+
+        self.runner.model.sync_param('tensor')
         self.runner.call_hook('after_test_epoch', metrics=None)
         self.runner.call_hook('after_test')
 
@@ -223,8 +282,10 @@ class PTQLoop(TestLoop):
             save_optimizer=False,
             save_param_scheduler=False)
 
-        self.runner.model.apply(enable_fake_quant)
-        self.runner.model.apply(disable_observer)
+        # self.runner.model.apply(enable_fake_quant)
+        # self.runner.model.apply(disable_observer)
+
+        enable_quantization(self.runner.model)
 
         return self.runner.val_loop.run()
 

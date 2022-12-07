@@ -231,7 +231,7 @@ class CustomQuantizer(BaseModule):
                             cls = MERGE_BN_MAPPINGS[type(child)]
                             new_child = cls.from_float(float_child)
                         else:
-                            new_child = child.from_float(float_child)
+                            new_child = type(child).from_float(float_child)
 
                         new_child.weight_fake_quant(new_child.weight)
                     else:
@@ -239,8 +239,9 @@ class CustomQuantizer(BaseModule):
                     setattr(module, name, new_child)
                 else:
                     traverse(child)
+
         observed_module.apply(enable_fake_quant)
         traverse(observed_module)
 
-    def prepare_for_mmdeploy(self, model):
+    def prepare_for_mmdeploy(self, model, dummy_input, checkpoint):
         raise NotImplementedError
