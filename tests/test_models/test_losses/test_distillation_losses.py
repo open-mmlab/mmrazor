@@ -211,9 +211,3 @@ class TestLosses(TestCase):
         feats_S, feats_T = torch.rand(2, 256, 4, 4), torch.rand(2, 256, 4, 4)
         loss = mgd_loss(feats_S, feats_T)
         self.assertTrue(loss.numel() == 1)
-
-        num_stages = 4
-        feats_S = (torch.rand(2, 256, 4, 4) for _ in range(num_stages))
-        feats_T = (torch.rand(2, 256, 4, 4) for _ in range(num_stages))
-        loss = mgd_loss(feats_S, feats_T)
-        self.assertTrue(loss.numel() == 1)
