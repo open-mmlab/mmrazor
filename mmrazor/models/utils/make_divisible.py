@@ -1,6 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Optional
 
+from mmrazor.utils import print_log
+
 warn_once = False
 
 
@@ -29,11 +31,10 @@ def make_divisible(value: int,
     if min_value < divisor:
         global warn_once
         if warn_once is False:
-            from mmengine import MMLogger
-            MMLogger.get_current_instance().warning(
-                (f'min_value=={min_value} should greater or equal to '
-                 f'divisor=={divisor}, '
-                 'so we make min_value equal divisor.'))
+            print_log((f'min_value=={min_value} should greater or equal to '
+                       f'divisor=={divisor}, '
+                       'so we make min_value equal divisor.'),
+                      level='warning')
             warn_once = True
 
         min_value = divisor

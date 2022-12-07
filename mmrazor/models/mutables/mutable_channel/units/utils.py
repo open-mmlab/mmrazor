@@ -6,6 +6,7 @@ import torch
 
 from mmrazor.models.mutables.mutable_channel.units import \
     SequentialMutableChannelUnit
+from mmrazor.utils import print_log
 
 
 def assert_model_is_changed(tensors1, tensors2):
@@ -69,9 +70,7 @@ def find_mutable(model, try_units, units, demo_input, template_tensors):
         return try_units
     except Exception:
         if len(try_units) == 1:
-            from mmengine import MMLogger
-            MMLogger.get_current_instance().debug(
-                f'Find an unmutable unit {try_units[0]}')
+            print_log(f'Find an unmutable unit {try_units[0]}', level='debug')
             return []
         else:
             num = len(try_units)

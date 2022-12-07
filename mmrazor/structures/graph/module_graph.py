@@ -8,7 +8,6 @@ from collections import OrderedDict
 from typing import Dict, List, TypeVar, Union
 
 import torch.nn as nn
-from mmengine import MMLogger
 from torch.nn import Module
 
 from mmrazor.models.task_modules.tracer.backward_tracer import BackwardTracer
@@ -17,6 +16,7 @@ from mmrazor.models.task_modules.tracer.loss_calculator import \
 from mmrazor.models.task_modules.tracer.path import (Path, PathConcatNode,
                                                      PathList, PathNode)
 from mmrazor.registry import TASK_UTILS
+from mmrazor.utils import print_log
 from .base_graph import BaseGraph, BaseNode
 from .pseudo_fx_graph import FxBaseNode
 
@@ -223,12 +223,14 @@ class ModuleGraph(BaseGraph[MODULENODE]):
                 try:
                     raise e
                 except NoOutputError as e:
-                    MMLogger.get_current_instance().debug(
-                        f'add a output after {node}, error: {e}')
+                    print_log(
+                        f'add a output after {node}, error: {e}',
+                        level='debug')
                     self._add_output_after(node)
                 except NoInputError as e:
-                    MMLogger.get_current_instance().debug(
-                        f'add a input before {node}, error: {e}')
+                    print_log(
+                        f'add a input before {node}, error: {e}',
+                        level='debug')
                     self._add_input_before(node)
 
                 self._check(node, fix=True)

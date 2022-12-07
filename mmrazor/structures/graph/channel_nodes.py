@@ -12,6 +12,7 @@ import torch.nn as nn
 from mmcv.cnn.bricks import Scale
 from mmengine import MMLogger
 
+from mmrazor.utils import print_log
 from .channel_flow import ChannelTensor
 from .module_graph import ModuleNode
 
@@ -134,10 +135,10 @@ class ChannelNode(ModuleNode):
     def _get_in_channels_by_prev_nodes(self, prev_nodes):
         """Get input channel numbers by previous nodes."""
         if len(prev_nodes) == 0:
-            from mmengine import MMLogger
-            MMLogger.get_current_instance().debug(
+            print_log(
                 (f'As {self.name} '
-                 'has no prev nodes, so we set the in channels of it to 3.'))
+                 'has no prev nodes, so we set the in channels of it to 3.'),
+                level='debug')
             return 3
         else:
             return prev_nodes[0].out_channels

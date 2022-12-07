@@ -2,9 +2,9 @@
 import copy
 from typing import Callable, Dict, List
 
-from mmengine import MMLogger
 from torch.nn import Module
 
+from mmrazor.utils import print_log
 from .base_graph import BaseGraph
 from .channel_flow import ChannelTensor
 from .channel_nodes import (ChannelDismatchError, ChannelNode, EndNode,
@@ -187,10 +187,10 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
                     pre_node: ChannelNode
                     if (pre_node.out_channels < node.in_channels
                             and node.in_channels % pre_node.out_channels == 0):
-                        from mmengine import MMLogger
-                        MMLogger.get_current_instance().warning(
+                        print_log(
                             (f'As the channels of {pre_node} and {node} '
-                             'dismatch, we add an ExpandNode between them.'))
+                             'dismatch, we add an ExpandNode between them.'),
+                            level='warning')
                         expand_ratio = (
                             node.in_channels // pre_node.out_channels)
                         # insert a expand node
@@ -219,17 +219,18 @@ class ChannelGraph(ModuleGraph[ChannelNode]):
                 try:
                     raise e
                 except NoOutputError as e:
-                    MMLogger.get_current_instance().debug(
-                        f'add a output after {node}, error: {e}')
+                    print_log(f'add a output after {node}, error: {e}',
+                              'debug')
                     self._add_output_after(node)
                 except NoInputError as e:
-                    MMLogger.get_current_instance().debug(
-                        f'add a input before {node}, error: {e}')
+                    print_log(
+                        f'add a input before {node}, error: {e}',
+                        level='debug')
                     self._add_input_before(node)
                 except ChannelDismatchError as e:
-                    MMLogger.get_current_instance().debug(
-                        (f'{node} has channel error, so'
-                         f'we convert it to a EndNode. error: {e}'))
+                    print_log((f'{node} has channel error, so'
+                               f'we convert it to a EndNode. error: {e}'),
+                              level='debug')
                     self._convert_a_node_to_end_node(node)
 
                 self._check(node, fix=True)
