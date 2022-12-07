@@ -81,7 +81,7 @@ class MutableChannelContainer(BaseMutableChannel):
         """Register a BaseMutableChannel to a module with
         MutableChannelContainers."""
         if end == -1:
-            end = mutable.num_channels + start
+            end = mutable.current_choice + start
         if is_to_output_channel:
             container: MutableChannelContainer = module.get_mutable_attr(
                 'out_channels')
@@ -100,7 +100,8 @@ class MutableChannelContainer(BaseMutableChannel):
         for start, end in self.mutable_channels:
             assert start == last_end
             last_end = end
-        assert last_end == self.num_channels
+        assert last_end == self.num_channels, (
+            f'channel mismatch: {last_end} vs {self.num_channels}')
 
     def _fill_unregistered_range(self):
         """Fill with SimpleMutableChannels in the range without any stored

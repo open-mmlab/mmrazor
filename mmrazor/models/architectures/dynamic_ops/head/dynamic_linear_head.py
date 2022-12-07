@@ -3,7 +3,12 @@ from abc import abstractmethod
 from typing import Optional, Tuple
 
 import torch
-from mmcls.models import ClsHead
+
+try:
+    from mmcls.models import ClsHead
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    ClsHead = get_placeholder('mmcls')
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
