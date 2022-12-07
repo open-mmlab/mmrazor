@@ -332,7 +332,7 @@ class FxTracer(Tracer):
             return a
 
 
-class CustomFxTracer(FxTracer):
+class MMFxTracer(FxTracer):
 
     def __init__(
             self,

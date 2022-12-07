@@ -34,7 +34,7 @@ from mmrazor.structures.graph.module_graph import (FxTracerToGraphConverter,
 from mmrazor.structures.graph.pseudo_fx_graph import parse_torch_graph
 from ..demo_inputs import BaseDemoInput, DefaultDemoInput
 from .backward_tracer import BackwardTracer
-from .fx_tracer import CustomFxTracer
+from .fx_tracer import MMFxTracer
 from .loss_calculator.sum_loss_calculator import SumPseudoLoss
 
 
@@ -89,7 +89,7 @@ class ChannelAnalyzer:
             assert digit_version(torch.__version__) >= digit_version(
                 '1.12.0'
             ), 'Please install torch>=1.12.0, if you want to use fx tracer.'
-            self.tracer = CustomFxTracer(leaf_module=self.default_leaf_modules)
+            self.tracer = MMFxTracer(leaf_module=self.default_leaf_modules)
         else:
             raise NotImplementedError()
 
