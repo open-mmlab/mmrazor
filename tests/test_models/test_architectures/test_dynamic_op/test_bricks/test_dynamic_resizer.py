@@ -51,7 +51,6 @@ class TestInputResizer(TestCase):
 
         mutable_shape = OneShotMutableValue(
             value_list=[192, 224, 256], default_value=224)
-
         mutable_shape.current_choice = 192
 
         with pytest.raises(RuntimeError):
@@ -60,11 +59,11 @@ class TestInputResizer(TestCase):
         mutable_shape.fix_chosen(mutable_shape.dump_chosen().chosen)
         self.dynamic_input_resizer.register_mutable_attr(
             'shape', mutable_shape)
-
         static_op = self.dynamic_input_resizer.to_static_op()
-
         x = static_op(input)
-        self.assertTrue(torch.equal(x, input))
+        static_m = InputResizer()
+        output = static_m(input, mutable_shape.current_choice)
+        self.assertTrue(torch.equal(x, output))
 
         mutable_shape = OneShotMutableValue(
             value_list=[[192, 192], [224, 224], [256, 256], [288, 288]],
@@ -75,12 +74,8 @@ class TestInputResizer(TestCase):
             'shape', mutable_shape)
 
         static_op = self.dynamic_input_resizer.to_static_op()
-
         self.assertIsNotNone(static_op)
-
         x = self.dynamic_input_resizer(input)
-
-        assert x is not None
         assert torch.equal(
             self.dynamic_input_resizer(input),
             static_op(input, mutable_shape.current_choice))

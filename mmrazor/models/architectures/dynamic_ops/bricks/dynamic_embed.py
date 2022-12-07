@@ -130,6 +130,9 @@ class DynamicPatchEmbed(PatchEmbed, DynamicChannelMixin):
             norm_cfg=None,
             conv_cfg=None,
             init_cfg=None)
+
+        # TODO mutable_attr should be inherited from its `__base__` class
+        dynamic_patch_embed.projection = module.projection
         dynamic_patch_embed.norm = module.norm
 
         return dynamic_patch_embed
