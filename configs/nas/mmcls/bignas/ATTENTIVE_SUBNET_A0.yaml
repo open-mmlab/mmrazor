@@ -1,0 +1,64 @@
+architecture.backbone.first_out_channels:
+  chosen: 16
+architecture.backbone.last_out_channels:
+  chosen: 1792
+architecture.backbone.layer1.0.depthwise_conv.conv.mutable_attrs.kernel_size:
+  chosen: 3
+architecture.backbone.layer1_expand_ratio:
+  chosen: 1
+architecture.backbone.layer1.mutable_attrs.depth:
+  chosen: 1
+architecture.backbone.layer1_out_channels:
+  chosen: 16
+architecture.backbone.layer2.0.depthwise_conv.conv.mutable_attrs.kernel_size:
+  chosen: 3
+architecture.backbone.layer2_expand_ratio:
+  chosen: 4
+architecture.backbone.layer2.mutable_attrs.depth:
+  chosen: 3
+architecture.backbone.layer2_out_channels:
+  chosen: 24
+architecture.backbone.layer3.0.depthwise_conv.conv.mutable_attrs.kernel_size:
+  chosen: 3
+architecture.backbone.layer3_expand_ratio:
+  chosen: 4
+architecture.backbone.layer3.mutable_attrs.depth:
+  chosen: 3
+architecture.backbone.layer3_out_channels:
+  chosen: 32
+architecture.backbone.layer4.0.depthwise_conv.conv.mutable_attrs.kernel_size:
+  chosen: 3
+architecture.backbone.layer4_expand_ratio:
+  chosen: 4
+architecture.backbone.layer4.mutable_attrs.depth:
+  chosen: 3
+architecture.backbone.layer4_out_channels:
+  chosen: 64
+architecture.backbone.layer5.0.depthwise_conv.conv.mutable_attrs.kernel_size:
+  chosen: 3
+architecture.backbone.layer5_expand_ratio:
+  chosen: 4
+architecture.backbone.layer5.mutable_attrs.depth:
+  chosen: 3
+architecture.backbone.layer5_out_channels:
+  chosen: 112
+architecture.backbone.layer6.0.depthwise_conv.conv.mutable_attrs.kernel_size:
+  chosen: 3
+architecture.backbone.layer6_expand_ratio:
+  chosen: 6
+architecture.backbone.layer6.mutable_attrs.depth:
+  chosen: 3
+architecture.backbone.layer6_out_channels:
+  chosen: 192
+architecture.backbone.layer7.0.depthwise_conv.conv.mutable_attrs.kernel_size:
+  chosen: 3
+architecture.backbone.layer7_expand_ratio:
+  chosen: 6
+architecture.backbone.layer7.mutable_attrs.depth:
+  chosen: 1
+architecture.backbone.layer7_out_channels:
+  chosen: 216
+architecture.input_resizer.mutable_attrs.shape:
+  chosen:
+  - 192
+  - 192

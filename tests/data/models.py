@@ -849,7 +849,7 @@ class DynamicMMBlock(nn.Module):
 
             mutable_kernel_size = OneShotMutableValue(
                 value_list=kernel_sizes, default_value=max(kernel_sizes))
-            mutable_expand_value = OneShotMutableValue(
+            mutable_expand_ratio = OneShotMutableValue(
                 value_list=expand_ratios, default_value=max(expand_ratios))
             mutable_out_channels = OneShotMutableChannel(
                 num_channels=max(out_channels), candidate_choices=out_channels)
@@ -862,7 +862,7 @@ class DynamicMMBlock(nn.Module):
                 mutate_mobilenet_layer(layer[k], self.last_mutable,
                                        mutable_out_channels,
                                        mutable_se_channels,
-                                       mutable_expand_value,
+                                       mutable_expand_ratio,
                                        mutable_kernel_size)
                 self.last_mutable = mutable_out_channels
 
