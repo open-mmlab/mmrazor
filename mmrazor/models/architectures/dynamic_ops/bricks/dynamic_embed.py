@@ -4,7 +4,12 @@ from typing import Dict, Set, Tuple
 
 import torch.nn as nn
 import torch.nn.functional as F
-from mmcls.models.utils import PatchEmbed
+
+try:
+    from mmcls.models.utils import PatchEmbed
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    PatchEmbed = get_placeholder('mmcls')
 from mmengine import print_log
 from torch import Tensor
 
@@ -126,6 +131,10 @@ class DynamicPatchEmbed(PatchEmbed, DynamicChannelMixin):
             conv_cfg=None,
             init_cfg=None)
 
+        # TODO mutable_attr should be inherited from its `__base__` class
+        dynamic_patch_embed.projection = module.projection
+        dynamic_patch_embed.norm = module.norm
+
         return dynamic_patch_embed
 
     def forward(self, x: Tensor) -> Tensor:
@@ -138,5 +147,8 @@ class DynamicPatchEmbed(PatchEmbed, DynamicChannelMixin):
             stride=16,
             padding=self.projection.padding,
             dilation=self.projection.dilation).flatten(2).transpose(1, 2)
+
+        if self.norm is not None:
+            x = self.norm(x)
 
         return x

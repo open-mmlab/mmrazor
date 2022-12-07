@@ -212,7 +212,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
 
         return current_choices
 
-    def sample_choices(self) -> Dict[int, Any]:
+    def sample_choices(self, kind: str = 'random') -> Dict[int, Any]:
         """Sampling by search groups.
 
         The sampling result of the first mutable of each group is the sampling
@@ -221,6 +221,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
         Returns:
             Dict[int, Any]: Random choices dict.
         """
+        assert kind == 'random', f'unsupported the {kind} sample method.'
         random_choices = dict()
         for group_id, modules in self.search_groups.items():
             random_choices[group_id] = modules[0].sample_choice()

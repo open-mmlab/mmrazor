@@ -161,7 +161,7 @@ class ChannelUnit(BaseModule):
                     Channel.init_from_cfg(model, channel_config))
             for channel_config in channels['output_related']:
                 auto_fill_channel_config(channel_config, True)
-                unit.add_ouptut_related(
+                unit.add_output_related(
                     Channel.init_from_cfg(model, channel_config))
         return unit
 
@@ -221,21 +221,15 @@ class ChannelUnit(BaseModule):
 
     # node operations
 
-    def add_ouptut_related(self, channel: Channel):
+    def add_output_related(self, channel: Channel):
         """Add a Channel which is output related."""
         assert channel.is_output_channel
-        assert self.num_channels == channel.num_channels or (
-            channel.num_channels > self.num_channels
-            and channel.num_channels % self.num_channels == 0)
         if channel not in self.output_related:
             self.output_related.append(channel)
 
     def add_input_related(self, channel: Channel):
         """Add a Channel which is input related."""
         assert channel.is_output_channel is False
-        assert self.num_channels == channel.num_channels or (
-            channel.num_channels > self.num_channels
-            and channel.num_channels % self.num_channels == 0)
         if channel not in self.input_related:
             self.input_related.append(channel)
 

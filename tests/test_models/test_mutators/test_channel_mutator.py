@@ -195,3 +195,25 @@ class TestChannelMutator(unittest.TestCase):
         mutator2.prepare_from_supernet(model2)
 
         self.assertEqual(len(mutator2.search_groups), 24)
+
+    def test_related_shortcut_layer(self):
+        for Model in [
+                DynamicMMBlock,
+        ]:
+            with self.subTest(model=Model):
+                model = Model()
+                mutator = ChannelMutator(
+                    channel_unit_cfg={
+                        'type': 'OneShotMutableChannelUnit',
+                        'default_args': {
+                            'unit_predefined': True
+                        }
+                    },
+                    parse_cfg={'type': 'Predefined'})
+                mutator.prepare_from_supernet(model)
+                choices = mutator.sample_choices()
+                mutator.set_choices(choices)
+                self.assertGreater(len(mutator.mutable_units), 0)
+                x = torch.rand([2, 3, 224, 224])
+                y = model(x)
+                self.assertEqual(list(y[-1].shape), [2, 1984, 1, 1])

@@ -67,4 +67,4 @@ param_scheduler = dict(end=max_epochs)
 
 # train, val, test setting
 train_cfg = dict(max_epochs=max_epochs)
-val_cfg = dict(type='mmrazor.AutoSlimValLoop')
+val_cfg = dict(type='mmrazor.SubnetValLoop')

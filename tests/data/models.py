@@ -1,23 +1,33 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 # this file includes models for tesing.
-import math
+from collections import OrderedDict
+from typing import Dict
+
 from torch.nn import Module
 from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
+from mmengine.model import BaseModel
 from mmrazor.models.architectures.dynamic_ops import DynamicBatchNorm2d, DynamicConv2d, DynamicLinear, DynamicChannelMixin, DynamicPatchEmbed, DynamicSequential
 from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
 from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables import BaseMutable
 from mmrazor.models.mutables import OneShotMutableChannelUnit, OneShotMutableChannel
-# this file includes models for tesing.
 
 from mmrazor.models.mutables import OneShotMutableValue
 from mmrazor.models.architectures.backbones.searchable_autoformer import TransformerEncoderLayer
 from mmrazor.registry import MODELS
+from mmrazor.models.mutables import OneShotMutableValue
+from mmrazor.models.architectures.backbones.searchable_autoformer import TransformerEncoderLayer
+from mmrazor.models.utils.parse_values import parse_values
 
+from mmrazor.models.architectures.ops.mobilenet_series import MBBlock
+from mmcv.cnn import ConvModule
+from mmengine.model import Sequential
+from mmrazor.models.architectures.utils.mutable_register import (
+    mutate_conv_module, mutate_mobilenet_layer)
 
 # models to test fx tracer
 
@@ -671,7 +681,7 @@ class SampleExpandDerivedMutable(BaseMutable):
     def current_choice(self, choice):
         super().current_choice(choice)
 
-
+    
 class DynamicLinearModel(nn.Module):
     """
         x
@@ -802,3 +812,222 @@ class DynamicAttention(nn.Module):
         x = x + self.pos_embed[..., :embed_dims]
         x = self.blocks(x)
         return torch.mean(x[:, 1:], dim=1)
+
+
+class DynamicMMBlock(nn.Module):
+
+    arch_setting = dict(
+        kernel_size=[  # [min_kernel_size, max_kernel_size, step]
+            [3, 5, 2],
+            [3, 5, 2],
+            [3, 5, 2],
+            [3, 5, 2],
+            [3, 5, 2],
+            [3, 5, 2],
+            [3, 5, 2],
+        ],
+        num_blocks=[  # [min_num_blocks, max_num_blocks, step]
+            [1, 2, 1],
+            [3, 5, 1],
+            [3, 6, 1],
+            [3, 6, 1],
+            [3, 8, 1],
+            [3, 8, 1],
+            [1, 2, 1],
+        ],
+        expand_ratio=[  # [min_expand_ratio, max_expand_ratio, step]
+            [1, 1, 1],
+            [4, 6, 1],
+            [4, 6, 1],
+            [4, 6, 1],
+            [4, 6, 1],
+            [6, 6, 1],
+            [6, 6, 1]
+        ],
+        num_out_channels=[  # [min_channel, max_channel, step]
+            [16, 24, 8],
+            [24, 32, 8],
+            [32, 40, 8],
+            [64, 72, 8],
+            [112, 128, 8],
+            [192, 216, 8],
+            [216, 224, 8]
+        ])
+
+    def __init__(
+        self, 
+        conv_cfg: Dict = dict(type='mmrazor.BigNasConv2d'),
+        norm_cfg: Dict = dict(type='mmrazor.DynamicBatchNorm2d'),
+    ) -> None:
+        super().__init__()
+
+        self.conv_cfg = conv_cfg
+        self.norm_cfg = norm_cfg
+        self.act_list = ['Swish'] * 7
+        self.stride_list = [1, 2, 2, 2, 1, 2, 1]
+        self.with_se_list = [False, False, True, False, True, True, True]
+        self.kernel_size_list = parse_values(self.arch_setting['kernel_size'])
+        self.num_blocks_list = parse_values(self.arch_setting['num_blocks'])
+        self.expand_ratio_list = \
+            parse_values(self.arch_setting['expand_ratio'])
+        self.num_channels_list = \
+            parse_values(self.arch_setting['num_out_channels'])
+        assert len(self.kernel_size_list) == len(self.num_blocks_list) == \
+            len(self.expand_ratio_list) == len(self.num_channels_list)
+        self.with_attentive_shortcut = True
+        self.in_channels = 24
+
+        self.first_conv = ConvModule(
+            in_channels=3,
+            out_channels=24,
+            kernel_size=3,
+            stride=2,
+            padding=1,
+            conv_cfg=self.conv_cfg,
+            norm_cfg=self.norm_cfg,
+            act_cfg=dict(type='Swish'))
+
+        self.last_mutable = OneShotMutableChannel(num_channels=24, candidate_choices=[16, 24])
+
+        self.layers = []
+        for i, (num_blocks, kernel_sizes, expand_ratios, num_channels) in \
+            enumerate(zip(self.num_blocks_list, self.kernel_size_list,
+                          self.expand_ratio_list, self.num_channels_list)):
+            inverted_res_layer = self._make_single_layer(
+                out_channels=num_channels,
+                num_blocks=num_blocks,
+                kernel_sizes=kernel_sizes,
+                expand_ratios=expand_ratios,
+                act_cfg=self.act_list[i],
+                stride=self.stride_list[i],
+                use_se=self.with_se_list[i])
+            layer_name = f'layer{i + 1}'
+            self.add_module(layer_name, inverted_res_layer)
+            self.layers.append(inverted_res_layer)
+
+        last_expand_channels = 1344
+        self.out_channels = 1984
+        self.last_out_channels_list = [1792, 1984]
+        self.last_expand_ratio_list = [6]
+
+        last_layers = Sequential(
+            OrderedDict([('final_expand_layer',
+                          ConvModule(
+                              in_channels=self.in_channels,
+                              out_channels=last_expand_channels,
+                              kernel_size=1,
+                              padding=0,
+                              conv_cfg=self.conv_cfg,
+                              norm_cfg=self.norm_cfg,
+                              act_cfg=dict(type='Swish'))),
+                         ('pool', nn.AdaptiveAvgPool2d((1, 1))),
+                         ('feature_mix_layer',
+                          ConvModule(
+                              in_channels=last_expand_channels,
+                              out_channels=self.out_channels,
+                              kernel_size=1,
+                              padding=0,
+                              bias=False,
+                              conv_cfg=self.conv_cfg,
+                              norm_cfg=None,
+                              act_cfg=dict(type='Swish')))]))
+        self.add_module('last_conv', last_layers)
+        self.layers.append(last_layers)
+        
+        self.register_mutables()
+
+    def _make_single_layer(self, out_channels, num_blocks,
+                           kernel_sizes, expand_ratios,
+                           act_cfg, stride, use_se):
+        _layers = []
+        for i in range(max(num_blocks)):
+            if i >= 1:
+                stride = 1
+            if use_se:
+                se_cfg = dict(
+                    act_cfg=(dict(type='ReLU'), dict(type='HSigmoid')),
+                    ratio=4,
+                    conv_cfg=self.conv_cfg)
+            else:
+                se_cfg = None  # type: ignore
+
+            mb_layer = MBBlock(
+                in_channels=self.in_channels,
+                out_channels=max(out_channels),
+                kernel_size=max(kernel_sizes),
+                stride=stride,
+                expand_ratio=max(expand_ratios),
+                conv_cfg=self.conv_cfg,
+                norm_cfg=self.norm_cfg,
+                act_cfg=dict(type=act_cfg),
+                se_cfg=se_cfg,
+                with_attentive_shortcut=self.with_attentive_shortcut)
+
+            _layers.append(mb_layer)
+            self.in_channels = max(out_channels)
+
+        dynamic_seq = DynamicSequential(*_layers)
+        return dynamic_seq
+
+    def register_mutables(self):
+        OneShotMutableChannelUnit._register_channel_container(
+            self, MutableChannelContainer)
+
+        # mutate the first conv
+        mutate_conv_module(
+            self.first_conv, mutable_out_channels=self.last_mutable)
+
+        # mutate the built mobilenet layers
+        for i, layer in enumerate(self.layers[:-1]):
+            num_blocks = self.num_blocks_list[i]
+            kernel_sizes = self.kernel_size_list[i]
+            expand_ratios = self.expand_ratio_list[i]
+            out_channels = self.num_channels_list[i]
+
+            mutable_kernel_size = OneShotMutableValue(
+                value_list=kernel_sizes, default_value=max(kernel_sizes))
+            mutable_expand_value = OneShotMutableValue(
+                value_list=expand_ratios, default_value=max(expand_ratios))
+            mutable_out_channels = OneShotMutableChannel(
+                num_channels=max(out_channels), candidate_choices=out_channels)
+
+            se_ratios = [i / 4 for i in expand_ratios]
+            mutable_se_channels = OneShotMutableValue(
+                value_list=se_ratios, default_value=max(se_ratios))
+
+            for k in range(max(self.num_blocks_list[i])):
+                mutate_mobilenet_layer(layer[k], self.last_mutable,
+                                       mutable_out_channels,
+                                       mutable_se_channels,
+                                       mutable_expand_value,
+                                       mutable_kernel_size)
+                self.last_mutable = mutable_out_channels
+
+            mutable_depth = OneShotMutableValue(
+                value_list=num_blocks, default_value=max(num_blocks))
+            layer.register_mutable_attr('depth', mutable_depth)
+
+        mutable_out_channels = OneShotMutableChannel(
+            num_channels=self.out_channels,
+            candidate_choices=self.last_out_channels_list)
+        last_mutable_expand_value = OneShotMutableValue(
+            value_list=self.last_expand_ratio_list,
+            default_value=max(self.last_expand_ratio_list))
+        derived_expand_channels = self.last_mutable * last_mutable_expand_value
+        mutate_conv_module(
+            self.layers[-1].final_expand_layer,
+            mutable_in_channels=self.last_mutable,
+            mutable_out_channels=derived_expand_channels)
+        mutate_conv_module(
+            self.layers[-1].feature_mix_layer,
+            mutable_in_channels=derived_expand_channels,
+            mutable_out_channels=mutable_out_channels)
+
+        self.last_mutable = mutable_out_channels
+
+    def forward(self, x):
+        x = self.first_conv(x)
+        for _, layer in enumerate(self.layers):
+            x = layer(x)
+
+        return tuple([x])

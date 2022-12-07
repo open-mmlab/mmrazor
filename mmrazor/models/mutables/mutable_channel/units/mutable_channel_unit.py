@@ -4,13 +4,16 @@ import abc
 from collections import Set
 from typing import Dict, List, Type, TypeVar
 
+import torch
 import torch.nn as nn
 
 from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
-from mmrazor.models.mutables import DerivedMutable
+from mmrazor.models.mutables import DerivedMutable, MutableValue
 from mmrazor.models.mutables.mutable_channel import (BaseMutableChannel,
                                                      MutableChannelContainer)
 from .channel_unit import Channel, ChannelUnit
+
+expand_ratio_warning_list = []
 
 
 class MutableChannelUnit(ChannelUnit):
@@ -50,12 +53,18 @@ class MutableChannelUnit(ChannelUnit):
         """Initialize units using the model with pre-defined dynamicops and
         mutable-channels."""
 
-        def process_container(contanier: MutableChannelContainer,
+        global expand_ratio_warning_list
+
+        def process_container(container: MutableChannelContainer,
                               module,
                               module_name,
                               mutable2units,
                               is_output=True):
-            for index, mutable in contanier.mutable_channels.items():
+            for index, mutable in container.mutable_channels.items():
+                derived_choices = mutable.current_choice
+                if isinstance(derived_choices, torch.Tensor):
+                    derived_choices = derived_choices.sum().item()
+                expand_ratio = 1
                 if isinstance(mutable, DerivedMutable):
                     source_mutables: Set = \
                         mutable._trace_source_mutables()
@@ -66,7 +75,39 @@ class MutableChannelUnit(ChannelUnit):
                     assert len(source_channel_mutables) == 1, (
                         'only support one mutable channel '
                         'used in DerivedMutable')
-                    mutable = list(source_channel_mutables)[0]
+                    mutable = source_channel_mutables[0]
+                    subchannel = mutable.current_choice
+
+                    source_value_mutables = [
+                        mutable for mutable in source_mutables
+                        if isinstance(mutable, MutableValue)
+                    ]
+                    assert len(source_value_mutables) <= 1, (
+                        'only support one mutable value '
+                        'used in DerivedMutable')
+                    if source_value_mutables:
+                        expand_ratio = int(
+                            source_value_mutables[0].current_choice)
+
+                    assert len(
+                        source_mutables) >= len(source_channel_mutables) + len(
+                            source_value_mutables
+                        ), 'DerivedMutable can only be composed of '
+                    'value_mutable and channel_mutable.'
+
+                    expected_ratio = derived_choices / subchannel
+                    if expected_ratio != expand_ratio:
+                        x = expected_ratio / expand_ratio
+                        expand_ratio = expand_ratio * x
+                        if expand_ratio not in expand_ratio_warning_list:
+                            from mmengine import MMLogger
+                            logger = MMLogger.get_current_instance()
+                            logger.warning(
+                                'Trying to recompute the expand_ratio. '
+                                f'Align {expand_ratio:.2f}*{subchannel} '
+                                f'= {derived_choices} to the related channel. '
+                                f'which will have no effect. ')
+                            expand_ratio_warning_list.append(expand_ratio)
 
                 if mutable not in mutable2units:
                     mutable2units[mutable] = cls.init_from_mutable_channel(
@@ -74,7 +115,7 @@ class MutableChannelUnit(ChannelUnit):
 
                 unit: MutableChannelUnit = mutable2units[mutable]
                 if is_output:
-                    unit.add_ouptut_related(
+                    unit.add_output_related(
                         Channel(
                             module_name,
                             module,
@@ -252,14 +293,16 @@ class MutableChannelUnit(ChannelUnit):
                     start = channel.start
                     end = channel.end
                 elif channel.num_channels > self.num_channels:
+
                     if channel.num_channels % self.num_channels == 0:
-                        mutable_channel_ = \
-                            mutable_channel.expand_mutable_channel(
-                                channel.num_channels // self.num_channels)
-                        start = channel.start
-                        end = channel.end
+                        ratio = channel.num_channels // self.num_channels
                     else:
-                        raise NotImplementedError()
+                        ratio = channel.num_channels / self.num_channels
+
+                    mutable_channel_ = \
+                        mutable_channel.expand_mutable_channel(ratio)
+                    start = channel.start
+                    end = channel.end
                 else:
                     raise NotImplementedError()
 

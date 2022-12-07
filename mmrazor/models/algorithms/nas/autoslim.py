@@ -94,11 +94,11 @@ class AutoSlim(BaseAlgorithm):
 
     def set_max_subnet(self) -> None:
         """Set max subnet."""
-        self.mutator.set_choices(self.mutator.max_choices())
+        self.mutator.set_choices(self.mutator.max_choice)
 
     def set_min_subnet(self) -> None:
         """Set min subnet."""
-        self.mutator.set_choices(self.mutator.min_choices())
+        self.mutator.set_choices(self.mutator.min_choice)
 
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:

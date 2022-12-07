@@ -19,8 +19,8 @@ except ImportError:
 
 
 @MODELS.register_module()
-class SearchableMobileNet(BaseBackbone):
-    """Searchable MobileNet backbone.
+class SearchableMobileNetV2(BaseBackbone):
+    """Searchable MobileNetV2 backbone.
 
     Args:
         arch_setting (list[list]): Architecture settings.
@@ -70,7 +70,7 @@ class SearchableMobileNet(BaseBackbone):
         ...     [160, 3, 2, mutable_cfg],
         ...     [320, 1, 1, mutable_cfg]
         ... ]
-        >>> model = SearchableMobileNet(arch_setting=arch_setting)
+        >>> model = SearchableMobileNetV2(arch_setting=arch_setting)
     """
 
     def __init__(
@@ -158,7 +158,7 @@ class SearchableMobileNet(BaseBackbone):
 
     def _make_layer(self, out_channels: int, num_blocks: int, stride: int,
                     mutable_cfg: Dict) -> Sequential:
-        """Stack mutable blocks to build a layer for SearchableMobileNet.
+        """Stack mutable blocks to build a layer for SearchableMobileNetV2.
 
         Note:
             Here we use ``module_kwargs`` to pass dynamic parameters such as

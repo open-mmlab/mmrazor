@@ -51,17 +51,7 @@ ALGORITHM_CFG = dict(
     type='mmrazor.Autoformer',
     architecture=ARCHITECTURE_CFG,
     fix_subnet=None,
-    mutators=dict(
-        channel_mutator=dict(
-            type='mmrazor.OneShotChannelMutator',
-            channel_unit_cfg={
-                'type': 'OneShotMutableChannelUnit',
-                'default_args': {
-                    'unit_predefined': True
-                }
-            },
-            parse_cfg={'type': 'Predefined'}),
-        value_mutator=dict(type='mmrazor.DynamicValueMutator')))
+    mutators=MUTATOR_CFG)
 
 
 class TestAUTOFORMER(TestCase):

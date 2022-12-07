@@ -3,6 +3,7 @@ from .dynamic_container import DynamicSequential
 from .dynamic_conv import (BigNasConv2d, DynamicConv2d,
                            DynamicConv2dAdaptivePadding, FuseConv2d, OFAConv2d)
 from .dynamic_embed import DynamicPatchEmbed
+from .dynamic_function import DynamicInputResizer
 from .dynamic_linear import DynamicLinear
 from .dynamic_multi_head_attention import DynamicMultiheadAttention
 from .dynamic_norm import (DynamicBatchNorm1d, DynamicBatchNorm2d,
@@ -17,5 +18,7 @@ __all__ = [
     'SwitchableBatchNorm2d', 'DynamicSequential', 'DynamicPatchEmbed',
     'DynamicLayerNorm', 'DynamicRelativePosition2D', 'FuseConv2d',
     'DynamicMultiheadAttention', 'DynamicSyncBatchNorm',
-    'DynamicConv2dAdaptivePadding', 'DynamicBatchNormXd'
+    'DynamicConv2dAdaptivePadding', 'DynamicBatchNormXd',
+    'DynamicMultiheadAttention', 'DynamicInputResizer', 'FuseConv2d',
+    'DynamicLayerNorm', 'DynamicRelativePosition2D'
 ]

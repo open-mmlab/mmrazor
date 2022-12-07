@@ -1,0 +1,64 @@
+architecture.backbone.first_mutable:
+  chosen: 24
+architecture.backbone.last_mutable:
+  chosen: 1984
+architecture.backbone.layer1.0.depthwise_conv.conv.mutable_attrs.kernel_size:
+  chosen: 5
+architecture.backbone.layer1.0.mutable_expand_value:
+  chosen: 1
+architecture.backbone.layer1.mutable_attrs.depth:
+  chosen: 2
+architecture.backbone.layer1.mutable_out_channels:
+  chosen: 24
+architecture.backbone.layer2.0.depthwise_conv.conv.mutable_attrs.kernel_size:
+  chosen: 5
+architecture.backbone.layer2.0.mutable_expand_value:
+  chosen: 6
+architecture.backbone.layer2.mutable_attrs.depth:
+  chosen: 5
+architecture.backbone.layer2.mutable_out_channels:
+  chosen: 32
+architecture.backbone.layer3.0.depthwise_conv.conv.mutable_attrs.kernel_size:
+  chosen: 5
+architecture.backbone.layer3.0.mutable_expand_value:
+  chosen: 6
+architecture.backbone.layer3.mutable_attrs.depth:
+  chosen: 6
+architecture.backbone.layer3.mutable_out_channels:
+  chosen: 40
+architecture.backbone.layer4.0.depthwise_conv.conv.mutable_attrs.kernel_size:
+  chosen: 5
+architecture.backbone.layer4.0.mutable_expand_value:
+  chosen: 6
+architecture.backbone.layer4.mutable_attrs.depth:
+  chosen: 6
+architecture.backbone.layer4.mutable_out_channels:
+  chosen: 72
+architecture.backbone.layer5.0.depthwise_conv.conv.mutable_attrs.kernel_size:
+  chosen: 5
+architecture.backbone.layer5.0.mutable_expand_value:
+  chosen: 6
+architecture.backbone.layer5.mutable_attrs.depth:
+  chosen: 8
+architecture.backbone.layer5.mutable_out_channels:
+  chosen: 128
+architecture.backbone.layer6.0.depthwise_conv.conv.mutable_attrs.kernel_size:
+  chosen: 5
+architecture.backbone.layer6.0.mutable_expand_value:
+  chosen: 6
+architecture.backbone.layer6.mutable_attrs.depth:
+  chosen: 8
+architecture.backbone.layer6.mutable_out_channels:
+  chosen: 216
+architecture.backbone.layer7.0.depthwise_conv.conv.mutable_attrs.kernel_size:
+  chosen: 5
+architecture.backbone.layer7.0.mutable_expand_value:
+  chosen: 6
+architecture.backbone.layer7.mutable_attrs.depth:
+  chosen: 2
+architecture.backbone.layer7.mutable_out_channels:
+  chosen: 224
+architecture.input_resizer.mutable_attrs.shape:
+  chosen:
+  - 288
+  - 288
