@@ -324,7 +324,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
             tracer: ChannelAnalyzer = TASK_UTILS.build(parse_cfg)
         else:
             tracer = parse_cfg
-        unit_configs = tracer.trace(model)
+        unit_configs = tracer.analyze(model)
 
         # get ChannelUnits
         units = [

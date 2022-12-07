@@ -93,7 +93,7 @@ def _test_a_model(Model, tracer_type='fx'):
                 'scope': Model.scope
             })
         with time_limit(60):
-            unit_configs = tracer.trace(model)
+            unit_configs = tracer.analyze(model)
 
         out = len(unit_configs)
         print(f'test {Model} successful.')

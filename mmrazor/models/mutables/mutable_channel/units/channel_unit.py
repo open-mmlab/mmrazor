@@ -177,15 +177,15 @@ class ChannelUnit(BaseModule):
         return mutable_unit
 
     @classmethod
-    def init_from_prune_tracer(cls, model, tracer=None):
+    def init_from_channel_analyzer(cls, model, analyzer=None):
         """Init MutableChannelUnits from a ChannelAnalyzer."""
 
-        if tracer is None:
+        if analyzer is None:
             from mmrazor.models.task_modules.tracer import ChannelAnalyzer
-            tracer = ChannelAnalyzer()
-        if isinstance(tracer, dict):
-            tracer = TASK_UTILS.build(tracer)
-        unit_config = tracer.trace(model)
+            analyzer = ChannelAnalyzer()
+        if isinstance(analyzer, dict):
+            analyzer = TASK_UTILS.build(analyzer)
+        unit_config = analyzer.analyze(model)
         return [cls.init_from_cfg(model, cfg) for cfg in unit_config.values()]
 
     # tools

@@ -50,7 +50,7 @@ class TestDCFFChannelUnit(TestCase):
     def test_init_from_channel_unit(self):
         # init using tracer
         model = SingleLineModel()
-        unit_configs = ChannelAnalyzer().trace(model)
+        unit_configs = ChannelAnalyzer().analyze(model)
         units = [
             DCFFChannelUnit.init_from_cfg(model, unit_config)
             for unit_config in unit_configs.values()

@@ -13,7 +13,7 @@ class TestChannelAnalyzer(TestCase):
     def test_backward_tracer(self):
         model = SingleLineModel()
         tracer = ChannelAnalyzer(tracer_type='BackwardTracer')
-        unit_configs = tracer.trace(model)
+        unit_configs = tracer.analyze(model)
         print(unit_configs)
 
     def test_fx_tracer(self):
@@ -21,5 +21,5 @@ class TestChannelAnalyzer(TestCase):
             self.skipTest('torch<1.12.0')
         model = SingleLineModel()
         tracer = ChannelAnalyzer(tracer_type='FxTracer')
-        unit_configs = tracer.trace(model)
+        unit_configs = tracer.analyze(model)
         print(unit_configs)

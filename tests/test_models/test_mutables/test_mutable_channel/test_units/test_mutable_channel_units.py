@@ -100,14 +100,16 @@ class TestMutableChannelUnit(TestCase):
 
                 # init using tracer
                 model = SingleLineModel()
-                units: List[ChannelUnit] = ChannelUnit.init_from_prune_tracer(
-                    model)
+                units: List[
+                    ChannelUnit] = ChannelUnit.init_from_channel_analyzer(
+                        model)
                 test_units(units, model)
 
                 # init using tracer config
                 model = SingleLineModel()
-                units: List[ChannelUnit] = ChannelUnit.init_from_prune_tracer(
-                    model, tracer=dict(type='ChannelAnalyzer'))
+                units: List[
+                    ChannelUnit] = ChannelUnit.init_from_channel_analyzer(
+                        model, analyzer=dict(type='ChannelAnalyzer'))
                 test_units(units, model)
 
                 print(units)
@@ -119,7 +121,7 @@ class TestMutableChannelUnit(TestCase):
                 with self.subTest(model=model_data, unit=unit_type):
                     model: nn.Module = model_data()
                     units: List[
-                        MutableChannelUnit] = unit_type.init_from_prune_tracer(
+                        MutableChannelUnit] = unit_type.init_from_channel_analyzer(  # noqa
                             model)
                     for unit in units:
                         unit.prepare_for_pruning(model)

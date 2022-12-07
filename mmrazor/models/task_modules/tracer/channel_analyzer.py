@@ -93,7 +93,7 @@ class ChannelAnalyzer:
         else:
             raise NotImplementedError()
 
-    def trace(self, model):
+    def analyze(self, model):
         """Tracer the model, and return configs of channel dependency."""
         model = copy.deepcopy(model)
         model = revert_sync_batchnorm(model)
