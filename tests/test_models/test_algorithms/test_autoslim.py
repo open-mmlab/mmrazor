@@ -29,6 +29,17 @@ ARCHITECTURE_CFG = dict(
         loss=dict(type='mmcls.CrossEntropyLoss', loss_weight=1.0),
         topk=(1, 5)))
 
+ONESHOT_MUTABLE_CFG = dict(
+    type='OneShotMutableChannel',
+    candidate_choices=[1 / 8, 2 / 8, 3 / 8, 4 / 8, 5 / 8, 6 / 8, 7 / 8, 1.0],
+    candidate_mode='ratio')
+ONESHOT_MUTABLE_CFGS = dict(
+    in_features=ONESHOT_MUTABLE_CFG,
+    out_features=ONESHOT_MUTABLE_CFG,
+    in_channels=ONESHOT_MUTABLE_CFG,
+    out_channels=ONESHOT_MUTABLE_CFG,
+    num_features=ONESHOT_MUTABLE_CFG)
+
 MUTATOR_CFG = dict(
     type='OneShotChannelMutator',
     channel_unit_cfg=dict(

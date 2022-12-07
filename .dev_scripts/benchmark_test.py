@@ -87,39 +87,34 @@ def replace_to_ceph(cfg):
             's3://openmmlab/datasets/classification/imagenet',
         }))
 
-    def _process_pipeline(dataset, name):
+    def _process_dataset(dataset):
 
-        def replace_img(pipeline):
-            if pipeline['type'] == 'LoadImageFromFile':
-                pipeline['file_client_args'] = file_client_args
+        def replace_pipline(pipelines):
+            for pipeline in pipelines:
+                if pipeline['type'] in [
+                        'LoadImageFromFile',
+                        'LoadAnnotations',
+                        'LoadPanopticAnnotations',
+                ]:
+                    pipeline['file_client_args'] = file_client_args
 
-        def replace_ann(pipeline):
-            if pipeline['type'] == 'LoadAnnotations' or pipeline[
-                    'type'] == 'LoadPanopticAnnotations':
-                pipeline['file_client_args'] = file_client_args
-
+        if dataset['type'] in ['CityscapesDataset']:
+            dataset['file_client_args'] = file_client_args
         if 'pipeline' in dataset:
-            replace_img(dataset.pipeline[0])
-            replace_ann(dataset.pipeline[1])
-            if 'dataset' in dataset:
-                # dataset wrapper
-                replace_img(dataset.dataset.pipeline[0])
-                replace_ann(dataset.dataset.pipeline[1])
-        else:
-            # dataset wrapper
-            replace_img(dataset.dataset.pipeline[0])
-            replace_ann(dataset.dataset.pipeline[1])
+            replace_pipline(dataset['pipeline'])
+        if 'dataset' in dataset:
+            _process_dataset(dataset['dataset'])
 
-    def _process_evaluator(evaluator, name):
+    def _process_evaluator(evaluator):
         if evaluator['type'] == 'CocoPanopticMetric':
             evaluator['file_client_args'] = file_client_args
 
     # half ceph
-    _process_pipeline(cfg.train_dataloader.dataset, cfg.filename)
-    _process_pipeline(cfg.val_dataloader.dataset, cfg.filename)
-    _process_pipeline(cfg.test_dataloader.dataset, cfg.filename)
-    _process_evaluator(cfg.val_evaluator, cfg.filename)
-    _process_evaluator(cfg.test_evaluator, cfg.filename)
+    _process_dataset(cfg.train_dataloader.dataset, )
+    _process_dataset(cfg.val_dataloader.dataset)
+    _process_dataset(cfg.test_dataloader.dataset)
+    _process_evaluator(cfg.val_evaluator)
+    _process_evaluator(cfg.test_evaluator)
 
 
 def create_test_job_batch(commands, model_info, args, port):
@@ -169,7 +164,7 @@ def create_test_job_batch(commands, model_info, args, port):
 
     launcher = 'none' if args.local else 'slurm'
     runner = 'python' if args.local else 'srun python'
-    master_port = f'NASTER_PORT={port}'
+    master_port = f'MASTER_PORT={port}'
 
     script_name = osp.join('tools', 'test.py')
     job_script = (f'#!/bin/bash\n'

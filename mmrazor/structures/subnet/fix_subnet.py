@@ -14,8 +14,6 @@ def _dynamic_to_static(model: nn.Module) -> None:
     from mmrazor.models.architectures.dynamic_ops import DynamicMixin
 
     def traverse_children(module: nn.Module) -> None:
-        # TODO
-        # dynamicop must have no dynamic child
         for name, child in module.named_children():
             if isinstance(child, DynamicMixin):
                 setattr(module, name, child.to_static_op())
@@ -30,8 +28,12 @@ def _dynamic_to_static(model: nn.Module) -> None:
 
 def load_fix_subnet(model: nn.Module,
                     fix_mutable: ValidFixMutable,
-                    prefix: str = '') -> None:
+                    prefix: str = '',
+                    extra_prefix: str = '') -> None:
     """Load fix subnet."""
+    if prefix and extra_prefix:
+        raise RuntimeError('`prefix` and `extra_prefix` can not be set at the '
+                           f'same time, but got {prefix} vs {extra_prefix}')
     if isinstance(fix_mutable, str):
         fix_mutable = fileio.load(fix_mutable)
     if not isinstance(fix_mutable, dict):
@@ -62,7 +64,12 @@ def load_fix_subnet(model: nn.Module,
                     # {chosen=xx, meta=xx)
                     chosen = fix_mutable.get(alias, None)
                 else:
-                    mutable_name = name.lstrip(prefix)
+                    if prefix:
+                        mutable_name = name.lstrip(prefix)
+                    elif extra_prefix:
+                        mutable_name = extra_prefix + name
+                    else:
+                        mutable_name = name
                     if mutable_name not in fix_mutable and not isinstance(
                             module, (DerivedMutable, MutableChannelContainer)):
                         raise RuntimeError(

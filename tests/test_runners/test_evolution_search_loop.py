@@ -87,8 +87,10 @@ class TestEvolutionSearchLoop(TestCase):
             score_key='coco/bbox_mAP')
         self.train_cfg = Config(train_cfg)
         self.runner = MagicMock(spec=ToyRunner)
+        self.runner.train_dataloader = MagicMock()
         self.dataloader = DataLoader(ToyDataset(), collate_fn=collate_fn)
         self.evaluator = MagicMock()
+        self.calibrate_bn_statistics = MagicMock()
 
     def tearDown(self):
         shutil.rmtree(self.temp_dir)
@@ -243,6 +245,7 @@ class TestEvolutionSearchLoopWithPredictor(TestCase):
             ))
         self.train_cfg = Config(train_cfg)
         self.runner = MagicMock(spec=ToyRunner)
+        self.runner.train_dataloader = MagicMock()
         self.dataloader = DataLoader(ToyDataset(), collate_fn=collate_fn)
         self.evaluator = MagicMock()
 

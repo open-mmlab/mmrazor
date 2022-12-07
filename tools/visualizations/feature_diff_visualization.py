@@ -20,7 +20,7 @@ def parse_args():
         'config1', help='train config file path for the first model')
     parser.add_argument(
         'config2', help='train config file path for the second model')
-    parser.add_argument('vis-config', help='visualization config file path')
+    parser.add_argument('vis_config', help='visualization config file path')
     parser.add_argument(
         'checkpoint1', help='Checkpoint file for the first model')
     parser.add_argument(

@@ -43,22 +43,14 @@ def build_razor_model_from_cfg(
         model = get_model(**cfg)  # type: ignore
         return model
 
-    from mmrazor.structures import load_fix_subnet
-
-    if cfg.get('_fix_subnet_', None):
-        fix_subnet = cfg.pop('_fix_subnet_')
-        mutable_model = build_from_cfg(cfg, registry, default_args)
-        load_fix_subnet(mutable_model, fix_subnet)
-        return mutable_model
+    return_architecture = False
+    if cfg.get('_return_architecture_', None):
+        return_architecture = cfg.pop('_return_architecture_')
+    razor_model = build_from_cfg(cfg, registry, default_args)
+    if return_architecture:
+        return razor_model.architecture
     else:
-        return_architecture = False
-        if cfg.get('_return_architecture_', None):
-            return_architecture = cfg.pop('_return_architecture_')
-        razor_model = build_from_cfg(cfg, registry, default_args)
-        if return_architecture:
-            return razor_model.architecture
-        else:
-            return razor_model
+        return razor_model
 
 
 # Registries For Runner and the related
@@ -111,3 +103,14 @@ TASK_UTILS = Registry('task util', parent=MMENGINE_TASK_UTILS)
 VISUALIZERS = Registry('visualizer', parent=MMENGINE_VISUALIZERS)
 # manage visualizer backend
 VISBACKENDS = Registry('vis_backend', parent=MMENGINE_VISBACKENDS)
+
+
+# manage sub models for downstream repos
+@MODELS.register_module()
+def sub_model(cfg, fix_subnet, prefix='', extra_prefix=''):
+    model = MODELS.build(cfg)
+    from mmrazor.structures import load_fix_subnet
+
+    load_fix_subnet(
+        model, fix_subnet, prefix=prefix, extra_prefix=extra_prefix)
+    return model
