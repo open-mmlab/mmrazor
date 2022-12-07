@@ -82,7 +82,7 @@ def _divide_and_divise(x: int, ratio: int, divisor: int = 8) -> int:
     """Helper function for divide and divise."""
     new_x = x // ratio
 
-    return make_divisible(new_x, divisor)
+    return make_divisible(new_x, divisor)  # type: ignore
 
 
 def _divide_choice_fn(mutable: MutableProtocol,
