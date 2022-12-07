@@ -9,7 +9,7 @@ from mmrazor.models.mutables import (ChannelUnitType, MutableChannelUnit,
                                      SequentialMutableChannelUnit)
 from mmrazor.models.mutables.mutable_channel.units.channel_unit import \
     ChannelUnit
-from mmrazor.models.task_modules.tracer.prune_tracer import ChannelAnalyzer
+from mmrazor.models.task_modules.tracer.channel_analyzer import ChannelAnalyzer
 from mmrazor.registry import MODELS, TASK_UTILS
 from ..base_mutator import BaseMutator
 from ..group_mixin import GroupMixin
@@ -110,7 +110,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
         self._name2module = dict(supernet.named_modules())
 
         if isinstance(self.parse_cfg,
-                      ChannelAnalyzer) or 'Tracer' in self.parse_cfg['type']:
+                      ChannelAnalyzer) or 'Analyzer' in self.parse_cfg['type']:
             units = self._prepare_from_tracer(supernet, self.parse_cfg)
         elif self.parse_cfg['type'] == 'Config':
             units = self._prepare_from_cfg(supernet, self.units_cfg)

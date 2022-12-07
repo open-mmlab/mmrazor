@@ -12,7 +12,7 @@ from unittest import TestCase
 import torch
 from mmengine import MMLogger
 
-from mmrazor.models.task_modules.tracer.prune_tracer import ChannelAnalyzer
+from mmrazor.models.task_modules.tracer.channel_analyzer import ChannelAnalyzer
 from ...data.model_library import ModelGenerator
 from ...data.tracer_passed_models import (PassedModelManager,
                                           backward_passed_library,
