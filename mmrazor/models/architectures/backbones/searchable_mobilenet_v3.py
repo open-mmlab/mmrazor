@@ -270,14 +270,9 @@ class AttentiveMobileNetV3(BaseBackbone):
                     num_channels=max(out_channels),
                     candidate_choices=out_channels))
 
-            se_ratios = [i / 4 for i in expand_ratios]
-            mutable_se_channels = OneShotMutableValue(
-                value_list=se_ratios, default_value=max(se_ratios))
-
             for k in range(max(self.num_blocks_list[i])):
                 mutate_mobilenet_layer(layer[k], mid_mutable,
                                        getattr(self, mutable_channel_name),
-                                       mutable_se_channels,
                                        mutable_expand_value,
                                        mutable_kernel_size)
                 mid_mutable = getattr(self, mutable_channel_name)

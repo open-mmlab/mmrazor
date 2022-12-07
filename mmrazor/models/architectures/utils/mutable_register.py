@@ -31,8 +31,8 @@ def mutate_conv_module(
 
 
 def mutate_mobilenet_layer(mb_layer: MBBlock, mutable_in_channels,
-                           mutable_out_channels, mutable_se_channels,
-                           mutable_expand_value, mutable_kernel_size):
+                           mutable_out_channels, mutable_expand_value,
+                           mutable_kernel_size):
     """Mutate MobileNet layers."""
     mb_layer.mutable_expand_value = mutable_expand_value
     mb_layer.derived_expand_channels = \
