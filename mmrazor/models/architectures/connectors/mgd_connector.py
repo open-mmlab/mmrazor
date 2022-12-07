@@ -56,7 +56,9 @@ class MGDConnector(BaseConnector):
 
         device = feature.device
         mat = torch.rand((N, 1, H, W)).to(device)
-        mat = torch.where(mat > 1 - self.lambda_mgd, 0, 1).to(device)
+        mat = torch.where(mat > 1 - self.lambda_mgd,
+                          torch.zeros(1).to(device),
+                          torch.ones(1).to(device)).to(device)
 
         masked_fea = torch.mul(feature, mat)
         new_fea = self.generation(masked_fea)
