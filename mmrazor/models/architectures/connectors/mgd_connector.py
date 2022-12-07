@@ -9,7 +9,7 @@ from .base_connector import BaseConnector
 
 
 @MODELS.register_module()
-class MGDConncetor(BaseConnector):
+class MGDConnector(BaseConnector):
     """PyTorch version of `Masked Generative Distillation.
 
     <https://arxiv.org/abs/2205.01529>`

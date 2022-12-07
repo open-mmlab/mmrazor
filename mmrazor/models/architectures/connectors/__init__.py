@@ -4,12 +4,12 @@ from .convmodule_connector import ConvModuleConncetor
 from .crd_connector import CRDConnector
 from .factor_transfer_connectors import Paraphraser, Translator
 from .fbkd_connector import FBKDStudentConnector, FBKDTeacherConnector
-from .mgd_connector import MGDConncetor
+from .mgd_connector import MGDConnector
 from .ofd_connector import OFDTeacherConnector
 from .torch_connector import TorchFunctionalConnector, TorchNNConnector
 
 __all__ = [
     'ConvModuleConncetor', 'Translator', 'Paraphraser', 'BYOTConnector',
     'FBKDTeacherConnector', 'FBKDStudentConnector', 'TorchFunctionalConnector',
-    'CRDConnector', 'TorchNNConnector', 'OFDTeacherConnector', 'MGDConncetor'
+    'CRDConnector', 'TorchNNConnector', 'OFDTeacherConnector', 'MGDConnector'
 ]

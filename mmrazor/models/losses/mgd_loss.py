@@ -26,15 +26,28 @@ class MGDLoss(nn.Module):
         """Forward function.
 
         Args:
-            preds_S(Tensor): Bs*C*H*W, student's feature map
-            preds_T(Tensor): Bs*C*H*W, teacher's feature map
+            preds_S(torch.Tensor): Bs*C*H*W, student's feature map
+            preds_T(torch.Tensor): Bs*C*H*W, teacher's feature map
+
+        Return:
+            torch.Tensor: The calculated loss value.
         """
         assert preds_S.shape == preds_T.shape
         loss = self.get_dis_loss(preds_S, preds_T) * self.alpha_mgd
 
         return loss
 
-    def get_dis_loss(self, preds_S, preds_T):
+    def get_dis_loss(self, preds_S: torch.Tensor,
+                     preds_T: torch.Tensor) -> torch.Tensor:
+        """Get MSE distance of preds_S and preds_T.
+
+        Args:
+            preds_S(torch.Tensor): Bs*C*H*W, student's feature map
+            preds_T(torch.Tensor): Bs*C*H*W, teacher's feature map
+
+        Return:
+            torch.Tensor: The calculated mse distance value.
+        """
         N, C, H, W = preds_T.shape
         dis_loss = self.loss_mse(preds_S, preds_T) / N
 

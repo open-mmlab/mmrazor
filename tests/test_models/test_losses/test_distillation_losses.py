@@ -7,7 +7,8 @@ from mmengine.structures import BaseDataElement
 from mmrazor import digit_version
 from mmrazor.models import (ABLoss, ActivationLoss, ATLoss, CRDLoss, DKDLoss,
                             FBKDLoss, FTLoss, InformationEntropyLoss,
-                            KDSoftCELoss, OFDLoss, OnehotLikeLoss, PKDLoss)
+                            KDSoftCELoss, MGDLoss, OFDLoss, OnehotLikeLoss,
+                            PKDLoss)
 
 
 class TestLosses(TestCase):
@@ -204,3 +205,15 @@ class TestLosses(TestCase):
         loss = pkd_loss(feats_S, feats_T)
         self.assertTrue(loss.numel() == 1)
         self.assertTrue(0. <= loss <= 1.)
+
+    def test_mgd_loss(self):
+        mgd_loss = MGDLoss(alpha_mgd=0.00002)
+        feats_S, feats_T = torch.rand(2, 256, 4, 4), torch.rand(2, 256, 4, 4)
+        loss = mgd_loss(feats_S, feats_T)
+        self.assertTrue(loss.numel() == 1)
+
+        num_stages = 4
+        feats_S = (torch.rand(2, 256, 4, 4) for _ in range(num_stages))
+        feats_T = (torch.rand(2, 256, 4, 4) for _ in range(num_stages))
+        loss = mgd_loss(feats_S, feats_T)
+        self.assertTrue(loss.numel() == 1)
