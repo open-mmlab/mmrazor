@@ -11,7 +11,7 @@ from mmrazor.models.mutables.mutable_channel import (
 from mmrazor.models.mutators.channel_mutator import ChannelMutator
 from mmrazor.models.task_modules import ChannelAnalyzer
 from mmrazor.registry import MODELS
-from ...data.models import DynamicAttention, DynamicLinearModel
+from ...data.models import DynamicAttention, DynamicLinearModel, DynamicMMBlock
 from ...data.tracer_passed_models import backward_passed_library
 
 

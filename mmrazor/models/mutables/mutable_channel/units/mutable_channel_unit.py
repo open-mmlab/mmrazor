@@ -8,9 +8,10 @@ import torch
 import torch.nn as nn
 
 from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
-from mmrazor.models.mutables import DerivedMutable, MutableValue
+from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables.mutable_channel import (BaseMutableChannel,
                                                      MutableChannelContainer)
+from mmrazor.models.mutables.mutable_value import MutableValue
 from .channel_unit import Channel, ChannelUnit
 
 expand_ratio_warning_list = []
