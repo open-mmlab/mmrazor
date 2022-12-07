@@ -5,10 +5,10 @@ from typing import Callable, Dict
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mmengine.registry import MODELS
 from torch import Tensor
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
+from mmrazor.registry import MODELS
 from ..mixins.dynamic_conv_mixins import (BigNasConvMixin, DynamicConvMixin,
                                           FuseConvMixin, OFAConvMixin)
 
