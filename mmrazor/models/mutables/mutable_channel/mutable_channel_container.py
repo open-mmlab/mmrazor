@@ -83,8 +83,13 @@ class MutableChannelContainer(BaseMutableChannel):
         if end == -1:
             end = mutable.current_choice + start
         if is_to_output_channel:
-            container: MutableChannelContainer = module.get_mutable_attr(
-                'out_channels')
+            from mmcv.cnn import ConvModule
+            if not isinstance(module, ConvModule):
+                container: MutableChannelContainer = module.get_mutable_attr(
+                    'out_channels')
+            else:
+                container: MutableChannelContainer = module.conv.get_mutable_attr(
+                    'out_channels')
         else:
             container = module.get_mutable_attr('in_channels')
         assert isinstance(container, MutableChannelContainer)

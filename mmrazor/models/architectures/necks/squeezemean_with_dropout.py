@@ -29,6 +29,7 @@ class SqueezeMeanPoolingWithDropout(BaseModule):
         'to B C*H*W output if dim = 2'
         for i in range(x.ndim - 1, 1, -1):
             x = x.mean(i, keepdim=True)
+        for i in range(x.ndim - 1, 1, -1):
             x = torch.squeeze(x, -1)
         return x
 

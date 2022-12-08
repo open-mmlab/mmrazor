@@ -144,9 +144,9 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         if self.resume_from:
             self._resume()
 
-        while self._epoch < self._max_epochs:
-            self.run_epoch()
-            self._save_searcher_ckpt()
+        # while self._epoch < self._max_epochs:
+        #     self.run_epoch()
+        #     self._save_searcher_ckpt()
 
         self._save_best_fix_subnet()
 
@@ -329,8 +329,11 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
     def _save_best_fix_subnet(self):
         """Save best subnet in searched top-k candidates."""
         if self.runner.rank == 0:
-            best_random_subnet = self.top_k_candidates.subnets[0]
-            self.model.set_subnet(best_random_subnet)
+            # best_random_subnet = self.top_k_candidates.subnets[0]
+            # self.model.set_subnet(best_random_subnet)
+
+            # self.model.set_min_subnet()
+            self.model.set_attentivenas_subnet('a4')
 
             best_fix_subnet = export_fix_subnet(self.model)
             best_fix_subnet = self.convert_fix_subnet(best_fix_subnet)

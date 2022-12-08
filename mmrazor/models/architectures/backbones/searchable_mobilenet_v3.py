@@ -152,10 +152,6 @@ class AttentiveMobileNetV3(BaseBackbone):
         #     num_channels=self.in_channels,
         #     candidate_choices=self.first_out_channels_list)
 
-        self.last_mutable = OneShotMutableChannel(
-            num_channels=self.in_channels,
-            candidate_choices=self.first_out_channels_list)
-
         for i, (num_blocks, kernel_sizes, expand_ratios, num_channels) in \
             enumerate(zip(self.num_blocks_list, self.kernel_size_list,
                           self.expand_ratio_list, self.num_channels_list)):
@@ -249,12 +245,22 @@ class AttentiveMobileNetV3(BaseBackbone):
         OneShotMutableChannelUnit._register_channel_container(
             self, MutableChannelContainer)
 
-<<<<<<< HEAD
-        mutate_conv_module(
-            self.first_conv, mutable_out_channels=self.last_mutable)
+        self.last_mutable = OneShotMutableChannel(
+            num_channels=max(self.first_out_channels_list),
+            candidate_choices=self.first_out_channels_list)
 
-=======
->>>>>>> github/dev-1.x
+        # self.first_module = self.last_mutable.derive_same_mutable
+
+        # mutate_conv_module(
+        #     self.first_conv, mutable_out_channels=self.first_module)
+        
+        MutableChannelContainer.register_mutable_channel_to_module(
+            self.first_conv,
+            self.last_mutable.derive_same_mutable,
+            True,
+            start=0,
+            end=24)
+
         # mutate the built mobilenet layers
         for i, layer in enumerate(self.layers[:-1]):
             num_blocks = self.num_blocks_list[i]
@@ -266,40 +272,28 @@ class AttentiveMobileNetV3(BaseBackbone):
                 value_list=kernel_sizes, default_value=max(kernel_sizes))
             mutable_expand_value = OneShotMutableValue(
                 value_list=expand_ratios, default_value=max(expand_ratios))
+            layer.out_channels = OneShotMutableChannel(
+                num_channels=max(out_channels), candidate_choices=out_channels)
 
-            mutable_channel_name = 'layer' + str(i +
-<<<<<<< HEAD
-                                                 1) + '_mutable_out_channels'
-=======
-                                                 1) + '.mutable_out_channels'
->>>>>>> github/dev-1.x
-            setattr(
-                self, mutable_channel_name,
-                OneShotMutableChannel(
-                    num_channels=max(out_channels),
-                    candidate_choices=out_channels))
+            # mutable_channel_name = f'layer{i+1}_mutable_out_channels'
+            # setattr(
+            #     self, mutable_channel_name,
+            #     OneShotMutableChannel(
+            #         num_channels=max(out_channels),
+            #         candidate_choices=out_channels))
 
             se_ratios = [i / 4 for i in expand_ratios]
             mutable_se_channels = OneShotMutableValue(
                 value_list=se_ratios, default_value=max(se_ratios))
 
-<<<<<<< HEAD
-            # if i == 0:
-            #     mutate_conv_module(
-            #         self.first_conv, mutable_out_channels=self.last_mutable)
-=======
-            if i == 0:
-                mutate_conv_module(
-                    self.first_conv, mutable_out_channels=self.last_mutable)
->>>>>>> github/dev-1.x
-
             for k in range(max(self.num_blocks_list[i])):
-                mutate_mobilenet_layer(layer[k], self.last_mutable,
-                                       getattr(self, mutable_channel_name),
+                mutate_mobilenet_layer(layer[k], 
+                                       self.last_mutable,
+                                       layer.out_channels,
                                        mutable_se_channels,
                                        mutable_expand_value,
                                        mutable_kernel_size)
-                self.last_mutable = getattr(self, mutable_channel_name)
+                self.last_mutable = layer.out_channels
 
             mutable_depth = OneShotMutableValue(
                 value_list=num_blocks, default_value=max(num_blocks))
@@ -325,13 +319,20 @@ class AttentiveMobileNetV3(BaseBackbone):
         self.last_mutable = self.last_mutable_out_channels
 
     def forward(self, x):
+        # import pdb;pdb.set_trace()
+        # print(x[:, 0, 0:5, 0]) # tensor([[-0.5085, -0.6097, -0.8077,  0.4523,  1.3825]], device='cuda:0')
         x = self.first_conv(x)
+        # tensor([[-0.0688,  0.3314,  7.5532,  0.9856,  4.2129]], device='cuda:0')
         outs = []
-        for i, layer in enumerate(self.layers):
+        for i, layer in enumerate(self.layers): # 8
             x = layer(x)
+            if i in [0, 2, 3, 4, 5, 6]:
+                print(x.shape)
+                # import pdb;pdb.set_trace() 
             if i in self.out_indices:
                 outs.append(x)
 
+        # outs[0][:, 5:10, 0, 0] tensor([[590458.9375, 432793.2812, 269742.4688,     -0.0000,     -0.0000]],
         return tuple(outs)
 
     def train(self, mode=True):

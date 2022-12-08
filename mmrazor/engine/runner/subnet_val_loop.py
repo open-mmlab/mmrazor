@@ -62,10 +62,10 @@ class SubnetValLoop(ValLoop, CalibrateBNMixin):
         all_metrics = dict()
 
         # sample subnet by mutator
-        for scale in ['a_max', 'a0', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6']:
-            self._model.set_attentivenas_subnet(scale)
-            metrics = self._evaluate_once()
-            all_metrics.update(add_prefix(metrics, scale))
+        # for scale in ['a_max', 'a0', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6']:
+        #     self._model.set_attentivenas_subnet(scale)
+        #     metrics = self._evaluate_once()
+        #     all_metrics.update(add_prefix(metrics, scale))
 
         if self.evaluate_fixed_subnet:
             metrics = self._evaluate_once()
@@ -93,8 +93,8 @@ class SubnetValLoop(ValLoop, CalibrateBNMixin):
 
     def _evaluate_once(self) -> Dict:
         """Evaluate a subnet once with BN re-calibration."""
-        self.calibrate_bn_statistics(self.runner.train_dataloader,
-                                     self.calibrate_sample_num)
+        # self.calibrate_bn_statistics(self.runner.train_dataloader,
+        #                              self.calibrate_sample_num)
         self.runner.model.eval()
         for idx, data_batch in enumerate(self.dataloader):
             self.run_iter(idx, data_batch)
