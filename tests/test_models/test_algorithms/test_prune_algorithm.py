@@ -11,6 +11,7 @@ from mmengine.model import BaseModel
 from mmrazor.models.algorithms.pruning.ite_prune_algorithm import (
     ItePruneAlgorithm, ItePruneConfigManager)
 from mmrazor.registry import MODELS
+from ...utils.set_dist_env import SetDistEnv
 
 
 # @TASK_UTILS.register_module()
@@ -232,6 +233,31 @@ class TestItePruneAlgorithm(unittest.TestCase):
 
             algorithm.init_weights()
             self._set_epoch_ite(1, 2, epoch)
+            algorithm.forward(
+                data['inputs'], data['data_samples'], mode='loss')
+            self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
+
+    def test_dist_init(self):
+        if DEVICE != torch.device('cuda:0'):
+            self.skipTest('not use cuda')
+        with SetDistEnv(DEVICE == torch.device('cuda:0')):
+            iter_per_epoch = 10
+            epoch_step = 2
+            times = 3
+            data = self.fake_cifar_data()
+
+            # prepare checkpoint
+            model_cfg = copy.deepcopy(MODEL_CFG)
+
+            algorithm = ItePruneAlgorithm(
+                model_cfg,
+                mutator_cfg=MUTATOR_CONFIG_NUM,
+                target_pruning_ratio=None,
+                step_freq=epoch_step,
+                prune_times=times,
+            ).to(DEVICE)
+            algorithm.init_weights()
+            self._set_epoch_ite(4, 5, 6)
             algorithm.forward(
                 data['inputs'], data['data_samples'], mode='loss')
             self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)

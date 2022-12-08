@@ -175,15 +175,24 @@ class DynamicConvMixin(DynamicChannelMixin):
             # depth-wise conv
             weight = weight[out_mask]
         else:
-            raise NotImplementedError(
-                'Current `ChannelMutator` only support pruning the depth-wise '
-                '`nn.Conv2d` or `nn.Conv2d` module whose group number equals '
-                f'to one, but got {self.groups}.')
+            # group-wise conv
+            in_mask_ = in_mask.reshape([self.groups, -1])  # G in/G
+            in_per_group = in_mask_.sum(dim=-1)[0].item()
+            assert (in_mask_.sum(dim=-1) == in_per_group).all()
+            out_mask_ = out_mask.reshape([self.groups, -1])  # G out/G
+            out_per_group = out_mask_.sum(dim=-1)[0].item()
+            assert (out_mask_.sum(dim=-1) == out_per_group).all()
 
-        bias = self.bias[out_mask].contiguous(
-        ) if self.bias is not None else None
+            mask = out_mask_.unsqueeze(-1) * in_mask_.unsqueeze(
+                -2)  # G out/G in/G
+            mask = mask.flatten()
+            weight = weight.flatten(0, 1)
+            weight = weight[mask]
+            weight = weight.reshape(
+                [self.groups * out_per_group, in_per_group, *self.kernel_size])
 
-        return weight.contiguous(), bias
+        bias = self.bias[out_mask] if self.bias is not None else None
+        return weight, bias
 
     def forward_mixin(self: _ConvNd, x: Tensor) -> Tensor:
         """Forward of dynamic conv2d OP."""
