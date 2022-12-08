@@ -106,7 +106,7 @@ class MMArchitectureQuant(BaseAlgorithm):
 
         qmodels = nn.ModuleDict()
 
-        self.quantizer._swap_ff_with_fxff(model)
+        self.quantizer.swap_ff_with_fxff(model)
         tracer = self.quantizer.tracer
 
         for mode in self.forward_modes:

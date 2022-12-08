@@ -17,9 +17,9 @@ class QConfigHander():
             a_observer = MODELS.get(qconfig['a_observer']['type'])
             w_is_per_channel = False
             a_is_per_channel = False
-            if 'PerChannel' in w_observer.__class__.__name__:
+            if 'PerChannel' in w_observer.__name__:
                 w_is_per_channel = True
-            if 'PerChannel' in a_observer.__class__.__name__:
+            if 'PerChannel' in a_observer.__name__:
                 a_is_per_channel = False
             self.w_qscheme = QSchemeHander(is_per_channel=w_is_per_channel,
                                             **qconfig['w_qscheme'])
@@ -65,10 +65,13 @@ class QSchemeHander(object):
     """
 
     def __init__(self,
+                 qdtype='quint8',
                  bit=8,
                  is_symmetry=True,
                  is_per_channel=False,
                  **kwargs):
+        assert qdtype in ('quint8', 'qint8')
+        self.qdtype = qdtype
         self.bit = bit
         self.is_symmetry = is_symmetry
         self.is_per_channel = is_per_channel
@@ -87,9 +90,10 @@ class QSchemeHander(object):
         self.kwargs = kwargs
 
     def to_observer_params(self):
-        quant_min = 0
-        quant_max = 2**self.bit - 1
-        if self.is_symmetry:
+        if self.qdtype == 'quint8':
+            quant_min = 0
+            quant_max = 2**self.bit - 1
+        else:
             quant_max = 2**(self.bit - 1) - 1
             if self.is_symmetric_range:
                 quant_min = -2**(self.bit - 1) + 1
@@ -98,6 +102,7 @@ class QSchemeHander(object):
 
         # `dtype` will be same as BackenConfig's
         naive_para = {
+            'dtype': torch.quint8 if self.qdtype == 'quint8' else torch.int8,
             'quant_min': quant_min,
             'quant_max': quant_max,
             'qscheme': self.torch_qscheme,
@@ -105,12 +110,12 @@ class QSchemeHander(object):
         }
         if self.is_per_channel:
             naive_para['ch_axis'] = 0
-        
-        naive_para.update(self.kwargs)
-        return naive_para
+        all_para = self.kwargs.copy()
+        all_para.update(naive_para)
+        return all_para
 
     def __str__(self):
-        return f'bit: {self.bit} / is_symmetry: {self.is_symmetry} / \
+        return f'dtype: {self.dtype} / bit: {self.bit} / is_symmetry: {self.is_symmetry} / \
                 is_per_channel: {self.is_per_channel} \
                 / extra_kwargs: {self.kwargs}'
 

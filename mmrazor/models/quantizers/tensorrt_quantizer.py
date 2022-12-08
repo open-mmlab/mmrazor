@@ -5,31 +5,22 @@ from torch.ao.quantization import disable_observer
 from mmrazor.models.task_modules.tracer.fx.custom_tracer import \
     build_graphmodule
 from mmrazor.registry import MODELS
-from mmrazor.structures.quantization import DefaultQconfigs
-from .base import CustomQuantizer
+from .base import WithDeployQuantizer
 
 
 @MODELS.register_module()
-class TensorRTQuantizer(CustomQuantizer):
+class TensorRTQuantizer(WithDeployQuantizer):
     """Quantizer for TensorRT backend."""
 
-    support_bits = [8]
-    support_w_mode = ['per_channel']
+    backend: 'tensorrt'
+    support_w_mode = ['per_tensor', 'per_channel']
     support_a_mode = ['per_tensor']
 
     def __init__(self,
-                 qconfig=DefaultQconfigs['tensorrt'],
-                 is_qat=True,
-                 skipped_methods=None,
-                 prepare_custom_config_dict=None,
-                 convert_custom_config_dict=None,
-                 equalization_qconfig_dict=None,
-                 _remove_qconfig=True,
+                 global_qconfig,
+                 tracer=dict(type='CustomTracer'),
                  init_cfg=None):
-        super().__init__(qconfig, is_qat, skipped_methods,
-                         prepare_custom_config_dict,
-                         convert_custom_config_dict, equalization_qconfig_dict,
-                         _remove_qconfig, init_cfg)
+        super().__init__(global_qconfig, tracer, init_cfg)
 
     def prepare_for_mmdeploy(self, model, dummy_input=None, checkpoint=None):
 

@@ -1,4 +1,4 @@
-_base_ = ['mmcls::resnet/resnet18_8xb16_cifar10.py']
+_base_ = ['mmcls::resnet/resnet18_8xb32_in1k.py']
 
 test_cfg = dict(
     type='mmrazor.PTQLoop'
@@ -25,7 +25,7 @@ model = dict(
     _delete_=True,
     type='mmrazor.MMArchitectureQuant',
     architecture=_base_.model,
-    float_checkpoint='/tmp/humu/resnet18_b16x8_cifar10_20210528-bd6371c8.pth',
+    float_checkpoint='/tmp/humu/resnet18_8xb32_in1k_20210831-fbbb1da6.pth',
     quantizer=dict(
         type='mmrazor.WithoutDeployQuantizer',
         qconfig_mapping=qconfig_mapping,

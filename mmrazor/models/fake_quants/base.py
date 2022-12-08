@@ -7,7 +7,7 @@ from mmrazor.models.utils import (_is_float_qparams, _is_per_channel,
 from mmrazor.registry import MODELS
 
 
-@MODELS.register_module()
+# @MODELS.register_module()
 class FakeQuantize(FakeQuantizeBase):
 
     scale: torch.Tensor

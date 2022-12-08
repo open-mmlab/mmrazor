@@ -212,6 +212,7 @@ class PTQLoop(TestLoop):
         for idx, data_batch in enumerate(self.dataloader):
             self.run_iter(idx, data_batch)
 
+        self.runner.model.sync_param('tensor')
         self.runner.call_hook('after_test_epoch', metrics=None)
         self.runner.call_hook('after_test')
 
