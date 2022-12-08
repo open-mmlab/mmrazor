@@ -10,21 +10,35 @@ from mmengine.evaluator import Evaluator
 from mmengine.runner import TestLoop
 from torch.utils.data import DataLoader
 
-from mmrazor.models.task_modules import ResourceEstimator
-from mmrazor.registry import LOOPS
+from mmrazor.registry import LOOPS, TASK_UTILS
 from mmrazor.structures import export_fix_subnet
-from .utils import get_subnet_flops
+from .utils import check_subnet_resources
 
 
 @LOOPS.register_module()
-class GreedySearchLoop(TestLoop):
+class AutoSlimGreedySearchLoop(TestLoop):
+    """Loop for Greedy searching in AutoSlim.
+
+    Args:
+        runner (Runner): A reference of runner.
+        dataloader (Dataloader or dict): A dataloader object or a dict to
+            build a dataloader.
+        evaluator (Evaluator or dict or list): Used for computing metrics.
+        target_flops (Tuple[float]): The FLOPs limitation of target subnets.
+        estimator_cfg (dict, Optional): Used for building a resource estimator.
+            Defaults to None.
+        score_key (str): Specify one metric in evaluation results to score
+            candidates. Defaults to 'accuracy_top-1'.
+        resume_from (str, optional): Specify the path of saved .pkl file for
+            resuming searching.
+    """
 
     def __init__(self,
                  runner,
                  dataloader: Union[DataLoader, Dict],
                  evaluator: Union[Evaluator, Dict, List],
                  target_flops: Tuple[float],
-                 resource_estimator_cfg: Dict[str, Any] = dict(),
+                 estimator_cfg: Dict[str, Any] = dict(),
                  score_key: str = 'accuracy/top1',
                  resume_from: Optional[str] = None):
         super().__init__(runner, dataloader, evaluator)
@@ -40,7 +54,12 @@ class GreedySearchLoop(TestLoop):
         self.target_flops = sorted(target_flops, reverse=True)
         self.score_key = score_key
         self.resume_from = resume_from
-        self.estimator = ResourceEstimator(**resource_estimator_cfg)
+
+        # initialize estimator
+        estimator_cfg = dict() if estimator_cfg is None else estimator_cfg
+        if 'type' not in estimator_cfg:
+            estimator_cfg['type'] = 'mmrazor.ResourceEstimator'
+        self.estimator = TASK_UTILS.build(estimator_cfg)
 
         if self.runner.distributed:
             self.model = runner.model.module
@@ -60,9 +79,9 @@ class GreedySearchLoop(TestLoop):
 
         current_subnet_choices = self._channel_bins2choices(
             self.current_subnet)
-        self.current_flops = get_subnet_flops(self.model,
-                                              current_subnet_choices,
-                                              self.estimator)
+        _, results = check_subnet_resources(self.model, current_subnet_choices,
+                                            self.estimator)
+        self.current_flops = results['flops']
 
         self.searched_subnet: List[Dict[str, int]] = []
         self.searched_subnet_flops: List[float] = []
@@ -116,9 +135,10 @@ class GreedySearchLoop(TestLoop):
                 self.current_subnet = best_subnet
                 current_subnet_choices = self._channel_bins2choices(
                     self.current_subnet)
-                self.current_flops = get_subnet_flops(self.model,
-                                                      current_subnet_choices,
-                                                      self.estimator)
+                _, results = check_subnet_resources(self.model,
+                                                    current_subnet_choices,
+                                                    self.estimator)
+                self.current_flops = results['flops']
                 self.runner.logger.info(
                     f'Greedily find model, score: {best_score}, '
                     f'{self.current_subnet}, FLOPS: {self.current_flops}')

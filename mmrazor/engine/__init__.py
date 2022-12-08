@@ -3,14 +3,14 @@ from .hooks import DumpSubnetHook, EstimateResourcesHook
 from .optimizers import SeparateOptimWrapperConstructor
 from .runner import (AutoSlimValLoop, DartsEpochBasedTrainLoop,
                      DartsIterBasedTrainLoop, EvolutionSearchLoop,
-                     GreedySamplerTrainLoop, SelfDistillValLoop,
-                     SingleTeacherDistillValLoop, SlimmableValLoop,
-                     SubnetValLoop, AutoSlimGreedySearchLoop)
+                     GreedySamplerTrainLoop, AutoSlimGreedySearchLoop,
+                     SelfDistillValLoop, SingleTeacherDistillValLoop,
+                     SlimmableValLoop, SubnetValLoop)
 
 __all__ = [
     'SeparateOptimWrapperConstructor', 'DumpSubnetHook',
     'SingleTeacherDistillValLoop', 'DartsEpochBasedTrainLoop',
     'DartsIterBasedTrainLoop', 'SlimmableValLoop', 'EvolutionSearchLoop',
     'GreedySamplerTrainLoop', 'AutoSlimValLoop', 'EstimateResourcesHook',
-    'SelfDistillValLoop', 'SubnetValLoop', 'AutoSlimGreedySearchLoop'
+    'SelfDistillValLoop', 'AutoSlimGreedySearchLoop', 'SubnetValLoop'
 ]

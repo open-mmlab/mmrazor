@@ -11,7 +11,7 @@ val_evaluator = None
 
 test_cfg = dict(
     _delete_=True,
-    type='mmrazor.GreedySearchLoop',
+    type='mmrazor.AutoSlimGreedySearchLoop',
     dataloader=_base_.test_dataloader,
     evaluator=_base_.test_evaluator,
     target_flops=(500., 300., 200.))

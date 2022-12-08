@@ -13,7 +13,7 @@ from mmcls.structures import ClsDataSample
 from mmengine.config import Config
 from torch.utils.data import DataLoader, Dataset
 
-from mmrazor.engine import GreedySearchLoop
+from mmrazor.engine import AutoSlimGreedySearchLoop
 from mmrazor.models.algorithms import AutoSlim
 from mmrazor.registry import LOOPS
 
@@ -136,12 +136,12 @@ class ToyRunner:
         pass
 
 
-class TestGreedySearchLoop(TestCase):
+class TestAutoSlimGreedySearchLoop(TestCase):
     device: str = 'cpu'
 
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
-        train_cfg = dict(type='GreedySearchLoop', target_flops=(680, ))
+        train_cfg = dict(type='AutoSlimGreedySearchLoop', target_flops=(680, ))
         self.train_cfg = Config(train_cfg)
         self.runner = MagicMock(spec=ToyRunner)
         self.runner.model = self.prepare_model(MUTATOR_CFG, DISTILLER_CFG,
@@ -174,7 +174,7 @@ class TestGreedySearchLoop(TestCase):
         loop_cfg.dataloader = self.dataloader
         loop_cfg.evaluator = self.evaluator
         loop = LOOPS.build(loop_cfg)
-        self.assertIsInstance(loop, GreedySearchLoop)
+        self.assertIsInstance(loop, AutoSlimGreedySearchLoop)
 
     def test_run(self):
         # test_run_epoch: distributed == False
@@ -187,6 +187,5 @@ class TestGreedySearchLoop(TestCase):
         loop._epoch = 1
         self.runner.distributed = False
         self.runner.work_dir = self.temp_dir
-        # self.runner.model.sample_subnet = MagicMock(return_value=fake_subnet)
         loop.run()
         self.assertEqual(len(loop.searched_subnet), 1)
