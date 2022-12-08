@@ -79,8 +79,9 @@ model = dict(
             type='DCFFChannelUnit',
             units='configs/pruning/mmdet/dcff/resnet_det.json'),
         parse_cfg=dict(
-            type='BackwardTracer',
-            loss_calculator=dict(type='TwoStageDetectorPseudoLoss'))),
+            type='ChannelAnalyzer',
+            demo_input=(1, 3, 224, 224),
+            tracer_type='BackwardTracer')),
     target_pruning_ratio=target_pruning_ratio,
     step_freq=1,
     linear_schedule=False,

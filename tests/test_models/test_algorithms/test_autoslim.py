@@ -47,9 +47,7 @@ MUTATOR_CFG = dict(
         default_args=dict(
             candidate_choices=list(i / 12 for i in range(2, 13)),
             choice_mode='ratio')),
-    parse_cfg=dict(
-        type='BackwardTracer',
-        loss_calculator=dict(type='ImageClassifierPseudoLoss')))
+    parse_cfg=dict(type='ChannelAnalyzer'))
 
 DISTILLER_CFG = dict(
     type='ConfigurableDistiller',

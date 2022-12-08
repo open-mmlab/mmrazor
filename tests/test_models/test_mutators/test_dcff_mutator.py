@@ -91,11 +91,7 @@ def test_DCFF_channel_mutator() -> None:
     imgs = torch.randn(16, 3, 224, 224)
 
     # ResBlock
-    mutator = DCFFChannelMutator(
-        channel_unit_cfg=dict(type='DCFFChannelUnit'),
-        parse_cfg=dict(
-            type='BackwardTracer',
-            loss_calculator=dict(type='ImageClassifierPseudoLoss')))
+    mutator = DCFFChannelMutator(channel_unit_cfg=dict(type='DCFFChannelUnit'))
 
     target_pruning_ratio = {
         0: 0.5,

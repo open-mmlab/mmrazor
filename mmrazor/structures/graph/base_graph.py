@@ -121,17 +121,27 @@ class BaseGraph(Generic[BASENODE]):
         if node.name not in self.nodes:
             self.nodes[node.name] = node
         else:
-            raise BaseException(f'{node.name} already exists in graph')
+            raise Exception(f'{node.name} already exists in graph')
 
     def connect(self, pre_node: BASENODE, next_node: BASENODE):
         """Add an edge from pre_node to next_node."""
-        assert pre_node in self and next_node in self
+        pre_node_ = self.find_node(pre_node)
+        next_node_ = self.find_node(next_node)
+        assert pre_node_ is not None and next_node_ is not None, \
+            f"{pre_node},{next_node} don't exist in the graph."
+        pre_node = pre_node_
+        next_node = next_node_
         pre_node.add_next_node(next_node)
         next_node.add_prev_node(pre_node)
 
     def disconnect(self, pre_node: BASENODE, next_node: BASENODE):
         """Remove the edge form pre_node to next_node."""
-        assert pre_node in self and next_node in self
+        pre_node_ = self.find_node(pre_node)
+        next_node_ = self.find_node(next_node)
+        assert pre_node_ is not None and next_node_ is not None, \
+            f"{pre_node},{next_node} don't exist in the graph."
+        pre_node = pre_node_
+        next_node = next_node_
         if next_node in pre_node.next_nodes:
             pre_node.next_nodes.remove(next_node)
         if pre_node in next_node.prev_nodes:
@@ -185,7 +195,7 @@ class BaseGraph(Generic[BASENODE]):
     def __repr__(self):
         res = f'Graph with {len(self)} nodes:\n'
         for node in self:
-            res += '{0:<40} -> {1:^40} -> {2:<40}\n'.format(
+            res += '{0:<80} -> {1:^80} -> {2:<80}\n'.format(
                 str(node.prev_nodes), node.__repr__(), str(node.next_nodes))
         return res
 
@@ -204,7 +214,7 @@ class BaseGraph(Generic[BASENODE]):
             for node_name in in_degree:
                 if in_degree[node_name] == 0:
                     return node_name
-            return None
+            raise Exception(f'no zero degree node\n{in_degree}')
 
         in_degree = _in_degree(self)
 

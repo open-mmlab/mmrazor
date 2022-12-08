@@ -1,6 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-import sys
 import unittest
 from typing import Union
 
@@ -10,12 +9,10 @@ import torch
 from mmrazor.models.mutables.mutable_channel import (
     L1MutableChannelUnit, SequentialMutableChannelUnit)
 from mmrazor.models.mutators.channel_mutator import ChannelMutator
+from mmrazor.models.task_modules import ChannelAnalyzer
 from mmrazor.registry import MODELS
-from tests.data.models import (DynamicAttention, DynamicLinearModel,
-                               DynamicMMBlock)
-from tests.test_core.test_graph.test_graph import TestGraph
-
-sys.setrecursionlimit(2000)
+from ...data.models import DynamicAttention, DynamicLinearModel, DynamicMMBlock
+from ...data.tracer_passed_models import backward_passed_library
 
 
 @MODELS.register_module()
@@ -47,8 +44,15 @@ class TestChannelMutator(unittest.TestCase):
         y = model(x)
         self.assertEqual(list(y.shape), [2, 1000])
 
+    def test_init(self):
+        model = backward_passed_library.include_models()[0]()
+        mutator = ChannelMutator(parse_cfg=ChannelAnalyzer())
+        mutator.prepare_from_supernet(model)
+        self.assertGreaterEqual(len(mutator.mutable_units), 1)
+        self._test_a_mutator(mutator, model)
+
     def test_sample_subnet(self):
-        data_models = TestGraph.backward_tracer_passed_models()
+        data_models = backward_passed_library.include_models()[:2]
 
         for i, data in enumerate(data_models):
             with self.subTest(i=i, data=data):
@@ -62,7 +66,7 @@ class TestChannelMutator(unittest.TestCase):
                 self._test_a_mutator(mutator, model)
 
     def test_generic_support(self):
-        data_models = TestGraph.backward_tracer_passed_models()
+        data_models = backward_passed_library.include_models()
 
         for data_model in data_models[:1]:
             for unit_type in DATA_UNITS:
@@ -107,7 +111,7 @@ class TestChannelMutator(unittest.TestCase):
         self._test_a_mutator(mutator2, model2)
 
     def test_mix_config_tracer(self):
-        model = TestGraph.backward_tracer_passed_models()[0]()
+        model = backward_passed_library.include_models()[0]()
 
         model0 = copy.deepcopy(model)
         mutator0 = ChannelMutator()
