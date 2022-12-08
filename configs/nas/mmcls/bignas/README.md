@@ -31,8 +31,7 @@ sh tools/slurm_train.sh $PARTITION $JOB_NAME \
 ```bash
 sh tools/slurm_test.sh $PARTITION $JOB_NAME \
   configs/nas/mmcls/bignas/attentive_mobilenet_subnet_8xb256_in1k.py \
-  $STEP2_CKPT --work-dir $WORK_DIR --eval accuracy \
-  --cfg-options algorithm.mutable_cfg=$STEP2_SUBNET_YAML
+  $STEP2_CKPT --cfg-options model.fix_subnet==$STEP2_SUBNET_YAML
 ```
 
 ## Results and models
