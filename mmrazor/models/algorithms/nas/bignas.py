@@ -48,7 +48,8 @@ class BigNAS(BaseAlgorithm):
             loaded dict or built :obj:`FixSubnet`. Defaults to None.
         data_preprocessor (Optional[Union[dict, nn.Module]]): The pre-process
             config of :class:`BaseDataPreprocessor`. Defaults to None.
-        strategy (str): The sampling strategy. Defaults to `sandwich4`.
+        num_random_samples (int): number of random sample subnets.
+            Defaults to 2.
         drop_path_rate (float): Stochastic depth rate. Defaults to 0.2.
         backbone_dropout_stages (List): Stages to be set dropout. Defaults to
             [6, 7].
@@ -62,19 +63,13 @@ class BigNAS(BaseAlgorithm):
         the mutable object ``OneShotMutableChannel`` in BigNAS.
     """
 
-    strategy_groups: Dict[str, List] = {
-        'sandwich2': ['max', 'min'],
-        'sandwich3': ['max', 'random0', 'min'],
-        'sandwich4': ['max', 'random0', 'random1', 'min']
-    }
-
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
                  mutators: VALID_MUTATORS_TYPE,
                  distiller: VALID_DISTILLER_TYPE,
                  fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
-                 strategy: str = 'sandwich4',
+                 num_random_samples: int = 2,
                  drop_path_rate: float = 0.2,
                  backbone_dropout_stages: List = [6, 7],
                  init_cfg: Optional[Dict] = None) -> None:
@@ -100,13 +95,14 @@ class BigNAS(BaseAlgorithm):
         self.distiller.prepare_from_teacher(self.architecture)
         self.distiller.prepare_from_student(self.architecture)
 
-        self.strategy = strategy
-        self.selects = self.strategy_groups[self.strategy]
-        self.random_samples = len([s for s in self.selects if 'random' in s])
-        self.is_supernet = True if len(self.selects) > 1 else False
+        self.sample_kinds = ['max', 'min']
+        for i in range(num_random_samples):
+            self.sample_kinds.append('random' + str(i))
+
         self.drop_path_rate = drop_path_rate
         self.backbone_dropout_stages = backbone_dropout_stages
         self._optim_wrapper_count_status_reinitialized = False
+        self.is_supernet = True
 
         if fix_subnet:
             # Avoid circular import
@@ -197,15 +193,16 @@ class BigNAS(BaseAlgorithm):
                 reinitialize_optim_wrapper_count_status(
                     model=self,
                     optim_wrapper=optim_wrapper,
-                    accumulative_counts=len(self.selects))
+                    accumulative_counts=len(self.sample_kinds))
                 self._optim_wrapper_count_status_reinitialized = True
 
             batch_inputs, data_samples = self.data_preprocessor(data,
                                                                 True).values()
 
             total_losses = dict()
-            for kind in self.selects:
-                if kind in ('max'):
+            for kind in self.sample_kinds:
+                # update the max subnet loss.
+                if kind == 'max':
                     self.set_max_subnet()
                     set_dropout(
                         layers=self.architecture.backbone.layers[:-1],
@@ -222,7 +219,8 @@ class BigNAS(BaseAlgorithm):
                         optim_wrapper.update_params(parsed_max_subnet_losses)
                     total_losses.update(
                         add_prefix(max_subnet_losses, 'max_subnet'))
-                elif kind in ('min'):
+                # update the min subnet loss.
+                elif kind == 'min':
                     self.set_min_subnet()
                     set_dropout(
                         layers=self.architecture.backbone.layers[:-1],
@@ -233,7 +231,8 @@ class BigNAS(BaseAlgorithm):
                                                      data_samples)
                     total_losses.update(
                         add_prefix(min_subnet_losses, 'min_subnet'))
-                elif kind in ('random0', 'random1'):
+                # update the random subnets loss.
+                elif 'random' in kind:
                     self.set_subnet(self.sample_subnet())
                     set_dropout(
                         layers=self.architecture.backbone.layers[:-1],
@@ -242,8 +241,8 @@ class BigNAS(BaseAlgorithm):
                         drop_path_rate=0.)
                     random_subnet_losses = distill_step(
                         batch_inputs, data_samples)
-                    total_losses.update(
-                        add_prefix(random_subnet_losses, f'{kind}_subnet'))
+                total_losses.update(
+                    add_prefix(random_subnet_losses, f'{kind}_subnet'))
 
             return total_losses
         else:
@@ -288,15 +287,16 @@ class BigNASDDP(MMDistributedDataParallel):
                 reinitialize_optim_wrapper_count_status(
                     model=self,
                     optim_wrapper=optim_wrapper,
-                    accumulative_counts=len(self.module.selects))
+                    accumulative_counts=len(self.module.sample_kinds))
                 self._optim_wrapper_count_status_reinitialized = True
 
             batch_inputs, data_samples = self.module.data_preprocessor(
                 data, True).values()
 
             total_losses = dict()
-            for kind in self.module.selects:
-                if kind in ('max'):
+            for kind in self.module.sample_kinds:
+                # update the max subnet loss.
+                if kind == 'max':
                     self.module.set_max_subnet()
                     set_dropout(
                         layers=self.module.architecture.backbone.layers[:-1],
@@ -313,7 +313,8 @@ class BigNASDDP(MMDistributedDataParallel):
                         optim_wrapper.update_params(parsed_max_subnet_losses)
                     total_losses.update(
                         add_prefix(max_subnet_losses, 'max_subnet'))
-                elif kind in ('min'):
+                # update the min subnet loss.
+                elif kind == 'min':
                     self.module.set_min_subnet()
                     set_dropout(
                         layers=self.module.architecture.backbone.layers[:-1],
@@ -324,8 +325,8 @@ class BigNASDDP(MMDistributedDataParallel):
                                                      data_samples)
                     total_losses.update(
                         add_prefix(min_subnet_losses, 'min_subnet'))
-
-                elif kind in ('random0', 'random1'):
+                # update the random subnets loss.
+                elif 'random' in kind:
                     self.module.set_subnet(self.module.sample_subnet())
                     set_dropout(
                         layers=self.module.architecture.backbone.layers[:-1],

@@ -109,6 +109,5 @@ class Autoformer(BaseAlgorithm):
     ) -> LossResults:
         """Calculate losses from a batch of inputs and data samples."""
         if self.is_supernet:
-            random_subnet = self.sample_subnet()
-            self.set_subnet(random_subnet)
+            self.set_subnet(self.sample_subnet())
         return self.architecture(batch_inputs, data_samples, mode='loss')
