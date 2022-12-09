@@ -6,7 +6,8 @@ from nbconvert.preprocessors import ExecutePreprocessor
 
 notebook_paths = [
     './mmrazor/models/mutators/channel_mutator/channel_mutator.ipynb',
-    './mmrazor/models/mutables/mutable_channel/units/mutable_channel_unit.ipynb'  # noqa
+    './mmrazor/models/mutables/mutable_channel/units/mutable_channel_unit.ipynb',  # noqa
+    './demo/config_pruning.ipynb'
 ]
 
 
