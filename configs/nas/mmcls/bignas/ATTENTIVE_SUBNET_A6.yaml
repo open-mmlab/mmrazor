@@ -1,5 +1,5 @@
 backbone.first_channels:
-  chosen: 24
+  chosen: 16
 backbone.last_channels:
   chosen: 1984
 backbone.layers.1.kernel_size:
