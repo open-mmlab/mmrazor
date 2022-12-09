@@ -1,14 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
-from copy import deepcopy
 
 import numpy as np
 from mmengine import fileio
+from mmengine.optim import build_optim_wrapper
 from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 
-from mmrazor.models.task_modules import (GeneticOptimizer,
-                                         NSGA2Optimizer,
-                                         AuxiliarySingleLevelProblem,
+from mmrazor.models.task_modules import (AuxiliarySingleLevelProblem,
+                                         GeneticOptimizer, NSGA2Optimizer,
                                          SubsetProblem)
 from mmrazor.registry import LOOPS
 from mmrazor.structures import Candidates, export_fix_subnet
@@ -56,7 +55,7 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
 
         self.candidates.extend(self.top_k_candidates)
         self.sort_candidates()
-        self.top_k_candidates = Candidates(self.candidates[:self.top_k])
+        self.top_k_candidates = Candidates(self.candidates.data[:self.top_k])
 
         scores_after = self.top_k_candidates.scores
         self.runner.logger.info(f'top k scores after update: '
@@ -92,15 +91,19 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
             if len(candidates_resources) > 0:
                 self.candidates.update_resources(
                     candidates_resources,
-                    start=len(self.candidates.data)-len(candidates_resources))
+                    start=len(self.candidates.data) -
+                    len(candidates_resources))
 
-    def sample_candidates_with_nsga2(self, archive: Candidates, num_candidates):
+    def sample_candidates_with_nsga2(self, archive: Candidates,
+                                     num_candidates):
         """Searching for candidates with high-fidelity evaluation."""
         F = np.column_stack((archive.scores, archive.resources('flops')))
-        front_index = NonDominatedSorting().do(F, only_non_dominated_front=True)
+        front_index = NonDominatedSorting().do(
+            F, only_non_dominated_front=True)
 
         fronts = np.array(archive.subnets)[front_index]
-        fronts = np.array([self.predictor.model2vector(cand) for cand in fronts])
+        fronts = np.array(
+            [self.predictor.model2vector(cand) for cand in fronts])
         fronts = self.predictor.preprocess(fronts)
 
         # initialize the candidate finding optimization problem
@@ -120,24 +123,24 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
         # check for duplicates
         check_list = []
         for x in result['pop'].get('X'):
-            assert x is not None
             check_list.append(self.predictor.vector2model(x))
-        
+
         not_duplicate = np.logical_not(
             [x in archive.subnets for x in check_list])
 
         # extra process after nsga2 search
-        sub_problem = SubsetProblem(result['pop'][not_duplicate].get('F')[:, 1],
-                                    F[front_index, 1],
-                                    num_candidates)
-        sub_method = GeneticOptimizer(pop_size=num_candidates,
-                                      eliminate_duplicates=True)
+        sub_problem = SubsetProblem(
+            result['pop'][not_duplicate].get('F')[:, 1], F[front_index, 1],
+            num_candidates)
+        sub_method = GeneticOptimizer(
+            pop_size=num_candidates, eliminate_duplicates=True)
         sub_method.initialize(sub_problem, n_gen=4, verbose=False)
         indices = sub_method.solve()['X']
-        
-        candidates = Candidates()
+
+        candidates = []
         pop = result['pop'][not_duplicate][indices]
         for x in pop.get('X'):
+            x = x[0] if isinstance(x[0], list) else x
             candidates.append(self.predictor.vector2model(x))
 
         return candidates
@@ -146,20 +149,20 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
         """Support sort candidates in single and multiple-obj optimization."""
         assert self.trade_off is not None, (
             '`self.trade_off` is required when sorting candidates in '
-            'NSGA2SearchLoop. Got self.trade_off is None.')
+            'NSGA2SearchLoop. Got `self.trade_off` is None.')
         ratio = self.trade_off.get('ratio', 1)
-        multiple_obj_score = []
+        max_score_key = self.trade_off.get('max_score_key', 100)
+
+        multi_obj_score = []
         for score, flops in zip(self.candidates.scores,
                                 self.candidates.resources('flops')):
-            multiple_obj_score.append((score, flops))
-        multiple_obj_score = np.array(multiple_obj_score)
-        max_score_key = self.trade_off.get('max_score_key', 100)
+            multi_obj_score.append((score, flops))
+        multi_obj_score = np.array(multi_obj_score)
         if max_score_key != 0:
-            multiple_obj_score[:, 0] = \
-                max_score_key - multiple_obj_score[:, 0]
-        sort_idx = np.argsort(multiple_obj_score[:, 0])
-        F = multiple_obj_score[sort_idx]
-        dm = HighTradeoffPoints(ratio, n_survive=len(multiple_obj_score))
+            multi_obj_score[:, 0] = max_score_key - multi_obj_score[:, 0]
+        sort_idx = np.argsort(multi_obj_score[:, 0])
+        F = multi_obj_score[sort_idx]
+        dm = HighTradeoffPoints(ratio, n_survive=len(multi_obj_score))
         candidate_index = dm.do(F)
         candidate_index = sort_idx[candidate_index]
         self.candidates = [self.candidates[idx] for idx in candidate_index]
@@ -187,10 +190,9 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
                          f'search_epoch_{self._epoch}.pkl'))
 
             correlation_str = 'fitting '
-            # correlation_str += f'{self.predictor.type}: '
             correlation_str += f'RMSE = {rmse:.4f}, '
             correlation_str += f'Spearmans Rho = {rho:.4f}, '
-            correlation_str += f'num_candidatesendalls Tau = {tau:.4f}'
+            correlation_str += f'Kendalls Tau = {tau:.4f}'
 
             self.pareto_mode = False
             if self.pareto_mode:
@@ -225,21 +227,31 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
                 metrics[i] = self.max_score_key - metrics[i]
         return metrics
 
-    def finetune_step(self, model):
+    def finetune_step(self):
         """fintune before candidates evaluation."""
-        # TODO (gaoyang): update with 2.0 version.
         self.runner.logger.info('start finetuning...')
-        model.train()
-        while self._fintune_epoch < self._max_finetune_epochs:
-            self.runner.call_hook('before_train_epoch')
-            for idx, data_batch in enumerate(self.dataloader):
-                self.runner.call_hook(
-                    'before_train_iter',
-                    batch_idx=idx,
-                    data_batch=data_batch)
+        self.model.train()
 
-                outputs = model.train_step(
-                    data_batch, optim_wrapper=self.optim_wrapper)
+        self._finetune_epoch = 0
+        self._max_finetune_epochs = 1
+
+        optimizer_cfg = dict(
+            type='SGD',
+            lr=0.5,
+            momentum=0.9,
+            nesterov=True,
+            weight_decay=0.0001)
+        optim_wrapper_cfg = dict(optimizer=optimizer_cfg)
+        optim_wrapper = build_optim_wrapper(self.model, optim_wrapper_cfg)
+
+        while self._finetune_epoch < self._max_finetune_epochs:
+            self.runner.call_hook('before_train_epoch')
+            for idx, data_batch in enumerate(self.finetune_dataloader):
+                self.runner.call_hook(
+                    'before_train_iter', batch_idx=idx, data_batch=data_batch)
+
+                outputs = self.model.train_step(
+                    data_batch, optim_wrapper=optim_wrapper)
 
                 self.runner.call_hook(
                     'after_train_iter',
@@ -250,4 +262,4 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
             self.runner.call_hook('after_train_epoch')
             self._finetune_epoch += 1
 
-        model.eval()
+        self.model.eval()

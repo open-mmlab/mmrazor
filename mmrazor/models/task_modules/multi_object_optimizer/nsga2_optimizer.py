@@ -4,11 +4,10 @@ import numpy as np
 
 from mmrazor.registry import TASK_UTILS
 from .base_optimizer import BaseOptimizer
-from .utils.selection import (IntegerFromFloatMutation, Mating,
-                              PointCrossover, TournamentSelection,
-                              binary_tournament)
 from .utils.helper import (DefaultDuplicateElimination, Individual,
                            Initialization, Survival)
+from .utils.selection import (IntegerFromFloatMutation, Mating, PointCrossover,
+                              TournamentSelection, binary_tournament)
 
 # from pymoo.algorithms.moo.nsga2 import binary_tournament
 # from pymoo.core.mating import Mating

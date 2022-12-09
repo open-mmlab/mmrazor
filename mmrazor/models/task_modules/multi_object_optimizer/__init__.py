@@ -4,6 +4,6 @@ from .nsga2_optimizer import NSGA2Optimizer
 from .problem import AuxiliarySingleLevelProblem, SubsetProblem
 
 __all__ = [
-    'AuxiliarySingleLevelProblem', 'SubsetProblem',
-    'GeneticOptimizer', 'NSGA2Optimizer'
+    'AuxiliarySingleLevelProblem', 'SubsetProblem', 'GeneticOptimizer',
+    'NSGA2Optimizer'
 ]

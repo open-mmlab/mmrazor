@@ -7,26 +7,25 @@ from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 from mmrazor.registry import TASK_UTILS
 from .nsga2_optimizer import NSGA2Optimizer
 from .utils.helper import Individual, Population
-from .utils.selection import (BinaryCrossover, IntegerFromFloatMutation, Mating,
-                              MyMutation, MySampling, PointCrossover,
+from .utils.selection import (BinaryCrossover, MyMutation, MySampling,
                               TournamentSelection)
-
 
 
 @TASK_UTILS.register_module()
 class GeneticOptimizer(NSGA2Optimizer):
     """Genetic Algorithm."""
 
-    def __init__(self,
-                 pop_size=100,
-                 sampling=MySampling(),
-                 selection=TournamentSelection(func_comp='comp_by_cv_and_fitness'),
-                 crossover=BinaryCrossover(),
-                 mutation=MyMutation(),
-                 eliminate_duplicates=True,
-                 n_offsprings=None,
-                 display=None,
-                 **kwargs):
+    def __init__(
+            self,
+            pop_size=100,
+            sampling=MySampling(),
+            selection=TournamentSelection(func_comp='comp_by_cv_and_fitness'),
+            crossover=BinaryCrossover(),
+            mutation=MyMutation(),
+            eliminate_duplicates=True,
+            n_offsprings=None,
+            display=None,
+            **kwargs):
         """
         Args:
             pop_size : {pop_size}

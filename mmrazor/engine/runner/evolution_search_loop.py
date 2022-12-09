@@ -62,8 +62,9 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
 
     def __init__(self,
                  runner,
-                 dataloader: Union[DataLoader, Dict],
                  evaluator: Union[Evaluator, Dict, List],
+                 dataloader: Union[DataLoader, Dict],
+                 finetune_dataloader: Union[DataLoader, Dict] = None,
                  max_epochs: int = 20,
                  max_keep_ckpts: int = 3,
                  resume_from: Optional[str] = None,
@@ -84,6 +85,13 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
             self.evaluator = runner.build_evaluator(evaluator)  # type: ignore
         else:
             self.evaluator = evaluator  # type: ignore
+
+        if isinstance(finetune_dataloader, dict):
+            self.finetune_dataloader = self.runner.build_dataloader(
+                finetune_dataloader)
+        else:
+            self.finetune_dataloader = finetune_dataloader
+
         if hasattr(self.dataloader.dataset, 'metainfo'):
             self.evaluator.dataset_meta = self.dataloader.dataset.metainfo
         else:
@@ -199,6 +207,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         if self.runner.rank == 0:
             while len(self.candidates) < self.num_candidates:
                 candidate = self.model.sample_subnet()
+                self.model.set_subnet(candidate)
+                self.finetune_step()
                 is_pass, result = self._check_constraints(
                     random_subnet=candidate)
                 if is_pass:
@@ -459,3 +469,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                     f'Predictor pre-trained, saved in {predictor_dir}.')
             self.use_predictor = True
             self.candidates = Candidates()
+
+    def finetune_step(self, subnet):
+        pass
