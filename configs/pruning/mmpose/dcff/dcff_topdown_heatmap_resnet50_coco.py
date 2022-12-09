@@ -114,8 +114,9 @@ model = dict(
         channel_unit_cfg=dict(
             type='DCFFChannelUnit', default_args=dict(choice_mode='ratio')),
         parse_cfg=dict(
-            type='BackwardTracer',
-            loss_calculator=dict(type='TopdownPoseEstimatorPseudoLoss'))),
+            type='ChannelAnalyzer',
+            demo_input=(1, 3, 224, 224),
+            tracer_type='BackwardTracer')),
     target_pruning_ratio=target_pruning_ratio,
     step_freq=1,
     linear_schedule=False,

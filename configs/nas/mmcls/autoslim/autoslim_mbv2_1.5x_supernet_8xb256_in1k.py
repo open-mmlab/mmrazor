@@ -50,8 +50,9 @@ model = dict(
                 choice_mode='ratio',
                 divisor=8)),
         parse_cfg=dict(
-            type='BackwardTracer',
-            loss_calculator=dict(type='ImageClassifierPseudoLoss'))))
+            type='ChannelAnalyzer',
+            demo_input=(1, 3, 224, 224),
+            tracer_type='BackwardTracer')))
 
 model_wrapper_cfg = dict(
     type='mmrazor.AutoSlimDDP',
@@ -66,4 +67,4 @@ param_scheduler = dict(end=max_epochs)
 
 # train, val, test setting
 train_cfg = dict(max_epochs=max_epochs)
-val_cfg = dict(type='mmrazor.AutoSlimValLoop')
+val_cfg = dict(type='mmrazor.SubnetValLoop')

@@ -30,7 +30,7 @@ ARCHSETTING_CFG = [
 ]
 NORM_CFG = dict(type='BN')
 BACKBONE_CFG = dict(
-    type='mmrazor.SearchableMobileNet',
+    type='mmrazor.SearchableMobileNetV2',
     first_channels=32,
     last_channels=1280,
     widen_factor=1.0,

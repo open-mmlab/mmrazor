@@ -12,10 +12,12 @@ class TestPatchEmbed(TestCase):
 
     def setUp(self):
         self.dynamic_embed = DynamicPatchEmbed(
-            img_size=224, in_channels=3, embed_dims=100)
+            img_size=224,
+            in_channels=3,
+            embed_dims=100,
+            norm_cfg=dict(type='BN'))
 
         mutable_embed_dims = SquentialMutableChannel(num_channels=100)
-
         mutable_embed_dims.current_choice = 50
         self.dynamic_embed.register_mutable_attr('embed_dims',
                                                  mutable_embed_dims)
@@ -31,11 +33,20 @@ class TestPatchEmbed(TestCase):
             50)
 
     def test_convert(self):
-        static_m = PatchEmbed(img_size=224, in_channels=3, embed_dims=768)
+        static_m = PatchEmbed(
+            img_size=224,
+            in_channels=3,
+            embed_dims=768,
+            conv_cfg=dict(type='mmrazor.BigNasConv2d'),
+            norm_cfg=dict(type='mmrazor.DynamicBatchNorm2d'))
 
         dynamic_m = DynamicPatchEmbed.convert_from(static_m)
 
         self.assertIsNotNone(dynamic_m)
+
+        mutable_embed_dims = SquentialMutableChannel(num_channels=768)
+        dynamic_m.register_mutable_attr('embed_dims', mutable_embed_dims)
+        mutable_embed_dims.current_choice = 512
 
     def test_to_static_op(self):
         mutable_embed_dims = SquentialMutableChannel(num_channels=100)

@@ -29,7 +29,7 @@ from mmrazor.registry import MODELS
 from .base_connector import BaseConnector
 
 @MODELS.register_module()
-class ConvModuleConncetor(BaseConnector):
+class ConvModuleConnector(BaseConnector):
     def __init__(self, in_channel, out_channel, kernel_size = 1, stride = 1):
         ...
 

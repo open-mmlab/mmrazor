@@ -51,17 +51,7 @@ ALGORITHM_CFG = dict(
     type='mmrazor.Autoformer',
     architecture=ARCHITECTURE_CFG,
     fix_subnet=None,
-    mutators=dict(
-        channel_mutator=dict(
-            type='mmrazor.OneShotChannelMutator',
-            channel_unit_cfg={
-                'type': 'OneShotMutableChannelUnit',
-                'default_args': {
-                    'unit_predefined': True
-                }
-            },
-            parse_cfg={'type': 'Predefined'}),
-        value_mutator=dict(type='mmrazor.DynamicValueMutator')))
+    mutators=MUTATOR_CFG)
 
 
 class TestAUTOFORMER(TestCase):
@@ -99,8 +89,9 @@ class TestAUTOFORMER(TestCase):
                     candidate_choices=list(i / 12 for i in range(2, 13)),
                     choice_mode='ratio')),
             parse_cfg=dict(
-                type='BackwardTracer',
-                loss_calculator=dict(type='ImageClassifierPseudoLoss')))
+                type='ChannelAnalyzer',
+                demo_input=(1, 3, 224, 224),
+                tracer_type='BackwardTracer'))
         ALGORITHM_CFG_SUPERNET['mutators'] = dict(
             channel_mutator=backwardtracer_cfg,
             value_mutator=dict(type='mmrazor.DynamicValueMutator'))

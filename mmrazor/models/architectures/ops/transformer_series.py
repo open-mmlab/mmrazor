@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, Optional
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -80,17 +80,18 @@ class MultiheadAttention(nn.Module):
     This module implements multi-head attention that supports different input
     dims and embed dims. And it also supports a shortcut from ``value``, which
     is useful if input dims is not the same with embed dims.
+
     Args:
         embed_dims (int): The embedding dimension.
         num_heads (int): Parallel attention heads.
         input_dims (int, optional): The input dimension, and if None,
             use ``embed_dims``. Defaults to None.
-        attn_drop (float): Dropout rate of the dropout layer after the
+        attn_drop_rate (float): Dropout rate of the dropout layer after the
             attention calculation of query and key. Defaults to 0.
-        proj_drop (float): Dropout rate of the dropout layer after the
+        proj_drop_rate (float): Dropout rate of the dropout layer after the
             output projection. Defaults to 0.
-        dropout_layer (dict): The dropout config before adding the shortcut.
-            Defaults to ``dict(type='Dropout', drop_prob=0.)``.
+        out_drop_rate (dict): Dropout rate of the dropout layer before adding
+            the shortcut. Defaults to 0.
         relative_position (bool, optional): Whether use relative position.
             Defaults to True.
         max_relative_position (int): The max relative position distance.
@@ -112,8 +113,8 @@ class MultiheadAttention(nn.Module):
                  num_heads: int,
                  input_dims: Optional[int] = None,
                  attn_drop_rate: float = 0.,
-                 proj_drop: float = 0.,
-                 dropout_layer: Dict = dict(type='Dropout', drop_prob=0.),
+                 proj_drop_rate: float = 0.,
+                 out_drop_rate: float = 0.,
                  relative_position: Optional[bool] = True,
                  max_relative_position: int = 14,
                  qkv_bias: bool = True,
@@ -129,7 +130,6 @@ class MultiheadAttention(nn.Module):
         self.v_shortcut = v_shortcut
         self.relative_position = relative_position
         self.max_relative_position = max_relative_position
-        self.attn_drop_rate = attn_drop_rate
 
         self.head_dims = 64  # unit
         self.scale = qk_scale or self.head_dims**-0.5
@@ -144,10 +144,11 @@ class MultiheadAttention(nn.Module):
             self.input_dims, num_heads * self.head_dims, bias=qkv_bias)
 
         self.attn_drop = nn.Dropout(attn_drop_rate)
+        self.proj_drop = nn.Dropout(proj_drop_rate)
+        self.out_drop = nn.Dropout(out_drop_rate)
+
         self.proj = nn.Linear(
             num_heads * self.head_dims, embed_dims, bias=proj_bias)
-        self.proj_drop = nn.Dropout(proj_drop)
-        self.out_drop = nn.Dropout(dropout_layer['drop_prob'])
 
         # image relative position encoding
         if self.relative_position:
