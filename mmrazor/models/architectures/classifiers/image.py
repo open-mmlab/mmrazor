@@ -87,6 +87,7 @@ class SearchableImageClassifier(ImageClassifier):
                             f'{type(input_resizer)}')
 
         mutable_shape_cfg = input_resizer_cfg['mutable_shape']
+        mutable_shape_cfg['alias'] = 'input_shape'
         mutable_shape = MODELS.build(mutable_shape_cfg)
         if not isinstance(mutable_shape, OneShotMutableValue):
             raise ValueError('`mutable_shape` should be instance of '

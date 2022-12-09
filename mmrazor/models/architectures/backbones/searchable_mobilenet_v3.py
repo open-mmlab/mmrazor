@@ -242,6 +242,7 @@ class AttentiveMobileNetV3(BaseBackbone):
             self, MutableChannelContainer)
 
         self.first_out_channels = OneShotMutableChannel(
+            alias='backbone.first_channels',
             num_channels=max(self.first_out_channels_list),
             candidate_choices=self.first_out_channels_list)
 
@@ -256,41 +257,44 @@ class AttentiveMobileNetV3(BaseBackbone):
             expand_ratios = self.expand_ratio_list[i]
             out_channels = self.num_channels_list[i]
 
-            prefix = 'layer' + str(i + 1)
-            mutable_kernel_size_name = prefix + '_kernel_size'
-            mutable_expand_ratio_name = prefix + '_expand_ratio'
-            mutable_out_channel_name = prefix + '_out_channels'
+            mutable_kernel_size = OneShotMutableValue(
+                alias='backbone.layers.' + str(i + 1) + '.kernel_size',
+                value_list=kernel_sizes)
 
-            setattr(
-                self, mutable_kernel_size_name,
-                OneShotMutableValue(
-                    value_list=kernel_sizes, default_value=max(kernel_sizes)))
+            prefix = 'layers_' + str(i + 1)
+            mutable_expand_ratio_name = prefix + '_expand_ratio'
+            mutable_out_channels_name = prefix + '_out_channels'
+            # TODO: unset the mutable as self.attrs
             setattr(
                 self, mutable_expand_ratio_name,
                 OneShotMutableValue(
-                    value_list=expand_ratios,
-                    default_value=max(expand_ratios)))
+                    alias='backbone.layers.' + str(i + 1) + '.expand_ratio',
+                    value_list=expand_ratios))
             setattr(
-                self, mutable_out_channel_name,
+                self, mutable_out_channels_name,
                 OneShotMutableChannel(
+                    alias='backbone.layers.' + str(i + 1) + '.out_channels',
                     candidate_choices=out_channels,
                     num_channels=max(out_channels)))
 
             for k in range(max(self.num_blocks_list[i])):
                 mutate_mobilenet_layer(
                     layer[k], mid_mutable,
-                    getattr(self, mutable_out_channel_name),
+                    getattr(self, mutable_out_channels_name),
                     getattr(self, mutable_expand_ratio_name),
-                    getattr(self, mutable_kernel_size_name))
-                mid_mutable = getattr(self, mutable_out_channel_name)
+                    mutable_kernel_size)
+                mid_mutable = getattr(self, mutable_out_channels_name)
 
             mutable_depth = OneShotMutableValue(
-                value_list=num_blocks, default_value=max(num_blocks))
+                alias='backbone.layers.' + str(i + 1) + '.depth',
+                value_list=num_blocks)
             layer.register_mutable_attr('depth', mutable_depth)
 
         self.last_out_channels = OneShotMutableChannel(
+            alias='backbone.last_channels',
             num_channels=self.out_channels,
             candidate_choices=self.last_out_channels_list)
+
         last_mutable_expand_value = OneShotMutableValue(
             value_list=self.last_expand_ratio_list,
             default_value=max(self.last_expand_ratio_list))
