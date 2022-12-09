@@ -64,9 +64,9 @@ class MMArchitectureQuant(BaseAlgorithm):
 
         self.qmodels = self._build_qmodels(self.architecture)
 
-        self.sync_param('tensor')
+        self.sync_qparams('predict')
 
-    def sync_param(self, src_mode):
+    def sync_qparams(self, src_mode):
 
         def traverse(module, prefix):
             for name, child in module._modules.items():
@@ -108,7 +108,7 @@ class MMArchitectureQuant(BaseAlgorithm):
 
         self.quantizer.swap_ff_with_fxff(model)
         tracer = self.quantizer.tracer
-
+        import pdb;pdb.set_trace()
         for mode in self.forward_modes:
             concrete_args = {'mode': mode}
             traced_graph = tracer.trace(model, concrete_args=concrete_args)
@@ -159,5 +159,5 @@ class MMArchitectureQuantDDP(MMDistributedDataParallel):
     def calibrate_step(self, data):
         return self.module.calibrate_step(data)
 
-    def sync_param(self, src):
-        self.module.sync_param(src)
+    def sync_qparams(self, src):
+        self.module.sync_qparams(src)

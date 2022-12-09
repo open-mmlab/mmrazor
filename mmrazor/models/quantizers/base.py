@@ -2,6 +2,7 @@ from abc import abstractmethod
 import torch
 from mmrazor.registry import MODELS, TASK_UTILS
 from mmrazor.structures.quantization import QConfigHander, BackendConfigs
+from mmrazor.models.utils import str2class
 from mmengine.model import BaseModule
 from torch.ao.quantization import enable_fake_quant
 from torch.ao.quantization.fx import prepare
@@ -141,6 +142,7 @@ class WithDeployQuantizer(BaseQuantizer):
 
     def __init__(self,
                  global_qconfig,
+                 no_observer_modules=None,
                  tracer=dict(type='CustomTracer')):
         super().__init__(tracer)
         self.qconfig = QConfigHander(global_qconfig)
@@ -154,8 +156,11 @@ class WithDeployQuantizer(BaseQuantizer):
             a_mode = 'per_tensor'
         assert w_mode in self.support_w_modes
         assert a_mode in self.support_a_modes
-        
+        self.no_observer_modules = str2class(no_observer_modules)
         self.qconfig_mapping = QConfigMapping().set_global(self.qconfig.convert())
+        for mod in self.no_observer_modules:
+            import pdb; pdb.set_trace()
+            self.qconfig_mapping.set_object_type(mod, None)
         self.backend_config = BackendConfigs[self.backend]
         self.example_inputs = (torch.randn(1, 3, 224, 224),)
     
@@ -200,7 +205,7 @@ class WithDeployQuantizer(BaseQuantizer):
 
                     if keep_fake_quant:
                         for m in float_child.modules():
-                            setattr(m, 'qconfig', self.qconfig_dict[''])
+                            setattr(m, 'qconfig', self.qconfig.convert())
 
                         if type(child) in MERGE_BN_MAPPINGS:
                             cls = MERGE_BN_MAPPINGS[type(child)]

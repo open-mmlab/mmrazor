@@ -12,18 +12,31 @@ from .base import WithDeployQuantizer
 class TensorRTQuantizer(WithDeployQuantizer):
     """Quantizer for TensorRT backend."""
 
-    backend: 'tensorrt'
-    support_w_mode = ['per_tensor', 'per_channel']
-    support_a_mode = ['per_tensor']
+    # backend: 'tensorrt'
+    # support_w_mode = ['per_tensor', 'per_channel']
+    # support_a_mode = ['per_tensor']
 
     def __init__(self,
                  global_qconfig,
-                 tracer=dict(type='CustomTracer'),
-                 init_cfg=None):
-        super().__init__(global_qconfig, tracer, init_cfg)
+                 no_observer_modules=None,
+                 tracer=dict(type='CustomTracer')):
+        super().__init__(global_qconfig, no_observer_modules, tracer)
+    
+    @property
+    def backend(self):
+        return 'tensorrt'
+    
+    @property
+    def support_a_modes(self):
+        return ['per_tensor', 'per_channel']
+    
+    @property
+    def support_a_modes(self):
+        return ['per_tensor']
 
     def prepare_for_mmdeploy(self, model, dummy_input=None, checkpoint=None):
 
+        self.swap_ff_with_fxff(model)
         graph = self.tracer.trace(model)
         graph_module = build_graphmodule(model, graph)
         observed_model = self.prepare(model, graph_module)

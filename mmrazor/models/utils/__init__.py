@@ -14,6 +14,7 @@ from .quantization_util import (PerChannelLoadHook, _is_float_qparams,
                                 pot_quantization, sync_tensor)
 # yapf:enable
 from .utils import get_module_device, set_requires_grad
+from .quantization_util import str2class
 
 __all__ = [
     'add_prefix', 'check_is_valid_convert_custom_config_dict',
@@ -23,5 +24,5 @@ __all__ = [
     'pot_quantization', 'reinitialize_optim_wrapper_count_status',
     'set_requires_grad', 'sync_tensor', '_is_per_channel', '_is_per_tensor',
     '_is_symmetric_quant', '_is_float_qparams', 'is_tracing_state',
-    'PerChannelLoadHook'
+    'PerChannelLoadHook', 'str2class'
 ]
