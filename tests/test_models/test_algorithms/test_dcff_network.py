@@ -12,6 +12,7 @@ from mmrazor.models.algorithms.pruning.dcff import DCFF
 from mmrazor.models.algorithms.pruning.ite_prune_algorithm import \
     ItePruneConfigManager
 from mmrazor.registry import MODELS
+from mmrazor.structures import export_fix_subnet
 
 
 # @TASK_UTILS.register_module()
@@ -229,3 +230,43 @@ class TestDCFFAlgorithm(unittest.TestCase):
             algorithm.forward(
                 data['inputs'], data['data_samples'], mode='loss')
             self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
+
+    def test_export_subnet(self):
+
+        model = MODELS.build(MODEL_CFG)
+        mutator = MODELS.build(MUTATOR_CONFIG_FLOAT)
+        mutator.prepare_from_supernet(model)
+        mutator.set_choices(mutator.sample_choices())
+        prune_target = mutator.choice_template
+
+        custom_groups = [[
+            'backbone.layer1.0.conv1_(0, 64)_64',
+            'backbone.layer1.1.conv1_(0, 64)_64'
+        ]]
+        mutator_cfg = copy.deepcopy(MUTATOR_CONFIG_FLOAT)
+        mutator_cfg['custom_groups'] = custom_groups
+
+        iter_per_epoch = 10
+        epoch_step = 2
+        epoch = 6
+        data = self.fake_cifar_data()
+
+        prune_target['backbone.layer1.0.conv1_(0, 64)_64'] = 0.1
+        prune_target['backbone.layer1.1.conv1_(0, 64)_64'] = 0.1
+
+        algorithm = DCFF(
+            MODEL_CFG,
+            target_pruning_ratio=prune_target,
+            mutator_cfg=mutator_cfg,
+            step_freq=epoch_step).to(DEVICE)
+
+        algorithm.init_weights()
+        self._set_epoch_ite(1, 2, epoch)
+        algorithm.forward(data['inputs'], data['data_samples'], mode='loss')
+        self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
+        subnet = export_fix_subnet(algorithm.architecture, dump_derived_mutable=True)
+        print("subnet:", subnet)
+        # print("model:", algorithm.architecture)
+        from mmengine import fileio
+        fileio.dump(subnet,'/mnt/lustre/zengyi/mmrazor/experiment/subnet.yaml')
+        self.assertEqual(1, 0)
