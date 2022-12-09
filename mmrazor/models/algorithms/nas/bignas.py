@@ -241,8 +241,8 @@ class BigNAS(BaseAlgorithm):
                         drop_path_rate=0.)
                     random_subnet_losses = distill_step(
                         batch_inputs, data_samples)
-                total_losses.update(
-                    add_prefix(random_subnet_losses, f'{kind}_subnet'))
+                    total_losses.update(
+                        add_prefix(random_subnet_losses, f'{kind}_subnet'))
 
             return total_losses
         else:

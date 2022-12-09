@@ -58,8 +58,6 @@ model_wrapper_cfg = dict(
     broadcast_buffers=False,
     find_unused_parameters=False)
 
-optim_wrapper = dict(accumulative_counts=num_random_samples + 2)
-
 # learning policy
 max_epochs = 50
 param_scheduler = dict(end=max_epochs)

@@ -42,6 +42,4 @@ model_wrapper_cfg = dict(
     broadcast_buffers=False,
     find_unused_parameters=True)
 
-optim_wrapper = dict(accumulative_counts=3)
-
 val_cfg = dict(type='mmrazor.SlimmableValLoop')

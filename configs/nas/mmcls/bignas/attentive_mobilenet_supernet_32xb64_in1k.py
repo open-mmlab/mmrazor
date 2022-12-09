@@ -56,8 +56,6 @@ model = dict(
             parse_cfg={'type': 'Predefined'}),
         value_mutator=dict(type='DynamicValueMutator')))
 
-optim_wrapper = dict(accumulative_counts=4)
-
 model_wrapper_cfg = dict(
     type='mmrazor.BigNASDDP',
     broadcast_buffers=False,
