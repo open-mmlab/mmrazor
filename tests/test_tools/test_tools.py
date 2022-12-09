@@ -8,9 +8,15 @@ import torch
 
 from mmrazor import digit_version
 
+TEST_TOOLS = os.getenv('TEST_TOOLS') == 'true'
+
 
 class TestTools(TestCase):
     _config_path = None
+
+    def setUp(self) -> None:
+        if not TEST_TOOLS:
+            self.skipTest('disabled')
 
     @property
     def config_path(self):
