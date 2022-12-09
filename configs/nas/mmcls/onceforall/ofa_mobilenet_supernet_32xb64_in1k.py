@@ -26,7 +26,7 @@ supernet = dict(
             type='OneShotMutableValue',
             value_list=[[192, 192], [224, 224], [256, 256], [288, 288]],
             default_value=[224, 224])),
-    connect_head=dict(connect_with_backbone='backbone.last_channels'),
+    connect_head=dict(connect_with_backbone='backbone.last_mutable_channels'),
 )
 
 model = dict(
