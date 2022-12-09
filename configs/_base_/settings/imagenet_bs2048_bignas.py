@@ -351,13 +351,11 @@ train_dataloader = dict(
 )
 
 val_dataloader = dict(
-    # batch_size=64,
-    batch_size=1,
+    batch_size=64,
     num_workers=16,
     dataset=dict(
         type=dataset_type,
-        data_root='data/imagenet-debug',
-        # data_root='data/imagenet',
+        data_root='data/imagenet',
         ann_file='meta/val.txt',
         data_prefix='val',
         pipeline=test_pipeline),
