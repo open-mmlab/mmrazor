@@ -245,10 +245,10 @@ class AttentiveMobileNetV3(BaseBackbone):
             num_channels=max(self.first_out_channels_list),
             candidate_choices=self.first_out_channels_list)
 
-        self.first_module = self.last_mutable
+        self.first_mutable = self.last_mutable
 
         mutate_conv_module(
-            self.first_conv, mutable_out_channels=self.first_module)
+            self.first_conv, mutable_out_channels=self.first_mutable)
 
         # mutate the built mobilenet layers
         for i, layer in enumerate(self.layers[:-1]):

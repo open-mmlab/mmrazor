@@ -1,4 +1,4 @@
-architecture.backbone.first_module:
+architecture.backbone.first_mutable:
   chosen: 16
 architecture.backbone.last_mutable:
   chosen: 1984
