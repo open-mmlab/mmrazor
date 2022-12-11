@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import logging
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Dict, Optional, Set, Tuple
 
 import torch
@@ -11,7 +11,8 @@ from torch.nn.modules.batchnorm import _BatchNorm
 from mmrazor.models.mutables.base_mutable import BaseMutable
 
 
-class DynamicMixin(ABC):
+# TODO abstract class
+class DynamicMixin():
     """Base class for dynamic OP. A dynamic OP usually consists of a normal
     static OP and mutables, where mutables are used to control the searchable
     (mutable) part of the dynamic OP.
