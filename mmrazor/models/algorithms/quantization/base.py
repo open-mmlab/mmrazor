@@ -108,7 +108,7 @@ class MMArchitectureQuant(BaseAlgorithm):
 
         self.quantizer.swap_ff_with_fxff(model)
         tracer = self.quantizer.tracer
-        import pdb;pdb.set_trace()
+
         for mode in self.forward_modes:
             concrete_args = {'mode': mode}
             traced_graph = tracer.trace(model, concrete_args=concrete_args)

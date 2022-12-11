@@ -198,8 +198,10 @@ class PTQLoop(TestLoop):
                  runner,
                  dataloader: Union[DataLoader, Dict],
                  evaluator: Union[Evaluator, Dict, List],
-                 fp16: bool = False):
+                 fp16: bool = False,
+                 num_cali_batch=32):
         super().__init__(runner, dataloader, evaluator, fp16)
+        self.num_cali_batch = num_cali_batch
 
     def run(self) -> dict:
         """Launch test."""
@@ -210,6 +212,8 @@ class PTQLoop(TestLoop):
         self.runner.model.apply(enable_observer)
 
         for idx, data_batch in enumerate(self.dataloader):
+            if idx == self.num_cali_batch:
+                break
             self.run_iter(idx, data_batch)
 
         self.runner.model.sync_qparams('tensor')
