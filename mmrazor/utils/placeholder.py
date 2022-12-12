@@ -18,7 +18,6 @@ def get_placeholder(string: str) -> object:
             f'`{package_name}` is not installed properly, plz check.')
 
     class PlaceHolder():
-        # class PlaceHolder():
 
         def __init__(self) -> None:
             raise_import_error(string)
