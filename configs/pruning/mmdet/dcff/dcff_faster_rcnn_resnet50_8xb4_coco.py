@@ -11,7 +11,7 @@ stage_ratio_3 = 0.9
 stage_ratio_4 = 0.7
 
 # the config template of target_pruning_ratio can be got by
-# python ./tools/get_channel_units.py {config_file} --choice
+# python ./tools/pruning/get_channel_units.py {config_file} --choice
 target_pruning_ratio = {
     'backbone.layer1.0.conv1_(0, 64)_64': stage_ratio_1,
     'backbone.layer1.0.conv2_(0, 64)_64': stage_ratio_2,

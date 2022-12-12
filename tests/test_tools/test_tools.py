@@ -43,7 +43,7 @@ class TestTools(TestCase):
                 self.save_to_config('pretrain.py', f"""_base_=['{path}']""")
                 try:
                     subprocess.run([
-                        'python', './tools/get_channel_units.py',
+                        'python', './tools/pruning/get_channel_units.py',
                         f'{self.workdir}/pretrain.py', '-o',
                         f'{self.workdir}/unit.json'
                     ])
