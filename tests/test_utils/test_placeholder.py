@@ -12,7 +12,7 @@ class TestPlaceholder(unittest.TestCase):
         holder = get_placeholder('test')
         with pytest.raises(ImportError):
             holder()
-        with pytest.raises(ImportError):
-            holder.a
-        with pytest.raises(ImportError):
-            holder.a()
+        from mmrazor.models.architectures.dynamic_ops import DynamicMixin
+
+        class tmp(holder, DynamicMixin):
+            pass
