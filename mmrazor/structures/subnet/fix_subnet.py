@@ -1,6 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import copy
 import logging
 
+import torch
 from mmengine import fileio
 from mmengine.logging import print_log
 from torch import nn
@@ -87,16 +89,17 @@ def load_fix_subnet(model: nn.Module,
 
 
 def export_fix_subnet(model: nn.Module,
+                      dump_mutable_container: bool = False,
                       dump_derived_mutable: bool = False,
-                      export_weight: bool = False) -> FixMutable:
+                      export_weight_path: str = '') -> FixMutable:
     """Export subnet that can be loaded by :func:`load_fix_subnet`.
 
     Args:
         model (nn.Module): The target model to export.
         dump_derived_mutable (bool): Dump information for all derived mutables.
             Default to False.
-        export_weight (bool): Export entire subnet when set to True.
-            Export choice of mutables when set to False. Default to False.
+        export_weight_path (str): Export subnet weight path.
+            If empty stop export weight. Default to ''.
     """
     if dump_derived_mutable:
         print_log(
@@ -108,37 +111,24 @@ def export_fix_subnet(model: nn.Module,
     from mmrazor.models.mutables import DerivedMutable, MutableChannelContainer
     from mmrazor.models.mutables.base_mutable import BaseMutable
 
-    if export_weight:
+    if export_weight_path:
         # export subnet ckpt
-        fix_subnet = dict()
-        for name, module in model.named_modules():
-            if isinstance(module, BaseMutable):
-                if isinstance(module,
-                            (MutableChannelContainer,
-                            DerivedMutable)) and not dump_derived_mutable:
-                    continue
+        static_model = copy.deepcopy(model)
+        _dynamic_to_static(static_model)
+        torch.save(static_model.state_dict(), export_weight_path)
+    fix_subnet = dict()
+    for name, module in model.named_modules():
+        if isinstance(module, BaseMutable):
+            if isinstance(
+                    module,
+                    MutableChannelContainer) and not dump_mutable_container:
+                continue
+            if isinstance(module, DerivedMutable) and not dump_derived_mutable:
+                continue
 
-                if module.alias:
-                    fix_subnet[module.alias] = module.dump_chosen()
-                else:
-                    fix_subnet[name] = module.dump_chosen()
+            if module.alias:
+                fix_subnet[module.alias] = module.dump_chosen()
+            else:
+                fix_subnet[name] = module.dump_chosen()
 
-        return fix_subnet
-    else:
-        # export mutable's current_choice
-        fix_subnet = dict()
-        for name, module in model.named_modules():
-            print("name, module:", name)
-            if isinstance(module, BaseMutable):
-                print("name, base:", name)
-                if isinstance(module,
-                            (MutableChannelContainer,
-                            DerivedMutable)) and not dump_derived_mutable:
-                    continue
-
-                if module.alias:
-                    fix_subnet[module.alias] = module.dump_chosen()
-                else:
-                    fix_subnet[name] = module.dump_chosen()
-
-        return fix_subnet
+    return fix_subnet

@@ -82,6 +82,23 @@ class TestRegistry(TestCase):
         model = MODELS.build(cfg.model)
         self.assertTrue(isinstance(model, BaseModel))
 
+    def test_build_subnet_prune_from_cfg(self):
+        # test cfg_path
+        # model = MODELS.build(self.arch_cfg_path)
+        # self.assertIsNotNone(model)
+
+        # test fix subnet
+        cfg = dict(
+            # use mmrazor's build_func
+            type='mmrazor.sub_model_prune',
+            cfg=dict(
+                cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py',
+                pretrained=False),
+            fix_subnet='tests/data/test_registry/resnet_subnet.yaml',
+            extra_prefix='backbone.')
+        model = MODELS.build(cfg)
+        self.assertTrue(isinstance(model, BaseModel))
+
 
 if __name__ == '__main__':
     unittest.main()

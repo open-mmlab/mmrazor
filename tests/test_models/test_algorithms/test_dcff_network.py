@@ -237,7 +237,6 @@ class TestDCFFAlgorithm(unittest.TestCase):
         mutator = MODELS.build(MUTATOR_CONFIG_FLOAT)
         mutator.prepare_from_supernet(model)
         mutator.set_choices(mutator.sample_choices())
-        prune_target = mutator.choice_template
 
         custom_groups = [[
             'backbone.layer1.0.conv1_(0, 64)_64',
@@ -251,22 +250,68 @@ class TestDCFFAlgorithm(unittest.TestCase):
         epoch = 6
         data = self.fake_cifar_data()
 
-        prune_target['backbone.layer1.0.conv1_(0, 64)_64'] = 0.1
-        prune_target['backbone.layer1.1.conv1_(0, 64)_64'] = 0.1
+        stage_ratio_1 = 0.65
+        stage_ratio_2 = 0.6
+        stage_ratio_3 = 0.9
+        stage_ratio_4 = 0.7
+
+        target_pruning_ratio = {
+            'backbone.layer1.0.conv1_(0, 64)_64': stage_ratio_1,
+            'backbone.layer1.0.conv2_(0, 64)_64': stage_ratio_2,
+            'backbone.layer1.0.conv3_(0, 256)_256': stage_ratio_3,
+            'backbone.layer1.1.conv1_(0, 64)_64': stage_ratio_1,
+            'backbone.layer1.1.conv2_(0, 64)_64': stage_ratio_2,
+            'backbone.layer1.2.conv1_(0, 64)_64': stage_ratio_1,
+            'backbone.layer1.2.conv2_(0, 64)_64': stage_ratio_2,
+            # block 1 [0.65, 0.6] downsample=[0.9]
+            'backbone.layer2.0.conv1_(0, 128)_128': stage_ratio_1,
+            'backbone.layer2.0.conv2_(0, 128)_128': stage_ratio_2,
+            'backbone.layer2.0.conv3_(0, 512)_512': stage_ratio_3,
+            'backbone.layer2.1.conv1_(0, 128)_128': stage_ratio_1,
+            'backbone.layer2.1.conv2_(0, 128)_128': stage_ratio_2,
+            'backbone.layer2.2.conv1_(0, 128)_128': stage_ratio_1,
+            'backbone.layer2.2.conv2_(0, 128)_128': stage_ratio_2,
+            'backbone.layer2.3.conv1_(0, 128)_128': stage_ratio_1,
+            'backbone.layer2.3.conv2_(0, 128)_128': stage_ratio_2,
+            # block 2 [0.65, 0.6] downsample=[0.9]
+            'backbone.layer3.0.conv1_(0, 256)_256': stage_ratio_1,
+            'backbone.layer3.0.conv2_(0, 256)_256': stage_ratio_2,
+            'backbone.layer3.0.conv3_(0, 1024)_1024': stage_ratio_3,
+            'backbone.layer3.1.conv1_(0, 256)_256': stage_ratio_1,
+            'backbone.layer3.1.conv2_(0, 256)_256': stage_ratio_2,
+            'backbone.layer3.2.conv1_(0, 256)_256': stage_ratio_1,
+            'backbone.layer3.2.conv2_(0, 256)_256': stage_ratio_2,
+            'backbone.layer3.3.conv1_(0, 256)_256': stage_ratio_4,
+            'backbone.layer3.3.conv2_(0, 256)_256': stage_ratio_4,
+            'backbone.layer3.4.conv1_(0, 256)_256': stage_ratio_4,
+            'backbone.layer3.4.conv2_(0, 256)_256': stage_ratio_4,
+            'backbone.layer3.5.conv1_(0, 256)_256': stage_ratio_4,
+            'backbone.layer3.5.conv2_(0, 256)_256': stage_ratio_4,
+            # block 3 [0.65, 0.6]*2+[0.7, 0.7]*2 downsample=[0.9]
+            'backbone.layer4.0.conv1_(0, 512)_512': stage_ratio_4,
+            'backbone.layer4.0.conv2_(0, 512)_512': stage_ratio_4,
+            'backbone.layer4.0.conv3_(0, 2048)_2048': stage_ratio_3,
+            'backbone.layer4.1.conv1_(0, 512)_512': stage_ratio_4,
+            'backbone.layer4.1.conv2_(0, 512)_512': stage_ratio_4,
+            'backbone.layer4.2.conv1_(0, 512)_512': stage_ratio_4,
+            'backbone.layer4.2.conv2_(0, 512)_512': stage_ratio_4
+            # block 4 [0.7, 0.7] downsample=[0.9]
+        }
 
         algorithm = DCFF(
             MODEL_CFG,
-            target_pruning_ratio=prune_target,
+            target_pruning_ratio=target_pruning_ratio,
             mutator_cfg=mutator_cfg,
             step_freq=epoch_step).to(DEVICE)
 
         algorithm.init_weights()
-        self._set_epoch_ite(1, 2, epoch)
+        self._set_epoch_ite(0, 0, epoch)
         algorithm.forward(data['inputs'], data['data_samples'], mode='loss')
         self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
-        subnet = export_fix_subnet(algorithm.architecture, dump_derived_mutable=True)
-        print("subnet:", subnet)
-        # print("model:", algorithm.architecture)
+        subnet = export_fix_subnet(
+            algorithm.architecture,
+            dump_mutable_container=True,
+            dump_derived_mutable=False)
         from mmengine import fileio
-        fileio.dump(subnet,'/mnt/lustre/zengyi/mmrazor/experiment/subnet.yaml')
-        self.assertEqual(1, 0)
+        fileio.dump(subnet,
+                    'tests/data/test_models/test_algorithm/test_subnet.yaml')

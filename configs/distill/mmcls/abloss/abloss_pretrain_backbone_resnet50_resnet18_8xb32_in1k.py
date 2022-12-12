@@ -4,7 +4,7 @@ _base_ = [
     'mmcls::_base_/default_runtime.py'
 ]
 
-teacher_ = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth'  # noqa: E501
+teacher_ckpt = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth'  # noqa: E501
 model = dict(
     _scope_='mmrazor',
     type='SingleTeacherDistill',

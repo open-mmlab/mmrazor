@@ -10,5 +10,6 @@ from .subnet_val_loop import SubnetValLoop
 __all__ = [
     'SingleTeacherDistillValLoop', 'DartsEpochBasedTrainLoop',
     'DartsIterBasedTrainLoop', 'SlimmableValLoop', 'EvolutionSearchLoop',
-    'GreedySamplerTrainLoop', 'SubnetValLoop', 'SelfDistillValLoop'
+    'GreedySamplerTrainLoop', 'SubnetValLoop', 'SelfDistillValLoop',
+    'ItePruneValLoop'
 ]

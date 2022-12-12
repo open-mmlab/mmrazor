@@ -1,0 +1,186 @@
+backbone.bn1.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 64
+- max_channels: 64
+backbone.conv1.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 3
+- max_channels: 3
+backbone.conv1.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 64
+- max_channels: 64
+backbone.layer1.0.bn1.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 41
+- max_channels: 64
+backbone.layer1.0.bn2.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 64
+- max_channels: 64
+backbone.layer1.0.conv1.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 64
+- max_channels: 64
+backbone.layer1.0.conv1.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 41
+- max_channels: 64
+backbone.layer1.0.conv2.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 41
+- max_channels: 64
+backbone.layer1.0.conv2.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 64
+- max_channels: 64
+backbone.layer1.1.bn1.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 41
+- max_channels: 64
+backbone.layer1.1.bn2.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 64
+- max_channels: 64
+backbone.layer1.1.conv1.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 64
+- max_channels: 64
+backbone.layer1.1.conv1.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 41
+- max_channels: 64
+backbone.layer1.1.conv2.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 41
+- max_channels: 64
+backbone.layer1.1.conv2.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 64
+- max_channels: 64
+backbone.layer2.0.bn1.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 83
+- max_channels: 128
+backbone.layer2.0.bn2.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 76
+- max_channels: 128
+backbone.layer2.0.conv1.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 64
+- max_channels: 64
+backbone.layer2.0.conv1.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 83
+- max_channels: 128
+backbone.layer2.0.conv2.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 83
+- max_channels: 128
+backbone.layer2.0.conv2.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 76
+- max_channels: 128
+backbone.layer2.0.downsample.0.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 64
+- max_channels: 64
+backbone.layer2.0.downsample.0.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 76
+- max_channels: 128
+backbone.layer2.0.downsample.1.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 76
+- max_channels: 128
+backbone.layer2.1.bn1.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 83
+- max_channels: 128
+backbone.layer2.1.bn2.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 76
+- max_channels: 128
+backbone.layer2.1.conv1.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 76
+- max_channels: 128
+backbone.layer2.1.conv1.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 83
+- max_channels: 128
+backbone.layer2.1.conv2.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 83
+- max_channels: 128
+backbone.layer2.1.conv2.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 76
+- max_channels: 128
+backbone.layer3.0.bn1.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 166
+- max_channels: 256
+backbone.layer3.0.bn2.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 153
+- max_channels: 256
+backbone.layer3.0.conv1.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 76
+- max_channels: 128
+backbone.layer3.0.conv1.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 166
+- max_channels: 256
+backbone.layer3.0.conv2.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 166
+- max_channels: 256
+backbone.layer3.0.conv2.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 153
+- max_channels: 256
+backbone.layer3.0.downsample.0.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 76
+- max_channels: 128
+backbone.layer3.0.downsample.0.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 153
+- max_channels: 256
+backbone.layer3.0.downsample.1.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 153
+- max_channels: 256
+backbone.layer3.1.bn1.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 166
+- max_channels: 256
+backbone.layer3.1.bn2.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 153
+- max_channels: 256
+backbone.layer3.1.conv1.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 153
+- max_channels: 256
+backbone.layer3.1.conv1.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 166
+- max_channels: 256
+backbone.layer3.1.conv2.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 166
+- max_channels: 256
+backbone.layer3.1.conv2.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 153
+- max_channels: 256
+backbone.layer4.0.bn1.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 358
+- max_channels: 512
+backbone.layer4.0.bn2.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 358
+- max_channels: 512
+backbone.layer4.0.conv1.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 153
+- max_channels: 256
+backbone.layer4.0.conv1.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 358
+- max_channels: 512
+backbone.layer4.0.conv2.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 358
+- max_channels: 512
+backbone.layer4.0.conv2.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 358
+- max_channels: 512
+backbone.layer4.0.downsample.0.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 153
+- max_channels: 256
+backbone.layer4.0.downsample.0.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 358
+- max_channels: 512
+backbone.layer4.0.downsample.1.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 358
+- max_channels: 512
+backbone.layer4.1.bn1.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 358
+- max_channels: 512
+backbone.layer4.1.bn2.mutable_attrs.num_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 358
+- max_channels: 512
+backbone.layer4.1.conv1.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 358
+- max_channels: 512
+backbone.layer4.1.conv1.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 358
+- max_channels: 512
+backbone.layer4.1.conv2.mutable_attrs.in_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 358
+- max_channels: 512
+backbone.layer4.1.conv2.mutable_attrs.out_channels: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 358
+- max_channels: 512
+head.fc.mutable_attrs.in_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 358
+- max_channels: 512
+head.fc.mutable_attrs.out_features: !!python/object/new:mmrazor.utils.typing.DumpChosen
+- 1000
+- max_channels: 1000
