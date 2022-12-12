@@ -28,7 +28,8 @@ def main():
                 if 'blocks.' + str(i) in key:
                     new_key = key.replace(
                         'blocks.' + str(i),
-                        'layer' + str(i // 4 + 1) + '.' + str((i + 3) % 4))
+                        'layer' + str((i + 3) // 4 + 1) + '.' + str(
+                            (i + 3) % 4))
         else:
             new_key = key
 
