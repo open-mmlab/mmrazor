@@ -63,7 +63,7 @@ class TestTools(TestCase):
                 try:
                     subprocess.run([
                         'python',
-                        './tools/get_prune_config.py',
+                        './tools/pruning/get_l1_prune_config.py',
                         f'{self.workdir}/pretrain.py',
                         '-o',
                         f'{self.workdir}/prune.py',
