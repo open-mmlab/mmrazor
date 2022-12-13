@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .model_library import (MMClsModelLibrary, MMDetModelLibrary,
                             DefaultModelLibrary, TorchModelLibrary,
-                            MMSegModelLibrary)
+                            MMPoseModelLibrary, MMSegModelLibrary)
 
 
 class PassedModelManager:
@@ -33,6 +33,9 @@ class FxPassedModelManager(PassedModelManager):
     _mmseg_library = None
     _mmdet_library = None
 
+    # New
+    _mmpose_library = None
+
     def libraries(self, full=False):
         if full:
             return [
@@ -41,6 +44,8 @@ class FxPassedModelManager(PassedModelManager):
                 self.__class__.mmcls_library(),
                 self.__class__.mmseg_library(),
                 self.__class__.mmdet_library(),
+                # New
+                self.__class__.mmpose_library(),
             ]
         else:
             return [self.__class__.default_library()]
@@ -78,23 +83,23 @@ class FxPassedModelManager(PassedModelManager):
         trace in eval mode
         """
         torch_includes = [
-            'resnext',
-            'efficientnet',
-            'inception',
-            'wide',
-            'resnet',
-            'regnet',
-            'shufflenet',
-            'mnasnet',
-            'vit',
-            'convnext',
-            'googlenet',
-            'densenet',
-            'swin',
-            'vgg',
-            'mobilenet',
-            'squeezenet',
-            'alexnet',
+            # 'resnext',
+            # 'efficientnet',
+            # 'inception',
+            # 'wide',
+            # 'resnet',
+            # 'regnet',
+            # 'shufflenet',
+            # 'mnasnet',
+            # 'vit',
+            # 'convnext',
+            # 'googlenet',
+            # 'densenet',
+            # 'swin',
+            # 'vgg',
+            # 'mobilenet',
+            # 'squeezenet',
+            # 'alexnet',
         ]
         if cls._torch_library is None:
             cls._torch_library = TorchModelLibrary(include=torch_includes)
@@ -110,40 +115,40 @@ class FxPassedModelManager(PassedModelManager):
         convnext: consist of layernorm.
         """
         mmcls_include = [
-            'tnt',
-            'resnet',
-            'resnetv1c',
-            'mobileone',
-            'mlp',
-            'densenet',
-            'hrnet',
-            'seresnet',
-            'van',
-            'repmlp',
-            'repvgg',
-            'vgg',
-            'vgg11bn',
-            'edgenext',
-            'vgg19bn',
-            'wide',
-            'res2net',
-            'vgg13bn',
-            'resnetv1d',
-            'mobilenet',
-            'convmixer',
-            'resnest',
-            'inception',
-            'resnext',
-            'twins',
-            'vgg16bn',
-            'shufflenet',
-            'conformer',
-            'regnet',
-            'seresnext',
-            'vit',
-            'poolformer',
-            't2t',
-            'efficientnet',
+            # 'tnt',
+            # 'resnet',
+            # 'resnetv1c',
+            # 'mobileone',
+            # 'mlp',
+            # 'densenet',
+            # 'hrnet',
+            # 'seresnet',
+            # 'van',
+            # 'repmlp',
+            # 'repvgg',
+            # 'vgg',
+            # 'vgg11bn',
+            # 'edgenext',
+            # 'vgg19bn',
+            # 'wide',
+            # 'res2net',
+            # 'vgg13bn',
+            # 'resnetv1d',
+            # 'mobilenet',
+            # 'convmixer',
+            # 'resnest',
+            # 'inception',
+            # 'resnext',
+            # 'twins',
+            # 'vgg16bn',
+            # 'shufflenet',
+            # 'conformer',
+            # 'regnet',
+            # 'seresnext',
+            # 'vit',
+            # 'poolformer',
+            # 't2t',
+            # 'efficientnet',
             ## error
             # 'deit',
             # 'swin',
@@ -157,50 +162,50 @@ class FxPassedModelManager(PassedModelManager):
     @classmethod
     def mmdet_library(cls):
         mmdet_include = [
-            'pafpn',
-            'gn+ws',
-            'paa',
-            'fcos',
-            'autoassign',
-            'centripetalnet',
-            'retinanet',
-            'cornernet',
-            'gn',
-            'instaboost',
-            'rpn',
-            'fpg',
-            'crowddet',
-            'resnest',
-            'pvt',
-            'solo',
-            'grid',
-            'free',
-            'point',
-            'yolo',
-            'double',
-            'dynamic',
-            'maskformer',
-            'scratch',
-            'nas',
-            'yolof',
-            'faster',
-            'atss',
-            'yolox',
-            'fsaf',
-            'ghm',
-            'centernet',
-            'seesaw',
-            'regnet',
-            'cityscapes',
-            'lvis',
-            'sabl',
-            'gfl',
-            'tridentnet',
-            'selfsup',
-            'deepfashion',
-            'efficientnet',
-            'foveabox',
-            'mask',
+            # 'pafpn',
+            # 'gn+ws',
+            # 'paa',
+            # 'fcos',
+            # 'autoassign',
+            # 'centripetalnet',
+            # 'retinanet',
+            # 'cornernet',
+            # 'gn',
+            # 'instaboost',
+            # 'rpn',
+            # 'fpg',
+            # 'crowddet',
+            # 'resnest',
+            # 'pvt',
+            # 'solo',
+            # 'grid',
+            # 'free',
+            # 'point',
+            # 'yolo',
+            # 'double',
+            # 'dynamic',
+            # 'maskformer',
+            # 'scratch',
+            # 'nas',
+            # 'yolof',
+            # 'faster',
+            # 'atss',
+            # 'yolox',
+            # 'fsaf',
+            # 'ghm',
+            # 'centernet',
+            # 'seesaw',
+            # 'regnet',
+            # 'cityscapes',
+            # 'lvis',
+            # 'sabl',
+            # 'gfl',
+            # 'tridentnet',
+            # 'selfsup',
+            # 'deepfashion',
+            # 'efficientnet',
+            # 'foveabox',
+            # 'mask',
             ## errors
             # 'timm',
             # 'swin',
@@ -255,40 +260,40 @@ class FxPassedModelManager(PassedModelManager):
     def mmseg_library(cls):
         # a common error: unet related models
         include = [
-            'bisenetv',
-            'erfnet',
-            'dmnet',
-            'twins',
-            'segformer',
-            'isanet',
-            'vit',
-            'resnest',
-            'setr',
-            'cgnet',
-            'stdc',
-            'dpt',
-            'pspnet',
-            'upernet',
-            'apcnet',
-            'gcnet',
-            'ann',
-            'ocrnet',
-            'ccnet',
-            'deeplabv',
-            'dnlnet',
-            'point',
-            'fastscnn',
-            'psanet',
-            'segmenter',
-            'danet',
-            'emanet',
-            'icnet',
-            'unet',
-            'fcn',
-            'swin',
-            'nonlocal',
-            'deeplabv3plus',
-            'sem',
+            # 'bisenetv',
+            # 'erfnet',
+            # 'dmnet',
+            # 'twins',
+            # 'segformer',
+            # 'isanet',
+            # 'vit',
+            # 'resnest',
+            # 'setr',
+            # 'cgnet',
+            # 'stdc',
+            # 'dpt',
+            # 'pspnet',
+            # 'upernet',
+            # 'apcnet',
+            # 'gcnet',
+            # 'ann',
+            # 'ocrnet',
+            # 'ccnet',
+            # 'deeplabv',
+            # 'dnlnet',
+            # 'point',
+            # 'fastscnn',
+            # 'psanet',
+            # 'segmenter',
+            # 'danet',
+            # 'emanet',
+            # 'icnet',
+            # 'unet',
+            # 'fcn',
+            # 'swin',
+            # 'nonlocal',
+            # 'deeplabv3plus',
+            # 'sem',
             ## errors
             # 'mobilenet',
             # 'mae',
@@ -304,6 +309,24 @@ class FxPassedModelManager(PassedModelManager):
             cls._mmseg_library = MMSegModelLibrary(include=include)
         return cls._mmseg_library
 
+    # New
+
+    @classmethod
+    def mmpose_library(cls):
+        # New
+        mmpose_include = [
+            'aic',
+            'coco',
+            'crowdpose',
+            'jhmdb',
+            'mpii',
+            'posetrack18',
+        ]
+        if cls._mmpose_library is None:
+            cls._mmpose_library = MMPoseModelLibrary(include=mmpose_include)
+        
+        return cls._mmpose_library
+
     # for backward tracer
 
 
@@ -315,6 +338,10 @@ class BackwardPassedModelManager(PassedModelManager):
     _mmseg_library = None
     _mmdet_library = None
 
+    # New
+    _mmpose_library = None
+
+
     def libraries(self, full=False):
         if full:
             return [
@@ -323,6 +350,8 @@ class BackwardPassedModelManager(PassedModelManager):
                 self.__class__.mmcls_library(),
                 self.__class__.mmseg_library(),
                 self.__class__.mmdet_library(),
+                # New
+                self.__class__.mmpose_library(),
             ]
         else:
             return [self.__class__.default_library()]
@@ -331,20 +360,20 @@ class BackwardPassedModelManager(PassedModelManager):
     def default_library(cls):
         if cls._default_library is None:
             cls._default_library = DefaultModelLibrary(include=[
-                'SingleLineModel',
-                'ResBlock',
-                'AddCatModel',
-                'ConcatModel',
-                'MultiConcatModel',
-                'MultiConcatModel2',
-                'GroupWiseConvModel',
-                'Xmodel',
-                # 'MultipleUseModel', # bug
-                'Icep',
-                'ExpandLineModel',
-                'MultiBindModel',
-                'DwConvModel',
-                'ConvAttnModel',
+                # 'SingleLineModel',
+                # 'ResBlock',
+                # 'AddCatModel',
+                # 'ConcatModel',
+                # 'MultiConcatModel',
+                # 'MultiConcatModel2',
+                # 'GroupWiseConvModel',
+                # 'Xmodel',
+                # # 'MultipleUseModel', # bug
+                # 'Icep',
+                # 'ExpandLineModel',
+                # 'MultiBindModel',
+                # 'DwConvModel',
+                # 'ConvAttnModel',
             ])
         return cls._default_library
 
@@ -356,20 +385,20 @@ class BackwardPassedModelManager(PassedModelManager):
         """
 
         torch_includes = [
-            'alexnet',
-            'densenet',
-            'efficientnet',
-            'googlenet',
-            'inception',
-            'mnasnet',
-            'mobilenet',
-            'regnet',
-            'resnet',
-            'resnext',
-            # 'shufflenet',     # bug
-            'squeezenet',
-            'vgg',
-            'wide_resnet',
+            # 'alexnet',
+            # 'densenet',
+            # 'efficientnet',
+            # 'googlenet',
+            # 'inception',
+            # 'mnasnet',
+            # 'mobilenet',
+            # 'regnet',
+            # 'resnet',
+            # 'resnext',
+            # # 'shufflenet',     # bug
+            # 'squeezenet',
+            # 'vgg',
+            # 'wide_resnet',
             # "vit",
             # "swin",
             # "convnext"
@@ -388,20 +417,20 @@ class BackwardPassedModelManager(PassedModelManager):
         convnext: consist of layernorm.
         """
         mmcls_model_include = [
-            'vgg',
-            'efficientnet',
-            'resnet',
-            'mobilenet',
-            'resnext',
-            'wide-resnet',
-            # 'shufflenet',  # bug
-            'hrnet',
-            # 'resnest',  # bug
-            'inception',
-            # 'res2net',  # bug
-            'densenet',
-            # 'convnext',  # bug
-            'regnet',
+            # 'vgg',
+            # 'efficientnet',
+            # 'resnet',
+            # 'mobilenet',
+            # 'resnext',
+            # 'wide-resnet',
+            # # 'shufflenet',  # bug
+            # 'hrnet',
+            # # 'resnest',  # bug
+            # 'inception',
+            # # 'res2net',  # bug
+            # 'densenet',
+            # # 'convnext',  # bug
+            # 'regnet',
             # 'van',  # bug
             # 'swin_transformer',  # bug
             # 'convmixer', # bug
@@ -466,7 +495,7 @@ class BackwardPassedModelManager(PassedModelManager):
             # 'bisenetv2',
             # 'pointrend',
             # 'ccnet',
-            'pspnet',
+            # 'pspnet',
             # 'dmnet',
             # 'stdc',
             # 'ann',
@@ -480,6 +509,22 @@ class BackwardPassedModelManager(PassedModelManager):
         if cls._mmseg_library is None:
             cls._mmseg_library = MMSegModelLibrary(include=include)
         return cls._mmseg_library
+
+    # New
+    @classmethod
+    def mmpose_library(cls):
+        mmpose_include = [
+            'coco',
+            'jhmdb',
+            'posetrack',
+            'mpii',
+            'crowdpose',
+            'aic',
+        ]
+
+        if cls._mmpose_library is None:
+            cls._mmpose_library = MMPoseModelLibrary(include=mmpose_include)
+        return cls._mmpose_library
 
 
 fx_passed_library = FxPassedModelManager()

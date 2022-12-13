@@ -7,7 +7,7 @@ from mmrazor.utils import get_placeholder
 from .demo_inputs import (BaseDemoInput, DefaultMMClsDemoInput,
                           DefaultMMDemoInput, DefaultMMDetDemoInput,
                           DefaultMMRotateDemoInput, DefaultMMSegDemoInput,
-                          DefaultMMYoloDemoInput)
+                          DefaultMMPoseDemoInput, DefaultMMYoloDemoInput)
 
 try:
     from mmdet.models import BaseDetector
@@ -24,12 +24,20 @@ try:
 except Exception:
     BaseSegmentor = get_placeholder('mmseg')
 
+# New
+try:
+    from mmpose.models import TopdownPoseEstimator
+except Exception:
+    TopdownPoseEstimator = get_placeholder('mmpose')
+
 default_demo_input_class = {
     BaseDetector: DefaultMMDetDemoInput,
     ImageClassifier: DefaultMMClsDemoInput,
     BaseSegmentor: DefaultMMSegDemoInput,
     BaseModel: DefaultMMDemoInput,
-    nn.Module: BaseDemoInput
+    nn.Module: BaseDemoInput,
+    # New
+    TopdownPoseEstimator: DefaultMMPoseDemoInput,
 }
 default_demo_input_class_for_scope = {
     'mmcls': DefaultMMClsDemoInput,

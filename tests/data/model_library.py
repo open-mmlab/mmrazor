@@ -646,6 +646,29 @@ class MMSegModelLibrary(MMModelLibrary):
         config['_scope_'] = 'mmseg'
         return config
 
+# New
+
+class MMPoseModelLibrary(MMModelLibrary):
+    """ New """
+    default_includes: List = [
+        'coco',
+        'jhmdb',
+        'posetrack',
+        'mpii',
+        'crowdpose',
+        'aic',
+    ]
+    base_config_path = '/body_2d_keypoint/topdown_heatmap/'
+    repo = 'mmpose'
+
+    def __init__(self, include=default_includes, exclude=[]) -> None:
+        super().__init__(include, exclude=exclude)
+
+    @classmethod
+    def _config_process(cls, config: Dict):
+        config['_scope_'] = 'mmpose'
+        return config
+
 
 # tools
 

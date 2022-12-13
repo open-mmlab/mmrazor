@@ -55,7 +55,7 @@ def _demo_mmseg_inputs(input_shape=(1, 3, 8, 16), num_classes=10):
 
     imgs = torch.randn(*input_shape)
     segs = torch.randint(
-        low=0, high=num_classes - 1, size=(N, H, W), dtype=torch.long)
+        low=0, high=num_classes - 1, size=(N, H, W), dtype=torch.long)  
 
     img_metas = [{
         'img_shape': (H, W),
