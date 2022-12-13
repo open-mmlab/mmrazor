@@ -47,10 +47,10 @@ The mainstream approach for filter pruning is usually either to force a hard-cod
 
 ### Generate channel_config file
 
-Generate `resnet_det.json` with `tools/get_channel_units.py`.
+Generate `resnet_det.json` with `tools/pruning/get_channel_units.py`.
 
 ```bash
-python tools/get_channel_units.py
+python tools/pruning/get_channel_units.py
   configs/pruning/mmdet/dcff/dcff_faster_rcnn_resnet50_8xb4_coco.py \
   -c -i --output-path=configs/pruning/mmcls/dcff/resnet_det.json
 ```
