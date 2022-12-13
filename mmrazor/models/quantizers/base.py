@@ -1,5 +1,7 @@
 from abc import abstractmethod
+import copy
 import torch
+import torch.nn as nn
 from mmrazor.registry import MODELS, TASK_UTILS
 from mmrazor.structures.quantization import QConfigHander, BackendConfigs
 from mmrazor.models.utils import str2class
@@ -12,6 +14,7 @@ from torch.ao.quantization.quant_type import QuantType, _quant_type_from_str
 from torch.ao.quantization.fx.custom_config import PrepareCustomConfig, FuseCustomConfig
 from torch.nn.intrinsic.qat import modules as qat_fused_modules
 from torch.nn.qat import modules as qat_modules
+from torch.ao.quantization import FakeQuantizeBase
 
 GLOBAL_DICT_KEY = "_global_"
 OBJECT_TYPE_DICT_KEY = "object_type"
@@ -40,6 +43,122 @@ MERGE_BN_MAPPINGS = {
     qat_fused_modules.ConvBnReLU3d: qat_fused_modules.ConvReLU3d,
     qat_fused_modules.LinearBn1d: qat_modules.Linear
 }
+
+MODULE_DEL_PREV_FAKEQUANT = (nn.ReLU6, nn.Identity)
+MODULE_DEL_NEXT_FAKEQUANT = (nn.MaxPool2d, )
+TARGET_DEL_PREV_FAKEQUANT = ('output', )
+TARGET_DEL_NEXT_FAKEQUANT = ('flatten', )
+
+def _get_attrs(target, attrs):
+    attrs = attrs.split('.')
+    for att in attrs:
+        target = getattr(target, att, None)
+    return target
+
+
+def del_fakequant_before_target(prepared_model, target_patterns, inplace=True):
+
+    def recursive_find_erased_nodes(node):
+        """Find FakeQuant before target node recursively.
+
+        Examples:
+            head_fc = self.head.fc(activation_post_process_87);  activation_post_process_87 = None
+            activation_post_process_88 = self.activation_post_process_88(head_fc);  head_fc = None
+            head = self.head
+            _get_loss = head._get_loss(activation_post_process_88, data_samples);  head = activation_post_process_88 = data_samples = None
+            return _get_loss
+
+        node                       |           node.args
+        --------------------
+        output                     | (_get_loss, )
+        _get_loss                  | (head, activation_post_process_88, data_samples)
+        head                       | ()
+        activation_post_process_88 | (head_fc, )
+        data_samples               | (None, )
+        """
+        if node is None:
+            return
+        if isinstance(_get_attrs(prepared_model, node.target), FakeQuantizeBase):
+            nodes_to_erase.append(node)
+            return
+        for prev_node in node.args:
+            recursive_find_erased_nodes(prev_node)
+        for prev_node in node.kwargs.values():
+            recursive_find_erased_nodes(prev_node)
+        return
+
+    if not inplace:
+        prepared_model = copy.deepcopy(prepared_model)
+    new_graph = copy.deepcopy(prepared_model.graph)
+    for node in new_graph.nodes:
+        if node.target in target_patterns:
+            nodes_to_erase = []
+            recursive_find_erased_nodes(node)
+            for to_erase in nodes_to_erase:
+                to_erase.replace_all_uses_with(to_erase.args[0])
+                new_graph.erase_node(to_erase)
+                delattr(prepared_model, to_erase.target)
+    new_graph.lint()
+    prepared_model.graph = new_graph
+    return prepared_model
+
+
+def del_fakequant_after_target(prepared_model, target_patterns, inplace=True):
+    if not inplace:
+        prepared_model = copy.deepcopy(prepared_model)
+    new_graph = copy.deepcopy(prepared_model.graph)
+    for node in new_graph.nodes:
+        if node.op == 'call_module' and isinstance(
+                _get_attrs(prepared_model, node.target), FakeQuantizeBase):
+            assert len(node.args) == 1
+            prev_node = node.args[0]
+            if prev_node.target not in target_patterns:
+                continue
+            node.replace_all_uses_with(prev_node)
+            new_graph.erase_node(node)
+            delattr(prepared_model, node.target)
+    new_graph.lint()
+    prepared_model.graph = new_graph
+    return prepared_model
+
+
+def del_fakequant_before_module(prepared_model, module_patterns, inplace=True):
+    if not inplace:
+        prepared_model = copy.deepcopy(prepared_model)
+    new_graph = copy.deepcopy(prepared_model.graph)
+    for node in new_graph.nodes:
+        if node.op == 'call_module' and isinstance(_get_attrs(prepared_model, node.target), module_patterns):
+            to_erase = node.args[0]
+            if not isinstance(_get_attrs(prepared_model, to_erase.target), FakeQuantizeBase):
+                continue
+            if len(to_erase.users) > 1:
+                continue
+            to_erase.replace_all_uses_with(to_erase.args[0])
+            new_graph.erase_node(to_erase)
+            delattr(prepared_model, to_erase.target)
+    new_graph.lint()
+    prepared_model.graph = new_graph
+    return prepared_model
+
+
+def del_fakequant_after_module(prepared_model, module_patterns, inplace=True):
+    if not inplace:
+        prepared_model = copy.deepcopy(prepared_model)
+    new_graph = copy.deepcopy(prepared_model.graph)
+    for node in new_graph.nodes:
+        if node.op == 'call_module' and isinstance(_get_attrs(prepared_model, node.target), FakeQuantizeBase):
+            assert len(node.args) == 1
+            prev_node = node.args[0]
+            if not isinstance(_get_attrs(prepared_model, prev_node.target),
+                              module_patterns):
+                continue
+            node.replace_all_uses_with(prev_node)
+            new_graph.erase_node(node)
+            delattr(prepared_model, node.target)
+    new_graph.lint()
+    prepared_model.graph = new_graph
+    return prepared_model
+
 
 class BaseQuantizer(BaseModule):
     def __init__(self, tracer):
@@ -96,6 +215,13 @@ class WithoutDeployQuantizer(BaseQuantizer):
         )
         for attr_name in preserved_attributes:
             setattr(prepared, attr_name, getattr(model, attr_name))
+
+        prepared = del_fakequant_before_module(prepared, MODULE_DEL_PREV_FAKEQUANT, inplace=True)
+        prepared = del_fakequant_after_module(prepared, MODULE_DEL_NEXT_FAKEQUANT, inplace=True)
+        prepared = del_fakequant_before_target(prepared, TARGET_DEL_PREV_FAKEQUANT, inplace=True)
+        prepared = del_fakequant_after_target(prepared, TARGET_DEL_NEXT_FAKEQUANT, inplace=True)
+
+
         return prepared
 
     def gen_qconfig_mapping(self, qconfig_mapping):
@@ -190,6 +316,20 @@ class WithDeployQuantizer(BaseQuantizer):
             example_inputs=self.example_inputs,
             backend_config=self.backend_config
         )
+
+        prepared = del_fakequant_before_module(prepared,
+                                               MODULE_DEL_PREV_FAKEQUANT,
+                                               inplace=True)
+        prepared = del_fakequant_after_module(prepared,
+                                              MODULE_DEL_NEXT_FAKEQUANT,
+                                              inplace=True)
+        prepared = del_fakequant_before_target(prepared,
+                                               TARGET_DEL_PREV_FAKEQUANT,
+                                               inplace=True)
+        prepared = del_fakequant_after_target(prepared,
+                                              TARGET_DEL_NEXT_FAKEQUANT,
+                                              inplace=True)
+
         return prepared
     
     def post_process_weight_fakequant(self,
@@ -211,7 +351,7 @@ class WithDeployQuantizer(BaseQuantizer):
                             cls = MERGE_BN_MAPPINGS[type(child)]
                             new_child = cls.from_float(float_child)
                         else:
-                            new_child = child.from_float(float_child)
+                            new_child = type(child).from_float(float_child)
 
                         new_child.weight_fake_quant(new_child.weight)
                     else:
@@ -222,7 +362,5 @@ class WithDeployQuantizer(BaseQuantizer):
         observed_module.apply(enable_fake_quant)
         traverse(observed_module)
 
-    def prepare_for_mmdeploy(self, model):
+    def prepare_for_mmdeploy(self, model, dummy_input, checkpoint):
         raise NotImplementedError
-    
-
