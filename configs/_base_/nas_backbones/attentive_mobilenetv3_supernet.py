@@ -40,7 +40,7 @@ arch_setting = dict(
         [1792, 1984, 1984 - 1792],  # last layer
     ])
 
-_INPUT_MUTABLE = dict(
+input_mutable = dict(
     input_resizer=dict(type='DynamicInputResizer'),
     mutable_shape=dict(
         type='OneShotMutableValue',

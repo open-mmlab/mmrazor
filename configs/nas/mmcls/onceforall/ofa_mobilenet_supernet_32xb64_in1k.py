@@ -1,6 +1,6 @@
 _base_ = [
     'mmcls::_base_/default_runtime.py',
-    'mmrazor::_base_/settings/imagenet_bs2048_bignas.py',
+    'mmrazor::_base_/settings/imagenet_bs2048_ofa.py',
     'mmrazor::_base_/nas_backbones/ofa_mobilenetv3_supernet.py',
 ]
 
@@ -20,12 +20,7 @@ supernet = dict(
             mode='original',
             loss_weight=1.0),
         topk=(1, 5)),
-    input_resizer_cfg=dict(
-        input_resizer=dict(type='DynamicInputResizer'),
-        mutable_shape=dict(
-            type='OneShotMutableValue',
-            value_list=[[192, 192], [224, 224], [256, 256], [288, 288]],
-            default_value=[224, 224])),
+    input_resizer_cfg=_base_.input_mutable,
     connect_head=dict(connect_with_backbone='backbone.last_mutable_channels'),
 )
 
