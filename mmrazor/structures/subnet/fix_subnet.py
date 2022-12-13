@@ -10,18 +10,21 @@ from mmrazor.utils import FixMutable, ValidFixMutable
 from mmrazor.utils.typing import DumpChosen
 
 
-def _dynamic_to_static(model: nn.Module) -> None:
+def _dynamic_to_static(model: nn.Module, first_visit: bool = True) -> None:
     # Avoid circular import
     from mmrazor.models.architectures.dynamic_ops import DynamicMixin
 
     def traverse_children(module: nn.Module) -> None:
         for name, child in module.named_children():
             if isinstance(child, DynamicMixin):
+                # TODO: Maybe deal with DynamicSequential in a better way.
+                if 'layer' in name:
+                    _dynamic_to_static(child, first_visit=False)
                 setattr(module, name, child.to_static_op())
             else:
                 traverse_children(child)
 
-    if isinstance(model, DynamicMixin):
+    if isinstance(model, DynamicMixin) and first_visit:
         raise RuntimeError('Root model can not be dynamic op.')
 
     traverse_children(model)
