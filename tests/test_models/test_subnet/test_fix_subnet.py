@@ -117,26 +117,15 @@ class TestFixSubnet(TestCase):
         model = MockModelWithDerivedMutable()
         fix_subnet = export_fix_subnet(model)
         self.assertDictEqual(
-            fix_subnet, {'source_mutable': model.source_mutable.dump_chosen()})
+            fix_subnet, {
+                'source_mutable': model.source_mutable.dump_chosen(),
+                'derived_mutable': model.source_mutable.dump_chosen()
+            })
 
         fix_subnet['source_mutable'] = dict(
             fix_subnet['source_mutable']._asdict())
         fix_subnet['source_mutable']['chosen'] = 4
         load_fix_subnet(model, fix_subnet)
+
         assert model.source_mutable.current_choice == 4
         assert model.derived_mutable.current_choice == 8
-
-        model = MockModelWithDerivedMutable()
-        fix_subnet = export_fix_subnet(model, dump_derived_mutable=True)
-        self.assertDictEqual(
-            fix_subnet, {
-                'source_mutable': model.source_mutable.dump_chosen(),
-                'derived_mutable': model.derived_mutable.dump_chosen()
-            })
-
-        fix_subnet['source_mutable'] = dict(
-            fix_subnet['source_mutable']._asdict())
-        fix_subnet['source_mutable']['chosen'] = 2
-        load_fix_subnet(model, fix_subnet)
-        assert model.source_mutable.current_choice == 2
-        assert model.derived_mutable.current_choice == 4

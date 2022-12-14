@@ -1,9 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import logging
 from typing import Dict
 
 from mmengine import fileio
-from mmengine.logging import print_log
 from torch import nn
 
 from mmrazor.utils import FixMutable, ValidFixMutable
@@ -99,15 +97,8 @@ def load_fix_subnet(model: nn.Module,
     _dynamic_to_static(model)
 
 
-def export_fix_subnet(model: nn.Module,
-                      dump_derived_mutable: bool = False) -> FixMutable:
+def export_fix_subnet(model: nn.Module) -> FixMutable:
     """Export subnet that can be loaded by :func:`load_fix_subnet`."""
-    if dump_derived_mutable:
-        print_log(
-            'Trying to dump information of all derived mutables, '
-            'this might harm readability of the exported configurations.',
-            level=logging.WARNING)
-
     # Avoid circular import
     from mmrazor.models.mutables import DerivedMutable, MutableChannelContainer
     from mmrazor.models.mutables.base_mutable import BaseMutable
@@ -121,8 +112,7 @@ def export_fix_subnet(model: nn.Module,
     fix_subnet: Dict[str, DumpChosen] = dict()
     for name, module in model.named_modules():
         if isinstance(module, BaseMutable):
-            if isinstance(module, MutableChannelContainer) and \
-               not dump_derived_mutable:
+            if isinstance(module, MutableChannelContainer):
                 continue
 
             elif isinstance(module, DerivedMutable):

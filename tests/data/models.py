@@ -740,6 +740,7 @@ class DynamicMMBlock(nn.Module):
         self.with_attentive_shortcut = True
         self.in_channels = 24
 
+        self.first_out_channels_list = [16]
         self.first_conv = ConvModule(
             in_channels=3,
             out_channels=24,
@@ -749,8 +750,6 @@ class DynamicMMBlock(nn.Module):
             conv_cfg=self.conv_cfg,
             norm_cfg=self.norm_cfg,
             act_cfg=dict(type='Swish'))
-
-        self.last_mutable = OneShotMutableChannel(num_channels=24, candidate_choices=[16, 24])
 
         self.layers = []
         for i, (num_blocks, kernel_sizes, expand_ratios, num_channels) in \
@@ -833,13 +832,19 @@ class DynamicMMBlock(nn.Module):
         return dynamic_seq
 
     def register_mutables(self):
+        """Mutate the BigNAS-style MobileNetV3."""
         OneShotMutableChannelUnit._register_channel_container(
             self, MutableChannelContainer)
 
-        # mutate the first conv
-        mutate_conv_module(
-            self.first_conv, mutable_out_channels=self.last_mutable)
+        self.first_mutable_channels = OneShotMutableChannel(
+            alias='backbone.first_channels',
+            num_channels=max(self.first_out_channels_list),
+            candidate_choices=self.first_out_channels_list)
 
+        mutate_conv_module(
+            self.first_conv, mutable_out_channels=self.first_mutable_channels)
+
+        mid_mutable = self.first_mutable_channels
         # mutate the built mobilenet layers
         for i, layer in enumerate(self.layers[:-1]):
             num_blocks = self.num_blocks_list[i]
@@ -847,46 +852,48 @@ class DynamicMMBlock(nn.Module):
             expand_ratios = self.expand_ratio_list[i]
             out_channels = self.num_channels_list[i]
 
-            mutable_kernel_size = OneShotMutableValue(
-                value_list=kernel_sizes, default_value=max(kernel_sizes))
-            mutable_expand_ratio = OneShotMutableValue(
-                value_list=expand_ratios, default_value=max(expand_ratios))
+            prefix = 'backbone.layers.' + str(i + 1) + '.'
+
             mutable_out_channels = OneShotMutableChannel(
-                num_channels=max(out_channels), candidate_choices=out_channels)
+                alias=prefix + 'out_channels',
+                candidate_choices=out_channels,
+                num_channels=max(out_channels))
 
-            se_ratios = [i / 4 for i in expand_ratios]
-            mutable_se_channels = OneShotMutableValue(
-                value_list=se_ratios, default_value=max(se_ratios))
+            mutable_kernel_size = OneShotMutableValue(
+                alias=prefix + 'kernel_size', value_list=kernel_sizes)
 
-            for k in range(max(self.num_blocks_list[i])):
-                mutate_mobilenet_layer(layer[k], self.last_mutable,
-                                       mutable_out_channels,
-                                       mutable_se_channels,
-                                       mutable_expand_ratio,
-                                       mutable_kernel_size)
-                self.last_mutable = mutable_out_channels
+            mutable_expand_ratio = OneShotMutableValue(
+                alias=prefix + 'expand_ratio', value_list=expand_ratios)
 
             mutable_depth = OneShotMutableValue(
-                value_list=num_blocks, default_value=max(num_blocks))
+                alias=prefix + 'depth', value_list=num_blocks)
             layer.register_mutable_attr('depth', mutable_depth)
 
-        mutable_out_channels = OneShotMutableChannel(
+            for k in range(max(self.num_blocks_list[i])):
+                mutate_mobilenet_layer(layer[k], mid_mutable,
+                                       mutable_out_channels,
+                                       mutable_expand_ratio,
+                                       mutable_kernel_size)
+                mid_mutable = mutable_out_channels
+
+        self.last_mutable_channels = OneShotMutableChannel(
+            alias='backbone.last_channels',
             num_channels=self.out_channels,
             candidate_choices=self.last_out_channels_list)
+
         last_mutable_expand_value = OneShotMutableValue(
             value_list=self.last_expand_ratio_list,
             default_value=max(self.last_expand_ratio_list))
-        derived_expand_channels = self.last_mutable * last_mutable_expand_value
+
+        derived_expand_channels = mid_mutable * last_mutable_expand_value
         mutate_conv_module(
             self.layers[-1].final_expand_layer,
-            mutable_in_channels=self.last_mutable,
+            mutable_in_channels=mid_mutable,
             mutable_out_channels=derived_expand_channels)
         mutate_conv_module(
             self.layers[-1].feature_mix_layer,
             mutable_in_channels=derived_expand_channels,
-            mutable_out_channels=mutable_out_channels)
-
-        self.last_mutable = mutable_out_channels
+            mutable_out_channels=self.last_mutable_channels)
 
     def forward(self, x):
         x = self.first_conv(x)

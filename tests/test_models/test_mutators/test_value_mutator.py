@@ -56,8 +56,10 @@ class TestValueMutator(unittest.TestCase):
                         for each_mutables in module.source_mutables:
                             if isinstance(each_mutables, MutableValue):
                                 mutable_value_space.append(each_mutables)
-                assert len(
-                    value_mutator.search_groups) == len(mutable_value_space)
+                count = 0
+                for values in value_mutator.search_groups.values():
+                    count += len(values)
+                assert count == len(mutable_value_space)
 
                 x = torch.rand([2, 3, 224, 224])
                 y = model(x)
