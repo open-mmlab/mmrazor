@@ -295,7 +295,25 @@ class MutableChannelUnit(ChannelUnit):
                 else:
                     container.register_mutable(mutable_channel_, start, end)
 
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        """Load from state dict."""
+
+        def load(name):
+            key = prefix + name
+            if key in state_dict:
+                return state_dict[key]
+            else:
+                if strict:
+                    missing_keys.append(key)
+                return None
+
+        choice = load('choice')
+        if choice is not None:
+            self.current_choice = choice
+
     def _save_to_state_dict(self, destination, prefix, keep_vars):
+        """Save current choice to state dict."""
         destination[prefix + 'choice'] = self.current_choice
 
 

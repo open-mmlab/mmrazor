@@ -158,6 +158,10 @@ class SequentialMutableChannelUnit(MutableChannelUnit):
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
+        """Load from state dict."""
+        super()._load_from_state_dict(state_dict, prefix, local_metadata,
+                                      strict, missing_keys, unexpected_keys,
+                                      error_msgs)
 
         def load(name):
             key = prefix + name
@@ -168,15 +172,12 @@ class SequentialMutableChannelUnit(MutableChannelUnit):
                     missing_keys.append(key)
                 return None
 
-        choice = load('choice')
-        if choice is not None:
-            self.current_choice = choice
-
-            mask = load('mutable_channel_mask')
-            if mask is not None:
-                self.mutable_channel.mask = mask
+        mask = load('mutable_channel_mask')
+        if mask is not None:
+            self.mutable_channel.mask = mask
 
     def _save_to_state_dict(self, destination, prefix, keep_vars):
+        """Additionally add mask to state dict."""
         super()._save_to_state_dict(destination, prefix, keep_vars)
         destination[prefix +
                     'mutable_channel_mask'] = self.mutable_channel.current_mask
