@@ -2,6 +2,7 @@
 import random
 from typing import Dict, Union
 
+import torch
 import torch.nn as nn
 from mmcv.cnn.bricks import Conv2dAdaptivePadding
 from mmengine import MMLogger
@@ -166,7 +167,11 @@ class SequentialMutableChannelUnit(MutableChannelUnit):
         def load(name):
             key = prefix + name
             if key in state_dict:
-                return state_dict[key]
+                value = state_dict[key]
+                if isinstance(value, torch.Tensor):
+                    if value.numel() == 1:
+                        value = value.item()
+                return value
             else:
                 if strict:
                     missing_keys.append(key)
@@ -179,5 +184,14 @@ class SequentialMutableChannelUnit(MutableChannelUnit):
     def _save_to_state_dict(self, destination, prefix, keep_vars):
         """Additionally add mask to state dict."""
         super()._save_to_state_dict(destination, prefix, keep_vars)
-        destination[prefix +
-                    'mutable_channel_mask'] = self.mutable_channel.current_mask
+        if len(destination) > 0:
+            device = list(destination.values())[0].device
+        else:
+            device = torch.device('cpu')
+            from mmrazor.utils import print_log
+            print_log(("save state dict, but don't find proper device,"
+                       'using cpu by default.'))
+        destination[
+            prefix +
+            'mutable_channel_mask'] = self.mutable_channel.current_mask.float(
+            ).to(device)
