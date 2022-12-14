@@ -15,20 +15,18 @@ class FGDLoss(nn.Module):
     <https://arxiv.org/abs/2111.11837>
 
     Args:
-        student_channels(int): Number of channels in the student's feature map.
-        teacher_channels(int): Number of channels in the teacher's feature map.
+        in_channels (int): Channels of the input feature map.
         temp (float, optional): Temperature coefficient. Defaults to 0.5.
-        name (str): the loss name of the layer
-        alpha_fgd (float, optional): Weight of fg_loss.
-        beta_fgd (float, optional): Weight of bg_loss.
-        gamma_fgd (float, optional): Weight of mask_loss.
+        alpha_fgd (float, optional): Weight of fg_loss. Defaults to 0.001.
+        beta_fgd (float, optional): Weight of bg_loss. Defaults to 0.0005.
+        gamma_fgd (float, optional): Weight of mask_loss. Defaults to 0.001.
         lambda_fgd (float, optional): Weight of relation_loss.
+            Defaults to 0.000005.
     """
 
     def __init__(
         self,
-        student_channels,
-        teacher_channels,
+        in_channels,
         temp=0.5,
         alpha_fgd=0.001,
         beta_fgd=0.0005,
@@ -42,16 +40,16 @@ class FGDLoss(nn.Module):
         self.gamma_fgd = gamma_fgd
         self.lambda_fgd = lambda_fgd
 
-        self.conv_mask_s = nn.Conv2d(teacher_channels, 1, kernel_size=1)
-        self.conv_mask_t = nn.Conv2d(teacher_channels, 1, kernel_size=1)
+        self.conv_mask_s = nn.Conv2d(in_channels, 1, kernel_size=1)
+        self.conv_mask_t = nn.Conv2d(in_channels, 1, kernel_size=1)
         self.channel_add_conv_s = nn.Sequential(
-            nn.Conv2d(teacher_channels, teacher_channels // 2, kernel_size=1),
-            nn.LayerNorm([teacher_channels // 2, 1, 1]), nn.ReLU(inplace=True),
-            nn.Conv2d(teacher_channels // 2, teacher_channels, kernel_size=1))
+            nn.Conv2d(in_channels, in_channels // 2, kernel_size=1),
+            nn.LayerNorm([in_channels // 2, 1, 1]), nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels // 2, in_channels, kernel_size=1))
         self.channel_add_conv_t = nn.Sequential(
-            nn.Conv2d(teacher_channels, teacher_channels // 2, kernel_size=1),
-            nn.LayerNorm([teacher_channels // 2, 1, 1]), nn.ReLU(inplace=True),
-            nn.Conv2d(teacher_channels // 2, teacher_channels, kernel_size=1))
+            nn.Conv2d(in_channels, in_channels // 2, kernel_size=1),
+            nn.LayerNorm([in_channels // 2, 1, 1]), nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels // 2, in_channels, kernel_size=1))
 
         self.reset_parameters()
 
@@ -70,11 +68,11 @@ class FGDLoss(nn.Module):
         gt_bboxes = self.current_data['gt_boxxes']
         metas = self.current_data['img_metas']
 
-        S_attention_t, C_attention_t = self.get_attention(preds_T, self.temp)
-        S_attention_s, C_attention_s = self.get_attention(preds_S, self.temp)
+        spatial_attention_t, channel_attention_t = self.get_attention(preds_T, self.temp)
+        spatial_attention_s, channel_attention_s = self.get_attention(preds_S, self.temp)
 
-        M_fg = torch.zeros_like(S_attention_t)
-        M_bg = torch.ones_like(S_attention_t)
+        mask_fg = torch.zeros_like(spatial_attention_t)
+        mask_bg = torch.ones_like(spatial_attention_t)
         wmin, wmax, hmin, hmax = [], [], [], []
         for i in range(N):
             new_boxx = torch.ones_like(gt_bboxes[i])
@@ -93,19 +91,19 @@ class FGDLoss(nn.Module):
             area = 1.0 / height / width
 
             for j in range(len(gt_bboxes[i])):
-                M_fg[i][hmin[i][j]:hmax[i][j]+1, wmin[i][j]:wmax[i][j]+1] = \
-                        torch.maximum(M_fg[i][hmin[i][j]:hmax[i][j]+1,
+                mask_fg[i][hmin[i][j]:hmax[i][j]+1, wmin[i][j]:wmax[i][j]+1] = \
+                        torch.maximum(mask_fg[i][hmin[i][j]:hmax[i][j]+1,
                                       wmin[i][j]:wmax[i][j]+1], area[0][j])
 
-            M_bg[i] = torch.where(M_fg[i] > 0, 0, 1)
-            if torch.sum(M_bg[i]):
-                M_bg[i] /= torch.sum(M_bg[i])
+            mask_bg[i] = torch.where(mask_fg[i] > 0, 0, 1)
+            if torch.sum(mask_bg[i]):
+                mask_bg[i] /= torch.sum(mask_bg[i])
 
-        fg_loss, bg_loss = self.get_fea_loss(preds_S, preds_T, M_fg, M_bg,
-                                             C_attention_s, C_attention_t,
-                                             S_attention_s, S_attention_t)
-        mask_loss = self.get_mask_loss(C_attention_s, C_attention_t,
-                                       S_attention_s, S_attention_t)
+        fg_loss, bg_loss = self.get_fea_loss(preds_S, preds_T, mask_fg, mask_bg,
+                                             channel_attention_s, channel_attention_t,
+                                             spatial_attention_s, spatial_attention_t)
+        mask_loss = self.get_mask_loss(channel_attention_s, channel_attention_t,
+                                       spatial_attention_s, spatial_attention_t)
         rela_loss = self.get_rela_loss(preds_S, preds_T)
 
         loss = self.alpha_fgd * fg_loss + self.beta_fgd * bg_loss \
@@ -114,22 +112,27 @@ class FGDLoss(nn.Module):
         return loss
 
     def get_attention(self, preds, temp):
-        """ preds: Bs*C*H*W """
+        """ Calculate spatial and channel attention.
+
+        Args:
+            preds (Tensor): Model prediction with shape (N, C, H, W).
+            temp (float): Temperature coefficient.
+        """
         N, C, H, W = preds.shape
 
         value = torch.abs(preds)
         # Bs*W*H
         fea_map = value.mean(axis=1, keepdim=True)
-        S_attention = (H * W * F.softmax(
+        spatial_attention = (H * W * F.softmax(
             (fea_map / temp).view(N, -1), dim=1)).view(N, H, W)
 
         # Bs*C
         channel_map = value.mean(
             axis=2, keepdim=False).mean(
                 axis=2, keepdim=False)
-        C_attention = C * F.softmax(channel_map / temp, dim=1)
+        channel_attention = C * F.softmax(channel_map / temp, dim=1)
 
-        return S_attention, C_attention
+        return spatial_attention, channel_attention
 
     def get_fea_loss(self, preds_S, preds_T, M_fg, M_bg, C_s, C_t, S_s, S_t):
         loss_mse = nn.MSELoss(reduction='sum')
