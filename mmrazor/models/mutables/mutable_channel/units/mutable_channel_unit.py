@@ -295,5 +295,8 @@ class MutableChannelUnit(ChannelUnit):
                 else:
                     container.register_mutable(mutable_channel_, start, end)
 
+    def _save_to_state_dict(self, destination, prefix, keep_vars):
+        destination[prefix + 'choice'] = self.current_choice
+
 
 ChannelUnitType = TypeVar('ChannelUnitType', bound=MutableChannelUnit)

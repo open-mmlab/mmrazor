@@ -204,23 +204,24 @@ class ItePruneAlgorithm(BaseAlgorithm):
                 data_samples: Optional[List[BaseDataElement]] = None,
                 mode: str = 'tensor') -> ForwardResults:
         """Forward."""
-        if not hasattr(self, 'prune_config_manager'):
-            # self._iters_per_epoch() only available after initiation
-            self.prune_config_manager = self._init_prune_config_manager()
 
-        if self.prune_config_manager.is_prune_time(self._iter):
+        if self.training:
+            if not hasattr(self, 'prune_config_manager'):
+                # self._iters_per_epoch() only available after initiation
+                self.prune_config_manager = self._init_prune_config_manager()
+            if self.prune_config_manager.is_prune_time(self._iter):
 
-            config = self.prune_config_manager.prune_at(self._iter)
+                config = self.prune_config_manager.prune_at(self._iter)
 
-            self.mutator.set_choices(config)
+                self.mutator.set_choices(config)
 
-            logger = MMLogger.get_current_instance()
-            if (self.by_epoch):
-                logger.info(
-                    f'The model is pruned at {self._epoch}th epoch once.')
-            else:
-                logger.info(
-                    f'The model is pruned at {self._iter}th iter once.')
+                logger = MMLogger.get_current_instance()
+                if (self.by_epoch):
+                    logger.info(
+                        f'The model is pruned at {self._epoch}th epoch once.')
+                else:
+                    logger.info(
+                        f'The model is pruned at {self._iter}th iter once.')
 
         return super().forward(inputs, data_samples, mode)
 

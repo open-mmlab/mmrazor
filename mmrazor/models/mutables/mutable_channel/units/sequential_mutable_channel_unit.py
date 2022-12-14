@@ -155,3 +155,28 @@ class SequentialMutableChannelUnit(MutableChannelUnit):
         logger = MMLogger.get_current_instance()
         logger.info(f'The choice={choice}, which is set to {self.name}, '
                     f'is changed to {new_choice} for a divisible choice.')
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+
+        def load(name):
+            key = prefix + name
+            if key in state_dict:
+                return state_dict[key]
+            else:
+                if strict:
+                    missing_keys.append(key)
+                return None
+
+        choice = load('choice')
+        if choice is not None:
+            self.current_choice = choice
+
+            mask = load('mutable_channel_mask')
+            if mask is not None:
+                self.mutable_channel.mask = mask
+
+    def _save_to_state_dict(self, destination, prefix, keep_vars):
+        super()._save_to_state_dict(destination, prefix, keep_vars)
+        destination[prefix +
+                    'mutable_channel_mask'] = self.mutable_channel.current_mask
