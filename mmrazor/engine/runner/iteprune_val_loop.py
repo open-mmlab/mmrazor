@@ -39,13 +39,13 @@ class ItePruneValLoop(ValLoop):
     def _save_fix_subnet(self):
         """Save model subnet config."""
         # TO DO: Modify export_fix_subnet's output. Might contain weight return
-        weight_path = osp.join(self.runner.work_dir, 'fix_subnet_weight.pth')
-        fix_subnet = export_fix_subnet(
-            self.model,
-            dump_mutable_container=True,
-            export_weight_path=weight_path)
-        save_name = 'fix_subnet.yaml'
-        fileio.dump(fix_subnet, osp.join(self.runner.work_dir, save_name))
+        fix_subnet, fix_weight = export_fix_subnet(
+            self.model, dump_mutable_container=True, export_weight=True)
+        subnet_name = 'fix_subnet.yaml'
+        weight_name = 'fix_subnet_weight.pth'
+        fileio.dump(fix_subnet, osp.join(self.runner.work_dir, subnet_name))
+        fileio.dump(fix_weight, osp.join(self.runner.work_dir, weight_name))
         self.runner.logger.info(
             'export finished and '
-            f'{save_name} saved in {self.runner.work_dir}.')
+            f'{subnet_name}, '
+            f'{weight_name} saved in {self.runner.work_dir}.')

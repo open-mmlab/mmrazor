@@ -2,12 +2,11 @@
 import copy
 import logging
 
-import torch
 from mmengine import fileio
 from mmengine.logging import print_log
 from torch import nn
 
-from mmrazor.utils import FixMutable, ValidFixMutable
+from mmrazor.utils import ValidFixMutable
 from mmrazor.utils.typing import DumpChosen
 
 
@@ -89,17 +88,15 @@ def load_fix_subnet(model: nn.Module,
 
 
 def export_fix_subnet(model: nn.Module,
-                      dump_mutable_container: bool = False,
                       dump_derived_mutable: bool = False,
-                      export_weight_path: str = '') -> FixMutable:
+                      export_weight: bool = False):
     """Export subnet that can be loaded by :func:`load_fix_subnet`.
 
     Args:
         model (nn.Module): The target model to export.
         dump_derived_mutable (bool): Dump information for all derived mutables.
             Default to False.
-        export_weight_path (str): Export subnet weight path.
-            If empty stop export weight. Default to ''.
+        export_weight (bool): Export subnet weight. Default to False.
     """
     if dump_derived_mutable:
         print_log(
@@ -111,19 +108,12 @@ def export_fix_subnet(model: nn.Module,
     from mmrazor.models.mutables import DerivedMutable, MutableChannelContainer
     from mmrazor.models.mutables.base_mutable import BaseMutable
 
-    if export_weight_path:
-        # export subnet ckpt
-        static_model = copy.deepcopy(model)
-        _dynamic_to_static(static_model)
-        torch.save(static_model.state_dict(), export_weight_path)
     fix_subnet = dict()
     for name, module in model.named_modules():
         if isinstance(module, BaseMutable):
-            if isinstance(
-                    module,
-                    MutableChannelContainer) and not dump_mutable_container:
-                continue
-            if isinstance(module, DerivedMutable) and not dump_derived_mutable:
+            if isinstance(module,
+                          (MutableChannelContainer,
+                           DerivedMutable)) and not dump_derived_mutable:
                 continue
 
             if module.alias:
@@ -131,4 +121,10 @@ def export_fix_subnet(model: nn.Module,
             else:
                 fix_subnet[name] = module.dump_chosen()
 
-    return fix_subnet
+    if export_weight:
+        # export subnet ckpt
+        static_model = copy.deepcopy(model)
+        _dynamic_to_static(static_model)
+        return fix_subnet, static_model
+    else:
+        return fix_subnet

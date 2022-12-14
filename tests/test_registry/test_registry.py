@@ -4,6 +4,7 @@ from typing import Dict, Optional, Union
 from unittest import TestCase
 
 import torch.nn as nn
+from mmengine import fileio
 from mmengine.config import Config
 from mmengine.model import BaseModel
 
@@ -83,20 +84,17 @@ class TestRegistry(TestCase):
         self.assertTrue(isinstance(model, BaseModel))
 
     def test_build_subnet_prune_from_cfg(self):
-        # test cfg_path
-        # model = MODELS.build(self.arch_cfg_path)
-        # self.assertIsNotNone(model)
-
+        mutator_cfg = fileio.load('tests/data/test_registry/subnet.json')
+        # mutator_cfg['parse_cfg'] = {'type': 'Config'}
         # test fix subnet
-        cfg = dict(
+        model_cfg = dict(
             # use mmrazor's build_func
             type='mmrazor.sub_model_prune',
-            cfg=dict(
+            architecture=dict(
                 cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py',
                 pretrained=False),
-            fix_subnet='tests/data/test_registry/resnet_subnet.yaml',
-            extra_prefix='backbone.')
-        model = MODELS.build(cfg)
+            mutator_cfg=mutator_cfg)
+        model = MODELS.build(model_cfg)
         self.assertTrue(isinstance(model, BaseModel))
 
 

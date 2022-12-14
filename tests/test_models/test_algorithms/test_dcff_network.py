@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
+import json
 import os
 import unittest
 
@@ -12,7 +13,6 @@ from mmrazor.models.algorithms.pruning.dcff import DCFF
 from mmrazor.models.algorithms.pruning.ite_prune_algorithm import \
     ItePruneConfigManager
 from mmrazor.registry import MODELS
-from mmrazor.structures import export_fix_subnet
 
 
 # @TASK_UTILS.register_module()
@@ -308,10 +308,8 @@ class TestDCFFAlgorithm(unittest.TestCase):
         self._set_epoch_ite(0, 0, epoch)
         algorithm.forward(data['inputs'], data['data_samples'], mode='loss')
         self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
-        subnet = export_fix_subnet(
-            algorithm.architecture,
-            dump_mutable_container=True,
-            dump_derived_mutable=False)
-        from mmengine import fileio
-        fileio.dump(subnet,
-                    'tests/data/test_models/test_algorithm/test_subnet.yaml')
+        config = algorithm.mutator.config_template(
+            with_channels=False, with_unit_init_args=True)
+        json_config = json.dumps(config, indent=4, separators=(',', ':'))
+        with open('tests/data/test_registry/subnet.json', 'w') as file:
+            file.write(json_config)
