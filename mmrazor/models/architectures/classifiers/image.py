@@ -9,7 +9,6 @@ except ImportError:
 from torch import Tensor
 
 from mmrazor.models.architectures.dynamic_ops import DynamicInputResizer
-from mmrazor.models.mutables import OneShotMutableValue
 from mmrazor.registry import MODELS
 
 
@@ -79,19 +78,20 @@ class SearchableImageClassifier(ImageClassifier):
     def _build_input_resizer(self,
                              input_resizer_cfg: Dict) -> DynamicInputResizer:
         """Build a input resizer."""
-        input_resizer_cfg_ = input_resizer_cfg['input_resizer']
-        input_resizer = MODELS.build(input_resizer_cfg_)
-        if not isinstance(input_resizer, DynamicInputResizer):
-            raise TypeError('input_resizer should be a `dict` or '
-                            '`DynamicInputResizer` instance, but got '
-                            f'{type(input_resizer)}')
+        mutable_shape_cfg = dict(type='OneShotMutableValue')
 
-        mutable_shape_cfg = input_resizer_cfg['mutable_shape']
-        mutable_shape_cfg['alias'] = 'input_shape'
+        mutable_shape_cfg['alias'] = \
+            input_resizer_cfg.get('alias', 'input_shape')
+
+        assert 'input_sizes' in input_resizer_cfg and \
+            isinstance(input_resizer_cfg['input_sizes'][0], list), (
+                'input_resizer_cfg[`input_sizes`] should be List[list].')
+        mutable_shape_cfg['value_list'] = \
+            input_resizer_cfg.get('input_sizes')  # type: ignore
+
         mutable_shape = MODELS.build(mutable_shape_cfg)
-        if not isinstance(mutable_shape, OneShotMutableValue):
-            raise ValueError('`mutable_shape` should be instance of '
-                             'OneShotMutableValue')
+
+        input_resizer = MODELS.build(dict(type='DynamicInputResizer'))
         input_resizer.register_mutable_attr('shape', mutable_shape)
 
         return input_resizer

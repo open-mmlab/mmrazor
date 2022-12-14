@@ -37,13 +37,9 @@ arch_setting = dict(
         [1024, 1280, 1280 - 1024],  # last layer
     ])
 
-input_mutable = dict(
-    input_resizer=dict(type='DynamicInputResizer'),
-    mutable_shape=dict(
-        type='OneShotMutableValue',
-        value_list=[[128, 128], [140, 140], [144, 144], [152, 152], [192, 192],
-                    [204, 204], [224, 224]],
-        default_value=[224, 224]))
+input_resizer_cfg = dict(
+    input_sizes=[[128, 128], [140, 140], [144, 144], [152, 152], [192, 192],
+                 [204, 204], [224, 224], [256, 256]])
 
 nas_backbone = dict(
     type='mmrazor.AttentiveMobileNetV3',
