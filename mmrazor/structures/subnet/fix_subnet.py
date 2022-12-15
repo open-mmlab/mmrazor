@@ -9,21 +9,19 @@ from mmrazor.utils import FixMutable, ValidFixMutable
 from mmrazor.utils.typing import DumpChosen
 
 
-def _dynamic_to_static(model: nn.Module, first_visit: bool = True) -> None:
+def _dynamic_to_static(model: nn.Module) -> None:
     # Avoid circular import
     from mmrazor.models.architectures.dynamic_ops import DynamicMixin
 
     def traverse_children(module: nn.Module) -> None:
-        for name, child in module.named_children():
-            if isinstance(child, DynamicMixin):
-                # TODO: Maybe deal with DynamicSequential in a better way.
-                if 'layer' in name:
-                    _dynamic_to_static(child, first_visit=False)
-                setattr(module, name, child.to_static_op())
-            else:
-                traverse_children(child)
+        # for name, child in module.named_children():
+        for name, mutable in module.items():
+            if isinstance(mutable, DynamicMixin):
+                module[name] = mutable.to_static_op()
+            if hasattr(mutable, '_modules'):
+                traverse_children(mutable._modules)
 
-    if isinstance(model, DynamicMixin) and first_visit:
+    if isinstance(model, DynamicMixin):
         raise RuntimeError('Root model can not be dynamic op.')
 
     traverse_children(model)
@@ -95,7 +93,7 @@ def load_fix_subnet(model: nn.Module,
                 load_fix_module(module)
 
     # convert dynamic op to static op
-    _dynamic_to_static(model)
+    _dynamic_to_static(model._modules)
 
 
 def export_fix_subnet(
