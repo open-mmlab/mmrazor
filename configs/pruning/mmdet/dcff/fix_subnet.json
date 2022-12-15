@@ -1,186 +1,141 @@
-backbone.bn1.mutable_attrs.num_features:
-- 64
-- max_channels: 64
-backbone.conv1.mutable_attrs.in_channels:
-- 3
-- max_channels: 3
-backbone.conv1.mutable_attrs.out_channels:
-- 64
-- max_channels: 64
-backbone.layer1.0.bn1.mutable_attrs.num_features:
-- 41
-- max_channels: 64
-backbone.layer1.0.bn2.mutable_attrs.num_features:
-- 64
-- max_channels: 64
-backbone.layer1.0.conv1.mutable_attrs.in_channels:
-- 64
-- max_channels: 64
-backbone.layer1.0.conv1.mutable_attrs.out_channels:
-- 41
-- max_channels: 64
-backbone.layer1.0.conv2.mutable_attrs.in_channels:
-- 41
-- max_channels: 64
-backbone.layer1.0.conv2.mutable_attrs.out_channels:
-- 64
-- max_channels: 64
-backbone.layer1.1.bn1.mutable_attrs.num_features:
-- 41
-- max_channels: 64
-backbone.layer1.1.bn2.mutable_attrs.num_features:
-- 64
-- max_channels: 64
-backbone.layer1.1.conv1.mutable_attrs.in_channels:
-- 64
-- max_channels: 64
-backbone.layer1.1.conv1.mutable_attrs.out_channels:
-- 41
-- max_channels: 64
-backbone.layer1.1.conv2.mutable_attrs.in_channels:
-- 41
-- max_channels: 64
-backbone.layer1.1.conv2.mutable_attrs.out_channels:
-- 64
-- max_channels: 64
-backbone.layer2.0.bn1.mutable_attrs.num_features:
-- 83
-- max_channels: 128
-backbone.layer2.0.bn2.mutable_attrs.num_features:
-- 76
-- max_channels: 128
-backbone.layer2.0.conv1.mutable_attrs.in_channels:
-- 64
-- max_channels: 64
-backbone.layer2.0.conv1.mutable_attrs.out_channels:
-- 83
-- max_channels: 128
-backbone.layer2.0.conv2.mutable_attrs.in_channels:
-- 83
-- max_channels: 128
-backbone.layer2.0.conv2.mutable_attrs.out_channels:
-- 76
-- max_channels: 128
-backbone.layer2.0.downsample.0.mutable_attrs.in_channels:
-- 64
-- max_channels: 64
-backbone.layer2.0.downsample.0.mutable_attrs.out_channels:
-- 76
-- max_channels: 128
-backbone.layer2.0.downsample.1.mutable_attrs.num_features:
-- 76
-- max_channels: 128
-backbone.layer2.1.bn1.mutable_attrs.num_features:
-- 83
-- max_channels: 128
-backbone.layer2.1.bn2.mutable_attrs.num_features:
-- 76
-- max_channels: 128
-backbone.layer2.1.conv1.mutable_attrs.in_channels:
-- 76
-- max_channels: 128
-backbone.layer2.1.conv1.mutable_attrs.out_channels:
-- 83
-- max_channels: 128
-backbone.layer2.1.conv2.mutable_attrs.in_channels:
-- 83
-- max_channels: 128
-backbone.layer2.1.conv2.mutable_attrs.out_channels:
-- 76
-- max_channels: 128
-backbone.layer3.0.bn1.mutable_attrs.num_features:
-- 166
-- max_channels: 256
-backbone.layer3.0.bn2.mutable_attrs.num_features:
-- 153
-- max_channels: 256
-backbone.layer3.0.conv1.mutable_attrs.in_channels:
-- 76
-- max_channels: 128
-backbone.layer3.0.conv1.mutable_attrs.out_channels:
-- 166
-- max_channels: 256
-backbone.layer3.0.conv2.mutable_attrs.in_channels:
-- 166
-- max_channels: 256
-backbone.layer3.0.conv2.mutable_attrs.out_channels:
-- 153
-- max_channels: 256
-backbone.layer3.0.downsample.0.mutable_attrs.in_channels:
-- 76
-- max_channels: 128
-backbone.layer3.0.downsample.0.mutable_attrs.out_channels:
-- 153
-- max_channels: 256
-backbone.layer3.0.downsample.1.mutable_attrs.num_features:
-- 153
-- max_channels: 256
-backbone.layer3.1.bn1.mutable_attrs.num_features:
-- 166
-- max_channels: 256
-backbone.layer3.1.bn2.mutable_attrs.num_features:
-- 153
-- max_channels: 256
-backbone.layer3.1.conv1.mutable_attrs.in_channels:
-- 153
-- max_channels: 256
-backbone.layer3.1.conv1.mutable_attrs.out_channels:
-- 166
-- max_channels: 256
-backbone.layer3.1.conv2.mutable_attrs.in_channels:
-- 166
-- max_channels: 256
-backbone.layer3.1.conv2.mutable_attrs.out_channels:
-- 153
-- max_channels: 256
-backbone.layer4.0.bn1.mutable_attrs.num_features:
-- 358
-- max_channels: 512
-backbone.layer4.0.bn2.mutable_attrs.num_features:
-- 358
-- max_channels: 512
-backbone.layer4.0.conv1.mutable_attrs.in_channels:
-- 153
-- max_channels: 256
-backbone.layer4.0.conv1.mutable_attrs.out_channels:
-- 358
-- max_channels: 512
-backbone.layer4.0.conv2.mutable_attrs.in_channels:
-- 358
-- max_channels: 512
-backbone.layer4.0.conv2.mutable_attrs.out_channels:
-- 358
-- max_channels: 512
-backbone.layer4.0.downsample.0.mutable_attrs.in_channels:
-- 153
-- max_channels: 256
-backbone.layer4.0.downsample.0.mutable_attrs.out_channels:
-- 358
-- max_channels: 512
-backbone.layer4.0.downsample.1.mutable_attrs.num_features:
-- 358
-- max_channels: 512
-backbone.layer4.1.bn1.mutable_attrs.num_features:
-- 358
-- max_channels: 512
-backbone.layer4.1.bn2.mutable_attrs.num_features:
-- 358
-- max_channels: 512
-backbone.layer4.1.conv1.mutable_attrs.in_channels:
-- 358
-- max_channels: 512
-backbone.layer4.1.conv1.mutable_attrs.out_channels:
-- 358
-- max_channels: 512
-backbone.layer4.1.conv2.mutable_attrs.in_channels:
-- 358
-- max_channels: 512
-backbone.layer4.1.conv2.mutable_attrs.out_channels:
-- 358
-- max_channels: 512
-head.fc.mutable_attrs.in_features:
-- 358
-- max_channels: 512
-head.fc.mutable_attrs.out_features:
-- 1000
-- max_channels: 1000
+{
+    "type":"DCFFChannelMutator",
+    "channel_unit_cfg":{
+        "type":"DCFFChannelUnit",
+        "default_args":{
+            "choice_mode":"ratio"
+        },
+        "units":{
+            "backbone.conv1_(0, 64)_64":{
+                "init_args":{
+                    "num_channels":64,
+                    "choice_mode":"ratio",
+                    "divisor":1,
+                    "min_value":1,
+                    "min_ratio":0.9
+                },
+                "choice":1.0
+            },
+            "backbone.layer1.0.conv1_(0, 64)_64":{
+                "init_args":{
+                    "num_channels":64,
+                    "choice_mode":"ratio",
+                    "divisor":1,
+                    "min_value":1,
+                    "min_ratio":0.9
+                },
+                "choice":0.640625
+            },
+            "backbone.layer1.1.conv1_(0, 64)_64":{
+                "init_args":{
+                    "num_channels":64,
+                    "choice_mode":"ratio",
+                    "divisor":1,
+                    "min_value":1,
+                    "min_ratio":0.9
+                },
+                "choice":0.640625
+            },
+            "backbone.layer2.0.conv1_(0, 128)_128":{
+                "init_args":{
+                    "num_channels":128,
+                    "choice_mode":"ratio",
+                    "divisor":1,
+                    "min_value":1,
+                    "min_ratio":0.9
+                },
+                "choice":0.6484375
+            },
+            "backbone.layer2.0.conv2_(0, 128)_128":{
+                "init_args":{
+                    "num_channels":128,
+                    "choice_mode":"ratio",
+                    "divisor":1,
+                    "min_value":1,
+                    "min_ratio":0.9
+                },
+                "choice":0.59375
+            },
+            "backbone.layer2.1.conv1_(0, 128)_128":{
+                "init_args":{
+                    "num_channels":128,
+                    "choice_mode":"ratio",
+                    "divisor":1,
+                    "min_value":1,
+                    "min_ratio":0.9
+                },
+                "choice":0.6484375
+            },
+            "backbone.layer3.0.conv1_(0, 256)_256":{
+                "init_args":{
+                    "num_channels":256,
+                    "choice_mode":"ratio",
+                    "divisor":1,
+                    "min_value":1,
+                    "min_ratio":0.9
+                },
+                "choice":0.6484375
+            },
+            "backbone.layer3.0.conv2_(0, 256)_256":{
+                "init_args":{
+                    "num_channels":256,
+                    "choice_mode":"ratio",
+                    "divisor":1,
+                    "min_value":1,
+                    "min_ratio":0.9
+                },
+                "choice":0.59765625
+            },
+            "backbone.layer3.1.conv1_(0, 256)_256":{
+                "init_args":{
+                    "num_channels":256,
+                    "choice_mode":"ratio",
+                    "divisor":1,
+                    "min_value":1,
+                    "min_ratio":0.9
+                },
+                "choice":0.6484374
+            },
+            "backbone.layer4.0.conv1_(0, 512)_512":{
+                "init_args":{
+                    "num_channels":512,
+                    "choice_mode":"ratio",
+                    "divisor":1,
+                    "min_value":1,
+                    "min_ratio":0.9
+                },
+                "choice":0.69921875
+            },
+            "backbone.layer4.0.conv2_(0, 512)_512":{
+                "init_args":{
+                    "num_channels":512,
+                    "choice_mode":"ratio",
+                    "divisor":1,
+                    "min_value":1,
+                    "min_ratio":0.9
+                },
+                "choice":0.69921875
+            },
+            "backbone.layer4.1.conv1_(0, 512)_512":{
+                "init_args":{
+                    "num_channels":512,
+                    "choice_mode":"ratio",
+                    "divisor":1,
+                    "min_value":1,
+                    "min_ratio":0.9
+                },
+                "choice":0.69921875
+            }
+        }
+    },
+    "parse_cfg":{
+        "type":"ChannelAnalyzer",
+        "demo_input":[
+            1,
+            3,
+            224,
+            224
+        ],
+        "tracer_type":"BackwardTracer"
+    }
+}
