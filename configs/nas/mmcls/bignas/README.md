@@ -46,9 +46,10 @@ sh tools/slurm_test.sh $PARTITION $JOB_NAME \
 *Models with * are converted from the [official repo](https://github.com/facebookresearch/AttentiveNAS). The config files of these models
 are only for inference. We don't ensure these config files' training accuracy and welcome you to contribute your reproduction results.*
 
-**Note**: In the official `AttentiveNAS` code, the `AutoAugmentation` in Calib-BN subnet recommended to useuse large batchsize to evaluation like `256`, which leads to higher performance. Compared with the original configuration file, this configuration has been modified as follows:
+**Note**: In the official `AttentiveNAS` code, the `AutoAugmentation` in Calib-BN subnet recommended to use large batchsize to evaluation like `256`, which leads to higher performance. Compared with the original configuration file, this configuration has been modified as follows:
 
-- modified the settings related to `batchsize` in `train_pipeline` and `test_pipeline`, e.g. setting `test_cfg.calibrate_sample_num=16384` and `collate_fn=dict(type='default_collate')` in train_dataloader.
+- modified the settings related to `batchsize` in `train_pipeline` and `test_pipeline`, e.g. setting `train_dataloader.batch_size=256`、 `val_dataloader.batch_size=256`、`test_cfg.calibrate_sample_num=16384` and `collate_fn=dict(type='default_collate')` in train_dataloader.
+- setting `dict(type='mmrazor.AutoAugment', policies='original')` instead of `dict(type='mmrazor.AutoAugmentV2', policies=policies)` in train_pipeline.
 
 1. Used search_space in AttentiveNAS, which is different from BigNAS paper.
 2. The Top-1 Acc is unstable and may fluctuate by about 0.1, convert the official weight according to the [converter script](../../../../tools/model_converters/convert_attentivenas_nas_ckpt.py). A Calib-BN model will be released later.

@@ -194,8 +194,6 @@ class AutoAugmentOp(BaseTransform):
             'TranslateYRel': translate_y_rel,
         }
         self.aug_fn = NAME_TO_OP[name]
-
-        # self.level_fn = level_to_arg(hparams)[name]
         self.prob = prob
         self.magnitude = magnitude
         # If std deviation of magnitude is > 0, we introduce some randomness
@@ -299,15 +297,14 @@ class AutoAugmentOp(BaseTransform):
 
 @TRANSFORMS.register_module()
 class AutoAugment(BaseTransform):
-    """Auto Augment Implementation adapted from timm:
+    """Auto Augment Implementation adapted from timm: ImageNet
+    auto_augment_policy is 'original': From TPU EfficientNet impl
+    https://github.com/rwightman/pytorch-image-models.
 
-    https://github.com/rwightman/pytorch-image-models
+    ImageNet auto_augment_policy is 'v0':
+    A PyTorch implementation of : `AutoAugment: Learning Augmentation
+    Policies from Data <https://arxiv.org/abs/1805.09501>`_
     """
-    # ImageNet policy from TPU EfficientNet impl, cannot find
-    # a paper reference.
-
-    # ImageNet policy from https://arxiv.org/abs/1805.09501
-
     auto_augment_policy = {
         'original': [
             [('Equalize', 0.8, 1), ('ShearY', 0.8, 4)],
