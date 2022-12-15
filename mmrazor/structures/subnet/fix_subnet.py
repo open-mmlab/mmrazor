@@ -14,7 +14,6 @@ def _dynamic_to_static(model: nn.Module) -> None:
     from mmrazor.models.architectures.dynamic_ops import DynamicMixin
 
     def traverse_children(module: nn.Module) -> None:
-        # for name, child in module.named_children():
         for name, mutable in module.items():
             if isinstance(mutable, DynamicMixin):
                 module[name] = mutable.to_static_op()
@@ -93,7 +92,8 @@ def load_fix_subnet(model: nn.Module,
                 load_fix_module(module)
 
     # convert dynamic op to static op
-    _dynamic_to_static(model._modules)
+    if hasattr(model, '_modules'):
+        _dynamic_to_static(model._modules)
 
 
 def export_fix_subnet(
