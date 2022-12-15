@@ -2,3 +2,5 @@ mutable1:
   chosen: conv1
 mutable2: 
   chosen: conv2
+mutable3.0.kernel_size:
+  chosen: 3

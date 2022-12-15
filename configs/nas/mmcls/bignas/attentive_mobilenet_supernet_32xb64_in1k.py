@@ -20,7 +20,7 @@ supernet = dict(
             mode='original',
             loss_weight=1.0),
         topk=(1, 5)),
-    input_resizer_cfg=_base_.input_mutable,
+    input_resizer_cfg=_base_.input_resizer_cfg,
     connect_head=dict(connect_with_backbone='backbone.last_mutable_channels'),
 )
 

@@ -1,11 +1,14 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import argparse
 import os
+import os.path as osp
+import time
 
+import torch
 from mmengine.config import Config
 from mmengine.runner import Runner
 
-from mmrazor.models.architectures.utils import export_subnet_checkpoint
+from mmrazor.structures.subnet import load_fix_subnet
 from mmrazor.utils import register_all_modules
 
 
@@ -41,8 +44,16 @@ def main():
 
     runner = Runner.from_cfg(cfg)
 
-    export_subnet_checkpoint(
-        runner.model, fix_subnet=args.yaml, prefix=cfg.work_dir)
+    load_fix_subnet(runner.model, args.yaml)
+
+    timestamp_subnet = time.strftime('%Y%m%d_%H%M', time.localtime())
+    model_name = f'subnet_{timestamp_subnet}.pth'
+    save_path = osp.join(runner.work_dir, model_name)
+    torch.save({
+        'state_dict': runner.model.state_dict(),
+        'meta': {}
+    }, save_path)
+    runner.logger.info(f'Successful converted. Saved in {save_path}.')
 
 
 if __name__ == '__main__':
