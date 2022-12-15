@@ -47,7 +47,10 @@ nas_backbone = dict(
     out_indices=(6, ),
     stride_list=[1, 2, 2, 2, 1, 2],
     with_se_list=[False, False, True, False, True, True],
-    act_cfg_list=['ReLU', 'ReLU', 'ReLU', 'HSwish', 'HSwish', 'HSwish'],
+    act_cfg_list=[
+        'HSwish', 'ReLU', 'ReLU', 'ReLU', 'HSwish', 'HSwish', 'HSwish',
+        'HSwish', 'HSwish'
+    ],
     conv_cfg=dict(type='OFAConv2d'),
     norm_cfg=dict(type='mmrazor.DynamicBatchNorm2d', momentum=0.1),
     fine_grained_mode=True,
