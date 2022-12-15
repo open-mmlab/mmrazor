@@ -21,12 +21,12 @@ data_preprocessor = dict(
 )
 
 # !autoslim algorithm config
-num_samples = 2
+num_random_samples = 2
 model = dict(
     _delete_=True,
     _scope_='mmrazor',
     type='AutoSlim',
-    num_samples=num_samples,
+    num_random_samples=num_random_samples,
     architecture=supernet,
     data_preprocessor=data_preprocessor,
     distiller=dict(
@@ -58,8 +58,6 @@ model_wrapper_cfg = dict(
     type='mmrazor.AutoSlimDDP',
     broadcast_buffers=False,
     find_unused_parameters=False)
-
-optim_wrapper = dict(accumulative_counts=num_samples + 2)
 
 # learning policy
 max_epochs = 50

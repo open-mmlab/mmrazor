@@ -117,10 +117,10 @@ class TestAutoSlim(TestCase):
         assert losses['max_subnet.loss'] > 0
         assert losses['min_subnet.loss'] > 0
         assert losses['min_subnet.loss_kl'] + 1e-5 > 0
-        assert losses['random_subnet_0.loss'] > 0
-        assert losses['random_subnet_0.loss_kl'] + 1e-5 > 0
-        assert losses['random_subnet_1.loss'] > 0
-        assert losses['random_subnet_1.loss_kl'] + 1e-5 > 0
+        assert losses['random0_subnet.loss'] > 0
+        assert losses['random0_subnet.loss_kl'] + 1e-5 > 0
+        assert losses['random1_subnet.loss'] > 0
+        assert losses['random1_subnet.loss_kl'] + 1e-5 > 0
 
         assert algo._optim_wrapper_count_status_reinitialized
         assert optim_wrapper._inner_count == 4
@@ -142,13 +142,13 @@ class TestAutoSlim(TestCase):
                       mutator_cfg: MUTATOR_TYPE = MUTATOR_CFG,
                       distiller_cfg: DISTILLER_TYPE = DISTILLER_CFG,
                       architecture_cfg: Dict = ARCHITECTURE_CFG,
-                      num_samples: int = 2) -> AutoSlim:
+                      num_random_samples: int = 2) -> AutoSlim:
         model = AutoSlim(
             mutator=mutator_cfg,
             distiller=distiller_cfg,
             architecture=architecture_cfg,
             data_preprocessor=ToyDataPreprocessor(),
-            num_samples=num_samples)
+            num_random_samples=num_random_samples)
         model.to(self.device)
 
         return model
@@ -173,12 +173,12 @@ class TestAutoSlimDDP(TestAutoSlim):
                       mutator_cfg: MUTATOR_TYPE = MUTATOR_CFG,
                       distiller_cfg: DISTILLER_TYPE = DISTILLER_CFG,
                       architecture_cfg: Dict = ARCHITECTURE_CFG,
-                      num_samples: int = 2) -> AutoSlim:
+                      num_random_samples: int = 2) -> AutoSlim:
         model = super().prepare_model(
             mutator_cfg=mutator_cfg,
             distiller_cfg=distiller_cfg,
             architecture_cfg=architecture_cfg,
-            num_samples=num_samples)
+            num_random_samples=num_random_samples)
 
         return AutoSlimDDP(module=model, find_unused_parameters=True)
 

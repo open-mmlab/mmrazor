@@ -59,7 +59,7 @@ def test_dynamic_bn(dynamic_class: Type[nn.modules.batchnorm._BatchNorm],
     out1 = d_bn(x)
     assert out1.size(1) == 8
 
-    fix_mutables = export_fix_subnet(d_bn)
+    fix_mutables = export_fix_subnet(d_bn)[0]
     with pytest.raises(RuntimeError):
         load_fix_subnet(d_bn, fix_mutables)
     fix_dynamic_op(d_bn, fix_mutables)

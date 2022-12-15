@@ -9,10 +9,28 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='Process a checkpoint to be published')
     parser.add_argument('checkpoint', help='input checkpoint filename')
+    parser.add_argument('--depth', nargs='+', type=int, help='layer depth')
     parser.add_argument(
         '--inplace', action='store_true', help='replace origin ckpt')
     args = parser.parse_args()
     return args
+
+
+def block2layer_index_convert(layer_depth):
+    """Build index_table from OFA blocks to MMRazor layers."""
+    index_table = dict()
+    i = 0
+    first_index = 1
+    second_index = 0
+    for k in layer_depth:
+        for _ in range(k):
+            index_table[str(i)] = str(first_index) + '.' + str(second_index)
+            i += 1
+            second_index += 1
+        second_index = 0
+        first_index += 1
+
+    return index_table
 
 
 def main():
@@ -20,15 +38,13 @@ def main():
     checkpoint = torch.load(args.checkpoint, map_location='cpu')
     new_state_dict = dict()
 
+    index_table = block2layer_index_convert(args.depth)
+
     for key, value in checkpoint['state_dict'].items():
-        if 'blocks.0.' in key:
-            new_key = key.replace('blocks.0', 'layer1.0')
-        elif 'blocks' in key:
-            for i in range(1, 21):
-                if 'blocks.' + str(i) in key:
-                    new_key = key.replace(
-                        'blocks.' + str(i),
-                        'layer' + str(i // 4 + 1) + '.' + str((i + 3) % 4))
+        if 'blocks' in key:
+            index = key.split('.')[1]
+            new_key = key.replace('blocks.' + index,
+                                  'layer' + index_table[index])
         else:
             new_key = key
 

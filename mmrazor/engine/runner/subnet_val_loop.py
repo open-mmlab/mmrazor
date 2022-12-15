@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from mmengine.evaluator import Evaluator
 from mmengine.hooks import CheckpointHook
@@ -7,7 +7,7 @@ from mmengine.runner import ValLoop
 from torch.utils.data import DataLoader
 
 from mmrazor.models.utils import add_prefix
-from mmrazor.registry import LOOPS
+from mmrazor.registry import LOOPS, TASK_UTILS
 from .utils import CalibrateBNMixin
 
 
@@ -27,15 +27,20 @@ class SubnetValLoop(ValLoop, CalibrateBNMixin):
         calibrate_sample_num (int): The number of images to compute the true
             average of per-batch mean/variance instead of the running average.
             Defaults to 4096.
+        estimator_cfg (dict, Optional): Used for building a resource estimator.
+            Defaults to dict(type='mmrazor.ResourceEstimator').
     """
 
-    def __init__(self,
-                 runner,
-                 dataloader: Union[DataLoader, Dict],
-                 evaluator: Union[Evaluator, Dict, List],
-                 fp16: bool = False,
-                 evaluate_fixed_subnet: bool = False,
-                 calibrate_sample_num: int = 4096) -> None:
+    def __init__(
+        self,
+        runner,
+        dataloader: Union[DataLoader, Dict],
+        evaluator: Union[Evaluator, Dict, List],
+        fp16: bool = False,
+        evaluate_fixed_subnet: bool = False,
+        calibrate_sample_num: int = 4096,
+        estimator_cfg: Optional[Dict] = dict(type='mmrazor.ResourceEstimator')
+    ) -> None:
         super().__init__(runner, dataloader, evaluator, fp16)
 
         if self.runner.distributed:
@@ -43,10 +48,10 @@ class SubnetValLoop(ValLoop, CalibrateBNMixin):
         else:
             model = self.runner.model
 
-        # just for convenience
-        self._model = model
+        self.model = model
         self.evaluate_fixed_subnet = evaluate_fixed_subnet
         self.calibrate_sample_num = calibrate_sample_num
+        self.estimator = TASK_UTILS.build(estimator_cfg)
 
         # remove CheckpointHook to avoid extra problems.
         for hook in self.runner._hooks:
@@ -64,23 +69,20 @@ class SubnetValLoop(ValLoop, CalibrateBNMixin):
         if self.evaluate_fixed_subnet:
             metrics = self._evaluate_once()
             all_metrics.update(add_prefix(metrics, 'fix_subnet'))
-        else:
-            self._model.set_max_subnet()
-            metrics = self._evaluate_once()
-            all_metrics.update(add_prefix(metrics, 'max_subnet'))
-
-            self._model.set_min_subnet()
-            metrics = self._evaluate_once()
-            all_metrics.update(add_prefix(metrics, 'min_subnet'))
-
-            sample_nums = self._model.random_samples if hasattr(
-                self._model, 'random_samples') else self._model.samples
-            for subnet_idx in range(sample_nums):
-                self._model.set_subnet(self._model.sample_subnet())
-                # compute student metrics
-                metrics = self._evaluate_once()
-                all_metrics.update(
-                    add_prefix(metrics, f'random_subnet_{subnet_idx}'))
+        elif hasattr(self.model, 'sample_kinds'):
+            for kind in self.model.sample_kinds:
+                if kind == 'max':
+                    self.model.set_max_subnet()
+                    metrics = self._evaluate_once()
+                    all_metrics.update(add_prefix(metrics, 'max_subnet'))
+                elif kind == 'min':
+                    self.model.set_min_subnet()
+                    metrics = self._evaluate_once()
+                    all_metrics.update(add_prefix(metrics, 'min_subnet'))
+                elif 'random' in kind:
+                    self.model.set_subnet(self.model.sample_subnet())
+                    metrics = self._evaluate_once()
+                    all_metrics.update(add_prefix(metrics, f'{kind}_subnet'))
 
         self.runner.call_hook('after_val_epoch', metrics=all_metrics)
         self.runner.call_hook('after_val')
@@ -93,4 +95,8 @@ class SubnetValLoop(ValLoop, CalibrateBNMixin):
         for idx, data_batch in enumerate(self.dataloader):
             self.run_iter(idx, data_batch)
 
-        return self.evaluator.evaluate(len(self.dataloader.dataset))
+        metrics = self.evaluator.evaluate(len(self.dataloader.dataset))
+        resource_metrics = self.estimator.estimate(self.model)
+        metrics.update(resource_metrics)
+
+        return metrics

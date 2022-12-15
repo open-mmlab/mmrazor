@@ -1,18 +1,18 @@
 _base_ = [
     'mmcls::_base_/default_runtime.py',
-    'mmrazor::_base_/settings/imagenet_bs2048_bignas.py',
-    'mmrazor::_base_/nas_backbones/attentive_mobilenetv3_supernet.py',
+    'mmrazor::_base_/settings/imagenet_bs2048_ofa.py',
+    'mmrazor::_base_/nas_backbones/ofa_mobilenetv3_supernet.py',
 ]
 
 supernet = dict(
     _scope_='mmrazor',
     type='SearchableImageClassifier',
     backbone=_base_.nas_backbone,
-    neck=dict(type='SqueezeMeanPoolingWithDropout', drop_ratio=0.2),
+    neck=dict(type='mmcls.GlobalAveragePooling'),
     head=dict(
         type='DynamicLinearClsHead',
         num_classes=1000,
-        in_channels=1984,
+        in_channels=1280,
         loss=dict(
             type='mmcls.LabelSmoothLoss',
             num_classes=1000,
@@ -28,7 +28,6 @@ model = dict(
     _scope_='mmrazor',
     type='BigNAS',
     drop_path_rate=0.2,
-    num_random_samples=2,
     backbone_dropout_stages=[6, 7],
     architecture=supernet,
     data_preprocessor=_base_.data_preprocessor,
@@ -60,7 +59,3 @@ model_wrapper_cfg = dict(
     type='mmrazor.BigNASDDP',
     broadcast_buffers=False,
     find_unused_parameters=True)
-
-default_hooks = dict(
-    checkpoint=dict(
-        type='CheckpointHook', interval=1, max_keep_ckpts=1, save_best='auto'))

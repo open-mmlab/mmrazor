@@ -73,7 +73,7 @@ class MetricPredictor:
             'cause the model of handler in predictor needs to be initialized.')
 
         if self.initialize:
-            model = export_fix_subnet(model)
+            model, _ = export_fix_subnet(model)
             data = self.preprocess(np.array([self.model2vector(model)]))
             score = float(np.squeeze(self.handler.predict(data)))
             if metric.get(self.score_key_list[0], None):
