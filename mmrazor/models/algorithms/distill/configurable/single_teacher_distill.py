@@ -61,6 +61,9 @@ class SingleTeacherDistill(BaseAlgorithm):
             self.teacher.init_weights()
             _ = load_checkpoint(self.teacher, teacher_ckpt)
         self.teacher_trainable = teacher_trainable
+        if not self.teacher_trainable:
+            for param in self.teacher.parameters():
+                param.requires_grad = False
         self.teacher_norm_eval = teacher_norm_eval
 
         # The student model will not calculate gradients and update parameters
