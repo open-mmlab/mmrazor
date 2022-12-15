@@ -2,6 +2,7 @@
 import os
 import os.path as osp
 import random
+import time
 import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -14,7 +15,6 @@ from mmengine.runner import EpochBasedTrainLoop
 from mmengine.utils import is_list_of
 from torch.utils.data import DataLoader
 
-from mmrazor.models.architectures.utils import export_subnet_checkpoint
 from mmrazor.registry import LOOPS, TASK_UTILS
 from mmrazor.structures import Candidates, export_fix_subnet
 from mmrazor.utils import SupportRandomSubnet
@@ -313,12 +313,21 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
             best_random_subnet = self.top_k_candidates.subnets[0]
             self.model.set_subnet(best_random_subnet)
 
-            best_fix_subnet = export_fix_subnet(self.model)
-            best_fix_subnet = self._convert_fix_subnet(best_fix_subnet)
-            export_subnet_checkpoint(
-                self.model, best_fix_subnet, prefix=self.runner.work_dir)
+            best_fix_subnet, sliced_model = \
+                export_fix_subnet(self.model, slice_weight=True)
+
+            timestamp_subnet = time.strftime('%Y%m%d_%H%M', time.localtime())
+            model_name = f'subnet_{timestamp_subnet}.pth'
+            save_path = osp.join(self.runner.work_dir, model_name)
+            torch.save({
+                'state_dict': sliced_model.state_dict(),
+                'meta': {}
+            }, save_path)
+            self.runner.logger.info(f'Subnet checkpoint {model_name} saved in '
+                                    f'{self.runner.work_dir}')
 
             save_name = 'best_fix_subnet.yaml'
+            best_fix_subnet = self._convert_fix_subnet(best_fix_subnet)
             fileio.dump(best_fix_subnet,
                         osp.join(self.runner.work_dir, save_name))
             self.runner.logger.info(

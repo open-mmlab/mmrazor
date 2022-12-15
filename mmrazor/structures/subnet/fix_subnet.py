@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict
+import copy
+from typing import Dict, Optional, Tuple
 
 from mmengine import fileio
 from torch import nn
@@ -97,8 +98,15 @@ def load_fix_subnet(model: nn.Module,
     _dynamic_to_static(model)
 
 
-def export_fix_subnet(model: nn.Module) -> FixMutable:
-    """Export subnet that can be loaded by :func:`load_fix_subnet`."""
+def export_fix_subnet(
+        model: nn.Module,
+        slice_weight: bool = False) -> Tuple[FixMutable, Optional[Dict]]:
+    """Export subnet config with (optional) the sliced weight.
+
+    Args:
+        slice_weight (bool): Whether to return the sliced subnet.
+            Defaults to False.
+    """
     # Avoid circular import
     from mmrazor.models.mutables import DerivedMutable, MutableChannelContainer
     from mmrazor.models.mutables.base_mutable import BaseMutable
@@ -114,12 +122,19 @@ def export_fix_subnet(model: nn.Module) -> FixMutable:
         if isinstance(module, BaseMutable):
             if isinstance(module, MutableChannelContainer):
                 continue
-
             elif isinstance(module, DerivedMutable):
                 for source_mutable in module.source_mutables:
                     module_dump_chosen(source_mutable, fix_subnet)
-
             else:
                 module_dump_chosen(module, fix_subnet)
 
-    return fix_subnet
+    if slice_weight:
+        copied_model = copy.deepcopy(model)
+        load_fix_subnet(copied_model, fix_subnet)
+
+        if next(copied_model.parameters()).is_cuda:
+            copied_model.cuda()
+
+        return fix_subnet, copied_model
+
+    return fix_subnet, None

@@ -38,6 +38,16 @@ class ToyDataset(Dataset):
         return dict(inputs=self.data[index], data_sample=self.label[index])
 
 
+class ToyModel(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        self.architecture = nn.Conv2d(1, 1, 1)
+
+    def forward(self, x):
+        return self.architecture(x)
+
+
 class ToyRunner:
 
     @property
@@ -57,7 +67,7 @@ class ToyRunner:
         pass
 
     def model(self):
-        return nn.Conv2d
+        return ToyModel()
 
     def logger(self):
         pass
@@ -131,6 +141,7 @@ class TestEvolutionSearchLoop(TestCase):
         self.runner.work_dir = self.temp_dir
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
         loop.model.sample_subnet = MagicMock(return_value=fake_subnet)
+        mock_export_fix_subnet.return_value = (fake_subnet, self.runner.model)
         load_status.return_value = True
         flops_params.return_value = 0, 0
         loop.run_epoch()
@@ -159,7 +170,6 @@ class TestEvolutionSearchLoop(TestCase):
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
         loop.model.sample_subnet = MagicMock(return_value=fake_subnet)
         flops_params.return_value = (50., 1)
-        mock_export_fix_subnet.return_value = fake_subnet
         loop.run_epoch()
         self.assertEqual(len(loop.candidates), 4)
         self.assertEqual(len(loop.top_k_candidates), 2)
@@ -179,6 +189,7 @@ class TestEvolutionSearchLoop(TestCase):
         loop._epoch = 1
 
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
+        mock_export_fix_subnet.return_value = (fake_subnet, self.runner.model)
         self.runner.work_dir = self.temp_dir
         loop.update_candidate_pool = MagicMock()
         loop.val_candidate_pool = MagicMock()
@@ -197,7 +208,7 @@ class TestEvolutionSearchLoop(TestCase):
             MagicMock(return_value=crossover_candidates)
         loop.candidates = Candidates([fake_subnet] * 4)
         mock_flops.return_value = (0.5, 101)
-        mock_export_fix_subnet.return_value = fake_subnet
+        torch.save = MagicMock()
         loop.run()
         assert os.path.exists(
             os.path.join(self.temp_dir, 'best_fix_subnet.yaml'))
@@ -277,7 +288,6 @@ class TestEvolutionSearchLoopWithPredictor(TestCase):
            'get_model_flops_params')
     def test_run_epoch(self, flops_params, mock_export_fix_subnet,
                        load_status):
-        # test_run_epoch: distributed == False
         loop_cfg = copy.deepcopy(self.train_cfg)
         loop_cfg.runner = self.runner
         loop_cfg.dataloader = self.dataloader
@@ -288,6 +298,7 @@ class TestEvolutionSearchLoopWithPredictor(TestCase):
         self.runner.work_dir = self.temp_dir
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
         loop.model.sample_subnet = MagicMock(return_value=fake_subnet)
+        mock_export_fix_subnet.return_value = (fake_subnet, self.runner.model)
         load_status.return_value = True
         flops_params.return_value = 0, 0
         loop.run_epoch()
@@ -316,7 +327,6 @@ class TestEvolutionSearchLoopWithPredictor(TestCase):
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
         loop.model.sample_subnet = MagicMock(return_value=fake_subnet)
         flops_params.return_value = (50., 1)
-        mock_export_fix_subnet.return_value = fake_subnet
         loop.run_epoch()
         self.assertEqual(len(loop.candidates), 4)
         self.assertEqual(len(loop.top_k_candidates), 2)
@@ -340,6 +350,7 @@ class TestEvolutionSearchLoopWithPredictor(TestCase):
 
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
         loop.model.sample_subnet = MagicMock(return_value=fake_subnet)
+        mock_export_fix_subnet.return_value = (fake_subnet, self.runner.model)
 
         self.runner.work_dir = self.temp_dir
         loop.update_candidate_pool = MagicMock()
@@ -360,10 +371,9 @@ class TestEvolutionSearchLoopWithPredictor(TestCase):
         loop.candidates = Candidates([fake_subnet] * 4)
 
         mock_flops.return_value = (0.5, 101)
-        mock_export_fix_subnet.return_value = fake_subnet
         mock_model2vector.return_value = dict(
             normal_vector=[0, 1], onehot_vector=[0, 1, 0, 1])
-
+        torch.save = MagicMock()
         loop.run()
         assert os.path.exists(
             os.path.join(self.temp_dir, 'best_fix_subnet.yaml'))

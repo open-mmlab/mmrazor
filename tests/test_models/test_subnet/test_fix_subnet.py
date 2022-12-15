@@ -96,12 +96,12 @@ class TestFixSubnet(TestCase):
         load_fix_subnet(model, fix_subnet)
 
         with pytest.raises(AssertionError):
-            exported_fix_subnet: FixMutable = export_fix_subnet(model)
+            exported_fix_subnet: FixMutable = export_fix_subnet(model)[0]
 
         model = MockModel()
         model.mutable1.current_choice = 'conv1'
         model.mutable2.current_choice = 'conv2'
-        exported_fix_subnet = export_fix_subnet(model)
+        exported_fix_subnet = export_fix_subnet(model)[0]
 
         mutable1_dump_chosen = exported_fix_subnet['mutable1']
         mutable2_dump_chosen = exported_fix_subnet['mutable2']
@@ -115,7 +115,7 @@ class TestFixSubnet(TestCase):
 
     def test_export_fix_subnet_with_derived_mutable(self) -> None:
         model = MockModelWithDerivedMutable()
-        fix_subnet = export_fix_subnet(model)
+        fix_subnet = export_fix_subnet(model)[0]
         self.assertDictEqual(
             fix_subnet, {
                 'source_mutable': model.source_mutable.dump_chosen(),
