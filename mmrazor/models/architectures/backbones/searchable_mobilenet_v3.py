@@ -111,7 +111,7 @@ class AttentiveMobileNetV3(BaseBackbone):
         self.with_attentive_shortcut = with_attentive_shortcut
 
         self.act_cfg_list = act_cfg_list if act_cfg_list \
-            else ['Swish'] * 10
+            else ['Swish'] * 9
         self.stride_list = stride_list if stride_list \
             else [1, 2, 2, 2, 1, 2, 1]
         self.with_se_list = with_se_list if with_se_list \
@@ -129,9 +129,9 @@ class AttentiveMobileNetV3(BaseBackbone):
             make_divisible(c * widen_factor, 8) for c in channels
         ] for channels in self.num_channels_list]
 
-        self.first_conv_act = self.act_cfg_list.pop(0)
-        self.final_expand_layer_act = self.act_cfg_list.pop(-1)
-        self.feature_mix_layer_act = self.act_cfg_list.pop(-1)
+        self.first_act = self.act_cfg_list.pop(0)
+        self.last_act = self.act_cfg_list.pop(-1)
+
         self.first_out_channels_list = self.num_channels_list.pop(0)
         self.last_out_channels_list = self.num_channels_list.pop(-1)
         self.last_expand_ratio_list = self.expand_ratio_list.pop(-1)
@@ -155,7 +155,7 @@ class AttentiveMobileNetV3(BaseBackbone):
             padding=1,
             conv_cfg=self.conv_cfg,
             norm_cfg=self.norm_cfg,
-            act_cfg=self.first_conv_act)
+            act_cfg=dict(type=self.first_act))
 
         for i, (num_blocks, kernel_sizes, expand_ratios, num_channels) in \
             enumerate(zip(self.num_blocks_list, self.kernel_size_list,
@@ -184,7 +184,7 @@ class AttentiveMobileNetV3(BaseBackbone):
                               padding=0,
                               conv_cfg=self.conv_cfg,
                               norm_cfg=self.norm_cfg,
-                              act_cfg=self.final_expand_layer_act)),
+                              act_cfg=dict(type=self.last_act))),
                          ('pool', nn.AdaptiveAvgPool2d((1, 1))),
                          ('feature_mix_layer',
                           ConvModule(
@@ -195,14 +195,14 @@ class AttentiveMobileNetV3(BaseBackbone):
                               bias=False,
                               conv_cfg=self.conv_cfg,
                               norm_cfg=None,
-                              act_cfg=self.feature_mix_layer_act))]))
+                              act_cfg=dict(type=self.last_act)))]))
         self.add_module('last_conv', last_layers)
         layers.append(last_layers)
         return layers
 
     def _make_single_layer(self, out_channels: List, num_blocks: List,
                            kernel_sizes: List, expand_ratios: List,
-                           stride: int, use_se: bool):
+                           stride: int, act: str, use_se: bool):
         """Stack InvertedResidual blocks (MBBlocks) to build a layer for
         MobileNetV3.
 
@@ -235,7 +235,7 @@ class AttentiveMobileNetV3(BaseBackbone):
                 expand_ratio=max(expand_ratios),
                 conv_cfg=self.conv_cfg,
                 norm_cfg=self.norm_cfg,
-                act_cfg=self.act_cfg,
+                act_cfg=dict(type=act),
                 with_cp=self.with_cp,
                 se_cfg=se_cfg,
                 with_attentive_shortcut=self.with_attentive_shortcut)
