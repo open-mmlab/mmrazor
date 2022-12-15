@@ -46,12 +46,17 @@ class ShortcutLayer(BaseOP):
             x = F.avg_pool2d(x, self.reduction, padding=padding)
 
         # HACK
-        mutable_in_channels = self.conv.mutable_in_channels
-        mutable_out_channels = self.conv.mutable_out_channels
-        if mutable_out_channels is not None and \
-                mutable_in_channels is not None:
-            if mutable_out_channels.current_mask.sum().item() != \
-                    mutable_in_channels.current_mask.sum().item():
+        if hasattr(self.conv, 'mutable_in_channels'):
+            in_channels = self.conv.mutable_in_channels.current_mask.sum(
+            ).item()
+            out_channels = self.conv.mutable_out_channels.current_mask.sum(
+            ).item()
+        else:
+            in_channels = self.conv.in_channels
+            out_channels = self.conv.out_channels
+        if in_channels is not None and \
+                out_channels is not None:
+            if in_channels != out_channels:
                 x = self.conv(x)
 
         return x

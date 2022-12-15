@@ -145,7 +145,11 @@ policies = [
             prob=1.0,
             magnitude=9,
             extra_params=extra_params),
-        dict(type='ShearY', prob=0.6, magnitude=3, extra_params=extra_params),
+        dict(
+            type='mmrazor.ShearY',
+            prob=0.6,
+            magnitude=3,
+            extra_params=extra_params),
     ],
     [
         dict(
