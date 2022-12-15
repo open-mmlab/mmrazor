@@ -136,8 +136,7 @@ class SlimmableNetwork(BaseAlgorithm):
         self.mutator.set_choices(self.mutator.subnets[index])
         self.mutator.fix_channel_mutables()
         self._fix_archtecture()
-        if hasattr(self.architecture, '_modules'):
-            _dynamic_to_static(self.architecture._modules)
+        _dynamic_to_static(self.architecture)
         self.is_deployed = True
 
 

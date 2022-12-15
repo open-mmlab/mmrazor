@@ -23,7 +23,8 @@ def _dynamic_to_static(model: nn.Module) -> None:
     if isinstance(model, DynamicMixin):
         raise RuntimeError('Root model can not be dynamic op.')
 
-    traverse_children(model)
+    if hasattr(model, '_modules'):
+        traverse_children(model._modules)
 
 
 def load_fix_subnet(model: nn.Module,
@@ -92,8 +93,7 @@ def load_fix_subnet(model: nn.Module,
                 load_fix_module(module)
 
     # convert dynamic op to static op
-    if hasattr(model, '_modules'):
-        _dynamic_to_static(model._modules)
+    _dynamic_to_static(model)
 
 
 def export_fix_subnet(
