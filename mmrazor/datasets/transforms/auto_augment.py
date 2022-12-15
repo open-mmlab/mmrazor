@@ -42,18 +42,24 @@ def _check_args_tf(kwargs):
 
 
 def shear_x(img, factor, **kwargs):
+    """ShearX images."""
+
     _check_args_tf(kwargs)
     return img.transform(img.size, Image.AFFINE, (1, factor, 0, 0, 1, 0),
                          **kwargs)
 
 
 def shear_y(img, factor, **kwargs):
+    """ShearY images."""
+
     _check_args_tf(kwargs)
     return img.transform(img.size, Image.AFFINE, (1, 0, 0, factor, 1, 0),
                          **kwargs)
 
 
 def translate_x_rel(img, pct, **kwargs):
+    """TranslateXRel images."""
+
     pixels = pct * img.size[0]
     _check_args_tf(kwargs)
     return img.transform(img.size, Image.AFFINE, (1, 0, pixels, 0, 1, 0),
@@ -61,6 +67,8 @@ def translate_x_rel(img, pct, **kwargs):
 
 
 def translate_y_rel(img, pct, **kwargs):
+    """TranslateYRel images."""
+
     pixels = pct * img.size[1]
     _check_args_tf(kwargs)
     return img.transform(img.size, Image.AFFINE, (1, 0, 0, 0, 1, pixels),
@@ -68,18 +76,24 @@ def translate_y_rel(img, pct, **kwargs):
 
 
 def translate_x_abs(img, pixels, **kwargs):
+    """TranslateX images."""
+
     _check_args_tf(kwargs)
     return img.transform(img.size, Image.AFFINE, (1, 0, pixels, 0, 1, 0),
                          **kwargs)
 
 
 def translate_y_abs(img, pixels, **kwargs):
+    """TranslateY images."""
+
     _check_args_tf(kwargs)
     return img.transform(img.size, Image.AFFINE, (1, 0, 0, 0, 1, pixels),
                          **kwargs)
 
 
 def rotate(img, degrees, **kwargs):
+    """Rotate images."""
+
     _check_args_tf(kwargs)
     if _PIL_VER >= (5, 2):
         return img.rotate(degrees, **kwargs)
@@ -112,22 +126,32 @@ def rotate(img, degrees, **kwargs):
 
 
 def auto_contrast(img, **__):
+    """AutoContrast images."""
+
     return ImageOps.autocontrast(img)
 
 
 def invert(img, **__):
+    """Invert images."""
+
     return ImageOps.invert(img)
 
 
 def equalize(img, **__):
+    """Equalize images."""
+
     return ImageOps.equalize(img)
 
 
 def solarize(img, thresh, **__):
+    """Solarize images."""
+
     return ImageOps.solarize(img, thresh)
 
 
 def solarize_add(img, add, thresh=128, **__):
+    """SolarizeAdd images."""
+
     lut = []
     for i in range(256):
         if i < thresh:
@@ -143,6 +167,8 @@ def solarize_add(img, add, thresh=128, **__):
 
 
 def posterize(img, bits_to_keep, **__):
+    """Posterize images."""
+
     if bits_to_keep >= 8:
         return img
     bits_to_keep = max(1, bits_to_keep)  # prevent all 0 images
@@ -150,18 +176,26 @@ def posterize(img, bits_to_keep, **__):
 
 
 def contrast(img, factor, **__):
+    """Contrast images."""
+
     return ImageEnhance.Contrast(img).enhance(factor)
 
 
 def color(img, factor, **__):
+    """Color images."""
+
     return ImageEnhance.Color(img).enhance(factor)
 
 
 def brightness(img, factor, **__):
+    """Brightness images."""
+
     return ImageEnhance.Brightness(img).enhance(factor)
 
 
 def sharpness(img, factor, **__):
+    """Sharpness images."""
+
     return ImageEnhance.Sharpness(img).enhance(factor)
 
 
