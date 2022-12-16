@@ -1,11 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import copy
 from typing import Any, Dict, Tuple
 
 import torch
 
 from mmrazor.models import ResourceEstimator
-from mmrazor.structures import export_fix_subnet, load_fix_subnet
+from mmrazor.structures import export_fix_subnet
 from mmrazor.utils import SupportRandomSubnet
 
 try:
@@ -32,11 +31,9 @@ def check_subnet_resources(
 
     assert hasattr(model, 'set_subnet') and hasattr(model, 'architecture')
     model.set_subnet(subnet)
-    fix_mutable = export_fix_subnet(model)
-    copied_model = copy.deepcopy(model)
-    load_fix_subnet(copied_model, fix_mutable)
+    _, sliced_model = export_fix_subnet(model, slice_weight=True)
 
-    model_to_check = model.architecture
+    model_to_check = sliced_model.architecture  # type: ignore
     if isinstance(model_to_check, BaseDetector):
         results = estimator.estimate(model=model_to_check.backbone)
     else:

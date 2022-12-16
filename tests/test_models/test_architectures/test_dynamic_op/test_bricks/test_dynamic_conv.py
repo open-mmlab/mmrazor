@@ -59,7 +59,7 @@ class TestDynamicConv2d(TestCase):
         with pytest.raises(RuntimeError):
             _ = d_conv2d.to_static_op()
 
-        fix_mutables = export_fix_subnet(d_conv2d)
+        fix_mutables = export_fix_subnet(d_conv2d)[0]
         with pytest.raises(RuntimeError):
             load_fix_subnet(d_conv2d, fix_mutables)
         fix_dynamic_op(d_conv2d, fix_mutables)
@@ -126,7 +126,7 @@ def test_dynamic_conv2d(bias: bool, dynamic_class: Type[nn.Conv2d]) -> None:
     out1 = d_conv2d(x)
     assert out1.size(1) == 4
 
-    fix_mutables = export_fix_subnet(d_conv2d)
+    fix_mutables = export_fix_subnet(d_conv2d)[0]
     with pytest.raises(RuntimeError):
         load_fix_subnet(d_conv2d, fix_mutables)
     fix_dynamic_op(d_conv2d, fix_mutables)
@@ -180,7 +180,7 @@ def test_dynamic_conv2d_mutable_single_channels(
     with pytest.raises(RuntimeError):
         _ = d_conv2d.to_static_op()
 
-    fix_mutables = export_fix_subnet(d_conv2d)
+    fix_mutables = export_fix_subnet(d_conv2d)[0]
     with pytest.raises(RuntimeError):
         load_fix_subnet(d_conv2d, fix_mutables)
     fix_dynamic_op(d_conv2d, fix_mutables)
@@ -239,7 +239,7 @@ def test_kernel_dynamic_conv2d(dynamic_class: Type[nn.Conv2d],
     out1 = d_conv2d(x)
     assert out1.size(1) == 8
 
-    fix_mutables = export_fix_subnet(d_conv2d)
+    fix_mutables = export_fix_subnet(d_conv2d)[0]
     with pytest.raises(RuntimeError):
         load_fix_subnet(d_conv2d, fix_mutables)
     fix_dynamic_op(d_conv2d, fix_mutables)

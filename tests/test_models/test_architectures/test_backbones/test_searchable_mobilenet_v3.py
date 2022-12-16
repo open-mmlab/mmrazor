@@ -72,7 +72,7 @@ def test_attentive_mobilenet_mutable() -> None:
         elif isinstance(module, DynamicSequential):
             assert isinstance(module.mutable_depth, OneShotMutableValue)
 
-    assert backbone.last_mutable.num_channels == max(out_channels[-1])
+    assert backbone.last_mutable_channels.num_channels == max(out_channels[-1])
 
 
 def test_attentive_mobilenet_train() -> None:

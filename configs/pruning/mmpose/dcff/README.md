@@ -47,10 +47,10 @@ The mainstream approach for filter pruning is usually either to force a hard-cod
 
 ### Generate channel_config file
 
-Generate `resnet_pose.json` with `tools/get_channel_units.py`.
+Generate `resnet_pose.json` with `tools/pruning/get_channel_units.py`.
 
 ```bash
-python tools/get_channel_units.py
+python tools/pruning/get_channel_units.py
   configs/pruning/mmpose/dcff/dcff_topdown_heatmap_resnet50.py \
   -c -i --output-path=configs/pruning/mmpose/dcff/resnet_pose.json
 ```

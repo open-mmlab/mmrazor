@@ -37,12 +37,21 @@ arch_setting = dict(
         [1024, 1280, 1280 - 1024],  # last layer
     ])
 
+input_resizer_cfg = dict(
+    input_sizes=[[128, 128], [140, 140], [144, 144], [152, 152], [192, 192],
+                 [204, 204], [224, 224], [256, 256]])
+
 nas_backbone = dict(
     type='mmrazor.AttentiveMobileNetV3',
     arch_setting=arch_setting,
     out_indices=(6, ),
     stride_list=[1, 2, 2, 2, 1, 2],
     with_se_list=[False, False, True, False, True, True],
+    act_cfg_list=[
+        'HSwish', 'ReLU', 'ReLU', 'ReLU', 'HSwish', 'HSwish', 'HSwish',
+        'HSwish', 'HSwish'
+    ],
     conv_cfg=dict(type='OFAConv2d'),
-    norm_cfg=dict(type='mmrazor.DynamicBatchNorm2d', momentum=0.0),
+    norm_cfg=dict(type='mmrazor.DynamicBatchNorm2d', momentum=0.1),
+    fine_grained_mode=True,
     with_attentive_shortcut=False)

@@ -7,4 +7,6 @@ model_cfg = dict(
     cfg=_base_.architecture,
     fix_subnet='configs/pruning/mmpose/dcff/fix_subnet.json',
     mode='mutator',
-    subnet_weight='configs/pruning/mmpose/dcff/fix_subnet_weight.pth')
+    init_cfg=dict(
+        type='Pretrained',
+        checkpoint='configs/pruning/mmpose/dcff/fix_subnet_weight.pth'))

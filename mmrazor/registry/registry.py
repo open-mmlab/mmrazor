@@ -7,7 +7,6 @@ https://mmengine.readthedocs.io/en/latest/tutorials/registry.html.
 """
 from typing import Any, Optional, Union
 
-import torch
 from mmengine.config import Config, ConfigDict
 from mmengine.registry import DATA_SAMPLERS as MMENGINE_DATA_SAMPLERS
 from mmengine.registry import DATASETS as MMENGINE_DATASETS
@@ -113,7 +112,7 @@ def sub_model(cfg,
               mode='mutable',
               prefix='',
               extra_prefix='',
-              subnet_weight=None):
+              init_cfg=None):
     model = MODELS.build(cfg)
     from mmrazor.structures import load_fix_subnet
 
@@ -123,11 +122,4 @@ def sub_model(cfg,
         load_subnet_mode=mode,
         prefix=prefix,
         extra_prefix=extra_prefix)
-    if subnet_weight:
-        if isinstance(subnet_weight, str):
-            subnet_weight = torch.load(subnet_weight)
-        if not isinstance(subnet_weight, dict):
-            raise TypeError('subnet_weight should be a `str` or `dict`'
-                            f'but got {type(subnet_weight)}')
-        model.load_state_dict(subnet_weight)
     return model
