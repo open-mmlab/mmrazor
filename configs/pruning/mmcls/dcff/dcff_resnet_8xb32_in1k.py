@@ -80,7 +80,6 @@ model = dict(
     data_preprocessor=None,
     target_pruning_ratio=target_pruning_ratio,
     step_freq=1,
-    linear_schedule=False,
-    is_deployed=False)
+    linear_schedule=False)
 
 val_cfg = dict(_delete_=True, type='mmrazor.ItePruneValLoop')

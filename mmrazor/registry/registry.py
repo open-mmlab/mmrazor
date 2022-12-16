@@ -5,8 +5,9 @@ Each node is a child of the root registry in MMEngine.
 More details can be found at
 https://mmengine.readthedocs.io/en/latest/tutorials/registry.html.
 """
-from typing import Any, Optional, Union
+from typing import Any, Dict, Optional, Union
 
+import torch
 from mmengine.config import Config, ConfigDict
 from mmengine.registry import DATA_SAMPLERS as MMENGINE_DATA_SAMPLERS
 from mmengine.registry import DATASETS as MMENGINE_DATASETS
@@ -109,14 +110,16 @@ VISBACKENDS = Registry('vis_backend', parent=MMENGINE_VISBACKENDS)
 @MODELS.register_module()
 def sub_model(cfg,
               fix_subnet,
-              mode='mutable',
-              prefix='',
-              extra_prefix='',
-              init_cfg=None):
-    # override
+              mode: str = 'mutable',
+              prefix: str = '',
+              extra_prefix: str = '',
+              init_weight_supernet: bool = False,
+              init_cfg: Optional[Dict] = None):
     model = MODELS.build(cfg)
     # save path type cfg process, set init_cfg directly
-    model.init_cfg = init_cfg
+    if init_cfg and (not init_weight_supernet):
+        # load subnet weight when init_cfg is valid
+        model.init_cfg = init_cfg
     from mmrazor.structures import load_fix_subnet
 
     load_fix_subnet(
@@ -125,4 +128,18 @@ def sub_model(cfg,
         load_subnet_mode=mode,
         prefix=prefix,
         extra_prefix=extra_prefix)
+
+    if init_weight_supernet:
+        # load supernet weight via sliced state_dict
+        if init_cfg is None:
+            raise TypeError(f'`init_cfg` should be a `dict`'
+                            'when `init_weight_supernet` is True'
+                            f'but got {init_cfg}')
+        if 'checkpoint' in init_cfg:
+            init_cfg = torch.load(init_cfg['checkpoint'])
+        if not isinstance(init_cfg, dict):
+            raise TypeError('init_cfg should be a `str` or `dict`'
+                            f'but got {type(init_cfg)}')
+        model.load_state_dict(init_cfg)
+
     return model

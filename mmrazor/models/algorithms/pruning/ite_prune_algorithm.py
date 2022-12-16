@@ -113,8 +113,6 @@ class ItePruneAlgorithm(BaseAlgorithm):
             Defaults to None.
         linear_schedule (bool, optional): flag to set linear ratio schedule.
             Defaults to True.
-        is_deployed (bool, optional): flag to set deployed algorithm.
-            Defaults to False.
     """
 
     def __init__(self,
@@ -129,8 +127,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
                  step_freq=1,
                  prune_times=1,
                  init_cfg: Optional[Dict] = None,
-                 linear_schedule=True,
-                 is_deployed=False) -> None:
+                 linear_schedule=True) -> None:
 
         super().__init__(architecture, data_preprocessor, init_cfg)
 
@@ -139,17 +136,9 @@ class ItePruneAlgorithm(BaseAlgorithm):
         self.step_freq = step_freq
         self.prune_times = prune_times
         self.linear_schedule = linear_schedule
-        self.is_deployed = is_deployed
 
-        if self.is_deployed:
-            assert fix_subnet is not None
-            # Avoid circular import
-            from mmrazor.structures import load_fix_subnet
-            load_fix_subnet(self.architecture, fix_subnet)
-        else:
-            # init mutator
-            self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
-            self.mutator.prepare_from_supernet(self.architecture)
+        self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
+        self.mutator.prepare_from_supernet(self.architecture)
 
     def group_target_pruning_ratio(
         self, target: Dict[str, float],

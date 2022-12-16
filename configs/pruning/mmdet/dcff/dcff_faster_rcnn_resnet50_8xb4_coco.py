@@ -79,8 +79,7 @@ model = dict(
             tracer_type='BackwardTracer')),
     target_pruning_ratio=target_pruning_ratio,
     step_freq=1,
-    linear_schedule=False,
-    is_deployed=False)
+    linear_schedule=False)
 
 model_wrapper = dict(
     type='mmcv.MMDistributedDataParallel', find_unused_parameters=True)

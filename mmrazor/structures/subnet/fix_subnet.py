@@ -139,7 +139,7 @@ def export_fix_subnet(
 
     Return:
         fix_subnet (ValidFixMutable): Exported subnet choice config.
-        static_model (nn.Module): Exported static model.
+        static_model (Optional[Dict]): Exported static model state_dict.
             Valid when `slice_weight`=True.
     """
 

@@ -5,7 +5,6 @@ import torch
 
 from mmrazor.registry import MODELS
 from mmrazor.utils import IndexDict
-from mmrazor.utils.typing import DumpChosen
 from ...architectures.dynamic_ops.mixins import DynamicChannelMixin
 from .base_mutable_channel import BaseMutableChannel
 from .simple_mutable_channel import SimpleMutableChannel
@@ -92,13 +91,6 @@ class MutableChannelContainer(BaseMutableChannel):
         container.register_mutable(mutable, start, end)
 
     # private methods
-
-    def dump_chosen(self) -> DumpChosen:
-        """Dump chosen."""
-        meta = dict(max_channels=self.num_channels)
-        chosen = self.export_chosen()
-
-        return DumpChosen(chosen=chosen, meta=meta)
 
     def _assert_mutables_valid(self):
         """Assert the current stored BaseMutableChannels are valid to generate

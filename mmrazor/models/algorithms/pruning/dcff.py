@@ -46,8 +46,6 @@ class DCFF(ItePruneAlgorithm):
             Defaults to None.
         linear_schedule (bool, optional): flag to set linear ratio schedule.
             Defaults to False due to dcff fixed pruning rate.
-        is_deployed (bool, optional): flag to set deployed algorithm.
-            Defaults to False.
     """
 
     def __init__(self,
@@ -61,12 +59,11 @@ class DCFF(ItePruneAlgorithm):
                  step_freq=1,
                  prune_times=0,
                  init_cfg: Optional[Dict] = None,
-                 linear_schedule=False,
-                 is_deployed=False) -> None:
+                 linear_schedule=False) -> None:
         # invalid param prune_times, reset after message_hub get [max_epoch]
         super().__init__(architecture, mutator_cfg, fix_subnet,
                          data_preprocessor, target_pruning_ratio, step_freq,
-                         prune_times, init_cfg, linear_schedule, is_deployed)
+                         prune_times, init_cfg, linear_schedule)
 
     def _calc_temperature(self, cur_num: int, max_num: int):
         """Calculate temperature param."""

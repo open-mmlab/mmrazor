@@ -3,7 +3,6 @@ import json
 import os.path as osp
 
 import torch
-from mmengine import fileio
 from mmengine.runner import ValLoop
 
 from mmrazor.registry import LOOPS
@@ -46,11 +45,10 @@ class ItePruneValLoop(ValLoop):
         fix_subnet = json.dumps(fix_subnet, indent=4, separators=(',', ':'))
         subnet_name = 'fix_subnet.json'
         weight_name = 'fix_subnet_weight.pth'
-        fileio.dump(fix_subnet, osp.join(self.runner.work_dir, subnet_name))
-        torch.save({
-            'state_dict': static_model.state_dict(),
-            'meta': {}
-        }, osp.join(self.runner.work_dir, weight_name))
+        with open(osp.join(self.runner.work_dir, subnet_name), 'w') as file:
+            file.write(fix_subnet)
+        torch.save({'state_dict': static_model.state_dict()},
+                   osp.join(self.runner.work_dir, weight_name))
         self.runner.logger.info(
             'export finished and '
             f'{subnet_name}, '

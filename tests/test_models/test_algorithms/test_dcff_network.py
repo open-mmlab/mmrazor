@@ -7,7 +7,7 @@ import unittest
 
 import torch
 from mmcls.structures import ClsDataSample
-from mmengine import MessageHub, fileio
+from mmengine import MessageHub
 from mmengine.model import BaseModel
 
 from mmrazor.models.algorithms.pruning.dcff import DCFF
@@ -316,8 +316,9 @@ class TestDCFFAlgorithm(unittest.TestCase):
         fix_subnet = json.dumps(fix_subnet, indent=4, separators=(',', ':'))
         subnet_name = 'subnet.json'
         weight_name = 'subnet_weight.pth'
-        fileio.dump(fix_subnet,
-                    osp.join('tests/data/test_registry/', subnet_name))
+        with open(osp.join('tests/data/test_registry/', subnet_name),
+                  'w') as file:
+            file.write(fix_subnet)
         torch.save({
             'state_dict': static_model.state_dict(),
             'meta': {}
