@@ -132,13 +132,13 @@ def sub_model(cfg,
     if init_weight_supernet:
         # load supernet weight via sliced state_dict
         if init_cfg is None:
-            raise TypeError(f'`init_cfg` should be a `dict`'
+            raise TypeError(f'`init_cfg` should be valid'
                             'when `init_weight_supernet` is True'
                             f'but got {init_cfg}')
         if 'checkpoint' in init_cfg:
             init_cfg = torch.load(init_cfg['checkpoint'])
         if not isinstance(init_cfg, dict):
-            raise TypeError('init_cfg should be a `str` or `dict`'
+            raise TypeError('init_cfg should be a `dict`'
                             f'but got {type(init_cfg)}')
         model.load_state_dict(init_cfg)
 
