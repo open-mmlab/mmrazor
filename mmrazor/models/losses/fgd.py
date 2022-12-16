@@ -94,8 +94,8 @@ class FGDLoss(nn.Module):
             for j in range(len(gt_bboxes[i])):
                 mask_fg[i][hmin[i][j]:hmax[i][j]+1,
                            wmin[i][j]:wmax[i][j]+1] = \
-                        torch.maximum(mask_fg[i][hmin[i][j]:hmax[i][j]+1,
-                                      wmin[i][j]:wmax[i][j]+1], area[0][j])
+                        torch.max(mask_fg[i][hmin[i][j]:hmax[i][j]+1,
+                                  wmin[i][j]:wmax[i][j]+1], area[0][j])
 
             mask_bg[i] = torch.where(mask_fg[i] > 0, 0, 1)
             if torch.sum(mask_bg[i]):
