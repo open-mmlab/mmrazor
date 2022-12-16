@@ -64,9 +64,9 @@ Then set layers' pruning rates `target_pruning_ratio` by `resnet_seg.json`.
 ##### Citpscapes
 
 ```bash
-sh tools/slurm_train.sh $PARTITION $JOB_NAME \
-  configs/pruning/mmseg/dcff/dcff_pointrend_resnet50_8xb2_cityscapes.py \
-  $WORK_DIR
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/pruning/mmseg/dcff/dcff_pointrend_resnet50_8xb2_cityscapes.py 4 \
+  --work-dir $WORK_DIR
 ```
 
 ### Test DCFF
@@ -76,7 +76,7 @@ sh tools/slurm_train.sh $PARTITION $JOB_NAME \
 ##### Citpscapes
 
 ```bash
-sh tools/slurm_test.sh $PARTITION $JOB_NAME \
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_test.sh \
   configs/pruning/mmseg/dcff/dcff_compact_pointrend_resnet50_8xb2_cityscapes.py \
-  $WORK_DIR
+  $CKPT 1 --work-dir $WORK_DIR
 ```

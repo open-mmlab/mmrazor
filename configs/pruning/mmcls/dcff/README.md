@@ -64,9 +64,9 @@ Then set layers' pruning rates `target_pruning_ratio` by `resnet_cls.json`.
 ##### ImageNet
 
 ```bash
-sh tools/slurm_train.sh $PARTITION $JOB_NAME \
-  configs/pruning/mmcls/dcff/dcff_resnet50_8xb32_in1k.py \
-  $WORK_DIR
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/pruning/mmcls/dcff/dcff_resnet50_8xb32_in1k.py 4 \
+  --work-dir $WORK_DIR
 ```
 
 ### Test DCFF
@@ -76,7 +76,7 @@ sh tools/slurm_train.sh $PARTITION $JOB_NAME \
 ##### ImageNet
 
 ```bash
-sh tools/slurm_test.sh $PARTITION $JOB_NAME \
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_test.sh \
   configs/pruning/mmcls/dcff/dcff_compact_resnet50_8xb32_in1k.py \
-  $WORK_DIR
+  $CKPT 1 --work-dir $WORK_DIR
 ```

@@ -64,9 +64,9 @@ Then set layers' pruning rates `target_pruning_ratio` by `resnet_pose.json`.
 ##### COCO
 
 ```bash
-sh tools/slurm_train.sh $PARTITION $JOB_NAME \
-  configs/pruning/mmpose/dcff/dcff_topdown_heatmap_resnet50.py \
-  $WORK_DIR
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/pruning/mmpose/dcff/dcff_topdown_heatmap_resnet50.py 4 \
+  --work-dir $WORK_DIR
 ```
 
 ### Test DCFF
@@ -76,7 +76,7 @@ sh tools/slurm_train.sh $PARTITION $JOB_NAME \
 ##### COCO
 
 ```bash
-sh tools/slurm_test.sh $PARTITION $JOB_NAME \
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_test.sh \
   configs/pruning/mmpose/dcff/dcff_compact_topdown_heatmap_resnet50.py \
-  $WORK_DIR
+  $CKPT 1 --work-dir $WORK_DIR
 ```
