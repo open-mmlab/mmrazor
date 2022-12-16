@@ -1,6 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-import logging
 from typing import Dict, Optional, Tuple
 
 from mmengine import fileio
@@ -127,7 +126,6 @@ def _load_fix_subnet_by_mutator(model: nn.Module, mutator_cfg: Dict) -> None:
 def export_fix_subnet(
         model: nn.Module,
         export_subnet_mode: str = 'mutable',
-        dump_derived_mutable: bool = False,
         slice_weight: bool = False) -> Tuple[FixMutable, Optional[Dict]]:
     """Export subnet that can be loaded by :func:`load_fix_subnet`. Include
     subnet structure and subnet weight.
@@ -137,8 +135,6 @@ def export_fix_subnet(
         export_subnet_mode (bool): Subnet export method choice.
             Export by `mutable.dump_chosen()` when set to 'mutable' (NAS)
             Export by `mutator.config_template()` when set to 'mutator' (Prune)
-        dump_derived_mutable (bool): Dump information for all derived mutables.
-            Valid when `export_subnet_mode`='mutable'. Default to False.
         slice_weight (bool): Export subnet weight. Default to False.
 
     Return:
@@ -151,8 +147,7 @@ def export_fix_subnet(
 
     fix_subnet = dict()
     if export_subnet_mode == 'mutable':
-        fix_subnet = _export_subnet_by_mutable(static_model,
-                                               dump_derived_mutable)
+        fix_subnet = _export_subnet_by_mutable(static_model)
     elif export_subnet_mode == 'mutator':
         fix_subnet = _export_subnet_by_mutator(static_model)
     else:
@@ -170,13 +165,7 @@ def export_fix_subnet(
         return fix_subnet, None
 
 
-def _export_subnet_by_mutable(model: nn.Module,
-                              dump_derived_mutable: bool) -> Dict:
-    if dump_derived_mutable:
-        print_log(
-            'Trying to dump information of all derived mutables, '
-            'this might harm readability of the exported configurations.',
-            level=logging.WARNING)
+def _export_subnet_by_mutable(model: nn.Module) -> Dict:
 
     # Avoid circular import
     from mmrazor.models.mutables import DerivedMutable, MutableChannelContainer
@@ -197,13 +186,13 @@ def _export_subnet_by_mutable(model: nn.Module,
                 for source_mutable in module.source_mutables:
                     module_dump_chosen(source_mutable, fix_subnet)
             else:
-                fix_subnet[name] = module.dump_chosen()
+                module_dump_chosen(module, fix_subnet)
     return fix_subnet
 
 
 def _export_subnet_by_mutator(model: nn.Module) -> Dict:
     if not hasattr(model, 'mutator'):
-        raise ValueError('model should contain `mutator` instance, but got '
+        raise ValueError('model should contain `mutator` attribute, but got '
                          f'{type(model)} model')
     fix_subnet = model.mutator.config_template(
         with_channels=False, with_unit_init_args=True)

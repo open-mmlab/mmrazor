@@ -2,17 +2,19 @@
 import copy
 import json
 import os
+import os.path as osp
 import unittest
 
 import torch
 from mmcls.structures import ClsDataSample
-from mmengine import MessageHub
+from mmengine import MessageHub, fileio
 from mmengine.model import BaseModel
 
 from mmrazor.models.algorithms.pruning.dcff import DCFF
 from mmrazor.models.algorithms.pruning.ite_prune_algorithm import \
     ItePruneConfigManager
 from mmrazor.registry import MODELS
+from mmrazor.structures import export_fix_subnet
 
 
 # @TASK_UTILS.register_module()
@@ -308,8 +310,15 @@ class TestDCFFAlgorithm(unittest.TestCase):
         self._set_epoch_ite(0, 0, epoch)
         algorithm.forward(data['inputs'], data['data_samples'], mode='loss')
         self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
-        config = algorithm.mutator.config_template(
-            with_channels=False, with_unit_init_args=True)
-        json_config = json.dumps(config, indent=4, separators=(',', ':'))
-        with open('tests/data/test_registry/subnet.json', 'w') as file:
-            file.write(json_config)
+
+        fix_subnet, static_model = export_fix_subnet(
+            algorithm, export_subnet_mode='mutator', slice_weight=True)
+        fix_subnet = json.dumps(fix_subnet, indent=4, separators=(',', ':'))
+        subnet_name = 'subnet.json'
+        weight_name = 'subnet_weight.pth'
+        fileio.dump(fix_subnet,
+                    osp.join('tests/data/test_registry/', subnet_name))
+        torch.save({
+            'state_dict': static_model.state_dict(),
+            'meta': {}
+        }, osp.join('tests/data/test_registry/', weight_name))

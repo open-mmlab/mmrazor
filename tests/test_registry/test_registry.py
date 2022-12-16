@@ -85,6 +85,9 @@ class TestRegistry(TestCase):
 
     def test_build_subnet_prune_from_cfg(self):
         mutator_cfg = fileio.load('tests/data/test_registry/subnet.json')
+        init_cfg = dict(
+            type='Pretrained',
+            checkpoint='tests/data/test_registry/subnet_weight.pth')
         # test fix subnet
         model_cfg = dict(
             # use mmrazor's build_func
@@ -93,7 +96,8 @@ class TestRegistry(TestCase):
                 cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py',
                 pretrained=False),
             fix_subnet=mutator_cfg,
-            mode='mutator')
+            mode='mutator',
+            init_cfg=init_cfg)
         model = MODELS.build(model_cfg)
         self.assertTrue(isinstance(model, BaseModel))
 

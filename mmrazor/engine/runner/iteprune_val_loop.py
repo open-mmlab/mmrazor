@@ -42,7 +42,7 @@ class ItePruneValLoop(ValLoop):
         """Save model subnet config."""
         # TO DO: Modify export_fix_subnet's output. Might contain weight return
         fix_subnet, static_model = export_fix_subnet(
-            self.model, subnet_export_mode='mutator', slice_weight=True)
+            self.model, export_subnet_mode='mutator', slice_weight=True)
         fix_subnet = json.dumps(fix_subnet, indent=4, separators=(',', ':'))
         subnet_name = 'fix_subnet.json'
         weight_name = 'fix_subnet_weight.pth'

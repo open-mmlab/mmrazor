@@ -113,7 +113,10 @@ def sub_model(cfg,
               prefix='',
               extra_prefix='',
               init_cfg=None):
+    # override
     model = MODELS.build(cfg)
+    # save path type cfg process, set init_cfg directly
+    model.init_cfg = init_cfg
     from mmrazor.structures import load_fix_subnet
 
     load_fix_subnet(
