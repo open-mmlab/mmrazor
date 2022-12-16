@@ -8,10 +8,9 @@ from mmengine import MMLogger
 from mmengine.model import BaseModel
 from mmengine.structures import BaseDataElement
 
-from mmrazor.models.mutables import BaseMutable
 from mmrazor.models.mutators import DCFFChannelMutator
 from mmrazor.registry import MODELS
-from mmrazor.structures.subnet.fix_subnet import _dynamic_to_static
+from mmrazor.utils import ValidFixMutable
 from .ite_prune_algorithm import ItePruneAlgorithm, ItePruneConfigManager
 
 LossResults = Dict[str, torch.Tensor]
@@ -30,8 +29,8 @@ class DCFF(ItePruneAlgorithm):
     Args:
         architecture (Union[BaseModel, Dict]): The model to be pruned.
         mutator_cfg (Union[Dict, ChannelMutator], optional): The config
-            of a mutator. Defaults to dict( type='ChannelMutator',
-            channel_unit_cfg=dict( type='SequentialMutableChannelUnit')).
+            of a mutator. Defaults to dict( type='DCFFChannelMutator',
+            channel_unit_cfg=dict( type='DCFFChannelUnit')).
         data_preprocessor (Optional[Union[Dict, nn.Module]], optional):
             Defaults to None.
         target_pruning_ratio (dict, optional): The prune-target. The template
@@ -47,8 +46,6 @@ class DCFF(ItePruneAlgorithm):
             Defaults to None.
         linear_schedule (bool, optional): flag to set linear ratio schedule.
             Defaults to False due to dcff fixed pruning rate.
-        is_deployed (bool, optional): flag to set deployed algorithm.
-            Defaults to False.
     """
 
     def __init__(self,
@@ -56,35 +53,17 @@ class DCFF(ItePruneAlgorithm):
                  mutator_cfg: Union[Dict, DCFFChannelMutator] = dict(
                      type=' DCFFChannelMutator',
                      channel_unit_cfg=dict(type='DCFFChannelUnit')),
+                 fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  target_pruning_ratio: Optional[Dict[str, float]] = None,
                  step_freq=1,
                  prune_times=0,
                  init_cfg: Optional[Dict] = None,
-                 linear_schedule=False,
-                 is_deployed=False) -> None:
+                 linear_schedule=False) -> None:
         # invalid param prune_times, reset after message_hub get [max_epoch]
-        super().__init__(architecture, mutator_cfg, data_preprocessor,
-                         target_pruning_ratio, step_freq, prune_times,
-                         init_cfg, linear_schedule)
-        self.is_deployed = is_deployed
-        if (self.is_deployed):
-            # To static ops for loaded pruned network.
-            self._deploy()
-
-    def _fix_archtecture(self):
-        for module in self.architecture.modules():
-            if isinstance(module, BaseMutable):
-                if not module.is_fixed:
-                    module.fix_chosen(None)
-
-    def _deploy(self):
-        config = self.prune_config_manager.prune_at(self._iter)
-        self.mutator.set_choices(config)
-        self.mutator.fix_channel_mutables()
-        self._fix_archtecture()
-        _dynamic_to_static(self.architecture)
-        self.is_deployed = True
+        super().__init__(architecture, mutator_cfg, fix_subnet,
+                         data_preprocessor, target_pruning_ratio, step_freq,
+                         prune_times, init_cfg, linear_schedule)
 
     def _calc_temperature(self, cur_num: int, max_num: int):
         """Calculate temperature param."""
