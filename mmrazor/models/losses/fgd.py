@@ -59,17 +59,18 @@ class FGDLoss(nn.Module):
         Args:
             preds_S(Tensor): Bs*C*H*W, student's feature map
             preds_T(Tensor): Bs*C*H*W, teacher's feature map
-            gt_bboxes(tuple): Bs*[nt*4], (tl_x, tl_y, br_x, br_y)
-            img_metas (list[dict]): Meta information of each image, e.g.,
-            image size, scaling factor, etc.
         """
         assert preds_S.shape[-2:] == preds_T.shape[-2:]
         N, C, H, W = preds_S.shape
-        gt_bboxes = self.current_data['gt_boxxes']
-        metas = self.current_data['img_metas']
+        # Bs*[nt*4], (tl_x, tl_y, br_x, br_y)
+        gt_bboxes = self.current_data['gt_bboxes']
+        # Meta information of each image, e.g., image size, scaling factor.
+        metas = self.current_data['img_metas']  # list[dict]
 
-        spatial_attention_t, channel_attention_t = self.get_attention(preds_T, self.temp)
-        spatial_attention_s, channel_attention_s = self.get_attention(preds_S, self.temp)
+        spatial_attention_t, channel_attention_t = self.get_attention(
+            preds_T, self.temp)
+        spatial_attention_s, channel_attention_s = self.get_attention(
+            preds_S, self.temp)
 
         mask_fg = torch.zeros_like(spatial_attention_t)
         mask_bg = torch.ones_like(spatial_attention_t)
@@ -91,7 +92,8 @@ class FGDLoss(nn.Module):
             area = 1.0 / height / width
 
             for j in range(len(gt_bboxes[i])):
-                mask_fg[i][hmin[i][j]:hmax[i][j]+1, wmin[i][j]:wmax[i][j]+1] = \
+                mask_fg[i][hmin[i][j]:hmax[i][j]+1,
+                           wmin[i][j]:wmax[i][j]+1] = \
                         torch.maximum(mask_fg[i][hmin[i][j]:hmax[i][j]+1,
                                       wmin[i][j]:wmax[i][j]+1], area[0][j])
 
@@ -99,11 +101,13 @@ class FGDLoss(nn.Module):
             if torch.sum(mask_bg[i]):
                 mask_bg[i] /= torch.sum(mask_bg[i])
 
-        fg_loss, bg_loss = self.get_fea_loss(preds_S, preds_T, mask_fg, mask_bg,
-                                             channel_attention_s, channel_attention_t,
-                                             spatial_attention_s, spatial_attention_t)
-        mask_loss = self.get_mask_loss(channel_attention_s, channel_attention_t,
-                                       spatial_attention_s, spatial_attention_t)
+        fg_loss, bg_loss = self.get_fea_loss(preds_S, preds_T, mask_fg,
+                                             mask_bg, channel_attention_t,
+                                             spatial_attention_t)
+        mask_loss = self.get_mask_loss(channel_attention_s,
+                                       channel_attention_t,
+                                       spatial_attention_s,
+                                       spatial_attention_t)
         rela_loss = self.get_rela_loss(preds_S, preds_T)
 
         loss = self.alpha_fgd * fg_loss + self.beta_fgd * bg_loss \
@@ -112,7 +116,7 @@ class FGDLoss(nn.Module):
         return loss
 
     def get_attention(self, preds, temp):
-        """ Calculate spatial and channel attention.
+        """Calculate spatial and channel attention.
 
         Args:
             preds (Tensor): Model prediction with shape (N, C, H, W).
@@ -134,41 +138,46 @@ class FGDLoss(nn.Module):
 
         return spatial_attention, channel_attention
 
-    def get_fea_loss(self, preds_S, preds_T, M_fg, M_bg, C_s, C_t, S_s, S_t):
+    def get_fea_loss(self, preds_S, preds_T, mask_fg, mask_bg,
+                     channel_attention_t, spatial_attention_t):
         loss_mse = nn.MSELoss(reduction='sum')
 
-        M_fg = M_fg.unsqueeze(dim=1)
-        M_bg = M_bg.unsqueeze(dim=1)
+        mask_fg = mask_fg.unsqueeze(dim=1)
+        mask_bg = mask_bg.unsqueeze(dim=1)
 
-        C_t = C_t.unsqueeze(dim=-1)
-        C_t = C_t.unsqueeze(dim=-1)
+        channel_attention_t = channel_attention_t.unsqueeze(dim=-1).unsqueeze(
+            dim=-1)
+        spatial_attention_t = spatial_attention_t.unsqueeze(dim=1)
 
-        S_t = S_t.unsqueeze(dim=1)
+        fea_t = torch.mul(preds_T, torch.sqrt(spatial_attention_t))
+        fea_t = torch.mul(fea_t, torch.sqrt(channel_attention_t))
+        fea_t_fg = torch.mul(fea_t, torch.sqrt(mask_fg))
+        fea_t_bg = torch.mul(fea_t, torch.sqrt(mask_bg))
 
-        fea_t = torch.mul(preds_T, torch.sqrt(S_t))
-        fea_t = torch.mul(fea_t, torch.sqrt(C_t))
-        fg_fea_t = torch.mul(fea_t, torch.sqrt(M_fg))
-        bg_fea_t = torch.mul(fea_t, torch.sqrt(M_bg))
+        fea_s = torch.mul(preds_S, torch.sqrt(spatial_attention_t))
+        fea_s = torch.mul(fea_s, torch.sqrt(channel_attention_t))
+        fea_s_fg = torch.mul(fea_s, torch.sqrt(mask_fg))
+        fea_s_bg = torch.mul(fea_s, torch.sqrt(mask_bg))
 
-        fea_s = torch.mul(preds_S, torch.sqrt(S_t))
-        fea_s = torch.mul(fea_s, torch.sqrt(C_t))
-        fg_fea_s = torch.mul(fea_s, torch.sqrt(M_fg))
-        bg_fea_s = torch.mul(fea_s, torch.sqrt(M_bg))
+        loss_fg = loss_mse(fea_s_fg, fea_t_fg) / len(mask_fg)
+        loss_bg = loss_mse(fea_s_bg, fea_t_bg) / len(mask_bg)
 
-        fg_loss = loss_mse(fg_fea_s, fg_fea_t) / len(M_fg)
-        bg_loss = loss_mse(bg_fea_s, bg_fea_t) / len(M_bg)
+        return loss_fg, loss_bg
 
-        return fg_loss, bg_loss
+    def get_mask_loss(self, channel_attention_s, channel_attention_t,
+                      spatial_attention_s, spatial_attention_t):
 
-    def get_mask_loss(self, C_s, C_t, S_s, S_t):
-
-        mask_loss = torch.sum(torch.abs(
-            (C_s - C_t))) / len(C_s) + torch.sum(torch.abs(
-                (S_s - S_t))) / len(S_s)
+        mask_loss = torch.sum(
+            torch.abs(
+                (channel_attention_s -
+                 channel_attention_t))) / len(channel_attention_s) + torch.sum(
+                     torch.abs(
+                         (spatial_attention_s -
+                          spatial_attention_t))) / len(spatial_attention_s)
 
         return mask_loss
 
-    def spatial_pool(self, x, in_type):
+    def spatial_pool(self, x, is_student_input):
         batch, channel, width, height = x.size()
         input_x = x
         # [N, C, H * W]
@@ -176,7 +185,7 @@ class FGDLoss(nn.Module):
         # [N, 1, C, H * W]
         input_x = input_x.unsqueeze(1)
         # [N, 1, H, W]
-        if in_type == 0:
+        if is_student_input:
             context_mask = self.conv_mask_s(x)
         else:
             context_mask = self.conv_mask_t(x)
@@ -196,8 +205,8 @@ class FGDLoss(nn.Module):
     def get_rela_loss(self, preds_S, preds_T):
         loss_mse = nn.MSELoss(reduction='sum')
 
-        context_s = self.spatial_pool(preds_S, 0)
-        context_t = self.spatial_pool(preds_T, 1)
+        context_s = self.spatial_pool(preds_S, is_student_input=True)
+        context_t = self.spatial_pool(preds_T, is_student_input=False)
 
         out_s = preds_S
         out_t = preds_T
