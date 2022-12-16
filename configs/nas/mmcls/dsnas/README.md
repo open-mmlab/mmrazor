@@ -12,6 +12,24 @@ Based on this observation, DSNAS proposes a task-specific end-to-end differentia
 
 ![pipeline](/docs/en/imgs/model_zoo/dsnas/pipeline.jpg)
 
+## Get Started
+
+### Supernet training on ImageNet
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/nas/mmcls/dsnas/dsnas_supernet_8xb128_in1k.py 4 \
+  --work-dir $WORK_DIR
+```
+
+## Subnet inference on ImageNet
+
+```bash
+CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
+  configs/nas/mmcls/dsnas/dsnas_subnet_8xb128_in1k.py \
+  $STEP1_CKPT 1 --work-dir $WORK_DIR
+```
+
 ## Results and models
 
 ### Supernet

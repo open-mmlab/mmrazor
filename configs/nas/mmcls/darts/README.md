@@ -10,6 +10,24 @@ This paper addresses the scalability challenge of architecture search by formula
 
 ![pipeline](https://user-images.githubusercontent.com/88702197/187425171-2dfe7fbf-7c2c-4c22-9219-2234aa83e47d.png)
 
+## Get Started
+
+### Supernet training on Cifar-10
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/nas/mmcls/darts/darts_supernet_unroll_1xb96_cifar10.py 4 \
+  --work-dir $WORK_DIR
+```
+
+## Subnet inference on Cifar-10
+
+```bash
+CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
+  configs/nas/mmcls/darts/darts_subnet_1xb96_cifar10_2.0.py \
+  $STEP1_CKPT 1 --work-dir $WORK_DIR
+```
+
 ## Results and models
 
 ### Supernet
