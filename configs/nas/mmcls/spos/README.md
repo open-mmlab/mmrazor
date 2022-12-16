@@ -11,7 +11,7 @@ Comprehensive experiments verify that our approach is flexible and effective. It
 
 ![pipeline](https://user-images.githubusercontent.com/88702197/187424862-c2f3fde1-4a48-4eda-9ff7-c65971b683ba.jpg)
 
-## Getting Started
+## Get Started
 
 ### Step 1: Supernet pre-training on ImageNet
 
@@ -29,7 +29,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
   --work-dir $WORK_DIR --cfg-options load_from=$STEP1_CKPT
 ```
 
-### \[Optional\] Step 3: Subnet retraining on ImageNet
+### Step 3: Subnet retraining on ImageNet
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \

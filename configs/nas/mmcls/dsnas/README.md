@@ -12,7 +12,7 @@ Based on this observation, DSNAS proposes a task-specific end-to-end differentia
 
 ![pipeline](/docs/en/imgs/model_zoo/dsnas/pipeline.jpg)
 
-## Introduction
+## Get Started
 
 ### Supernet training on ImageNet
 

@@ -10,7 +10,7 @@ Object detectors are usually equipped with backbone networks designed for image 
 
 ![pipeline](https://user-images.githubusercontent.com/88702197/187425296-64baa22a-9422-46cd-bd95-47e3e5707f75.jpg)
 
-## Getting Started
+## Get Started
 
 ### Step 1: Supernet pre-training on ImageNet
 

@@ -43,7 +43,7 @@ The mainstream approach for filter pruning is usually either to force a hard-cod
 }
 ```
 
-## Getting Started
+## Get Started
 
 ### Generate channel_config file
 
@@ -76,7 +76,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
 ##### COCO
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_train.sh \
+CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
   configs/pruning/mmdet/dcff/dcff_compact_faster_rcnn_resnet50_8xb4_coco.py \
   $CKPT 1 --work-dir $WORK_DIR
 ```

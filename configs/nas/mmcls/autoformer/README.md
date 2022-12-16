@@ -21,29 +21,28 @@ the performance on downstream benchmarks and distillation experiments.
 
 ![pipeline](/docs/en/imgs/model_zoo/autoformer/pipeline.png)
 
-## Getting Started
+## Get Started
 
 ### Step 1: Supernet pre-training on ImageNet
 
 ```bash
-python ./tools/train.py \
-  configs/nas/mmcls/autoformer/autoformer_supernet_32xb256_in1k.py \
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/nas/mmcls/autoformer/autoformer_supernet_32xb256_in1k.py 4 \
   --work-dir $WORK_DIR
 ```
 
 ### Step 2: Search for subnet on the trained supernet
 
 ```bash
-sh tools/train.py \
-  configs/nas/mmcls/autoformer/autoformer_search_8xb128_in1k.py \
-  $STEP1_CKPT \
-  --work-dir $WORK_DIR
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/nas/mmcls/autoformer/autoformer_search_8xb128_in1k.py 4 \
+  --work-dir $WORK_DIR --cfg-options load_from=$STEP1_CKPT
 ```
 
 ### Step 3: Subnet inference on ImageNet
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_train.sh \
+CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
   configs/nas/mmcls/autoformer/autoformer_subnet_8xb128_in1k.py \
   $STEP2_CKPT 1 --work-dir $WORK_DIR \
   --cfg-options algorithm.mutable_cfg=$STEP2_SUBNET_YAML

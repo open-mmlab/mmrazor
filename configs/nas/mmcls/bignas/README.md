@@ -8,7 +8,7 @@
 
 Neural architecture search (NAS) has shown promising results discovering models that are both accurate and fast. For NAS, training a one-shot model has become a popular strategy to rank the relative quality of different architectures (child models) using a single set of shared weights. However, while one-shot model weights can effectively rank different network architectures, the absolute accuracies from these shared weights are typically far below those obtained from stand-alone training. To compensate, existing methods assume that the weights must be retrained, finetuned, or otherwise post-processed after the search is completed. These steps significantly increase the compute requirements and complexity of the architecture search and model deployment. In this work, we propose BigNAS, an approach that challenges the conventional wisdom that post-processing of the weights is necessary to get good prediction accuracies. Without extra retraining or post-processing steps, we are able to train a single set of shared weights on ImageNet and use these weights to obtain child models whose sizes range from 200 to 1000 MFLOPs. Our discovered model family, BigNASModels, achieve top1 accuracies ranging from 76.5% to 80.9%, surpassing state-of-the-art models in this range including EfficientNets and Once-for-All networks without extra retraining or post-processing. We present ablative study and analysis to further understand the proposed BigNASModels.
 
-## Getting Started
+## Get Started
 
 ### Step 1: Supernet pre-training on ImageNet
 
@@ -29,7 +29,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
 ### Step 3: Subnet inference on ImageNet
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_train.sh \
+CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
   configs/nas/mmcls/bignas/attentive_mobilenet_subnet_8xb256_in1k.py \
   $STEP2_CKPT 1 --work-dir $WORK_DIR \
   --cfg-options algorithm.mutable_cfg=$STEP2_SUBNET_YAML

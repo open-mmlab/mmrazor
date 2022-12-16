@@ -10,7 +10,7 @@ This paper addresses the scalability challenge of architecture search by formula
 
 ![pipeline](https://user-images.githubusercontent.com/88702197/187425171-2dfe7fbf-7c2c-4c22-9219-2234aa83e47d.png)
 
-## Introduction
+## Get Started
 
 ### Supernet training on Cifar-10
 

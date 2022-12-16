@@ -11,7 +11,7 @@ Notably, by setting optimized channel numbers, our AutoSlim-MobileNet-v2 at 305M
 
 ![pipeline](https://user-images.githubusercontent.com/88702197/187425354-d90e4b36-e033-4dc0-b951-64a536e61b71.png)
 
-## Getting Started
+## Get Started
 
 ### Supernet pre-training on ImageNet
 

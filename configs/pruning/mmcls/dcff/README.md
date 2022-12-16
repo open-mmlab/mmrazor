@@ -43,7 +43,7 @@ The mainstream approach for filter pruning is usually either to force a hard-cod
 }
 ```
 
-## Getting Started
+## Get Started
 
 ### Generate channel_config file
 
