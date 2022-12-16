@@ -35,30 +35,33 @@ class AttentiveMobileNetV3(BaseBackbone):
     """Searchable MobileNetV3 backbone.
 
     Args:
-        arch_setting (list[list]): Architecture settings.
+        arch_setting (Dict[str, List]): Architecture settings.
         widen_factor (float): Width multiplier, multiply number of
-            channels in each layer by this amount. Default: 1.0.
+            channels in each layer by this amount. Defaults to 1.0.
         out_indices (Sequence[int]): Output from which stages.
-            Default: (7, ).
+            Defaults to (7, ).
         frozen_stages (int): Stages to be frozen (all param fixed).
-            Default: -1, which means not freezing any parameters.
-        stride_list (list[list]): stride setting in each stage.
-            Default: None
-        with_se_list (list[list]): Whether to use se-layer in each stage.
-            Default: None
+            Defaults to -1, which means not freezing any parameters.
         conv_cfg (dict, optional): Config dict for convolution layer.
-            Default: None, which means using conv2d.
+            Defaults to None, which means using conv2d.
         norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='BN').
-        act_cfg (dict): Config dict for activation layer.
-            Default: dict(type='Swish').
+            Defaults to dict(type='BN').
+        act_cfg_list (List): Config dict for activation layer.
+            Defaults to None.
+        stride_list (list): stride setting in each stage.
+            Defaults to None.
+        with_se_list (list): Whether to use se-layer in each stage.
+            Defaults to None.
         norm_eval (bool): Whether to set norm layers to eval mode, namely,
             freeze running stats (mean and var). Note: Effect on Batch Norm
-            and its variants only. Default: False.
+            and its variants only. Defaults to False.
         with_cp (bool): Use checkpoint or not. Using checkpoint will save some
-            memory while slowing down the training speed. Default: False.
+            memory while slowing down the training speed. Defaults to False.
         zero_init_residual (bool): Zero norm param in linear conv of MBBlock
-            or not when there is a shortcut. Default: True.
+            or not when there is a shortcut. Defaults to True.
+        fine_grained_mode (bool): Whether to use fine-grained mode (search
+            kernel size & expand ratio for each MB block in each layers).
+            Defaults to False.
         with_attentive_shortcut (bool): Use shortcut in AttentiveNAS or not.
             Defaults to True.
         init_cfg (dict | list[dict], optional): initialization configuration
@@ -72,14 +75,15 @@ class AttentiveMobileNetV3(BaseBackbone):
                  widen_factor: float = 1.,
                  out_indices: Sequence[int] = (7, ),
                  frozen_stages: int = -1,
-                 stride_list: List = None,
-                 with_se_list: List = None,
                  conv_cfg: Dict = dict(type='BigNasConv2d'),
                  norm_cfg: Dict = dict(type='DynamicBatchNorm2d'),
-                 act_cfg: Dict = dict(type='Swish'),
+                 act_cfg_list: List = None,
+                 stride_list: List = None,
+                 with_se_list: List = None,
                  norm_eval: bool = False,
                  with_cp: bool = False,
                  zero_init_residual: bool = True,
+                 fine_grained_mode: bool = False,
                  with_attentive_shortcut: bool = True,
                  init_cfg: Optional[Union[Dict, List[Dict]]] = None):
 
@@ -100,15 +104,17 @@ class AttentiveMobileNetV3(BaseBackbone):
 
         self.conv_cfg = conv_cfg
         self.norm_cfg = norm_cfg
-        self.act_cfg = act_cfg
         self.norm_eval = norm_eval
         self.zero_init_residual = zero_init_residual
         self.with_cp = with_cp
+        self.fine_grained_mode = fine_grained_mode
         self.with_attentive_shortcut = with_attentive_shortcut
 
-        self.stride_list = stride_list if stride_list is not None \
+        self.act_cfg_list = act_cfg_list if act_cfg_list \
+            else ['Swish'] * 9
+        self.stride_list = stride_list if stride_list \
             else [1, 2, 2, 2, 1, 2, 1]
-        self.with_se_list = with_se_list if with_se_list is not None \
+        self.with_se_list = with_se_list if with_se_list \
             else [False, False, True, False, True, True, True]
 
         # adapt mutable settings
@@ -122,6 +128,9 @@ class AttentiveMobileNetV3(BaseBackbone):
         self.num_channels_list = [[
             make_divisible(c * widen_factor, 8) for c in channels
         ] for channels in self.num_channels_list]
+
+        self.first_act = self.act_cfg_list.pop(0)
+        self.last_act = self.act_cfg_list.pop(-1)
 
         self.first_out_channels_list = self.num_channels_list.pop(0)
         self.last_out_channels_list = self.num_channels_list.pop(-1)
@@ -146,11 +155,7 @@ class AttentiveMobileNetV3(BaseBackbone):
             padding=1,
             conv_cfg=self.conv_cfg,
             norm_cfg=self.norm_cfg,
-            act_cfg=dict(type='Swish'))
-
-        self.last_mutable = OneShotMutableChannel(
-            num_channels=self.in_channels,
-            candidate_choices=self.first_out_channels_list)
+            act_cfg=dict(type=self.first_act))
 
         for i, (num_blocks, kernel_sizes, expand_ratios, num_channels) in \
             enumerate(zip(self.num_blocks_list, self.kernel_size_list,
@@ -161,7 +166,8 @@ class AttentiveMobileNetV3(BaseBackbone):
                 kernel_sizes=kernel_sizes,
                 expand_ratios=expand_ratios,
                 stride=self.stride_list[i],
-                use_se=self.with_se_list[i])
+                use_se=self.with_se_list[i],
+                act=self.act_cfg_list[i])
             layer_name = f'layer{i + 1}'
             self.add_module(layer_name, inverted_res_layer)
             layers.append(inverted_res_layer)
@@ -178,7 +184,7 @@ class AttentiveMobileNetV3(BaseBackbone):
                               padding=0,
                               conv_cfg=self.conv_cfg,
                               norm_cfg=self.norm_cfg,
-                              act_cfg=dict(type='Swish'))),
+                              act_cfg=dict(type=self.last_act))),
                          ('pool', nn.AdaptiveAvgPool2d((1, 1))),
                          ('feature_mix_layer',
                           ConvModule(
@@ -189,14 +195,14 @@ class AttentiveMobileNetV3(BaseBackbone):
                               bias=False,
                               conv_cfg=self.conv_cfg,
                               norm_cfg=None,
-                              act_cfg=dict(type='Swish')))]))
+                              act_cfg=dict(type=self.last_act)))]))
         self.add_module('last_conv', last_layers)
         layers.append(last_layers)
         return layers
 
     def _make_single_layer(self, out_channels: List, num_blocks: List,
                            kernel_sizes: List, expand_ratios: List,
-                           stride: int, use_se: bool):
+                           stride: int, act: str, use_se: bool):
         """Stack InvertedResidual blocks (MBBlocks) to build a layer for
         MobileNetV3.
 
@@ -229,7 +235,7 @@ class AttentiveMobileNetV3(BaseBackbone):
                 expand_ratio=max(expand_ratios),
                 conv_cfg=self.conv_cfg,
                 norm_cfg=self.norm_cfg,
-                act_cfg=self.act_cfg,
+                act_cfg=dict(type=act),
                 with_cp=self.with_cp,
                 se_cfg=se_cfg,
                 with_attentive_shortcut=self.with_attentive_shortcut)
@@ -245,6 +251,15 @@ class AttentiveMobileNetV3(BaseBackbone):
         OneShotMutableChannelUnit._register_channel_container(
             self, MutableChannelContainer)
 
+        self.first_mutable_channels = OneShotMutableChannel(
+            alias='backbone.first_channels',
+            num_channels=max(self.first_out_channels_list),
+            candidate_choices=self.first_out_channels_list)
+
+        mutate_conv_module(
+            self.first_conv, mutable_out_channels=self.first_mutable_channels)
+
+        mid_mutable = self.first_mutable_channels
         # mutate the built mobilenet layers
         for i, layer in enumerate(self.layers[:-1]):
             num_blocks = self.num_blocks_list[i]
@@ -252,57 +267,59 @@ class AttentiveMobileNetV3(BaseBackbone):
             expand_ratios = self.expand_ratio_list[i]
             out_channels = self.num_channels_list[i]
 
-            mutable_kernel_size = OneShotMutableValue(
-                value_list=kernel_sizes, default_value=max(kernel_sizes))
-            mutable_expand_value = OneShotMutableValue(
-                value_list=expand_ratios, default_value=max(expand_ratios))
+            prefix = 'backbone.layers.' + str(i + 1) + '.'
 
-            mutable_channel_name = 'layer' + str(i +
-                                                 1) + '.mutable_out_channels'
-            setattr(
-                self, mutable_channel_name,
-                OneShotMutableChannel(
-                    num_channels=max(out_channels),
-                    candidate_choices=out_channels))
+            mutable_out_channels = OneShotMutableChannel(
+                alias=prefix + 'out_channels',
+                candidate_choices=out_channels,
+                num_channels=max(out_channels))
 
-            se_ratios = [i / 4 for i in expand_ratios]
-            mutable_se_channels = OneShotMutableValue(
-                value_list=se_ratios, default_value=max(se_ratios))
+            if not self.fine_grained_mode:
+                mutable_kernel_size = OneShotMutableValue(
+                    alias=prefix + 'kernel_size', value_list=kernel_sizes)
 
-            if i == 0:
-                mutate_conv_module(
-                    self.first_conv, mutable_out_channels=self.last_mutable)
-
-            for k in range(max(self.num_blocks_list[i])):
-                mutate_mobilenet_layer(layer[k], self.last_mutable,
-                                       getattr(self, mutable_channel_name),
-                                       mutable_se_channels,
-                                       mutable_expand_value,
-                                       mutable_kernel_size)
-                self.last_mutable = getattr(self, mutable_channel_name)
+                mutable_expand_ratio = OneShotMutableValue(
+                    alias=prefix + 'expand_ratio', value_list=expand_ratios)
 
             mutable_depth = OneShotMutableValue(
-                value_list=num_blocks, default_value=max(num_blocks))
+                alias=prefix + 'depth', value_list=num_blocks)
             layer.register_mutable_attr('depth', mutable_depth)
 
-        self.last_mutable_out_channels = OneShotMutableChannel(
+            for k in range(max(self.num_blocks_list[i])):
+
+                if self.fine_grained_mode:
+                    mutable_kernel_size = OneShotMutableValue(
+                        alias=prefix + str(k) + '.kernel_size',
+                        value_list=kernel_sizes)
+
+                    mutable_expand_ratio = OneShotMutableValue(
+                        alias=prefix + str(k) + '.expand_ratio',
+                        value_list=expand_ratios)
+
+                mutate_mobilenet_layer(layer[k], mid_mutable,
+                                       mutable_out_channels,
+                                       mutable_expand_ratio,
+                                       mutable_kernel_size)
+                mid_mutable = mutable_out_channels
+
+        self.last_mutable_channels = OneShotMutableChannel(
+            alias='backbone.last_channels',
             num_channels=self.out_channels,
             candidate_choices=self.last_out_channels_list)
+
         last_mutable_expand_value = OneShotMutableValue(
             value_list=self.last_expand_ratio_list,
             default_value=max(self.last_expand_ratio_list))
 
-        derived_expand_channels = self.last_mutable * last_mutable_expand_value
+        derived_expand_channels = mid_mutable * last_mutable_expand_value
         mutate_conv_module(
             self.layers[-1].final_expand_layer,
-            mutable_in_channels=self.last_mutable,
+            mutable_in_channels=mid_mutable,
             mutable_out_channels=derived_expand_channels)
         mutate_conv_module(
             self.layers[-1].feature_mix_layer,
             mutable_in_channels=derived_expand_channels,
-            mutable_out_channels=self.last_mutable_out_channels)
-
-        self.last_mutable = self.last_mutable_out_channels
+            mutable_out_channels=self.last_mutable_channels)
 
     def forward(self, x):
         x = self.first_conv(x)

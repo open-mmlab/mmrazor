@@ -25,8 +25,9 @@ class DCFFChannelMutator(ChannelMutator[DCFFChannelUnit]):
                  channel_unit_cfg: Union[dict, Type[ChannelUnitType]] = dict(
                      type='DCFFChannelUnit', units={}),
                  parse_cfg=dict(
-                     type='BackwardTracer',
-                     loss_calculator=dict(type='ImageClassifierPseudoLoss')),
+                     type='ChannelAnalyzer',
+                     demo_input=(1, 3, 224, 224),
+                     tracer_type='BackwardTracer'),
                  **kwargs) -> None:
         super().__init__(channel_unit_cfg, parse_cfg, **kwargs)
 

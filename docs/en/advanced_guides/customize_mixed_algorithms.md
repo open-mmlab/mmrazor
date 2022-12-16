@@ -47,8 +47,8 @@ class AutoSlim(BaseAlgorithm):
                  distiller: VALID_DISTILLER_TYPE,
                  architecture: Union[BaseModel, Dict],
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
-                 init_cfg: Optional[Dict] = None,
-                 num_samples: int = 2) -> None:
+                 num_random_samples: int = 2,
+                 init_cfg: Optional[Dict] = None) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
         self.mutator = self._build_mutator(mutator)
         # `prepare_from_supernet` must be called before distiller initialized
@@ -107,23 +107,23 @@ class AutoSlim(BaseAlgorithm):
         batch_inputs, data_samples = self.data_preprocessor(data, True)
 
         total_losses = dict()
-        # update the max subnet loss.
-        self.set_max_subnet()
-        ......
-        total_losses.update(add_prefix(max_subnet_losses, 'max_subnet'))
-
-        # update the min subnet loss.
-        self.set_min_subnet()
-        min_subnet_losses = distill_step(batch_inputs, data_samples)
-        total_losses.update(add_prefix(min_subnet_losses, 'min_subnet'))
-
-        # update the random subnet loss.
-        for sample_idx in range(self.num_samples):
-            self.set_subnet(self.sample_subnet())
-            random_subnet_losses = distill_step(batch_inputs, data_samples)
-            total_losses.update(
-                add_prefix(random_subnet_losses,
-                           f'random_subnet_{sample_idx}'))
+        for kind in self.sample_kinds:
+            # update the max subnet loss.
+            if kind == 'max':
+                self.set_max_subnet()
+                ......
+                total_losses.update(add_prefix(max_subnet_losses, 'max_subnet'))
+            # update the min subnet loss.
+            elif kind == 'min':
+                self.set_min_subnet()
+                min_subnet_losses = distill_step(batch_inputs, data_samples)
+                total_losses.update(add_prefix(min_subnet_losses, 'min_subnet'))
+            # update the random subnets loss.
+            elif 'random' in kind:
+                self.set_subnet(self.sample_subnet())
+                random_subnet_losses = distill_step(batch_inputs, data_samples)
+                total_losses.update(
+                    add_prefix(random_subnet_losses, f'{kind}_subnet'))
 
         return total_losses
 ```

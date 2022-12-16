@@ -213,11 +213,10 @@ class GroupMixin():
     def _check_valid_groups(self, alias2mutable_names: Dict[str, List[str]],
                             name2mutable: Dict[str, BaseMutable],
                             custom_group: List[List[str]]) -> None:
-
+        """Check if all keys are legal."""
         aliases = [*alias2mutable_names.keys()]
         module_names = [*name2mutable.keys()]
 
-        # check if all keys are legal
         expanded_custom_group: List[str] = [
             _ for group in custom_group for _ in group
         ]
@@ -261,8 +260,10 @@ class MutatorProtocol(Protocol):  # pragma: no cover
 
 
 class OneShotSampleMixin:
+    """Sample mixin for one-shot mutators."""
 
     def sample_choices(self: MutatorProtocol) -> Dict:
+        """Sample choices for each group in search_groups."""
         random_choices = dict()
         for group_id, modules in self.search_groups.items():
             random_choices[group_id] = modules[0].sample_choice()
@@ -270,6 +271,7 @@ class OneShotSampleMixin:
         return random_choices
 
     def set_choices(self: MutatorProtocol, choices: Dict) -> None:
+        """Set choices for each group in search_groups."""
         for group_id, modules in self.search_groups.items():
             choice = choices[group_id]
             for module in modules:
@@ -279,6 +281,7 @@ class OneShotSampleMixin:
 class DynamicSampleMixin(OneShotSampleMixin):
 
     def sample_choices(self: MutatorProtocol, kind: str = 'random') -> Dict:
+        """Sample choices for each group in search_groups."""
         random_choices = dict()
         for group_id, modules in self.search_groups.items():
             if kind == 'max':
@@ -291,6 +294,7 @@ class DynamicSampleMixin(OneShotSampleMixin):
 
     @property
     def max_choice(self: MutatorProtocol) -> Dict:
+        """Get max choices for each group in search_groups."""
         max_choice = dict()
         for group_id, modules in self.search_groups.items():
             max_choice[group_id] = modules[0].max_choice
@@ -299,6 +303,7 @@ class DynamicSampleMixin(OneShotSampleMixin):
 
     @property
     def min_choice(self: MutatorProtocol) -> Dict:
+        """Get min choices for each group in search_groups."""
         min_choice = dict()
         for group_id, modules in self.search_groups.items():
             min_choice[group_id] = modules[0].min_choice

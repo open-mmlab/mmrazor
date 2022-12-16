@@ -20,15 +20,15 @@ supernet = dict(
             mode='original',
             loss_weight=1.0),
         topk=(1, 5)),
-    input_resizer_cfg=_base_._INPUT_MUTABLE,
-    connect_head=dict(connect_with_backbone='backbone.last_mutable'),
+    input_resizer_cfg=_base_.input_resizer_cfg,
+    connect_head=dict(connect_with_backbone='backbone.last_mutable_channels'),
 )
 
 model = dict(
     _scope_='mmrazor',
     type='BigNAS',
-    strategy='sandwich4',
     drop_path_rate=0.2,
+    num_random_samples=2,
     backbone_dropout_stages=[6, 7],
     architecture=supernet,
     data_preprocessor=_base_.data_preprocessor,
@@ -55,8 +55,6 @@ model = dict(
             },
             parse_cfg={'type': 'Predefined'}),
         value_mutator=dict(type='DynamicValueMutator')))
-
-optim_wrapper = dict(accumulative_counts=4)
 
 model_wrapper_cfg = dict(
     type='mmrazor.BigNASDDP',

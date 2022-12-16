@@ -106,6 +106,7 @@ class AutoAugmentOp(object):
 
 @TRANSFORMS.register_module()
 class ShearX(AutoAugmentOp):
+    """ShearX images."""
 
     def __init__(self, prob, magnitude, extra_params: dict):
         super().__init__(prob, magnitude, extra_params)
@@ -129,6 +130,7 @@ class ShearX(AutoAugmentOp):
 
 @TRANSFORMS.register_module()
 class ShearY(AutoAugmentOp):
+    """ShearY images."""
 
     def __init__(self, prob, magnitude, extra_params: dict):
         super().__init__(prob, magnitude, extra_params)
@@ -152,6 +154,7 @@ class ShearY(AutoAugmentOp):
 
 @TRANSFORMS.register_module()
 class TranslateXRel(AutoAugmentOp):
+    """TranslateXRel images."""
 
     def __init__(self, prob, magnitude, extra_params: dict):
         super().__init__(prob, magnitude, extra_params)
@@ -175,6 +178,7 @@ class TranslateXRel(AutoAugmentOp):
 
 @TRANSFORMS.register_module()
 class TranslateYRel(AutoAugmentOp):
+    """TranslateYRel images."""
 
     def __init__(self, prob, magnitude, extra_params: dict):
         super().__init__(prob, magnitude, extra_params)
@@ -198,6 +202,7 @@ class TranslateYRel(AutoAugmentOp):
 
 @TRANSFORMS.register_module()
 class TranslateX(AutoAugmentOp):
+    """TranslateX images."""
 
     def __init__(self, prob, magnitude, extra_params: dict):
         super().__init__(prob, magnitude, extra_params)
@@ -221,6 +226,7 @@ class TranslateX(AutoAugmentOp):
 
 @TRANSFORMS.register_module()
 class TranslateY(AutoAugmentOp):
+    """TranslateY images."""
 
     def __init__(self, prob, magnitude, extra_params: dict):
         super().__init__(prob, magnitude, extra_params)
@@ -244,6 +250,7 @@ class TranslateY(AutoAugmentOp):
 
 @TRANSFORMS.register_module()
 class RotateV2(AutoAugmentOp):
+    """Rotate images."""
 
     def __init__(self, prob, magnitude, extra_params: dict):
         super().__init__(prob, magnitude, extra_params)
@@ -292,6 +299,7 @@ class RotateV2(AutoAugmentOp):
 
 @TRANSFORMS.register_module()
 class AutoContrastV2(AutoAugmentOp):
+    """AutoContrast images."""
 
     def __call__(self, results, **__):
         if self.prob < random.random():
@@ -307,6 +315,7 @@ class AutoContrastV2(AutoAugmentOp):
 
 @TRANSFORMS.register_module()
 class InvertV2(AutoAugmentOp):
+    """Invert images."""
 
     def __call__(self, results, **__):
         if self.prob < random.random():
@@ -322,6 +331,7 @@ class InvertV2(AutoAugmentOp):
 
 @TRANSFORMS.register_module()
 class EqualizeV2(AutoAugmentOp):
+    """Equalize images."""
 
     def __call__(self, results, **__):
         if self.prob < random.random():
@@ -337,6 +347,7 @@ class EqualizeV2(AutoAugmentOp):
 
 @TRANSFORMS.register_module()
 class SolarizeV2(AutoAugmentOp):
+    """Solarize images."""
 
     def __init__(self, prob, magnitude, extra_params: dict):
         super().__init__(prob, magnitude, extra_params)
@@ -360,6 +371,7 @@ class SolarizeV2(AutoAugmentOp):
 
 @TRANSFORMS.register_module()
 class SolarizeAddV2(AutoAugmentOp):
+    """SolarizeAdd images."""
 
     def __init__(self, prob, magnitude, extra_params: dict):
         super().__init__(prob, magnitude, extra_params)
@@ -393,6 +405,7 @@ class SolarizeAddV2(AutoAugmentOp):
 
 @TRANSFORMS.register_module()
 class PosterizeV2(AutoAugmentOp):
+    """Posterize images."""
 
     def __init__(self, prob, magnitude, extra_params: dict):
         super().__init__(prob, magnitude, extra_params)
@@ -419,6 +432,7 @@ class PosterizeV2(AutoAugmentOp):
 
 @TRANSFORMS.register_module()
 class ContrastV2(AutoAugmentOp):
+    """Contrast images."""
 
     def __init__(self, prob, magnitude, extra_params: dict):
         super().__init__(prob, magnitude, extra_params)
@@ -440,6 +454,7 @@ class ContrastV2(AutoAugmentOp):
 
 @TRANSFORMS.register_module()
 class Color(AutoAugmentOp):
+    """Color images."""
 
     def __init__(self, prob, magnitude, extra_params: dict):
         super().__init__(prob, magnitude, extra_params)
@@ -461,6 +476,7 @@ class Color(AutoAugmentOp):
 
 @TRANSFORMS.register_module()
 class BrightnessV2(AutoAugmentOp):
+    """Brightness images."""
 
     def __init__(self, prob, magnitude, extra_params: dict):
         super().__init__(prob, magnitude, extra_params)
@@ -482,6 +498,7 @@ class BrightnessV2(AutoAugmentOp):
 
 @TRANSFORMS.register_module()
 class SharpnessV2(AutoAugmentOp):
+    """Sharpness images."""
 
     def __init__(self, prob, magnitude, extra_params: dict):
         super().__init__(prob, magnitude, extra_params)

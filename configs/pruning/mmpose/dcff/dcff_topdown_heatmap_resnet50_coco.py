@@ -61,7 +61,7 @@ stage_ratio_3 = 0.9
 stage_ratio_4 = 0.85
 
 # the config template of target_pruning_ratio can be got by
-# python ./tools/get_channel_units.py {config_file} --choice
+# python ./tools/pruning/get_channel_units.py {config_file} --choice
 target_pruning_ratio = {
     'backbone.layer1.0.conv1_(0, 64)_64': stage_ratio_1,
     'backbone.layer1.0.conv2_(0, 64)_64': stage_ratio_2,
@@ -116,8 +116,9 @@ model = dict(
             type='DCFFChannelUnit',
             units='configs/pruning/mmpose/dcff/resnet_pose.json'),
         parse_cfg=dict(
-            type='BackwardTracer',
-            loss_calculator=dict(type='TopdownPoseEstimatorPseudoLoss'))),
+            type='ChannelAnalyzer',
+            demo_input=(1, 3, 224, 224),
+            tracer_type='BackwardTracer')),
     target_pruning_ratio=target_pruning_ratio,
     step_freq=1,
     linear_schedule=False,

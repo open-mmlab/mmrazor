@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import argparse
 import json
+import sys
 
 import torch.nn as nn
 from mmengine import MODELS
@@ -8,6 +9,8 @@ from mmengine.config import Config
 
 from mmrazor.models import BaseAlgorithm
 from mmrazor.models.mutators import ChannelMutator
+
+sys.setrecursionlimit(int(pow(2, 20)))
 
 
 def parse_args():
@@ -40,11 +43,25 @@ def parse_args():
 def main():
     args = parse_args()
     config = Config.fromfile(args.config)
+    default_scope = config['default_scope']
+
     model = MODELS.build(config['model'])
     if isinstance(model, BaseAlgorithm):
         mutator = model.mutator
     elif isinstance(model, nn.Module):
-        mutator = ChannelMutator()
+        mutator: ChannelMutator = ChannelMutator(
+            channel_unit_cfg=dict(
+                type='L1MutableChannelUnit',
+                default_args=dict(choice_mode='ratio'),
+            ),
+            parse_cfg={
+                'type': 'ChannelAnalyzer',
+                'demo_input': {
+                    'type': 'DefaultDemoInput',
+                    'scope': default_scope
+                },
+                'tracer_type': 'FxTracer'
+            })
         mutator.prepare_from_supernet(model)
     if args.choice:
         config = mutator.choice_template
