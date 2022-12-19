@@ -1,7 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict, List, Optional
 
+import torch
+
 from mmrazor.models.mutators import ChannelMutator
+from .chex_unit import ChexUnit
 
 
 class ChexMutator(ChannelMutator):
@@ -24,8 +27,9 @@ class ChexMutator(ChannelMutator):
         step1: get pruning structure
         step2: prune based on ChexMixin.prune_imp
         """
-        _ = self._get_prune_choices()
-        pass
+        choices = self._get_prune_choices()
+        for unit in self.mutable_units:
+            unit.prune(choices[unit.name])
 
     def grow(self, growth_ratio=0.0):
         """Make the model grow.
@@ -33,11 +37,30 @@ class ChexMutator(ChannelMutator):
         step1: get growth choices
         step2: grow based on ChexMixin.growth_imp
         """
-        _ = self._get_grow_choices(growth_ratio)
-        pass
+        choices = self._get_grow_choices(growth_ratio)
+        for unit in self.mutable_units:
+            unit: ChexUnit
+            unit.grow(choices[unit.name] - unit.current_choice)
 
     def _get_grow_choices(self, growth_choice):
-        pass
+        choices = {}
+        for unit in self.mutable_units:
+            unit: ChexUnit
+            choices[unit.name] = min(
+                unit.num_channels,
+                (unit.current_choice + int(unit.num_channels * growth_choice)))
+        return choices
 
     def _get_prune_choices(self):
-        pass
+        choices = {}
+        bn_imps = {}
+        for unit in self.mutable_units:
+            unit: ChexUnit
+            bn_imps[unit.name] = unit.bn_imp
+        bn_imp: torch.Tensor = torch.cat(list(bn_imps.values()), dim=0)
+        num_remain = int(self.channel_ratio * len(bn_imp))
+        threshold = bn_imp.topk(num_remain)[0][-1]
+        for unit in self.mutable_units:
+            num = (bn_imps[unit.name] >= threshold).float().sum().long().item()
+            choices[unit.name] = num
+        return choices
