@@ -179,19 +179,12 @@ class SequentialMutableChannelUnit(MutableChannelUnit):
 
         mask = load('mutable_channel_mask')
         if mask is not None:
-            self.mutable_channel.mask = mask
+            self.mutable_channel.mask = mask.bool()
 
     def _save_to_state_dict(self, destination, prefix, keep_vars):
         """Additionally add mask to state dict."""
         super()._save_to_state_dict(destination, prefix, keep_vars)
-        if len(destination) > 0:
-            device = list(destination.values())[0].device
-        else:
-            device = torch.device('cpu')
-            from mmrazor.utils import print_log
-            print_log(("save state dict, but don't find proper device,"
-                       'using cpu by default.'))
         destination[
             prefix +
             'mutable_channel_mask'] = self.mutable_channel.current_mask.float(
-            ).to(device)
+            )

@@ -318,15 +318,7 @@ class MutableChannelUnit(ChannelUnit):
 
     def _save_to_state_dict(self, destination, prefix, keep_vars):
         """Save current choice to state dict."""
-        if len(destination) > 0:
-            device = list(destination.values())[0].device
-        else:
-            device = torch.device('cpu')
-            from mmrazor.utils import print_log
-            print_log(("save state dict, but don't find proper device,"
-                       'using cpu by default.'))
-        destination[prefix + 'choice'] = torch.tensor(
-            self.current_choice).to(device)
+        destination[prefix + 'choice'] = torch.tensor(self.current_choice)
 
 
 ChannelUnitType = TypeVar('ChannelUnitType', bound=MutableChannelUnit)

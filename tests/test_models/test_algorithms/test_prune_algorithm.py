@@ -263,6 +263,7 @@ class TestItePruneAlgorithm(unittest.TestCase):
             self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
 
     def test_resume(self):
+        DEVICE = torch.device('cuda:0')
         algorithm: ItePruneAlgorithm = ItePruneAlgorithm(
             MODEL_CFG,
             mutator_cfg=MUTATOR_CONFIG_NUM,
