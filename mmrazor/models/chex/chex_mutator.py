@@ -19,10 +19,24 @@ class ChexMutator(ChannelMutator):
         self.channel_ratio = channel_ratio  # number of channels to preserve
 
     def prune(self):
+        """Prune the model.
+
+        step1: get pruning structure
+        step2: prune based on ChexMixin.prune_imp
+        """
         _ = self._get_prune_choices()
         pass
 
     def grow(self, growth_ratio=0.0):
+        """Make the model grow.
+
+        step1: get growth choices
+        step2: grow based on ChexMixin.growth_imp
+        """
+        _ = self._get_grow_choices(growth_ratio)
+        pass
+
+    def _get_grow_choices(self, growth_choice):
         pass
 
     def _get_prune_choices(self):

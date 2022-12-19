@@ -7,10 +7,12 @@ class ChexMixin:
 
     @property
     def prune_imp(self):
+        # compute channel importance for pruning
         return self._prune_imp(self.weight)
 
     @property
     def growth_imp(self):
+        # compute channel importance for growth
         return self._growth_imp(self.weight)
 
     def _prune_imp(self, weight):
