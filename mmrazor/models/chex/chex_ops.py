@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import torch
+
 from mmrazor.models.architectures.dynamic_ops import (DynamicConv2d,
                                                       DynamicLinear)
 
@@ -17,16 +19,18 @@ class ChexMixin:
 
     def _prune_imp(self, weight):
         # weight: out * in. return the importance of each channel
-        pass
+        out_channel = weight.shape[0]
+        return torch.rand(out_channel)
 
     def _growth_imp(self, weight):
         # weight: out * in. return the importance of each channel when growth
-        pass
+        out_channel = weight.shape[0]
+        return torch.rand(out_channel)
 
 
 class ChexConv2d(DynamicConv2d, ChexMixin):
     pass
 
 
-class ChexLinear2d(DynamicLinear, ChexMixin):
+class ChexLinear(DynamicLinear, ChexMixin):
     pass

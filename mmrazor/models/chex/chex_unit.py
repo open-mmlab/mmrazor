@@ -1,36 +1,93 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Union
 
+import torch
 import torch.nn as nn
+from mmengine.model.utils import _BatchNormXd
+from mmengine.utils.dl_utils.parrots_wrapper import \
+    SyncBatchNorm as EngineSyncBatchNorm
 
-from mmrazor.models.mutables.mutable_channel.units import \
-    SequentialMutableChannelUnit
+import mmrazor.models.architectures.dynamic_ops as dynamic_ops
+from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
+from mmrazor.models.mutables.mutable_channel.units import L1MutableChannelUnit
+from .chex_ops import ChexConv2d, ChexLinear, ChexMixin
 
 
-class ChexUnit(SequentialMutableChannelUnit):
+class ChexUnit(L1MutableChannelUnit):
 
     def prepare_for_pruning(self, model: nn.Module):
-        return super().prepare_for_pruning(model)
+        self._replace_with_dynamic_ops(
+            model, {
+                nn.Conv2d: ChexConv2d,
+                nn.BatchNorm2d: dynamic_ops.DynamicBatchNorm2d,
+                nn.Linear: ChexLinear,
+                nn.SyncBatchNorm: dynamic_ops.DynamicSyncBatchNorm,
+                EngineSyncBatchNorm: dynamic_ops.DynamicSyncBatchNorm,
+                _BatchNormXd: dynamic_ops.DynamicBatchNormXd,
+            })
+        self._register_channel_container(model, MutableChannelContainer)
+        self._register_mutable_channel(self.mutable_channel)
 
-    @property
-    def current_choice(self) -> Union[int, float]:
-        return super().current_choice
+    def prune(self, num_remaining):
+        # prune the channels to num_remaining
+        def get_prune_imp():
+            prune_imp: torch.Tensor = torch.zeros([self.num_channels])
+            for channel in self.chex_channels:
+                module = channel.module
+                prune_imp = prune_imp.to(module.prune_imp.device)
+                prune_imp = prune_imp + module.prune_imp[channel.start:channel.
+                                                         end]
+            return prune_imp
 
-    @current_choice.setter
-    def current_choice(self, value):
-        if self.current_choice > value:
-            # prune
-            self.prune(1)
-        else:
-            # growth
-            self.prune(1)
+        prune_imp = get_prune_imp()
+        index = prune_imp.topk(num_remaining)[1]
+        mask: torch.Tensor = torch.zeros([self.num_channels],
+                                         device=prune_imp.device)
+        mask.scatter_(-1, index, 1.0)
+        mask = mask.bool()
+        self.mutable_channel.current_choice.data = mask
 
     def grow(self, num):
-        pass
 
-    def prune(self, num):
-        pass
+        def get_growth_imp():
+            growth_imp: torch.Tensor = torch.zeros([self.num_channels])
+            for channel in self.chex_channels:
+                module = channel.module
+                growth_imp = growth_imp.to(module.growth_imp.device)
+                growth_imp = growth_imp + module.growth_imp[channel.
+                                                            start:channel.end]
+            return growth_imp
 
+        growth_imp = get_growth_imp()
+        mask = self.mutable_channel.current_mask
+        index_free = torch.nonzero(1 - mask.float()).flatten()
+        growth_imp = growth_imp[index_free]
+        growth_imp = growth_imp.softmax(dim=-1)
+        if len(index_free) >= num:
+            select_index = torch.multinomial(growth_imp, num)
+            select_index = index_free[select_index]
+        else:
+            select_index = index_free
+        mask.index_fill_(-1, select_index, 1.0)
+
+        self.mutable_channel.current_choice.data = mask
+
+    @property
     def bn_imp(self):
-        # return channel importance based on bn
-        pass
+        imp = torch.zeros([self.num_channels])
+        num_layers = 0
+        for channel in self.output_related:
+            module = channel.module
+            if isinstance(module, nn.modules.batchnorm._BatchNorm):
+                imp = imp.to(module.weight.device)
+                imp = imp + module.weight[channel.start:channel.end]
+                num_layers += 1
+        assert num_layers > 0
+        imp = imp / num_layers
+        return imp
+
+    @property
+    def chex_channels(self):
+        for channel in self.output_related:
+            module = channel.module
+            if isinstance(module, ChexMixin):
+                yield channel
