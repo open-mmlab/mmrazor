@@ -36,7 +36,7 @@ class ChexAlgorithm(BaseAlgorithm):
     def forward(self, inputs, data_samples=None, mode: str = 'tensor'):
         if self.training:  #
             if RuntimeInfo.iter() % self.delta_t == 0 and \
-                 RuntimeInfo.iter() // self.delta_t < self.total_steps:
+                 RuntimeInfo.epoch() < self.total_steps:
                 self.mutator.prune()
                 self.mutator.grow(self.growth_ratio)
         return super().forward(inputs, data_samples, mode)
