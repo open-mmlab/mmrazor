@@ -66,5 +66,5 @@ class ChexMutator(ChannelMutator):
         threshold = bn_imp.topk(num_remain)[0][-1]
         for unit in self.mutable_units:
             num = (bn_imps[unit.name] >= threshold).long().sum().item()
-            choices[unit.name] = num
+            choices[unit.name] = max(num, 1)
         return choices
