@@ -4,9 +4,11 @@ from typing import Dict, List, Optional
 import torch
 
 from mmrazor.models.mutators import ChannelMutator
+from mmrazor.registry import MODELS
 from .chex_unit import ChexUnit
 
 
+@MODELS.register_module()
 class ChexMutator(ChannelMutator):
 
     def __init__(self,

@@ -9,9 +9,11 @@ from mmengine.utils.dl_utils.parrots_wrapper import \
 import mmrazor.models.architectures.dynamic_ops as dynamic_ops
 from mmrazor.models.mutables.mutable_channel import MutableChannelContainer
 from mmrazor.models.mutables.mutable_channel.units import L1MutableChannelUnit
+from mmrazor.registry import MODELS
 from .chex_ops import ChexConv2d, ChexLinear, ChexMixin
 
 
+@MODELS.register_module()
 class ChexUnit(L1MutableChannelUnit):
 
     def prepare_for_pruning(self, model: nn.Module):
@@ -47,6 +49,9 @@ class ChexUnit(L1MutableChannelUnit):
         self.mutable_channel.current_choice.data = mask
 
     def grow(self, num):
+        assert num >= 0
+        if num == 0:
+            return
 
         def get_growth_imp():
             growth_imp: torch.Tensor = torch.zeros([self.num_channels])
