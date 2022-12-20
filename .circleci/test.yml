@@ -114,6 +114,7 @@ jobs:
       - run:
           name: Install mmrazor dependencies
           command: |
+            docker exec mmrazor pip uninstall -y numpy
             docker exec mmrazor pip install -e /mmengine
             docker exec mmrazor pip install -U openmim
             docker exec mmrazor mim install 'mmcv >= 2.0.0rc1'
