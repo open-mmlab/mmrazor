@@ -45,7 +45,7 @@ class ChexAlgorithm(BaseAlgorithm):
     def growth_ratio(self):
         # return growth ratio in current epoch
         def cos():
-            a = math.pi * RuntimeInfo.epoch() / RuntimeInfo.max_epochs()
+            a = math.pi * RuntimeInfo.epoch() / self.total_steps
             return (math.cos(a) + 1) / 2
 
         return self.init_growth_rate * cos()
