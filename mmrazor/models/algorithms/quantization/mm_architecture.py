@@ -39,8 +39,6 @@ class MMArchitectureQuant(BaseAlgorithm):
             :class:`BaseModule`.
     """
 
-    
-
     def __init__(self,
                  architecture,
                  quantizer,
@@ -58,6 +56,7 @@ class MMArchitectureQuant(BaseAlgorithm):
         if float_checkpoint:
             _ = load_checkpoint(self.architecture, float_checkpoint)
             self.architecture._is_init = True
+        
         self.quantizer = MODELS.build(quantizer)
         self.input_shapes = input_shapes
         self.forward_modes = forward_modes
@@ -112,14 +111,11 @@ class MMArchitectureQuant(BaseAlgorithm):
         for mode in self.forward_modes:
             concrete_args = {'mode': mode}
             traced_graph = tracer.trace(model, concrete_args=concrete_args)
-
             graph_mopdule = build_graphmodule(model, traced_graph)
             observed_module = self.quantizer.prepare(model, graph_mopdule)
-
             qmodels[mode] = observed_module
-
-        dummy_input = torch.randn(self.input_shapes)
-        qmodels['predict'](dummy_input, None, 'predict')
+        # dummy_input = torch.randn(self.input_shapes)
+        # qmodels['predict'](dummy_input, None, 'predict')
 
         return qmodels
 
@@ -136,7 +132,7 @@ class MMArchitectureQuant(BaseAlgorithm):
 
     def calibrate_step(self, data):
         data = self.data_preprocessor(data, False)
-        return self._run_forward(data, mode='tensor')
+        return self._run_forward(data, mode='predict')
 
 
 @MODEL_WRAPPERS.register_module()

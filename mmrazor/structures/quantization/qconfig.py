@@ -102,7 +102,7 @@ class QSchemeHander(object):
 
         # `dtype` will be same as BackenConfig's
         naive_para = {
-            'dtype': torch.quint8 if self.qdtype == 'quint8' else torch.int8,
+            'dtype': torch.quint8 if self.qdtype == 'quint8' else torch.qint8,
             'quant_min': quant_min,
             'quant_max': quant_max,
             'qscheme': self.torch_qscheme,
@@ -131,11 +131,14 @@ if __name__ == '__main__':
         w_fake_quant=dict(type='mmrazor.FakeQuantize'),
         a_fake_quant=dict(type='mmrazor.FakeQuantize'),
         w_qscheme=dict(
+            qdtype='qint8',
+            bit=8,
+            is_symmetry=True,
+            is_symmetric_range=True),
+        a_qscheme=dict(
+            qdtype='quint8',
             bit=8,
             is_symmetry=True),
-        a_qscheme=dict(
-            bit=8,
-            is_symmetry=False),
     )
     from mmengine.config import Config
     qconfig = Config(qconfig)

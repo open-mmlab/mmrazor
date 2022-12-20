@@ -1,34 +1,38 @@
 _base_ = ['mmcls::mobilenet_v2/mobilenet-v2_8xb32_in1k.py']
 
 test_cfg = dict(
-    type='mmrazor.PTQLoop'
+    type='mmrazor.PTQLoop',
+    calibrate_dataloader=_base_.train_dataloader,
+    calibrate_steps=32,
 )
 
-qconfig_mapping = dict(
-    _global_=dict(
-        w_observer=dict(type='mmrazor.PerChannelMinMaxObserver'),
-        a_observer=dict(type='mmrazor.MovingAverageMinMaxObserver'),
-        w_fake_quant=dict(type='mmrazor.FakeQuantize'),
-        a_fake_quant=dict(type='mmrazor.FakeQuantize'),
-        w_qscheme=dict(
-            dtype='quint8',
-            bit=8,
-            is_symmetry=False),
-        a_qscheme=dict(
-            dtype='quint8',
-            bit=8,
-            is_symmetry=False),
-    )
+
+global_qconfig=dict(
+    w_observer=dict(type='mmrazor.PerChannelMinMaxObserver'),
+    a_observer=dict(type='mmrazor.MovingAverageMinMaxObserver'),
+    w_fake_quant=dict(type='mmrazor.FakeQuantize'),
+    a_fake_quant=dict(type='mmrazor.FakeQuantize'),
+    w_qscheme=dict(
+        qdtype='qint8',
+        bit=8,
+        is_symmetry=True,
+        is_symmetric_range=True),
+    a_qscheme=dict(
+        qdtype='quint8',
+        bit=8,
+        is_symmetry=True,
+        averaging_constant=0.1),
 )
+
 
 model = dict(
     _delete_=True,
     type='mmrazor.MMArchitectureQuant',
     architecture=_base_.model,
-    float_checkpoint=r'G:\projects\research\checkpoint\resnet50_8xb32_in1k_20210831-ea4938fc.pth',# '/mnt/petrelfs/caoweihan.p/ckpt/resnet50_8xb32_in1k_20210831-ea4938fc.pth',
+    float_checkpoint='/tmp/humu/mobilenet_v2_batch256_imagenet_20200708-3b2dc3af.pth',
     quantizer=dict(
-        type='mmrazor.WithoutDeployQuantizer',
-        qconfig_mapping=qconfig_mapping,
+        type='mmrazor.OpenVINOQuantizer',
+        global_qconfig=global_qconfig,
         tracer=dict(
             type='mmrazor.CustomTracer',
             skipped_methods=[

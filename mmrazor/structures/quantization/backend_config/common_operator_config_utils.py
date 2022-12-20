@@ -120,19 +120,9 @@ def _get_linear_configs(dtype_configs: List[DTypeConfig]) -> List[BackendPattern
             .set_dtype_configs(dtype_configs)  # noqa: E131
             .set_fuser_method(reverse_sequential_wrapper2(nni.LinearReLU))
             .set_fused_module(nni.LinearReLU))
-    linear_configs.append(
-        BackendPatternConfig((torch.nn.ReLU6, torch.nn.Linear))
-            .set_dtype_configs(dtype_configs)  # noqa: E131
-            .set_fuser_method(reverse_sequential_wrapper2(nni.LinearReLU))
-            .set_fused_module(nni.LinearReLU))
     # linear relu, linear module + functional relu
     linear_configs.append(
         BackendPatternConfig((torch.nn.functional.relu, torch.nn.Linear))
-            .set_dtype_configs(dtype_configs)  # noqa: E131
-            .set_fuser_method(reverse_sequential_wrapper2(nni.LinearReLU))
-            .set_fused_module(nni.LinearReLU))
-    linear_configs.append(
-        BackendPatternConfig((torch.nn.functional.relu6, torch.nn.Linear))
             .set_dtype_configs(dtype_configs)  # noqa: E131
             .set_fuser_method(reverse_sequential_wrapper2(nni.LinearReLU))
             .set_fused_module(nni.LinearReLU))
@@ -233,19 +223,9 @@ def _get_conv_configs(dtype_configs):
                 .set_dtype_configs(dtype_configs)  # noqa: E131
                 .set_fuser_method(reverse_sequential_wrapper2(convs.fused_conv_relu))
                 .set_fused_module(convs.fused_conv_relu))
-        conv_configs.append(
-            BackendPatternConfig((torch.nn.ReLU6, convs.root))
-                .set_dtype_configs(dtype_configs)  # noqa: E131
-                .set_fuser_method(reverse_sequential_wrapper2(convs.fused_conv_relu))
-                .set_fused_module(convs.fused_conv_relu))
         # conv relu fusion, conv module + functional relu
         conv_configs.append(
             BackendPatternConfig((F.relu, convs.root))
-                .set_dtype_configs(dtype_configs)  # noqa: E131
-                .set_fuser_method(reverse_sequential_wrapper2(convs.fused_conv_relu))
-                .set_fused_module(convs.fused_conv_relu))
-        conv_configs.append(
-            BackendPatternConfig((F.relu6, convs.root))
                 .set_dtype_configs(dtype_configs)  # noqa: E131
                 .set_fuser_method(reverse_sequential_wrapper2(convs.fused_conv_relu))
                 .set_fused_module(convs.fused_conv_relu))
@@ -304,20 +284,9 @@ def _get_conv_configs(dtype_configs):
                 .set_dtype_configs(dtype_configs)  # noqa: E131
                 .set_fuser_method(reverse3(fuse_conv_bn_relu))
                 .set_fused_module(convs.fused_conv_bn_relu))
-        conv_configs.append(
-            BackendPatternConfig((nn.ReLU6, (convs.bn, convs.root)))
-                .set_dtype_configs(dtype_configs)  # noqa: E131
-                .set_fuser_method(reverse3(fuse_conv_bn_relu))
-                .set_fused_module(convs.fused_conv_bn_relu))
         # conv + bn + relu functional fusion
         conv_configs.append(
             BackendPatternConfig((F.relu, (convs.bn, convs.root)))
-                .set_dtype_configs(dtype_configs)  # noqa: E131
-                .set_root_module(convs.root)
-                .set_fuser_method(reverse3(fuse_conv_bn_relu))
-                .set_fused_module(convs.fused_conv_bn_relu))
-        conv_configs.append(
-            BackendPatternConfig((F.relu6, (convs.bn, convs.root)))
                 .set_dtype_configs(dtype_configs)  # noqa: E131
                 .set_root_module(convs.root)
                 .set_fuser_method(reverse3(fuse_conv_bn_relu))
@@ -399,12 +368,12 @@ def _get_default_op_configs(dtype_configs: List[DTypeConfig]) -> List[BackendPat
         torch.nn.InstanceNorm1d,
         torch.nn.InstanceNorm2d,
         torch.nn.InstanceNorm3d,
-        # torch.nn.Dropout,
+        torch.nn.Dropout,
         torch.nn.PReLU,
         torch.nn.functional.elu,
         torch.nn.functional.hardswish,
         torch.nn.functional.leaky_relu,
-        # torch.nn.functional.dropout,
+        torch.nn.functional.dropout,
     ]
     for op in default_ops:
         configs.append(
@@ -459,33 +428,32 @@ def _get_share_qparams_op_configs(dtype_configs):
             .set_dtype_configs(dtype_configs)
 
     share_qparams_ops = [
-        # torch.nn.AdaptiveAvgPool1d,
-        # torch.nn.AdaptiveAvgPool2d,
-        # torch.nn.AdaptiveAvgPool3d,
-        # torch.nn.AvgPool1d,
-        # torch.nn.AvgPool2d,
-        # torch.nn.AvgPool3d,
+        torch.nn.AdaptiveAvgPool1d,
+        torch.nn.AdaptiveAvgPool2d,
+        torch.nn.AdaptiveAvgPool3d,
+        torch.nn.AvgPool1d,
+        torch.nn.AvgPool2d,
+        torch.nn.AvgPool3d,
         torch.nn.Hardtanh,
         torch.nn.Identity,
-        # torch.nn.MaxPool1d,
-        # torch.nn.MaxPool2d,
-        # torch.nn.MaxPool3d,
+        torch.nn.MaxPool1d,
+        torch.nn.MaxPool2d,
+        torch.nn.MaxPool3d,
         torch.nn.ReLU,
-        torch.nn.ReLU6,
-        # torch.adaptive_avg_pool1d,
-        # torch.nn.functional.adaptive_avg_pool2d,
-        # torch.nn.functional.adaptive_avg_pool3d,
+        torch.adaptive_avg_pool1d,
+        torch.nn.functional.adaptive_avg_pool2d,
+        torch.nn.functional.adaptive_avg_pool3d,
         torch.nn.functional.hardtanh,
         torch.nn.functional.hardtanh_,
         torch.nn.functional.interpolate,
-        # torch.nn.functional.max_pool1d,
-        # torch.nn.functional.max_pool2d,
-        # torch.nn.functional.max_pool3d,
+        torch.nn.functional.max_pool1d,
+        torch.nn.functional.max_pool2d,
+        torch.nn.functional.max_pool3d,
         torch.nn.functional.relu,
         torch.nn.functional.relu6,
-        # torch.avg_pool1d,
-        # torch._C._nn.avg_pool2d,
-        # torch._C._nn.avg_pool3d,
+        torch.avg_pool1d,
+        torch._C._nn.avg_pool2d,
+        torch._C._nn.avg_pool3d,
         torch.clamp,
         torch.flatten,
         torch.mean,
@@ -535,19 +503,9 @@ def _get_bn_configs(dtype_configs: List[DTypeConfig]) -> List[BackendPatternConf
                 .set_dtype_configs(dtype_configs)  # noqa: E131
                 .set_fuser_method(reverse_sequential_wrapper2(fused_bn))
                 .set_fused_module(fused_bn))
-        bn_configs.append(
-            BackendPatternConfig((torch.nn.ReLU6, bn))
-                .set_dtype_configs(dtype_configs)  # noqa: E131
-                .set_fuser_method(reverse_sequential_wrapper2(fused_bn))
-                .set_fused_module(fused_bn))
         # bn module + F.relu fusion config
         bn_configs.append(
             BackendPatternConfig((torch.nn.functional.relu, bn))
-                .set_dtype_configs(dtype_configs)  # noqa: E131
-                .set_fuser_method(reverse_sequential_wrapper2(bn_to_fused_bn[bn]))
-                .set_fused_module(fused_bn))
-        bn_configs.append(
-            BackendPatternConfig((torch.nn.functional.relu6, bn))
                 .set_dtype_configs(dtype_configs)  # noqa: E131
                 .set_fuser_method(reverse_sequential_wrapper2(bn_to_fused_bn[bn]))
                 .set_fused_module(fused_bn))

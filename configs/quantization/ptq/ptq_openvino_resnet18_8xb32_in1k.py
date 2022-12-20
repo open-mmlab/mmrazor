@@ -11,11 +11,11 @@ qconfig_mapping = dict(
         w_fake_quant=dict(type='mmrazor.FakeQuantize'),
         a_fake_quant=dict(type='mmrazor.FakeQuantize'),
         w_qscheme=dict(
-            dtype='quint8',
+            qdtype='quint8',
             bit=8,
             is_symmetry=False),
         a_qscheme=dict(
-            dtype='quint8',
+            qdtype='quint8',
             bit=8,
             is_symmetry=False),
     )
