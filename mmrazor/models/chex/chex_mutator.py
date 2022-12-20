@@ -2,6 +2,7 @@
 from typing import Dict, List, Optional
 
 import torch
+from mmengine import dist
 
 from mmrazor.models.mutators import ChannelMutator
 from mmrazor.registry import MODELS
@@ -60,9 +61,10 @@ class ChexMutator(ChannelMutator):
             unit: ChexUnit
             bn_imps[unit.name] = unit.bn_imp
         bn_imp: torch.Tensor = torch.cat(list(bn_imps.values()), dim=0)
+        dist.all_reduce(bn_imp)
         num_remain = int(self.channel_ratio * len(bn_imp))
         threshold = bn_imp.topk(num_remain)[0][-1]
         for unit in self.mutable_units:
-            num = (bn_imps[unit.name] >= threshold).float().sum().long().item()
+            num = (bn_imps[unit.name] >= threshold).long().sum().item()
             choices[unit.name] = num
         return choices
