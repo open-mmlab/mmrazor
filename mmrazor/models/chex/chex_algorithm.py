@@ -2,8 +2,11 @@
 import math
 from typing import Dict, Optional, Union
 
+import torch
 import torch.nn as nn
+from mmengine import dist
 from mmengine.model import BaseModel
+from mmengine.model.utils import convert_sync_batchnorm
 
 from mmrazor.models.algorithms import BaseAlgorithm
 from mmrazor.registry import MODELS
@@ -26,6 +29,9 @@ class ChexAlgorithm(BaseAlgorithm):
                  init_cfg: Optional[Dict] = None):
         super().__init__(architecture, data_preprocessor, init_cfg)
 
+        if dist.is_distributed():
+            self.architecture = convert_sync_batchnorm(self.architecture)
+
         self.delta_t = delta_t
         self.total_steps = total_steps
         self.init_growth_rate = init_growth_rate
@@ -37,8 +43,9 @@ class ChexAlgorithm(BaseAlgorithm):
         if self.training:  #
             if RuntimeInfo.iter() % self.delta_t == 0 and \
                  RuntimeInfo.epoch() < self.total_steps:
-                self.mutator.prune()
-                self.mutator.grow(self.growth_ratio)
+                with torch.no_grad():
+                    self.mutator.prune()
+                    self.mutator.grow(self.growth_ratio)
         return super().forward(inputs, data_samples, mode)
 
     @property

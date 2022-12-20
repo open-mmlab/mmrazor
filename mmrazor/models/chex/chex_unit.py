@@ -32,22 +32,19 @@ class ChexUnit(L1MutableChannelUnit):
     def prune(self, num_remaining):
         # prune the channels to num_remaining
         def get_prune_imp():
-            prune_imp: torch.Tensor = torch.zeros([self.num_channels])
+            prune_imp = 0
             for channel in self.chex_channels:
                 module = channel.module
-                prune_imp = prune_imp.to(
-                    module.prune_imp(num_remaining).device)
                 prune_imp = prune_imp + module.prune_imp(
                     num_remaining)[channel.start:channel.end]
             return prune_imp
 
-        prune_imp = get_prune_imp()
-        index = prune_imp.topk(num_remaining)[1]
-        mask: torch.Tensor = torch.zeros([self.num_channels],
-                                         device=prune_imp.device)
-        mask.scatter_(-1, index, 1.0)
-        mask = mask.bool()
-        self.mutable_channel.current_choice.data = mask
+        with torch.no_grad():
+            prune_imp = get_prune_imp()
+            index = prune_imp.topk(num_remaining)[1]
+            self.mutable_channel.mask = self.mutable_channel.mask.to(
+                prune_imp.device)
+            self.mutable_channel.current_choice.data.scatter_(-1, index, 1.0)
 
     def grow(self, num):
         assert num >= 0
@@ -55,10 +52,9 @@ class ChexUnit(L1MutableChannelUnit):
             return
 
         def get_growth_imp():
-            growth_imp: torch.Tensor = torch.zeros([self.num_channels])
+            growth_imp = 0
             for channel in self.chex_channels:
                 module = channel.module
-                growth_imp = growth_imp.to(module.growth_imp.device)
                 growth_imp = growth_imp + module.growth_imp[channel.
                                                             start:channel.end]
             return growth_imp
@@ -79,12 +75,11 @@ class ChexUnit(L1MutableChannelUnit):
 
     @property
     def bn_imp(self):
-        imp = torch.zeros([self.num_channels])
+        imp = 0
         num_layers = 0
         for channel in self.output_related:
             module = channel.module
             if isinstance(module, nn.modules.batchnorm._BatchNorm):
-                imp = imp.to(module.weight.device)
                 imp = imp + module.weight[channel.start:channel.end]
                 num_layers += 1
         assert num_layers > 0

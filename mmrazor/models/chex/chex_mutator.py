@@ -30,9 +30,10 @@ class ChexMutator(ChannelMutator):
         step1: get pruning structure
         step2: prune based on ChexMixin.prune_imp
         """
-        choices = self._get_prune_choices()
-        for unit in self.mutable_units:
-            unit.prune(choices[unit.name])
+        with torch.no_grad():
+            choices = self._get_prune_choices()
+            for unit in self.mutable_units:
+                unit.prune(choices[unit.name])
 
     def grow(self, growth_ratio=0.0):
         """Make the model grow.
