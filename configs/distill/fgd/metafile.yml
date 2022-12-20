@@ -1,0 +1,32 @@
+Collections:
+  - Name: FGD
+    Metadata:
+      Training Data:
+        - COCO
+    Paper:
+      URL: https://arxiv.org/abs/2111.11837
+      Title: Focal and Global Knowledge Distillation for Detectors
+    README: configs/distill/fgd/README.md
+    Code:
+      URL:
+      Version: v0.1.0
+    Converted From:
+      Code:
+        - https://github.com/yzd-v/FGD
+Models:
+  - Name: fgd_retina_x101_fpn_retina_r50_fpn_2x_coco
+    In Collection: FGD
+    Metadata:
+      Location: FPN
+      Student: retinanet-r50
+      Teacher: retinanet-x101
+      Teacher Checkpoint: https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_x101_64x4d_fpn_1x_coco/retinanet_x101_64x4d_fpn_1x_coco_20200130-366f5af1.pth
+    Results:
+      - Task: Object Detection
+        Dataset: COCO
+        Metrics:
+          box AP: 40.5
+          box AP(S): 37.4
+          box AP(T): 41.0
+    Config: configs/distill/fgd/fgd_retina_x101_fpn_retina_r50_fpn_2x_coco.py
+    Weights: https://download.openmmlab.com/mmrazor/v0.1/distill/fgd/fgd_retina_x101_retina_r50_2x_coco_20221216_114845-c4c7496d.pth
