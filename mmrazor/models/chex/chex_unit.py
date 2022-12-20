@@ -35,9 +35,10 @@ class ChexUnit(L1MutableChannelUnit):
             prune_imp: torch.Tensor = torch.zeros([self.num_channels])
             for channel in self.chex_channels:
                 module = channel.module
-                prune_imp = prune_imp.to(module.prune_imp.device)
-                prune_imp = prune_imp + module.prune_imp[channel.start:channel.
-                                                         end]
+                prune_imp = prune_imp.to(
+                    module.prune_imp(num_remaining).device)
+                prune_imp = prune_imp + module.prune_imp(
+                    num_remaining)[channel.start:channel.end]
             return prune_imp
 
         prune_imp = get_prune_imp()
