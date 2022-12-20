@@ -1,12 +1,16 @@
-import torch.ao.quantization.observer as torch_observer_src
+# Copyright (c) OpenMMLab. All rights reserved.
 import inspect
 from typing import List
+
+import torch.ao.quantization.observer as torch_observer_src
+
 from mmrazor.registry import MODELS
 
+
 def register_torch_observers() -> List[str]:
-    """Register observers in ``torch.ao.quantization.observer`` to the 
+    """Register observers in ``torch.ao.quantization.observer`` to the
     ``MODELS`` registry.
-    
+
     Returns:
         List[str]: A list of registered observers' name.
     """
@@ -16,12 +20,13 @@ def register_torch_observers() -> List[str]:
                                             module_name.startswith('default'):
             continue
         _observer = getattr(torch_observer_src, module_name)
-        if inspect.isclass(_observer) and issubclass(_observer,
-                                            torch_observer_src.ObserverBase):
+        if inspect.isclass(_observer) and issubclass(
+                _observer, torch_observer_src.ObserverBase):
             if MODELS.get(module_name) is None:
                 MODELS.register_module(module=_observer)
                 torch_observers.append(module_name)
     return torch_observers
+
 
 TORCH_observers = register_torch_observers()
 # TORCH_observers including:

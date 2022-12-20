@@ -1,11 +1,14 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 from torch.ao.quantization import QConfig
+
 from mmrazor.registry import MODELS
 
 RequiredArgs = [
-    'w_qscheme', 'a_qscheme', 'w_fake_quant', 'a_fake_quant',
-    'w_observer', 'a_observer'
+    'w_qscheme', 'a_qscheme', 'w_fake_quant', 'a_fake_quant', 'w_observer',
+    'a_observer'
 ]
+
 
 class QConfigHander():
 
@@ -21,21 +24,21 @@ class QConfigHander():
                 w_is_per_channel = True
             if 'PerChannel' in a_observer.__name__:
                 a_is_per_channel = False
-            self.w_qscheme = QSchemeHander(is_per_channel=w_is_per_channel,
-                                            **qconfig['w_qscheme'])
-            self.a_qscheme = QSchemeHander(is_per_channel=a_is_per_channel,
-                                            **qconfig['a_qscheme'])
-            
+            self.w_qscheme = QSchemeHander(
+                is_per_channel=w_is_per_channel, **qconfig['w_qscheme'])
+            self.a_qscheme = QSchemeHander(
+                is_per_channel=a_is_per_channel, **qconfig['a_qscheme'])
+
             w_fake_quant = MODELS.get(qconfig['w_fake_quant']['type'])
             w_observer_kwargs = self.w_qscheme.to_observer_params()
             a_fake_quant = MODELS.get(qconfig['a_fake_quant']['type'])
             a_observer_kwargs = self.a_qscheme.to_observer_params()
-            
-            self.w_fake_quant = w_fake_quant.with_args(observer=w_observer, 
-                                                       **w_observer_kwargs)
-            self.a_fake_quant = a_fake_quant.with_args(observer=a_observer, 
-                                                       **a_observer_kwargs)
-    
+
+            self.w_fake_quant = w_fake_quant.with_args(
+                observer=w_observer, **w_observer_kwargs)
+            self.a_fake_quant = a_fake_quant.with_args(
+                observer=a_observer, **a_observer_kwargs)
+
     def check_qconfig(self, qconfig):
         is_pass = True
         for arg in RequiredArgs:
@@ -47,8 +50,8 @@ class QConfigHander():
         return is_pass
 
     def convert(self):
-        torch_qconfig = QConfig(weight=self.w_fake_quant, 
-                                activation=self.a_fake_quant)
+        torch_qconfig = QConfig(
+            weight=self.w_fake_quant, activation=self.a_fake_quant)
         return torch_qconfig
 
 
@@ -119,9 +122,10 @@ class QSchemeHander(object):
                 is_per_channel: {self.is_per_channel} \
                 / extra_kwargs: {self.kwargs}'
 
+
 if __name__ == '__main__':
-    from mmrazor.models.observers import register_torch_observers
     from mmrazor.models.fake_quants import register_torch_fake_quants
+    from mmrazor.models.observers import register_torch_observers
     register_torch_observers()
     register_torch_fake_quants()
 
@@ -131,14 +135,8 @@ if __name__ == '__main__':
         w_fake_quant=dict(type='mmrazor.FakeQuantize'),
         a_fake_quant=dict(type='mmrazor.FakeQuantize'),
         w_qscheme=dict(
-            qdtype='qint8',
-            bit=8,
-            is_symmetry=True,
-            is_symmetric_range=True),
-        a_qscheme=dict(
-            qdtype='quint8',
-            bit=8,
-            is_symmetry=True),
+            qdtype='qint8', bit=8, is_symmetry=True, is_symmetric_range=True),
+        a_qscheme=dict(qdtype='quint8', bit=8, is_symmetry=True),
     )
     from mmengine.config import Config
     qconfig = Config(qconfig)

@@ -1,10 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
 from torch.ao.quantization import disable_observer
+
 from mmrazor.models.task_modules.tracer.fx.custom_tracer import \
     build_graphmodule
 from mmrazor.registry import MODELS
-from .base import NativeQuantizer
+from .native_quantizer import NativeQuantizer
 
 
 @MODELS.register_module()
@@ -20,21 +21,21 @@ class TensorRTQuantizer(NativeQuantizer):
                  no_observer_modules=None,
                  tracer=dict(type='CustomTracer')):
         super().__init__(global_qconfig, no_observer_modules, tracer)
-    
+
     @property
     def backend(self):
         return 'tensorrt'
-    
+
     @property
-    def support_a_modes(self):
+    def support_w_modes(self):
         return ['per_tensor', 'per_channel']
-    
+
     @property
     def support_a_modes(self):
         return ['per_tensor']
 
-    def prepare_for_mmdeploy(self, 
-                             model, 
+    def prepare_for_mmdeploy(self,
+                             model,
                              dummy_input=(1, 3, 224, 224),
                              checkpoint=None):
 
@@ -45,7 +46,8 @@ class TensorRTQuantizer(NativeQuantizer):
         if dummy_input is not None:
             observed_model(torch.randn(dummy_input))
         if checkpoint is not None:
-            observed_model.load_state_dict(torch.load(checkpoint)['state_dict'])
+            observed_model.load_state_dict(
+                torch.load(checkpoint)['state_dict'])
         self.post_process_weight_fakequant(
             observed_model, keep_fake_quant=True)
 

@@ -43,7 +43,7 @@ class MMArchitectureQuant(BaseAlgorithm):
                  architecture,
                  quantizer,
                  data_preprocessor=None,
-                 forward_modes = ('tensor', 'predict', 'loss'),
+                 forward_modes=('tensor', 'predict', 'loss'),
                  float_checkpoint: Optional[str] = None,
                  input_shapes=(1, 3, 224, 224),
                  init_cfg=None):
@@ -56,7 +56,7 @@ class MMArchitectureQuant(BaseAlgorithm):
         if float_checkpoint:
             _ = load_checkpoint(self.architecture, float_checkpoint)
             self.architecture._is_init = True
-        
+
         self.quantizer = MODELS.build(quantizer)
         self.input_shapes = input_shapes
         self.forward_modes = forward_modes
@@ -114,6 +114,8 @@ class MMArchitectureQuant(BaseAlgorithm):
             graph_mopdule = build_graphmodule(model, traced_graph)
             observed_module = self.quantizer.prepare(model, graph_mopdule)
             qmodels[mode] = observed_module
+        import pdb
+        pdb.set_trace()
         # dummy_input = torch.randn(self.input_shapes)
         # qmodels['predict'](dummy_input, None, 'predict')
 

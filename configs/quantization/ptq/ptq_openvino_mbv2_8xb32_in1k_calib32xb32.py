@@ -1,10 +1,8 @@
-_base_ = ['mmcls::resnet/resnet50_8xb32_in1k.py']
-
-train_dataloader = dict(batch_size=32)
+_base_ = ['mmcls::mobilenet_v2/mobilenet-v2_8xb32_in1k.py']
 
 test_cfg = dict(
     type='mmrazor.PTQLoop',
-    calibrate_dataloader=train_dataloader,
+    calibrate_dataloader=_base_.train_dataloader,
     calibrate_steps=32,
 )
 
@@ -23,7 +21,8 @@ model = dict(
     _delete_=True,
     type='mmrazor.MMArchitectureQuant',
     architecture=_base_.model,
-    float_checkpoint='/tmp/humu/resnet50_8xb32_in1k_20210831-ea4938fc.pth',
+    float_checkpoint='/tmp/humu/mobilenet_v2_batch256_imagenet' +
+    '_20200708-3b2dc3af.pth',
     quantizer=dict(
         type='mmrazor.OpenVINOQuantizer',
         global_qconfig=global_qconfig,

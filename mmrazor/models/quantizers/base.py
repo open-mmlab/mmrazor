@@ -1,17 +1,22 @@
-import copy
+# Copyright (c) OpenMMLab. All rights reserved.
+from abc import abstractmethod
+
 import torch
 from mmengine.model import BaseModule
-from mmrazor.registry import MODELS, TASK_UTILS
+
+from mmrazor.registry import TASK_UTILS
+
 
 class BaseQuantizer(BaseModule):
+
     def __init__(self, tracer):
         super().__init__()
         self.tracer = TASK_UTILS.build(tracer)
-    
+
     @abstractmethod
     def prepare(self):
         pass
-    
+
     def swap_ff_with_fxff(self, model):
         r""" Swap FloatFunctional with FXFloatFunctional
         """
