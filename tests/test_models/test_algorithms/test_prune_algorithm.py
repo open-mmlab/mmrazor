@@ -261,3 +261,30 @@ class TestItePruneAlgorithm(unittest.TestCase):
             algorithm.forward(
                 data['inputs'], data['data_samples'], mode='loss')
             self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
+
+    def test_resume(self):
+        algorithm: ItePruneAlgorithm = ItePruneAlgorithm(
+            MODEL_CFG,
+            mutator_cfg=MUTATOR_CONFIG_NUM,
+            target_pruning_ratio=None,
+            step_freq=1,
+            prune_times=1,
+        ).to(DEVICE)
+        algorithm.mutator.set_choices(algorithm.mutator.sample_choices())
+        state_dict = algorithm.state_dict()
+        print(state_dict.keys())
+
+        algorithm2: ItePruneAlgorithm = ItePruneAlgorithm(
+            MODEL_CFG,
+            mutator_cfg=MUTATOR_CONFIG_NUM,
+            target_pruning_ratio=None,
+            step_freq=1,
+            prune_times=1,
+        ).to(DEVICE)
+
+        algorithm2.load_state_dict(state_dict)
+
+        print(algorithm.mutator.current_choices)
+        print(algorithm2.mutator.current_choices)
+        self.assertDictEqual(algorithm.mutator.current_choices,
+                             algorithm2.mutator.current_choices)
