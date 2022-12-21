@@ -63,9 +63,16 @@ class ChexMutator(ChannelMutator):
             bn_imps[unit.name] = unit.bn_imp
         bn_imp: torch.Tensor = torch.cat(list(bn_imps.values()), dim=0)
         dist.all_reduce(bn_imp)
-        num_remain = int(self.channel_ratio * len(bn_imp))
-        threshold = bn_imp.topk(num_remain)[0][-1]
+
+        num_total_channel = len(bn_imp)
+        num_min_remained = int(self.channel_ratio * num_total_channel)
+        threshold = bn_imp.topk(num_min_remained)[0][-1]
+
+        num_remained = 0
         for unit in self.mutable_units:
             num = (bn_imps[unit.name] >= threshold).long().sum().item()
             choices[unit.name] = max(num, 1)
+            num_remained += choices[unit.name]
+        assert num_remained >= num_min_remained, \
+            f'{num_remained},{num_min_remained}'
         return choices
