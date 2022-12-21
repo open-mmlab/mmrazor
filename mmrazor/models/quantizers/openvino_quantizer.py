@@ -28,9 +28,9 @@ class OpenVINOQuantizer(NativeQuantizer):
                  tracer=dict(type='CustomTracer'),
                  remove_fakequants=dict(
                      module_prev=('torch.nn.ReLU6', 'torch.nn.Identity'),
-                     module_next=('torch.nn.MaxPool2d'),
-                     target_prev=('output'),
-                     target_next=('flatten'))):
+                     module_next=('torch.nn.MaxPool2d', ),
+                     target_prev=('output', ),
+                     target_next=('flatten', ))):
         super().__init__(global_qconfig, no_observer_modules, tracer)
         self.remove_fakequants = remove_fakequants
 
@@ -75,6 +75,14 @@ class OpenVINOQuantizer(NativeQuantizer):
         if target_next:
             prepared = del_fakequant_after_target(
                 prepared, target_next, inplace=True)
+        # print(prepared)
+        # cnt = 0
+        # from ..fake_quants import BaseFakeQuantize
+        # for module in prepared.modules():
+        #     if isinstance(module, BaseFakeQuantize):
+        #         cnt += 1
+        # print(cnt)
+        # input()
 
         return prepared
 

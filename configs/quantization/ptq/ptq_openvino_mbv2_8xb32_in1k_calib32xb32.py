@@ -21,8 +21,8 @@ model = dict(
     _delete_=True,
     type='mmrazor.MMArchitectureQuant',
     architecture=_base_.model,
-    float_checkpoint='/tmp/humu/mobilenet_v2_batch256_imagenet' +
-    '_20200708-3b2dc3af.pth',
+    # float_checkpoint='/tmp/humu/mobilenet_v2_batch256_imagenet' +
+    # '_20200708-3b2dc3af.pth',
     quantizer=dict(
         type='mmrazor.OpenVINOQuantizer',
         global_qconfig=global_qconfig,

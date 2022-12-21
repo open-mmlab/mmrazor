@@ -114,8 +114,8 @@ class MMArchitectureQuant(BaseAlgorithm):
             graph_mopdule = build_graphmodule(model, traced_graph)
             observed_module = self.quantizer.prepare(model, graph_mopdule)
             qmodels[mode] = observed_module
-        import pdb
-        pdb.set_trace()
+        # import pdb
+        # pdb.set_trace()
         # dummy_input = torch.randn(self.input_shapes)
         # qmodels['predict'](dummy_input, None, 'predict')
 
