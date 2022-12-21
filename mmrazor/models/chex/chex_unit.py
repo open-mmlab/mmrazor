@@ -44,6 +44,7 @@ class ChexUnit(L1MutableChannelUnit):
             index = prune_imp.topk(num_remaining)[1]
             self.mutable_channel.mask = self.mutable_channel.mask.to(
                 prune_imp.device)
+            self.mutable_channel.mask.fill_(0.0)
             self.mutable_channel.current_choice.data.scatter_(-1, index, 1.0)
 
     def grow(self, num):

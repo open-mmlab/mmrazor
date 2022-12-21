@@ -25,3 +25,4 @@ class ChexHook(Hook):
             for unit in algorithm.mutator.mutable_units:
                 config[unit.name] = unit.current_choice
             print_log(json.dumps(config, indent=4))
+            print_log(f'growth_ratio: {algorithm.growth_ratio}')
