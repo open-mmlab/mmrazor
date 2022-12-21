@@ -51,12 +51,12 @@ class SquentialMutableChannel(SimpleMutableChannel):
             int_choice = choice
         mask = torch.zeros([self.num_channels], device=self.mask.device)
         mask[0:int_choice] = 1
-        self.mask = mask.bool()
+        SimpleMutableChannel.current_choice.fset(self, mask)  # type: ignore
 
     @property
     def current_mask(self) -> torch.Tensor:
         """Return current mask."""
-        return self.mask
+        return self.mask.bool()
 
     # methods for
 

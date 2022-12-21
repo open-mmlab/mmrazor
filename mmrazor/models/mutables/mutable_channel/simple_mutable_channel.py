@@ -20,7 +20,8 @@ class SimpleMutableChannel(BaseMutableChannel):
 
     def __init__(self, num_channels: int, **kwargs) -> None:
         super().__init__(num_channels, **kwargs)
-        mask = torch.ones([self.num_channels]).bool()
+        mask = torch.ones([self.num_channels
+                           ])  # save bool as float for dist training
         self.register_buffer('mask', mask)
         self.mask: torch.Tensor
 
@@ -34,7 +35,7 @@ class SimpleMutableChannel(BaseMutableChannel):
     @current_choice.setter
     def current_choice(self, choice: torch.Tensor):
         """Set current choice."""
-        self.mask = choice.to(self.mask.device).bool()
+        self.mask = choice.to(self.mask.device).float()
 
     @property
     def current_mask(self) -> torch.Tensor:
