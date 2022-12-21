@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os
+import unittest
 from pathlib import Path
 
 import requests
@@ -8,7 +9,7 @@ import yaml
 MMRAZOR_ROOT = Path(__file__).absolute().parents[1]
 
 
-class TestMetafiles:
+class TestMetafiles(unittest.TestCase):
 
     def get_metafiles(self, code_path):
         """
@@ -51,3 +52,7 @@ class TestMetafiles:
                 assert model['Name'] == correct_name, \
                     f'name error in {metafile}, correct name should ' \
                     f'be {correct_name}'
+
+
+if __name__ == '__main__':
+    unittest.main()
