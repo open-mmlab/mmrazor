@@ -40,8 +40,6 @@ def del_fakequant_before_target(prepared_model, target_patterns, inplace=True):
         """
         if node is None:
             return
-        # if node.op != 'call_module':
-        #     return
         if isinstance(
                 _get_attrs(prepared_model, node.target), FakeQuantizeBase):
             nodes_to_erase.append(node)
@@ -56,10 +54,9 @@ def del_fakequant_before_target(prepared_model, target_patterns, inplace=True):
         prepared_model = copy.deepcopy(prepared_model)
     new_graph = copy.deepcopy(prepared_model.graph)
     for node in new_graph.nodes:
-        if isinstance(node.target, str) and node.target in target_patterns:
+        if node.target in target_patterns:
             nodes_to_erase = []
             recursive_find_erased_nodes(node)
-            print(node, nodes_to_erase)
             for to_erase in nodes_to_erase:
                 to_erase.replace_all_uses_with(to_erase.args[0])
                 new_graph.erase_node(to_erase)
@@ -73,13 +70,18 @@ def del_fakequant_after_target(prepared_model, target_patterns, inplace=True):
     if not inplace:
         prepared_model = copy.deepcopy(prepared_model)
     new_graph = copy.deepcopy(prepared_model.graph)
+
+    target_nodes = []
+    for node in new_graph.nodes:
+        if node.target in target_patterns:
+            target_nodes.append(node)
+
     for node in new_graph.nodes:
         if node.op == 'call_module' and isinstance(
                 _get_attrs(prepared_model, node.target), FakeQuantizeBase):
             assert len(node.args) == 1
             prev_node = node.args[0]
-            if isinstance(prev_node.target, str) and (prev_node.target
-                                                      not in target_patterns):
+            if prev_node not in target_nodes:
                 continue
             node.replace_all_uses_with(prev_node)
             new_graph.erase_node(node)
@@ -115,17 +117,18 @@ def del_fakequant_after_module(prepared_model, module_patterns, inplace=True):
     if not inplace:
         prepared_model = copy.deepcopy(prepared_model)
     new_graph = copy.deepcopy(prepared_model.graph)
+    target_nodes = []
+    for node in new_graph.nodes:
+        if node.op == 'call_module' and isinstance(
+                _get_attrs(prepared_model, node.target), module_patterns):
+            target_nodes.append(node)
+
     for node in new_graph.nodes:
         if node.op == 'call_module' and isinstance(
                 _get_attrs(prepared_model, node.target), FakeQuantizeBase):
             assert len(node.args) == 1
             prev_node = node.args[0]
-            if prev_node.op != 'call_module':
-                continue
-            print(prev_node.target)
-            if not isinstance(
-                    _get_attrs(prepared_model, prev_node.target),
-                    module_patterns):
+            if prev_node not in target_nodes:
                 continue
             node.replace_all_uses_with(prev_node)
             new_graph.erase_node(node)
