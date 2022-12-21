@@ -60,10 +60,7 @@ MUTATOR_CFG = dict(
         type='OneShotMutableChannelUnit',
         default_args=dict(
             candidate_choices=list(i / 12 for i in range(2, 13)),
-            choice_mode='ratio')),
-    parse_cfg=dict(
-        type='BackwardTracer',
-        loss_calculator=dict(type='ImageClassifierPseudoLoss')))
+            choice_mode='ratio')))
 
 DISTILLER_CFG = dict(
     type='ConfigurableDistiller',
@@ -153,13 +150,13 @@ class TestAutoSlimGreedySearchLoop(TestCase):
                       mutator_cfg: MUTATOR_TYPE = MUTATOR_CFG,
                       distiller_cfg: DISTILLER_TYPE = DISTILLER_CFG,
                       architecture_cfg: Dict = ARCHITECTURE_CFG,
-                      num_samples: int = 2) -> AutoSlim:
+                      num_random_samples: int = 2) -> AutoSlim:
         model = AutoSlim(
             mutator=mutator_cfg,
             distiller=distiller_cfg,
             architecture=architecture_cfg,
             data_preprocessor=ToyDataPreprocessor(),
-            num_samples=num_samples)
+            num_random_samples=num_random_samples)
         model.to(self.device)
 
         return model

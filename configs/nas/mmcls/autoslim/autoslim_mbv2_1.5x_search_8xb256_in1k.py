@@ -1,5 +1,7 @@
 _base_ = ['./autoslim_mbv2_1.5x_supernet_8xb256_in1k.py']
 
+model = dict(bn_training_mode=True)
+
 train_cfg = None
 optim_wrapper = None
 param_scheduler = None

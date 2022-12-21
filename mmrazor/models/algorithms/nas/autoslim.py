@@ -38,6 +38,12 @@ class AutoSlim(BaseAlgorithm):
             Defaults to 2.
         init_cfg (Optional[Dict], optional): config of initialization.
             Defaults to None.
+        bn_training_mode (bool): Whether set bn to training mode when model is
+            set to eval mode. Note that in slimmable networks, accumulating
+            different numbers of channels results in different feature means
+            and variances, which further leads to inaccurate statistics of
+            shared BN. Set ``bn_training_mode`` to True to use the feature
+            means and variances in a batch.
     """
 
     def __init__(self,
