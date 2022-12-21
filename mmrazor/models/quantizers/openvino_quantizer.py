@@ -76,15 +76,6 @@ class OpenVINOQuantizer(NativeQuantizer):
             prepared = del_fakequant_after_target(
                 prepared, target_next, inplace=True)
         print(prepared)
-        cnt = 0
-
-        from ..fake_quants import BaseFakeQuantize
-        for name, module in prepared.named_modules():
-            if isinstance(module, BaseFakeQuantize) and 'weight' in name:
-                cnt += 1
-                # print()
-        print(cnt)
-        input()
 
         return prepared
 
