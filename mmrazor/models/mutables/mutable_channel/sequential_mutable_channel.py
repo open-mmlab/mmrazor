@@ -49,9 +49,8 @@ class SquentialMutableChannel(SimpleMutableChannel):
             int_choice = self._ratio2num(choice)
         else:
             int_choice = choice
-        mask = torch.zeros([self.num_channels], device=self.mask.device)
-        mask[0:int_choice] = 1
-        SimpleMutableChannel.current_choice.fset(self, mask)  # type: ignore
+        self.mask.fill_(0.0)
+        self.mask[0:int_choice] = 1.0
 
     @property
     def current_mask(self) -> torch.Tensor:
