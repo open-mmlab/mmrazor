@@ -101,7 +101,6 @@ class Net(nn.Module):
             padding=self.conv.padding,
             dilation=self.conv.dilation,
             groups=self.conv.groups)
-        # out = self.conv(x)
         return out
 
 
@@ -141,7 +140,7 @@ class TestAutoSlimGreedySearchLoop(TestCase):
 
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
-        train_cfg = dict(type='AutoSlimGreedySearchLoop', target_flops=(680, ))
+        train_cfg = dict(type='AutoSlimGreedySearchLoop', target_flops=(700, ))
         self.train_cfg = Config(train_cfg)
         self.runner = MagicMock(spec=ToyRunner)
         self.runner.model = self.prepare_model(MUTATOR_CFG, DISTILLER_CFG,
