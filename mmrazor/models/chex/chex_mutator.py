@@ -2,7 +2,6 @@
 from typing import Dict, List, Optional
 
 import torch
-from mmengine import dist
 
 from mmrazor.models.mutators import ChannelMutator
 from mmrazor.registry import MODELS
@@ -62,7 +61,6 @@ class ChexMutator(ChannelMutator):
             unit: ChexUnit
             bn_imps[unit.name] = unit.bn_imp
         bn_imp: torch.Tensor = torch.cat(list(bn_imps.values()), dim=0)
-        dist.all_reduce(bn_imp)
 
         num_total_channel = len(bn_imp)
         num_min_remained = int(self.channel_ratio * num_total_channel)
