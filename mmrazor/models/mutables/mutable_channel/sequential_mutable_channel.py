@@ -27,7 +27,6 @@ class SquentialMutableChannel(SimpleMutableChannel):
         super().__init__(num_channels, **kwargs)
         assert choice_mode in ['ratio', 'number']
         self.choice_mode = choice_mode
-        self.mask = torch.ones([self.num_channels]).bool()
 
     @property
     def is_num_mode(self):

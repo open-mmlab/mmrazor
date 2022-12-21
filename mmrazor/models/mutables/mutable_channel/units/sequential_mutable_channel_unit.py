@@ -2,7 +2,6 @@
 import random
 from typing import Dict, Union
 
-import torch
 import torch.nn as nn
 from mmcv.cnn.bricks import Conv2dAdaptivePadding
 from mmengine import MMLogger
@@ -156,35 +155,3 @@ class SequentialMutableChannelUnit(MutableChannelUnit):
         logger = MMLogger.get_current_instance()
         logger.info(f'The choice={choice}, which is set to {self.name}, '
                     f'is changed to {new_choice} for a divisible choice.')
-
-    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
-                              missing_keys, unexpected_keys, error_msgs):
-        """Load from state dict."""
-        super()._load_from_state_dict(state_dict, prefix, local_metadata,
-                                      strict, missing_keys, unexpected_keys,
-                                      error_msgs)
-
-        def load(name):
-            key = prefix + name
-            if key in state_dict:
-                value = state_dict[key]
-                if isinstance(value, torch.Tensor):
-                    if value.numel() == 1:
-                        value = value.item()
-                return value
-            else:
-                if strict:
-                    missing_keys.append(key)
-                return None
-
-        mask = load('mutable_channel_mask')
-        if mask is not None:
-            self.mutable_channel.mask = mask.bool()
-
-    def _save_to_state_dict(self, destination, prefix, keep_vars):
-        """Additionally add mask to state dict."""
-        super()._save_to_state_dict(destination, prefix, keep_vars)
-        destination[
-            prefix +
-            'mutable_channel_mask'] = self.mutable_channel.current_mask.float(
-            )

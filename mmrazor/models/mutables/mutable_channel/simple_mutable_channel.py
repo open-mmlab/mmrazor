@@ -20,7 +20,9 @@ class SimpleMutableChannel(BaseMutableChannel):
 
     def __init__(self, num_channels: int, **kwargs) -> None:
         super().__init__(num_channels, **kwargs)
-        self.mask = torch.ones(num_channels).bool()
+        mask = torch.ones([self.num_channels]).bool()
+        self.register_buffer('mask', mask)
+        self.mask: torch.Tensor
 
     # choice
 
