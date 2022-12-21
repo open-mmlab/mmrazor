@@ -42,10 +42,8 @@ class ChexUnit(L1MutableChannelUnit):
         with torch.no_grad():
             prune_imp = get_prune_imp()
             index = prune_imp.topk(num_remaining)[1]
-            self.mutable_channel.mask = self.mutable_channel.mask.to(
-                prune_imp.device)
             self.mutable_channel.mask.fill_(0.0)
-            self.mutable_channel.current_choice.data.scatter_(-1, index, 1.0)
+            self.mutable_channel.mask.data.scatter_(-1, index, 1.0)
 
     def grow(self, num):
         assert num >= 0
@@ -70,9 +68,8 @@ class ChexUnit(L1MutableChannelUnit):
             select_index = index_free[select_index]
         else:
             select_index = index_free
-        mask.index_fill_(-1, select_index, 1.0)
 
-        self.mutable_channel.current_choice.data = mask
+        self.mutable_channel.mask.index_fill_(-1, select_index, 1.0)
 
     @property
     def bn_imp(self):
