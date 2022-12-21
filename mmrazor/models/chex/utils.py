@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import math
+
 from mmengine.logging import MessageHub
 
 
@@ -23,3 +25,12 @@ class RuntimeInfo():
     @classmethod
     def iter(cls):
         return cls.get_info('iter')
+
+    @classmethod
+    def max_iters(cls):
+        return cls.get_info('max_iters')
+
+    @classmethod
+    def iter_by_epoch(cls):
+        iter_per_epoch = math.ceil(cls.max_iters() / cls.max_epochs())
+        return cls.iter() % iter_per_epoch
