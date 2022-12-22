@@ -11,8 +11,6 @@ class BNCounter(BaseCounter):
 
     @staticmethod
     def add_count_hook(module, input, output):
-        """Calculate FLOPs and params based on the size of input & output."""
-        import pdb;pdb.set_trace()
         input = input[0]
         batch_flops = np.prod(input.shape)
         if getattr(module, 'affine', False):
@@ -77,9 +75,12 @@ class DMCPBatchNorm2dCounter(BNCounter):
     def add_count_hook(module, input, output):
         """Calculate FLOPs and params based on the size of input & output."""
         input = input[0]
-        batch_flops = np.prod(input.shape)
+        B, C, H, W = input.shape
+        if hasattr(module, '_traceable_choice'):
+            C = module._traceable_choice()
+        batch_flops = B * C * H * W
         if getattr(module, 'affine', False):
             batch_flops *= 2
         num_features = module.mutable_attrs['num_features'].activated_channels
-        module.__flops__ += int(batch_flops)
+        module.__flops__ += batch_flops
         module.__params__ += num_features*2
