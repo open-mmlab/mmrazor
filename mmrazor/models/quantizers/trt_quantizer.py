@@ -31,7 +31,7 @@ class TensorRTQuantizer(CustomQuantizer):
                          convert_custom_config_dict, equalization_qconfig_dict,
                          _remove_qconfig, init_cfg)
 
-    def prepare_for_mmdeploy(self, model, dummy_input=None, checkpoint=None)
+    def prepare_for_mmdeploy(self, model, dummy_input=None, checkpoint=None):
 
         graph = self.tracer.trace(model)
         graph_module = build_graphmodule(model, graph)
