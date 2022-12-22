@@ -27,7 +27,6 @@ class SquentialMutableChannel(SimpleMutableChannel):
         super().__init__(num_channels, **kwargs)
         assert choice_mode in ['ratio', 'number']
         self.choice_mode = choice_mode
-        self.mask = torch.ones([self.num_channels]).bool()
 
     @property
     def is_num_mode(self):
@@ -50,14 +49,13 @@ class SquentialMutableChannel(SimpleMutableChannel):
             int_choice = self._ratio2num(choice)
         else:
             int_choice = choice
-        mask = torch.zeros([self.num_channels], device=self.mask.device)
-        mask[0:int_choice] = 1
-        self.mask = mask.bool()
+        self.mask.fill_(0.0)
+        self.mask[0:int_choice] = 1.0
 
     @property
     def current_mask(self) -> torch.Tensor:
         """Return current mask."""
-        return self.mask
+        return self.mask.bool()
 
     # methods for
 
