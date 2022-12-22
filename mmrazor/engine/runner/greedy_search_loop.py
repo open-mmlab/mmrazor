@@ -17,7 +17,8 @@ from .utils import check_subnet_resources
 
 @LOOPS.register_module()
 class AutoSlimGreedySearchLoop(TestLoop):
-    """Loop for Greedy searching in AutoSlim.
+    """Loop for Greedy searching in AutoSlim. Please refer to
+    https://arxiv.org/abs/1903.11728 for more details.
 
     Args:
         runner (Runner): A reference of runner.
