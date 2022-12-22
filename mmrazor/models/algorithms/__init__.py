@@ -4,15 +4,30 @@ from .distill import (DAFLDataFreeDistillation, DataFreeDistillation,
                       FpnTeacherDistill, OverhaulFeatureDistillation,
                       SelfDistill, SingleTeacherDistill)
 from .nas import (DSNAS, DSNASDDP, SPOS, Autoformer, AutoSlim, AutoSlimDDP,
-                  BigNAS, BigNASDDP, Darts, DartsDDP)
-from .pruning import DCFF, SlimmableNetwork, SlimmableNetworkDDP
+                  Darts, DartsDDP)
+from .pruning import DCFF, SlimmableNetwork, SlimmableNetworkDDP, DMCP, DMCPDDP
 from .pruning.ite_prune_algorithm import ItePruneAlgorithm
 
 __all__ = [
-    'SingleTeacherDistill', 'BaseAlgorithm', 'FpnTeacherDistill', 'SPOS',
-    'SlimmableNetwork', 'SlimmableNetworkDDP', 'AutoSlim', 'AutoSlimDDP',
-    'Darts', 'DartsDDP', 'DCFF', 'SelfDistill', 'DataFreeDistillation',
-    'DAFLDataFreeDistillation', 'OverhaulFeatureDistillation',
-    'ItePruneAlgorithm', 'DSNAS', 'DSNASDDP', 'Autoformer', 'BigNAS',
-    'BigNASDDP'
+    'SingleTeacherDistill',
+    'BaseAlgorithm',
+    'FpnTeacherDistill',
+    'SPOS',
+    'SlimmableNetwork',
+    'SlimmableNetworkDDP',
+    'AutoSlim',
+    'AutoSlimDDP',
+    'Darts',
+    'DartsDDP',
+    'DCFF',
+    'DMCP',
+    'DMCPDDP',
+    'SelfDistill',
+    'DataFreeDistillation',
+    'DAFLDataFreeDistillation',
+    'OverhaulFeatureDistillation',
+    'ItePruneAlgorithm',
+    'DSNAS',
+    'DSNASDDP',
+    'Autoformer',
 ]

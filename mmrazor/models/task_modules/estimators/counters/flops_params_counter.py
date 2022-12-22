@@ -107,7 +107,6 @@ def get_model_flops_params(model,
             params_count,
             ost=ost,
             flush=flush)
-
     if units is not None:
         flops_count = params_units_convert(flops_count, units['flops'])
         params_count = params_units_convert(params_count, units['params'])
@@ -172,7 +171,8 @@ def params_units_convert(num_params, units='M', precision=3):
         >>> params_units_convert(3e-9)
         '3e-09'
     """
-
+    if getattr(num_params, 'requires_grad', None):
+        return num_params
     if units == 'G':
         return round(num_params / 10.**9, precision)
     elif units == 'M':

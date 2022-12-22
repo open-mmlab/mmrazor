@@ -7,7 +7,6 @@ from .value_mutator import ValueMutator
 
 @MODELS.register_module()
 class DynamicValueMutator(ValueMutator, DynamicSampleMixin):
-    """Dynamic value mutator with type as `OneShotMutableValue`."""
 
     @property
     def mutable_class_type(self):

@@ -1,205 +1,130 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import math
 import os.path as osp
-import warnings
-from typing import List, Optional, Union
+from typing import Optional, Sequence
 
-import mmcv
-import torch
-from mmcv.transforms import Compose
-from mmengine.dist import master_only
-from mmengine.fileio import FileClient
+from mmengine import FileClient
 from mmengine.hooks import Hook
-from mmengine.model import is_model_wrapper
-from mmengine.utils import mkdir_or_exist
+from mmengine.runner import EpochBasedTrainLoop, Runner
 from mmengine.visualization import Visualizer
 
-from mmrazor.models.task_modules import RecorderManager
-from mmrazor.registry import HOOKS
-from mmrazor.visualization.local_visualizer import modify
-
-
-def norm(feat):
-    assert len(feat.shape) == 4
-    N, C, H, W = feat.shape
-    feat = feat.permute(1, 0, 2, 3).reshape(C, -1)
-    mean = feat.mean(dim=-1, keepdim=True)
-    std = feat.std(dim=-1, keepdim=True)
-    centered = (feat - mean) / (std + 1e-6)
-    centered = centered.reshape(C, N, H, W).permute(1, 0, 2, 3)
-    return centered
+from mmcls.registry import HOOKS
+from mmcls.structures import ClsDataSample
 
 
 @HOOKS.register_module()
-class RazorVisualizationHook(Hook):
-    """Razor Visualization Hook. Used to visualize training process immediate
-    feature maps.
+class VisualizationHook(Hook):
+    """Classification Visualization Hook. Used to visualize validation and
+    testing prediction results.
 
-    1. If ``show`` is True, it means that only the immediate feature maps are
-        visualized without storing data, so ``vis_backends`` needs to
-        be excluded.
-    2. If ``out_dir`` is specified, it means that the immediate feature maps
-        need to be saved to ``out_dir``. In order to avoid vis_backends
-        also storing data, so ``vis_backends`` needs to be excluded.
-    3. ``vis_backends`` takes effect if the user does not specify ``show``
-        and `out_dir``. You can set ``vis_backends`` to WandbVisBackend or
-        TensorboardVisBackend to store the immediate feature maps in Wandb or
-        Tensorboard.
+    - If ``out_dir`` is specified, all storage backends are ignored
+      and save the image to the ``out_dir``.
+    - If ``show`` is True, plot the result image in a window, please
+      confirm you are able to access the graphical interface.
 
     Args:
-        recorders (dict): All recorders' config.
-        mappings: (Dict[str, Dict]): The mapping between feature names and
-            records.
-        enabled (bool): Whether to draw immediate feature maps. If it is False,
-            it means that no drawing will be done. Defaults to False.
-        interval (int): The interval of visualization. Defaults to 1.
-        show (bool): Whether to display the drawn image. Default to False.
-        wait_time (float): The interval of show (s). Defaults to 0.
-        out_dir (str, optional): directory where painted images
-            will be saved in testing process.
-        file_client_args (dict): Arguments to instantiate a FileClient.
-            See :class:`mmengine.fileio.FileClient` for details.
-            Defaults to ``dict(backend='disk')``.
-        is_overlaid (bool): If `is_overlaid` is True, the final output image
-            will be the weighted sum of img and featmap. Defaults to True.
-        visualization_cfg (dict): Configs for visualization.
-        use_norm (bool): Whether to apply Batch Normalization over the
-            feature map. Defaults to False.
+        enable (bool): Whether to enable this hook. Defaults to False.
+        interval (int): The interval of samples to visualize. Defaults to 5000.
+        show (bool): Whether to display the drawn image. Defaults to False.
+        out_dir (str, optional): directory where painted images will be saved
+            in the testing process. If None, handle with the backends of the
+            visualizer. Defaults to None.
+        **kwargs: other keyword arguments of
+            :meth:`mmcls.visualization.ClsVisualizer.add_datasample`.
     """
 
     def __init__(self,
-                 recorders: dict,
-                 mappings: dict,
-                 enabled: bool = False,
-                 data_idx: Union[int, List] = 0,
-                 interval: int = 1,
+                 enable=False,
+                 interval: int = 5000,
                  show: bool = False,
-                 wait_time: float = 0.1,
                  out_dir: Optional[str] = None,
-                 file_client_args: dict = dict(backend='disk'),
-                 is_overlaid: bool = True,
-                 visualization_cfg=dict(
-                     channel_reduction='pixel_wise_max',
-                     topk=20,
-                     arrangement=(4, 5),
-                     resize_shape=None,
-                     alpha=0.5),
-                 use_norm: bool = False):
-        self.enabled = enabled
+                 **kwargs):
         self._visualizer: Visualizer = Visualizer.get_current_instance()
-        self._visualizer.draw_featmap = modify
-        if isinstance(data_idx, int):
-            data_idx = [data_idx]
-        self.data_idx = data_idx
-        self.show = show
-        if self.show:
-            # No need to think about vis backends.
-            self._visualizer._vis_backends = {}
-            warnings.warn('The show is True, it means that only '
-                          'the prediction results are visualized '
-                          'without storing data, so vis_backends '
-                          'needs to be excluded.')
 
-        self.wait_time = wait_time
-        self.file_client_args = file_client_args.copy()
-        self.file_client = None
-        self.out_dir = out_dir
+        self.enable = enable
         self.interval = interval
-
-        self.is_overlaid = is_overlaid
-        self.visualization_cfg = visualization_cfg
-        self.use_norm = use_norm
-
-        self.recorder_manager = RecorderManager(recorders)
-        self.mappings = mappings
-
-        self._step = 0  # Global step value to record
-
-    @master_only
-    def before_run(self, runner) -> None:
-        model = runner.model
-        if is_model_wrapper(model):
-            self.recorder_manager.initialize(model.module)
+        self.show = show
+        self.out_dir = out_dir
+        if out_dir is not None:
+            self.file_client = FileClient.infer_client(uri=out_dir)
         else:
-            self.recorder_manager.initialize(model)
+            self.file_client = None
 
-    @master_only
-    def before_train(self, runner):
-        if not self.enabled or runner.epoch % self.interval != 0:
+        self.draw_args = {**kwargs, 'show': show}
+
+    def _draw_samples(self,
+                      batch_idx: int,
+                      data_batch: dict,
+                      data_samples: Sequence[ClsDataSample],
+                      step: int = 0) -> None:
+        """Visualize every ``self.interval`` samples from a data batch.
+
+        Args:
+            batch_idx (int): The index of the current batch in the val loop.
+            data_batch (dict): Data from dataloader.
+            outputs (Sequence[:obj:`ClsDataSample`]): Outputs from model.
+            step (int): Global step value to record. Defaults to 0.
+        """
+        if self.enable is False:
             return
-        self._visualize(runner, 'before_run')
 
-    @master_only
-    def after_train_epoch(self, runner) -> None:
-        if not self.enabled or runner.epoch % self.interval != 0:
-            return
-        self._visualize(runner, f'epoch_{runner.epoch}')
+        batch_size = len(data_samples)
+        images = data_batch['inputs']
+        start_idx = batch_size * batch_idx
+        end_idx = start_idx + batch_size
 
-    def _visualize(self, runner, stage):
-        if self.out_dir is not None:
-            self.out_dir = osp.join(runner.work_dir, runner.timestamp,
-                                    self.out_dir)
-            mkdir_or_exist(self.out_dir)
+        # The first index divisible by the interval, after the start index
+        first_sample_id = math.ceil(start_idx / self.interval) * self.interval
 
-        if self.file_client is None:
-            self.file_client = FileClient(**self.file_client_args)
+        for sample_id in range(first_sample_id, end_idx, self.interval):
+            image = images[sample_id - start_idx]
+            image = image.permute(1, 2, 0).cpu().numpy().astype('uint8')
 
-        cfg = runner.cfg.copy()
-        test_pipeline = cfg.test_dataloader.dataset.pipeline
-        new_test_pipeline = []
-        for pipeline in test_pipeline:
-            if pipeline['type'] != 'LoadAnnotations' and pipeline[
-                    'type'] != 'LoadPanopticAnnotations':
-                new_test_pipeline.append(pipeline)
-
-        test_pipeline = Compose(new_test_pipeline)
-        dataset = runner.val_loop.dataloader.dataset
-
-        for idx in self.data_idx:
-            data_info = dataset.get_data_info(idx)
-            img_path = data_info['img_path']
-            data_ = dict(img_path=img_path, img_id=0)
-            data_ = test_pipeline(data_)
-
-            data_['inputs'] = [data_['inputs']]
-            data_['data_samples'] = [data_['data_samples']]
-
-            with torch.no_grad(), self.recorder_manager:
-                runner.model.test_step(data_)
-
-            if self.is_overlaid:
-                img_bytes = self.file_client.get(img_path)
-                overlaid_image = mmcv.imfrombytes(
-                    img_bytes, channel_order='rgb')
+            data_sample = data_samples[sample_id - start_idx]
+            if 'img_path' in data_sample:
+                # osp.basename works on different platforms even file clients.
+                sample_name = osp.basename(data_sample.get('img_path'))
             else:
-                overlaid_image = None
+                sample_name = str(sample_id)
 
-            for name, record in self.mappings.items():
-                recorder = self.recorder_manager.get_recorder(record.recorder)
-                record_idx = getattr(record, 'record_idx', 0)
-                data_idx = getattr(record, 'data_idx', None)
-                feats = recorder.get_record_data(record_idx, data_idx)
-                if isinstance(feats, torch.Tensor):
-                    feats = (feats, )
+            draw_args = self.draw_args
+            if self.out_dir is not None:
+                draw_args['out_file'] = self.file_client.join_path(
+                    self.out_dir, f'{sample_name}_{step}.png')
 
-                for i, feat in enumerate(feats):
-                    if self.use_norm:
-                        feat = norm(feat)
-                    drawn_img = self._visualizer.draw_featmap(
-                        feat[0], overlaid_image, **self.visualization_cfg)
+            self._visualizer.add_datasample(
+                sample_name,
+                image=image,
+                data_sample=data_sample,
+                step=step,
+                **self.draw_args,
+            )
 
-                    out_file = None
-                    if self.out_dir is not None:
-                        out_file = f'{stage}_data_idx_{idx}_{name}_{i}.jpg'
-                        out_file = osp.join(self.out_dir, out_file)
+    def after_val_iter(self, runner: Runner, batch_idx: int, data_batch: dict,
+                       outputs: Sequence[ClsDataSample]) -> None:
+        """Visualize every ``self.interval`` samples during validation.
 
-                    self._visualizer.add_datasample(
-                        f'{stage}_data_idx_{idx}_{name}_{i}',
-                        drawn_img,
-                        draw_gt=False,
-                        draw_pred=False,
-                        show=self.show,
-                        wait_time=0.1,
-                        # TODO: Supported in mmengine's Viusalizer.
-                        out_file=out_file,
-                        step=self._step)
-                    self._step += 1
+        Args:
+            runner (:obj:`Runner`): The runner of the validation process.
+            batch_idx (int): The index of the current batch in the val loop.
+            data_batch (dict): Data from dataloader.
+            outputs (Sequence[:obj:`ClsDataSample`]): Outputs from model.
+        """
+        if isinstance(runner.train_loop, EpochBasedTrainLoop):
+            step = runner.epoch
+        else:
+            step = runner.iter
+
+        self._draw_samples(batch_idx, data_batch, outputs, step=step)
+
+    def after_test_iter(self, runner: Runner, batch_idx: int, data_batch: dict,
+                        outputs: Sequence[ClsDataSample]) -> None:
+        """Visualize every ``self.interval`` samples during test.
+
+        Args:
+            runner (:obj:`Runner`): The runner of the testing process.
+            batch_idx (int): The index of the current batch in the test loop.
+            data_batch (dict): Data from dataloader.
+            outputs (Sequence[:obj:`DetDataSample`]): Outputs from model.
+        """
+        self._draw_samples(batch_idx, data_batch, outputs, step=0)

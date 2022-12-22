@@ -2,7 +2,6 @@
 import os
 import os.path as osp
 import random
-import time
 import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -18,11 +17,11 @@ from torch.utils.data import DataLoader
 from mmrazor.registry import LOOPS, TASK_UTILS
 from mmrazor.structures import Candidates, export_fix_subnet
 from mmrazor.utils import SupportRandomSubnet
-from .utils import CalibrateBNMixin, check_subnet_resources, crossover
+from .utils import check_subnet_resources, crossover
 
 
 @LOOPS.register_module()
-class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
+class EvolutionSearchLoop(EpochBasedTrainLoop):
     """Loop for evolution searching.
 
     Args:
@@ -43,9 +42,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
             Defaults to 25.
         mutate_prob (float): The probability of mutation. Defaults to 0.1.
         crossover_prob (float): The probability of crossover. Defaults to 0.5.
-        calibrate_sample_num (int): The number of images to compute the true
-            average of per-batch mean/variance instead of the running average.
-            Defaults to -1.
         constraints_range (Dict[str, Any]): Constraints to be used for
             screening candidates. Defaults to dict(flops=(0, 330)).
         estimator_cfg (dict, Optional): Used for building a resource estimator.
@@ -72,7 +68,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                  num_crossover: int = 25,
                  mutate_prob: float = 0.1,
                  crossover_prob: float = 0.5,
-                 calibrate_sample_num: int = -1,
                  constraints_range: Dict[str, Any] = dict(flops=(0., 330.)),
                  estimator_cfg: Optional[Dict] = None,
                  predictor_cfg: Optional[Dict] = None,
@@ -94,7 +89,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         self.num_candidates = num_candidates
         self.top_k = top_k
         self.constraints_range = constraints_range
-        self.calibrate_sample_num = calibrate_sample_num
         self.score_key = score_key
         self.num_mutation = num_mutation
         self.num_crossover = num_crossover
@@ -102,7 +96,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         self.crossover_prob = crossover_prob
         self.max_keep_ckpts = max_keep_ckpts
         self.resume_from = resume_from
-        self.fp16 = False
 
         if init_candidates is None:
             self.candidates = Candidates()
@@ -312,39 +305,13 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         if self.runner.rank == 0:
             best_random_subnet = self.top_k_candidates.subnets[0]
             self.model.set_subnet(best_random_subnet)
-
-            best_fix_subnet, sliced_model = \
-                export_fix_subnet(self.model, slice_weight=True)
-
-            timestamp_subnet = time.strftime('%Y%m%d_%H%M', time.localtime())
-            model_name = f'subnet_{timestamp_subnet}.pth'
-            save_path = osp.join(self.runner.work_dir, model_name)
-            torch.save({
-                'state_dict': sliced_model.state_dict(),
-                'meta': {}
-            }, save_path)
-            self.runner.logger.info(f'Subnet checkpoint {model_name} saved in '
-                                    f'{self.runner.work_dir}')
-
+            best_fix_subnet = export_fix_subnet(self.model)
             save_name = 'best_fix_subnet.yaml'
-            best_fix_subnet = self._convert_fix_subnet(best_fix_subnet)
             fileio.dump(best_fix_subnet,
                         osp.join(self.runner.work_dir, save_name))
             self.runner.logger.info(
-                f'Subnet config {save_name} saved in {self.runner.work_dir}.')
-
-            self.runner.logger.info('Search finished.')
-
-    def _convert_fix_subnet(self, fix_subnet: Dict[str, Any]):
-        """Convert the fixed subnet to avoid python typing error."""
-        from mmrazor.utils.typing import DumpChosen
-
-        converted_fix_subnet = dict()
-        for k, v in fix_subnet.items():
-            assert isinstance(v, DumpChosen)
-            converted_fix_subnet[k] = dict(chosen=v.chosen)
-
-        return converted_fix_subnet
+                'Search finished and '
+                f'{save_name} saved in {self.runner.work_dir}.')
 
     @torch.no_grad()
     def _val_candidate(self, use_predictor: bool = False) -> Dict:
@@ -358,9 +325,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
             assert self.predictor is not None
             metrics = self.predictor.predict(self.model)
         else:
-            if self.calibrate_sample_num > 0:
-                self.calibrate_bn_statistics(self.runner.train_dataloader,
-                                             self.calibrate_sample_num)
             self.runner.model.eval()
             for data_batch in self.dataloader:
                 outputs = self.runner.model.val_step(data_batch)

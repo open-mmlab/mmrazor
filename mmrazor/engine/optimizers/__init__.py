@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .optimizer_constructor import SeparateOptimWrapperConstructor
+from .lamb import Lamb
 
-__all__ = ['SeparateOptimWrapperConstructor']
+__all__ = [
+    'Lamb',
+]

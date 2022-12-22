@@ -1,6 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .dump_subnet_hook import DumpSubnetHook
-from .estimate_resources_hook import EstimateResourcesHook
-from .visualization_hook import RazorVisualizationHook
+from .class_num_check_hook import ClassNumCheckHook
+from .precise_bn_hook import PreciseBNHook
+from .visualization_hook import VisualizationHook
 
-__all__ = ['DumpSubnetHook', 'EstimateResourcesHook', 'RazorVisualizationHook']
+__all__ = [
+    'ClassNumCheckHook',
+    'PreciseBNHook',
+    'VisualizationHook',
+]

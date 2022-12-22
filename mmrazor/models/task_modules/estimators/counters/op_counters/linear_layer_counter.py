@@ -18,3 +18,8 @@ class LinearCounter(BaseCounter):
             -1]  # pytorch checks dimensions, so here we don't care much
         module.__flops__ += int(np.prod(input.shape) * output_last_dim)
         module.__params__ += get_model_parameters_number(module)
+
+
+@TASK_UTILS.register_module()
+class DynamicLinearCounter(LinearCounter):
+    pass

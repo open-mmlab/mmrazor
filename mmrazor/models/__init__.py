@@ -1,8 +1,15 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .algorithms import *  # noqa: F401,F403
-from .architectures import *  # noqa: F401,F403
-from .distillers import *  # noqa: F401,F403
+from .backbones import *  # noqa: F401,F403
+from .builder import (BACKBONES, CLASSIFIERS, HEADS, LOSSES, NECKS,
+                      build_backbone, build_classifier, build_head, build_loss,
+                      build_neck)
+from .classifiers import *  # noqa: F401,F403
+from .heads import *  # noqa: F401,F403
 from .losses import *  # noqa: F401,F403
-from .mutables import *  # noqa: F401,F403
-from .mutators import *  # noqa: F401,F403
-from .task_modules import *  # noqa: F401,F403
+from .necks import *  # noqa: F401,F403
+from .utils import *  # noqa: F401,F403
+
+__all__ = [
+    'BACKBONES', 'HEADS', 'NECKS', 'LOSSES', 'CLASSIFIERS', 'build_backbone',
+    'build_head', 'build_neck', 'build_loss', 'build_classifier'
+]

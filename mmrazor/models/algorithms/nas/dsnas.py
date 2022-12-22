@@ -122,7 +122,7 @@ class DSNAS(BaseAlgorithm):
 
         subnet = self.mutator.sample_choices()
         self.mutator.set_choices(subnet)
-        return export_fix_subnet(self)[0]
+        return export_fix_subnet(self)
 
     def fix_subnet(self):
         """Fix subnet when finetuning."""
