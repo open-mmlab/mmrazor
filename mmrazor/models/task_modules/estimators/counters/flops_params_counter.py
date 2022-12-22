@@ -63,7 +63,7 @@ def get_model_flops_params(model,
         flush (bool): same as that in :func:`print`. Default to False.
         ost (stream): same as ``file`` param in :func:`print`.
             Default to sys.stdout.
-
+grad
     Returns:
         tuple[float | str] | dict[str, float]: If `as_strings` is set to True,
             it will return FLOPs and parameter counts in a string format.

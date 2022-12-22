@@ -1,5 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 
+from typing import Union
+
 import torch
 
 from mmrazor.registry import MODELS
@@ -18,7 +20,10 @@ class SimpleMutableChannel(BaseMutableChannel):
 
     def __init__(self, num_channels: int, **kwargs) -> None:
         super().__init__(num_channels, **kwargs)
-        self.mask = torch.ones(num_channels).bool()
+        mask = torch.ones([self.num_channels
+                           ])  # save bool as float for dist training
+        self.register_buffer('mask', mask)
+        self.mask: torch.Tensor
 
     # choice
 
@@ -30,7 +35,7 @@ class SimpleMutableChannel(BaseMutableChannel):
     @current_choice.setter
     def current_choice(self, choice: torch.Tensor):
         """Set current choice."""
-        self.mask = choice.to(self.mask.device).bool()
+        self.mask = choice.to(self.mask.device).float()
 
     @property
     def current_mask(self) -> torch.Tensor:
@@ -39,7 +44,8 @@ class SimpleMutableChannel(BaseMutableChannel):
 
     # basic extension
 
-    def expand_mutable_channel(self, expand_ratio: int) -> DerivedMutable:
+    def expand_mutable_channel(
+            self, expand_ratio: Union[int, float]) -> DerivedMutable:
         """Get a derived SimpleMutableChannel with expanded mask."""
 
         def _expand_mask():
