@@ -5,14 +5,19 @@ from typing import Any, Dict, Generic, List, Optional, Tuple, Type, Union
 from mmengine import fileio
 from torch.nn import Module, ModuleList
 
+from mmrazor.models.architectures.dynamic_ops import DynamicChannelMixin
 from mmrazor.models.mutables import (ChannelUnitType, MutableChannelUnit,
                                      SequentialMutableChannelUnit)
 from mmrazor.models.mutables.mutable_channel.units.channel_unit import \
     ChannelUnit
-from mmrazor.models.task_modules.tracer.channel_analyzer import ChannelAnalyzer
-from mmrazor.registry import MODELS, TASK_UTILS
+from mmrazor.registry import MODELS
+from mmrazor.structures.graph import ModuleGraph
 from ..base_mutator import BaseMutator
 from ..group_mixin import GroupMixin
+
+
+def is_dynamic_op_for_fx_tracer(module, name):
+    return isinstance(module, DynamicChannelMixin)
 
 
 @MODELS.register_module()
@@ -41,10 +46,8 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
         parse_cfg (Dict, optional):
             The config to parse the model.
             Defaults to
-                dict(
-                     type='ChannelAnalyzer',
-                     demo_input=(1, 3, 224, 224),
-                     tracer_type='BackwardTracer')
+                dict( type='BackwardTracer',
+                loss_calculator=dict(type='ImageClassifierPseudoLoss')).
 
         custom_groups (list[list[str]], optional): User-defined search groups.
             All searchable modules that are not in ``custom_group`` will be
@@ -56,8 +59,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
     Note:
         There are three ways used in ChannelMutator to parse a model and
         get MutableChannelUnits.
-        1. Using tracer. It needs parse_cfg to be the config of the
-        ChannelAnalyzer.
+        1. Using tracer. It needs parse_cfg to be the config of a tracer.
         2. Using config. When parse_cfg['type']='Config'. It needs that
         channel_unit_cfg['unit']['xxx_unit_name] has a key 'channels'.
         3. Using the model with pre-defined dynamic-ops and mutablechannels:
@@ -71,9 +73,8 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
                      dict,
                      Type[MutableChannelUnit]] = SequentialMutableChannelUnit,
                  parse_cfg: Dict = dict(
-                     type='ChannelAnalyzer',
-                     demo_input=(1, 3, 224, 224),
-                     tracer_type='BackwardTracer'),
+                     type='BackwardTracer',
+                     loss_calculator=dict(type='ImageClassifierPseudoLoss')),
                  custom_groups: Optional[List[List[str]]] = None,
                  init_cfg: Optional[Dict] = None) -> None:
 
@@ -82,7 +83,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
         # tracer
         if isinstance(parse_cfg, dict):
             assert parse_cfg['type'] in [
-                'ChannelAnalyzer', 'Config', 'Predefined'
+                'RazorFxTracer', 'BackwardTracer', 'Config', 'Predefined'
             ]
         self.parse_cfg = parse_cfg
 
@@ -107,10 +108,10 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
         1. parse the model and get MutableChannelUnits.
         2. call unit.prepare_for_pruning for each unit.
         """
+
         self._name2module = dict(supernet.named_modules())
 
-        if isinstance(self.parse_cfg,
-                      ChannelAnalyzer) or 'Analyzer' in self.parse_cfg['type']:
+        if 'Tracer' in self.parse_cfg['type']:
             units = self._prepare_from_tracer(supernet, self.parse_cfg)
         elif self.parse_cfg['type'] == 'Config':
             units = self._prepare_from_cfg(supernet, self.units_cfg)
@@ -212,7 +213,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
 
         return current_choices
 
-    def sample_choices(self, kind: str = 'random') -> Dict[int, Any]:
+    def sample_choices(self) -> Dict[int, Any]:
         """Sampling by search groups.
 
         The sampling result of the first mutable of each group is the sampling
@@ -221,7 +222,6 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
         Returns:
             Dict[int, Any]: Random choices dict.
         """
-        assert kind == 'random', f'unsupported the {kind} sample method.'
         random_choices = dict()
         for group_id, modules in self.search_groups.items():
             random_choices[group_id] = modules[0].sample_choice()
@@ -319,18 +319,20 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
 
     def _prepare_from_tracer(self, model: Module, parse_cfg: Dict):
         """Initialize units using a tracer."""
-
-        if isinstance(parse_cfg, Dict):
-            tracer: ChannelAnalyzer = TASK_UTILS.build(parse_cfg)
+        if 'num_input_channel' in parse_cfg:
+            num_input_channel = parse_cfg.pop('num_input_channel')
         else:
-            tracer = parse_cfg
-        unit_configs = tracer.analyze(model)
-
+            num_input_channel = 3
+        if self.parse_cfg['type'] == 'BackwardTracer':
+            graph = ModuleGraph.init_from_backward_tracer(model, parse_cfg)
+        elif self.parse_cfg['type'] == 'RazorFxTracer':
+            graph = ModuleGraph.init_from_fx_tracer(model, fx_tracer=parse_cfg)
+        else:
+            raise NotImplementedError()
+        self._graph = graph
         # get ChannelUnits
-        units = [
-            ChannelUnit.init_from_cfg(model, cfg)
-            for cfg in unit_configs.values()
-        ]
+        units = ChannelUnit.init_from_graph(
+            graph, num_input_channel=num_input_channel)
         # convert to MutableChannelUnits
         units = self._convert_channel_unit_to_mutable(units)
         return units
