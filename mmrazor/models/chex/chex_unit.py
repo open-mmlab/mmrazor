@@ -74,16 +74,12 @@ class ChexUnit(L1MutableChannelUnit):
     @property
     def bn_imp(self):
         with torch.no_grad():
-            imp = 0
-            num_layers = 0
             for channel in self.output_related:
                 module = channel.module
                 if isinstance(module, nn.modules.batchnorm._BatchNorm):
-                    imp = imp + module.weight[channel.start:channel.end].abs()
-                    num_layers += 1
-            assert num_layers > 0
-            imp = imp / num_layers
-            return imp
+                    imp = module.weight[channel.start:channel.end].abs()
+                    return imp
+            raise Exception(f'no bn in {self.name}')
 
     @property
     def chex_channels(self):
