@@ -1,5 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Dict, Union
+
 import torch
+from mmengine.config import Config
 from torch.ao.quantization import QConfig
 
 from mmrazor.registry import MODELS
@@ -11,8 +14,19 @@ RequiredArgs = [
 
 
 class QConfigHander():
+    """Convert custom user-friendly qconfig format to torch's QConfig.
 
-    def __init__(self, qconfig):
+    Args:
+        qconfig (Dict | Config): custom user-friendly qconfig format,
+            including setting observers, fakequants and quantization schemes
+            for weights and activations.
+    Note:
+        whether quantization scheme is per-channel or not depends on
+        used observer, if observer support per-channel quantization, its name
+        should contain 'PerChannel'.
+    """
+
+    def __init__(self, qconfig: Union[Dict, Config]):
         if not self.check_qconfig(qconfig):
             raise ValueError('The format of qconfig is incorrect.')
         else:
@@ -20,10 +34,11 @@ class QConfigHander():
             a_observer = MODELS.get(qconfig['a_observer']['type'])
             w_is_per_channel = False
             a_is_per_channel = False
+            # import pdb;pdb.set_trace()
             if 'PerChannel' in w_observer.__name__:
                 w_is_per_channel = True
             if 'PerChannel' in a_observer.__name__:
-                a_is_per_channel = False
+                a_is_per_channel = True
             self.w_qscheme = QSchemeHander(
                 is_per_channel=w_is_per_channel, **qconfig['w_qscheme'])
             self.a_qscheme = QSchemeHander(
@@ -39,10 +54,13 @@ class QConfigHander():
             self.a_fake_quant = a_fake_quant.with_args(
                 observer=a_observer, **a_observer_kwargs)
 
-    def check_qconfig(self, qconfig):
+    @staticmethod
+    def check_qconfig(qconfig: Union[Dict, Config]):
+        """Check whether the passed qconfig's format meets requirement."""
         is_pass = True
         for arg in RequiredArgs:
-            if isinstance(qconfig[arg], dict) and arg in qconfig.keys():
+            val = qconfig.get(arg, None)
+            if isinstance(val, dict) and arg in qconfig.keys():
                 continue
             else:
                 is_pass = False
@@ -50,30 +68,33 @@ class QConfigHander():
         return is_pass
 
     def convert(self):
+        """Generate torch's QConfig with built fake_quants."""
         torch_qconfig = QConfig(
             weight=self.w_fake_quant, activation=self.a_fake_quant)
         return torch_qconfig
 
 
 class QSchemeHander(object):
-    """Custom QScheme. Refer to:
-    https://github.com/pytorch/pytorch/blob/master/c10/core/QScheme.h.
+    """Convert the qscheme of custom user-friendly qconfig to args needed in
+    observers.
 
     Args:
-        bit (int, optional): Bit number. Defaults to 8.
-        is_symmetry (bool, optional): Is symmetry quantization or not. Defaults
-            to True.
-        is_per_channel (bool, optional): Is per-channel quantization or not.
+        qdtype (str): Quantization dtype. It should is 'quint8' or 'qint8',
+            and should be supported by the deploy backend. Defaults to 'quint8'
+        bit (int): Quantization bit number. Defaults to 8.
+        is_symmetry (bool): Is symmetry quantization or not. Defaults to True.
+        is_per_channel (bool): Is per-channel quantization or not.
             Defaults to False.
     """
 
     def __init__(self,
-                 qdtype='quint8',
-                 bit=8,
-                 is_symmetry=True,
-                 is_per_channel=False,
+                 qdtype: str = 'quint8',
+                 bit: int = 8,
+                 is_symmetry: bool = True,
+                 is_per_channel: bool = False,
                  **kwargs):
-        assert qdtype in ('quint8', 'qint8')
+        assert qdtype in ('quint8', 'qint8'), \
+            'qdtype is incorrect, it should be quint8 or qint8.'
         self.qdtype = qdtype
         self.bit = bit
         self.is_symmetry = is_symmetry
@@ -93,6 +114,7 @@ class QSchemeHander(object):
         self.kwargs = kwargs
 
     def to_observer_params(self):
+        """Generate the args needed in observers."""
         if self.qdtype == 'quint8':
             quant_min = 0
             quant_max = 2**self.bit - 1
@@ -118,6 +140,7 @@ class QSchemeHander(object):
         return all_para
 
     def __str__(self):
+        """Print generated args for observers."""
         return f'dtype: {self.dtype} / bit: {self.bit} / is_symmetry: {self.is_symmetry} / \
                 is_per_channel: {self.is_per_channel} \
                 / extra_kwargs: {self.kwargs}'
