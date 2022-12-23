@@ -87,3 +87,9 @@ class ChexUnit(L1MutableChannelUnit):
             module = channel.module
             if isinstance(module, ChexMixin):
                 yield channel
+
+    @property
+    def is_mutable(self) -> bool:
+        base_is_mutable = super().is_mutable
+        only_one_chex_layer = len(list(self.chex_channels)) == 1
+        return base_is_mutable and only_one_chex_layer
