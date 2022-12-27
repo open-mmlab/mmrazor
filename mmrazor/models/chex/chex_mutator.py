@@ -45,16 +45,17 @@ class ChexMutator(ChannelMutator):
             unit: ChexUnit
             unit.grow(choices[unit.name] - unit.current_choice)
 
-    def _get_grow_choices(self, growth_choice):
-        choices = {}
-        for unit in self.mutable_units:
-            unit: ChexUnit
-            choices[unit.name] = min(
-                unit.num_channels,
-                (unit.current_choice + int(unit.num_channels * growth_choice)))
+    def _get_grow_choices(self, growth_ratio):
+        choices = self._get_choices_by_bn_imp(self.channel_ratio +
+                                              growth_ratio)
+
         return choices
 
     def _get_prune_choices(self):
+        return self._get_choices_by_bn_imp(self.channel_ratio)
+
+    def _get_choices_by_bn_imp(self, remain_ratio=0.5):
+
         choices = {}
         bn_imps = {}
         for unit in self.mutable_units:
@@ -63,7 +64,7 @@ class ChexMutator(ChannelMutator):
         bn_imp: torch.Tensor = torch.cat(list(bn_imps.values()), dim=0)
 
         num_total_channel = len(bn_imp)
-        num_min_remained = int(self.channel_ratio * num_total_channel)
+        num_min_remained = int(remain_ratio * num_total_channel)
         threshold = bn_imp.topk(num_min_remained)[0][-1]
 
         num_remained = 0
