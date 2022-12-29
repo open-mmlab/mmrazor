@@ -16,6 +16,7 @@ from mmpose.testing._utils import get_packed_inputs
 
 # heatmap heads
 from mmpose.models.heads import HeatmapHead, MSPNHead, CPMHead, SimCCHead, ViPNASHead
+
 # regression heads
 from mmpose.models.heads import DSNTHead, IntegralRegressionHead, RegressionHead, RLEHead
 
@@ -123,25 +124,3 @@ def demo_mmpose_inputs(model, for_training=False, batch_size=1):
 
     return mm_inputs
 
-
-# def _demo_mmpose_inputs(input_shape=(1, 3, 192, 256)):
-#     """Create a superset of inputs needed to run test or train batches.
-
-#     Args:
-#         input_shape (tuple):
-#             input batch dimensions
-
-#         num_classes (int):
-#             number of semantic classes
-#     """
-#     imgs = torch.randn(*input_shape)
-
-#     data = get_packed_inputs(2, img_shape=[256, 198])
-#     data_samples = [d['data_sample'] for d in data]
-
-#     mm_inputs = {
-#         'inputs': torch.FloatTensor(imgs),
-#         'data_samples': data_samples
-#         }
-
-#     return mm_inputs

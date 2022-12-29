@@ -646,10 +646,8 @@ class MMSegModelLibrary(MMModelLibrary):
         config['_scope_'] = 'mmseg'
         return config
 
-# New
 
 class MMPoseModelLibrary(MMModelLibrary):
-    """ New """
     default_includes: List = [
         'hand',
         'face',

@@ -33,7 +33,6 @@ class FxPassedModelManager(PassedModelManager):
     _mmseg_library = None
     _mmdet_library = None
 
-    # New
     _mmpose_library = None
 
     def libraries(self, full=False):
@@ -44,7 +43,6 @@ class FxPassedModelManager(PassedModelManager):
                 self.__class__.mmcls_library(),
                 self.__class__.mmseg_library(),
                 self.__class__.mmdet_library(),
-                # New
                 self.__class__.mmpose_library(),
             ]
         else:
@@ -309,11 +307,9 @@ class FxPassedModelManager(PassedModelManager):
             cls._mmseg_library = MMSegModelLibrary(include=include)
         return cls._mmseg_library
 
-    # New
 
     @classmethod
     def mmpose_library(cls):
-        # New
         mmpose_include = [
             'hand',
             'face',
@@ -336,8 +332,6 @@ class BackwardPassedModelManager(PassedModelManager):
     _mmcls_library = None
     _mmseg_library = None
     _mmdet_library = None
-
-    # New
     _mmpose_library = None
 
 
@@ -349,7 +343,6 @@ class BackwardPassedModelManager(PassedModelManager):
                 self.__class__.mmcls_library(),
                 self.__class__.mmseg_library(),
                 self.__class__.mmdet_library(),
-                # New
                 self.__class__.mmpose_library(),
             ]
         else:
@@ -509,7 +502,6 @@ class BackwardPassedModelManager(PassedModelManager):
             cls._mmseg_library = MMSegModelLibrary(include=include)
         return cls._mmseg_library
 
-    # New
     @classmethod
     def mmpose_library(cls):
         mmpose_include = [
