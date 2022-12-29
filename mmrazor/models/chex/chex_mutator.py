@@ -23,6 +23,13 @@ class ChexMutator(ChannelMutator):
         super().__init__(channel_unit_cfg, parse_cfg, custom_groups, init_cfg)
         self.channel_ratio = channel_ratio  # number of channels to preserve
 
+    def init_channel_mask(self, ratio=0.5):
+        """Prune the model at the beginning of training.
+        """
+        with torch.no_grad():
+            for unit in self.mutable_units:
+                unit.current_choice = ratio
+
     def prune(self):
         """Prune the model.
 
@@ -55,7 +62,6 @@ class ChexMutator(ChannelMutator):
         return self._get_choices_by_bn_imp(self.channel_ratio)
 
     def _get_choices_by_bn_imp(self, remain_ratio=0.5):
-
         choices = {}
         bn_imps = {}
         for unit in self.mutable_units:

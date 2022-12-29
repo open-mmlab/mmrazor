@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-
+import numpy as np
 import torch
 import torch.nn as nn
 from mmengine.model.utils import _BatchNormXd
