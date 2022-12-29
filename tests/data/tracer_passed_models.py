@@ -315,12 +315,11 @@ class FxPassedModelManager(PassedModelManager):
     def mmpose_library(cls):
         # New
         mmpose_include = [
-            # 'aic',
-            'coco',
-            # 'crowdpose',
-            # 'jhmdb',
-            # 'mpii',
-            # 'posetrack18',
+            'hand',
+            'face',
+            'wholebody',
+            'body',
+            'animal',
         ]
         if cls._mmpose_library is None:
             cls._mmpose_library = MMPoseModelLibrary(include=mmpose_include)
@@ -514,12 +513,11 @@ class BackwardPassedModelManager(PassedModelManager):
     @classmethod
     def mmpose_library(cls):
         mmpose_include = [
-            'coco',
-            # 'jhmdb',
-            # 'posetrack',
-            # 'mpii',
-            # 'crowdpose',
-            # 'aic',
+            'hand',
+            'face',
+            'wholebody',
+            'body',
+            'animal',
         ]
 
         if cls._mmpose_library is None:

@@ -651,14 +651,13 @@ class MMSegModelLibrary(MMModelLibrary):
 class MMPoseModelLibrary(MMModelLibrary):
     """ New """
     default_includes: List = [
-        'coco',
-        'jhmdb',
-        'posetrack',
-        'mpii',
-        'crowdpose',
-        'aic',
+        'hand',
+        'face',
+        'wholebody',
+        'body',
+        'animal',
     ]
-    base_config_path = '/body_2d_keypoint/topdown_heatmap/coco/'
+    base_config_path = '/'
     repo = 'mmpose'
 
     def __init__(self, include=default_includes, exclude=[]) -> None:

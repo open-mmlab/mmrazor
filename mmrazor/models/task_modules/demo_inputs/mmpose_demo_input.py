@@ -46,7 +46,7 @@ def demo_mmpose_inputs(model, for_training=False, batch_size=1):
             inputs['data_sample'] for inputs in get_packed_inputs(
                 batch_size=batch_size,
                 num_instances=1,
-                num_keypoints=17,
+                num_keypoints=model.head.out_channels,
                 heatmap_size=model.head.decoder.heatmap_size,
                 with_heatmap=True,
                 with_reg_label=False,
@@ -57,7 +57,7 @@ def demo_mmpose_inputs(model, for_training=False, batch_size=1):
             inputs['data_sample'] for inputs in get_packed_inputs(
                 batch_size=batch_size,
                 num_instances=1,
-                num_keypoints=17,
+                num_keypoints=model.head.out_channels,
                 heatmap_size=model.head.decoder.heatmap_size[::-1],
                 with_heatmap=True,
                 with_reg_label=False)
@@ -66,17 +66,48 @@ def demo_mmpose_inputs(model, for_training=False, batch_size=1):
         batch_data_samples = [
             inputs['data_sample'] for inputs in get_packed_inputs(
                 batch_size,
-                simcc_split_ratio=2.0,
-                with_simcc_label=False)
+                num_keypoints=model.head.out_channels,
+                simcc_split_ratio=model.head.decoder.simcc_split_ratio,
+                input_size=model.head.decoder.input_size,
+                with_simcc_label=True)
         ]
     elif isinstance(model.head, ViPNASHead):
         batch_data_samples = [
-            inputs['data_sample'] for inputs in get_packed_inputs(batch_size)
+            inputs['data_sample'] for inputs in get_packed_inputs(
+                batch_size,
+                num_keypoints=model.head.out_channels,)
         ]
+    elif isinstance(model.head, DSNTHead):
+        batch_data_samples = [
+            inputs['data_sample'] for inputs in get_packed_inputs(
+                batch_size,
+                num_keypoints=model.head.num_joints,
+                with_reg_label=True)
+        ]
+    elif isinstance(model.head, IntegralRegressionHead):
+        batch_data_samples = [
+            inputs['data_sample'] for inputs in get_packed_inputs(
+                batch_size,
+                num_keypoints=model.head.num_joints,
+                with_reg_label=True)
+        ]
+    elif isinstance(model.head, RegressionHead):
+        batch_data_samples = [
+            inputs['data_sample'] for inputs in get_packed_inputs(
+                batch_size,
+                num_keypoints=model.head.num_joints,
+                with_reg_label=True)
+        ]
+    elif isinstance(model.head, RLEHead):
+        batch_data_samples = [
+            inputs['data_sample'] for inputs in get_packed_inputs(
+                batch_size,
+                num_keypoints=model.head.num_joints,
+                with_reg_label=True)
+        ]        
+    else:
+        raise AssertionError('Head Type is Not Predefined')
 
-    # convert to cuda Tensor if applicabled
-    # if torch.cuda.is_available():
-    #     segmentor = segmentor.cuda()
 
     mm_inputs = {
         'inputs': torch.FloatTensor(imgs),
