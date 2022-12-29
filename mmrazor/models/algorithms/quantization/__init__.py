@@ -1,4 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .base import MMArchitectureQuant, MMArchitectureQuantDDP
+from .mm_architecture import MMArchitectureQuant, MMArchitectureQuantDDP
 
 __all__ = ['MMArchitectureQuant', 'MMArchitectureQuantDDP']
