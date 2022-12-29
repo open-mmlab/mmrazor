@@ -198,30 +198,44 @@ class PTQLoop(TestLoop):
                  runner,
                  dataloader: Union[DataLoader, Dict],
                  evaluator: Union[Evaluator, Dict, List],
+                 calibrate_dataloader: Union[DataLoader, Dict],
+                 calibrate_steps=32,
                  fp16: bool = False):
         super().__init__(runner, dataloader, evaluator, fp16)
+        if isinstance(calibrate_dataloader, dict):
+            # Determine whether or not different ranks use different seed.
+            diff_rank_seed = runner._randomness_cfg.get(
+                'diff_rank_seed', False)
+            self.dataloader = runner.build_dataloader(
+                dataloader, seed=runner.seed, diff_rank_seed=diff_rank_seed)
+        else:
+            self.dataloader = dataloader
+
+        self.calibrate_steps = calibrate_steps
 
     def run(self) -> dict:
         """Launch test."""
         self.runner.call_hook('before_test')
         self.runner.call_hook('before_test_epoch')
+
         self.runner.model.eval()
         self.runner.model.apply(enable_fake_quant)
         self.runner.model.apply(enable_observer)
 
         for idx, data_batch in enumerate(self.dataloader):
+            if idx == self.calibrate_steps:
+                break
             self.run_iter(idx, data_batch)
 
-        self.runner.call_hook('after_test_epoch', metrics=None)
-        self.runner.call_hook('after_test')
-
-        # todo: hard code to save checkpoint on disk
         self.runner.save_checkpoint(
             self.runner.work_dir,
-            'checkpoint_after_ptq.pth',
+            'model_ptq.pth',
             file_client_args=None,
             save_optimizer=False,
             save_param_scheduler=False)
+
+        self.runner.call_hook('after_test_epoch', metrics=None)
+        self.runner.call_hook('after_test')
 
         self.runner.model.apply(enable_fake_quant)
         self.runner.model.apply(disable_observer)

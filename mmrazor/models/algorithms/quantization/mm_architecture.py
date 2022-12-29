@@ -39,13 +39,11 @@ class MMArchitectureQuant(BaseAlgorithm):
             :class:`BaseModule`.
     """
 
-    
-
     def __init__(self,
                  architecture,
                  quantizer,
                  data_preprocessor=None,
-                 forward_modes = ('tensor', 'predict', 'loss'),
+                 forward_modes=('tensor', 'predict', 'loss'),
                  float_checkpoint: Optional[str] = None,
                  input_shapes=(1, 3, 224, 224),
                  init_cfg=None):
@@ -58,15 +56,16 @@ class MMArchitectureQuant(BaseAlgorithm):
         if float_checkpoint:
             _ = load_checkpoint(self.architecture, float_checkpoint)
             self.architecture._is_init = True
+
         self.quantizer = MODELS.build(quantizer)
         self.input_shapes = input_shapes
         self.forward_modes = forward_modes
 
         self.qmodels = self._build_qmodels(self.architecture)
 
-        self.sync_param('tensor')
+        self.sync_qparams('predict')
 
-    def sync_param(self, src_mode):
+    def sync_qparams(self, src_mode):
 
         def traverse(module, prefix):
             for name, child in module._modules.items():
@@ -106,20 +105,19 @@ class MMArchitectureQuant(BaseAlgorithm):
 
         qmodels = nn.ModuleDict()
 
-        self.quantizer._swap_ff_with_fxff(model)
+        self.quantizer.swap_ff_with_fxff(model)
         tracer = self.quantizer.tracer
 
         for mode in self.forward_modes:
             concrete_args = {'mode': mode}
             traced_graph = tracer.trace(model, concrete_args=concrete_args)
-
             graph_mopdule = build_graphmodule(model, traced_graph)
             observed_module = self.quantizer.prepare(model, graph_mopdule)
-
             qmodels[mode] = observed_module
-
-        dummy_input = torch.randn(self.input_shapes)
-        qmodels['predict'](dummy_input, None, 'predict')
+        # import pdb
+        # pdb.set_trace()
+        # dummy_input = torch.randn(self.input_shapes)
+        # qmodels['predict'](dummy_input, None, 'predict')
 
         return qmodels
 
@@ -136,7 +134,7 @@ class MMArchitectureQuant(BaseAlgorithm):
 
     def calibrate_step(self, data):
         data = self.data_preprocessor(data, False)
-        return self._run_forward(data, mode='tensor')
+        return self._run_forward(data, mode='predict')
 
 
 @MODEL_WRAPPERS.register_module()
@@ -159,5 +157,5 @@ class MMArchitectureQuantDDP(MMDistributedDataParallel):
     def calibrate_step(self, data):
         return self.module.calibrate_step(data)
 
-    def sync_param(self, src):
-        self.module.sync_param(src)
+    def sync_qparams(self, src):
+        self.module.sync_qparams(src)

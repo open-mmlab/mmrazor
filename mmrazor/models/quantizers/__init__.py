@@ -1,6 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .base import CustomQuantizer
-from .openvino_quantizer import OpenvinoQuantizer
-from .trt_quantizer import TensorRTQuantizer
+from .academic_quantizer import AcademicQuantizer
+from .base import BaseQuantizer
+from .native_quantizer import NativeQuantizer
+from .openvino_quantizer import OpenVINOQuantizer
+from .tensorrt_quantizer import TensorRTQuantizer
 
-__all__ = ['CustomQuantizer', 'TensorRTQuantizer', 'OpenvinoQuantizer']
+__all__ = [
+    'BaseQuantizer', 'AcademicQuantizer', 'NativeQuantizer',
+    'TensorRTQuantizer', 'OpenVINOQuantizer'
+]

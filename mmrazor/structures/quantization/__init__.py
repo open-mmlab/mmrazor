@@ -1,5 +1,3 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .backend_default_qconfigs import CheckArgs, DefaultQconfigs, SupportQtypes
-from .qscheme import QuantizeScheme
-
-__all__ = ['QuantizeScheme', 'DefaultQconfigs', 'SupportQtypes', 'CheckArgs']
+from .backend_config import *  # noqa: F401,F403
+from .qconfig import *  # noqa: F401,F403
