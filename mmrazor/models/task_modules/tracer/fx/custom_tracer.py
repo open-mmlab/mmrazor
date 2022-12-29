@@ -13,6 +13,8 @@ from torch.fx._symbolic_trace import (Graph, _autowrap_check,
                                       _patch_wrapped_functions, _Patcher)
 from torch.fx.proxy import Proxy
 
+from mmrazor.registry import TASK_UTILS
+
 _orig_module_call: Callable = torch.nn.Module.__call__
 _orig_module_getattr: Callable = torch.nn.Module.__getattr__
 
@@ -155,8 +157,8 @@ def _prepare_module_dict(model: nn.Module, fx_graph: torch.fx.Graph):
     return module_dict
 
 
-def build_graphmodule(model: nn.Module, 
-                      fx_graph: torch.fx.Graph, 
+def build_graphmodule(model: nn.Module,
+                      fx_graph: torch.fx.Graph,
                       name: str = 'GraphModule'):
     modules = dict(model.named_modules())
     module_dict = _prepare_module_dict(model, fx_graph)
@@ -164,6 +166,7 @@ def build_graphmodule(model: nn.Module,
     return GraphModule(modules, fx_graph, name)
 
 
+@TASK_UTILS.register_module()
 class CustomTracer(QuantizationTracer):
 
     def __init__(self,
@@ -308,7 +311,7 @@ class CustomTracer(QuantizationTracer):
         @functools.wraps(_orig_module_getattr)
         def module_getattr_wrapper(mod, attr):
             attr_val = _orig_module_getattr(mod, attr)
-            return self._module_getattr(attr, attr_val, parameter_proxy_cache)
+            return self.getattr(attr, attr_val, parameter_proxy_cache)
 
         @functools.wraps(_orig_module_call)
         def module_call_wrapper(mod, *args, **kwargs):

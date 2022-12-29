@@ -4,8 +4,9 @@ from .misc import add_prefix
 from .optim_wrapper import reinitialize_optim_wrapper_count_status
 from .parse_values import parse_values
 from .utils import get_module_device, set_requires_grad
+from .quantization_util import str2class
 
 __all__ = [
-    'add_prefix', 'reinitialize_optim_wrapper_count_status', 'make_divisible',
-    'get_module_device', 'set_requires_grad', 'parse_values'
+    'make_divisible', 'add_prefix', 'reinitialize_optim_wrapper_count_status',
+    'str2class', 'get_module_device', 'set_requires_grad', 'parse_values'
 ]
