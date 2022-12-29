@@ -43,7 +43,13 @@ class ChexAlgorithm(BaseAlgorithm):
 
     def forward(self, inputs, data_samples=None, mode: str = 'tensor'):
         if self.training:  #
-            if RuntimeInfo.epoch() % self.delta_t == 0 and \
+            if RuntimeInfo.epoch() == 0 and RuntimeInfo.iter_by_epoch() == 0:
+                with torch.no_grad():
+                    init_ratio = self.mutator.channel_ratio - self.init_growth_rate
+                    self.mutator.init_channel_mask(init_ratio)
+                    print_log(f'init channel mask with {init_ratio}')
+                    self.log_choices()
+            elif RuntimeInfo.epoch() % self.delta_t == 0 and \
                  RuntimeInfo.epoch() < self.total_steps and \
                     RuntimeInfo.iter_by_epoch() == 0:
                 with torch.no_grad():
