@@ -16,10 +16,15 @@ architecture.update({
 architecture.update({
     'head': 
         dict(
-            type='MultiLabelLinearClsHead',
+            type='LinearClsHead',
             num_classes=1000,
             in_channels=2048,
-            loss=dict(type='CrossEntropyLoss', use_soft=True, loss_weight=1.0),
+            loss=dict(
+                type='LabelSmoothLoss',
+                label_smooth_val=0.1,
+                num_classes=1000,
+                reduction='mean',
+                loss_weight=1.0),
             topk=(1, 5))
 })
 
@@ -71,5 +76,8 @@ param_scheduler = [
 # train setting
 train_cfg = dict(by_epoch=True, max_epochs=250, val_interval=1)
 
-# configure default hooks
-default_hooks = dict(logger=dict(type='LoggerHook', interval=10))
+default_hooks = dict(
+    # TODO: reset it to 100.
+    # print log every 10 iterations to quickly debug.
+    logger=dict(type='LoggerHook', interval=10)
+)
