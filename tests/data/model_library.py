@@ -658,7 +658,7 @@ class MMPoseModelLibrary(MMModelLibrary):
         'crowdpose',
         'aic',
     ]
-    base_config_path = '/body_2d_keypoint/topdown_heatmap/'
+    base_config_path = '/body_2d_keypoint/topdown_heatmap/coco/'
     repo = 'mmpose'
 
     def __init__(self, include=default_includes, exclude=[]) -> None:
@@ -671,7 +671,6 @@ class MMPoseModelLibrary(MMModelLibrary):
 
 
 # tools
-
 
 def revert_sync_batchnorm(module):
     # this is very similar to the function that it is trying to revert:

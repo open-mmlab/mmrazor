@@ -1,6 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch.nn as nn
 from mmengine.model import BaseModel
+from collections import OrderedDict
+
 
 from mmrazor.registry import TASK_UTILS
 from mmrazor.utils import get_placeholder
@@ -30,21 +32,32 @@ try:
 except Exception:
     TopdownPoseEstimator = get_placeholder('mmpose')
 
-default_demo_input_class = {
-    BaseDetector: DefaultMMDetDemoInput,
-    ImageClassifier: DefaultMMClsDemoInput,
-    BaseSegmentor: DefaultMMSegDemoInput,
-    BaseModel: DefaultMMDemoInput,
-    nn.Module: BaseDemoInput,
-    # New
-    TopdownPoseEstimator: DefaultMMPoseDemoInput,
-}
+# default_demo_input_class = {
+#     BaseDetector: DefaultMMDetDemoInput,
+#     ImageClassifier: DefaultMMClsDemoInput,
+#     BaseSegmentor: DefaultMMSegDemoInput,
+#     BaseModel: DefaultMMDemoInput,
+#     nn.Module: BaseDemoInput,
+#     # New
+#     TopdownPoseEstimator: DefaultMMPoseDemoInput,
+# }
+
+default_demo_input_class = OrderedDict([
+    (BaseDetector, DefaultMMDetDemoInput),
+    (ImageClassifier, DefaultMMClsDemoInput),
+    (BaseSegmentor, DefaultMMSegDemoInput),
+    (TopdownPoseEstimator, DefaultMMPoseDemoInput),
+    (BaseModel, DefaultMMDemoInput),
+    (nn.Module, BaseDemoInput),
+])
+
 default_demo_input_class_for_scope = {
     'mmcls': DefaultMMClsDemoInput,
     'mmdet': DefaultMMDetDemoInput,
     'mmseg': DefaultMMSegDemoInput,
     'mmrotate': DefaultMMRotateDemoInput,
     'mmyolo': DefaultMMYoloDemoInput,
+    'mmpose': DefaultMMPoseDemoInput,
     'torchvision': BaseDemoInput,
 }
 

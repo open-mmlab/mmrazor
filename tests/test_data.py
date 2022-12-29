@@ -45,6 +45,8 @@ class TestModelLibrary(unittest.TestCase):
         if not TEST_DATA:
             self.skipTest('not test data to save time.')
         library = MMSegModelLibrary()
+        print(library.short_names())
+
         self.assertTrue(library.is_default_includes_cover_all_models())
 
     # New

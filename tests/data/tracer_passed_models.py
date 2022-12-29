@@ -54,24 +54,24 @@ class FxPassedModelManager(PassedModelManager):
     def default_library(cls):
         if cls._default_library is None:
             cls._default_library = DefaultModelLibrary(include=[
-                'SingleLineModel',
-                'ResBlock',
-                'AddCatModel',
-                'ConcatModel',
-                'MultiConcatModel',
-                'MultiConcatModel2',
-                'GroupWiseConvModel',
-                'Xmodel',
-                'MultipleUseModel',
-                'Icep',
-                'ExpandLineModel',
-                'MultiBindModel',
-                'DwConvModel',
-                'ConvAttnModel',
+                # 'SingleLineModel',
+                # 'ResBlock',
+                # 'AddCatModel',
+                # 'ConcatModel',
+                # 'MultiConcatModel',
+                # 'MultiConcatModel2',
+                # 'GroupWiseConvModel',
+                # 'Xmodel',
+                # 'MultipleUseModel',
+                # 'Icep',
+                # 'ExpandLineModel',
+                # 'MultiBindModel',
+                # 'DwConvModel',
+                # 'ConvAttnModel',
                 # mm models
-                'resnet',
-                'pspnet',
-                'yolo'
+                # 'resnet',
+                # 'pspnet',
+                # 'yolo'
             ],with_mm_models=True)
 
         return cls._default_library
@@ -315,12 +315,12 @@ class FxPassedModelManager(PassedModelManager):
     def mmpose_library(cls):
         # New
         mmpose_include = [
-            'aic',
+            # 'aic',
             'coco',
-            'crowdpose',
-            'jhmdb',
-            'mpii',
-            'posetrack18',
+            # 'crowdpose',
+            # 'jhmdb',
+            # 'mpii',
+            # 'posetrack18',
         ]
         if cls._mmpose_library is None:
             cls._mmpose_library = MMPoseModelLibrary(include=mmpose_include)
@@ -515,11 +515,11 @@ class BackwardPassedModelManager(PassedModelManager):
     def mmpose_library(cls):
         mmpose_include = [
             'coco',
-            'jhmdb',
-            'posetrack',
-            'mpii',
-            'crowdpose',
-            'aic',
+            # 'jhmdb',
+            # 'posetrack',
+            # 'mpii',
+            # 'crowdpose',
+            # 'aic',
         ]
 
         if cls._mmpose_library is None:
