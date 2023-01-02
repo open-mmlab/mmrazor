@@ -76,8 +76,11 @@ class DMCPBatchNorm2dCounter(BNCounter):
         """Calculate FLOPs and params based on the size of input & output."""
         input = input[0]
         B, C, H, W = input.shape
-        if hasattr(module, '_traceable_choice'):
-            C = module._traceable_choice()
+
+        mutable_channel = list(module.mutable_attrs['num_features'].mutable_channels.values())
+        if hasattr(mutable_channel[0], 'traceable_choice'):
+            C = mutable_channel[0].traceable_choice
+
         batch_flops = B * C * H * W
         if getattr(module, 'affine', False):
             batch_flops *= 2

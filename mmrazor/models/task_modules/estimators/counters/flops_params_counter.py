@@ -63,7 +63,7 @@ def get_model_flops_params(model,
         flush (bool): same as that in :func:`print`. Default to False.
         ost (stream): same as ``file`` param in :func:`print`.
             Default to sys.stdout.
-grad
+
     Returns:
         tuple[float | str] | dict[str, float]: If `as_strings` is set to True,
             it will return FLOPs and parameter counts in a string format.
@@ -107,6 +107,7 @@ grad
             params_count,
             ost=ost,
             flush=flush)
+
     if units is not None:
         flops_count = params_units_convert(flops_count, units['flops'])
         params_count = params_units_convert(params_count, units['params'])
@@ -171,8 +172,7 @@ def params_units_convert(num_params, units='M', precision=3):
         >>> params_units_convert(3e-9)
         '3e-09'
     """
-    if getattr(num_params, 'requires_grad', None):
-        return num_params
+
     if units == 'G':
         return round(num_params / 10.**9, precision)
     elif units == 'M':

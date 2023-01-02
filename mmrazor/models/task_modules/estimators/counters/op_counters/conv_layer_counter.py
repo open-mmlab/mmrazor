@@ -76,8 +76,9 @@ class DynamicConv2dCounter(ConvCounter):
 
         kernel_dims = list(module.kernel_size)
 
-        if hasattr(module, '_traceable_choice'):
-            out_channels = module._traceable_choice()
+        mutable_channel = list(module.mutable_attrs['out_channels'].mutable_channels.values())
+        if hasattr(mutable_channel[0], 'traceable_choice'):
+            out_channels = mutable_channel[0].traceable_choice
         else:
             out_channels = module.mutable_attrs['out_channels'].activated_channels
         in_channels = module.mutable_attrs['in_channels'].activated_channels

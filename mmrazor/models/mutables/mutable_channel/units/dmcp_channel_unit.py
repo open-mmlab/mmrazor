@@ -9,14 +9,6 @@ from ..mutable_channel_container import MutableChannelContainer
 from .sequential_mutable_channel_unit import SequentialMutableChannelUnit
 
 
-class tracable_choice():
-    def __init__(self, choice = None) -> None:
-        self.choice = choice
-    
-    def __call__(self):
-        return self.choice
-
-
 @MODELS.register_module()
 class DMCPChannelUnit(SequentialMutableChannelUnit):
     """``DMCPChannelUnit`` is for supernet DMCP and based on
@@ -44,7 +36,6 @@ class DMCPChannelUnit(SequentialMutableChannelUnit):
                  min_ratio: float = 0.5) -> None:
         super().__init__(num_channels, choice_mode, divisor, min_value,
                          min_ratio)
-        self._traceable_choice = tracable_choice()
 
     def prepare_for_pruning(self, model: nn.Module):
         """In ``DMCPChannelGroup`` nn.BatchNorm2d is replaced with MixedBatchNorm2d."""

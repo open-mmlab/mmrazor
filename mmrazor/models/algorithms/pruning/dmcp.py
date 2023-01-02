@@ -1,10 +1,12 @@
 import os
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import random
 from typing_extensions import Self
 import torch
-from mmengine import MMLogger
+import yaml
+
+from mmengine import MessageHub, MMLogger
 from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper
 from mmengine.structures import BaseDataElement
@@ -17,14 +19,12 @@ from mmrazor.registry import MODEL_WRAPPERS, MODELS
 from mmrazor.utils import ValidFixMutable
 from mmrazor.structures.subnet.fix_subnet import _dynamic_to_static
 from ..base import BaseAlgorithm
+from ...task_modules.estimators import ResourceEstimator
 
-VALID_MUTATOR_TYPE = Union[BaseMutator, Dict]
-VALID_MUTATORS_TYPE = Dict[str, Union[BaseMutator, Dict]]
-VALID_DISTILLER_TYPE = Union[ConfigurableDistiller, Dict]
+VALID_DISTILLER_TYPE = Union[ConfigurableDistiller, Dict, Any]
 
 from mmrazor.models.mutators import DMCPChannelMutator
 from mmrazor.models.mutators import ChannelMutator
-from .ite_prune_algorithm import ItePruneAlgorithm, ItePruneConfigManager
 
 LossResults = Dict[str, torch.Tensor]
 TensorResults = Union[Tuple[torch.Tensor], torch.Tensor]
@@ -32,10 +32,9 @@ PredictResults = List[BaseDataElement]
 ForwardResults = Union[LossResults, TensorResults, PredictResults]
 
 @MODELS.register_module()
-class DMCP(ItePruneAlgorithm):
+class DMCP(BaseAlgorithm):
 
     def __init__(self,
-                #  mutators: VALID_MUTATORS_TYPE,
                  distiller: VALID_DISTILLER_TYPE,
                  architecture: Union[BaseModel, Dict],
                  mutator_cfg: Union[Dict, DMCPChannelMutator] = dict(
@@ -45,65 +44,41 @@ class DMCP(ItePruneAlgorithm):
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  strategy: List = ['max', 'min', 'scheduled_random', 'arch_random'],
                  init_cfg: Optional[Dict] = None,
-                 target_pruning_ratio: Optional[Dict[str, float]] = None,
-                 arch_start_train=10000, # arch_start_train_iter
-                 step_freq=500, # arch_train_freq
-                 distillation_times=2000, # distillation_start_train_iter
+                 arch_start_train=10000, 
+                 arch_train_freq=500,
+                 distillation_times=2000, 
                  target_flops=150, # MFLOPs
                  flops_loss_type: str = 'log_l1',
-                 flop_loss_weight: float = 1.0,
-                 linear_schedule=False,
-                 is_deployed=False) -> None:
-        super().__init__(architecture, mutator_cfg, data_preprocessor,
-                         target_pruning_ratio, step_freq,
-                         init_cfg, linear_schedule)
+                 flop_loss_weight: float = 1.0) -> None:
+        super().__init__(architecture, data_preprocessor, init_cfg)
         
         self.arch_start_train = arch_start_train
         self.strategy = strategy
         self.distillation_times = distillation_times
         self.target_flops = target_flops
 
-        self.samples = len([s for s in self.strategy if 'random' in s])
-        self.is_supernet = True if len(self.strategy) > 1 else False
-        self.distiller = self._build_distiller(distiller)
-        self.distiller.prepare_from_teacher(self.architecture)
-        self.distiller.prepare_from_student(self.architecture)
+        if distiller:
+            self.distiller = self._build_distiller(distiller)
+            self.distiller.prepare_from_teacher(self.architecture)
+            self.distiller.prepare_from_student(self.architecture)
 
         self.flops_loss_type = flops_loss_type
         self.flop_loss_weight = flop_loss_weight
         self.cur_sample_prob = 1.0
         self.arch_train = False
 
+        self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
+        self.mutator.prepare_from_supernet(self.architecture)
+
         if fix_subnet:
-            # Avoid circular import
-            from mmrazor.structures import load_fix_subnet
-
-            # According to fix_subnet, delete the unchosen part of supernet
-            load_fix_subnet(self.architecture, fix_subnet)
+            self._load_fix_subnet(fix_subnet)
             self.is_supernet = False
-        self.is_deployed = is_deployed
-        if (self.is_deployed):
-            # To static ops for loaded pruned network.
-            self._deploy()
-    
-    def _deploy(self):
-        config = self.prune_config_manager.prune_at(self._iter)
-        self.mutator.set_choices(config)
-        self.mutator.fix_channel_mutables()
-        self._fix_archtecture()
-        _dynamic_to_static(self.architecture)
-        self.is_deployed = True
+        else:
+            self.is_supernet = True
 
-    def _build_mutator(self, mutator: VALID_MUTATOR_TYPE) -> BaseMutator:
-        """build mutator."""
-        if isinstance(mutator, dict):
-            mutator = MODELS.build(mutator)
-        if not isinstance(mutator, BaseMutator):
-            raise TypeError('mutator should be a `dict` or '
-                            '`OneShotModuleMutator` instance, but got '
-                            f'{type(mutator)}')
-
-        return mutator
+    def  _load_fix_subnet(self, save_path):
+        with open(save_path) as file:
+            self.mutator.set_choices(yaml.load(file.read()))
 
     def _build_distiller(
             self, distiller: VALID_DISTILLER_TYPE) -> ConfigurableDistiller:
@@ -206,7 +181,7 @@ class DMCP(ItePruneAlgorithm):
 
             #update arch parameters
             if self.arch_train \
-                and self._iter % self.step_freq == 0:
+                and self._iter % self.arch_train_freq == 0:
                 with optim_wrapper['mutator'].optim_context(self):
                     optim_wrapper['mutator'].zero_grad()
                     mutator_loss = self._update_arch_params(
@@ -234,7 +209,7 @@ class DMCP(ItePruneAlgorithm):
 
         # update flops_loss
         self.set_subnet(mode='expected', arch_train=False)
-        expected_flops = self.mutator.calc_current_flops(self)
+        expected_flops = self.calc_current_flops()
         flops_loss = self._compute_flops_loss(expected_flops).to(
             arch_loss['loss'].device)
         parsed_flops_loss, _ = self.parse_losses({'loss':flops_loss})
@@ -275,6 +250,11 @@ class DMCP(ItePruneAlgorithm):
             raise NotImplementedError
         return floss * self.flop_loss_weight
 
+    def calc_current_flops(self):
+        estimator = ResourceEstimator(units=None)
+        model = getattr(self, 'module', self)
+        estimation = estimator.estimate(model=model.architecture.backbone,\)
+        return estimation['flops']
 
     def forward(self,
                 inputs: torch.Tensor,
@@ -282,6 +262,17 @@ class DMCP(ItePruneAlgorithm):
                 mode: str = 'loss') -> ForwardResults:
         """Forward."""
         return BaseAlgorithm.forward(self, inputs, data_samples, mode)
+
+    @property
+    def _iter(self):
+        """Get current sum iteration number."""
+        message_hub = MessageHub.get_current_instance()
+        if 'iter' in message_hub.runtime_info:
+            return message_hub.runtime_info['iter']
+        else:
+            raise RuntimeError('Use MessageHub before initiation.'
+                               'iter is inited in before_run_iter().')
+
 
 @MODEL_WRAPPERS.register_module()
 class DMCPDDP(MMDistributedDataParallel):
@@ -392,7 +383,7 @@ class DMCPDDP(MMDistributedDataParallel):
 
             # update arch parameters
             if self.module.arch_train \
-                and self.module._iter % self.modqule.step_freq == 0:
+                and self.module._iter % self.modqule.arch_train_freq == 0:
                 with optim_wrapper['mutator'].optim_context(self):
                     optim_wrapper['mutator'].zero_grad()
                     mutator_loss = self.module._update_arch_params(

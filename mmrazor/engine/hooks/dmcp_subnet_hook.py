@@ -7,8 +7,6 @@ from mmengine.dist import master_only
 from mmengine.hooks import Hook
 from mmengine.registry import HOOKS
 
-DATA_BATCH = Optional[Sequence[dict]]
-
 
 @HOOKS.register_module()
 class DMCPSubnetHook(Hook):
@@ -59,4 +57,3 @@ class DMCPSubnetHook(Hook):
                 runner.logger.info(
                     f'Driect sample(DS) arch with FlOP(MB): {cur_flops}')
             self._save_subnet(model.mutator.current_choices, save_path)
-
