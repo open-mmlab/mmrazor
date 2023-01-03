@@ -30,8 +30,8 @@ class SuperBlock(nn.Module):
     def __init__(self, fix_subnet=None, argv=None, opt=None, num_classes=None, plainnet_struct=None, no_create=False,
                  **kwargs):
         super(SuperBlock, self).__init__()
-        self.argv = argv
-        self.opt = opt
+        # self.argv = argv
+        # self.opt = opt
         self.num_classes = num_classes
         self.plainnet_struct = plainnet_struct
         self.plainnet_struct_txt = fix_subnet
@@ -494,7 +494,8 @@ def main(args, argv):
 
     # load masternet
     fix_subnet = args.plainnet_struct_txt
-    masternet = MasterNet(fix_subnet=fix_subnet, num_classes=args.num_classes, opt=args, argv=argv, no_create=True)
+    # masternet = MasterNet(fix_subnet=fix_subnet, num_classes=args.num_classes, opt=args, argv=argv, no_create=True)
+    masternet = MasterNet(fix_subnet=fix_subnet, num_classes=args.num_classes, no_create=True)
     initial_structure_str = str(masternet)
 
     popu_structure_list = []

@@ -6,10 +6,11 @@ from .iteprune_val_loop import ItePruneValLoop
 from .slimmable_val_loop import SlimmableValLoop
 from .subnet_sampler_loop import GreedySamplerTrainLoop
 from .subnet_val_loop import SubnetValLoop
+from .zero_shot_loop import ZeroShotLoop
 
 __all__ = [
     'SingleTeacherDistillValLoop', 'DartsEpochBasedTrainLoop',
     'DartsIterBasedTrainLoop', 'SlimmableValLoop', 'EvolutionSearchLoop',
     'GreedySamplerTrainLoop', 'SubnetValLoop', 'SelfDistillValLoop',
-    'ItePruneValLoop'
+    'ItePruneValLoop', 'ZeroShotLoop'
 ]
