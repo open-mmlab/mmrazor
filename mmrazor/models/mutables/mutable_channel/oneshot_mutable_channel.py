@@ -40,6 +40,3 @@ class OneShotMutableChannel(SquentialMutableChannel):
         SquentialMutableChannel.current_choice.fset(  # type: ignore
             self,  # type: ignore
             choice)  # type: ignore
-
-    def export_chosen(self):
-        return self.current_choice
