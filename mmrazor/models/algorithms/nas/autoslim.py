@@ -8,6 +8,7 @@ from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper
 from mmengine.structures import BaseDataElement
 from torch import nn
+from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.distillers import ConfigurableDistiller
 from mmrazor.models.mutators import OneShotChannelMutator
@@ -37,6 +38,12 @@ class AutoSlim(BaseAlgorithm):
             Defaults to 2.
         init_cfg (Optional[Dict], optional): config of initialization.
             Defaults to None.
+        bn_training_mode (bool): Whether set bn to training mode when model is
+            set to eval mode. Note that in slimmable networks, accumulating
+            different numbers of channels results in different feature means
+            and variances, which further leads to inaccurate statistics of
+            shared BN. Set ``bn_training_mode`` to True to use the feature
+            means and variances in a batch.
     """
 
     def __init__(self,
@@ -45,7 +52,8 @@ class AutoSlim(BaseAlgorithm):
                  architecture: Union[BaseModel, Dict],
                  num_random_samples: int = 2,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
-                 init_cfg: Optional[Dict] = None) -> None:
+                 init_cfg: Optional[Dict] = None,
+                 bn_training_mode=False) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
 
         self.mutator: OneShotChannelMutator = MODELS.build(mutator)
@@ -61,6 +69,8 @@ class AutoSlim(BaseAlgorithm):
             self.sample_kinds.append('random' + str(i))
 
         self._optim_wrapper_count_status_reinitialized = False
+
+        self.bn_training_mode = bn_training_mode
 
     def _build_mutator(self,
                        mutator: VALID_MUTATOR_TYPE) -> OneShotChannelMutator:
@@ -163,6 +173,21 @@ class AutoSlim(BaseAlgorithm):
                     add_prefix(random_subnet_losses, f'{kind}_subnet'))
 
         return total_losses
+
+    def train(self, mode=True):
+        """Overwrite the train method in ``nn.Module`` to set ``nn.BatchNorm``
+        to training mode when model is set to eval mode when
+        ``self.bn_training_mode`` is ``True``.
+
+        Args:
+            mode (bool): whether to set training mode (``True``) or evaluation
+                mode (``False``). Default: ``True``.
+        """
+        super(AutoSlim, self).train(mode)
+        if not mode and self.bn_training_mode:
+            for module in self.modules():
+                if isinstance(module, _BatchNorm):
+                    module.training = True
 
 
 @MODEL_WRAPPERS.register_module()
