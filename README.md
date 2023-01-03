@@ -20,7 +20,7 @@
 
 <!--算法库 Badges-->
 
-[![PyPI](https://img.shields.io/pypi/v/mmrazor)](https://pypi.org/project/mmrazor)
+[![PyPI](https://img.shields.io/pypi/v/mmrazor)](**https**://pypi.org/project/mmrazor)
 [![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmrazor.readthedocs.io/en/latest/)
 [![badge](https://github.com/open-mmlab/mmrazor/workflows/build/badge.svg)](https://github.com/open-mmlab/mmrazor/actions)
 [![codecov](https://codecov.io/gh/open-mmlab/mmrazor/branch/master/graph/badge.svg)](https://codecov.io/gh/open-mmlab/mmrazor)
@@ -81,7 +81,17 @@ Below is an overview of MMRazor's design and implementation, please refer to [tu
 
 ## What's new
 
+### 💎 Stable version
+
 MMRazor v0.3.1 was released in 5/4/2022.
+
+### 🌟 Preview of 1.x version
+
+A brand new version of MMRazor v1.0.0rc1 was released in 27/10/2022.
+
+- Unifies interfaces of all components based on MMEngine.
+- A new pruning framework.
+- More distillation/Nas algorithms.
 
 ## Benchmark and model zoo
 
