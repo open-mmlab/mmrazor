@@ -195,6 +195,17 @@ class AutoSlimGreedySearchLoop(TestLoop):
 
     def _save_searched_subnet(self):
         """Save the final searched subnet dict."""
+
+        def _convert_fix_subnet(fixed_subnet: Dict[str, Any]):
+            from mmrazor.utils.typing import DumpChosen
+
+            converted_fix_subnet = dict()
+            for key, val in fixed_subnet.items():
+                assert isinstance(val, DumpChosen)
+                converted_fix_subnet[key] = dict(val._asdict())
+
+            return converted_fix_subnet
+
         if self.runner.rank != 0:
             return
         self.runner.logger.info('Search finished:')
@@ -202,8 +213,9 @@ class AutoSlimGreedySearchLoop(TestLoop):
                                  self.searched_subnet_flops):
             subnet_choice = self._channel_bins2choices(subnet)
             self.model.set_subnet(subnet_choice)
-            fixed_subnet = export_fix_subnet(self.model)
+            fixed_subnet, _ = export_fix_subnet(self.model)
             save_name = 'FLOPS_{:.2f}M.yaml'.format(flops)
+            fixed_subnet = _convert_fix_subnet(fixed_subnet)
             fileio.dump(fixed_subnet, osp.join(self.runner.work_dir,
                                                save_name))
             self.runner.logger.info(
