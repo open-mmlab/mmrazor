@@ -126,10 +126,11 @@ class DefaultMMYoloDemoInput(DefaultMMDetDemoInput):
 
 @TASK_UTILS.register_module()
 class DefaultMMPoseDemoInput(DefaultMMDemoInput):
-    """Default demo input generator for mmpose models"""
+    """Default demo input generator for mmpose models."""
 
     def _get_mm_data(self, model, input_shape, training=False):
         from mmpose.models import TopdownPoseEstimator
+
         from .mmpose_demo_input import demo_mmpose_inputs
         assert isinstance(model, TopdownPoseEstimator)
 

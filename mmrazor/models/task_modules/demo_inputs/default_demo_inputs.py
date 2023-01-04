@@ -1,15 +1,15 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import torch.nn as nn
-from mmengine.model import BaseModel
 from collections import OrderedDict
 
+import torch.nn as nn
+from mmengine.model import BaseModel
 
 from mmrazor.registry import TASK_UTILS
 from mmrazor.utils import get_placeholder
 from .demo_inputs import (BaseDemoInput, DefaultMMClsDemoInput,
                           DefaultMMDemoInput, DefaultMMDetDemoInput,
-                          DefaultMMRotateDemoInput, DefaultMMSegDemoInput,
-                          DefaultMMPoseDemoInput, DefaultMMYoloDemoInput)
+                          DefaultMMPoseDemoInput, DefaultMMRotateDemoInput,
+                          DefaultMMSegDemoInput, DefaultMMYoloDemoInput)
 
 try:
     from mmdet.models import BaseDetector

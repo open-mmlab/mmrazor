@@ -6,8 +6,8 @@ import torch
 
 from .data.model_library import (DefaultModelLibrary, MMClsModelLibrary,
                                  MMDetModelLibrary, MMModelLibrary,
-                                 MMSegModelLibrary, ModelGenerator,
-                                 MMPoseModelLibrary, TorchModelLibrary)
+                                 MMPoseModelLibrary, MMSegModelLibrary,
+                                 ModelGenerator, TorchModelLibrary)
 from .data.models import SingleLineModel
 from .data.tracer_passed_models import (BackwardPassedModelManager,
                                         FxPassedModelManager)

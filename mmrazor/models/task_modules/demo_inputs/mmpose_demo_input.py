@@ -4,22 +4,14 @@
 Modified from mmpose.
 """
 
-import numpy as np
 import torch
-from mmengine.structures import BaseDataElement, InstanceData, PixelData
-from torch import nn
-
-from mmrazor.utils import get_placeholder
-
-from mmpose.structures.bbox import bbox_xyxy2cs
+from mmpose.models.heads import (CPMHead, DSNTHead, HeatmapHead,
+                                 IntegralRegressionHead, MSPNHead,
+                                 RegressionHead, RLEHead, SimCCHead,
+                                 ViPNASHead)
 from mmpose.testing._utils import get_packed_inputs
 
-# heatmap heads
-from mmpose.models.heads import HeatmapHead, MSPNHead, CPMHead, SimCCHead, ViPNASHead
-
-# regression heads
-from mmpose.models.heads import DSNTHead, IntegralRegressionHead, RegressionHead, RLEHead
-
+from mmrazor.utils import get_placeholder
 
 try:
     from mmpose.models import PoseDataPreProcessor
@@ -31,17 +23,21 @@ except ImportError:
 
 def demo_mmpose_inputs(model, for_training=False, batch_size=1):
 
-    input_shape = (1,3,) + model.head.decoder.input_size
+    input_shape = (
+        1,
+        3,
+    ) + model.head.decoder.input_size
     imgs = torch.randn(*input_shape)
 
     batch_data_samples = []
 
     if isinstance(model.head, HeatmapHead):
-        batch_data_samples = [inputs['data_sample'] for inputs in get_packed_inputs(
-            batch_size, 
-            num_keypoints=model.head.out_channels,
-            heatmap_size=model.head.decoder.heatmap_size[::-1])
-            ]
+        batch_data_samples = [
+            inputs['data_sample'] for inputs in get_packed_inputs(
+                batch_size,
+                num_keypoints=model.head.out_channels,
+                heatmap_size=model.head.decoder.heatmap_size[::-1])
+        ]
     elif isinstance(model.head, MSPNHead):
         batch_data_samples = [
             inputs['data_sample'] for inputs in get_packed_inputs(
@@ -51,7 +47,7 @@ def demo_mmpose_inputs(model, for_training=False, batch_size=1):
                 heatmap_size=model.head.decoder.heatmap_size,
                 with_heatmap=True,
                 with_reg_label=False,
-                num_levels=model.head.num_stages*model.head.num_units)
+                num_levels=model.head.num_stages * model.head.num_units)
         ]
     elif isinstance(model.head, CPMHead):
         batch_data_samples = [
@@ -76,7 +72,8 @@ def demo_mmpose_inputs(model, for_training=False, batch_size=1):
         batch_data_samples = [
             inputs['data_sample'] for inputs in get_packed_inputs(
                 batch_size,
-                num_keypoints=model.head.out_channels,)
+                num_keypoints=model.head.out_channels,
+            )
         ]
     elif isinstance(model.head, DSNTHead):
         batch_data_samples = [
@@ -105,15 +102,14 @@ def demo_mmpose_inputs(model, for_training=False, batch_size=1):
                 batch_size,
                 num_keypoints=model.head.num_joints,
                 with_reg_label=True)
-        ]        
+        ]
     else:
         raise AssertionError('Head Type is Not Predefined')
-
 
     mm_inputs = {
         'inputs': torch.FloatTensor(imgs),
         'data_samples': batch_data_samples
-        }
+    }
 
     # check data preprocessor
     if not hasattr(model,
@@ -123,4 +119,3 @@ def demo_mmpose_inputs(model, for_training=False, batch_size=1):
     mm_inputs = model.data_preprocessor(mm_inputs, for_training)
 
     return mm_inputs
-
