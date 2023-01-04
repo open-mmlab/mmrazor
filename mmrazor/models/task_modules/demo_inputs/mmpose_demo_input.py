@@ -60,6 +60,7 @@ def demo_mmpose_inputs(model, for_training=False, batch_size=1):
                 with_reg_label=False)
         ]
     elif isinstance(model.head, SimCCHead):
+        # bug
         batch_data_samples = [
             inputs['data_sample'] for inputs in get_packed_inputs(
                 batch_size,
