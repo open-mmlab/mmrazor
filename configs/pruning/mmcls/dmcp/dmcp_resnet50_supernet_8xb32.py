@@ -53,6 +53,7 @@ model = dict(
             loss_calculator=dict(type='ImageClassifierPseudoLoss'))),
     arch_start_train=10000,
     step_freq=500,
+    flop_loss_weight=0.1,
     distillation_times=20000,
     target_flops=2000)
 
