@@ -32,16 +32,6 @@ try:
 except Exception:
     TopdownPoseEstimator = get_placeholder('mmpose')
 
-# default_demo_input_class = {
-#     BaseDetector: DefaultMMDetDemoInput,
-#     ImageClassifier: DefaultMMClsDemoInput,
-#     BaseSegmentor: DefaultMMSegDemoInput,
-#     BaseModel: DefaultMMDemoInput,
-#     nn.Module: BaseDemoInput,
-#     # New
-#     TopdownPoseEstimator: DefaultMMPoseDemoInput,
-# }
-
 default_demo_input_class = OrderedDict([
     (BaseDetector, DefaultMMDetDemoInput),
     (ImageClassifier, DefaultMMClsDemoInput),

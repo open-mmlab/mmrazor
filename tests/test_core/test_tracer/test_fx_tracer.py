@@ -43,8 +43,6 @@ class TestFxTracer(unittest.TestCase):
                 demo_input = DefaultDemoInput()
                 inputs = demo_input.get_data(model)
 
-                print('|||', input)
-
                 if isinstance(inputs, dict):
                     # args = copy.copy(inputs)
                     # args.pop('inputs')
