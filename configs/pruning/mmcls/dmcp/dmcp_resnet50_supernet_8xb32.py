@@ -49,7 +49,9 @@ model = dict(
         channel_unit_cfg=dict(
             type='DMCPChannelUnit', default_args=dict(choice_mode='number')),
         parse_cfg=dict(
-            type='BackwardTracer',
+            type='ChannelAnalyzer',
+            demo_input=(1, 3, 224, 224),
+            tracer_type='BackwardTracer',
             loss_calculator=dict(type='ImageClassifierPseudoLoss'))),
     arch_start_train=10000,
     step_freq=500,
