@@ -103,6 +103,38 @@ class ZenNAS(BaseAlgorithm):
 
         self.norm_training = norm_training
 
+    # def parameters(self):
+    #     """split network weights into to categlories,
+    #     one are weights in conv layer and linear layer,
+    #     others are other learnable paramters(conv bias,
+    #     bn weights, bn bias, linear bias)
+    #     Args:
+    #         net: network architecture
+
+    #     Returns:
+    #         a dictionary of params splite into to categlories
+    #     """
+
+    #     decay = []
+    #     no_decay = []
+
+    #     for m in self.modules():
+    #         if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+    #             decay.append(m.weight)
+
+    #             if m.bias is not None:
+    #                 no_decay.append(m.bias)
+
+    #         else:
+    #             if hasattr(m, 'weight'):
+    #                 no_decay.append(m.weight)
+    #             if hasattr(m, 'bias'):
+    #                 no_decay.append(m.bias)
+
+    #     assert len(list(self.parameters())) == len(decay) + len(no_decay)
+
+    #     return [dict(params=decay), dict(params=no_decay, weight_decay=0)]
+
     def sample_subnet(self) -> SingleMutatorRandomSubnet:
         """Random sample subnet by mutator."""
         return self.mutator.sample_choices()

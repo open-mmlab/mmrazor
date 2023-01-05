@@ -176,7 +176,9 @@ def _build_netblock_list_from_str_(s, no_create=False, **kwargs):
             the_block_cfg, remaining_s = the_block_class.create_from_str(s, no_create=no_create, **kwargs)
             mutable_cfg.update(the_block_cfg)
             # print(mutable_cfg)
-            the_block = MODELS.build(mutable_cfg) 
+            # the_block = MODELS.build(mutable_cfg)
+            mutable_cfg.pop('type')
+            the_block = the_block_class(**mutable_cfg)
             # the_block_class = _all_netblocks_dict_[the_block_class_name]
             # the_block, remaining_s = the_block_class.create_from_str(s, no_create=no_create, **kwargs)
             if the_block is not None:

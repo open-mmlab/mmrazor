@@ -1,12 +1,13 @@
-import os, sys
+# import os, sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import itertools
 
 import global_utils
 # from PlainNet import basic_blocks, super_blocks, SuperResKXKX, SuperResK1KXK1
-from PlainNet import basic_blocks
+# from PlainNet import basic_blocks
+from mmrazor.models.architectures.backbones.PlainNet import basic_blocks
 
 seach_space_block_type_list_list = [
     [basic_blocks.SuperResK1K3K1, basic_blocks.SuperResK1K5K1, basic_blocks.SuperResK1K7K1],
