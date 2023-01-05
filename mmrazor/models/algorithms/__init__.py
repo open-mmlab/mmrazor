@@ -4,7 +4,7 @@ from .distill import (DAFLDataFreeDistillation, DataFreeDistillation,
                       FpnTeacherDistill, OverhaulFeatureDistillation,
                       SelfDistill, SingleTeacherDistill)
 from .nas import (DSNAS, DSNASDDP, SPOS, Autoformer, AutoSlim, AutoSlimDDP,
-                  BigNAS, BigNASDDP, Darts, DartsDDP)
+                  BigNAS, BigNASDDP, Darts, DartsDDP, NSGANetV2)
 from .pruning import DCFF, SlimmableNetwork, SlimmableNetworkDDP
 from .pruning.ite_prune_algorithm import ItePruneAlgorithm
 
@@ -14,5 +14,5 @@ __all__ = [
     'Darts', 'DartsDDP', 'DCFF', 'SelfDistill', 'DataFreeDistillation',
     'DAFLDataFreeDistillation', 'OverhaulFeatureDistillation',
     'ItePruneAlgorithm', 'DSNAS', 'DSNASDDP', 'Autoformer', 'BigNAS',
-    'BigNASDDP'
+    'BigNASDDP', 'NSGANetV2'
 ]

@@ -139,18 +139,19 @@ class MetricPredictor:
         start = 0
         model = {}
         for key, value in self.search_groups.items():
+            if isinstance(value[0], OneShotMutableChannelUnit):
+                choices = value[0].candidate_choices
+            else:
+                choices = value[0].choices
+
             if self.encoding_type == 'onehot':
-                index = np.where(vector[start:start +
-                                        len(value[0].choices)] == 1)[0][0]
-                start += len(value[0].choices)
+                index = np.where(vector[start:start + len(choices)] == 1)[0][0]
+                start += len(choices)
             else:
                 index = vector[start]
                 start += 1
 
-            if isinstance(value[0], OneShotMutableChannelUnit):
-                chosen = value[0].candidate_choices[int(index)]
-            else:
-                chosen = value[0].choices[int(index)]
+            chosen = choices[int(index)]
             model[key] = chosen
 
         return model

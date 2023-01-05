@@ -9,10 +9,8 @@ from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.distillers import ConfigurableDistiller
 from mmrazor.models.mutators.base_mutator import BaseMutator
-from mmrazor.models.mutators import OneShotModuleMutator
 from mmrazor.registry import MODELS
-from mmrazor.structures.subnet.fix_subnet import load_fix_subnet
-from mmrazor.utils import SingleMutatorRandomSubnet, ValidFixMutable
+from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm, LossResults
 
 VALID_MUTATOR_TYPE = Union[BaseMutator, Dict]
@@ -22,61 +20,60 @@ VALID_DISTILLER_TYPE = Union[ConfigurableDistiller, Dict]
 
 @MODELS.register_module()
 class NSGANetV2(BaseAlgorithm):
-    """
-
-    """
-
-    # TODO fix ea's name in doc-string.
+    """NSGANetV2 algorithm."""
 
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
-                 mutator: VALID_MUTATORS_TYPE,
-                #  distiller: VALID_DISTILLER_TYPE,
-                #  norm_training: bool = False,
+                 mutators: VALID_MUTATORS_TYPE,
                  fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[dict, nn.Module]] = None,
-                 init_cfg: Optional[dict] = None,
-                 drop_prob: float = 0.2):
+                 drop_path_rate: float = 0.2,
+                 backbone_dropout_stages: List = [6, 7],
+                 norm_training: bool = False,
+                 init_cfg: Optional[dict] = None):
         super().__init__(architecture, data_preprocessor, init_cfg)
+
+        if isinstance(mutators, dict):
+            built_mutators: Dict = dict()
+            for name, mutator_cfg in mutators.items():
+                if 'parse_cfg' in mutator_cfg and isinstance(
+                        mutator_cfg['parse_cfg'], dict):
+                    assert mutator_cfg['parse_cfg'][
+                        'type'] == 'Predefined', \
+                            'BigNAS only support predefined.'
+                mutator: BaseMutator = MODELS.build(mutator_cfg)
+                built_mutators[name] = mutator
+                mutator.prepare_from_supernet(self.architecture)
+            self.mutators = built_mutators
+        else:
+            raise TypeError('mutator should be a `dict` but got '
+                            f'{type(mutators)}')
+
+        self.drop_path_rate = drop_path_rate
+        self.backbone_dropout_stages = backbone_dropout_stages
+        self.norm_training = norm_training
+        self.is_supernet = True
 
         if fix_subnet:
             # Avoid circular import
             from mmrazor.structures import load_fix_subnet
 
             # According to fix_subnet, delete the unchosen part of supernet
-            load_fix_subnet(self.architecture, fix_subnet)
+            load_fix_subnet(self, fix_subnet)
             self.is_supernet = False
-        else:
-            # Mutator is an essential component of the NAS algorithm. It
-            # provides some APIs commonly used by NAS.
-            # Before using it, you must do some preparations according to
-            # the supernet.
-            self.mutator.prepare_from_supernet(self.architecture)
-            self.is_supernet = True
 
-        self.drop_prob = drop_prob
-
-    def _build_mutator(self, mutator: VALID_MUTATOR_TYPE) -> BaseMutator:
-        """build mutator."""
-        assert mutator is not None, \
-            'mutator cannot be None when fix_subnet is None.'
-        if isinstance(mutator, OneShotModuleMutator):
-            self.mutator = mutator
-        elif isinstance(mutator, dict):
-            self.mutator = MODELS.build(mutator)
-        else:
-            raise TypeError('mutator should be a `dict` or '
-                            f'`OneShotModuleMutator` instance, but got '
-                            f'{type(mutator)}')
-        return mutator
-
-    def sample_subnet(self) -> SingleMutatorRandomSubnet:
+    def sample_subnet(self, kind='random') -> Dict:
         """Random sample subnet by mutator."""
-        return self.mutator.sample_choices()
+        subnet = dict()
+        for mutator in self.mutators.values():
+            subnet.update(mutator.sample_choices(kind))
+        return subnet
 
-    def set_subnet(self, subnet: SingleMutatorRandomSubnet):
+    def set_subnet(self, subnet: Dict[str, Dict[int, Union[int,
+                                                           list]]]) -> None:
         """Set the subnet sampled by :meth:sample_subnet."""
-        self.mutator.set_choices(subnet)
+        for mutator in self.mutators.values():
+            mutator.set_choices(subnet)
 
     def loss(
         self,
@@ -85,8 +82,7 @@ class NSGANetV2(BaseAlgorithm):
     ) -> LossResults:
         """Calculate losses from a batch of inputs and data samples."""
         if self.is_supernet:
-            random_subnet = self.sample_subnet()
-            self.set_subnet(random_subnet)
+            self.set_subnet(self.sample_subnet())
             return self.architecture(batch_inputs, data_samples, mode='loss')
         else:
             return self.architecture(batch_inputs, data_samples, mode='loss')
