@@ -66,21 +66,8 @@ class Candidates(UserList):
     @property
     def subnets(self) -> List[Dict]:
         """The subnets of candidates."""
-        import copy
         assert len(self.data) > 0, ('Got empty candidates.')
-        if 'value_subnet' in self.data[0]:
-            subnets = []
-            for data in self.data:
-                subnet = dict()
-                _data = copy.deepcopy(data)
-                for k1 in ['value_subnet', 'channel_subnet']:
-                    for k2 in self._indicators:
-                        _data[k1].pop(k2)
-                    subnet[k1] = _data[k1]
-                subnets.append(subnet)
-            return subnets
-        else:
-            return [eval(key) for item in self.data for key, _ in item.items()]
+        return [eval(key) for item in self.data for key, _ in item.items()]
 
     def _format(self, data: _format_input) -> _format_return:
         """Transform [Dict, ...] to Union[Dict[str, Dict], List[Dict[str,

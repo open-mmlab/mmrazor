@@ -138,8 +138,15 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         self.predictor_cfg = predictor_cfg
         if self.predictor_cfg is not None:
             self.predictor_cfg['score_key'] = self.score_key
-            self.predictor_cfg['search_groups'] = \
-                self.model.mutator.search_groups
+            if hasattr(self.model, 'mutators'):
+                self.predictor_cfg['search_groups'] = dict()
+                for mutator in self.model.mutators.values():
+                    self.predictor_cfg['search_groups'].update(
+                        mutator.search_groups)
+            else:
+                assert hasattr(self.model, 'mutator')
+                self.predictor_cfg['search_groups'] = \
+                    self.model.mutator.search_groups
             self.predictor = TASK_UTILS.build(self.predictor_cfg)
 
     def run(self) -> None:
@@ -181,7 +188,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
 
         self.candidates.extend(self.top_k_candidates)
         self.candidates.sort_by(key_indicator='score', reverse=True)
-        self.top_k_candidates = Candidates(self.candidates.data[:self.top_k])
+        self.top_k_candidates = Candidates(self.candidates[:self.top_k])
 
         scores_after = self.top_k_candidates.scores
         self.runner.logger.info(f'top k scores after update: '
@@ -213,19 +220,19 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                 if is_pass:
                     self.candidates.append(candidate)
                     candidates_resources.append(result)
-            self.candidates = Candidates(self.candidates.data)
+            self.candidates = Candidates(self.candidates)
         else:
             self.candidates = Candidates([dict(a=0)] * self.num_candidates)
 
         if len(candidates_resources) > 0:
             self.candidates.update_resources(
                 candidates_resources,
-                start=len(self.candidates.data) - len(candidates_resources))
+                start=len(self.candidates) - len(candidates_resources))
             assert init_candidates + len(
                 candidates_resources) == self.num_candidates
 
         # broadcast candidates to val with multi-GPUs.
-        broadcast_object_list(self.candidates.data)
+        broadcast_object_list([self.candidates])
 
     def update_candidates_scores(self) -> None:
         """Validate candicate one by one from the candicate pool, and update
@@ -269,7 +276,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         return mutation_candidates
 
     def gen_crossover_candidates(self):
-        """Generate specofied number of crossover candicates."""
+        """Generate specified number of crossover candicates."""
         crossover_resources = []
         crossover_candidates: List = []
         crossover_iter = 0
@@ -463,5 +470,5 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
             self.use_predictor = True
             self.candidates = Candidates()
 
-    def finetune_step(self, subnet):
+    def finetune_step(self):
         pass

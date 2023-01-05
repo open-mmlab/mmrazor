@@ -105,8 +105,16 @@ class MetricPredictor:
                     len(choice.meta['all_choices']), dtype=np.int)
                 _chosen_index = choice.meta['all_choices'].index(choice.chosen)
             else:
-                assert len(self.search_groups[index]) == 1
-                choices = self.search_groups[index][0].choices
+                if key is not None:
+                    from mmrazor.models.mutables import MutableChannelUnit
+                    if isinstance(self.search_groups[key][0],
+                                  MutableChannelUnit):
+                        choices = self.search_groups[key][0].candidate_choices
+                    else:
+                        choices = self.search_groups[key][0].choices
+                else:
+                    assert len(self.search_groups[index]) == 1
+                    choices = self.search_groups[index][0].choices
                 onehot = np.zeros(len(choices), dtype=np.int)
                 _chosen_index = choices.index(choice)
             onehot[_chosen_index] = 1
@@ -126,6 +134,8 @@ class MetricPredictor:
         Returns:
             Dict[str, str]: converted model.
         """
+        from mmrazor.models.mutables import OneShotMutableChannelUnit
+
         start = 0
         model = {}
         for key, value in self.search_groups.items():
@@ -136,7 +146,11 @@ class MetricPredictor:
             else:
                 index = vector[start]
                 start += 1
-            chosen = value[0].choices[int(index)]
+
+            if isinstance(value[0], OneShotMutableChannelUnit):
+                chosen = value[0].candidate_choices[int(index)]
+            else:
+                chosen = value[0].choices[int(index)]
             model[key] = chosen
 
         return model

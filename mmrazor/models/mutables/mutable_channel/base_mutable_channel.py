@@ -62,7 +62,8 @@ class BaseMutableChannel(BaseMutable, DerivedMethodMixin):
 
     def dump_chosen(self) -> DumpChosen:
         """Dump chosen."""
-        meta = dict(max_channels=self.mask.size(0))
+        meta = dict(
+            max_channels=self.mask.size(0), all_choices=self.candidate_choices)
         chosen = self.export_chosen()
 
         return DumpChosen(chosen=chosen, meta=meta)

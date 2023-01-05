@@ -37,14 +37,15 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
             4. Implement Mutation and crossover, generate better candidates.
         """
         archive = Candidates()
-        for subnet, score, flops in zip(self.candidates.subnets,
-                                        self.candidates.scores,
-                                        self.candidates.resources('flops')):
-            if self.trade_off['max_score_key'] != 0:
-                score = self.trade_off['max_score_key'] - score
-            archive.append(subnet)
-            archive.set_score(-1, score)
-            archive.set_resource(-1, flops, 'flops')
+        if len(self.candidates) > 0:
+            for subnet, score, flops in zip(
+                    self.candidates.subnets, self.candidates.scores,
+                    self.candidates.resources('flops')):
+                if self.trade_off['max_score_key'] != 0:
+                    score = self.trade_off['max_score_key'] - score
+                archive.append(subnet)
+                archive.set_score(-1, score)
+                archive.set_resource(-1, flops, 'flops')
 
         self.sample_candidates(random=(self._epoch == 0), archive=archive)
         self.update_candidates_scores()
@@ -55,7 +56,7 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
 
         self.candidates.extend(self.top_k_candidates)
         self.sort_candidates()
-        self.top_k_candidates = Candidates(self.candidates.data[:self.top_k])
+        self.top_k_candidates = Candidates(self.candidates[:self.top_k])
 
         scores_after = self.top_k_candidates.scores
         self.runner.logger.info(f'top k scores after update: '
@@ -91,8 +92,7 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
             if len(candidates_resources) > 0:
                 self.candidates.update_resources(
                     candidates_resources,
-                    start=len(self.candidates.data) -
-                    len(candidates_resources))
+                    start=len(self.candidates) - len(candidates_resources))
 
     def sample_candidates_with_nsga2(self, archive: Candidates,
                                      num_candidates):
@@ -111,13 +111,13 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
 
         # initiate a multi-objective solver to optimize the problem
         method = NSGA2Optimizer(
-            pop_size=4,
+            pop_size=40,
             sampling=fronts,  # initialize with current nd archs
             eliminate_duplicates=True,
             logger=self.runner.logger)
 
         # # kick-off the search
-        method.initialize(problem, n_gen=2, verbose=True)
+        method.initialize(problem, n_gen=20, verbose=True)
         result = method.solve()
 
         # check for duplicates

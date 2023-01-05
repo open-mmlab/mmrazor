@@ -17,9 +17,14 @@ class AuxiliarySingleLevelProblem(BaseProblem):
         self.xl = np.zeros(self.n_var)
         # upper bound for variable, automatically calculate by search space
         self.xu = []
+        from mmrazor.models.mutables import OneShotMutableChannelUnit
         for mutable in self.predictor.search_groups.values():
-            if mutable[0].num_choices > 0:
-                self.xu.append(mutable[0].num_choices - 1)
+            if isinstance(mutable[0], OneShotMutableChannelUnit):
+                if mutable[0].num_channels > 0:
+                    self.xu.append(mutable[0].num_channels - 1)
+            else:
+                if mutable[0].num_choices > 0:
+                    self.xu.append(mutable[0].num_choices - 1)
         self.xu = np.array(self.xu)
 
     def _evaluate(self, x, out, *args, **kwargs):

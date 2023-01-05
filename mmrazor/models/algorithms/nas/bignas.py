@@ -136,27 +136,16 @@ class BigNAS(BaseAlgorithm):
 
     def sample_subnet(self, kind='random') -> Dict:
         """Random sample subnet by mutator."""
-        value_subnet = dict()
-        channel_subnet = dict()
-        for name, mutator in self.mutators.items():
-            if name == 'value_mutator':
-                value_subnet.update(mutator.sample_choices(kind))
-            elif name == 'channel_mutator':
-                channel_subnet.update(mutator.sample_choices(kind))
-            else:
-                raise NotImplementedError
-        return dict(value_subnet=value_subnet, channel_subnet=channel_subnet)
+        subnet = dict()
+        for mutator in self.mutators.values():
+            subnet.update(mutator.sample_choices(kind))
+        return subnet
 
     def set_subnet(self, subnet: Dict[str, Dict[int, Union[int,
                                                            list]]]) -> None:
         """Set the subnet sampled by :meth:sample_subnet."""
-        for name, mutator in self.mutators.items():
-            if name == 'value_mutator':
-                mutator.set_choices(subnet['value_subnet'])
-            elif name == 'channel_mutator':
-                mutator.set_choices(subnet['channel_subnet'])
-            else:
-                raise NotImplementedError
+        for mutator in self.mutators.values():
+            mutator.set_choices(subnet)
 
     def set_max_subnet(self) -> None:
         """Set max subnet."""

@@ -208,7 +208,15 @@ class GroupMixin():
             f'The duplicate keys are {duplicate_keys}. ' \
             'Please check if there are duplicate keys in the `custom_group`.'
 
-        return search_groups
+        # TODO: update search groups
+        new_search_groups = dict()
+        for group_id, module in search_groups.items():
+            if module[0].alias:
+                new_search_groups[module[0].alias] = module
+            else:
+                new_search_groups[group_id] = module
+
+        return new_search_groups
 
     def _check_valid_groups(self, alias2mutable_names: Dict[str, List[str]],
                             name2mutable: Dict[str, BaseMutable],
@@ -259,26 +267,7 @@ class MutatorProtocol(Protocol):  # pragma: no cover
         ...
 
 
-class OneShotSampleMixin:
-    """Sample mixin for one-shot mutators."""
-
-    def sample_choices(self: MutatorProtocol) -> Dict:
-        """Sample choices for each group in search_groups."""
-        random_choices = dict()
-        for group_id, modules in self.search_groups.items():
-            random_choices[group_id] = modules[0].sample_choice()
-
-        return random_choices
-
-    def set_choices(self: MutatorProtocol, choices: Dict) -> None:
-        """Set choices for each group in search_groups."""
-        for group_id, modules in self.search_groups.items():
-            choice = choices[group_id]
-            for module in modules:
-                module.current_choice = choice
-
-
-class DynamicSampleMixin(OneShotSampleMixin):
+class DynamicSampleMixin():
 
     def sample_choices(self: MutatorProtocol, kind: str = 'random') -> Dict:
         """Sample choices for each group in search_groups."""
@@ -291,6 +280,13 @@ class DynamicSampleMixin(OneShotSampleMixin):
             else:
                 random_choices[group_id] = modules[0].sample_choice()
         return random_choices
+
+    def set_choices(self: MutatorProtocol, choices: Dict) -> None:
+        """Set choices for each group in search_groups."""
+        for group_id, modules in self.search_groups.items():
+            choice = choices[modules[0].alias]
+            for module in modules:
+                module.current_choice = choice
 
     @property
     def max_choice(self: MutatorProtocol) -> Dict:
