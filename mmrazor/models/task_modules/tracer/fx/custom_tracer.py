@@ -34,16 +34,15 @@ _orig_module_getattr: Callable = nn.Module.__getattr__
 
 
 class UntracedMethodRegistry:
-    """A `Descriptor` class which records untraced methods."""
+    """A `Descriptor` class which records untraced methods.
+
+    Args:
+        method (FunctionType): Function to be registered.
+    """
     method_dict: Dict = dict()
     tracer = None
 
     def __init__(self, method):
-        """_summary_
-
-        Args:
-            method (FunctionType): Function to be registered.
-        """
         self.method = method
         self.instances: Dict = dict()
         self.owner = None
@@ -179,6 +178,16 @@ def build_graphmodule(model: nn.Module, fx_graph, name: str = 'GraphModule'):
 
 @TASK_UTILS.register_module()
 class CustomTracer(QuantizationTracer):
+    """_summary_
+
+    Args:
+        skipped_methods (List[str], optional): Methods to be skipped while
+            tracing. Defaults to None.
+        skipped_module_names (List[str], optional): Modules to be skipped
+            while tracing. Defaults to None.
+        skipped_module_classes (List[str], optional): Class to be skipped
+            while tracing. Defaults to None.
+    """
 
     def __init__(self,
                  skipped_methods: List[str] = [],
@@ -186,16 +195,6 @@ class CustomTracer(QuantizationTracer):
                  skipped_module_classes: List[Callable] = [],
                  *args,
                  **kwargs):
-        """_summary_
-
-        Args:
-            skipped_methods (List[str], optional): Methods to be skipped while
-                tracing. Defaults to None.
-            skipped_module_names (List[str], optional): Modules to be skipped
-                while tracing. Defaults to None.
-            skipped_module_classes (List[str], optional): Class to be skipped
-                while tracing. Defaults to None.
-        """
         super(CustomTracer, self).__init__(skipped_module_names,
                                            skipped_module_classes)
         UntracedMethodRegistry.tracer = self  # type: ignore

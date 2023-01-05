@@ -27,7 +27,7 @@ from mmrazor.models.task_modules.tracer.fx import (
     del_fakequant_before_module, del_fakequant_before_op)
 from mmrazor.models.utils import str2class
 from mmrazor.registry import MODELS
-from mmrazor.structures.quantization import BackendConfigs, QConfigHander
+from mmrazor.structures.quantization import BackendConfigs, QConfigHandler
 from .base import BaseQuantizer
 
 if digit_version(torch.__version__) >= digit_version('1.13.0'):
@@ -76,7 +76,7 @@ class NativeQuantizer(BaseQuantizer):
                      extra_op_prev_wo_fakequant=tuple(),
                      extra_op_next_wo_fakequant=tuple())):
         super().__init__(tracer)
-        self.qconfig = QConfigHander(global_qconfig)
+        self.qconfig = QConfigHandler(global_qconfig)
         if self.qconfig.w_qscheme.is_per_channel:
             w_mode = 'per_channel'
         else:
