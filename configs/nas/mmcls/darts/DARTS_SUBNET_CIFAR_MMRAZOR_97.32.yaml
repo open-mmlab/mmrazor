@@ -1,0 +1,80 @@
+normal_n2:
+  chosen:
+  - normal_n2_p0
+  - normal_n2_p1
+normal_n2_p0:
+  chosen:
+  - sep_conv_3x3
+normal_n2_p1:
+  chosen:
+  - sep_conv_3x3
+normal_n3:
+  chosen:
+  - normal_n3_p0
+  - normal_n3_p1
+normal_n3_p0:
+  chosen:
+  - skip_connect
+normal_n3_p1:
+  chosen:
+  - sep_conv_5x5
+normal_n4:
+  chosen:
+  - normal_n4_p0
+  - normal_n4_p1
+normal_n4_p0:
+  chosen:
+  - sep_conv_3x3
+normal_n4_p1:
+  chosen:
+  - skip_connect
+normal_n5:
+  chosen:
+  - normal_n5_p0
+  - normal_n5_p1
+normal_n5_p0:
+  chosen:
+  - skip_connect
+normal_n5_p1:
+  chosen:
+  - skip_connect
+reduce_n2:
+  chosen:
+  - reduce_n2_p0
+  - reduce_n2_p1
+reduce_n2_p0:
+  chosen:
+  - max_pool_3x3
+reduce_n2_p1:
+  chosen:
+  - sep_conv_3x3
+reduce_n3:
+  chosen:
+  - reduce_n3_p0
+  - reduce_n3_p2
+reduce_n3_p0:
+  chosen:
+  - max_pool_3x3
+reduce_n3_p2:
+  chosen:
+  - dil_conv_5x5
+reduce_n4:
+  chosen:
+  - reduce_n4_p0
+  - reduce_n4_p2
+reduce_n4_p0:
+  chosen:
+  - max_pool_3x3
+reduce_n4_p2:
+  chosen:
+  - skip_connect
+reduce_n5:
+  chosen:
+  - reduce_n5_p0
+  - reduce_n5_p2
+reduce_n5_p0:
+  chosen:
+  - max_pool_3x3
+reduce_n5_p2:
+  chosen:
+  - skip_connect
