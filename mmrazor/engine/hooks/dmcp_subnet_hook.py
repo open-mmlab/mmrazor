@@ -28,7 +28,6 @@ class DMCPSubnetHook(Hook):
 
     @master_only
     def after_run(self, runner):
-        import pdb;pdb.set_trace()
         model = getattr(runner.model, 'module', runner.model)
         runner.logger.info('Sampling...')
 

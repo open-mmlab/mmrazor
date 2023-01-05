@@ -13,7 +13,6 @@ class ConvCounter(BaseCounter):
     def add_count_hook(module, input, output):
         """Calculate FLOPs and params based on the size of input & output."""
         # Can have multiple inputs, getting the first one
-        import pdb;pdb.set_trace()
         input = input[0]
 
         batch_size = input.shape[0]
@@ -77,8 +76,8 @@ class DynamicConv2dCounter(ConvCounter):
         kernel_dims = list(module.kernel_size)
 
         mutable_channel = list(module.mutable_attrs['out_channels'].mutable_channels.values())
-        if hasattr(mutable_channel[0], 'traceable_choice'):
-            out_channels = mutable_channel[0].traceable_choice
+        if hasattr(mutable_channel[0], '_current_mask'):
+            out_channels = mutable_channel[0]._current_mask
         else:
             out_channels = module.mutable_attrs['out_channels'].activated_channels
         in_channels = module.mutable_attrs['in_channels'].activated_channels

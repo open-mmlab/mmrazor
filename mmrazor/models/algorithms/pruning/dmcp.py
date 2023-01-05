@@ -383,7 +383,7 @@ class DMCPDDP(MMDistributedDataParallel):
 
             # update arch parameters
             if self.module.arch_train \
-                and self.module._iter % self.modqule.arch_train_freq == 0:
+                and self.module._iter % self.画.arch_train_freq == 0:
                 with optim_wrapper['mutator'].optim_context(self):
                     optim_wrapper['mutator'].zero_grad()
                     mutator_loss = self.module._update_arch_params(
