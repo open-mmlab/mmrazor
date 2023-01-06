@@ -17,7 +17,12 @@ from .common_operator_config_utils import (_get_conv_configs,
 
 
 def get_academic_backend_config() -> BackendConfig:
-    """Return the `BackendConfig` for academic reseaching."""
+    """Return the `BackendConfig` for academic reseaching.
+    
+    Note:
+        Learn more about BackendConfig, please refer to:
+        https://github.com/pytorch/pytorch/tree/master/torch/ao/quantization/backend_config # noqa: E501
+    """
 
     # ===================
     # |  DTYPE CONFIGS  |
@@ -34,7 +39,7 @@ def get_academic_backend_config() -> BackendConfig:
     conv_dtype_configs = [weighted_op_int8_dtype_config]
     linear_dtype_configs = [weighted_op_int8_dtype_config]
 
-    return BackendConfig('native') \
+    return BackendConfig('academic') \
         .set_backend_pattern_configs(_get_conv_configs(conv_dtype_configs)) \
         .set_backend_pattern_configs(_get_linear_configs(linear_dtype_configs))
 
