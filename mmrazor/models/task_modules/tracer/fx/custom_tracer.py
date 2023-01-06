@@ -74,30 +74,6 @@ class UntracedMethodRegistry:
         return wrapped_method
 
 
-def custom_symbolic_trace(
-        root: Union[torch.nn.Module, Callable[..., Any]],
-        concrete_args: Optional[Dict[str, Any]] = None) -> GraphModule:
-    """Modified `symbolic_trace` function in pytorch. Given an ``nn.Module`` or
-    function instance ``root``, this function will return a ``GraphModule``
-    constructed by recording operations seen while tracing through ``root``.
-
-    Args:
-        root (torch.nn.Module): Module or function to be
-            traced and converted into a Graph representation.
-        concrete_args (Optional[Dict[str, any]]): Inputs to be partially
-            specialized.
-
-    Returns:
-        GraphModule: a Module created from the recorded operations from
-        ``root``.
-    """
-    tracer = CustomTracer()
-    graph = tracer.trace(root, concrete_args)
-    name = root.__class__.__name__ if isinstance(root,
-                                                 nn.Module) else root.__name__
-    return GraphModule(tracer.root, graph, name)
-
-
 def _prepare_module_dict(model: torch.nn.Module, fx_graph: torch.fx.Graph):
     """If there is a class method that can not be traced by the symbolic
     tracer, a ``call_method`` ``Node`` will be inserted into the ``Graph`` in
@@ -444,3 +420,27 @@ class CustomTracer(QuantizationTracer):
         """
         leaf = super().is_leaf_module(m, module_qualified_name)
         return leaf
+
+
+def custom_symbolic_trace(
+        root: Union[torch.nn.Module, Callable[..., Any]],
+        concrete_args: Optional[Dict[str, Any]] = None) -> GraphModule:
+    """Modified `symbolic_trace` function in pytorch. Given an ``nn.Module`` or
+    function instance ``root``, this function will return a ``GraphModule``
+    constructed by recording operations seen while tracing through ``root``.
+
+    Args:
+        root (torch.nn.Module): Module or function to be
+            traced and converted into a Graph representation.
+        concrete_args (Optional[Dict[str, any]]): Inputs to be partially
+            specialized.
+
+    Returns:
+        GraphModule: a Module created from the recorded operations from
+        ``root``.
+    """
+    tracer = CustomTracer()
+    graph = tracer.trace(root, concrete_args)
+    name = root.__class__.__name__ if isinstance(
+        root, torch.nn.Module) else root.__name__
+    return GraphModule(tracer.root, graph, name)
