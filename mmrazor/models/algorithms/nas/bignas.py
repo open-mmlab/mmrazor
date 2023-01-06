@@ -17,6 +17,7 @@ from mmrazor.models.utils import (add_prefix,
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
 from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm
+from ..space_mixin import SpaceMixin
 
 VALID_MUTATOR_TYPE = Union[BaseMutator, Dict]
 VALID_MUTATORS_TYPE = Dict[str, Union[BaseMutator, Dict]]
@@ -24,7 +25,7 @@ VALID_DISTILLER_TYPE = Union[ConfigurableDistiller, Dict]
 
 
 @MODELS.register_module()
-class BigNAS(BaseAlgorithm):
+class BigNAS(BaseAlgorithm, SpaceMixin):
     """Implementation of `BigNas <https://arxiv.org/pdf/2003.11142>`_
 
     BigNAS is a NAS algorithm which searches the following items in MobileNetV3
@@ -91,6 +92,7 @@ class BigNAS(BaseAlgorithm):
             raise TypeError('mutator should be a `dict` but got '
                             f'{type(mutators)}')
 
+        self._build_search_space()
         self.distiller = self._build_distiller(distiller)
         self.distiller.prepare_from_teacher(self.architecture)
         self.distiller.prepare_from_student(self.architecture)
@@ -133,40 +135,6 @@ class BigNAS(BaseAlgorithm):
                             f'{type(distiller)}')
 
         return distiller
-
-    def sample_subnet(self, kind='random') -> Dict:
-        """Random sample subnet by mutator."""
-        value_subnet = dict()
-        channel_subnet = dict()
-        for name, mutator in self.mutators.items():
-            if name == 'value_mutator':
-                value_subnet.update(mutator.sample_choices(kind))
-            elif name == 'channel_mutator':
-                channel_subnet.update(mutator.sample_choices(kind))
-            else:
-                raise NotImplementedError
-        return dict(value_subnet=value_subnet, channel_subnet=channel_subnet)
-
-    def set_subnet(self, subnet: Dict[str, Dict[int, Union[int,
-                                                           list]]]) -> None:
-        """Set the subnet sampled by :meth:sample_subnet."""
-        for name, mutator in self.mutators.items():
-            if name == 'value_mutator':
-                mutator.set_choices(subnet['value_subnet'])
-            elif name == 'channel_mutator':
-                mutator.set_choices(subnet['channel_subnet'])
-            else:
-                raise NotImplementedError
-
-    def set_max_subnet(self) -> None:
-        """Set max subnet."""
-        for mutator in self.mutators.values():
-            mutator.set_choices(mutator.max_choice)
-
-    def set_min_subnet(self) -> None:
-        """Set min subnet."""
-        for mutator in self.mutators.values():
-            mutator.set_choices(mutator.min_choice)
 
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
