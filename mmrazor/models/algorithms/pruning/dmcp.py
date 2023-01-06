@@ -77,8 +77,10 @@ class DMCP(BaseAlgorithm):
             self.is_supernet = True
 
     def  _load_fix_subnet(self, save_path):
+        from mmrazor.structures import load_fix_subnet
         with open(save_path) as file:
             self.mutator.set_choices(yaml.load(file.read()))
+        load_fix_subnet(self.architecture, save_path)
 
     def _build_distiller(
             self, distiller: VALID_DISTILLER_TYPE) -> ConfigurableDistiller:

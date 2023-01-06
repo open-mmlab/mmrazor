@@ -7,6 +7,8 @@ from mmengine.dist import master_only
 from mmengine.hooks import Hook
 from mmengine.registry import HOOKS
 
+DATA_BATCH = Optional[Sequence[dict]]
+
 
 @HOOKS.register_module()
 class DMCPSubnetHook(Hook):
