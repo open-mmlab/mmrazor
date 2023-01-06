@@ -2,12 +2,6 @@ _base_ = ['mmcls::resnet/resnet18_8xb32_in1k.py']
 
 train_dataloader = dict(batch_size=1024)
 
-# test_cfg = dict(
-#     type='mmrazor.PTQLoop',
-#     calibrate_dataloader=train_dataloader,
-#     calibrate_steps=32,
-# )
-
 global_qconfig = dict(
     w_observer=dict(type='mmrazor.PerChannelMinMaxObserver'),
     a_observer=dict(type='mmrazor.MovingAverageMinMaxObserver'),

@@ -125,14 +125,23 @@ class NativeQuantizer(BaseQuantizer):
         return ['per_tensor']
 
     def prepare(self, model, graph_module):
-        """prepare graph to ObserverdGraphModule.
+        """prepare graph to ObservedGraphModule.
 
         Args:
-            model (_type_): _description_
-            graph_module (_type_): Graph modules before fuse.
+            graph_module (_type_): GraphModules before fuse.
 
         Returns:
-            ObserverdGraphModule: Graph module after fuse and observerd
+            ObservedGraphModule: GraphModules after fuse and observer.
+            
+        Notes:
+            'graph_module' after '_fuse_fx()' function will fuse conv, BN, ReLU
+            into modules in SUPPORT_QAT_MODULES.
+            'graph_module' after 'prepare()' function will become observed.
+            
+        Notes:
+            Keep `is_qat` is True is because in Pytorch when `is_qat` is false, 
+            the `_fuse_fx()` function only fuse module into `nn.Squential` ,
+            but we need it to be fused into `SUPPORT_QAT_MODULES` type.
         """
 
         graph_module = _fuse_fx(
@@ -153,11 +162,18 @@ class NativeQuantizer(BaseQuantizer):
     def post_process_weight_fakequant(self,
                                       observed_module,
                                       keep_fake_quant: bool = False):
-        """weight fakequant for supported QAT modules.
+        """weight fake-quant for supported QAT modules.
 
         Args:
-            observed_module (_type_): _description_
-            keep_fake_quant (bool, optional): _description_. Defaults to False.
+            observed_module (ObservedGraphModule): Modules after fused and 
+                observed.
+            keep_fake_quant (bool, optional): Bool to determine whether to keep
+            fake-quant op, depending on the backend. Defaults to False.
+            
+        Note: 
+            `post_process_weight_fakequant()` function is necessary that the
+                `SUPPORT_QAT_MODULES` will be convert to normal modules, and
+                BN will be really integrated into conv layers.
         """
 
         def traverse(module):
@@ -171,11 +187,14 @@ class NativeQuantizer(BaseQuantizer):
                     weight_fakequant = child.weight_fake_quant
                     child.weight.data = weight_fakequant(child.weight.data)
 
-                    # `to_float()` function fuse BN into conv or conv_relu.
+                    # `to_float()` function fuse BN into conv or conv_relu, and
+                    # also convert a qat module to a normal module.
+                    # source url: torch.nn.intrinsic.qat.modules.conv_fused.py
                     float_child = child.to_float()
 
-                    # This is decided by backend type, some backend need
+                     # This is decided by backend type, some backend need
                     # explicitly keep the fake quant structure, others don't.
+                    # TODO add deploy doc link
                     if keep_fake_quant:
                         for m in float_child.modules():
                             setattr(m, 'qconfig', self.qconfig.convert())

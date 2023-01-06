@@ -40,7 +40,8 @@ class MMArchitectureQuant(BaseAlgorithm):
         init_cfg (dict): The weight initialized config for :class:`BaseModule`.
 
     Note:
-        forward_modes (tuple):
+        forward_modes (tuple): In OpenMMLab architecture, differenet modes
+            will trace a different graph of quantized model.                                                     
     """
 
     def __init__(
@@ -49,7 +50,7 @@ class MMArchitectureQuant(BaseAlgorithm):
             quantizer: Union[Dict, BaseModel],
             #  data_preprocessor: Union[Dict, torch.nn.Module, None] = None,
             data_preprocessor=None,
-            forward_modes: Union[tuple, str] = ('tensor'),
+            forward_modes: Union[tuple, str] = ('tensor','predict', 'loss'),
             float_checkpoint: Optional[str] = None,
             input_shapes: tuple = (1, 3, 224, 224),
             init_cfg: Optional[dict] = None):
@@ -74,7 +75,10 @@ class MMArchitectureQuant(BaseAlgorithm):
         self.sync_qparams(forward_modes[0])
 
     def sync_qparams(self, src_mode):
-        """Sync all quantize parameters in different `forward_modes`.
+        """Sync all quantize parameters in different `forward_modes`. We have 
+            three modes to generate three graphs, but in training, only one 
+            graph will be update, so we need to sync qparams in the other two 
+            graphs.
 
         Args:
             src_mode (str): The modes of forward method.
@@ -84,7 +88,7 @@ class MMArchitectureQuant(BaseAlgorithm):
                 quantized graph generated from different `forward_modes`.
                 This is because We have different mode ('tensor', 'predict',
                 'loss') in OpenMMLab architecture which have different graph
-                in some subtle ways, so we need to sync them here.
+                in some subtle ways, so we need to sync them here. 
         """
 
         def traverse(module, prefix):
@@ -117,8 +121,6 @@ class MMArchitectureQuant(BaseAlgorithm):
 
         src_state_dict = self.qmodels[src_mode].state_dict()
         for mode in self.forward_modes:
-            import pdb
-            pdb.set_trace()
             if mode == src_mode:
                 continue
             traverse(self.qmodels[mode], '')
@@ -128,6 +130,26 @@ class MMArchitectureQuant(BaseAlgorithm):
 
         Args:
             model (dict | :obj:`BaseModel`): the given fp model.
+            
+        Example:
+            The main body of the graph is all the same, but the last one or two 
+            op will have difference, as shown below.
+            
+            self.qmodels['tensor'].graph.print_tabular()
+            opcode       target            args    
+            call_module  head.fc           (activation_post_process_38,)                                               
+            output       output            (head_fc,)    
+            
+            self.qmodels['loss'].graph.print_tabular()
+            opcode       target            args     
+            call_method  _get_loss         (head, head_fc, data_samples)                                               {}
+            output       output            (_get_loss,)     
+            
+            self.qmodels['predict'].graph.print_tabular()
+            opcode       target            args     
+            call_method  _get_predictions  (head, head_fc, data_samples)                                                  {}
+            output       output            (_get_predictions,)   
+
         """
 
         qmodels = nn.ModuleDict()
