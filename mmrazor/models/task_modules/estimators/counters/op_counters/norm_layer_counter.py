@@ -78,8 +78,8 @@ class DMCPBatchNorm2dCounter(BNCounter):
         B, C, H, W = input.shape
 
         mutable_channel = list(module.mutable_attrs['num_features'].mutable_channels.values())
-        if hasattr(mutable_channel[0], '_current_mask'):
-            C = mutable_channel[0]._current_mask
+        if hasattr(mutable_channel[0], 'activated_tensor_channels'):
+            C = mutable_channel[0].activated_tensor_channels
 
         batch_flops = B * C * H * W
         if getattr(module, 'affine', False):

@@ -36,6 +36,7 @@ class DMCPChannelUnit(SequentialMutableChannelUnit):
                  min_ratio: float = 0.5) -> None:
         super().__init__(num_channels, choice_mode, divisor, min_value,
                          min_ratio)
+        self.mutable_channel.activated_tensor_channels = None
 
     def prepare_for_pruning(self, model: nn.Module):
         """In ``DMCPChannelGroup`` nn.BatchNorm2d is replaced with MixedBatchNorm2d."""

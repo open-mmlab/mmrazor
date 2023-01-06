@@ -57,9 +57,6 @@ class SquentialMutableChannel(SimpleMutableChannel):
         """Return current mask."""
         return self.mask.bool()
 
-    @current_mask.setter
-    def current_mask(self, value):
-        self._current_mask = value
     # methods for
 
     def fix_chosen(self, chosen=...):

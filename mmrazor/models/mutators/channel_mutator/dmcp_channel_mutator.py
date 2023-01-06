@@ -167,5 +167,5 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
             choice = choices[group_id]
             for module in modules:
                 module.current_choice = choice
-                module.mutable_channel.current_mask = choice
+                module.mutable_channel.activated_tensor_channels = choice
 
