@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Dict, List, Optional, Tuple, Union
+
 import torch
 from torch.ao.quantization import enable_fake_quant
 from torch.ao.quantization.fx import prepare
@@ -40,6 +42,32 @@ MERGE_BN_MAPPINGS = {
 
 @MODELS.register_module()
 class NativeQuantizer(BaseQuantizer):
+    """Native class for quantizer.
+
+    Args:
+        global_qconfig (Dict): Config for quantization details of weight and
+            activation include observer, quantizer, and qscheme.
+        no_observer_modules (str | List | Tuple | Optional): Modules before
+            observer.
+        tracer (Dict): Config for tracer to trace modules for torch fx .
+
+    Raises:
+        NotImplementedError: _description_
+
+    Examples:
+        >>> global_qconfig = dict(
+        ...     w_observer=dict(type='mmrazor.PerChannelMinMaxObserver'),
+        ...     a_observer=dict(type='mmrazor.MovingAverageMinMaxObserver'),
+        ...     w_fake_quant=dict(type='mmrazor.FakeQuantize'),
+        ...     a_fake_quant=dict(type='mmrazor.FakeQuantize'),
+        ...     w_qscheme=dict(
+        ...         qdtype='qint8', bit=8, is_symmetry=True,
+        ...         is_symmetric_range=True),
+        ...     a_qscheme=dict(
+        ...         qdtype='quint8', bit=8, is_symmetry=True,
+        ...         averaging_constant=0.1),
+)
+    """
 
     # backend: 'native'
     # support_w_modes = ['per_tensor', 'per_channel']
@@ -97,6 +125,16 @@ class NativeQuantizer(BaseQuantizer):
         return ['per_tensor']
 
     def prepare(self, model, graph_module):
+        """prepare graph to ObserverdGraphModule.
+
+        Args:
+            model (_type_): _description_
+            graph_module (_type_): Graph modules before fuse.
+
+        Returns:
+            ObserverdGraphModule: Graph module after fuse and observerd
+        """
+
         graph_module = _fuse_fx(
             graph_module=graph_module,
             is_qat=True,
@@ -114,16 +152,30 @@ class NativeQuantizer(BaseQuantizer):
 
     def post_process_weight_fakequant(self,
                                       observed_module,
-                                      keep_fake_quant=False):
+                                      keep_fake_quant: bool = False):
+        """weight fakequant for supported QAT modules.
+
+        Args:
+            observed_module (_type_): _description_
+            keep_fake_quant (bool, optional): _description_. Defaults to False.
+        """
 
         def traverse(module):
             for name, child in module.named_children():
+                # Trace `SUPPORT_QAT_MODULES` recursively.
                 if isinstance(child, SUPPORT_QAT_MODULES):
+                    # We add w_fakequant once in case some ptq methods have
+                    # specific operations such as Adaround. So we do Quantize
+                    # to perform these operations and do dequantize to
+                    # introduce quantization loss in advance.
                     weight_fakequant = child.weight_fake_quant
                     child.weight.data = weight_fakequant(child.weight.data)
 
+                    # `to_float()` function fuse BN into conv or conv_relu.
                     float_child = child.to_float()
 
+                    # This is decided by backend type, some backend need
+                    # explicitly keep the fake quant structure, others don't.
                     if keep_fake_quant:
                         for m in float_child.modules():
                             setattr(m, 'qconfig', self.qconfig.convert())

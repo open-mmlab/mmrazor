@@ -11,7 +11,7 @@ from torch.ao.quantization import FakeQuantizeBase
 
 from mmrazor.models.task_modules import build_graphmodule
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
-from ..base import BaseAlgorithm
+from ..base import BaseAlgorithm, BaseModel
 
 LossResults = Dict[str, torch.Tensor]
 TensorResults = Union[Tuple[torch.Tensor], torch.Tensor]
@@ -28,31 +28,39 @@ class MMArchitectureQuant(BaseAlgorithm):
             :class:`BaseModel` or built model.
         quantizer (dict | :obj:`BaseModel`): The config of
             :class:`BaseQuantizer` or built model.
-        export_mode (str): The mode of the model to be exported. Defaults to
-            predict.
         qmodel_modes (list): The available mode of runner.
         data_preprocessor (dict | torch.nn.Module | None): The pre-process
             config of :class:`BaseDataPreprocessor`. Defaults to None.
-        pretrained_ckpt (str, Optional): The path of pretrained checkpoint.
-            Defaults to None.
-        init_cfg (dict): The weight initialized config for
-            :class:`BaseModule`.
+        forward_modes (tuple): The modes in forward method in OpenMMLab
+            architecture could be tensor, predict, or loss. It can generate
+            different graph of quantized model.
+        float_checkpoint (str, Optional): The path of pretrained FP checkpoint.
+            Quantization is different from or task, we recommend to use
+            `float_checkpoint` as pretrain model. Defaults to None.
+        init_cfg (dict): The weight initialized config for :class:`BaseModule`.
+
+    Note:
+        forward_modes (tuple):
     """
 
-    def __init__(self,
-                 architecture,
-                 quantizer,
-                 data_preprocessor=None,
-                 forward_modes=('tensor', 'predict', 'loss'),
-                 float_checkpoint: Optional[str] = None,
-                 input_shapes=(1, 3, 224, 224),
-                 init_cfg=None):
+    def __init__(
+            self,
+            architecture: Union[Dict, BaseModel],
+            quantizer: Union[Dict, BaseModel],
+            #  data_preprocessor: Union[Dict, torch.nn.Module, None] = None,
+            data_preprocessor=None,
+            forward_modes: Union[tuple, str] = ('tensor'),
+            float_checkpoint: Optional[str] = None,
+            input_shapes: tuple = (1, 3, 224, 224),
+            init_cfg: Optional[dict] = None):
 
         if data_preprocessor is None:
             data_preprocessor = {}
         # The build process is in MMEngine, so we need to add scope here.
+        # Default to mmcls.ClsDataPreprocessor.
         data_preprocessor.setdefault('type', 'mmcls.ClsDataPreprocessor')
         super().__init__(architecture, data_preprocessor, init_cfg)
+        # If we have a float_checkpoint, we load it as pretrain.
         if float_checkpoint:
             _ = load_checkpoint(self.architecture, float_checkpoint)
             self.architecture._is_init = True
@@ -63,9 +71,21 @@ class MMArchitectureQuant(BaseAlgorithm):
 
         self.qmodels = self._build_qmodels(self.architecture)
 
-        self.sync_qparams('predict')
+        self.sync_qparams(forward_modes[0])
 
     def sync_qparams(self, src_mode):
+        """Sync all quantize parameters in different `forward_modes`.
+
+        Args:
+            src_mode (str): The modes of forward method.
+
+        Note:
+            `traverse()` function recursively traverses all module to sync
+                quantized graph generated from different `forward_modes`.
+                This is because We have different mode ('tensor', 'predict',
+                'loss') in OpenMMLab architecture which have different graph
+                in some subtle ways, so we need to sync them here.
+        """
 
         def traverse(module, prefix):
             for name, child in module._modules.items():
@@ -79,10 +99,10 @@ class MMArchitectureQuant(BaseAlgorithm):
                         if src_param.shape == param.shape:
                             param.data.copy_(src_param)
                         else:
-                            requirs_grad = param.requires_grad
-                            param.requires_grad = False
+                            # requirs_grad = param.requires_grad
+                            # param.requires_grad = False
                             param.resize_(src_param.shape)
-                            param.requires_grad = requirs_grad
+                            # param.requires_grad = requirs_grad
                             param.data.copy_(src_param)
                     for name, buffer in child.named_buffers():
                         buffer_name = f'{child_name}.{name}'
@@ -97,11 +117,18 @@ class MMArchitectureQuant(BaseAlgorithm):
 
         src_state_dict = self.qmodels[src_mode].state_dict()
         for mode in self.forward_modes:
+            import pdb
+            pdb.set_trace()
             if mode == src_mode:
                 continue
             traverse(self.qmodels[mode], '')
 
     def _build_qmodels(self, model):
+        """Build quantized models from the given model.
+
+        Args:
+            model (dict | :obj:`BaseModel`): the given fp model.
+        """
 
         qmodels = nn.ModuleDict()
 
@@ -133,6 +160,8 @@ class MMArchitectureQuant(BaseAlgorithm):
             return self.architecture(inputs, data_samples, mode)
 
     def calibrate_step(self, data):
+        """PTQ method need calibrate by cali data."""
+
         data = self.data_preprocessor(data, False)
         return self._run_forward(data, mode='predict')
 
