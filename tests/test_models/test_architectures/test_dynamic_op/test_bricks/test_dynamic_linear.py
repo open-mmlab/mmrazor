@@ -49,7 +49,7 @@ def test_dynamic_linear(bias) -> None:
     with pytest.raises(RuntimeError):
         _ = d_linear.to_static_op()
 
-    fix_mutables = export_fix_subnet(d_linear)
+    fix_mutables = export_fix_subnet(d_linear)[0]
     with pytest.raises(RuntimeError):
         load_fix_subnet(d_linear, fix_mutables)
     fix_dynamic_op(d_linear, fix_mutables)
@@ -100,7 +100,7 @@ def test_dynamic_linear_mutable_single_features(
         with pytest.raises(RuntimeError):
             _ = d_linear.to_static_op()
 
-    fix_mutables = export_fix_subnet(d_linear)
+    fix_mutables = export_fix_subnet(d_linear)[0]
     with pytest.raises(RuntimeError):
         load_fix_subnet(d_linear, fix_mutables)
     fix_dynamic_op(d_linear, fix_mutables)

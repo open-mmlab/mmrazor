@@ -75,8 +75,9 @@ mutator = ChannelMutator(
         units={},
     ),
     parse_cfg=dict(
-        type='BackwardTracer',
-        loss_calculator=dict(type='ImageClassifierPseudoLoss')))
+        type='ChannelAnalyzer',
+        demo_input=(1, 3, 224, 224),
+        tracer_type='BackwardTracer'))
 # init the ChannelMutator object with a model
 mutator.prepare_from_supernet(model)
 config=mutator.config_template(with_unit_init_args=True)
@@ -101,10 +102,9 @@ print(config)
 #         }
 #     },
 #     'parse_cfg': {
-#         'type': 'BackwardTracer',
-#         'loss_calculator': {
-#             'type': 'ImageClassifierPseudoLoss'
-#         }
+#         type='ChannelAnalyzer',
+#         demo_input=(1, 3, 224, 224),
+#         tracer_type='BackwardTracer'
 #     }
 # }
 ```
@@ -121,9 +121,9 @@ mutator2.prepare_from_supernet(resnet34())
 To make your development more fluent, we provide a command tool to parse a model and return the config template.
 
 ```shell
-$ python ./tools/get_channel_units.py -h
+$ python ./tools/pruning/get_channel_units.py -h
 
-usage: get_channel_units.py [-h] [-c] [-i] [--choice] [-o OUTPUT_PATH] config
+usage: pruning/get_channel_units.py [-h] [-c] [-i] [--choice] [-o OUTPUT_PATH] config
 
 Get channel unit of a model.
 
@@ -142,7 +142,7 @@ optional arguments:
 Take the algorithm Slimmable Network as an example.
 
 ```shell
-python ./tools/get_channel_units.py ./configs/pruning/mmcls/autoslim/autoslim_mbv2_1.5x_slimmable_subnet_8xb256_in1k.py
+python ./tools/pruning/get_channel_units.py ./configs/pruning/mmcls/autoslim/autoslim_mbv2_1.5x_slimmable_subnet_8xb256_in1k.py
 
 # {
 #     "type":"SlimmableChannelMutator",
@@ -160,9 +160,9 @@ python ./tools/get_channel_units.py ./configs/pruning/mmcls/autoslim/autoslim_mb
 #         }
 #     },
 #     "parse_cfg":{
-#         "type":"BackwardTracer",
-#         "loss_calculator":{
-#             "type":"ImageClassifierPseudoLoss"
+#          type='ChannelAnalyzer',
+#          demo_input=(1, 3, 224, 224),
+#          tracer_type='BackwardTracer'
 #         }
 #     }
 # }
@@ -171,7 +171,7 @@ python ./tools/get_channel_units.py ./configs/pruning/mmcls/autoslim/autoslim_mb
 The '-i' flag will return the config with the initialization arguments.
 
 ```shell
-python ./tools/get_channel_units.py -i ./configs/pruning/mmcls/autoslim/autoslim_mbv2_1.5x_slimmable_subnet_8xb256_in1k.py
+python ./tools/pruning/get_channel_units.py -i ./configs/pruning/mmcls/autoslim/autoslim_mbv2_1.5x_slimmable_subnet_8xb256_in1k.py
 
 # {
 #     "type":"SlimmableChannelMutator",
@@ -196,9 +196,9 @@ python ./tools/get_channel_units.py -i ./configs/pruning/mmcls/autoslim/autoslim
 #         }
 #     },
 #     "parse_cfg":{
-#         "type":"BackwardTracer",
-#         "loss_calculator":{
-#             "type":"ImageClassifierPseudoLoss"
+#           type='ChannelAnalyzer',
+#           demo_input=(1, 3, 224, 224),
+#           tracer_type='BackwardTracer'
 #         }
 #     }
 # }
@@ -207,7 +207,7 @@ python ./tools/get_channel_units.py -i ./configs/pruning/mmcls/autoslim/autoslim
 With "--choice" flag, it will return the choice template, a dict which uses unit_name as key, and use the choice value as value.
 
 ```shell
-python ./tools/get_channel_units.py -i ./configs/pruning/mmcls/autoslim/autoslim_mbv2_1.5x_slimmable_subnet_8xb256_in1k.py --choice
+python ./tools/pruning/get_channel_units.py -i ./configs/pruning/mmcls/autoslim/autoslim_mbv2_1.5x_slimmable_subnet_8xb256_in1k.py --choice
 
 # {
 #     "backbone.conv1.conv_(0, 48)_48":32,

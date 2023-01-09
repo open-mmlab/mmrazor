@@ -498,6 +498,9 @@ def add_flops_params_counter_variable_or_reset(module):
         module.__params__ = 0
 
 
+counter_warning_list = []
+
+
 def get_counter_type(module) -> str:
     """Get counter type of the module based on the module class name.
 
@@ -515,10 +518,13 @@ def get_counter_type(module) -> str:
         for base_cls in module.__class__.mro():
             if base_cls in get_modules_list():
                 counter_type = base_cls.__name__ + 'Counter'
-                from mmengine import MMLogger
-                logger = MMLogger.get_current_instance()
-                logger.warning(f'`{old_counter_type}` not in op_counters. '
-                               f'Using `{counter_type}` instead.')
+                global counter_warning_list
+                if old_counter_type not in counter_warning_list:
+                    from mmengine import MMLogger
+                    logger = MMLogger.get_current_instance()
+                    logger.warning(f'`{old_counter_type}` not in op_counters. '
+                                   f'Using `{counter_type}` instead.')
+                    counter_warning_list.append(old_counter_type)
                 break
     return counter_type
 

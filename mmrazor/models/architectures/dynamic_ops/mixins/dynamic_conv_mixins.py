@@ -1,7 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import abstractmethod
+from functools import partial
 from itertools import repeat
-from typing import Callable, Iterable, Optional, Tuple
+from typing import Any, Callable, Iterable, Optional, Tuple, Union
 
 import torch
 import torch.nn.functional as F
@@ -10,6 +11,8 @@ from torch.nn.modules.conv import _ConvNd
 
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from .dynamic_mixins import DynamicChannelMixin
+
+PartialType = Callable[[Any, Optional[nn.Parameter]], Any]
 
 
 def _ntuple(n: int) -> Callable:  # pragma: no cover
@@ -172,10 +175,22 @@ class DynamicConvMixin(DynamicChannelMixin):
             # depth-wise conv
             weight = weight[out_mask]
         else:
-            raise NotImplementedError(
-                'Current `ChannelMutator` only support pruning the depth-wise '
-                '`nn.Conv2d` or `nn.Conv2d` module whose group number equals '
-                f'to one, but got {self.groups}.')
+            # group-wise conv
+            in_mask_ = in_mask.reshape([self.groups, -1])  # G in/G
+            in_per_group = in_mask_.sum(dim=-1)[0].item()
+            assert (in_mask_.sum(dim=-1) == in_per_group).all()
+            out_mask_ = out_mask.reshape([self.groups, -1])  # G out/G
+            out_per_group = out_mask_.sum(dim=-1)[0].item()
+            assert (out_mask_.sum(dim=-1) == out_per_group).all()
+
+            mask = out_mask_.unsqueeze(-1) * in_mask_.unsqueeze(
+                -2)  # G out/G in/G
+            mask = mask.flatten()
+            weight = weight.flatten(0, 1)
+            weight = weight[mask]
+            weight = weight.reshape(
+                [self.groups * out_per_group, in_per_group, *self.kernel_size])
+
         bias = self.bias[out_mask] if self.bias is not None else None
         return weight, bias
 
@@ -292,9 +307,10 @@ class BigNasConvMixin(DynamicConvMixin):
         return weight, bias, padding
 
     def _get_dynamic_params_by_mutable_kernel_size(
-            self: _ConvNd, weight: Tensor) -> Tuple[Tensor, Tuple[int]]:
+            self: _ConvNd, weight: Tensor) -> Tuple[Tensor, Tuple]:
         """Get sliced weight and bias according to ``mutable_in_channels`` and
         ``mutable_out_channels``."""
+
         if 'kernel_size' not in self.mutable_attrs \
                 or self.kernel_size_list is None:
             return weight, self.padding
@@ -303,7 +319,8 @@ class BigNasConvMixin(DynamicConvMixin):
         current_kernel_size = self.get_current_choice(mutable_kernel_size)
 
         n_dims = len(self.weight.shape) - 2
-        current_padding = _get_same_padding(current_kernel_size, n_dims)
+        current_padding: Union[Tuple[int], Tuple[int, int]] = \
+            _get_same_padding(current_kernel_size, n_dims)
 
         _pair = _ntuple(len(self.weight.shape) - 2)
         if _pair(current_kernel_size) == self.kernel_size:
@@ -316,16 +333,6 @@ class BigNasConvMixin(DynamicConvMixin):
             weight[:, :, start_offset:end_offset, start_offset:end_offset]
 
         return current_weight, current_padding
-
-    def forward_mixin(self: _ConvNd, x: Tensor) -> Tensor:
-        """Forward of dynamic conv2d OP."""
-        groups = self.groups
-        if self.groups == self.in_channels == self.out_channels:
-            groups = x.size(1)
-        weight, bias, padding = self.get_dynamic_params()
-
-        return self.conv_func(x, weight, bias, self.stride, padding,
-                              self.dilation, groups)
 
 
 class OFAConvMixin(BigNasConvMixin):
@@ -362,7 +369,7 @@ class OFAConvMixin(BigNasConvMixin):
         return f'trans_matrix_{src}to{tar}'
 
     def _get_dynamic_params_by_mutable_kernel_size(
-            self: _ConvNd, weight: Tensor) -> Tuple[Tensor, Tuple[int]]:
+            self: _ConvNd, weight: Tensor) -> Tuple[Tensor, Tuple]:
         """Get sliced weight and bias according to ``mutable_in_channels`` and
         ``mutable_out_channels``."""
 
@@ -373,7 +380,8 @@ class OFAConvMixin(BigNasConvMixin):
         current_kernel_size = self.get_current_choice(mutable_kernel_size)
 
         n_dims = len(self.weight.shape) - 2
-        current_padding = _get_same_padding(current_kernel_size, n_dims)
+        current_padding: Union[Tuple[int], Tuple[int, int]] = \
+            _get_same_padding(current_kernel_size, n_dims)
 
         _pair = _ntuple(len(self.weight.shape) - 2)
         if _pair(current_kernel_size) == self.kernel_size:
@@ -404,3 +412,161 @@ class OFAConvMixin(BigNasConvMixin):
             current_weight = target_weight
 
         return current_weight, current_padding
+
+
+class FuseConvMixin(DynamicConvMixin):
+    """A mixin class for fuse conv, which can mutate ``in_channels``,
+    ``out_channels`` ."""
+
+    def set_forward_args(self, choice: Tensor) -> None:
+        """Interface for modifying the arch_param using partial."""
+        param_channel_with_default_args: PartialType = \
+            partial(
+                self._get_dynamic_params_by_mutable_channels_choice,
+                choice=choice)
+        setattr(self, '_get_dynamic_params_by_mutable_channels',
+                param_channel_with_default_args)
+
+    def get_dynamic_params(
+            self: _ConvNd) -> Tuple[Tensor, Optional[Tensor], Tuple[int]]:
+        """Get dynamic parameters that will be used in forward process.
+
+        Returns:
+            Tuple[Tensor, Optional[Tensor], Tuple[int]]: Sliced weight, bias
+                and padding.
+        """
+        # slice in/out channel of weight according to mutable in_channels
+        # and mutable out channels.
+        weight, bias = self._get_dynamic_params_by_mutable_channels(
+            self.weight, self.bias)
+        return weight, bias, self.padding
+
+    def _get_dynamic_params_by_mutable_channels_choice(
+            self: _ConvNd, weight: Tensor, bias: Optional[Tensor],
+            choice: Tensor) -> Tuple[Tensor, Optional[Tensor]]:
+        """Get sliced weight and bias according to ``mutable_in_channels`` and
+        ``mutable_out_channels``.
+
+        Returns:
+            Tuple[Tensor, Optional[Tensor]]: Sliced weight and bias.
+        """
+
+        mutable_in_channels = 0
+        mutable_out_channels = 0
+
+        if 'in_channels' in self.mutable_attrs:
+            mutable_in_channels = self.mutable_attrs[
+                'in_channels'].current_mask.sum().item()
+
+        if 'out_channels' in self.mutable_attrs:
+            mutable_out_channels = self.mutable_attrs[
+                'out_channels'].current_mask.sum().item()
+
+        if mutable_in_channels == 0:
+            mutable_in_channels = self.in_channels
+        if mutable_out_channels == 0:
+            mutable_out_channels = self.out_channels
+
+        # if channel not in mutable_attrs or unchanged
+        if mutable_in_channels == self.in_channels and \
+                mutable_out_channels == self.out_channels:
+            return weight, bias
+
+        weight = self.weight[:, 0:mutable_in_channels, :, :]
+        if self.groups == 1:
+            cout, cin, k, _ = weight.shape
+            fused_weight = torch.mm(choice,
+                                    weight.reshape(cout,
+                                                   -1)).reshape(-1, cin, k, k)
+        elif self.groups == self.in_channels == self.out_channels:
+            # depth-wise conv
+            cout, cin, k, _ = weight.shape
+            fused_weight = torch.mm(choice,
+                                    weight.reshape(cout,
+                                                   -1)).reshape(-1, cin, k, k)
+        else:
+            raise NotImplementedError(
+                'Current `ChannelMutator` only support pruning the depth-wise '
+                '`nn.Conv2d` or `nn.Conv2d` module whose group number equals '
+                f'to one, but got {self.groups}.')
+        if (self.bias is not None):
+            fused_bias = torch.mm(choice, self.bias.unsqueeze(1)).squeeze(1)
+        else:
+            fused_bias = self.bias
+        return fused_weight, fused_bias
+
+    def to_static_op(self: _ConvNd) -> nn.Conv2d:
+        """Convert dynamic conv2d to :obj:`torch.nn.Conv2d`.
+
+        Returns:
+            torch.nn.Conv2d: :obj:`torch.nn.Conv2d` with sliced parameters.
+        """
+        self.check_if_mutables_fixed()
+
+        weight, bias, padding = self.get_dynamic_params()
+        groups = self.groups
+        if groups == self.in_channels == self.out_channels and \
+                self.mutable_in_channels is not None:
+            mutable_in_channels = self.mutable_attrs['in_channels']
+            groups = mutable_in_channels.current_mask.sum().item()
+        out_channels = weight.size(0)
+        in_channels = weight.size(1) * groups
+
+        kernel_size = tuple(weight.shape[2:])
+
+        static_conv = self.static_op_factory(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=self.stride,
+            padding=padding,
+            padding_mode=self.padding_mode,
+            dilation=self.dilation,
+            groups=groups,
+            bias=True if bias is not None else False)
+
+        static_conv.weight = nn.Parameter(weight)
+        if bias is not None:
+            static_conv.bias = nn.Parameter(bias)
+
+        return static_conv
+
+    def get_pooled_channel(self: _ConvNd, tau: float) -> Tensor:
+        """Calculate channel's kl and apply softmax pooling on channel. Return
+        `layeri_softmaxp` as pooling result.
+
+        Args:
+            tau (float): Temperature by epoch/iter.
+
+        Returns:
+            Tensor: softmax pooled channel.
+        """
+        param = self.weight
+
+        # Compute layeri_param.
+        layeri_param = torch.reshape(param.detach(), (param.shape[0], -1))
+        layeri_Eudist = torch.cdist(layeri_param, layeri_param, p=2)
+        layeri_negaEudist = -layeri_Eudist
+        softmax = nn.Softmax(dim=1)
+        layeri_softmaxp = softmax(layeri_negaEudist / tau)
+
+        # KL = [c, 1, c] * ([c, 1 ,c] / [c, c, 1]).log()
+        #    = [c, 1, c] * ([c, 1, c].log() - [c, c, 1].log())
+        # only dim0 is required, dim1 and dim2 are pooled
+        # calc mean(dim=1) first
+
+        # avoid frequent NaN
+        eps = 1e-7
+        layeri_kl = layeri_softmaxp[:, None, :]
+        log_p = layeri_kl * (layeri_kl + eps).log()
+        log_q = layeri_kl * torch.mean((layeri_softmaxp + eps).log(), dim=1)
+
+        layeri_kl = torch.mean((log_p - log_q), dim=2)
+        del log_p, log_q
+        real_out = self.mutable_attrs['out_channels'].activated_channels
+
+        layeri_iscore_kl = torch.sum(layeri_kl, dim=1)
+        _, topm_ids_order = torch.topk(
+            layeri_iscore_kl, int(real_out), sorted=False)
+        del param, layeri_param, layeri_negaEudist, layeri_kl
+        return layeri_softmaxp[topm_ids_order, :]

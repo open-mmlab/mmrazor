@@ -10,6 +10,24 @@ This paper addresses the scalability challenge of architecture search by formula
 
 ![pipeline](https://user-images.githubusercontent.com/88702197/187425171-2dfe7fbf-7c2c-4c22-9219-2234aa83e47d.png)
 
+## Get Started
+
+### Supernet training on Cifar-10
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/nas/mmcls/darts/darts_supernet_unroll_1xb96_cifar10.py 4 \
+  --work-dir $WORK_DIR
+```
+
+## Subnet inference on Cifar-10
+
+```bash
+CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
+  configs/nas/mmcls/darts/darts_subnet_1xb96_cifar10_2.0.py \
+  $STEP1_CKPT 1 --work-dir $WORK_DIR
+```
+
 ## Results and models
 
 ### Supernet
@@ -20,10 +38,10 @@ This paper addresses the scalability challenge of architecture search by formula
 
 ### Subnet
 
-| Dataset | Params(M) | Flops(G) | Top-1 Acc | Top-5 Acc |                                                                                  Subnet                                                                                   |                    Config                    |                                                                                                                                                     Download                                                                                                                                                      |     Remarks      |
-| :-----: | :-------: | :------: | :-------: | :-------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------: |
-| Cifar10 |   3.42    |   0.48   |   97.32   |   99.94   | [mutable](https://download.openmmlab.com/mmrazor/v0.1/nas/darts/darts_subnetnet_1xb96_cifar10/darts_subnetnet_1xb96_cifar10_acc-97.32_20211222-e5727921_mutable_cfg.yaml) | [config](./darts_subnetnet_1xb96_cifar10.py) | [model](https://download.openmmlab.com/mmrazor/v0.1/nas/darts/darts_subnetnet_1xb96_cifar10/darts_subnetnet_1xb96_cifar10_acc-97.32_20211222-e5727921.pth) \| [log](https://download.openmmlab.com/mmrazor/v0.1/nas/darts/darts_subnetnet_1xb96_cifar10/darts_subnetnet_1xb96_cifar10_20211222-e5727921.log.json) | MMRazor searched |
-| Cifar10 |   3.83    |   0.55   |   97.27   |   99.98   | [mutable](https://download.openmmlab.com/mmrazor/v0.1/nas/darts/darts_subnetnet_1xb96_cifar10/darts_subnetnet_1xb96_cifar10_acc-97.27_20211222-17e42600_mutable_cfg.yaml) | [config](./darts_subnetnet_1xb96_cifar10.py) | [model](https://download.openmmlab.com/mmrazor/v0.1/nas/darts/darts_subnetnet_1xb96_cifar10/darts_subnetnet_1xb96_cifar10_acc-97.27_20211222-17e42600.pth) \| [log](https://download.openmmlab.com/mmrazor/v0.1/nas/darts/darts_subnetnet_1xb96_cifar10/darts_subnetnet_1xb96_cifar10_20211222-17e42600.log.json) |     official     |
+| Dataset | Params(M) | Flops(G) | Top-1 Acc | Top-5 Acc |                                                                                  Subnet                                                                                   |                        Config                         |                                                                                                                                                  Download                                                                                                                                                  |     Remarks      |
+| :-----: | :-------: | :------: | :-------: | :-------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------: |
+| Cifar10 |   3.42    |   0.48   |   97.32   |   99.94   |                   [mutable](https://download.openmmlab.com/mmrazor/v1/darts/darts_subnetnet_1xb96_cifar10_acc-97.32_20211222-e5727921_mutable_cfg.yaml)                   | [config](./darts_subnet_1xb96_cifar10_2.0_mmrazor.py) | [model](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/darts/darts_subnetnet_1xb96_cifar10_acc-97.32_20211222-e5727921_latest.pth) \| [log](https://download.openmmlab.com/mmrazor/v0.1/nas/darts/darts_subnetnet_1xb96_cifar10/darts_subnetnet_1xb96_cifar10_20211222-e5727921.log.json) | MMRazor searched |
+| Cifar10 |   3.83    |   0.55   |   97.27   |   99.98   | [mutable](https://download.openmmlab.com/mmrazor/v0.1/nas/darts/darts_subnetnet_1xb96_cifar10/darts_subnetnet_1xb96_cifar10_acc-97.27_20211222-17e42600_mutable_cfg.yaml) |     [config](./darts_subnet_1xb96_cifar10_2.0.py)     | [model](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/darts/darts_subnetnet_1xb96_cifar10_acc-97.27_20211222-17e42600_latest.pth) \| [log](https://download.openmmlab.com/mmrazor/v0.1/nas/darts/darts_subnetnet_1xb96_cifar10/darts_subnetnet_1xb96_cifar10_20211222-17e42600.log.json) |     official     |
 
 ## Citation
 

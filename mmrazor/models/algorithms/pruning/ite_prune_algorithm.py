@@ -10,6 +10,7 @@ from mmengine.structures import BaseDataElement
 from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutators import ChannelMutator
 from mmrazor.registry import MODELS
+from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm
 
 LossResults = Dict[str, torch.Tensor]
@@ -26,46 +27,54 @@ class ItePruneConfigManager:
         target (Dict[str, Union[int, float]]): The target structure to prune.
         supernet (Dict[str, Union[int, float]]): The sturecture of the
             supernet.
-        epoch_step (int, optional): The prune step to prune. Defaults to 1.
-        times (int, optional): The times to prune. Defaults to 1.
+        step_freq (int, optional): The prune step of epoch/iter to prune.
+            Defaults to 1.
+        prune_times (int, optional): The times to prune. Defaults to 1.
+        linear_schedule (bool, optional): flag to set linear ratio schedule.
+            Defaults to True.
     """
 
     def __init__(self,
                  target: Dict[str, Union[int, float]],
                  supernet: Dict[str, Union[int, float]],
-                 epoch_step=1,
-                 times=1) -> None:
+                 step_freq=1,
+                 prune_times=1,
+                 linear_schedule=True) -> None:
 
         self.supernet = supernet
         self.target = target
-        self.epoch_step = epoch_step
-        self.prune_times = times
+        self.step_freq = step_freq
+        self.prune_times = prune_times
+        self.linear_schedule = linear_schedule
 
-        self.delta: Dict = self._get_delta_each_epoch(self.target,
-                                                      self.supernet,
-                                                      self.prune_times)
+        self.delta: Dict = self._get_delta_each_iter(self.target,
+                                                     self.supernet,
+                                                     self.prune_times)
 
-    def is_prune_time(self, epoch, ite):
+    def is_prune_time(self, iteration):
         """Is the time to prune during training process."""
-        return epoch % self.epoch_step == 0 \
-            and epoch//self.epoch_step < self.prune_times \
-            and ite == 0
+        return iteration % self.step_freq == 0 \
+            and iteration // self.step_freq < self.prune_times
 
-    def prune_at(self, epoch):
-        """Get the pruning structure in a time(epoch)."""
-        times = epoch // self.epoch_step + 1
+    def prune_at(self, iteration):
+        """Get the pruning structure in a time(iteration)."""
+        times = iteration // self.step_freq + 1
         assert times <= self.prune_times
         prune_current = {}
         ratio = times / self.prune_times
 
         for key in self.target:
-            prune_current[key] = (self.target[key] - self.supernet[key]
-                                  ) * ratio + self.supernet[key]
+            if self.linear_schedule:
+                # TO DO: add scheduler for more pruning rate schedule
+                prune_current[key] = (self.target[key] - self.supernet[key]
+                                      ) * ratio + self.supernet[key]
+            else:
+                prune_current[key] = self.target[key]
             if isinstance(self.supernet[key], int):
                 prune_current[key] = int(prune_current[key])
         return prune_current
 
-    def _get_delta_each_epoch(self, target: Dict, supernet: Dict, times: int):
+    def _get_delta_each_iter(self, target: Dict, supernet: Dict, times: int):
         """Get the structure change for pruning once."""
         delta = {}
         for key in target:
@@ -89,16 +98,21 @@ class ItePruneAlgorithm(BaseAlgorithm):
         mutator_cfg (Union[Dict, ChannelMutator], optional): The config
             of a mutator. Defaults to dict( type='ChannelMutator',
             channel_unit_cfg=dict( type='SequentialMutableChannelUnit')).
+        fix_subnet (str | dict | :obj:`FixSubnet`): The path of yaml file or
+            loaded dict or built :obj:`FixSubnet`. Defaults to None.
         data_preprocessor (Optional[Union[Dict, nn.Module]], optional):
             Defaults to None.
         target_pruning_ratio (dict, optional): The prune-target. The template
             of the prune-target can be get by calling
             mutator.choice_template(). Defaults to {}.
-        step_epoch (int, optional): The step between two pruning operations.
+        step_freq (int, optional): The step between two pruning operations.
             Defaults to 1.
-        prune_times (int, optional): The times to prune a model. Defaults to 1.
+        prune_times (int, optional): The total times to prune a model.
+            Defaults to 1.
         init_cfg (Optional[Dict], optional): init config for architecture.
             Defaults to None.
+        linear_schedule (bool, optional): flag to set linear ratio schedule.
+            Defaults to True.
     """
 
     def __init__(self,
@@ -107,30 +121,24 @@ class ItePruneAlgorithm(BaseAlgorithm):
                      type='ChannelMutator',
                      channel_unit_cfg=dict(
                          type='SequentialMutableChannelUnit')),
+                 fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  target_pruning_ratio: Optional[Dict[str, float]] = None,
-                 step_epoch=1,
+                 step_freq=1,
                  prune_times=1,
-                 init_cfg: Optional[Dict] = None) -> None:
+                 init_cfg: Optional[Dict] = None,
+                 linear_schedule=True) -> None:
 
         super().__init__(architecture, data_preprocessor, init_cfg)
 
-        # mutator
+        # decided by EpochBasedRunner or IterBasedRunner
+        self.target_pruning_ratio = target_pruning_ratio
+        self.step_freq = step_freq
+        self.prune_times = prune_times
+        self.linear_schedule = linear_schedule
+
         self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
         self.mutator.prepare_from_supernet(self.architecture)
-
-        if target_pruning_ratio is None:
-            group_target_ratio = self.mutator.current_choices
-        else:
-            group_target_ratio = self.group_target_pruning_ratio(
-                target_pruning_ratio, self.mutator.search_groups)
-
-        # config_manager
-        self.prune_config_manager = ItePruneConfigManager(
-            group_target_ratio,
-            self.mutator.current_choices,
-            step_epoch,
-            times=prune_times)
 
     def group_target_pruning_ratio(
         self, target: Dict[str, float],
@@ -158,7 +166,6 @@ class ItePruneAlgorithm(BaseAlgorithm):
                     unit_target = target[unit_name]
                     assert isinstance(unit_target, (float, int))
                     group_target[group_id] = unit_target
-
         return group_target
 
     def check_prune_target(self, config: Dict):
@@ -166,21 +173,55 @@ class ItePruneAlgorithm(BaseAlgorithm):
         for value in config.values():
             assert isinstance(value, int) or isinstance(value, float)
 
+    def _init_prune_config_manager(self):
+        """init prune_config_manager and check step_freq & prune_times.
+
+        message_hub['max_epoch/iter'] unaccessible when initiation.
+        """
+        if self.target_pruning_ratio is None:
+            group_target_ratio = self.mutator.current_choices
+        else:
+            group_target_ratio = self.group_target_pruning_ratio(
+                self.target_pruning_ratio, self.mutator.search_groups)
+
+        if self.by_epoch:
+            # step_freq based on iterations
+            self.step_freq *= self._iters_per_epoch
+
+        # config_manager move to forward.
+        # message_hub['max_epoch'] unaccessible when init
+        prune_config_manager = ItePruneConfigManager(
+            group_target_ratio,
+            self.mutator.current_choices,
+            self.step_freq,
+            prune_times=self.prune_times,
+            linear_schedule=self.linear_schedule)
+
+        return prune_config_manager
+
     def forward(self,
                 inputs: torch.Tensor,
                 data_samples: Optional[List[BaseDataElement]] = None,
                 mode: str = 'tensor') -> ForwardResults:
         """Forward."""
-        print(self._epoch, self._iteration)
-        if self.prune_config_manager.is_prune_time(self._epoch,
-                                                   self._iteration):
 
-            config = self.prune_config_manager.prune_at(self._epoch)
+        if self.training:
+            if not hasattr(self, 'prune_config_manager'):
+                # self._iters_per_epoch() only available after initiation
+                self.prune_config_manager = self._init_prune_config_manager()
+            if self.prune_config_manager.is_prune_time(self._iter):
 
-            self.mutator.set_choices(config)
+                config = self.prune_config_manager.prune_at(self._iter)
 
-            logger = MMLogger.get_current_instance()
-            logger.info(f'The model is pruned at {self._epoch}th epoch once.')
+                self.mutator.set_choices(config)
+
+                logger = MMLogger.get_current_instance()
+                if (self.by_epoch):
+                    logger.info(
+                        f'The model is pruned at {self._epoch}th epoch once.')
+                else:
+                    logger.info(
+                        f'The model is pruned at {self._iter}th iter once.')
 
         return super().forward(inputs, data_samples, mode)
 
@@ -190,22 +231,56 @@ class ItePruneAlgorithm(BaseAlgorithm):
     # private methods
 
     @property
+    def by_epoch(self):
+        """Get epoch/iter based train loop."""
+        # IterBasedTrainLoop max_epochs default to 1
+        # TO DO: Add by_epoch params or change default max_epochs?
+        return self._max_epochs != 1
+
+    @property
     def _epoch(self):
         """Get current epoch number."""
         message_hub = MessageHub.get_current_instance()
         if 'epoch' in message_hub.runtime_info:
             return message_hub.runtime_info['epoch']
         else:
-            return 0
+            raise RuntimeError('Use MessageHub before initiation.'
+                               'epoch is inited in before_run_epoch().')
 
     @property
-    def _iteration(self):
-        """Get current iteration number."""
+    def _iter(self):
+        """Get current sum iteration number."""
         message_hub = MessageHub.get_current_instance()
         if 'iter' in message_hub.runtime_info:
-            iter = message_hub.runtime_info['iter']
-            max_iter = message_hub.runtime_info['max_iters']
-            max_epoch = message_hub.runtime_info['max_epochs']
-            return iter % (max_iter // max_epoch)
+            return message_hub.runtime_info['iter']
         else:
-            return 0
+            raise RuntimeError('Use MessageHub before initiation.'
+                               'iter is inited in before_run_iter().')
+
+    @property
+    def _max_epochs(self):
+        """Get max epoch number.
+
+        Default 1 for IterTrainLoop
+        """
+        message_hub = MessageHub.get_current_instance()
+        if 'max_epochs' in message_hub.runtime_info:
+            return message_hub.runtime_info['max_epochs']
+        else:
+            raise RuntimeError('Use MessageHub before initiation.'
+                               'max_epochs is inited in before_run_epoch().')
+
+    @property
+    def _max_iters(self):
+        """Get max iteration number."""
+        message_hub = MessageHub.get_current_instance()
+        if 'max_iters' in message_hub.runtime_info:
+            return message_hub.runtime_info['max_iters']
+        else:
+            raise RuntimeError('Use MessageHub before initiation.'
+                               'max_iters is inited in before_run_iter().')
+
+    @property
+    def _iters_per_epoch(self):
+        """Get iter num per epoch."""
+        return self._max_iters / self._max_epochs

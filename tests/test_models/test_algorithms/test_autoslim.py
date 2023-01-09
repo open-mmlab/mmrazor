@@ -29,6 +29,17 @@ ARCHITECTURE_CFG = dict(
         loss=dict(type='mmcls.CrossEntropyLoss', loss_weight=1.0),
         topk=(1, 5)))
 
+ONESHOT_MUTABLE_CFG = dict(
+    type='OneShotMutableChannel',
+    candidate_choices=[1 / 8, 2 / 8, 3 / 8, 4 / 8, 5 / 8, 6 / 8, 7 / 8, 1.0],
+    candidate_mode='ratio')
+ONESHOT_MUTABLE_CFGS = dict(
+    in_features=ONESHOT_MUTABLE_CFG,
+    out_features=ONESHOT_MUTABLE_CFG,
+    in_channels=ONESHOT_MUTABLE_CFG,
+    out_channels=ONESHOT_MUTABLE_CFG,
+    num_features=ONESHOT_MUTABLE_CFG)
+
 MUTATOR_CFG = dict(
     type='OneShotChannelMutator',
     channel_unit_cfg=dict(
@@ -36,9 +47,7 @@ MUTATOR_CFG = dict(
         default_args=dict(
             candidate_choices=list(i / 12 for i in range(2, 13)),
             choice_mode='ratio')),
-    parse_cfg=dict(
-        type='BackwardTracer',
-        loss_calculator=dict(type='ImageClassifierPseudoLoss')))
+    parse_cfg=dict(type='ChannelAnalyzer'))
 
 DISTILLER_CFG = dict(
     type='ConfigurableDistiller',
@@ -108,10 +117,10 @@ class TestAutoSlim(TestCase):
         assert losses['max_subnet.loss'] > 0
         assert losses['min_subnet.loss'] > 0
         assert losses['min_subnet.loss_kl'] + 1e-5 > 0
-        assert losses['random_subnet_0.loss'] > 0
-        assert losses['random_subnet_0.loss_kl'] + 1e-5 > 0
-        assert losses['random_subnet_1.loss'] > 0
-        assert losses['random_subnet_1.loss_kl'] + 1e-5 > 0
+        assert losses['random0_subnet.loss'] > 0
+        assert losses['random0_subnet.loss_kl'] + 1e-5 > 0
+        assert losses['random1_subnet.loss'] > 0
+        assert losses['random1_subnet.loss_kl'] + 1e-5 > 0
 
         assert algo._optim_wrapper_count_status_reinitialized
         assert optim_wrapper._inner_count == 4
@@ -133,13 +142,13 @@ class TestAutoSlim(TestCase):
                       mutator_cfg: MUTATOR_TYPE = MUTATOR_CFG,
                       distiller_cfg: DISTILLER_TYPE = DISTILLER_CFG,
                       architecture_cfg: Dict = ARCHITECTURE_CFG,
-                      num_samples: int = 2) -> AutoSlim:
+                      num_random_samples: int = 2) -> AutoSlim:
         model = AutoSlim(
             mutator=mutator_cfg,
             distiller=distiller_cfg,
             architecture=architecture_cfg,
             data_preprocessor=ToyDataPreprocessor(),
-            num_samples=num_samples)
+            num_random_samples=num_random_samples)
         model.to(self.device)
 
         return model
@@ -164,12 +173,12 @@ class TestAutoSlimDDP(TestAutoSlim):
                       mutator_cfg: MUTATOR_TYPE = MUTATOR_CFG,
                       distiller_cfg: DISTILLER_TYPE = DISTILLER_CFG,
                       architecture_cfg: Dict = ARCHITECTURE_CFG,
-                      num_samples: int = 2) -> AutoSlim:
+                      num_random_samples: int = 2) -> AutoSlim:
         model = super().prepare_model(
             mutator_cfg=mutator_cfg,
             distiller_cfg=distiller_cfg,
             architecture_cfg=architecture_cfg,
-            num_samples=num_samples)
+            num_random_samples=num_random_samples)
 
         return AutoSlimDDP(module=model, find_unused_parameters=True)
 

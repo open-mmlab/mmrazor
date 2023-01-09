@@ -1,0 +1,15 @@
+{
+    "op1_(0, 8)_8": {
+      "init_args":{
+        "num_channels":8,
+        "divisor":1,
+        "min_value":1,
+        "min_ratio":0.9,
+        "candidate_choices":[
+            6
+        ],
+        "choice_mode":"number"
+      },
+      "choice":6
+    }
+}

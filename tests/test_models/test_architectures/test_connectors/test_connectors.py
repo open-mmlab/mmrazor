@@ -3,10 +3,11 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models import (BYOTConnector, ConvModuleConncetor, CRDConnector,
+from mmrazor.models import (BYOTConnector, ConvModuleConnector, CRDConnector,
                             FBKDStudentConnector, FBKDTeacherConnector,
-                            Paraphraser, TorchFunctionalConnector,
-                            TorchNNConnector, Translator)
+                            MGDConnector, Paraphraser,
+                            TorchFunctionalConnector, TorchNNConnector,
+                            Translator)
 
 
 class TestConnector(TestCase):
@@ -19,26 +20,26 @@ class TestConnector(TestCase):
     def test_convmodule_connector(self):
         convmodule_connector_cfg = dict(
             in_channel=1, out_channel=3, norm_cfg=dict(type='BN'))
-        convmodule_connector = ConvModuleConncetor(**convmodule_connector_cfg)
+        convmodule_connector = ConvModuleConnector(**convmodule_connector_cfg)
 
         output = convmodule_connector.forward_train(self.s_feat)
         assert output.size() == self.t_feat.size()
 
         convmodule_connector_cfg['order'] = ('conv', 'norm')
         with self.assertRaises(AssertionError):
-            _ = ConvModuleConncetor(**convmodule_connector_cfg)
+            _ = ConvModuleConnector(**convmodule_connector_cfg)
 
         convmodule_connector_cfg['act_cfg'] = 'ReLU'
         with self.assertRaises(AssertionError):
-            _ = ConvModuleConncetor(**convmodule_connector_cfg)
+            _ = ConvModuleConnector(**convmodule_connector_cfg)
 
         convmodule_connector_cfg['norm_cfg'] = 'BN'
         with self.assertRaises(AssertionError):
-            _ = ConvModuleConncetor(**convmodule_connector_cfg)
+            _ = ConvModuleConnector(**convmodule_connector_cfg)
 
         convmodule_connector_cfg['conv_cfg'] = 'conv2d'
         with self.assertRaises(AssertionError):
-            _ = ConvModuleConncetor(**convmodule_connector_cfg)
+            _ = ConvModuleConnector(**convmodule_connector_cfg)
 
     def test_crd_connector(self):
         dim_out = 128
@@ -130,3 +131,15 @@ class TestConnector(TestCase):
             functional_pool_connector = TorchFunctionalConnector()
         with self.assertRaises(ValueError):
             functional_pool_connector = TorchNNConnector(module_name='fake')
+
+    def test_mgd_connector(self):
+        s_feat = torch.randn(1, 16, 8, 8)
+        mgd_connector1 = MGDConnector(
+            student_channels=16, teacher_channels=16, lambda_mgd=0.65)
+        mgd_connector2 = MGDConnector(
+            student_channels=16, teacher_channels=32, lambda_mgd=0.65)
+        s_output1 = mgd_connector1.forward_train(s_feat)
+        s_output2 = mgd_connector2.forward_train(s_feat)
+
+        assert s_output1.shape == torch.Size([1, 16, 8, 8])
+        assert s_output2.shape == torch.Size([1, 32, 8, 8])

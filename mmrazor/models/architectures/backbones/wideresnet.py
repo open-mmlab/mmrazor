@@ -259,7 +259,7 @@ class WideResNet(BaseModule):
         zero_init_residual (bool): Whether to use zero init for last norm layer
             in resblocks to let them behave as identity. Default: True.
     """
-    arch_settings = {
+    arch_setting = {
         10: (BasicBlock, (1, 1, 1)),
         16: (BasicBlock, (2, 2, 2)),
         22: (BasicBlock, (3, 3, 3)),
@@ -297,7 +297,7 @@ class WideResNet(BaseModule):
             https://github.com/open-mmlab/mmclassification/pull/715/files
             """
             warnings.warn('`WiderResNet` deep than 40 now is deprecated')
-        if depth not in self.arch_settings:
+        if depth not in self.arch_setting:
             raise KeyError(f'invalid depth {depth} for WideResNet')
         self.depth = depth
         self.widen_factor = widen_factor
@@ -311,7 +311,7 @@ class WideResNet(BaseModule):
         self.norm_cfg = norm_cfg
         self.norm_eval = norm_eval
         self.zero_init_residual = zero_init_residual
-        self.block, stage_blocks = self.arch_settings[depth]
+        self.block, stage_blocks = self.arch_setting[depth]
         self.stage_blocks = stage_blocks[:num_stages]
         self.expansion = get_expansion(self.block, widen_factor, expansion)
 

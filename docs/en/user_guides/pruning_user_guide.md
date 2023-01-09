@@ -146,3 +146,5 @@ Please refer to the following documents for more details.
   - [MutableChannel](../../../mmrazor/models/mutables/mutable_channel/MutableChannel.md)
   - [ChannelMutator](../../../mmrazor/models/mutables/mutable_channel/units/mutable_channel_unit.ipynb)
   - [MutableChannelUnit](../../../mmrazor/models/mutators/channel_mutator/channel_mutator.ipynb)
+- Demos
+  - [Config pruning](../../../demo/config_pruning.ipynb)

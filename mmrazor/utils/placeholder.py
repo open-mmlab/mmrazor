@@ -13,10 +13,13 @@ def get_placeholder(string: str) -> object:
         object: PlaceHolder instance.
     """
 
-    class PlaceHolder:
+    def raise_import_error(package_name):
+        raise ImportError(
+            f'`{package_name}` is not installed properly, plz check.')
 
-        def __init__(self, *args, **kwargs) -> None:
-            raise ImportError(
-                f'`{string}` is not installed properly, plz check.')
+    class PlaceHolder():
+
+        def __init__(self) -> None:
+            raise_import_error(string)
 
     return PlaceHolder

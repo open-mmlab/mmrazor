@@ -18,7 +18,8 @@ model = dict(
         cfg_path='mmcls::resnet/resnet18_8xb32_in1k.py', pretrained=False),
     teacher=dict(
         cfg_path='mmcls::resnet/resnet34_8xb32_in1k.py', pretrained=True),
-    teacher_ckpt='resnet34_8xb32_in1k_20210831-f257d4e6.pth',
+    teacher_ckpt=  # noqa
+    'https://download.openmmlab.com/mmclassification/v0/resnet/resnet34_8xb32_in1k_20210831-f257d4e6.pth',  # noqa
     distiller=dict(
         type='ConfigurableDistiller',
         student_recorders=dict(
