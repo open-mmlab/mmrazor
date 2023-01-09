@@ -1,10 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import random
-from typing import Any, Dict, Type, Union
+from typing import Any, Dict, Optional, Tuple, Type, Union
 
 import torch
 import torch.nn as nn
-from torch import tensor
 from torch.nn import Module
 
 from mmrazor.models.mutables import DMCPChannelUnit
@@ -98,12 +97,11 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
 
     def modify_supernet_forward(self, arch_train: str):
         for module, group_id in self._bn_arch_align.items():
+            arch_param: Optional[nn.Parameter] = None
+            arch_params_attr: Optional[Tuple] = None
             if arch_train:
                 arch_param = self.arch_params[self._bn_arch_align[module]]
                 arch_params_attr = self._arch_params_attr[str(group_id)]
-            else:
-                arch_param = None
-                arch_params_attr = None
             module.set_forward_args(
                 arch_param=arch_param, arch_attr=arch_params_attr)
 
