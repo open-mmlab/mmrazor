@@ -198,3 +198,15 @@ def _export_subnet_by_mutator(model: nn.Module) -> Dict:
         with_channels=False, with_unit_init_args=True)
 
     return fix_subnet
+
+
+def convert_fix_subnet(fix_subnet: Dict[str, DumpChosen]):
+    """Convert the fixed subnet to avoid python typing error."""
+    from mmrazor.utils.typing import DumpChosen
+
+    converted_fix_subnet = dict()
+    for k, v in fix_subnet.items():
+        assert isinstance(v, DumpChosen)
+        converted_fix_subnet[k] = dict(chosen=v.chosen)
+
+    return converted_fix_subnet

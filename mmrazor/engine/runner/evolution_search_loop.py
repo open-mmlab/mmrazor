@@ -16,7 +16,8 @@ from mmengine.utils import is_list_of
 from torch.utils.data import DataLoader
 
 from mmrazor.registry import LOOPS, TASK_UTILS
-from mmrazor.structures import Candidates, export_fix_subnet
+from mmrazor.structures import (Candidates, convert_fix_subnet,
+                                export_fix_subnet)
 from mmrazor.utils import SupportRandomSubnet
 from .utils import CalibrateBNMixin, check_subnet_resources, crossover
 
@@ -326,24 +327,13 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                                     f'{self.runner.work_dir}')
 
             save_name = 'best_fix_subnet.yaml'
-            best_fix_subnet = self._convert_fix_subnet(best_fix_subnet)
+            best_fix_subnet = convert_fix_subnet(best_fix_subnet)
             fileio.dump(best_fix_subnet,
                         osp.join(self.runner.work_dir, save_name))
             self.runner.logger.info(
                 f'Subnet config {save_name} saved in {self.runner.work_dir}.')
 
             self.runner.logger.info('Search finished.')
-
-    def _convert_fix_subnet(self, fix_subnet: Dict[str, Any]):
-        """Convert the fixed subnet to avoid python typing error."""
-        from mmrazor.utils.typing import DumpChosen
-
-        converted_fix_subnet = dict()
-        for k, v in fix_subnet.items():
-            assert isinstance(v, DumpChosen)
-            converted_fix_subnet[k] = dict(chosen=v.chosen)
-
-        return converted_fix_subnet
 
     @torch.no_grad()
     def _val_candidate(self, use_predictor: bool = False) -> Dict:

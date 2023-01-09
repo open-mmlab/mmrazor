@@ -9,10 +9,11 @@ from torch import nn
 from mmrazor.registry import MODELS
 from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm, LossResults
+from ..space_mixin import SpaceMixin
 
 
 @MODELS.register_module()
-class Autoformer(BaseAlgorithm):
+class Autoformer(BaseAlgorithm, SpaceMixin):
     """Implementation of `Autoformer <https://arxiv.org/abs/2107.00651>`_
 
     AutoFormer is dedicated to vision transformer search. AutoFormer
@@ -78,29 +79,7 @@ class Autoformer(BaseAlgorithm):
 
             self.is_supernet = True
 
-    def sample_subnet(self) -> Dict:
-        """Random sample subnet by mutator."""
-        value_subnet = dict()
-        channel_subnet = dict()
-        for name, mutator in self.mutators.items():
-            if name == 'value_mutator':
-                value_subnet.update(mutator.sample_choices())
-            elif name == 'channel_mutator':
-                channel_subnet.update(mutator.sample_choices())
-            else:
-                raise NotImplementedError
-        return dict(value_subnet=value_subnet, channel_subnet=channel_subnet)
-
-    def set_subnet(self, subnet: Dict[str, Dict[int, Union[int,
-                                                           list]]]) -> None:
-        """Set the subnet sampled by :meth:sample_subnet."""
-        for name, mutator in self.mutators.items():
-            if name == 'value_mutator':
-                mutator.set_choices(subnet['value_subnet'])
-            elif name == 'channel_mutator':
-                mutator.set_choices(subnet['channel_subnet'])
-            else:
-                raise NotImplementedError
+        self._build_search_space()
 
     def loss(
         self,

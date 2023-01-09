@@ -11,7 +11,7 @@ from mmengine.runner import TestLoop
 from torch.utils.data import DataLoader
 
 from mmrazor.registry import LOOPS, TASK_UTILS
-from mmrazor.structures import export_fix_subnet
+from mmrazor.structures import convert_fix_subnet, export_fix_subnet
 from .utils import check_subnet_resources
 
 
@@ -195,17 +195,6 @@ class AutoSlimGreedySearchLoop(TestLoop):
 
     def _save_searched_subnet(self):
         """Save the final searched subnet dict."""
-
-        def _convert_fix_subnet(fixed_subnet: Dict[str, Any]):
-            from mmrazor.utils.typing import DumpChosen
-
-            converted_fix_subnet = dict()
-            for key, val in fixed_subnet.items():
-                assert isinstance(val, DumpChosen)
-                converted_fix_subnet[key] = dict(val._asdict())
-
-            return converted_fix_subnet
-
         if self.runner.rank != 0:
             return
         self.runner.logger.info('Search finished:')
@@ -215,7 +204,7 @@ class AutoSlimGreedySearchLoop(TestLoop):
             self.model.set_subnet(subnet_choice)
             fixed_subnet, _ = export_fix_subnet(self.model)
             save_name = 'FLOPS_{:.2f}M.yaml'.format(flops)
-            fixed_subnet = _convert_fix_subnet(fixed_subnet)
+            fixed_subnet = convert_fix_subnet(fixed_subnet)
             fileio.dump(fixed_subnet, osp.join(self.runner.work_dir,
                                                save_name))
             self.runner.logger.info(

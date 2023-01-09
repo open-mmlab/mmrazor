@@ -1,6 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict
 
+import torch
+import torch.nn as nn
+
+from mmrazor.models.mutables import BaseMutable
+from mmrazor.models.mutators import DiffModuleMutator
+
 
 class SpaceMixin():
 
@@ -23,16 +29,54 @@ class SpaceMixin():
             for k, v in self.mutator.search_groups.items():
                 self.search_space[prefix + str(k)] = v
 
+            if isinstance(self.mutator, DiffModuleMutator):
+                self.search_params = self.build_search_params()
+                self.modify_supernet_forward()
+
+    def build_search_params(self):
+        """This function will build searchable params for each layer, which are
+        generally used in differentiable search algorithms, such as Darts'
+        series. Each group_id corresponds to an search param, so the Mutables
+        with the same group_id share the same search param.
+
+        Returns:
+            torch.nn.ParameterDict: search params are got by search_space.
+        """
+        search_params = nn.ParameterDict()
+
+        for name, modules in self.search_space.items():
+            search_params[name] = nn.Parameter(
+                torch.randn(modules[0].num_choices) * 1e-3)
+
+        return search_params
+
+    def modify_supernet_forward(self):
+        """Modify the DiffMutableModule's default arch_param in forward.
+
+        In MMRazor, the `arch_param` is along to `DiffModuleMutator`, while the
+        `DiffMutableModule` needs `arch_param` in the forward. Here we use
+        partial function to assign the corresponding `arch_param` to each
+        `DiffMutableModule`.
+        """
+        for name, mutables in self.search_space.items():
+            for m in mutables:
+                m.set_forward_args(arch_param=self.search_params[name])
+
     def sample_subnet(self, kind='random') -> Dict:
         """Random sample subnet by mutator."""
         subnet = dict()
         for name, modules in self.search_space.items():
-            if kind == 'max':
-                subnet[name] = modules[0].max_choice
-            elif kind == 'min':
-                subnet[name] = modules[0].min_choice
+            if hasattr(self, 'mutator') and \
+               isinstance(self.mutator, DiffModuleMutator):  # type: ignore
+                search_param = self.search_params[name]
+                subnet[name] = modules[0].sample_choice(search_param)
             else:
-                subnet[name] = modules[0].sample_choice()
+                if kind == 'max':
+                    subnet[name] = modules[0].max_choice
+                elif kind == 'min':
+                    subnet[name] = modules[0].min_choice
+                else:
+                    subnet[name] = modules[0].sample_choice()
         return subnet
 
     def set_subnet(self, choices: Dict) -> None:
@@ -44,6 +88,15 @@ class SpaceMixin():
             choice = choices[group_id]
             for module in modules:
                 module.current_choice = choice
+
+    def fix_subnet(self):
+        """Fix subnet."""
+        self.set_subnet(self.sample_subnet())
+        for module in self.architecture.modules():
+            if isinstance(module, BaseMutable):
+                if not module.is_fixed:
+                    module.fix_chosen(module.current_choice)
+        self.is_supernet = False
 
     @property
     def max_subnet(self) -> Dict:

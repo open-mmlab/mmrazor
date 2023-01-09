@@ -9,12 +9,13 @@ from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.mutators import OneShotModuleMutator
 from mmrazor.registry import MODELS
-from mmrazor.utils import SingleMutatorRandomSubnet, ValidFixMutable
+from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm, LossResults
+from ..space_mixin import SpaceMixin
 
 
 @MODELS.register_module()
-class SPOS(BaseAlgorithm):
+class SPOS(BaseAlgorithm, SpaceMixin):
     """Implementation of `SPOS <https://arxiv.org/abs/1904.00420>`_
 
     SPOS means Single Path One-Shot, a classic NAS algorithm.
@@ -101,15 +102,8 @@ class SPOS(BaseAlgorithm):
             self.mutator.prepare_from_supernet(self.architecture)
             self.is_supernet = True
 
+        self._build_search_space()
         self.norm_training = norm_training
-
-    def sample_subnet(self) -> SingleMutatorRandomSubnet:
-        """Random sample subnet by mutator."""
-        return self.mutator.sample_choices()
-
-    def set_subnet(self, subnet: SingleMutatorRandomSubnet):
-        """Set the subnet sampled by :meth:sample_subnet."""
-        self.mutator.set_choices(subnet)
 
     def loss(
         self,

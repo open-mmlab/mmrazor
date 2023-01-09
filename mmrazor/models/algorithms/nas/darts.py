@@ -14,10 +14,11 @@ from mmrazor.models.utils import add_prefix
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
 from mmrazor.utils import FixMutable
 from ..base import BaseAlgorithm
+from ..space_mixin import SpaceMixin
 
 
 @MODELS.register_module()
-class Darts(BaseAlgorithm):
+class Darts(BaseAlgorithm, SpaceMixin):
     """Implementation of `DARTS <https://arxiv.org/abs/1806.09055>`_
 
     DARTS means Differentiable Architecture Search, a classic NAS algorithm.
@@ -82,17 +83,9 @@ class Darts(BaseAlgorithm):
             self.mutator.prepare_from_supernet(self.architecture)
             self.is_supernet = True
 
+        self._build_search_space()
         self.norm_training = norm_training
         self.unroll = unroll
-
-    def search_subnet(self):
-        """Search subnet by mutator."""
-        # Avoid circular import
-        from mmrazor.structures import export_fix_subnet
-
-        subnet = self.mutator.sample_choices()
-        self.mutator.set_choices(subnet)
-        return export_fix_subnet(self)[0]
 
     def train(self, mode=True):
         """Convert the model into eval mode while keep normalization layer
@@ -136,31 +129,28 @@ class Darts(BaseAlgorithm):
                 f'The length of data ({len(data)}) should be equal to that '\
                 f'of optimizers ({len(optim_wrapper)}).'
 
-            supernet_data, mutator_data = data
+            supernet_data, search_data = data
 
             log_vars = dict()
 
-            # Update the parameter of mutator
+            # Update the search params
             if self.unroll:
-                with optim_wrapper['mutator'].optim_context(self):
-                    optim_wrapper['mutator'].zero_grad()
-                    mutator_log_vars = self._unrolled_backward(
-                        mutator_data, supernet_data, optim_wrapper)
-                optim_wrapper['mutator'].step()
-                log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
+                with optim_wrapper['search_params'].optim_context(self):
+                    optim_wrapper['search_params'].zero_grad()
+                    search_log_vars = self._unrolled_backward(
+                        search_data, supernet_data, optim_wrapper)
+                optim_wrapper['search_params'].step()
+                log_vars.update(add_prefix(search_log_vars, 'search_params'))
             else:
-                with optim_wrapper['mutator'].optim_context(self):
-                    pseudo_data = self.data_preprocessor(mutator_data, True)
-                    mutator_batch_inputs = pseudo_data['inputs']
-                    mutator_data_samples = pseudo_data['data_samples']
-                    mutator_loss = self(
-                        mutator_batch_inputs,
-                        mutator_data_samples,
-                        mode='loss')
-                mutator_losses, mutator_log_vars = self.parse_losses(
-                    mutator_loss)
-                optim_wrapper['mutator'].update_params(mutator_losses)
-                log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
+                with optim_wrapper['search_params'].optim_context(self):
+                    pseudo_data = self.data_preprocessor(search_data, True)
+                    search_batch_inputs = pseudo_data['inputs']
+                    search_data_samples = pseudo_data['data_samples']
+                    search_loss = self(
+                        search_batch_inputs, search_data_samples, mode='loss')
+                search_losses, search_log_vars = self.parse_losses(search_loss)
+                optim_wrapper['search_params'].update_params(search_losses)
+                log_vars.update(add_prefix(search_log_vars, 'search_params'))
 
             # Update the parameter of supernet
             with optim_wrapper['architecture'].optim_context(self):
@@ -185,7 +175,7 @@ class Darts(BaseAlgorithm):
             optim_wrapper.update_params(parsed_losses)
         return log_vars
 
-    def _unrolled_backward(self, mutator_data, supernet_data, optim_wrapper):
+    def _unrolled_backward(self, search_data, supernet_data, optim_wrapper):
         """Compute unrolled loss and backward its gradients."""
         backup_params = copy.deepcopy(tuple(self.architecture.parameters()))
 
@@ -199,26 +189,27 @@ class Darts(BaseAlgorithm):
 
         # Calculate unrolled loss on validation data
         # Keep gradients for model here for compute hessian
-        pseudo_data = self.data_preprocessor(mutator_data, True)
-        mutator_batch_inputs = pseudo_data['inputs']
-        mutator_data_samples = pseudo_data['data_samples']
-        mutator_loss = self(
-            mutator_batch_inputs, mutator_data_samples, mode='loss')
-        mutator_losses, mutator_log_vars = self.parse_losses(mutator_loss)
+        pseudo_data = self.data_preprocessor(search_data, True)
+        search_batch_inputs = pseudo_data['inputs']
+        search_data_samples = pseudo_data['data_samples']
+        search_loss = self(
+            search_batch_inputs, search_data_samples, mode='loss')
+        search_losses, search_log_vars = self.parse_losses(search_loss)
 
         # Here we use the backward function of optimWrapper to calculate
-        # the gradients of mutator loss. The gradients of model and arch
-        # can directly obtained. For more information, please refer to
+        # the gradients of the search loss. The gradients of architecture
+        # and search params can be directly obtained. For more information,
+        # please refer to
         # https://github.com/open-mmlab/mmengine/blob/main/mmengine/optim/optimizer/optimizer_wrapper.py
-        optim_wrapper['mutator'].backward(mutator_losses)
+        optim_wrapper['search_params'].backward(search_losses)
         d_model = [param.grad for param in self.architecture.parameters()]
-        d_arch = [param.grad for param in self.mutator.parameters()]
+        d_arch = [param.grad for param in self.search_params.values()]
 
         # compute hessian and final gradients
         hessian = self._compute_hessian(backup_params, d_model, supernet_data,
                                         optim_wrapper['architecture'])
 
-        w_arch = tuple(self.mutator.parameters())
+        w_arch = tuple(self.search_params.values())
 
         with torch.no_grad():
             for param, d, h in zip(w_arch, d_arch, hessian):
@@ -227,7 +218,7 @@ class Darts(BaseAlgorithm):
 
         # restore weights
         self._restore_weights(backup_params)
-        return mutator_log_vars
+        return search_log_vars
 
     def _compute_virtual_model(self, supernet_data, lr, momentum, weight_decay,
                                optim_wrapper):
@@ -288,7 +279,7 @@ class Darts(BaseAlgorithm):
             supernet_loss, _ = self.parse_losses(supernet_loss)
 
             optim_wrapper.backward(supernet_loss)
-            dalpha = [param.grad for param in self.mutator.parameters()]
+            dalpha = [param.grad for param in self.search_params.values()]
             dalphas.append(dalpha)
 
         # dalpha { L_trn(w+) }, # dalpha { L_trn(w-) }
@@ -375,33 +366,32 @@ class DartsDDP(MMDistributedDataParallel):
                 f'The length of data ({len(data)}) should be equal to that '\
                 f'of optimizers ({len(optim_wrapper)}).'
 
-            supernet_data, mutator_data = data
+            supernet_data, search_data = data
 
             log_vars = dict()
 
-            # Update the parameter of mutator
+            # Update the search params
             if self.module.unroll:
-                with optim_wrapper['mutator'].optim_context(self):
-                    optim_wrapper['mutator'].zero_grad()
-                    mutator_log_vars = self._unrolled_backward(
-                        mutator_data, supernet_data, optim_wrapper)
-                optim_wrapper['mutator'].step()
-                log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
+                with optim_wrapper['search_params'].optim_context(self):
+                    optim_wrapper['search_params'].zero_grad()
+                    search_log_vars = self._unrolled_backward(
+                        search_data, supernet_data, optim_wrapper)
+                optim_wrapper['search_params'].step()
+                log_vars.update(add_prefix(search_log_vars, 'search_params'))
             else:
-                with optim_wrapper['mutator'].optim_context(self):
+                with optim_wrapper['search_params'].optim_context(self):
                     pseudo_data = self.module.data_preprocessor(
-                        mutator_data, True)
-                    mutator_batch_inputs = pseudo_data['inputs']
-                    mutator_data_samples = pseudo_data['data_samples']
-                    mutator_loss = self(
-                        mutator_batch_inputs,
-                        mutator_data_samples,
-                        mode='loss')
+                        search_data, True)
+                    search_batch_inputs = pseudo_data['inputs']
+                    search_data_samples = pseudo_data['data_samples']
+                    search_loss = self(
+                        search_batch_inputs, search_data_samples, mode='loss')
 
-                    mutator_losses, mutator_log_vars = self.module.parse_losses(  # noqa: E501
-                        mutator_loss)
-                    optim_wrapper['mutator'].update_params(mutator_losses)
-                    log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
+                    search_losses, search_log_vars = self.module.parse_losses(  # noqa: E501
+                        search_loss)
+                    optim_wrapper['search_params'].update_params(search_losses)
+                    log_vars.update(
+                        add_prefix(search_log_vars, 'search_params'))
 
             # Update the parameter of supernet
             with optim_wrapper['architecture'].optim_context(self):
@@ -430,7 +420,7 @@ class DartsDDP(MMDistributedDataParallel):
 
         return log_vars
 
-    def _unrolled_backward(self, mutator_data, supernet_data, optim_wrapper):
+    def _unrolled_backward(self, search_data, supernet_data, optim_wrapper):
         """Compute unrolled loss and backward its gradients."""
         backup_params = copy.deepcopy(
             tuple(self.module.architecture.parameters()))
@@ -445,29 +435,29 @@ class DartsDDP(MMDistributedDataParallel):
 
         # calculate unrolled loss on validation data
         # keep gradients for model here for compute hessian
-        pseudo_data = self.module.data_preprocessor(mutator_data, True)
-        mutator_batch_inputs = pseudo_data['inputs']
-        mutator_data_samples = pseudo_data['data_samples']
-        mutator_loss = self(
-            mutator_batch_inputs, mutator_data_samples, mode='loss')
-        mutator_losses, mutator_log_vars = self.module.parse_losses(
-            mutator_loss)
+        pseudo_data = self.module.data_preprocessor(search_data, True)
+        search_batch_inputs = pseudo_data['inputs']
+        search_data_samples = pseudo_data['data_samples']
+        search_loss = self(
+            search_batch_inputs, search_data_samples, mode='loss')
+        search_losses, search_log_vars = self.module.parse_losses(search_loss)
 
         # Here we use the backward function of optimWrapper to calculate
-        # the gradients of mutator loss. The gradients of model and arch
-        # can directly obtained. For more information, please refer to
+        # the gradients of the search loss. The gradients of architecture
+        # and search params can be directly obtained. For more information,
+        # please refer to
         # https://github.com/open-mmlab/mmengine/blob/main/mmengine/optim/optimizer/optimizer_wrapper.py
-        optim_wrapper['mutator'].backward(mutator_losses)
+        optim_wrapper['search_params'].backward(search_losses)
         d_model = [
             param.grad for param in self.module.architecture.parameters()
         ]
-        d_arch = [param.grad for param in self.module.mutator.parameters()]
+        d_arch = [param.grad for param in self.module.search_params.values()]
 
         # compute hessian and final gradients
         hessian = self._compute_hessian(backup_params, d_model, supernet_data,
                                         optim_wrapper['architecture'])
 
-        w_arch = tuple(self.module.mutator.parameters())
+        w_arch = tuple(self.module.search_params.values())
 
         with torch.no_grad():
             for param, da, he in zip(w_arch, d_arch, hessian):
@@ -476,7 +466,7 @@ class DartsDDP(MMDistributedDataParallel):
 
         # restore weights
         self._restore_weights(backup_params)
-        return mutator_log_vars
+        return search_log_vars
 
     def _compute_virtual_model(self, supernet_data, lr, momentum, weight_decay,
                                optim_wrapper):
@@ -539,7 +529,9 @@ class DartsDDP(MMDistributedDataParallel):
             supernet_loss, _ = self.module.parse_losses(supernet_loss)
 
             optim_wrapper.backward(supernet_loss)
-            dalpha = [param.grad for param in self.module.mutator.parameters()]
+            dalpha = [
+                param.grad for param in self.module.search_params.values()
+            ]
             dalphas.append(dalpha)
 
         # dalpha { L_trn(w+) }, # dalpha { L_trn(w-) }

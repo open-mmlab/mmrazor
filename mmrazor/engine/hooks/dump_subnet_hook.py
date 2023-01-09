@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import copy
 import os.path as osp
 from pathlib import Path
 from typing import Optional, Sequence, Union
@@ -7,6 +8,9 @@ from mmengine.dist import master_only
 from mmengine.fileio import FileClient, dump
 from mmengine.hooks import Hook
 from mmengine.registry import HOOKS
+
+from mmrazor.models.mutables.base_mutable import BaseMutable
+from mmrazor.structures import convert_fix_subnet, export_fix_subnet
 
 DATA_BATCH = Optional[Sequence[dict]]
 
@@ -103,16 +107,25 @@ class DumpSubnetHook(Hook):
 
     @master_only
     def _save_subnet(self, runner) -> None:
-        """Save the current subnet and delete outdated subnet.
+        """Save the current best subnet.
 
         Args:
             runner (Runner): The runner of the training process.
         """
+        model = runner.model.module if runner.distributed else runner.model
 
-        if runner.distributed:
-            subnet_dict = runner.model.module.search_subnet()
-        else:
-            subnet_dict = runner.model.search_subnet()
+        # delete non-leaf tensor to get deepcopy(model).
+        # TODO solve the hard case.
+        for module in model.architecture.modules():
+            if isinstance(module, BaseMutable):
+                if hasattr(module, 'arch_weights'):
+                    delattr(module, 'arch_weights')
+
+        copied_model = copy.deepcopy(model)
+        copied_model.set_subnet(copied_model.sample_subnet())
+
+        subnet_dict = export_fix_subnet(copied_model)[0]
+        subnet_dict = convert_fix_subnet(subnet_dict)
 
         if self.by_epoch:
             subnet_filename = self.args.get(

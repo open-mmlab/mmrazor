@@ -104,7 +104,7 @@ class EstimateResourcesHook(Hook):
         """
         # Avoid circular import
         from mmrazor.models.mutables.base_mutable import BaseMutable
-        from mmrazor.structures import load_fix_subnet
+        from mmrazor.structures import export_fix_subnet, load_fix_subnet
 
         # delete non-leaf tensor to get deepcopy(model).
         # TODO solve the hard case.
@@ -114,7 +114,9 @@ class EstimateResourcesHook(Hook):
                     delattr(module, 'arch_weights')
 
         copied_model = copy.deepcopy(model)
-        fix_mutable = copied_model.search_subnet()
+        copied_model.set_subnet(copied_model.sample_subnet())
+
+        fix_mutable = export_fix_subnet(copied_model)[0]
         load_fix_subnet(copied_model, fix_mutable)
 
         return copied_model

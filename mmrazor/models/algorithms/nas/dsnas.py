@@ -13,17 +13,18 @@ from mmengine.optim import OptimWrapper, OptimWrapperDict
 from torch import nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.mutables.base_mutable import BaseMutable
+from mmrazor.models.mutables import BaseMutable
 from mmrazor.models.mutators import DiffModuleMutator
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import MODEL_WRAPPERS, MODELS, TASK_UTILS
-from mmrazor.structures import load_fix_subnet
+from mmrazor.structures import export_fix_subnet, load_fix_subnet
 from mmrazor.utils import FixMutable
 from ..base import BaseAlgorithm
+from ..space_mixin import SpaceMixin
 
 
 @MODELS.register_module()
-class DSNAS(BaseAlgorithm):
+class DSNAS(BaseAlgorithm, SpaceMixin):
     """Implementation of `DSNAS <https://arxiv.org/abs/2002.09128>`_
 
     Args:
@@ -73,10 +74,8 @@ class DSNAS(BaseAlgorithm):
         if 'type' not in estimator_cfg:
             estimator_cfg['type'] = 'mmrazor.ResourceEstimator'
         self.estimator = TASK_UTILS.build(estimator_cfg)
-        if fix_subnet:
-            # Avoid circular import
-            from mmrazor.structures import load_fix_subnet
 
+        if fix_subnet:
             # According to fix_subnet, delete the unchosen part of supernet
             load_fix_subnet(self.architecture, fix_subnet)
             self.is_supernet = False
@@ -102,6 +101,7 @@ class DSNAS(BaseAlgorithm):
             self.search_space_name_list = list(
                 self.mutator.name2mutable.keys())
 
+        self._build_search_space()
         self.norm_training = norm_training
         self.pretrain_epochs = pretrain_epochs
         self.finetune_epochs = finetune_epochs
@@ -113,26 +113,6 @@ class DSNAS(BaseAlgorithm):
         self.flops_loss_coef = 1e-2
         self.flops_constraints = flops_constraints
         _, self.world_size = get_dist_info()
-
-    def search_subnet(self):
-        """Search subnet by mutator."""
-
-        # Avoid circular import
-        from mmrazor.structures import export_fix_subnet
-
-        subnet = self.mutator.sample_choices()
-        self.mutator.set_choices(subnet)
-        return export_fix_subnet(self)[0]
-
-    def fix_subnet(self):
-        """Fix subnet when finetuning."""
-        subnet = self.mutator.sample_choices()
-        self.mutator.set_choices(subnet)
-        for module in self.architecture.modules():
-            if isinstance(module, BaseMutable):
-                if not module.is_fixed:
-                    module.fix_chosen(module.current_choice)
-        self.is_supernet = False
 
     def train(self, mode=True):
         """Convert the model into eval mode while keep normalization layer
@@ -157,12 +137,11 @@ class DSNAS(BaseAlgorithm):
             log_vars = dict()
             self.message_hub = MessageHub.get_current_instance()
             cur_epoch = self.message_hub.get_info('epoch')
-            need_update_mutator = self.need_update_mutator(cur_epoch)
+            require_search = self.require_search(cur_epoch)
 
-            # TODO process the input
             if cur_epoch == self.finetune_epochs and self.is_supernet:
                 # synchronize arch params to start the finetune stage.
-                for k, v in self.mutator.arch_params.items():
+                for k, v in self.search_params.items():
                     dist.broadcast(v, src=0)
                 self.fix_subnet()
 
@@ -177,19 +156,19 @@ class DSNAS(BaseAlgorithm):
             supernet_losses, supernet_log_vars = self.parse_losses(
                 supernet_loss)
             optim_wrapper['architecture'].backward(
-                supernet_losses, retain_graph=need_update_mutator)
+                supernet_losses, retain_graph=require_search)
             optim_wrapper['architecture'].step()
             optim_wrapper['architecture'].zero_grad()
             log_vars.update(add_prefix(supernet_log_vars, 'supernet'))
 
-            # 2. update mutator
-            if need_update_mutator:
-                with optim_wrapper['mutator'].optim_context(self):
-                    mutator_loss = self.compute_mutator_loss()
-                mutator_losses, mutator_log_vars = \
-                    self.parse_losses(mutator_loss)
-                optim_wrapper['mutator'].update_params(mutator_losses)
-                log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
+            # 2. update search parameters
+            if require_search:
+                with optim_wrapper['search_params'].optim_context(self):
+                    search_loss = self.compute_search_loss()
+                search_losses, search_log_vars = \
+                    self.parse_losses(search_loss)
+                optim_wrapper['search_params'].update_params(search_losses)
+                log_vars.update(add_prefix(search_log_vars, 'search_params'))
                 # handle the grad of arch params & weights
                 self.handle_grads()
 
@@ -207,7 +186,6 @@ class DSNAS(BaseAlgorithm):
 
     def _get_module_resources(self):
         """Get resources of spec modules."""
-
         spec_modules = []
         for name, module in self.architecture.named_modules():
             if isinstance(module, BaseMutable):
@@ -219,28 +197,28 @@ class DSNAS(BaseAlgorithm):
 
         return mutable_module_resources
 
-    def need_update_mutator(self, cur_epoch: int) -> bool:
-        """Whether to update mutator."""
+    def require_search(self, cur_epoch: int) -> bool:
+        """Whether to start searching."""
         if cur_epoch >= self.pretrain_epochs and \
            cur_epoch < self.finetune_epochs:
             return True
         return False
 
-    def compute_mutator_loss(self) -> Dict[str, torch.Tensor]:
-        """Compute mutator loss.
+    def compute_search_loss(self) -> Dict[str, torch.Tensor]:
+        """Compute search loss.
 
-        In this method, arch_loss & flops_loss[optional] are computed
-        by traversing arch_weights & probs in search groups.
+        In this method, search_loss & flops_loss[optional] are computed
+        by traversing arch_weights & probs in search space.
 
         Returns:
-            Dict: Loss of the mutator.
+            Dict: Loss of the search parameters.
         """
         arch_loss = 0.0
         flops_loss = 0.0
         for name, module in self.architecture.named_modules():
             if isinstance(module, BaseMutable):
                 k = str(self.search_space_name_list.index(name))
-                probs = F.softmax(self.mutator.arch_params[k], -1)
+                probs = F.softmax(self.search_params['module_' + str(k)], -1)
                 arch_loss += torch.log(
                     (module.arch_weights * probs).sum(-1)).sum()
 
@@ -250,25 +228,27 @@ class DSNAS(BaseAlgorithm):
                 flops_loss += probs[index] * \
                     self.mutable_module_resources[_module_key]['flops']
 
-        mutator_loss = dict(arch_loss=arch_loss / self.world_size)
+        search_loss = dict(arch_loss=arch_loss / self.world_size)
 
         copied_model = copy.deepcopy(self)
-        fix_mutable = copied_model.search_subnet()
+        copied_model.set_subnet(copied_model.sample_subnet())
+
+        fix_mutable = export_fix_subnet(copied_model)[0]
         load_fix_subnet(copied_model, fix_mutable)
 
         subnet_flops = self.estimator.estimate(copied_model)['flops']
         if subnet_flops >= self.flops_constraints:
-            mutator_loss['flops_loss'] = \
+            search_loss['flops_loss'] = \
                 (flops_loss * self.flops_loss_coef) / self.world_size
 
-        return mutator_loss
+        return search_loss
 
     def handle_grads(self):
         """Handle grads of arch params & arch weights."""
         for name, module in self.architecture.named_modules():
             if isinstance(module, BaseMutable):
                 k = str(self.search_space_name_list.index(name))
-                self.mutator.arch_params[k].grad.data.mul_(
+                self.search_params['module_' + str(k)].grad.data.mul_(
                     module.arch_weights.grad.data.sum())
                 module.arch_weights.grad.zero_()
 
@@ -299,14 +279,14 @@ class DSNASDDP(MMDistributedDataParallel):
             log_vars = dict()
             self.message_hub = MessageHub.get_current_instance()
             cur_epoch = self.message_hub.get_info('epoch')
-            need_update_mutator = self.module.need_update_mutator(cur_epoch)
+            require_search = self.module.require_search(cur_epoch)
 
             # TODO process the input
             if cur_epoch == self.module.finetune_epochs and \
                self.module.is_supernet:
                 # synchronize arch params to start the finetune stage.
-                for k, v in self.module.mutator.arch_params.items():
-                    dist.broadcast(v, src=0)
+                for param in self.module.search_params.values():
+                    dist.broadcast(param, src=0)
                 self.module.fix_subnet()
 
             # 1. update architecture
@@ -320,19 +300,19 @@ class DSNASDDP(MMDistributedDataParallel):
             supernet_losses, supernet_log_vars = self.module.parse_losses(
                 supernet_loss)
             optim_wrapper['architecture'].backward(
-                supernet_losses, retain_graph=need_update_mutator)
+                supernet_losses, retain_graph=require_search)
             optim_wrapper['architecture'].step()
             optim_wrapper['architecture'].zero_grad()
             log_vars.update(add_prefix(supernet_log_vars, 'supernet'))
 
-            # 2. update mutator
-            if need_update_mutator:
-                with optim_wrapper['mutator'].optim_context(self):
-                    mutator_loss = self.module.compute_mutator_loss()
-                mutator_losses, mutator_log_vars = \
-                    self.module.parse_losses(mutator_loss)
-                optim_wrapper['mutator'].update_params(mutator_losses)
-                log_vars.update(add_prefix(mutator_log_vars, 'mutator'))
+            # 2. update search parameters
+            if require_search:
+                with optim_wrapper['search_params'].optim_context(self):
+                    search_loss = self.module.compute_search_loss()
+                search_losses, search_log_vars = \
+                    self.module.parse_losses(search_loss)
+                optim_wrapper['search_params'].update_params(search_losses)
+                log_vars.update(add_prefix(search_log_vars, 'search_params'))
                 # handle the grad of arch params & weights
                 self.module.handle_grads()
 

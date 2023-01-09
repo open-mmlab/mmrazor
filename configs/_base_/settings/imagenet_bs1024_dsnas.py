@@ -63,7 +63,7 @@ optim_wrapper = dict(
         optimizer=dict(
             type='mmcls.SGD', lr=0.5, momentum=0.9, weight_decay=4e-5),
         paramwise_cfg=paramwise_cfg),
-    mutator=dict(
+    search_params=dict(
         optimizer=dict(
             type='mmcls.Adam', lr=0.001, weight_decay=0.0, betas=(0.5,
                                                                   0.999))))
@@ -94,7 +94,7 @@ param_scheduler = dict(
             by_epoch=True,
             convert_to_iter_based=True)
     ],
-    mutator=[])
+    search_params=[])
 
 # train, val, test setting
 train_cfg = dict(by_epoch=True, max_epochs=240)

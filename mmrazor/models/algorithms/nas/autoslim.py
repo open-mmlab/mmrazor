@@ -16,6 +16,7 @@ from mmrazor.models.utils import (add_prefix,
                                   reinitialize_optim_wrapper_count_status)
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
 from ..base import BaseAlgorithm
+from ..space_mixin import SpaceMixin
 
 VALID_MUTATOR_TYPE = Union[OneShotChannelMutator, Dict]
 VALID_DISTILLER_TYPE = Union[ConfigurableDistiller, Dict]
@@ -24,7 +25,7 @@ VALID_CHANNEL_CFG_PATH_TYPE = Union[VALID_PATH_TYPE, List[VALID_PATH_TYPE]]
 
 
 @MODELS.register_module()
-class AutoSlim(BaseAlgorithm):
+class AutoSlim(BaseAlgorithm, SpaceMixin):
     """Implementation of Autoslim algorithm. Please refer to
     https://arxiv.org/abs/1903.11728 for more details.
 
@@ -59,6 +60,7 @@ class AutoSlim(BaseAlgorithm):
         self.mutator: OneShotChannelMutator = MODELS.build(mutator)
         # prepare_from_supernet` must be called before distiller initialized
         self.mutator.prepare_from_supernet(self.architecture)
+        self._build_search_space()
 
         self.distiller = self._build_distiller(distiller)
         self.distiller.prepare_from_teacher(self.architecture)
@@ -69,7 +71,6 @@ class AutoSlim(BaseAlgorithm):
             self.sample_kinds.append('random' + str(i))
 
         self._optim_wrapper_count_status_reinitialized = False
-
         self.bn_training_mode = bn_training_mode
 
     def _build_mutator(self,
@@ -95,22 +96,6 @@ class AutoSlim(BaseAlgorithm):
                             f'{type(distiller)}')
 
         return distiller
-
-    def sample_subnet(self) -> Dict:
-        """Sample a subnet."""
-        return self.mutator.sample_choices()
-
-    def set_subnet(self, subnet) -> None:
-        """Set a subnet."""
-        self.mutator.set_choices(subnet)
-
-    def set_max_subnet(self) -> None:
-        """Set max subnet."""
-        self.mutator.set_choices(self.mutator.max_choice)
-
-    def set_min_subnet(self) -> None:
-        """Set min subnet."""
-        self.mutator.set_choices(self.mutator.min_choice)
 
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
