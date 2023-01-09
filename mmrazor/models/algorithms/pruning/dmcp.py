@@ -29,6 +29,26 @@ ForwardResults = Union[LossResults, TensorResults, PredictResults]
 
 @MODELS.register_module()
 class DMCP(BaseAlgorithm):
+    """Implementation of `DMCP <https://arxiv.org/abs/2005.03354>`_
+
+    Args:
+        architecture (dict|:obj:`BaseModel`): The config of :class:`BaseModel`
+            or built model. Corresponding to supernet in NAS algorithm.
+        distiller (VALID_DISTILLER_TYPE): Configs to build a distiller.
+        fix_subnet (str | dict | :obj:`FixSubnet`): The path of yaml file or
+            loaded dict or built :obj:`FixSubnet`. Defaults to None.
+        data_preprocessor (Optional[Union[dict, nn.Module]]): The pre-process
+            config of :class:`BaseDataPreprocessor`. Defaults to None.
+        strategy (list): mode of sampled net.
+        arch_start_train (int): Number of iter to start arch training.
+        arch_train_freq (int): Frequency of training. Defaults to 500.
+        distillation_times (int): Number of iter to start arch training.
+        target_flops (int): Target FLOPs. Default unit: MFLOPs.
+        flops_loss_type (str): The model used to calculate flops_loss.
+        flop_loss_weight (float): Weight of flops_loss.
+        init_cfg (Optional[dict]): Init config for ``BaseModule``.
+            Defaults to None.
+    """
 
     def __init__(self,
                  distiller: VALID_DISTILLER_TYPE,
@@ -42,7 +62,7 @@ class DMCP(BaseAlgorithm):
                  init_cfg: Optional[Dict] = None,
                  arch_start_train=10000,
                  arch_train_freq=500,
-                 distillation_times=2000,
+                 distillation_times=20000,
                  target_flops=150,
                  flops_loss_type: str = 'log_l1',
                  flop_loss_weight: float = 1.0) -> None:
@@ -279,7 +299,6 @@ class DMCP(BaseAlgorithm):
 
 @MODEL_WRAPPERS.register_module()
 class DMCPDDP(MMDistributedDataParallel):
-
     def __init__(self,
                  *,
                  device_ids: Optional[Union[List, int, torch.device]] = None,

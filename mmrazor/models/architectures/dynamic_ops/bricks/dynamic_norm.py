@@ -144,11 +144,12 @@ class SwitchableBatchNorm2d(DynamicBatchNorm2d):
     """A switchable DynamicBatchNorm2d. It mmploys independent batch
     normalization for different switches in a slimmable network.
 
-    To train slimmable networks, ``SwitchableBatchNorm2d`` privatizes all batch
-    normalization layers for each switch in a slimmable network. Compared with
-    the naive training approach, it solves the problem of feature aggregation
-    inconsistency between different switches by independently normalizing the
-    feature mean and variance during testing.
+    To train slimmable networks, ``SwitchableBatchNorm2d`` privatizes
+    all batch normalization layers for each switch in a slimmable
+    network. Compared with the naive training approach, it solves the
+    problem of feature aggregation inconsistency between different
+    switches by independently normalizing the feature mean and variance
+    during testing.
     """
 
     def __init__(self, *args, **kwargs) -> None:
@@ -395,7 +396,6 @@ class DynamicBatchNormXd(_DynamicBatchNorm):
 
 @MODELS.register_module()
 class DMCPBatchNorm2d(DynamicBatchNorm2d):
-
     accepted_mutable_attrs = {'num_features'}
 
     def __init__(self, *args, **kwargs) -> None:
@@ -488,7 +488,7 @@ class DMCPBatchNorm2d(DynamicBatchNorm2d):
         return out
 
     def set_forward_args(
-            self, arch_param: nn.Parameter, arch_attr: Tuple) -> None:
+            self, arch_param: nn.Parameter, arch_attr: Optional[Tuple]) -> None:
         """Interface for modifying the arch_param using partial."""
         forward_with_default_args: PartialType = \
             partial(self.forward, arch_param=arch_param, arch_attr=arch_attr)

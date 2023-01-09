@@ -75,10 +75,10 @@ class ConfigurableDistiller(BaseDistiller):
         ...     loss_neck=dict(type='L2Loss', loss_weight=5))
 
         >>> student_recorders = dict(
-        ...     feat = dict(type='ModuleOutputs', sources=['neck.gap']))
+        ...     feat = dict(type='ModuleOutputs', sources='neck.gap'))
 
         >>> teacher_recorders = dict(
-        ...     feat = dict(type='ModuleOutputs', sources=['neck.gap']))
+        ...     feat = dict(type='ModuleOutputs', sources='neck.gap'))
 
         >>> connectors = dict(
         ...     loss_neck_sfeat = dict(

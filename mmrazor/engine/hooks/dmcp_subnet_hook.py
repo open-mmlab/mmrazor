@@ -11,7 +11,6 @@ DATA_BATCH = Optional[Sequence[dict]]
 
 @HOOKS.register_module()
 class DMCPSubnetHook(Hook):
-
     priority = 'VERY_LOW'
 
     def __init__(self,

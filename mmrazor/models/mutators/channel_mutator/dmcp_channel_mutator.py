@@ -115,9 +115,8 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
 
         self.modify_supernet_forward(arch_train)
 
-    def _prune_by_arch(self, mode: str, group_id: int) -> Union[int, tensor]:
-        """
-        Prune the output channels according to the specified mode.
+    def _prune_by_arch(self, mode: str, group_id: int) -> Union[int, Any]:
+        """Prune the output channels according to the specified mode.
 
         Inputs:
             mode (list): one of ['max', 'min', 'random', 'direct', 'expected']

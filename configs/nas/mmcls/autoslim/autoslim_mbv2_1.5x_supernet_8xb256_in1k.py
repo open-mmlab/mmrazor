@@ -1,5 +1,5 @@
 _base_ = [
-    'mmrazor::_base_/settings/imagenet_bs2048_autoslim_pil.py',
+    '../../../_base_/settings/imagenet_bs2048_autoslim_pil.py',
     'mmcls::_base_/models/mobilenet_v2_1x.py',
     'mmcls::_base_/default_runtime.py',
 ]

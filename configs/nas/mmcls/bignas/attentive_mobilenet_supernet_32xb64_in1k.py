@@ -61,6 +61,9 @@ model_wrapper_cfg = dict(
     broadcast_buffers=False,
     find_unused_parameters=True)
 
+optim_wrapper_cfg = dict(
+    type='OptimWrapper', clip_grad=dict(type='value', clip_value=0.2))
+
 default_hooks = dict(
     checkpoint=dict(
         type='CheckpointHook', interval=1, max_keep_ckpts=1, save_best='auto'))

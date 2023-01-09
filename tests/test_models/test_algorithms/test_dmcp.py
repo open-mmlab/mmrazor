@@ -39,7 +39,6 @@ ALGORITHM_CFG = dict(
 
 
 class TestDMCP(TestCase):
-
     def test_init(self):
         ALGORITHM_CFG_SUPERNET = copy.deepcopy(ALGORITHM_CFG)
         # initiate dmcp with built `algorithm`.
