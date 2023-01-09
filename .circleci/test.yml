@@ -153,15 +153,15 @@ workflows:
                 - dev-1.x
       - build_cpu:
           name: minimum_version_cpu
-          torch: 1.6.0
-          torchvision: 0.7.0
+          torch: 1.13.0
+          torchvision: 0.14.0
           python: 3.7.9
           requires:
             - lint
       - build_cpu:
           name: maximum_version_cpu
-          torch: 1.12.1
-          torchvision: 0.13.1
+          torch: 1.13.0
+          torchvision: 0.14.0
           python: 3.9.0
           requires:
             - lint
@@ -171,7 +171,7 @@ workflows:
             - maximum_version_cpu
       - build_cuda:
           name: mainstream_version_gpu
-          torch: 1.8.1
+          torch: 1.13.0
           # Use double quotation mark to explicitly specify its type
           # as string instead of number
           cuda: "10.2"
@@ -183,7 +183,7 @@ workflows:
     jobs:
       - build_cuda:
           name: minimum_version_gpu
-          torch: 1.6.0
+          torch: 1.13.0
           # Use double quotation mark to explicitly specify its type
           # as string instead of number
           cuda: "10.1"
