@@ -8,13 +8,6 @@ from mmrazor.models.task_modules.tracer.fx import build_graphmodule
 from mmrazor.registry import MODELS
 from .native_quantizer import NativeQuantizer
 
-MODULE_DEL_PREV_FAKEQUANT = (torch.nn.ReLU6, torch.nn.Identity)
-MODULE_DEL_NEXT_FAKEQUANT = (torch.nn.MaxPool2d, )
-TARGET_DEL_PREV_FAKEQUANT: Tuple = tuple()
-TARGET_DEL_NEXT_FAKEQUANT = ('flatten', )
-OP_DEL_PREV_FAKEQUANT = ('output', )
-OP_DEL_NEXT_FAKEQUANT: Tuple = tuple()
-
 
 @MODELS.register_module()
 class OpenVINOQuantizer(NativeQuantizer):
