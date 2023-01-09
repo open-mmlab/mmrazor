@@ -3,8 +3,6 @@ from typing import Tuple
 
 import torch
 from torch.ao.quantization import disable_observer
-from torch.ao.quantization.fx import prepare
-from torch.ao.quantization.quantize_fx import _fuse_fx
 
 from mmrazor.models.task_modules.tracer.fx import build_graphmodule
 from mmrazor.registry import MODELS
@@ -38,23 +36,6 @@ class OpenVINOQuantizer(NativeQuantizer):
     def support_a_modes(self):
         return ['per_tensor']
 
-    def prepare(self, model, graph_module):
-        graph_module = _fuse_fx(
-            graph_module=graph_module,
-            is_qat=True,
-            backend_config=self.backend_config)
-        prepared = prepare(
-            model=graph_module,
-            qconfig_mapping=self.qconfig_mapping,
-            is_qat=True,
-            node_name_to_scope=self.tracer.node_name_to_scope,
-            example_inputs=self.example_inputs,
-            backend_config=self.backend_config)
-
-        prepared = self.del_fakequant(prepared)
-
-        return prepared
-
     def prepare_for_mmdeploy(self,
                              model,
                              dummy_input=(1, 3, 224, 224),
@@ -77,17 +58,17 @@ class OpenVINOQuantizer(NativeQuantizer):
         return observed_model
 
     @property
-    def module_del_prev_fakequant(self):
+    def module_prev_wo_fakequant(self):
         return (torch.nn.ReLU6, torch.nn.Identity)
 
     @property
-    def module_del_next_fakequant(self):
+    def module_next_wo_fakequant(self):
         return (torch.nn.MaxPool2d, )
 
     @property
-    def method_del_next_fakequant(self):
+    def method_next_wo_fakequant(self):
         return ('flatten', )
 
     @property
-    def op_del_prev_fakequant(self):
+    def op_prev_wo_fakequant(self):
         return ('output', )
