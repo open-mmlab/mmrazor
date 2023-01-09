@@ -54,7 +54,7 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
         """Build learnable architecture parameters."""
         return nn.Parameter(torch.zeros(num_choices))
         
-    def prepare_arch_params(self, supernet; Module) -> None:
+    def prepare_arch_params(self, supernet: Module) -> None:
         # Associate all the op's in the model with their corresponding arch parameters
         self.arch_params = nn.ParameterDict()
         self._op_arch_align = dict()

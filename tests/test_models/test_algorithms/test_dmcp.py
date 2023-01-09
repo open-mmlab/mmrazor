@@ -13,7 +13,7 @@ MUTATOR_CFG = dict(
         channel_unit_cfg={
             'type': 'DMCPChannelUnit'
         },
-        parse_cfg: Dict = dict(
+        parse_cfg = dict(
             type='ChannelAnalyzer',
             demo_input=(1, 3, 224, 224),
             tracer_type='BackwardTracer'),))

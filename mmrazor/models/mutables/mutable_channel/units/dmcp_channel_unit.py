@@ -1,6 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import List, Union
-
 import torch.nn as nn
 
 from mmrazor.models.architectures import dynamic_ops
@@ -17,10 +15,6 @@ class DMCPChannelUnit(SequentialMutableChannelUnit):
 
     Args:
         num_channels (int): The raw number of channels.
-        candidate_choices (List[Union[int, float]], optional):
-            A list of candidate width numbers or ratios. Each
-            candidate indicates how many channels to be reserved.
-            Defaults to [1.0](choice_mode='number').
         choice_mode (str, optional): Mode of candidates.
             One of "ratio" or "number". Defaults to 'ratio'.
         divisor (int): Used to make choice divisible.
@@ -39,7 +33,8 @@ class DMCPChannelUnit(SequentialMutableChannelUnit):
         self.mutable_channel.activated_tensor_channels = None
 
     def prepare_for_pruning(self, model: nn.Module):
-        """In ``DMCPChannelGroup`` nn.BatchNorm2d is replaced with MixedBatchNorm2d."""
+        """In ``DMCPChannelGroup`` nn.BatchNorm2d is replaced with
+        DMCPBatchNorm2d."""
         self._replace_with_dynamic_ops(
             model, {
                 nn.Conv2d: dynamic_ops.DynamicConv2d,

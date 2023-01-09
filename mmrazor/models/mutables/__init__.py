@@ -5,11 +5,11 @@ from .mutable_channel import (BaseMutableChannel, MutableChannelContainer,
                               OneShotMutableChannel, SimpleMutableChannel,
                               SquentialMutableChannel)
 from .mutable_channel.units import (ChannelUnitType, DCFFChannelUnit,
-                                    L1MutableChannelUnit, MutableChannelUnit,
+                                    DMCPChannelUnit, L1MutableChannelUnit,
+                                    MutableChannelUnit,
                                     OneShotMutableChannelUnit,
                                     SequentialMutableChannelUnit,
-                                    SlimmableChannelUnit,
-                                    DMCPChannelUnit)
+                                    SlimmableChannelUnit)
 from .mutable_module import (DiffChoiceRoute, DiffMutableModule, DiffMutableOP,
                              OneHotMutableOP, OneShotMutableModule,
                              OneShotMutableOP)

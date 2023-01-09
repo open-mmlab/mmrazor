@@ -23,13 +23,13 @@ from ...task_modules.estimators import ResourceEstimator
 
 VALID_DISTILLER_TYPE = Union[ConfigurableDistiller, Dict, Any]
 
-from mmrazor.models.mutators import DMCPChannelMutator
-from mmrazor.models.mutators import ChannelMutator
+from mmrazor.models.mutators import ChannelMutator, DMCPChannelMutator
 
 LossResults = Dict[str, torch.Tensor]
 TensorResults = Union[Tuple[torch.Tensor], torch.Tensor]
 PredictResults = List[BaseDataElement]
 ForwardResults = Union[LossResults, TensorResults, PredictResults]
+
 
 @MODELS.register_module()
 class DMCP(BaseAlgorithm):
@@ -255,7 +255,7 @@ class DMCP(BaseAlgorithm):
     def calc_current_flops(self):
         estimator = ResourceEstimator(units=None)
         model = getattr(self, 'module', self)
-        estimation = estimator.estimate(model=model.architecture.backbone,\)
+        estimation = estimator.estimate(model=model.architecture.backbone)
         return estimation['flops']
 
     def forward(self,

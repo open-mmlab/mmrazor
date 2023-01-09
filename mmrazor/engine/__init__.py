@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .hooks import DumpSubnetHook, EstimateResourcesHook, DMCPSubnetHook
+from .hooks import DMCPSubnetHook, DumpSubnetHook, EstimateResourcesHook
 from .optimizers import SeparateOptimWrapperConstructor
 from .runner import (DartsEpochBasedTrainLoop, DartsIterBasedTrainLoop,
                      EvolutionSearchLoop, GreedySamplerTrainLoop,

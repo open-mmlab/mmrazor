@@ -17,6 +17,7 @@ from ..mixins import DynamicBatchNormMixin, DynamicLayerNormMixin
 
 PartialType = Callable[[Any, Optional[nn.Parameter]], Tuple]
 
+
 class _DynamicBatchNorm(_BatchNorm, DynamicBatchNormMixin):
     """Dynamic BatchNormxd OP.
 
@@ -418,10 +419,8 @@ class DMCPBatchNorm2d(DynamicBatchNorm2d):
 
     def forward(self,
                 input: Tensor,
-                arch_param = None,
-                arch_attr = None):
-                # arch_param: Optional[nn.Parameter] = None,
-                # arch_attr: Optional[Tuple] = None) -> Tensor:
+                arch_param=None,
+                arch_attr=None):
         out = self.forward_batchnorm(input)
         if arch_param is not None:
             out = self.forward_arch_param(out, arch_param, arch_attr)
@@ -464,7 +463,7 @@ class DMCPBatchNorm2d(DynamicBatchNorm2d):
             self.running_var.masked_scatter_(out_mask, running_var)
 
         return out
-    
+
     def forward_arch_param(self, input: Tensor, arch_param, arch_attr):
         size_x = input.size()
         (group_size, num_groups, min_ch) = arch_attr
@@ -484,11 +483,12 @@ class DMCPBatchNorm2d(DynamicBatchNorm2d):
         tp_group_x = tp_group_x.view(num_groups, -1) * prob[:num_groups]
         tp_group_x = tp_group_x.view(size_tp_group)
 
-        out = torch.cat([tp_x[:min_ch],
-                       tp_group_x]).transpose(0, 1).contiguous()
+        out = torch.cat(
+            [tp_x[:min_ch], tp_group_x]).transpose(0, 1).contiguous()
         return out
 
-    def set_forward_args(self, arch_param: nn.Parameter, arch_attr:Tuple) -> None:
+    def set_forward_args(
+        self, arch_param: nn.Parameter, arch_attr: Tuple) -> None:
         """Interface for modifying the arch_param using partial."""
         forward_with_default_args: PartialType = \
             partial(self.forward, arch_param=arch_param, arch_attr=arch_attr)

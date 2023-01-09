@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .channel_mutator import (ChannelMutator, DCFFChannelMutator, DMCPChannelMutator,
-                              OneShotChannelMutator, SlimmableChannelMutator)
+from .channel_mutator import (ChannelMutator, DCFFChannelMutator,
+                              DMCPChannelMutator, OneShotChannelMutator,
+                              SlimmableChannelMutator)
 from .module_mutator import (DiffModuleMutator, ModuleMutator,
                              OneShotModuleMutator)
 from .value_mutator import DynamicValueMutator, ValueMutator

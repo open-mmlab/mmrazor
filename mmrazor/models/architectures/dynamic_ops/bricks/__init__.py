@@ -4,9 +4,9 @@ from .dynamic_conv import BigNasConv2d, DynamicConv2d, FuseConv2d, OFAConv2d
 from .dynamic_embed import DynamicPatchEmbed
 from .dynamic_linear import DynamicLinear
 from .dynamic_multi_head_attention import DynamicMultiheadAttention
-from .dynamic_norm import (DynamicBatchNorm1d, DynamicBatchNorm2d,
-                           DynamicBatchNorm3d, DynamicLayerNorm,
-                           SwitchableBatchNorm2d, DMCPBatchNorm2d)
+from .dynamic_norm import (DMCPBatchNorm2d, DynamicBatchNorm1d,
+                           DynamicBatchNorm2d, DynamicBatchNorm3d,
+                           DynamicLayerNorm, SwitchableBatchNorm2d)
 from .dynamic_relative_position import DynamicRelativePosition2D
 
 __all__ = [

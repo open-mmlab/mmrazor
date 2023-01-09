@@ -28,7 +28,6 @@ class DMCPSubnetHook(Hook):
         with open(save_path, 'w') as file:
             file.write(yaml.dump(_cfg, allow_unicode=True))
 
-    @master_only
     def after_run(self, runner):
         model = getattr(runner.model, 'module', runner.model)
         runner.logger.info('Sampling...')
@@ -53,8 +52,8 @@ class DMCPSubnetHook(Hook):
                 runner.logger.info(
                     f'Excepted sample(ES) arch with FlOP(MB):{cur_flops}')
             else:
-                save_path = os.path.join(root_dir,
-                                            'subnet_{}.yaml'.format(i + 1))
+                save_path = os.path.join(
+                    root_dir, 'subnet_{}.yaml'.format(i + 1))
                 runner.logger.info(
                     f'Driect sample(DS) arch with FlOP(MB): {cur_flops}')
             self._save_subnet(model.mutator.current_choices, save_path)

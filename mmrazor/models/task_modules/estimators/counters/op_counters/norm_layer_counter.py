@@ -11,6 +11,7 @@ class BNCounter(BaseCounter):
 
     @staticmethod
     def add_count_hook(module, input, output):
+        """Calculate FLOPs and params based on the size of input & output."""
         input = input[0]
         batch_flops = np.prod(input.shape)
         if getattr(module, 'affine', False):
@@ -70,14 +71,15 @@ class GroupNormCounter(BNCounter):
 @TASK_UTILS.register_module()
 class DMCPBatchNorm2dCounter(BNCounter):
     """FLOPs/params counter for DynamicBatchNorm2d module."""
-    
+
     @staticmethod
     def add_count_hook(module, input, output):
         """Calculate FLOPs and params based on the size of input & output."""
         input = input[0]
         B, C, H, W = input.shape
 
-        mutable_channel = list(module.mutable_attrs['num_features'].mutable_channels.values())
+        mutable_channel = list(
+            module.mutable_attrs['num_features'].mutable_channels.values())
         if hasattr(mutable_channel[0], 'activated_tensor_channels'):
             C = mutable_channel[0].activated_tensor_channels
 

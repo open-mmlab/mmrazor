@@ -75,11 +75,11 @@ class DynamicConv2dCounter(ConvCounter):
 
         kernel_dims = list(module.kernel_size)
 
-        mutable_channel = list(module.mutable_attrs['out_channels'].mutable_channels.values())
+        out_channels = module.mutable_attrs['out_channels'].activated_channels
+        mutable_channel = list(
+            module.mutable_attrs['out_channels'].mutable_channels.values())
         if hasattr(mutable_channel[0], 'activated_tensor_channels'):
             out_channels = mutable_channel[0].activated_tensor_channels
-        else:
-            out_channels = module.mutable_attrs['out_channels'].activated_channels
         in_channels = module.mutable_attrs['in_channels'].activated_channels
 
         groups = module.groups
