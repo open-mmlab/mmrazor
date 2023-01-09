@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 import os
 import random
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -37,8 +38,7 @@ class DMCP(BaseAlgorithm):
                      channel_unit_cfg=dict(type='DMCPChannelUnit')),
                  fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
-                 strategy: List = \
-                    ['max', 'min', 'scheduled_random', 'arch_random'],
+                 strategy: List = ['max', 'min', 'arch_random'],
                  init_cfg: Optional[Dict] = None,
                  arch_start_train=10000,
                  arch_train_freq=500,

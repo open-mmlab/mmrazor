@@ -13,7 +13,6 @@ from ...architectures import DMCPBatchNorm2d
 from .channel_mutator import ChannelMutator, ChannelUnitType
 
 
-
 @MODELS.register_module()
 class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
     """DMCP channel mutable based channel mutator. It uses DMCPPChannelUnit.
@@ -81,6 +80,10 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
             1. sampled by pruning rate (that is, maximum, minimum and random
                 pruning rate)
             2. sampled by probability
+        Inputs:
+            out_channels (int): channel num of conv layers 
+        Outputs:
+            attr (tuple): (group_size, num_groups, min_ch)
         """
         (min_rate, max_rate, rate_offset) = self.pruning_cfg
 
@@ -103,7 +106,7 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
             module.set_forward_args(
                 arch_param=arch_param, arch_attr=arch_params_attr)
 
-    def sample_subnet(self, mode: str, arch_train: bool) -> None:
+    def sample_subnet(self, mode: str, arch_train: str) -> None:
         choices = dict()
         for group_id, _ in self.search_groups.items():
             choices[group_id] = self._prune_by_arch(mode, group_id)
