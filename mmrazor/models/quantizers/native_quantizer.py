@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import torch
 from torch.ao.quantization import enable_fake_quant
 from torch.ao.quantization.fx import prepare
+from torch.ao.quantization.fx.graph_module import ObservedGraphModule
 from torch.ao.quantization.qconfig_mapping import QConfigMapping
 from torch.ao.quantization.quantize_fx import _fuse_fx
 from torch.nn.intrinsic.qat import modules as qat_fused_modules
@@ -160,7 +161,7 @@ class NativeQuantizer(BaseQuantizer):
         return prepared
 
     def post_process_weight_fakequant(self,
-                                      observed_module,
+                                      observed_module : ObservedGraphModule,
                                       keep_fake_quant: bool = False):
         """weight fake-quant for supported QAT modules.
 
