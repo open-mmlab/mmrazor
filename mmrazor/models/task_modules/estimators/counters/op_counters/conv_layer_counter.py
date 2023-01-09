@@ -67,7 +67,6 @@ class DynamicConv2dCounter(ConvCounter):
 
     @staticmethod
     def add_count_hook(module: nn.Conv2d, input, output):
-
         input = input[0]
 
         batch_size = input.shape[0]

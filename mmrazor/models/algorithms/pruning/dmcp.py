@@ -29,6 +29,26 @@ ForwardResults = Union[LossResults, TensorResults, PredictResults]
 
 @MODELS.register_module()
 class DMCP(BaseAlgorithm):
+    """Implementation of `DMCP <https://arxiv.org/abs/2005.03354>`_
+
+    Args:
+        architecture (dict|:obj:`BaseModel`): The config of :class:`BaseModel`
+            or built model. Corresponding to supernet in NAS algorithm.
+        distiller (VALID_DISTILLER_TYPE): Configs to build a distiller.
+        fix_subnet (str | dict | :obj:`FixSubnet`): The path of yaml file or
+            loaded dict or built :obj:`FixSubnet`. Defaults to None.
+        data_preprocessor (Optional[Union[dict, nn.Module]]): The pre-process
+            config of :class:`BaseDataPreprocessor`. Defaults to None.
+        strategy (list): mode of sampled net.
+        arch_start_train (int): Number of iter to start arch training.
+        arch_train_freq (int): Frequency of training. Defaults to 500.
+        distillation_times (int): Number of iter to start arch training.
+        target_flops (int): Target FLOPs. Default unit: MFLOPs.
+        flops_loss_type (str): The model used to calculate flops_loss.
+        flop_loss_weight (float): Weight of flops_loss.
+        init_cfg (Optional[dict]): Init config for ``BaseModule``.
+            Defaults to None.
+    """
 
     def __init__(self,
                  distiller: VALID_DISTILLER_TYPE,
@@ -42,7 +62,7 @@ class DMCP(BaseAlgorithm):
                  init_cfg: Optional[Dict] = None,
                  arch_start_train=10000,
                  arch_train_freq=500,
-                 distillation_times=2000,
+                 distillation_times=20000,
                  target_flops=150,
                  flops_loss_type: str = 'log_l1',
                  flop_loss_weight: float = 1.0) -> None:
@@ -104,6 +124,7 @@ class DMCP(BaseAlgorithm):
             self.arch_train = True
 
         if self.is_supernet:
+
             def distill_step(
                 batch_inputs: torch.Tensor, data_samples: List[BaseDataElement]
             ) -> Dict[str, torch.Tensor]:
@@ -124,8 +145,8 @@ class DMCP(BaseAlgorithm):
 
                 return subnet_losses
 
-            batch_inputs, data_samples = self.data_preprocessor(
-                data, True).values()
+            batch_inputs, data_samples = self.data_preprocessor(data,
+                                                                True).values()
             total_losses = dict()
 
             # update model parameters
@@ -155,15 +176,13 @@ class DMCP(BaseAlgorithm):
                         direct_subnet_losses = distill_step(
                             batch_inputs, data_samples)
                         total_losses.update(
-                            add_prefix(direct_subnet_losses,
-                                       'direct_subnet'))
+                            add_prefix(direct_subnet_losses, 'direct_subnet'))
                     else:
                         self.set_subnet(mode='random')
                         random_subnet_losses = distill_step(
                             batch_inputs, data_samples)
                         total_losses.update(
-                            add_prefix(random_subnet_losses,
-                                       'random_subnet'))
+                            add_prefix(random_subnet_losses, 'random_subnet'))
                 elif kind in ('scheduled_random'):
                     if random.uniform(0, 1) > self.cur_sample_prob\
                        and self.arch_train:
@@ -171,15 +190,13 @@ class DMCP(BaseAlgorithm):
                         direct_subnet_losses = distill_step(
                             batch_inputs, data_samples)
                         total_losses.update(
-                            add_prefix(direct_subnet_losses,
-                                       'direct_subnet'))
+                            add_prefix(direct_subnet_losses, 'direct_subnet'))
                     else:
                         self.set_subnet(mode='random')
                         random_subnet_losses = distill_step(
                             batch_inputs, data_samples)
                         total_losses.update(
-                            add_prefix(random_subnet_losses,
-                                       'random_subnet'))
+                            add_prefix(random_subnet_losses, 'random_subnet'))
                     self.cur_sample_prob *= 0.9999
 
             # update arch parameters
@@ -194,12 +211,11 @@ class DMCP(BaseAlgorithm):
         else:
             return super().train_step(data, optim_wrapper)
 
-    def _update_arch_params(
-                self,
-                inputs: torch.Tensor,
-                data_samples: Optional[List[BaseDataElement]],
-                optim_wrapper: OptimWrapper,
-                mode: str = 'loss') -> Dict:
+    def _update_arch_params(self,
+                            inputs: torch.Tensor,
+                            data_samples: Optional[List[BaseDataElement]],
+                            optim_wrapper: OptimWrapper,
+                            mode: str = 'loss') -> Dict:
         arch_params_loss = dict()
         self.eval()
         # update arch_loss
@@ -224,8 +240,8 @@ class DMCP(BaseAlgorithm):
     def _compute_flops_loss(self, expected_flops):
         """Calculation of loss functions of arch parameters.
 
-        Calculate the difference between the expected FLOPs and the
-        target FLOPs in the units of M.
+        Calculate the difference between the expected FLOPs and the target
+        FLOPs in the units of M.
         """
         flops_error = expected_flops - self.target_flops
 
@@ -297,13 +313,13 @@ class DMCPDDP(MMDistributedDataParallel):
             self.module.arch_train = True
 
         if self.module.is_supernet:
+
             def distill_step(
                 batch_inputs: torch.Tensor, data_samples: List[BaseDataElement]
             ) -> Dict[str, torch.Tensor]:
                 subnet_losses = dict()
                 with optim_wrapper['architecture'].optim_context(
-                        self
-                ), self.module.distiller.student_recorders:
+                        self), self.module.distiller.student_recorders:
                     hard_loss = self(batch_inputs, data_samples, mode='loss')
                     soft_loss = self.module.distiller.compute_distill_losses()
 
@@ -335,15 +351,17 @@ class DMCPDDP(MMDistributedDataParallel):
                             max_subnet_losses)
                         optim_wrapper['architecture'].update_params(
                             parsed_max_subnet_losses)
-                    total_losses.update(add_prefix(max_subnet_losses,
-                                                   f'max_subnet{max_net_num}'))
+                    total_losses.update(
+                        add_prefix(max_subnet_losses,
+                                   f'max_subnet{max_net_num}'))
                     max_net_num += 1
                 elif kind in ('min'):
                     self.module.set_subnet(mode='min')
-                    min_subnet_losses = distill_step(
-                        batch_inputs, data_samples)
-                    total_losses.update(add_prefix(min_subnet_losses,
-                                                   f'min_subnet{min_net_num}'))
+                    min_subnet_losses = distill_step(batch_inputs,
+                                                     data_samples)
+                    total_losses.update(
+                        add_prefix(min_subnet_losses,
+                                   f'min_subnet{min_net_num}'))
                     min_net_num += 1
                 elif kind in ('arch_random'):
                     if self.module.arch_train:

@@ -10,13 +10,12 @@ from mmrazor.registry import MODELS
 MUTATOR_CFG = dict(
     channel_mutator=dict(
         type='mmrazor.DMCPChannelMutator',
-        channel_unit_cfg={
-            'type': 'DMCPChannelUnit'
-        },
+        channel_unit_cfg={'type': 'DMCPChannelUnit'},
         parse_cfg=dict(
             type='ChannelAnalyzer',
             demo_input=(1, 3, 224, 224),
-            tracer_type='BackwardTracer'),))
+            tracer_type='BackwardTracer'),
+    ))
 
 DISTILLER_CFG = dict(
     _scope_='mmrazor',

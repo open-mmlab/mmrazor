@@ -11,12 +11,9 @@ DATA_BATCH = Optional[Sequence[dict]]
 
 @HOOKS.register_module()
 class DMCPSubnetHook(Hook):
-
     priority = 'VERY_LOW'
 
-    def __init__(self,
-                 subnet_sample_num: int = 10,
-                 **kwargs) -> None:
+    def __init__(self, subnet_sample_num: int = 10, **kwargs) -> None:
         self.subnet_sample_num = subnet_sample_num
 
     def _save_subnet(self, arch_space_dict, save_path):
@@ -51,8 +48,8 @@ class DMCPSubnetHook(Hook):
                 runner.logger.info(
                     f'Excepted sample(ES) arch with FlOP(MB):{cur_flops}')
             else:
-                save_path = os.path.join(
-                    root_dir, 'subnet_{}.yaml'.format(i + 1))
+                save_path = os.path.join(root_dir,
+                                         'subnet_{}.yaml'.format(i + 1))
                 runner.logger.info(
                     f'Driect sample(DS) arch with FlOP(MB): {cur_flops}')
             self._save_subnet(model.mutator.current_choices, save_path)

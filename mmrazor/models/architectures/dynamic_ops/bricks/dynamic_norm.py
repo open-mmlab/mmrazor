@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -395,7 +395,6 @@ class DynamicBatchNormXd(_DynamicBatchNorm):
 
 @MODELS.register_module()
 class DMCPBatchNorm2d(DynamicBatchNorm2d):
-
     accepted_mutable_attrs = {'num_features'}
 
     def __init__(self, *args, **kwargs) -> None:
@@ -417,10 +416,7 @@ class DMCPBatchNorm2d(DynamicBatchNorm2d):
             track_running_stats=module.track_running_stats)
         return dynamic_bn
 
-    def forward(self,
-                input: Tensor,
-                arch_param=None,
-                arch_attr=None):
+    def forward(self, input: Tensor, arch_param=None, arch_attr=None):
         out = self.forward_batchnorm(input)
         if arch_param is not None:
             out = self.forward_arch_param(out, arch_param, arch_attr)
@@ -483,12 +479,12 @@ class DMCPBatchNorm2d(DynamicBatchNorm2d):
         tp_group_x = tp_group_x.view(num_groups, -1) * prob[:num_groups]
         tp_group_x = tp_group_x.view(size_tp_group)
 
-        out = torch.cat(
-            [tp_x[:min_ch], tp_group_x]).transpose(0, 1).contiguous()
+        out = torch.cat([tp_x[:min_ch], tp_group_x]).transpose(0,
+                                                               1).contiguous()
         return out
 
-    def set_forward_args(
-            self, arch_param: nn.Parameter, arch_attr: Tuple) -> None:
+    def set_forward_args(self, arch_param: nn.Parameter,
+                         arch_attr: Union[Tuple, Any]) -> None:
         """Interface for modifying the arch_param using partial."""
         forward_with_default_args: PartialType = \
             partial(self.forward, arch_param=arch_param, arch_attr=arch_attr)
