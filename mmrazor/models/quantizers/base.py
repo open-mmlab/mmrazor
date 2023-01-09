@@ -8,7 +8,7 @@ from mmrazor.registry import TASK_UTILS
 
 
 class BaseQuantizer(BaseModule):
-    """"""
+    """tmp."""
 
     def __init__(self, tracer):
         super().__init__()
@@ -16,7 +16,7 @@ class BaseQuantizer(BaseModule):
 
     @abstractmethod
     def prepare(self, model, graph_module):
-        """"""
+        """tmp."""
         pass
 
     def swap_ff_with_fxff(self, model):

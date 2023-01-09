@@ -39,7 +39,7 @@ MERGE_BN_MAPPINGS = {
 
 @MODELS.register_module()
 class NativeQuantizer(BaseQuantizer):
-    """"""
+    """tmp."""
 
     # backend: 'native'
     # support_w_modes = ['per_tensor', 'per_channel']
@@ -86,21 +86,21 @@ class NativeQuantizer(BaseQuantizer):
 
     @property
     def backend(self):
-        """"""
+        """tmp."""
         return 'native'
 
     @property
     def support_w_modes(self):
-        """"""
+        """tmp."""
         return ['per_tensor', 'per_channel']
 
     @property
     def support_a_modes(self):
-        """"""
+        """tmp."""
         return ['per_tensor']
 
     def prepare(self, model, graph_module):
-        """"""
+        """tmp."""
         graph_module = _fuse_fx(
             graph_module=graph_module,
             is_qat=True,
@@ -119,7 +119,7 @@ class NativeQuantizer(BaseQuantizer):
     def post_process_weight_fakequant(self,
                                       observed_module,
                                       keep_fake_quant=False):
-        """"""
+        """tmp."""
 
         def traverse(module):
             for name, child in module.named_children():
@@ -150,11 +150,11 @@ class NativeQuantizer(BaseQuantizer):
         traverse(observed_module)
 
     def prepare_for_mmdeploy(self, model, dummy_input, checkpoint):
-        """"""
+        """tmp."""
         raise NotImplementedError
 
     def del_redundant_fakequant(self, prepared):
-        """"""
+        """tmp."""
         extra_module_prev_wo_fakequant = self.extra_redundant_fakequants.get(
             'extra_module_prev_wo_fakequant', tuple())
         prepared = del_fakequant_before_module(
@@ -214,40 +214,40 @@ class NativeQuantizer(BaseQuantizer):
 
     @property
     def module_prev_wo_fakequant(self):
-        """"""
+        """tmp."""
         return tuple()
 
     @property
     def module_next_wo_fakequant(self):
-        """"""
+        """tmp."""
         return tuple()
 
     @property
     def function_prev_wo_fakequant(self):
-        """"""
+        """tmp."""
         return tuple()
 
     @property
     def function_next_wo_fakequant(self):
-        """"""
+        """tmp."""
         return tuple()
 
     @property
     def method_prev_wo_fakequant(self):
-        """"""
+        """tmp."""
         return tuple()
 
     @property
     def method_next_wo_fakequant(self):
-        """"""
+        """tmp."""
         return tuple()
 
     @property
     def op_prev_wo_fakequant(self):
-        """"""
+        """tmp."""
         return tuple()
 
     @property
     def op_next_wo_fakequant(self):
-        """"""
+        """tmp."""
         return tuple()
