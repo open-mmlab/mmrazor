@@ -14,7 +14,7 @@ class BaseQuantizer(BaseModule):
         self.tracer = TASK_UTILS.build(tracer)
 
     @abstractmethod
-    def prepare(self):
+    def prepare(self, model, graph_module):
         pass
 
     def swap_ff_with_fxff(self, model):
