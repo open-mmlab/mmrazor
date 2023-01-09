@@ -119,7 +119,6 @@ class TestItePruneAlgorithm(unittest.TestCase):
         model = MODELS.build(MODEL_CFG)
         mutator = MODELS.build(MUTATOR_CONFIG_FLOAT)
         mutator.prepare_from_supernet(model)
-        mutator.set_choices(mutator.sample_choices())
         prune_target = mutator.choice_template
 
         iter_per_epoch = 10
@@ -144,12 +143,12 @@ class TestItePruneAlgorithm(unittest.TestCase):
                 self.assertEqual(epoch_step * iter_per_epoch,
                                  algorithm.step_freq)
 
-        current_choices = algorithm.mutator.current_choices
+        current_subnet = algorithm.current_subnet
         group_prune_target = algorithm.group_target_pruning_ratio(
-            prune_target, mutator.search_groups)
-        for key in current_choices:
+            prune_target, algorithm.search_space)
+        for key in current_subnet:
             self.assertAlmostEqual(
-                current_choices[key], group_prune_target[key], delta=0.1)
+                current_subnet[key], group_prune_target[key], delta=0.1)
 
     def test_load_pretrained(self):
         iter_per_epoch = 10
@@ -188,7 +187,6 @@ class TestItePruneAlgorithm(unittest.TestCase):
         model = MODELS.build(MODEL_CFG)
         mutator = MODELS.build(MUTATOR_CONFIG_FLOAT)
         mutator.prepare_from_supernet(model)
-        mutator.set_choices(mutator.sample_choices())
         prune_target = mutator.choice_template
 
         custom_groups = [[
@@ -270,7 +268,7 @@ class TestItePruneAlgorithm(unittest.TestCase):
             step_freq=1,
             prune_times=1,
         ).to(DEVICE)
-        algorithm.mutator.set_choices(algorithm.mutator.sample_choices())
+        algorithm.set_subnet(algorithm.sample_subnet())
         state_dict = algorithm.state_dict()
         print(state_dict.keys())
 
@@ -284,7 +282,7 @@ class TestItePruneAlgorithm(unittest.TestCase):
 
         algorithm2.load_state_dict(state_dict)
 
-        print(algorithm.mutator.current_choices)
-        print(algorithm2.mutator.current_choices)
-        self.assertDictEqual(algorithm.mutator.current_choices,
-                             algorithm2.mutator.current_choices)
+        print(algorithm.current_subnet)
+        print(algorithm2.current_subnet)
+        self.assertDictEqual(algorithm.current_subnet,
+                             algorithm2.current_subnet)

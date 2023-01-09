@@ -76,7 +76,6 @@ model = dict(
             type='ChannelAnalyzer',
             demo_input=(1, 3, 224, 224),
             tracer_type='BackwardTracer')),
-    fix_subnet=None,
     data_preprocessor=None,
     target_pruning_ratio=target_pruning_ratio,
     step_freq=1,

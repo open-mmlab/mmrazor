@@ -81,9 +81,9 @@ class Darts(BaseAlgorithm, SpaceMixin):
             # Before using it, you must do some preparation according to
             # the supernet.
             self.mutator.prepare_from_supernet(self.architecture)
+            self._build_search_space()
             self.is_supernet = True
 
-        self._build_search_space()
         self.norm_training = norm_training
         self.unroll = unroll
 

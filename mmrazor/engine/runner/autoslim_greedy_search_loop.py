@@ -106,8 +106,7 @@ class AutoSlimGreedySearchLoop(TestLoop):
                 continue
 
             while self.current_flops > target:
-                best_score, best_subnet = None, None
-
+                best_score, best_subnet = 0., None
                 for unit_name in sorted(self.current_subnet.keys()):
                     if self.current_subnet[unit_name] == 1:
                         # The number of channel_bin has reached the minimum
@@ -124,7 +123,7 @@ class AutoSlimGreedySearchLoop(TestLoop):
                     self.runner.logger.info(
                         f'Slimming unit {unit_name}, {self.score_key}: {score}'
                     )
-                    if best_score is None or score > best_score:
+                    if score >= best_score:
                         best_score = score
                         best_subnet = pruned_subnet
 

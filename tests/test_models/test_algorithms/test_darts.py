@@ -152,7 +152,7 @@ class TestDarts(TestCase):
         mutator = DiffModuleMutator()
         mutator.prepare_from_supernet(model)
         algo = Darts(model, mutator)
-        subnet = algo.search_subnet()
+        subnet = algo.sample_subnet()
         self.assertIsInstance(subnet, dict)
 
     def test_darts_train_step(self) -> None:
@@ -173,7 +173,7 @@ class TestDarts(TestCase):
         data = [self._prepare_fake_data() for _ in range(2)]
         optim_wrapper_dict = OptimWrapperDict(
             architecture=OptimWrapper(SGD(model.parameters(), lr=0.1)),
-            mutator=OptimWrapper(SGD(model.parameters(), lr=0.01)))
+            search_params=OptimWrapper(SGD(model.parameters(), lr=0.01)))
         loss = algo.train_step(data, optim_wrapper_dict)
 
         self.assertIsNotNone(loss)
@@ -188,7 +188,7 @@ class TestDarts(TestCase):
         data = [self._prepare_fake_data() for _ in range(2)]
         optim_wrapper_dict = OptimWrapperDict(
             architecture=OptimWrapper(SGD(model.parameters(), lr=0.1)),
-            mutator=OptimWrapper(SGD(model.parameters(), lr=0.01)))
+            search_params=OptimWrapper(SGD(model.parameters(), lr=0.01)))
         loss = algo.train_step(data, optim_wrapper_dict)
 
         self.assertIsNotNone(loss)
@@ -241,7 +241,7 @@ class TestDartsDDP(TestDarts):
         data = [self._prepare_fake_data() for _ in range(2)]
         optim_wrapper_dict = OptimWrapperDict(
             architecture=OptimWrapper(SGD(ddp_model.parameters(), lr=0.1)),
-            mutator=OptimWrapper(SGD(ddp_model.parameters(), lr=0.01)))
+            search_params=OptimWrapper(SGD(ddp_model.parameters(), lr=0.01)))
         loss = ddp_model.train_step(data, optim_wrapper_dict)
 
         self.assertIsNotNone(loss)
@@ -252,7 +252,7 @@ class TestDartsDDP(TestDarts):
         data = [self._prepare_fake_data() for _ in range(2)]
         optim_wrapper_dict = OptimWrapperDict(
             architecture=OptimWrapper(SGD(ddp_model.parameters(), lr=0.1)),
-            mutator=OptimWrapper(SGD(ddp_model.parameters(), lr=0.01)))
+            search_params=OptimWrapper(SGD(ddp_model.parameters(), lr=0.01)))
         loss = ddp_model.train_step(data, optim_wrapper_dict)
 
         self.assertIsNotNone(loss)

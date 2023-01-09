@@ -10,7 +10,6 @@ from mmengine.structures import BaseDataElement
 from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutators import ChannelMutator
 from mmrazor.registry import MODELS
-from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm
 from ..space_mixin import SpaceMixin
 
@@ -122,7 +121,6 @@ class ItePruneAlgorithm(BaseAlgorithm, SpaceMixin):
                      type='ChannelMutator',
                      channel_unit_cfg=dict(
                          type='SequentialMutableChannelUnit')),
-                 fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  target_pruning_ratio: Optional[Dict[str, float]] = None,
                  step_freq=1,

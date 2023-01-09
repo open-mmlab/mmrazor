@@ -9,6 +9,14 @@ from mmrazor.models.mutators import DiffModuleMutator
 
 
 class SpaceMixin():
+    """A mixin for :class:`BaseAlgorithm`, which can unify ``search_groups``
+    from different mutators into the overall search_space with providing APIs
+    for subnet operations.
+
+    Note:
+        SpaceMixin is designed for handling different type of mutators,
+        therefore it currently supports NAS/Pruning algorithms with mutator(s).
+    """
 
     def _build_search_space(self, prefix=''):
         """Unify search_groups in mutators as the search_space of the model."""

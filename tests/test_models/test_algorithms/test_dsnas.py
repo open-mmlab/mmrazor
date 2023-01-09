@@ -136,7 +136,7 @@ class TestDsnas(TestCase):
         mutator = DiffModuleMutator()
         mutator.prepare_from_supernet(model)
         algo = DSNAS(model, mutator)
-        subnet = algo.search_subnet()
+        subnet = algo.sample_subnet()
         self.assertIsInstance(subnet, dict)
 
     @patch('mmengine.logging.message_hub.MessageHub.get_info')
@@ -156,7 +156,7 @@ class TestDsnas(TestCase):
         algo = DSNAS(model, mutator)
         optim_wrapper_dict = OptimWrapperDict(
             architecture=OptimWrapper(SGD(model.parameters(), lr=0.1)),
-            mutator=OptimWrapper(SGD(model.parameters(), lr=0.01)))
+            search_params=OptimWrapper(SGD(model.parameters(), lr=0.01)))
         loss = algo.train_step(data, optim_wrapper_dict)
 
         self.assertIsNotNone(loss)
@@ -209,7 +209,7 @@ class TestDsnasDDP(TestDsnas):
         ddp_model = self.prepare_model()
         optim_wrapper_dict = OptimWrapperDict(
             architecture=OptimWrapper(SGD(ddp_model.parameters(), lr=0.1)),
-            mutator=OptimWrapper(SGD(ddp_model.parameters(), lr=0.01)))
+            search_params=OptimWrapper(SGD(ddp_model.parameters(), lr=0.01)))
         loss = ddp_model.train_step(data, optim_wrapper_dict)
 
         self.assertIsNotNone(loss)

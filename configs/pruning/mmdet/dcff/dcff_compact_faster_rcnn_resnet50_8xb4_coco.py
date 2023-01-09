@@ -5,7 +5,6 @@ model_cfg = dict(
     _scope_='mmrazor',
     type='sub_model',
     cfg=_base_.architecture,
-    fix_subnet='configs/pruning/mmdet/dcff/fix_subnet.json',
     mode='mutator',
     init_cfg=dict(
         type='Pretrained',

@@ -97,11 +97,11 @@ class DSNAS(BaseAlgorithm, SpaceMixin):
             # Before using it, you must do some preparations according to
             # the supernet.
             self.mutator.prepare_from_supernet(self.architecture)
+            self._build_search_space()
             self.is_supernet = True
             self.search_space_name_list = list(
                 self.mutator.name2mutable.keys())
 
-        self._build_search_space()
         self.norm_training = norm_training
         self.pretrain_epochs = pretrain_epochs
         self.finetune_epochs = finetune_epochs

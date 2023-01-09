@@ -18,8 +18,6 @@ class TestValueMutator(unittest.TestCase):
                 model = Model()
                 value_mutator = DynamicValueMutator()
                 value_mutator.prepare_from_supernet(model)
-                value_choices = value_mutator.sample_choices()
-                value_mutator.set_choices(value_choices)
 
                 mutable_value_space = []
                 for mutable_value, module in model.named_modules():
@@ -44,8 +42,6 @@ class TestValueMutator(unittest.TestCase):
                 model = Model()
                 value_mutator = DynamicValueMutator()
                 value_mutator.prepare_from_supernet(model)
-                value_choices = value_mutator.sample_choices()
-                value_mutator.set_choices(value_choices)
 
                 # TODO check DynamicMMBlock
                 mutable_value_space = []

@@ -76,36 +76,6 @@ class BigNAS(BaseAlgorithm, SpaceMixin):
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
 
-        if isinstance(mutators, dict):
-            built_mutators: Dict = dict()
-            for name, mutator_cfg in mutators.items():
-                if 'parse_cfg' in mutator_cfg and isinstance(
-                        mutator_cfg['parse_cfg'], dict):
-                    assert mutator_cfg['parse_cfg'][
-                        'type'] == 'Predefined', \
-                            'BigNAS only support predefined.'
-                mutator: BaseMutator = MODELS.build(mutator_cfg)
-                built_mutators[name] = mutator
-                mutator.prepare_from_supernet(self.architecture)
-            self.mutators = built_mutators
-        else:
-            raise TypeError('mutator should be a `dict` but got '
-                            f'{type(mutators)}')
-
-        self._build_search_space()
-        self.distiller = self._build_distiller(distiller)
-        self.distiller.prepare_from_teacher(self.architecture)
-        self.distiller.prepare_from_student(self.architecture)
-
-        self.sample_kinds = ['max', 'min']
-        for i in range(num_random_samples):
-            self.sample_kinds.append('random' + str(i))
-
-        self.drop_path_rate = drop_path_rate
-        self.backbone_dropout_stages = backbone_dropout_stages
-        self._optim_wrapper_count_status_reinitialized = False
-        self.is_supernet = True
-
         if fix_subnet:
             # Avoid circular import
             from mmrazor.structures import load_fix_subnet
@@ -113,6 +83,36 @@ class BigNAS(BaseAlgorithm, SpaceMixin):
             # According to fix_subnet, delete the unchosen part of supernet
             load_fix_subnet(self, fix_subnet)
             self.is_supernet = False
+        else:
+            if isinstance(mutators, dict):
+                built_mutators: Dict = dict()
+                for name, mutator_cfg in mutators.items():
+                    if 'parse_cfg' in mutator_cfg and isinstance(
+                            mutator_cfg['parse_cfg'], dict):
+                        assert mutator_cfg['parse_cfg'][
+                            'type'] == 'Predefined', \
+                                'BigNAS only support predefined.'
+                    mutator: BaseMutator = MODELS.build(mutator_cfg)
+                    built_mutators[name] = mutator
+                    mutator.prepare_from_supernet(self.architecture)
+                self.mutators = built_mutators
+            else:
+                raise TypeError('mutator should be a `dict` but got '
+                                f'{type(mutators)}')
+
+            self._build_search_space()
+            self.distiller = self._build_distiller(distiller)
+            self.distiller.prepare_from_teacher(self.architecture)
+            self.distiller.prepare_from_student(self.architecture)
+
+            self.sample_kinds = ['max', 'min']
+            for i in range(num_random_samples):
+                self.sample_kinds.append('random' + str(i))
+
+        self.drop_path_rate = drop_path_rate
+        self.backbone_dropout_stages = backbone_dropout_stages
+        self._optim_wrapper_count_status_reinitialized = False
+        self.is_supernet = True
 
     def _build_mutator(self, mutator: VALID_MUTATOR_TYPE) -> BaseMutator:
         """build mutator."""
@@ -122,7 +122,6 @@ class BigNAS(BaseAlgorithm, SpaceMixin):
             raise TypeError('mutator should be a `dict` or '
                             '`OneShotModuleMutator` instance, but got '
                             f'{type(mutator)}')
-
         return mutator
 
     def _build_distiller(
@@ -133,7 +132,6 @@ class BigNAS(BaseAlgorithm, SpaceMixin):
             raise TypeError('distiller should be a `dict` or '
                             '`ConfigurableDistiller` instance, but got '
                             f'{type(distiller)}')
-
         return distiller
 
     def train_step(self, data: List[dict],

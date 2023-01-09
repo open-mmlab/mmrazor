@@ -3,10 +3,8 @@ import copy
 from typing import Dict, Optional, Tuple
 
 from mmengine import fileio
-from mmengine.logging import print_log
 from torch import nn
 
-from mmrazor.registry import MODELS
 from mmrazor.utils import FixMutable, ValidFixMutable
 from mmrazor.utils.typing import DumpChosen
 
@@ -31,7 +29,6 @@ def _dynamic_to_static(model: nn.Module) -> None:
 
 def load_fix_subnet(model: nn.Module,
                     fix_mutable: ValidFixMutable,
-                    load_subnet_mode: str = 'mutable',
                     prefix: str = '',
                     extra_prefix: str = '') -> None:
     """Load fix subnet."""
@@ -48,22 +45,6 @@ def load_fix_subnet(model: nn.Module,
     if isinstance(model, DynamicMixin):
         raise RuntimeError('Root model can not be dynamic op.')
 
-    if load_subnet_mode == 'mutable':
-        _load_fix_subnet_by_mutable(model, fix_mutable, prefix, extra_prefix)
-    elif load_subnet_mode == 'mutator':
-        _load_fix_subnet_by_mutator(model, fix_mutable)
-    else:
-        raise ValueError(f'Invalid load_subnet_mode {load_subnet_mode}, '
-                         'only mutable or mutator is supported.')
-
-    # convert dynamic op to static op
-    _dynamic_to_static(model)
-
-
-def _load_fix_subnet_by_mutable(model: nn.Module,
-                                fix_mutable: Dict,
-                                prefix: str = '',
-                                extra_prefix: str = '') -> None:
     # Avoid circular import
     from mmrazor.models.mutables import DerivedMutable, MutableChannelContainer
     from mmrazor.models.mutables.base_mutable import BaseMutable
@@ -111,16 +92,8 @@ def _load_fix_subnet_by_mutable(model: nn.Module,
             else:
                 load_fix_module(module)
 
-
-def _load_fix_subnet_by_mutator(model: nn.Module, mutator_cfg: Dict) -> None:
-    if 'channel_unit_cfg' not in mutator_cfg:
-        raise ValueError('mutator_cfg must contain key channel_unit_cfg, '
-                         f'but got mutator_cfg:'
-                         f'{mutator_cfg}')
-    mutator_cfg['parse_cfg'] = {'type': 'Config'}
-    mutator = MODELS.build(mutator_cfg)
-    mutator.prepare_from_supernet(model)
-    mutator.set_choices(mutator.current_choices)
+    # convert dynamic op to static op
+    _dynamic_to_static(model)
 
 
 def export_fix_subnet(
@@ -156,7 +129,6 @@ def export_fix_subnet(
 
     if slice_weight:
         # export subnet ckpt
-        print_log('Exporting fixed subnet weight')
         _dynamic_to_static(static_model)
         if next(static_model.parameters()).is_cuda:
             static_model.cuda()

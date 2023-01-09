@@ -37,8 +37,6 @@ DATA_UNITS = [
 class TestChannelMutator(unittest.TestCase):
 
     def _test_a_mutator(self, mutator: ChannelMutator, model):
-        choices = mutator.sample_choices()
-        mutator.set_choices(choices)
         self.assertGreater(len(mutator.mutable_units), 0)
         x = torch.rand([2, 3, 224, 224])
         y = model(x)
@@ -156,14 +154,10 @@ class TestChannelMutator(unittest.TestCase):
                     },
                     parse_cfg={'type': 'Predefined'})
                 mutator.prepare_from_supernet(model)
-                choices = mutator.sample_choices()
-                mutator.set_choices(choices)
                 self.assertGreater(len(mutator.mutable_units), 0)
                 x = torch.rand([2, 3, 224, 224])
                 y = model(x)
-                self.assertEqual(
-                    list(y.shape),
-                    [2, list(mutator.current_choices.values())[0]])
+                self.assertEqual(list(y.shape), [2, 624])
 
     def test_custom_group(self):
         ARCHITECTURE_CFG = dict(
@@ -211,8 +205,6 @@ class TestChannelMutator(unittest.TestCase):
                     },
                     parse_cfg={'type': 'Predefined'})
                 mutator.prepare_from_supernet(model)
-                choices = mutator.sample_choices()
-                mutator.set_choices(choices)
                 self.assertGreater(len(mutator.mutable_units), 0)
                 x = torch.rand([2, 3, 224, 224])
                 y = model(x)

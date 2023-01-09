@@ -10,7 +10,6 @@ from mmengine.structures import BaseDataElement
 
 from mmrazor.models.mutators import DCFFChannelMutator
 from mmrazor.registry import MODELS
-from mmrazor.utils import ValidFixMutable
 from .ite_prune_algorithm import ItePruneAlgorithm, ItePruneConfigManager
 
 LossResults = Dict[str, torch.Tensor]
@@ -53,7 +52,6 @@ class DCFF(ItePruneAlgorithm):
                  mutator_cfg: Union[Dict, DCFFChannelMutator] = dict(
                      type='DCFFChannelMutator',
                      channel_unit_cfg=dict(type='DCFFChannelUnit')),
-                 fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  target_pruning_ratio: Optional[Dict[str, float]] = None,
                  step_freq=1,
@@ -61,9 +59,9 @@ class DCFF(ItePruneAlgorithm):
                  init_cfg: Optional[Dict] = None,
                  linear_schedule=False) -> None:
         # invalid param prune_times, reset after message_hub get [max_epoch]
-        super().__init__(architecture, mutator_cfg, fix_subnet,
-                         data_preprocessor, target_pruning_ratio, step_freq,
-                         prune_times, init_cfg, linear_schedule)
+        super().__init__(architecture, mutator_cfg, data_preprocessor,
+                         target_pruning_ratio, step_freq, prune_times,
+                         init_cfg, linear_schedule)
 
     def _calc_temperature(self, cur_num: int, max_num: int):
         """Calculate temperature param."""

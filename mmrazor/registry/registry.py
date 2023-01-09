@@ -109,7 +109,6 @@ VISBACKENDS = Registry('vis_backend', parent=MMENGINE_VISBACKENDS)
 @MODELS.register_module()
 def sub_model(cfg,
               fix_subnet,
-              mode: str = 'mutable',
               prefix: str = '',
               extra_prefix: str = '',
               init_weight_from_supernet: bool = False,
@@ -125,11 +124,7 @@ def sub_model(cfg,
     from mmrazor.structures import load_fix_subnet
 
     load_fix_subnet(
-        model,
-        fix_subnet,
-        load_subnet_mode=mode,
-        prefix=prefix,
-        extra_prefix=extra_prefix)
+        model, fix_subnet, prefix=prefix, extra_prefix=extra_prefix)
 
     if init_weight_from_supernet:
         # Supernet is modified after load_fix_subnet().

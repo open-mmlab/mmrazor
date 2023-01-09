@@ -76,10 +76,8 @@ class Autoformer(BaseAlgorithm, SpaceMixin):
             else:
                 raise TypeError('mutator should be a `dict` but got '
                                 f'{type(mutator)}')
-
+            self._build_search_space()
             self.is_supernet = True
-
-        self._build_search_space()
 
     def loss(
         self,
