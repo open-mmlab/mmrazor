@@ -12,6 +12,8 @@ from mmrazor.models import *  # noqa: F403, F401
 from mmrazor.models.algorithms.base import BaseAlgorithm
 from mmrazor.models.mutables import OneShotMutableOP
 from mmrazor.registry import MODELS
+from mmrazor.structures import load_fix_subnet
+from mmrazor.utils import ValidFixMutable
 
 
 @MODELS.register_module()
@@ -44,13 +46,15 @@ class MockAlgorithm(BaseAlgorithm):
 
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
-                 _return_architecture_: Optional[bool] = None):
+                 fix_subnet: Optional[ValidFixMutable] = None):
         super().__init__(architecture)
 
-        if _return_architecture_ is True:
-            self.return_model = self.architecture
+        if fix_subnet is not None:
+            # According to fix_subnet, delete the unchosen part of supernet
+            load_fix_subnet(self, fix_subnet, prefix='architecture.')
+            self.is_supernet = False
         else:
-            self.return_model = self
+            self.is_supernet = True
 
 
 class TestRegistry(TestCase):
@@ -68,18 +72,16 @@ class TestRegistry(TestCase):
         # model = MODELS.build(self.arch_cfg_path)
         # self.assertIsNotNone(model)
 
+        # test fix subnet
+        cfg = Config.fromfile(
+            'tests/data/test_registry/registry_subnet_config.py')
+        model = MODELS.build(cfg.model)
+
         # test return architecture
         cfg = Config.fromfile(
             'tests/data/test_registry/registry_architecture_config.py')
         model = MODELS.build(cfg.model)
-        self.assertTrue(isinstance(model.return_model, MockModel))
-
-        # test return model
-        cfg = Config.fromfile(
-            'tests/data/test_registry/registry_architecture_config.py')
-        cfg.model.pop('_return_architecture_')
-        model = MODELS.build(cfg.model)
-        self.assertTrue(isinstance(model.return_model, MockAlgorithm))
+        self.assertTrue(isinstance(model, BaseModel))
 
     def test_build_subnet_prune_from_cfg(self):
         mutator_cfg = fileio.load('tests/data/test_registry/subnet.json')

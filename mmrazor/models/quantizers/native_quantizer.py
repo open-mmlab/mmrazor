@@ -12,7 +12,6 @@ from mmrazor.models.task_modules.tracer.fx import (
     del_fakequant_after_module, del_fakequant_after_op,
     del_fakequant_before_function, del_fakequant_before_method,
     del_fakequant_before_module, del_fakequant_before_op)
-
 from mmrazor.models.utils import str2class
 from mmrazor.registry import MODELS
 from mmrazor.structures.quantization import BackendConfigs, QConfigHander
@@ -52,12 +51,12 @@ class NativeQuantizer(BaseQuantizer):
                  extra_redundant_fakequants=dict(
                      extra_module_prev_wo_fakequant=tuple(),
                      extra_module_next_wo_fakequant=tuple(),
-                     extra_function_prev_wo_fakequant = tuple(),
-                     extra_function_next_wo_fakequant = tuple(),
-                     extra_method_prev_wo_fakequant = tuple(),
-                     extra_method_next_wo_fakequant = tuple(),
-                     extra_op_prev_wo_fakequant = tuple(),
-                     extra_op_next_wo_fakequant = tuple())):
+                     extra_function_prev_wo_fakequant=tuple(),
+                     extra_function_next_wo_fakequant=tuple(),
+                     extra_method_prev_wo_fakequant=tuple(),
+                     extra_method_next_wo_fakequant=tuple(),
+                     extra_op_prev_wo_fakequant=tuple(),
+                     extra_op_next_wo_fakequant=tuple())):
         super().__init__(tracer)
         self.qconfig = QConfigHander(global_qconfig)
         if self.qconfig.w_qscheme.is_per_channel:
@@ -148,37 +147,61 @@ class NativeQuantizer(BaseQuantizer):
         raise NotImplementedError
 
     def del_redundant_fakequant(self, prepared):
-        extra_module_prev_wo_fakequant = self.extra_redundant_fakequants.get('extra_module_prev_wo_fakequant', tuple())
+        extra_module_prev_wo_fakequant = self.extra_redundant_fakequants.get(
+            'extra_module_prev_wo_fakequant', tuple())
         prepared = del_fakequant_before_module(
-            prepared, self.module_prev_wo_fakequant + extra_module_prev_wo_fakequant, inplace=True)
+            prepared,
+            self.module_prev_wo_fakequant + extra_module_prev_wo_fakequant,
+            inplace=True)
 
-        extra_module_next_wo_fakequant = self.extra_redundant_fakequants.get('extra_module_next_wo_fakequant', tuple())
+        extra_module_next_wo_fakequant = self.extra_redundant_fakequants.get(
+            'extra_module_next_wo_fakequant', tuple())
         prepared = del_fakequant_after_module(
-            prepared, self.module_next_wo_fakequant + extra_module_next_wo_fakequant, inplace=True)
+            prepared,
+            self.module_next_wo_fakequant + extra_module_next_wo_fakequant,
+            inplace=True)
 
-        extra_function_prev_wo_fakequant = self.extra_redundant_fakequants.get('extra_function_prev_wo_fakequant', tuple())
+        extra_function_prev_wo_fakequant = self.extra_redundant_fakequants.get(
+            'extra_function_prev_wo_fakequant', tuple())
         prepared = del_fakequant_before_method(
-            prepared, self.function_prev_wo_fakequant + extra_function_prev_wo_fakequant, inplace=True)
+            prepared,
+            self.function_prev_wo_fakequant + extra_function_prev_wo_fakequant,
+            inplace=True)
 
-        extra_function_next_wo_fakequant = self.extra_redundant_fakequants.get('extra_function_next_wo_fakequant', tuple())
+        extra_function_next_wo_fakequant = self.extra_redundant_fakequants.get(
+            'extra_function_next_wo_fakequant', tuple())
         prepared = del_fakequant_after_method(
-            prepared, self.function_next_wo_fakequant + extra_function_next_wo_fakequant, inplace=True)
+            prepared,
+            self.function_next_wo_fakequant + extra_function_next_wo_fakequant,
+            inplace=True)
 
-        extra_method_prev_wo_fakequant = self.extra_redundant_fakequants.get('extra_method_prev_wo_fakequant', tuple())
+        extra_method_prev_wo_fakequant = self.extra_redundant_fakequants.get(
+            'extra_method_prev_wo_fakequant', tuple())
         prepared = del_fakequant_before_function(
-            prepared, self.method_prev_wo_fakequant + extra_method_prev_wo_fakequant, inplace=True)
+            prepared,
+            self.method_prev_wo_fakequant + extra_method_prev_wo_fakequant,
+            inplace=True)
 
-        extra_method_next_wo_fakequant = self.extra_redundant_fakequants.get('extra_method_next_wo_fakequant', tuple())
+        extra_method_next_wo_fakequant = self.extra_redundant_fakequants.get(
+            'extra_method_next_wo_fakequant', tuple())
         prepared = del_fakequant_after_function(
-            prepared, self.method_next_wo_fakequant + extra_method_next_wo_fakequant, inplace=True)
+            prepared,
+            self.method_next_wo_fakequant + extra_method_next_wo_fakequant,
+            inplace=True)
 
-        extra_op_prev_wo_fakequant = self.extra_redundant_fakequants.get('extra_op_prev_wo_fakequant', tuple())
+        extra_op_prev_wo_fakequant = self.extra_redundant_fakequants.get(
+            'extra_op_prev_wo_fakequant', tuple())
         prepared = del_fakequant_before_op(
-            prepared, self.op_prev_wo_fakequant + extra_op_prev_wo_fakequant, inplace=True)
+            prepared,
+            self.op_prev_wo_fakequant + extra_op_prev_wo_fakequant,
+            inplace=True)
 
-        extra_op_next_wo_fakequant = self.extra_redundant_fakequants.get('extra_op_next_wo_fakequant', tuple())
+        extra_op_next_wo_fakequant = self.extra_redundant_fakequants.get(
+            'extra_op_next_wo_fakequant', tuple())
         prepared = del_fakequant_after_op(
-            prepared, self.op_next_wo_fakequant + extra_op_next_wo_fakequant, inplace=True)
+            prepared,
+            self.op_next_wo_fakequant + extra_op_next_wo_fakequant,
+            inplace=True)
         return prepared
 
     @property
