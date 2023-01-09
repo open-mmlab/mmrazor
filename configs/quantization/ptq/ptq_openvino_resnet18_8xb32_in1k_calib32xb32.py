@@ -23,7 +23,8 @@ model = dict(
     _delete_=True,
     type='mmrazor.MMArchitectureQuant',
     architecture=_base_.model,
-    float_checkpoint='/tmp/humu/resnet18_8xb32_in1k_20210831-fbbb1da6.pth',
+    float_checkpoint='https://download.openmmlab.com/mmclassification/v0/resne'
+    't/resnet18_8xb32_in1k_20210831-fbbb1da6.pth',
     quantizer=dict(
         type='mmrazor.OpenVINOQuantizer',
         global_qconfig=global_qconfig,
@@ -33,3 +34,5 @@ model = dict(
                 'mmcls.models.heads.ClsHead._get_loss',
                 'mmcls.models.heads.ClsHead._get_predictions'
             ])))
+
+model_wrapper_cfg = dict(type='mmrazor.MMArchitectureQuantDDP', )
