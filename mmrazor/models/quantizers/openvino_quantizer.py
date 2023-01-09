@@ -1,6 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Tuple
-
 import torch
 from torch.ao.quantization import disable_observer
 

@@ -8,16 +8,25 @@ global_qconfig = dict(
     w_fake_quant=dict(type='mmrazor.FakeQuantize'),
     a_fake_quant=dict(type='mmrazor.FakeQuantize'),
     w_qscheme=dict(
-        qdtype='qint8', bit=8, is_symmetry=True, is_symmetric_range=True,),
+        qdtype='qint8',
+        bit=8,
+        is_symmetry=True,
+        is_symmetric_range=True,
+    ),
     a_qscheme=dict(
-        qdtype='quint8', bit=8, is_symmetry=True, averaging_constant=0.1,),
+        qdtype='quint8',
+        bit=8,
+        is_symmetry=True,
+        averaging_constant=0.1,
+    ),
 )
 
 model = dict(
     _delete_=True,
     type='mmrazor.MMArchitectureQuant',
     architecture=_base_.model,
-    float_checkpoint='https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_8xb32_in1k_20210831-fbbb1da6.pth',
+    float_checkpoint='https://download.openmmlab.com/mmclassification/v0/resne'
+    't/resnet18_8xb32_in1k_20210831-fbbb1da6.pth',
     quantizer=dict(
         type='mmrazor.OpenVINOQuantizer',
         global_qconfig=global_qconfig,
@@ -40,12 +49,10 @@ param_scheduler = dict(
     begin=0,
     end=100)
 
-
 model_wrapper_cfg = dict(
-    type = 'mmrazor.MMArchitectureQuantDDP',
+    type='mmrazor.MMArchitectureQuantDDP',
     broadcast_buffers=False,
-    find_unused_parameters=True
-)
+    find_unused_parameters=True)
 
 # train, val, test setting
 train_cfg = dict(
