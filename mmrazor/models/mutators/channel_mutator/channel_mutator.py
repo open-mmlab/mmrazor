@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import Any, Dict, Generic, List, Optional, Tuple, Type, Union
+from typing import Dict, Generic, List, Optional, Tuple, Type, Union
 
 from mmengine import fileio
 from torch.nn import Module, ModuleList
@@ -202,48 +202,6 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
             unit.fix_chosen()
 
     # choice manage
-
-    @property
-    def current_choices(self) -> Dict:
-        """Get current choices."""
-        current_choices = dict()
-        for group_id, modules in self.search_groups.items():
-            current_choices[group_id] = modules[0].current_choice
-
-        return current_choices
-
-    def sample_choices(self, kind: str = 'random') -> Dict[int, Any]:
-        """Sampling by search groups.
-
-        The sampling result of the first mutable of each group is the sampling
-        result of this group.
-
-        Returns:
-            Dict[int, Any]: Random choices dict.
-        """
-        assert kind == 'random', f'unsupported the {kind} sample method.'
-        random_choices = dict()
-        for group_id, modules in self.search_groups.items():
-            random_choices[group_id] = modules[0].sample_choice()
-
-        return random_choices
-
-    def set_choices(self, choices: Dict[int, Any]) -> None:
-        """Set mutables' current choice according to choices sample by
-        :func:`sample_choices`.
-
-        Args:
-            choices (Dict[int, Any]): Choices dict. The key is group_id in
-                search groups, and the value is the sampling results
-                corresponding to this group.
-        """
-        for group_id, modules in self.search_groups.items():
-            if group_id not in choices:
-                # allow optional target_prune_ratio
-                continue
-            choice = choices[group_id]
-            for module in modules:
-                module.current_choice = choice
 
     @property
     def choice_template(self) -> Dict:

@@ -12,6 +12,7 @@ from mmrazor.models.mutators import ChannelMutator
 from mmrazor.registry import MODELS
 from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm
+from ..space_mixin import SpaceMixin
 
 LossResults = Dict[str, torch.Tensor]
 TensorResults = Union[Tuple[torch.Tensor], torch.Tensor]
@@ -89,7 +90,7 @@ class ItePruneConfigManager:
 
 
 @MODELS.register_module()
-class ItePruneAlgorithm(BaseAlgorithm):
+class ItePruneAlgorithm(BaseAlgorithm, SpaceMixin):
     """ItePruneAlgorithm prunes a model iteratively until reaching a prune-
     target.
 
@@ -139,24 +140,25 @@ class ItePruneAlgorithm(BaseAlgorithm):
 
         self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
         self.mutator.prepare_from_supernet(self.architecture)
+        self._build_search_space()
 
     def group_target_pruning_ratio(
-        self, target: Dict[str, float],
-        search_groups: Dict[int,
-                            List[MutableChannelUnit]]) -> Dict[int, float]:
+            self, target: Dict[str, float],
+            search_space: Dict[int,
+                               List[MutableChannelUnit]]) -> Dict[int, float]:
         """According to the target pruning ratio of each unit, set the target
         ratio of each search group."""
         group_target: Dict[int, float] = dict()
-        for group_id, units in search_groups.items():
+        for name, units in search_space.items():
             for unit in units:
                 unit_name = unit.name
                 # The config of target pruning ratio does not
                 # contain all units.
                 if unit_name not in target:
                     continue
-                if group_id in group_target:
+                if name in group_target:
                     unit_target = target[unit_name]
-                    if unit_target != group_target[group_id]:
+                    if unit_target != group_target[name]:
                         group_names = [u.name for u in units]
                         raise ValueError(
                             f"'{unit_name}' target ratio is different from "
@@ -165,7 +167,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
                 else:
                     unit_target = target[unit_name]
                     assert isinstance(unit_target, (float, int))
-                    group_target[group_id] = unit_target
+                    group_target[name] = unit_target
         return group_target
 
     def check_prune_target(self, config: Dict):
@@ -179,10 +181,10 @@ class ItePruneAlgorithm(BaseAlgorithm):
         message_hub['max_epoch/iter'] unaccessible when initiation.
         """
         if self.target_pruning_ratio is None:
-            group_target_ratio = self.mutator.current_choices
+            group_target_ratio = self.current_subnet
         else:
             group_target_ratio = self.group_target_pruning_ratio(
-                self.target_pruning_ratio, self.mutator.search_groups)
+                self.target_pruning_ratio, self.search_space)
 
         if self.by_epoch:
             # step_freq based on iterations
@@ -192,7 +194,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
         # message_hub['max_epoch'] unaccessible when init
         prune_config_manager = ItePruneConfigManager(
             group_target_ratio,
-            self.mutator.current_choices,
+            self.current_subnet,
             self.step_freq,
             prune_times=self.prune_times,
             linear_schedule=self.linear_schedule)
@@ -212,8 +214,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
             if self.prune_config_manager.is_prune_time(self._iter):
 
                 config = self.prune_config_manager.prune_at(self._iter)
-
-                self.mutator.set_choices(config)
+                self.set_subnet(config)
 
                 logger = MMLogger.get_current_instance()
                 if (self.by_epoch):

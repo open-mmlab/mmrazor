@@ -13,7 +13,7 @@ class SpaceMixin():
     def _build_search_space(self, prefix=''):
         """Unify search_groups in mutators as the search_space of the model."""
         assert hasattr(self, 'mutators') or hasattr(self, 'mutator'), (
-            '_trace_search_space is only suitable for algorithms with mutator.'
+            '_build_search_space is only suitable for algorithms with mutator.'
         )
         self.search_space = dict()
         if hasattr(self, 'mutators'):
@@ -81,11 +81,16 @@ class SpaceMixin():
 
     def set_subnet(self, choices: Dict) -> None:
         """Set choices for each module in search space."""
-        for group_id, modules in self.search_space.items():
-            if group_id not in choices:
-                # allow optional target_prune_ratio
-                continue
-            choice = choices[group_id]
+        for name, modules in self.search_space.items():
+            if name not in choices:
+                if modules[0].alias not in choices:
+                    # allow optional target_prune_ratio
+                    continue
+                else:
+                    choice = choices[modules[0].alias]
+            else:
+                choice = choices[name]
+
             for module in modules:
                 module.current_choice = choice
 
