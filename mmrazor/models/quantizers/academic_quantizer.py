@@ -23,6 +23,7 @@ PRESERVED_ATTRIBUTES_DICT_KEY = 'preserved_attributes'
 
 @MODELS.register_module()
 class AcademicQuantizer(BaseQuantizer):
+    """"""
 
     def __init__(self,
                  qconfig_mapping,
@@ -37,6 +38,7 @@ class AcademicQuantizer(BaseQuantizer):
         self.example_inputs = (torch.randn(1, 3, 224, 224), )
 
     def prepare(self, model, graph_module):
+        """"""
         preserved_attributes = self.prepare_custom_config.preserved_attributes
         for attr_name in preserved_attributes:
             setattr(graph_module, attr_name, getattr(model, attr_name))
@@ -60,6 +62,7 @@ class AcademicQuantizer(BaseQuantizer):
         return prepared
 
     def gen_qconfig_mapping(self, qconfig_mapping):
+        """"""
         conf = QConfigMapping()
         if GLOBAL_DICT_KEY in qconfig_mapping:
             qconfig = QConfigHander(qconfig_mapping[GLOBAL_DICT_KEY]).convert()
@@ -86,6 +89,7 @@ class AcademicQuantizer(BaseQuantizer):
         return conf
 
     def gen_prepare_custom_config(self, prepare_custom_config):
+        """"""
         conf = PrepareCustomConfig()
         if prepare_custom_config is None:
             return conf

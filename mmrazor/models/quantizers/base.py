@@ -8,6 +8,7 @@ from mmrazor.registry import TASK_UTILS
 
 
 class BaseQuantizer(BaseModule):
+    """"""
 
     def __init__(self, tracer):
         super().__init__()
@@ -15,11 +16,11 @@ class BaseQuantizer(BaseModule):
 
     @abstractmethod
     def prepare(self, model, graph_module):
+        """"""
         pass
 
     def swap_ff_with_fxff(self, model):
-        r""" Swap FloatFunctional with FXFloatFunctional
-        """
+        """Swap FloatFunctional with FXFloatFunctional."""
         modules_to_swap = []
         for name, module in model.named_children():
             if isinstance(module, torch.ao.nn.quantized.FloatFunctional):
