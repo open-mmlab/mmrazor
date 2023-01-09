@@ -81,7 +81,7 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
                 pruning rate)
             2. sampled by probability
         Inputs:
-            out_channels (int): channel num of conv layers 
+            out_channels (int): channel num of conv layers.
         Outputs:
             attr (tuple): (group_size, num_groups, min_ch)
         """
@@ -96,13 +96,14 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
 
         return (group_size, num_groups, min_ch)
 
-    def modify_supernet_forward(self, arch_train: str) -> bool:
+    def modify_supernet_forward(self, arch_train: str):
         for module, group_id in self._bn_arch_align.items():
             if arch_train:
                 arch_param = self.arch_params[self._bn_arch_align[module]]
                 arch_params_attr = self._arch_params_attr[str(group_id)]
             else:
-                arch_param = arch_params_attr = None
+                arch_param = None
+                arch_params_attr = None
             module.set_forward_args(
                 arch_param=arch_param, arch_attr=arch_params_attr)
 
