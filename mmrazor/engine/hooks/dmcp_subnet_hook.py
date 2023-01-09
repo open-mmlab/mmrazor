@@ -1,9 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import os
-import yaml
 from typing import Optional, Sequence
 
-from mmengine.dist import master_only
+import yaml
 from mmengine.hooks import Hook
 from mmengine.registry import HOOKS
 

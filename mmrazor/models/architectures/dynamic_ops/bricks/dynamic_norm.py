@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Any, Callable, Dict, List, Optional, Tuple
 from functools import partial
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -488,7 +488,7 @@ class DMCPBatchNorm2d(DynamicBatchNorm2d):
         return out
 
     def set_forward_args(
-        self, arch_param: nn.Parameter, arch_attr: Tuple) -> None:
+            self, arch_param: nn.Parameter, arch_attr: Tuple) -> None:
         """Interface for modifying the arch_param using partial."""
         forward_with_default_args: PartialType = \
             partial(self.forward, arch_param=arch_param, arch_attr=arch_attr)

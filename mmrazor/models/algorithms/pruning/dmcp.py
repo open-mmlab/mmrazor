@@ -1,29 +1,24 @@
 import os
+import random
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import random
-from typing_extensions import Self
 import torch
 import yaml
-
-from mmengine import MessageHub, MMLogger
+from mmengine import MessageHub
 from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper
 from mmengine.structures import BaseDataElement
 from torch import nn
 
 from mmrazor.models.distillers import ConfigurableDistiller
-from mmrazor.models.mutators.base_mutator import BaseMutator
+from mmrazor.models.mutators import ChannelMutator, DMCPChannelMutator
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
 from mmrazor.utils import ValidFixMutable
-from mmrazor.structures.subnet.fix_subnet import _dynamic_to_static
-from ..base import BaseAlgorithm
 from ...task_modules.estimators import ResourceEstimator
+from ..base import BaseAlgorithm
 
 VALID_DISTILLER_TYPE = Union[ConfigurableDistiller, Dict, Any]
-
-from mmrazor.models.mutators import ChannelMutator, DMCPChannelMutator
 
 LossResults = Dict[str, torch.Tensor]
 TensorResults = Union[Tuple[torch.Tensor], torch.Tensor]
@@ -42,16 +37,17 @@ class DMCP(BaseAlgorithm):
                      channel_unit_cfg=dict(type='DMCPChannelUnit')),
                  fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
-                 strategy: List = ['max', 'min', 'scheduled_random', 'arch_random'],
+                 strategy: List = \
+                    ['max', 'min', 'scheduled_random', 'arch_random'],
                  init_cfg: Optional[Dict] = None,
-                 arch_start_train=10000, 
+                 arch_start_train=10000,
                  arch_train_freq=500,
-                 distillation_times=2000, 
-                 target_flops=150, # MFLOPs
+                 distillation_times=2000,
+                 target_flops=150,
                  flops_loss_type: str = 'log_l1',
                  flop_loss_weight: float = 1.0) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
-        
+
         self.arch_start_train = arch_start_train
         self.strategy = strategy
         self.distillation_times = distillation_times
@@ -76,7 +72,7 @@ class DMCP(BaseAlgorithm):
         else:
             self.is_supernet = True
 
-    def  _load_fix_subnet(self, save_path):
+    def _load_fix_subnet(self, save_path):
         from mmrazor.structures import load_fix_subnet
         with open(save_path) as file:
             self.mutator.set_choices(yaml.load(file.read()))
@@ -104,7 +100,7 @@ class DMCP(BaseAlgorithm):
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
 
         if not self.arch_train and \
-            self._iter > self.arch_start_train:
+                self._iter > self.arch_start_train:
             self.arch_train = True
 
         if self.is_supernet:
@@ -123,7 +119,8 @@ class DMCP(BaseAlgorithm):
                         subnet_losses.update(soft_loss)
 
                     parsed_subnet_losses, _ = self.parse_losses(subnet_losses)
-                    optim_wrapper['architecture'].update_params(parsed_subnet_losses)
+                    optim_wrapper['architecture'].update_params(
+                        parsed_subnet_losses)
 
                 return subnet_losses
 
@@ -131,9 +128,9 @@ class DMCP(BaseAlgorithm):
                 data, True).values()
             total_losses = dict()
 
-            #update model parameters
+            # update model parameters
             for kind in self.strategy:
-                if kind in ('max'): 
+                if kind in ('max'):
                     self.set_subnet(mode='max')
                     with optim_wrapper['architecture'].optim_context(
                             self
@@ -142,22 +139,26 @@ class DMCP(BaseAlgorithm):
                             batch_inputs, data_samples, mode='loss')
                         parsed_max_subnet_losses, _ = self.parse_losses(
                             max_subnet_losses)
-                        optim_wrapper['architecture'].update_params(parsed_max_subnet_losses)
-                    total_losses.update(add_prefix(max_subnet_losses, 'max_subnet'))
+                        optim_wrapper['architecture'].update_params(
+                            parsed_max_subnet_losses)
+                    total_losses.update(
+                        add_prefix(max_subnet_losses, 'max_subnet'))
                 elif kind in ('min'):
                     self.set_subnet(mode='min')
-                    min_subnet_losses = distill_step(batch_inputs, data_samples)
-                    total_losses.update(add_prefix(min_subnet_losses, 'min_subnet'))
+                    min_subnet_losses =\
+                        distill_step(batch_inputs, data_samples)
+                    total_losses.update(
+                        add_prefix(min_subnet_losses, 'min_subnet'))
                 elif kind in ('arch_random'):
                     if self.arch_train:
                         self.set_subnet(mode='direct')
                         direct_subnet_losses = distill_step(
                             batch_inputs, data_samples)
                         total_losses.update(
-                            add_prefix(direct_subnet_losses, 
+                            add_prefix(direct_subnet_losses,
                                        'direct_subnet'))
                     else:
-                        self.set_subnet(mode='random') 
+                        self.set_subnet(mode='random')
                         random_subnet_losses = distill_step(
                             batch_inputs, data_samples)
                         total_losses.update(
@@ -170,10 +171,10 @@ class DMCP(BaseAlgorithm):
                         direct_subnet_losses = distill_step(
                             batch_inputs, data_samples)
                         total_losses.update(
-                            add_prefix(direct_subnet_losses, 
+                            add_prefix(direct_subnet_losses,
                                        'direct_subnet'))
                     else:
-                        self.set_subnet(mode='random') 
+                        self.set_subnet(mode='random')
                         random_subnet_losses = distill_step(
                             batch_inputs, data_samples)
                         total_losses.update(
@@ -181,9 +182,9 @@ class DMCP(BaseAlgorithm):
                                        'random_subnet'))
                     self.cur_sample_prob *= 0.9999
 
-            #update arch parameters
+            # update arch parameters
             if self.arch_train \
-                and self._iter % self.arch_train_freq == 0:
+                    and self._iter % self.arch_train_freq == 0:
                 with optim_wrapper['mutator'].optim_context(self):
                     optim_wrapper['mutator'].zero_grad()
                     mutator_loss = self._update_arch_params(
@@ -214,12 +215,12 @@ class DMCP(BaseAlgorithm):
         expected_flops = self.calc_current_flops()
         flops_loss = self._compute_flops_loss(expected_flops).to(
             arch_loss['loss'].device)
-        parsed_flops_loss, _ = self.parse_losses({'loss':flops_loss})
+        parsed_flops_loss, _ = self.parse_losses({'loss': flops_loss})
         optim_wrapper['mutator'].update_params(parsed_flops_loss)
-        arch_params_loss.update(add_prefix({'loss':flops_loss}, 'flops'))
+        arch_params_loss.update(add_prefix({'loss': flops_loss}, 'flops'))
         self.train()
         return arch_params_loss
-    
+
     def _compute_flops_loss(self, expected_flops):
         """Calculation of loss functions of arch parameters.
 
@@ -292,7 +293,7 @@ class DMCPDDP(MMDistributedDataParallel):
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
 
         if not self.module.arch_train and \
-            self.module._iter > self.module.arch_start_train:
+                self.module._iter > self.module.arch_start_train:
             self.module.arch_train = True
 
         if self.module.is_supernet:
@@ -302,7 +303,7 @@ class DMCPDDP(MMDistributedDataParallel):
                 subnet_losses = dict()
                 with optim_wrapper['architecture'].optim_context(
                         self
-                ), self.module.distiller.student_recorders:  # type: ignore
+                ), self.module.distiller.student_recorders:
                     hard_loss = self(batch_inputs, data_samples, mode='loss')
                     soft_loss = self.module.distiller.compute_distill_losses()
 
@@ -310,18 +311,20 @@ class DMCPDDP(MMDistributedDataParallel):
                     if self.module._iter > self.module.distillation_times:
                         subnet_losses.update(soft_loss)
 
-                    parsed_subnet_losses, _ = self.module.parse_losses(subnet_losses)
-                    optim_wrapper['architecture'].update_params(parsed_subnet_losses)
+                    parsed_subnet_losses, _ = \
+                        self.module.parse_losses(subnet_losses)
+                    optim_wrapper['architecture'].update_params(
+                        parsed_subnet_losses)
 
                 return subnet_losses
 
             batch_inputs, data_samples = self.module.data_preprocessor(
                 data, True).values()
             total_losses = dict()
-            #update model parameters
+            # update model parameters
             max_net_num = min_net_num = random_net_num = direct_net_num = 1
             for kind in self.module.strategy:
-                if kind in ('max'): 
+                if kind in ('max'):
                     self.module.set_subnet(mode='max')
                     with optim_wrapper['architecture'].optim_context(
                             self
@@ -330,13 +333,15 @@ class DMCPDDP(MMDistributedDataParallel):
                             batch_inputs, data_samples, mode='loss')
                         parsed_max_subnet_losses, _ = self.module.parse_losses(
                             max_subnet_losses)
-                        optim_wrapper['architecture'].update_params(parsed_max_subnet_losses)
+                        optim_wrapper['architecture'].update_params(
+                            parsed_max_subnet_losses)
                     total_losses.update(add_prefix(max_subnet_losses,
                                                    f'max_subnet{max_net_num}'))
                     max_net_num += 1
                 elif kind in ('min'):
                     self.module.set_subnet(mode='min')
-                    min_subnet_losses = distill_step(batch_inputs, data_samples)
+                    min_subnet_losses = distill_step(
+                        batch_inputs, data_samples)
                     total_losses.update(add_prefix(min_subnet_losses,
                                                    f'min_subnet{min_net_num}'))
                     min_net_num += 1
@@ -346,11 +351,11 @@ class DMCPDDP(MMDistributedDataParallel):
                         direct_subnet_losses = distill_step(
                             batch_inputs, data_samples)
                         total_losses.update(
-                            add_prefix(direct_subnet_losses, 
+                            add_prefix(direct_subnet_losses,
                                        f'direct_subnet{direct_net_num}'))
                         direct_net_num += 1
                     else:
-                        self.module.set_subnet(mode='random') 
+                        self.module.set_subnet(mode='random')
                         random_subnet_losses = distill_step(
                             batch_inputs, data_samples)
                         total_losses.update(
@@ -364,11 +369,11 @@ class DMCPDDP(MMDistributedDataParallel):
                         direct_subnet_losses = distill_step(
                             batch_inputs, data_samples)
                         total_losses.update(
-                            add_prefix(direct_subnet_losses, 
+                            add_prefix(direct_subnet_losses,
                                        f'direct_subnet{direct_net_num}'))
                         direct_net_num += 1
                     else:
-                        self.module.set_subnet(mode='random') 
+                        self.module.set_subnet(mode='random')
                         random_subnet_losses = distill_step(
                             batch_inputs, data_samples)
                         total_losses.update(
@@ -378,14 +383,14 @@ class DMCPDDP(MMDistributedDataParallel):
                     self.module.cur_sample_prob *= 0.9999
 
             with optim_wrapper['mutator'].optim_context(self):
-                    optim_wrapper['mutator'].zero_grad()
-                    mutator_loss = self.module._update_arch_params(
-                        batch_inputs, data_samples, optim_wrapper, mode='loss')
+                optim_wrapper['mutator'].zero_grad()
+                mutator_loss = self.module._update_arch_params(
+                    batch_inputs, data_samples, optim_wrapper, mode='loss')
             total_losses.update(mutator_loss)
 
             # update arch parameters
             if self.module.arch_train \
-                and self.module._iter % self.画.arch_train_freq == 0:
+                    and self.module._iter % self.module.arch_train_freq == 0:
                 with optim_wrapper['mutator'].optim_context(self):
                     optim_wrapper['mutator'].zero_grad()
                     mutator_loss = self.module._update_arch_params(

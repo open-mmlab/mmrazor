@@ -1,15 +1,17 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Any, Dict, Type, Union
 import random
+from typing import Any, Dict, Type, Union
 
 import torch
 import torch.nn as nn
 from torch import tensor
-from torch.nn import Module, ModuleList
+from torch.nn import Module
+
 from mmrazor.models.mutables import DMCPChannelUnit
 from mmrazor.registry import MODELS
-from .channel_mutator import ChannelMutator, ChannelUnitType
 from ...architectures import DMCPBatchNorm2d
+from .channel_mutator import ChannelMutator, ChannelUnitType
+
 
 
 @MODELS.register_module()
@@ -24,7 +26,7 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
             Defaults to dict( type='BackwardTracer',
                 loss_calculator=dict(type='ImageClassifierPseudoLoss')).
             Change loss_calculator according to task and backbone.
-        pruning_cfg (Tuple): (min_sample_rate, max_sample_rate, sample_offset)).
+        pruning_cfg (Tuple): (min_sample_rate, max_sample_rate, sample_offset)
     """
 
     def __init__(self,
@@ -39,7 +41,6 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
         super().__init__(channel_unit_cfg, parse_cfg, **kwargs)
         self.pruning_cfg = pruning_cfg
 
-
     def prepare_from_supernet(self, supernet: Module) -> None:
         """Prepare from a model for pruning.
 
@@ -53,26 +54,25 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
     def _build_arch_param(self, num_choices) -> nn.Parameter:
         """Build learnable architecture parameters."""
         return nn.Parameter(torch.zeros(num_choices))
-        
+
     def prepare_arch_params(self, supernet: Module) -> None:
-        # Associate all the op's in the model with their corresponding arch parameters
         self.arch_params = nn.ParameterDict()
         self._op_arch_align = dict()
         self._arch_params_attr = dict()
         for group_id, module in self.search_groups.items():
-            arch_message = self._generate_arch_message(module[0].mutable_channel.num_channels)
+            arch_message = self._generate_arch_message(
+                module[0].mutable_channel.num_channels)
             self._arch_params_attr[str(group_id)] = arch_message
             group_arch_param = self._build_arch_param(arch_message[1])
             self.arch_params[str(group_id)] = group_arch_param
 
             for unit in module[0].output_related:
                 self._op_arch_align[str(unit.name)] = str(group_id)
-    
-        # Associate all the BN in the model with their corresponding arch parameters
+
         self._bn_arch_align = dict()
         for name, module in supernet.named_modules():
             if isinstance(module, DMCPBatchNorm2d):
-                self._bn_arch_align[module] = self._op_arch_align[str(name)]  
+                self._bn_arch_align[module] = self._op_arch_align[str(name)]
 
     def _generate_arch_message(self, out_channels: int) -> tuple:
         """
@@ -90,7 +90,7 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
         min_ch = out_channels - (group_size * num_groups)
         assert min_ch > 0
         assert group_size * num_groups + min_ch == out_channels
-        
+
         return (group_size, num_groups, min_ch)
 
     def modify_supernet_forward(self, arch_train: str) -> bool:
@@ -100,7 +100,8 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
                 arch_params_attr = self._arch_params_attr[str(group_id)]
             else:
                 arch_param = arch_params_attr = None
-            module.set_forward_args(arch_param=arch_param, arch_attr=arch_params_attr)
+            module.set_forward_args(
+                arch_param=arch_param, arch_attr=arch_params_attr)
 
     def sample_subnet(self, mode: str, arch_train: bool) -> None:
         choices = dict()
@@ -117,13 +118,14 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
         Inputs:
             mode (list): one of ['max', 'min', 'random', 'direct', 'expected']
             group_id (int): number of search_groups
-        
+
         Outputs:
             channels (int): for mode 'max'/'min'/'random'/'dirext'
             channels (tensor): for mode 'expected'
         """
         arch_param = self.arch_params[str(group_id)]
-        (group_size, num_groups, min_ch) = self._arch_params_attr[str(group_id)]
+        (group_size, num_groups, min_ch) =\
+            self._arch_params_attr[str(group_id)]
 
         if mode == 'max':
             return min_ch + group_size * num_groups
@@ -150,7 +152,7 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
                 return expected_channel
             else:
                 raise NotImplementedError
-    
+
     def set_choices(self, choices: Dict[int, Any]) -> None:
         """Set mutables' current choice according to choices sample by
         :func:`sample_choices`.
@@ -168,4 +170,3 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
             for module in modules:
                 module.current_choice = choice
                 module.mutable_channel.activated_tensor_channels = choice
-
