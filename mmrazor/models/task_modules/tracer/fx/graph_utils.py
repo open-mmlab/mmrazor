@@ -2,7 +2,7 @@
 import copy
 from typing import Any, List, Tuple
 
-import torch.fx
+import torch
 
 try:
     from torch.ao.quantization.fake_quantize import FakeQuantizeBase
