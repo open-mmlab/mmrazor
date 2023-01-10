@@ -8,6 +8,7 @@ from mmrazor.models.mutators import DMCPChannelMutator
 
 
 class ResBlock(Module):
+
     def __init__(self) -> None:
         super().__init__()
 

@@ -5,4 +5,4 @@ from .slimmable_network import SlimmableNetwork, SlimmableNetworkDDP
 
 __all__ = [
     'SlimmableNetwork', 'SlimmableNetworkDDP', 'DCFF', 'DMCP', 'DMCPDDP'
-    ]
+]

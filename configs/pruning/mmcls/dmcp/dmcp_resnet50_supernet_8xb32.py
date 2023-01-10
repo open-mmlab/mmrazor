@@ -17,10 +17,7 @@ optim_wrapper = dict(
 param_scheduler = dict(
     type='MultiStepLR', by_epoch=True, milestones=[30, 60, 90], gamma=0.1)
 
-train_cfg = dict(
-    by_epoch=True,
-    max_epochs=120,
-    val_interval=1)
+train_cfg = dict(by_epoch=True, max_epochs=120, val_interval=1)
 
 data_preprocessor = {'type': 'mmcls.ClsDataPreprocessor'}
 

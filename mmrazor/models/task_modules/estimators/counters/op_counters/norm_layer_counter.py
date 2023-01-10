@@ -88,4 +88,4 @@ class DMCPBatchNorm2dCounter(BNCounter):
             batch_flops *= 2
         num_features = module.mutable_attrs['num_features'].activated_channels
         module.__flops__ += batch_flops
-        module.__params__ += num_features*2
+        module.__params__ += num_features * 2

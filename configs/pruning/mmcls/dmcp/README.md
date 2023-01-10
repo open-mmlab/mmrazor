@@ -20,9 +20,9 @@ Recent works imply that the channel pruning can be regarded as searching optimal
 
 ### 1.Classification
 
-|Dataset|       Supernet      | Flops(M) | Top-1 (%) | Top-5 (%) | Config | Download |
-|:---------------------:|:---------------------:|:------:|:---------:|:--------:|:---------:|:------:|
-|ImageNet|   ResNet50 |  - | - | - | [config](./dmcp_resnet50_supernet_8xb32.py) | \[model\] / [arch](./DMCP_SUBNET_IMAGENET.yaml)/ \[log\] |
+| Dataset  | Supernet | Flops(M) | Top-1 (%) | Top-5 (%) |                   Config                    |                         Download                         |
+| :------: | :------: | :------: | :-------: | :-------: | :-----------------------------------------: | :------------------------------------------------------: |
+| ImageNet | ResNet50 |    -     |     -     |     -     | [config](./dmcp_resnet50_supernet_8xb32.py) | \[model\] / [arch](./DMCP_SUBNET_IMAGENET.yaml)/ \[log\] |
 
 ## Getting Started
 
