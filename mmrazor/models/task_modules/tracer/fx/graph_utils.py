@@ -74,7 +74,7 @@ def recursive_find_erased_nodes(node, prepared_model):
 
 def del_fakequant_before_op(prepared_model,
                             target_ops: Tuple,
-                            inplace: bool = True) -> torch.fx.GraphModule:
+                            inplace: bool = True):
     """Delete useless fakequant before nodes whose ``op`` attribute (node.op)
     is in `target_ops`.
 
@@ -111,7 +111,7 @@ def del_fakequant_before_op(prepared_model,
 
 def del_fakequant_after_op(prepared_model,
                            target_ops: Tuple,
-                           inplace: bool = True) -> torch.fx.GraphModule:
+                           inplace: bool = True):
     """Delete useless fakequant after nodes whose ``op`` attribute (node.op) is
     in `target_ops`.
 
@@ -152,7 +152,7 @@ def del_fakequant_after_op(prepared_model,
 
 def del_fakequant_before_method(prepared_model,
                                 method_patterns: Tuple,
-                                inplace: bool = True) -> torch.fx.GraphModule:
+                                inplace: bool = True):
     """Delete useless fakequant before nodes whose op attribute (node.op) is
     `call_method` and target attribute (node.target) is in `target_patterns`.
 
@@ -189,7 +189,7 @@ def del_fakequant_before_method(prepared_model,
 
 def del_fakequant_after_method(prepared_model,
                                method_patterns: Tuple,
-                               inplace: bool = True) -> torch.fx.GraphModule:
+                               inplace: bool = True):
     """Delete useless fakequant after nodes whose op attribute (node.op) is
     `call_method` and target attribute (node.target) is in `target_patterns`.
 
@@ -229,10 +229,9 @@ def del_fakequant_after_method(prepared_model,
     return prepared_model
 
 
-def del_fakequant_before_function(
-        prepared_model,
-        function_patterns: Tuple,
-        inplace: bool = True) -> torch.fx.GraphModule:
+def del_fakequant_before_function(prepared_model,
+                                  function_patterns: Tuple,
+                                  inplace: bool = True):
     """Delete useless fakequant before nodes whose op attribute (node.op) is
     `call_function` and target attribute (node.target) is in `target_patterns`.
 
@@ -269,7 +268,7 @@ def del_fakequant_before_function(
 
 def del_fakequant_after_function(prepared_model,
                                  function_patterns: Tuple,
-                                 inplace: bool = True) -> torch.fx.GraphModule:
+                                 inplace: bool = True):
     """Delete useless fakequant after nodes whose op attribute (node.op) is
     `call_function` and target attribute (node.target) is in `target_patterns`.
 
@@ -311,7 +310,7 @@ def del_fakequant_after_function(prepared_model,
 
 def del_fakequant_before_module(prepared_model,
                                 module_patterns: Tuple,
-                                inplace: bool = True) -> torch.fx.GraphModule:
+                                inplace: bool = True):
     """Delete useless fakequant before modules whose type are in
     `module_patterns`.
 
@@ -347,7 +346,7 @@ def del_fakequant_before_module(prepared_model,
 
 def del_fakequant_after_module(prepared_model,
                                module_patterns: Tuple,
-                               inplace: bool = True) -> torch.fx.GraphModule:
+                               inplace: bool = True):
     """Delete useless fakequant after modules whose type are in
     `module_patterns`.
 
