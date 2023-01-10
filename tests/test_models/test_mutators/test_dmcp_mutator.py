@@ -25,7 +25,7 @@ class ResBlock(Module):
         return x3
 
 
-def test_DCFF_channel_mutator() -> None:
+def test_DMCP_channel_mutator() -> None:
     imgs = torch.randn(16, 3, 224, 224)
 
     # ResBlock
