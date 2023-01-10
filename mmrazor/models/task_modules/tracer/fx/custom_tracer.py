@@ -4,14 +4,29 @@ from types import FunctionType, MethodType
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import torch
-import torch.nn as nn
+
+try:
+    import torch.nn as nn
+    from torch._C import ScriptObject  # type: ignore[attr-defined]
+    from torch.ao.quantization.quantize_fx import QuantizationTracer
+    from torch.fx import GraphModule, Tracer
+    from torch.fx._symbolic_trace import (Graph, _autowrap_check,
+                                          _patch_wrapped_functions, _Patcher)
+    from torch.fx.proxy import Proxy
+except ImportError:
+    from mmrazor.utils import get_package_placeholder, get_placeholder
+    nn = get_package_placeholder('torch>=1.13')
+    ScriptObject = get_placeholder('torch>=1.13')
+    QuantizationTracer = get_placeholder('torch>=1.13')
+    GraphModule = get_placeholder('torch>=1.13')
+    Tracer = get_placeholder('torch>=1.13')
+    Graph = get_placeholder('torch>=1.13')
+    _autowrap_check = get_placeholder('torch>=1.13')
+    _patch_wrapped_functions = get_placeholder('torch>=1.13')
+    _Patcher = get_placeholder('torch>=1.13')
+    Proxy = get_placeholder('torch>=1.13')
+
 from mmengine.utils import import_modules_from_strings
-from torch._C import ScriptObject  # type: ignore[attr-defined]
-from torch.ao.quantization.quantize_fx import QuantizationTracer
-from torch.fx import GraphModule, Tracer
-from torch.fx._symbolic_trace import (Graph, _autowrap_check,
-                                      _patch_wrapped_functions, _Patcher)
-from torch.fx.proxy import Proxy
 
 from mmrazor.registry import TASK_UTILS
 

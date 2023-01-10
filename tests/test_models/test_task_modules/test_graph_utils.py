@@ -11,8 +11,8 @@ try:
     from torch.ao.quantization.fx import prepare
     from torch.ao.quantization.quantize_fx import _fuse_fx
 except ImportError:
-    from mmrazor.utils import get_placeholder
-    nn = get_placeholder('torch>=1.13')
+    from mmrazor.utils import get_package_placeholder, get_placeholder
+    nn = get_package_placeholder('torch>=1.13')
     QConfigMapping = get_placeholder('torch>=1.13')
     FakeQuantizeBase = get_placeholder('torch>=1.13')
     prepare = get_placeholder('torch>=1.13')

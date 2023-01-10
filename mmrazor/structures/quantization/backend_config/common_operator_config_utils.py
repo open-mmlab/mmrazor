@@ -22,13 +22,13 @@ try:
     from torch.ao.quantization.qconfig_mapping import \
         _FIXED_QPARAMS_OP_TO_OBSERVER
 except ImportError:
-    from mmrazor.utils import get_placeholder
-    nn = get_placeholder('torch>=1.13')
-    F = get_placeholder('torch>=1.13')
-    nni = get_placeholder('torch>=1.13')
-    nniqat = get_placeholder('torch>=1.13')
-    nnqat = get_placeholder('torch>=1.13')
-    nnqr = get_placeholder('torch>=1.13')
+    from mmrazor.utils import get_package_placeholder, get_placeholder
+    nn = get_package_placeholder('torch>=1.13')
+    F = get_package_placeholder('torch>=1.13')
+    nni = get_package_placeholder('torch>=1.13')
+    nniqat = get_package_placeholder('torch>=1.13')
+    nnqat = get_package_placeholder('torch>=1.13')
+    nnqr = get_package_placeholder('torch>=1.13')
     BackendPatternConfig = get_placeholder('torch>=1.13')
     DTypeConfig = get_placeholder('torch>=1.13')
     ObservationType = get_placeholder('torch>=1.13')

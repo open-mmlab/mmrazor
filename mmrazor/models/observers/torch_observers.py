@@ -7,8 +7,8 @@ from mmrazor.registry import MODELS
 try:
     import torch.ao.quantization.observer as torch_observer_src
 except ImportError:
-    from mmrazor.utils import get_placeholder
-    torch_observer_src = get_placeholder('torch>=1.13')
+    from mmrazor.utils import get_package_placeholder
+    torch_observer_src = get_package_placeholder('torch>=1.13')
 
 
 def register_torch_observers() -> List[str]:

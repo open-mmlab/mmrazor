@@ -9,13 +9,13 @@ try:
     from torch.nn.intrinsic.qat import modules as qat_fused_modules
     from torch.nn.qat import modules as qat_modules
 except ImportError:
-    from mmrazor.utils import get_placeholder
+    from mmrazor.utils import get_package_placeholder, get_placeholder
     enable_fake_quant = get_placeholder('torch>=1.13')
     prepare = get_placeholder('torch>=1.13')
     QConfigMapping = get_placeholder('torch>=1.13')
     _fuse_fx = get_placeholder('torch>=1.13')
-    qat_fused_modules = get_placeholder('torch>=1.13')
-    qat_modules = get_placeholder('torch>=1.13')
+    qat_fused_modules = get_package_placeholder('torch>=1.13')
+    qat_modules = get_package_placeholder('torch>=1.13')
 
 from mmrazor.models.task_modules.tracer.fx import (
     del_fakequant_after_function, del_fakequant_after_method,

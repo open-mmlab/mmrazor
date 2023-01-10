@@ -3,7 +3,12 @@ import copy
 from typing import Any, List, Tuple
 
 import torch.fx
-from torch.ao.quantization.fake_quantize import FakeQuantizeBase
+
+try:
+    from torch.ao.quantization.fake_quantize import FakeQuantizeBase
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    FakeQuantizeBase = get_placeholder('torch>=1.13')
 
 
 def _get_attrs(target: torch.nn.Module, attr: str) -> Any:
