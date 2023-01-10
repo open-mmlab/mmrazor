@@ -14,68 +14,6 @@ from .common_operator_config_utils import (  # noqa: F401,F403
     _get_fixed_qparams_op_configs, _get_linear_configs, _get_ln_configs,
     _get_rnn_op_configs, _get_share_qparams_op_configs)
 
-# ===================
-# |  DTYPE CONFIGS  |
-# ===================
-
-# weighted op int8 dtype config
-# this is config for ops that has quantized weights, like linear, conv
-weighted_op_int8_dtype_config = DTypeConfig(
-    input_dtype=torch.quint8,
-    output_dtype=torch.quint8,
-    weight_dtype=torch.qint8,
-    bias_dtype=torch.float,
-)
-
-default_op_quint8_dtype_config = DTypeConfig(
-    input_dtype=torch.quint8,
-    output_dtype=torch.quint8,
-)
-
-default_dynamic_int8_dtype_config = DTypeConfig(
-    input_dtype=torch.quint8,
-    output_dtype=torch.float,
-    weight_dtype=torch.qint8,
-    bias_dtype=torch.float,
-    # currently the dtype check is not yet enabled, so we provided the
-    # dtype_configs but it is not really used yet,
-    # we will enable it a bit later after we moved everything to
-    # backend_config_dict
-    is_dynamic=True,
-)
-
-default_dynamic_float16_dtype_config = DTypeConfig(
-    input_dtype=torch.float16,
-    output_dtype=torch.float,
-    weight_dtype=torch.float16,
-    bias_dtype=torch.float,
-    # currently the dtype check is not yet enabled, so we provided the
-    # dtype_configs but it is not really used yet, we will enable it a bit
-    # later after we moved everything to backend_config_dict
-    is_dynamic=True,
-)
-
-# Needed for LayerNorm and f.layer_norm, since currently the kernel only
-# supports float weights
-input_output_only_quint8_dtype_config = DTypeConfig(
-    input_dtype=torch.quint8,
-    output_dtype=torch.quint8,
-    weight_dtype=torch.float,
-    bias_dtype=torch.float,
-)
-
-weight_only_quint8_dtype_config = DTypeConfig(
-    input_dtype=torch.float,
-    output_dtype=torch.float,
-    weight_dtype=torch.quint8,
-)
-
-weight_only_quint4x2_dtype_config = DTypeConfig(
-    input_dtype=torch.float,
-    output_dtype=torch.float,
-    weight_dtype=torch.quint4x2,
-)
-
 # =====================
 # |  BACKEND CONFIGS  |
 # =====================
@@ -86,6 +24,68 @@ def get_native_backend_config() -> BackendConfig:
     (fbgemm/qnnpack)."""
     # TODO: express this BackendConfig as a union of the FBGEMM and QNNPACK
     # BackendConfigs
+
+    # ===================
+    # |  DTYPE CONFIGS  |
+    # ===================
+    # weighted op int8 dtype config
+    # this is config for ops that has quantized weights, like linear, conv
+    weighted_op_int8_dtype_config = DTypeConfig(
+        input_dtype=torch.quint8,
+        output_dtype=torch.quint8,
+        weight_dtype=torch.qint8,
+        bias_dtype=torch.float,
+    )
+
+    default_op_quint8_dtype_config = DTypeConfig(
+        input_dtype=torch.quint8,
+        output_dtype=torch.quint8,
+    )
+
+    default_dynamic_int8_dtype_config = DTypeConfig(
+        input_dtype=torch.quint8,
+        output_dtype=torch.float,
+        weight_dtype=torch.qint8,
+        bias_dtype=torch.float,
+        # currently the dtype check is not yet enabled, so we provided the
+        # dtype_configs but it is not really used yet,
+        # we will enable it a bit later after we moved everything to
+        # backend_config_dict
+        is_dynamic=True,
+    )
+
+    default_dynamic_float16_dtype_config = DTypeConfig(
+        input_dtype=torch.float16,
+        output_dtype=torch.float,
+        weight_dtype=torch.float16,
+        bias_dtype=torch.float,
+        # currently the dtype check is not yet enabled, so we provided the
+        # dtype_configs but it is not really used yet, we will enable it a bit
+        # later after we moved everything to backend_config_dict
+        is_dynamic=True,
+    )
+
+    # Needed for LayerNorm and f.layer_norm, since currently the kernel only
+    # supports float weights
+    input_output_only_quint8_dtype_config = DTypeConfig(
+        input_dtype=torch.quint8,
+        output_dtype=torch.quint8,
+        weight_dtype=torch.float,
+        bias_dtype=torch.float,
+    )
+
+    weight_only_quint8_dtype_config = DTypeConfig(
+        input_dtype=torch.float,
+        output_dtype=torch.float,
+        weight_dtype=torch.quint8,
+    )
+
+    weight_only_quint4x2_dtype_config = DTypeConfig(
+        input_dtype=torch.float,
+        output_dtype=torch.float,
+        weight_dtype=torch.quint4x2,
+    )
+
     conv_dtype_configs = [weighted_op_int8_dtype_config]
     linear_dtype_configs = [
         weighted_op_int8_dtype_config,

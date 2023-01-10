@@ -11,19 +11,6 @@ except ImportError:
 from .common_operator_config_utils import (_get_conv_configs,
                                            _get_linear_configs)
 
-# ===================
-# |  DTYPE CONFIGS  |
-# ===================
-
-# weighted op int8 dtype config
-# this is config for ops that has quantized weights, like linear, conv
-weighted_op_int8_dtype_config = DTypeConfig(
-    input_dtype=torch.quint8,
-    output_dtype=torch.quint8,
-    weight_dtype=torch.qint8,
-    bias_dtype=torch.float,
-)
-
 # =====================
 # |  BACKEND CONFIGS  |
 # =====================
@@ -31,6 +18,19 @@ weighted_op_int8_dtype_config = DTypeConfig(
 
 def get_academic_backend_config() -> BackendConfig:
     """Return the `BackendConfig` for academic reseaching."""
+
+    # ===================
+    # |  DTYPE CONFIGS  |
+    # ===================
+    # weighted op int8 dtype config
+    # this is config for ops that has quantized weights, like linear, conv
+    weighted_op_int8_dtype_config = DTypeConfig(
+        input_dtype=torch.quint8,
+        output_dtype=torch.quint8,
+        weight_dtype=torch.qint8,
+        bias_dtype=torch.float,
+    )
+
     conv_dtype_configs = [weighted_op_int8_dtype_config]
     linear_dtype_configs = [weighted_op_int8_dtype_config]
 
