@@ -73,9 +73,8 @@ class UntracedMethodRegistry:
         return wrapped_method
 
 
-def custom_symbolic_trace(
-        root: Union[nn.Module, Callable[..., Any]],
-        concrete_args: Optional[Dict[str, Any]] = None) -> GraphModule:
+def custom_symbolic_trace(root: Union[nn.Module, Callable[..., Any]],
+                          concrete_args: Optional[Dict[str, Any]] = None):
     """Modified `symbolic_trace` function.
 
     Args:

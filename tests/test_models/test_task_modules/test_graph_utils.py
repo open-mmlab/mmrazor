@@ -114,6 +114,9 @@ global_qconfig = dict(
 class TestGraphUtils(TestCase):
 
     def setUp(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         self.tracer = CustomTracer()
         self.backend_config = BackendConfigs['native']
         self.qconfig = QConfigHander(global_qconfig)
