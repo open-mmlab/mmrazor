@@ -18,8 +18,7 @@ except ImportError:
     _fuse_fx = get_placeholder('torch>=1.13')
 
 from mmrazor import digit_version
-from mmrazor.models.task_modules import build_graphmodule
-from mmrazor.models.task_modules.tracer import CustomTracer
+from mmrazor.models.task_modules.tracer import CustomTracer, build_graphmodule
 from mmrazor.models.task_modules.tracer.fx import (
     del_fakequant_after_function, del_fakequant_after_method,
     del_fakequant_after_module, del_fakequant_after_op,

@@ -1,7 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from unittest import TestCase
 
-from mmrazor.models.task_modules import CustomTracer, UntracedMethodRegistry
+from mmrazor.models.task_modules.tracer import (CustomTracer,
+                                                UntracedMethodRegistry)
 from mmrazor.testing import ConvBNReLU
 
 
