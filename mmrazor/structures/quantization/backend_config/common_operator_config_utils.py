@@ -5,6 +5,8 @@ from typing import List
 
 import torch
 
+from mmrazor import digit_version
+
 try:
     import torch.nn as nn
     import torch.nn.functional as F
@@ -47,21 +49,28 @@ _ConvMetadata = namedtuple('_ConvMetadata', [
     'fused_conv_relu', 'fused_conv_bn', 'fused_conv_bn_relu', 'qat',
     'relu_qat', 'bn_qat', 'bn_relu_qat', 'func'
 ])
-_Conv1dMetadata = _ConvMetadata(nn.Conv1d, nn.ConvTranspose1d, nn.BatchNorm1d,
-                                nnqr.Conv1d, nnqr.ConvTranspose1d,
-                                nni.ConvReLU1d, nni.ConvBn1d, nni.ConvBnReLU1d,
-                                nnqat.Conv1d, nniqat.ConvReLU1d,
-                                nniqat.ConvBn1d, nniqat.ConvBnReLU1d, F.conv1d)
-_Conv2dMetadata = _ConvMetadata(nn.Conv2d, nn.ConvTranspose2d, nn.BatchNorm2d,
-                                nnqr.Conv2d, nnqr.ConvTranspose2d,
-                                nni.ConvReLU2d, nni.ConvBn2d, nni.ConvBnReLU2d,
-                                nnqat.Conv2d, nniqat.ConvReLU2d,
-                                nniqat.ConvBn2d, nniqat.ConvBnReLU2d, F.conv2d)
-_Conv3dMetadata = _ConvMetadata(nn.Conv3d, nn.ConvTranspose3d, nn.BatchNorm3d,
-                                nnqr.Conv3d, nnqr.ConvTranspose3d,
-                                nni.ConvReLU3d, nni.ConvBn3d, nni.ConvBnReLU3d,
-                                nnqat.Conv3d, nniqat.ConvReLU3d,
-                                nniqat.ConvBn3d, nniqat.ConvBnReLU3d, F.conv3d)
+
+if digit_version(torch.__version__) >= digit_version('1.13.0'):
+    _Conv1dMetadata = _ConvMetadata(
+        nn.Conv1d, nn.ConvTranspose1d, nn.BatchNorm1d, nnqr.Conv1d,
+        nnqr.ConvTranspose1d, nni.ConvReLU1d, nni.ConvBn1d, nni.ConvBnReLU1d,
+        nnqat.Conv1d, nniqat.ConvReLU1d, nniqat.ConvBn1d, nniqat.ConvBnReLU1d,
+        F.conv1d)
+    _Conv2dMetadata = _ConvMetadata(
+        nn.Conv2d, nn.ConvTranspose2d, nn.BatchNorm2d, nnqr.Conv2d,
+        nnqr.ConvTranspose2d, nni.ConvReLU2d, nni.ConvBn2d, nni.ConvBnReLU2d,
+        nnqat.Conv2d, nniqat.ConvReLU2d, nniqat.ConvBn2d, nniqat.ConvBnReLU2d,
+        F.conv2d)
+    _Conv3dMetadata = _ConvMetadata(
+        nn.Conv3d, nn.ConvTranspose3d, nn.BatchNorm3d, nnqr.Conv3d,
+        nnqr.ConvTranspose3d, nni.ConvReLU3d, nni.ConvBn3d, nni.ConvBnReLU3d,
+        nnqat.Conv3d, nniqat.ConvReLU3d, nniqat.ConvBn3d, nniqat.ConvBnReLU3d,
+        F.conv3d)
+else:
+    toy_val = _ConvMetadata(*[i for i in range(13)])
+    _Conv1dMetadata = toy_val
+    _Conv2dMetadata = toy_val
+    _Conv3dMetadata = toy_val
 
 
 def _get_binary_op_configs(
