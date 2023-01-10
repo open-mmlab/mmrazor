@@ -39,15 +39,20 @@ class ItePruneValLoop(ValLoop):
 
     def _save_fix_subnet(self):
         """Save model subnet config."""
+        model = self.runner.model.module \
+            if self.runner.distributed else self.runner.model
+
         fix_subnet, static_model = export_fix_subnet(
-            self.model, export_subnet_mode='mutator', slice_weight=True)
+            model, export_subnet_mode='mutator', slice_weight=True)
         fix_subnet = json.dumps(fix_subnet, indent=4, separators=(',', ':'))
+
         subnet_name = 'fix_subnet.json'
         weight_name = 'fix_subnet_weight.pth'
         with open(osp.join(self.runner.work_dir, subnet_name), 'w') as file:
             file.write(fix_subnet)
         torch.save({'state_dict': static_model.state_dict()},
                    osp.join(self.runner.work_dir, weight_name))
+
         self.runner.logger.info(
             'export finished and '
             f'{subnet_name}, '
