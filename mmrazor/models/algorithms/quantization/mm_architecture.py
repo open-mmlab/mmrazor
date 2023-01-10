@@ -8,7 +8,7 @@ from mmengine.runner import load_checkpoint
 from mmengine.structures import BaseDataElement
 from torch import nn
 
-from mmrazor.models.task_modules import build_graphmodule
+from mmrazor.models.task_modules.tracer import build_graphmodule
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
 from ..base import BaseAlgorithm
 
