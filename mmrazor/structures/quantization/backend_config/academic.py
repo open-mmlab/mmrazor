@@ -1,6 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
-from torch.ao.quantization.backend_config import BackendConfig, DTypeConfig
+
+try:
+    from torch.ao.quantization.backend_config import BackendConfig, DTypeConfig
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    BackendConfig = get_placeholder('torch>=1.13')
+    DTypeConfig = get_placeholder('torch>=1.13')
 
 from .common_operator_config_utils import (_get_conv_configs,
                                            _get_linear_configs)

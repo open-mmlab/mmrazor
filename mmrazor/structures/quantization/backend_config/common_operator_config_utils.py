@@ -4,19 +4,43 @@ from collections import namedtuple
 from typing import List
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.nn.intrinsic as nni
-import torch.nn.intrinsic.qat as nniqat
-import torch.nn.qat as nnqat
-import torch.nn.quantized._reference as nnqr
-from torch.ao.quantization.backend_config import (BackendPatternConfig,
-                                                  DTypeConfig, ObservationType)
-from torch.ao.quantization.fake_quantize import FixedQParamsFakeQuantize
-from torch.ao.quantization.fuser_method_mappings import (
-    fuse_conv_bn, fuse_conv_bn_relu, fuse_convtranspose_bn, fuse_linear_bn,
-    reverse2, reverse3, reverse_sequential_wrapper2)
-from torch.ao.quantization.qconfig_mapping import _FIXED_QPARAMS_OP_TO_OBSERVER
+
+try:
+    import torch.nn as nn
+    import torch.nn.functional as F
+    import torch.nn.intrinsic as nni
+    import torch.nn.intrinsic.qat as nniqat
+    import torch.nn.qat as nnqat
+    import torch.nn.quantized._reference as nnqr
+    from torch.ao.quantization.backend_config import (BackendPatternConfig,
+                                                      DTypeConfig,
+                                                      ObservationType)
+    from torch.ao.quantization.fake_quantize import FixedQParamsFakeQuantize
+    from torch.ao.quantization.fuser_method_mappings import (
+        fuse_conv_bn, fuse_conv_bn_relu, fuse_convtranspose_bn, fuse_linear_bn,
+        reverse2, reverse3, reverse_sequential_wrapper2)
+    from torch.ao.quantization.qconfig_mapping import \
+        _FIXED_QPARAMS_OP_TO_OBSERVER
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    nn = get_placeholder('torch>=1.13')
+    F = get_placeholder('torch>=1.13')
+    nni = get_placeholder('torch>=1.13')
+    nniqat = get_placeholder('torch>=1.13')
+    nnqat = get_placeholder('torch>=1.13')
+    nnqr = get_placeholder('torch>=1.13')
+    BackendPatternConfig = get_placeholder('torch>=1.13')
+    DTypeConfig = get_placeholder('torch>=1.13')
+    ObservationType = get_placeholder('torch>=1.13')
+    FixedQParamsFakeQuantize = get_placeholder('torch>=1.13')
+    fuse_conv_bn = get_placeholder('torch>=1.13')
+    fuse_conv_bn_relu = get_placeholder('torch>=1.13')
+    fuse_convtranspose_bn = get_placeholder('torch>=1.13')
+    fuse_linear_bn = get_placeholder('torch>=1.13')
+    reverse2 = get_placeholder('torch>=1.13')
+    reverse3 = get_placeholder('torch>=1.13')
+    reverse_sequential_wrapper2 = get_placeholder('torch>=1.13')
+    _FIXED_QPARAMS_OP_TO_OBSERVER = get_placeholder('torch>=1.13')
 
 _ConvMetadata = namedtuple('_ConvMetadata', [
     'root', 'transpose', 'bn', 'reference', 'transpose_reference',

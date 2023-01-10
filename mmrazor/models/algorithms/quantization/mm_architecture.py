@@ -7,11 +7,16 @@ from mmengine.model import MMDistributedDataParallel
 from mmengine.runner import load_checkpoint
 from mmengine.structures import BaseDataElement
 from torch import nn
-from torch.ao.quantization import FakeQuantizeBase
 
 from mmrazor.models.task_modules import build_graphmodule
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
 from ..base import BaseAlgorithm
+
+try:
+    from torch.ao.quantization import FakeQuantizeBase
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    FakeQuantizeBase = get_placeholder('torch>=1.13')
 
 LossResults = Dict[str, torch.Tensor]
 TensorResults = Union[Tuple[torch.Tensor], torch.Tensor]

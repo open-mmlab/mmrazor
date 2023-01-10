@@ -4,9 +4,18 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 import torch
 from mmengine.evaluator import Evaluator
 from mmengine.runner import EpochBasedTrainLoop, TestLoop, ValLoop
-from torch.ao.quantization import (disable_observer, enable_fake_quant,
-                                   enable_observer)
-from torch.nn.intrinsic.qat import freeze_bn_stats
+
+try:
+    from torch.ao.quantization import (disable_observer, enable_fake_quant,
+                                       enable_observer)
+    from torch.nn.intrinsic.qat import freeze_bn_stats
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    disable_observer = get_placeholder('torch>=1.13')
+    enable_fake_quant = get_placeholder('torch>=1.13')
+    enable_observer = get_placeholder('torch>=1.13')
+    freeze_bn_stats = get_placeholder('torch>=1.13')
+
 from torch.utils.data import DataLoader
 
 from mmrazor.registry import LOOPS

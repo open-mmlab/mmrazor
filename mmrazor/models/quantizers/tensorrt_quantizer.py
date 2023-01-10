@@ -1,6 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
-from torch.ao.quantization import disable_observer
+
+try:
+    from torch.ao.quantization import disable_observer
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    disable_observer = get_placeholder('torch>=1.13')
 
 from mmrazor.models.task_modules.tracer.fx.custom_tracer import \
     build_graphmodule

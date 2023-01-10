@@ -3,7 +3,12 @@ from typing import Dict, Union
 
 import torch
 from mmengine.config import Config
-from torch.ao.quantization import QConfig
+
+try:
+    from torch.ao.quantization import QConfig
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    QConfig = get_placeholder('torch>=1.13')
 
 from mmrazor.registry import MODELS
 

@@ -2,9 +2,13 @@
 import inspect
 from typing import List
 
-import torch.ao.quantization.fake_quantize as torch_fake_quant_src
-
 from mmrazor.registry import MODELS
+
+try:
+    import torch.ao.quantization.fake_quantize as torch_fake_quant_src
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    torch_fake_quant_src = get_placeholder('torch>=1.13')
 
 
 def register_torch_fake_quants() -> List[str]:

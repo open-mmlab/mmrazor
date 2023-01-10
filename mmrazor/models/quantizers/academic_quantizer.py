@@ -1,15 +1,25 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
-from torch.ao.quantization.fx import prepare
-from torch.ao.quantization.fx.custom_config import (FuseCustomConfig,
-                                                    PrepareCustomConfig)
-from torch.ao.quantization.qconfig_mapping import QConfigMapping
-from torch.ao.quantization.quant_type import _quant_type_from_str
-from torch.ao.quantization.quantize_fx import _fuse_fx
 
 from mmrazor.registry import MODELS
 from mmrazor.structures.quantization import BackendConfigs, QConfigHander
 from .base import BaseQuantizer
+
+try:
+    from torch.ao.quantization.fx import prepare
+    from torch.ao.quantization.fx.custom_config import (FuseCustomConfig,
+                                                        PrepareCustomConfig)
+    from torch.ao.quantization.qconfig_mapping import QConfigMapping
+    from torch.ao.quantization.quant_type import _quant_type_from_str
+    from torch.ao.quantization.quantize_fx import _fuse_fx
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    prepare = get_placeholder('torch>=1.13')
+    FuseCustomConfig = get_placeholder('torch>=1.13')
+    PrepareCustomConfig = get_placeholder('torch>=1.13')
+    QConfigMapping = get_placeholder('torch>=1.13')
+    _quant_type_from_str = get_placeholder('torch>=1.13')
+    _fuse_fx = get_placeholder('torch>=1.13')
 
 GLOBAL_DICT_KEY = '_global_'
 OBJECT_TYPE_DICT_KEY = 'object_type'
