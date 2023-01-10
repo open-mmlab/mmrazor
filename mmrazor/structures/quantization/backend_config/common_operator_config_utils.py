@@ -4,11 +4,11 @@ from collections import namedtuple
 from typing import List
 
 import torch
+import torch.nn as nn
 
 from mmrazor import digit_version
 
 try:
-    import torch.nn as nn
     import torch.nn.functional as F
     import torch.nn.intrinsic as nni
     import torch.nn.intrinsic.qat as nniqat
@@ -25,7 +25,6 @@ try:
         _FIXED_QPARAMS_OP_TO_OBSERVER
 except ImportError:
     from mmrazor.utils import get_package_placeholder, get_placeholder
-    nn = get_package_placeholder('torch>=1.13')
     F = get_package_placeholder('torch>=1.13')
     nni = get_package_placeholder('torch>=1.13')
     nniqat = get_package_placeholder('torch>=1.13')

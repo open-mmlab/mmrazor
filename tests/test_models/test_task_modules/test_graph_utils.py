@@ -3,16 +3,15 @@ import operator
 from unittest import TestCase
 
 import torch
+import torch.nn as nn
 
 try:
-    import torch.nn as nn
     from torch.ao.quantization import QConfigMapping
     from torch.ao.quantization.fake_quantize import FakeQuantizeBase
     from torch.ao.quantization.fx import prepare
     from torch.ao.quantization.quantize_fx import _fuse_fx
 except ImportError:
-    from mmrazor.utils import get_package_placeholder, get_placeholder
-    nn = get_package_placeholder('torch>=1.13')
+    from mmrazor.utils import get_placeholder
     QConfigMapping = get_placeholder('torch>=1.13')
     FakeQuantizeBase = get_placeholder('torch>=1.13')
     prepare = get_placeholder('torch>=1.13')
