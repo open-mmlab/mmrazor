@@ -116,7 +116,7 @@ class EstimateResourcesHook(Hook):
         copied_model = copy.deepcopy(model)
         copied_model.set_subnet(copied_model.sample_subnet())
 
-        fix_mutable = export_fix_subnet(copied_model)[0]
-        load_fix_subnet(copied_model, fix_mutable)
+        subnet_dict = export_fix_subnet(copied_model)[0]
+        load_fix_subnet(copied_model, subnet_dict)
 
         return copied_model

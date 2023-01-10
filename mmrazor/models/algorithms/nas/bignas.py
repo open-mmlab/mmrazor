@@ -108,11 +108,11 @@ class BigNAS(BaseAlgorithm, SpaceMixin):
             self.sample_kinds = ['max', 'min']
             for i in range(num_random_samples):
                 self.sample_kinds.append('random' + str(i))
+            self.is_supernet = True
 
         self.drop_path_rate = drop_path_rate
         self.backbone_dropout_stages = backbone_dropout_stages
         self._optim_wrapper_count_status_reinitialized = False
-        self.is_supernet = True
 
     def _build_mutator(self, mutator: VALID_MUTATOR_TYPE) -> BaseMutator:
         """build mutator."""

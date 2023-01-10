@@ -218,6 +218,9 @@ class DSNAS(BaseAlgorithm, SpaceMixin):
         for name, module in self.architecture.named_modules():
             if isinstance(module, BaseMutable):
                 k = str(self.search_space_name_list.index(name))
+                # NOTE: with `DiffModuleMutator` as mutator, the keys in
+                # self.search_params must contain the prefix `module`.
+                # See `_build_search_space` in class SpaceMixin for details.
                 probs = F.softmax(self.search_params['module_' + str(k)], -1)
                 arch_loss += torch.log(
                     (module.arch_weights * probs).sum(-1)).sum()
@@ -233,8 +236,8 @@ class DSNAS(BaseAlgorithm, SpaceMixin):
         copied_model = copy.deepcopy(self)
         copied_model.set_subnet(copied_model.sample_subnet())
 
-        fix_mutable = export_fix_subnet(copied_model)[0]
-        load_fix_subnet(copied_model, fix_mutable)
+        subnet_dict = export_fix_subnet(copied_model)[0]
+        load_fix_subnet(copied_model, subnet_dict)
 
         subnet_flops = self.estimator.estimate(copied_model)['flops']
         if subnet_flops >= self.flops_constraints:
@@ -248,6 +251,9 @@ class DSNAS(BaseAlgorithm, SpaceMixin):
         for name, module in self.architecture.named_modules():
             if isinstance(module, BaseMutable):
                 k = str(self.search_space_name_list.index(name))
+                # NOTE: with `DiffModuleMutator` as mutator, the keys in
+                # self.search_params must contain the prefix `module`.
+                # See `_build_search_space` in class SpaceMixin for details.
                 self.search_params['module_' + str(k)].grad.data.mul_(
                     module.arch_weights.grad.data.sum())
                 module.arch_weights.grad.zero_()
