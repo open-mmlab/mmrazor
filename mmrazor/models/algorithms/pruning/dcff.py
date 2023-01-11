@@ -125,25 +125,29 @@ class DCFF(ItePruneAlgorithm):
                 data_samples: Optional[List[BaseDataElement]] = None,
                 mode: str = 'tensor') -> ForwardResults:
         """Forward."""
-        # In DCFF prune_message is related to total_num
-        # Set self.prune_config_manager after message_hub has['max_epoch/iter']
-        if not hasattr(self, 'prune_config_manager'):
-            # iter num per epoch only available after initiation
-            self.prune_config_manager = self._init_prune_config_manager()
-        if self.prune_config_manager.is_prune_time(self._iter):
-            config = self.prune_config_manager.prune_at(self._iter)
-            self.set_subnet(config)
 
-            # calc fusion channel
-            temperature = self._calc_temperature(self._iter, self._max_iters)
-            self.mutator.calc_information(temperature)
+        if self.training:
+            # In DCFF prune_message is related to total_num
+            # Set self.prune_config_manager after message_hub
+            # has['max_epoch/iter']
+            if not hasattr(self, 'prune_config_manager'):
+                # iter num per epoch only available after initiation
+                self.prune_config_manager = self._init_prune_config_manager()
+            if self.prune_config_manager.is_prune_time(self._iter):
+                config = self.prune_config_manager.prune_at(self._iter)
+                self.set_subnet(config)
 
-            logger = MMLogger.get_current_instance()
-            if (self.by_epoch):
-                logger.info(
-                    f'The model is pruned at {self._epoch}th epoch once.')
-            else:
-                logger.info(
-                    f'The model is pruned at {self._iter}th iter once.')
+                # calc fusion channel
+                temperature = self._calc_temperature(self._iter,
+                                                     self._max_iters)
+                self.mutator.calc_information(temperature)
+
+                logger = MMLogger.get_current_instance()
+                if (self.by_epoch):
+                    logger.info(
+                        f'The model is pruned at {self._epoch}th epoch once.')
+                else:
+                    logger.info(
+                        f'The model is pruned at {self._iter}th iter once.')
 
         return super().forward(inputs, data_samples, mode)
