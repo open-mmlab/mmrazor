@@ -13,25 +13,69 @@ from mmrazor.models.algorithms import MMArchitectureQuant
 from mmrazor.registry import MODELS
 
 
+class BasicBlock(nn.Module):
+
+    def __init__(self, in_channels, out_channels):
+        super(BasicBlock, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.mid_channels = out_channels
+
+        self.norm1 = nn.BatchNorm2d(self.mid_channels)
+        self.norm2 = nn.BatchNorm2d(out_channels)
+        self.conv1 = nn.Conv2d(in_channels, self.mid_channels, 1)
+        self.conv2 = nn.Conv2d(self.mid_channels, out_channels, 1)
+
+        self.relu = nn.ReLU6()
+        self.drop_path = nn.Identity()
+
+    def forward(self, x):
+
+        def _inner_forward(x):
+            identity = x
+
+            out = self.conv1(x)
+            out = self.norm1(out)
+            out = self.relu(out)
+
+            out = self.conv2(out)
+            out = self.norm2(out)
+
+            out = self.drop_path(out)
+
+            out += identity
+
+            return out
+
+        out = _inner_forward(x)
+
+        out = self.relu(out)
+
+        return out
+
+
 @MODELS.register_module()
 class ToyQuantModel(BaseModel):
 
-    def __init__(self, data_preprocessor=None):
-        super().__init__(data_preprocessor=data_preprocessor, init_cfg=None)
-        self.conv = nn.Conv2d(3, 1, 1)
-        self.bn = nn.BatchNorm2d(1)
-        self.act = nn.ReLU()
+    def __init__(self):
+        super().__init__()
+        self.stem_layer = nn.Sequential(
+            nn.Conv2d(3, 3, 1), nn.BatchNorm2d(3), nn.ReLU())
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.block = BasicBlock(3, 3)
+        self.block2 = BasicBlock(3, 3)
+        self.gap = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(3, 4)
 
-    def forward(self, inputs, data_samples=None, mode='tensor'):
-        if mode == 'loss':
-            out = self.act(self.bn(self.conv(inputs)))
-            return dict(loss=out)
-        elif mode == 'predict':
-            out = self.act(self.bn(self.conv(inputs))) + 1
-            return out
-        elif mode == 'tensor':
-            out = self.act(self.bn(self.conv(inputs))) + 2
-            return out
+    def forward(self, x):
+        x = self.stem_layer(x)
+        x = self.maxpool(x)
+        x = self.block(x)
+        x = self.block2(x)
+        x = self.gap(x)
+        x = x.flatten(1)
+        x = self.fc(x)
+        return x
 
 
 class TestMMArchitectureQuant(TestCase):
@@ -40,6 +84,7 @@ class TestMMArchitectureQuant(TestCase):
         self.temp_dir = tempfile.mkdtemp()
         filename = 'fp_model.pth'
         filename = os.path.join(self.temp_dir, filename)
+        # import pdb; pdb.set_trace()
         toymodel = ToyQuantModel()
         torch.save(toymodel.state_dict(), filename)
 
@@ -62,7 +107,7 @@ class TestMMArchitectureQuant(TestCase):
         alg_kwargs = dict(
             type='mmrazor.MMArchitectureQuant',
             architecture=dict(type='ToyQuantModel'),
-            float_checkpoint='fp_model.pth',
+            float_checkpoint=filename,
             quantizer=dict(
                 type='mmrazor.OpenVINOQuantizer',
                 global_qconfig=global_qconfig,
@@ -85,9 +130,12 @@ class TestMMArchitectureQuant(TestCase):
     def test_sync_qparams(self):
         mode = self.toy_model.forward_modes[0]
         self.toy_model.sync_qparams(mode)
-        w_loss = self.toy_model.qmodels['loss'].conv.state_dict()['weight']
-        w_tensor = self.toy_model.qmodels['tensor'].conv.state_dict()['weight']
-        w_pred = self.toy_model.qmodels['predict'].conv.state_dict()['weight']
+        w_loss = self.toy_model.qmodels['loss'].block.conv1.state_dict(
+        )['weight']
+        w_tensor = self.toy_model.qmodels['tensor'].block.conv1.state_dict(
+        )['weight']
+        w_pred = self.toy_model.qmodels['predict'].block.conv1.state_dict(
+        )['weight']
         assert w_loss.equal(w_pred)
         assert w_loss.equal(w_tensor)
 

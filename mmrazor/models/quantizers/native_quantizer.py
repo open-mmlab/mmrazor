@@ -1,5 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Dict, List, Tuple, Union
+
 import torch
+from mmengine.config import Config
 from torch.ao.quantization import enable_fake_quant
 from torch.ao.quantization.fx import prepare
 from torch.ao.quantization.fx.graph_module import ObservedGraphModule
@@ -45,7 +48,7 @@ class NativeQuantizer(BaseQuantizer):
     Args:
         global_qconfig (Dict): Config for quantization details of weight and
             activation include observer, quantizer, and qscheme.
-        no_observer_modules (str | List | Tuple | Optional): Modules before
+        no_observer_modules ( List | Tuple | Optional): Modules before
             observer.
         tracer (Dict): Config for tracer to trace modules for torch fx .
 
@@ -72,8 +75,8 @@ class NativeQuantizer(BaseQuantizer):
     # support_a_modes = ['per_tensor']
 
     def __init__(self,
-                 global_qconfig,
-                 no_observer_modules=None,
+                 global_qconfig: Union[Dict, Config],
+                 no_observer_modules: Union[List, Tuple, None] = None,
                  tracer=dict(type='CustomTracer'),
                  extra_redundant_fakequants=dict(
                      extra_module_prev_wo_fakequant=tuple(),
