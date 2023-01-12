@@ -4,8 +4,6 @@ from typing import Any, Dict, Tuple
 import torch
 
 from mmrazor.models import ResourceEstimator
-from mmrazor.structures import export_fix_subnet
-from mmrazor.utils import SupportRandomSubnet
 
 try:
     from mmdet.models.detectors import BaseDetector
@@ -17,7 +15,6 @@ except ImportError:
 @torch.no_grad()
 def check_subnet_resources(
     model,
-    subnet: SupportRandomSubnet,
     estimator: ResourceEstimator,
     constraints_range: Dict[str, Any] = dict(flops=(0, 330))
 ) -> Tuple[bool, Dict]:
@@ -29,11 +26,9 @@ def check_subnet_resources(
     if constraints_range is None:
         return True, dict()
 
-    assert hasattr(model, 'set_subnet') and hasattr(model, 'architecture')
-    model.set_subnet(subnet)
-    _, sliced_model = export_fix_subnet(model, slice_weight=True)
+    assert hasattr(model, 'architecture')
+    model_to_check = model.architecture  # type: ignore
 
-    model_to_check = sliced_model.architecture  # type: ignore
     if isinstance(model_to_check, BaseDetector):
         results = estimator.estimate(model=model_to_check.backbone)
     else:

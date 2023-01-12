@@ -3,7 +3,6 @@ import os.path as osp
 
 import numpy as np
 from mmengine import fileio
-from mmengine.optim import build_optim_wrapper
 from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 
 from mmrazor.models.task_modules import (AuxiliarySingleLevelProblem,
@@ -227,39 +226,18 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
                 metrics[i] = self.max_score_key - metrics[i]
         return metrics
 
-    def finetune_step(self):
-        """fintune before candidates evaluation."""
-        self.runner.logger.info('start finetuning...')
-        self.model.train()
+    def finetune_step(self, model):
+        """Fintune before candidates evaluation."""
+        self.runner.logger.info('Start finetuning...')
+        self.finetune_runner.model = model
+        self.finetune_runner.call_hook('before_run')
 
-        self._finetune_epoch = 0
-        self._max_finetune_epochs = 1
+        self.finetune_runner.optim_wrapper.initialize_count_status(
+            self.finetune_runner.model, self.finetune_runner._train_loop.iter,
+            self.finetune_runner._train_loop.max_iters)
 
-        optimizer_cfg = dict(
-            type='SGD',
-            lr=0.5,
-            momentum=0.9,
-            nesterov=True,
-            weight_decay=0.0001)
-        optim_wrapper_cfg = dict(optimizer=optimizer_cfg)
-        optim_wrapper = build_optim_wrapper(self.model, optim_wrapper_cfg)
+        self.model = self.finetune_runner.train_loop.run()
+        self.finetune_runner.train_loop._iter = 0
 
-        while self._finetune_epoch < self._max_finetune_epochs:
-            self.runner.call_hook('before_train_epoch')
-            for idx, data_batch in enumerate(self.finetune_dataloader):
-                self.runner.call_hook(
-                    'before_train_iter', batch_idx=idx, data_batch=data_batch)
-
-                outputs = self.model.train_step(
-                    data_batch, optim_wrapper=optim_wrapper)
-
-                self.runner.call_hook(
-                    'after_train_iter',
-                    batch_idx=idx,
-                    data_batch=data_batch,
-                    outputs=outputs)
-
-            self.runner.call_hook('after_train_epoch')
-            self._finetune_epoch += 1
-
-        self.model.eval()
+        self.finetune_runner.call_hook('after_run')
+        self.runner.logger.info('End finetuning...')
