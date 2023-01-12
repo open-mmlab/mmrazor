@@ -11,6 +11,7 @@ from mmengine.model import BaseModel
 from mmrazor.models.algorithms.pruning.ite_prune_algorithm import (
     ItePruneAlgorithm, ItePruneConfigManager)
 from mmrazor.registry import MODELS
+from ...utils.set_dist_env import SetDistEnv
 
 
 # @TASK_UTILS.register_module()
@@ -85,27 +86,31 @@ class TestItePruneAlgorithm(unittest.TestCase):
         return {'inputs': imgs, 'data_samples': data_samples}
 
     def test_ite_prune_config_manager(self):
+        iter_per_epoch = 10
         float_origin, float_target = 1.0, 0.5
         int_origin, int_target = 10, 5
         for origin, target, manager in [
             (float_origin, float_target,
-             ItePruneConfigManager({'a': float_target}, {'a': float_origin}, 2,
-                                   5)),
+             ItePruneConfigManager({'a': float_target}, {'a': float_origin},
+                                   2 * iter_per_epoch, 5)),
             (int_origin, int_target,
-             ItePruneConfigManager({'a': int_target}, {'a': int_origin}, 2, 5))
+             ItePruneConfigManager({'a': int_target}, {'a': int_origin},
+                                   2 * iter_per_epoch, 5))
         ]:
             times = 1
-            for e in range(1, 20):
-                for ite in range(1, 5):
-                    self._set_epoch_ite(e, ite, 5)
+            for e in range(1, 10):
+                for ite in range(iter_per_epoch):
+                    self._set_epoch_ite(e, ite, 10)
                     if (e, ite) in [(0, 0), (2, 0), (4, 0), (6, 0), (8, 0)]:
-                        self.assertTrue(manager.is_prune_time(e, ite))
-                        self.assertEqual(
-                            manager.prune_at(e)['a'],
-                            origin - (origin - target) * times / 5)
+                        self.assertTrue(
+                            manager.is_prune_time(e * iter_per_epoch + ite))
                         times += 1
+                        self.assertEqual(
+                            manager.prune_at(e * iter_per_epoch + ite)['a'],
+                            origin - (origin - target) * times / 5)
                     else:
-                        self.assertFalse(manager.is_prune_time(e, ite))
+                        self.assertFalse(
+                            manager.is_prune_time(e * iter_per_epoch + ite))
 
     def test_iterative_prune_int(self):
 
@@ -117,6 +122,7 @@ class TestItePruneAlgorithm(unittest.TestCase):
         mutator.set_choices(mutator.sample_choices())
         prune_target = mutator.choice_template
 
+        iter_per_epoch = 10
         epoch = 10
         epoch_step = 2
         times = 3
@@ -125,15 +131,18 @@ class TestItePruneAlgorithm(unittest.TestCase):
             MODEL_CFG,
             target_pruning_ratio=prune_target,
             mutator_cfg=MUTATOR_CONFIG_FLOAT,
-            step_epoch=epoch_step,
+            step_freq=epoch_step,
             prune_times=times).to(DEVICE)
 
         for e in range(epoch):
-            for ite in range(5):
-                self._set_epoch_ite(e, ite, 5)
+            for ite in range(10):
+                self._set_epoch_ite(e, ite, epoch)
 
                 algorithm.forward(
                     data['inputs'], data['data_samples'], mode='loss')
+                self.assertEqual(times, algorithm.prune_times)
+                self.assertEqual(epoch_step * iter_per_epoch,
+                                 algorithm.step_freq)
 
         current_choices = algorithm.mutator.current_choices
         group_prune_target = algorithm.group_target_pruning_ratio(
@@ -143,6 +152,7 @@ class TestItePruneAlgorithm(unittest.TestCase):
                 current_choices[key], group_prune_target[key], delta=0.1)
 
     def test_load_pretrained(self):
+        iter_per_epoch = 10
         epoch_step = 2
         times = 3
         data = self.fake_cifar_data()
@@ -162,11 +172,13 @@ class TestItePruneAlgorithm(unittest.TestCase):
             model_cfg,
             mutator_cfg=MUTATOR_CONFIG_NUM,
             target_pruning_ratio=None,
-            step_epoch=epoch_step,
+            step_freq=epoch_step,
             prune_times=times,
         ).to(DEVICE)
         algorithm.init_weights()
+        self._set_epoch_ite(4, 5, 6)
         algorithm.forward(data['inputs'], data['data_samples'], mode='loss')
+        self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
 
         # delete checkpoint
         os.remove(checkpoint_path)
@@ -186,27 +198,93 @@ class TestItePruneAlgorithm(unittest.TestCase):
         mutator_cfg = copy.deepcopy(MUTATOR_CONFIG_FLOAT)
         mutator_cfg['custom_groups'] = custom_groups
 
+        iter_per_epoch = 10
         epoch_step = 2
-        times = 3
+        time = 2
+        epoch = 6
+        data = self.fake_cifar_data()
 
         prune_target['backbone.layer1.0.conv1_(0, 64)_64'] = 0.1
         prune_target['backbone.layer1.1.conv1_(0, 64)_64'] = 0.1
 
-        _ = ItePruneAlgorithm(
+        algorithm = ItePruneAlgorithm(
             MODEL_CFG,
             target_pruning_ratio=prune_target,
             mutator_cfg=mutator_cfg,
-            step_epoch=epoch_step,
-            prune_times=times).to(DEVICE)
+            step_freq=epoch_step,
+            prune_times=time).to(DEVICE)
+
+        algorithm.init_weights()
+        self._set_epoch_ite(1, 2, epoch)
+        algorithm.forward(data['inputs'], data['data_samples'], mode='loss')
+        self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
 
         prune_target['backbone.layer1.0.conv1_(0, 64)_64'] = 0.1
         prune_target['backbone.layer1.1.conv1_(0, 64)_64'] = 0.2
 
         with self.assertRaises(ValueError):
 
-            _ = ItePruneAlgorithm(
+            algorithm = ItePruneAlgorithm(
                 MODEL_CFG,
                 target_pruning_ratio=prune_target,
                 mutator_cfg=mutator_cfg,
-                step_epoch=epoch_step,
-                prune_times=times).to(DEVICE)
+                step_freq=epoch_step,
+                prune_times=time).to(DEVICE)
+
+            algorithm.init_weights()
+            self._set_epoch_ite(1, 2, epoch)
+            algorithm.forward(
+                data['inputs'], data['data_samples'], mode='loss')
+            self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
+
+    def test_dist_init(self):
+        if DEVICE != torch.device('cuda:0'):
+            self.skipTest('not use cuda')
+        with SetDistEnv(DEVICE == torch.device('cuda:0')):
+            iter_per_epoch = 10
+            epoch_step = 2
+            times = 3
+            data = self.fake_cifar_data()
+
+            # prepare checkpoint
+            model_cfg = copy.deepcopy(MODEL_CFG)
+
+            algorithm = ItePruneAlgorithm(
+                model_cfg,
+                mutator_cfg=MUTATOR_CONFIG_NUM,
+                target_pruning_ratio=None,
+                step_freq=epoch_step,
+                prune_times=times,
+            ).to(DEVICE)
+            algorithm.init_weights()
+            self._set_epoch_ite(4, 5, 6)
+            algorithm.forward(
+                data['inputs'], data['data_samples'], mode='loss')
+            self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
+
+    def test_resume(self):
+        algorithm: ItePruneAlgorithm = ItePruneAlgorithm(
+            MODEL_CFG,
+            mutator_cfg=MUTATOR_CONFIG_NUM,
+            target_pruning_ratio=None,
+            step_freq=1,
+            prune_times=1,
+        ).to(DEVICE)
+        algorithm.mutator.set_choices(algorithm.mutator.sample_choices())
+        state_dict = algorithm.state_dict()
+        print(state_dict.keys())
+
+        algorithm2: ItePruneAlgorithm = ItePruneAlgorithm(
+            MODEL_CFG,
+            mutator_cfg=MUTATOR_CONFIG_NUM,
+            target_pruning_ratio=None,
+            step_freq=1,
+            prune_times=1,
+        ).to(DEVICE)
+
+        algorithm2.load_state_dict(state_dict)
+
+        print(algorithm.mutator.current_choices)
+        print(algorithm2.mutator.current_choices)
+        self.assertDictEqual(algorithm.mutator.current_choices,
+                             algorithm2.mutator.current_choices)

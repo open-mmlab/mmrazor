@@ -1,5 +1,5 @@
 _base_ = [
-    'mmrazor::_base_/settings/imagenet_bs2048_autoslim_pil.py',
+    '../../../_base_/settings/imagenet_bs2048_autoslim_pil.py',
     'mmcls::_base_/models/mobilenet_v2_1x.py',
     'mmcls::_base_/default_runtime.py',
 ]
@@ -21,12 +21,12 @@ data_preprocessor = dict(
 )
 
 # !autoslim algorithm config
-num_samples = 2
+num_random_samples = 2
 model = dict(
     _delete_=True,
     _scope_='mmrazor',
     type='AutoSlim',
-    num_samples=num_samples,
+    num_random_samples=num_random_samples,
     architecture=supernet,
     data_preprocessor=data_preprocessor,
     distiller=dict(
@@ -50,15 +50,14 @@ model = dict(
                 choice_mode='ratio',
                 divisor=8)),
         parse_cfg=dict(
-            type='BackwardTracer',
-            loss_calculator=dict(type='ImageClassifierPseudoLoss'))))
+            type='ChannelAnalyzer',
+            demo_input=(1, 3, 224, 224),
+            tracer_type='BackwardTracer')))
 
 model_wrapper_cfg = dict(
     type='mmrazor.AutoSlimDDP',
     broadcast_buffers=False,
     find_unused_parameters=False)
-
-optim_wrapper = dict(accumulative_counts=num_samples + 2)
 
 # learning policy
 max_epochs = 50
@@ -66,4 +65,4 @@ param_scheduler = dict(end=max_epochs)
 
 # train, val, test setting
 train_cfg = dict(max_epochs=max_epochs)
-val_cfg = dict(type='mmrazor.AutoSlimValLoop')
+val_cfg = dict(type='mmrazor.SubnetValLoop')

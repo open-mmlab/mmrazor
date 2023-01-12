@@ -1,4 +1,4 @@
-_base_ = ['./pkd_fpn_frcnn_r101_frcnn_r50_2x_coco.py']
+_base_ = ['./pkd_fpn_faster-rcnn_r101_faster-rcnn_r50_2x_coco.py']
 
 teacher_ckpt = 'https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_x101_64x4d_fpn_1x_coco/retinanet_x101_64x4d_fpn_1x_coco_20200130-366f5af1.pth'  # noqa: E501
 

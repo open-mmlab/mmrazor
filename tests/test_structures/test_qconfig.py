@@ -4,8 +4,14 @@ from unittest import TestCase
 
 import torch
 from mmengine.config import Config
-from torch.ao.quantization import QConfig
 
+try:
+    from torch.ao.quantization import QConfig
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    QConfig = get_placeholder('torch>=1.13')
+
+from mmrazor import digit_version
 from mmrazor.models.fake_quants import register_torch_fake_quants
 from mmrazor.models.observers import register_torch_observers
 from mmrazor.structures import QConfigHander, QSchemeHander
@@ -17,6 +23,9 @@ register_torch_fake_quants()
 class TestQSchemeHander(TestCase):
 
     def test_init(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         # per_channel
         qscheme = QSchemeHander(is_symmetry=True, is_per_channel=True)
         assert qscheme.torch_qscheme is torch.per_channel_symmetric
@@ -34,6 +43,9 @@ class TestQSchemeHander(TestCase):
         assert qscheme.is_symmetric_range is True
 
     def test_to_observer_params(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         # qdtype = quint8
         ret_params = QSchemeHander(qdtype='quint8').to_observer_params()
         assert ret_params['dtype'] == torch.quint8
@@ -78,6 +90,9 @@ class TestQConfigHander(TestCase):
         self.qconfig = Config(self.qconfig_dict)
 
     def test_check_qconfig(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         assert QConfigHander.check_qconfig(self.qconfig_dict) is True
         assert QConfigHander.check_qconfig(self.qconfig) is True
         qconfig_dict = copy.copy(self.qconfig_dict)
@@ -86,6 +101,9 @@ class TestQConfigHander(TestCase):
         assert QConfigHander.check_qconfig(qconfig_dict) is False
 
     def test_init(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         # test dict init
         qconfig = QConfigHander(self.qconfig_dict)
         assert hasattr(qconfig, 'w_qscheme')
@@ -105,6 +123,9 @@ class TestQConfigHander(TestCase):
         assert qconfig.a_qscheme.is_per_channel is True
 
     def test_convert(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         qconfig = QConfigHander(self.qconfig)
         torch_qconfig = qconfig.convert()
         assert isinstance(torch_qconfig, QConfig)

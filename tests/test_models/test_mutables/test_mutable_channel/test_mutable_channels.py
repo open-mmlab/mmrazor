@@ -30,5 +30,4 @@ class TestMutableChannels(unittest.TestCase):
         channel.current_choice = torch.tensor([1, 0, 0, 0]).bool()
         self.assertEqual(channel.activated_channels, 1)
         channel.fix_chosen()
-        # with pytest.raises(NotImplementedError):
-        #     channel.dump_chosen()
+        channel.dump_chosen()

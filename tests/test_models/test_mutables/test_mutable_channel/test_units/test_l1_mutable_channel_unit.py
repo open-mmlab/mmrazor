@@ -5,13 +5,13 @@ import torch.nn as nn
 
 from mmrazor.models.mutables import L1MutableChannelUnit
 from mmrazor.models.mutators import ChannelMutator
-from .....data.models import LineModel
+from .....data.models import SingleLineModel
 
 
 class TestL1MutableChannelUnit(TestCase):
 
     def test_init(self):
-        model = LineModel()
+        model = SingleLineModel()
         mutator = ChannelMutator(
             channel_unit_cfg={
                 'type': 'L1MutableChannelUnit',
@@ -21,9 +21,6 @@ class TestL1MutableChannelUnit(TestCase):
             })
         mutator.prepare_from_supernet(model)
         mutator.set_choices(mutator.sample_choices())
-        print(mutator.units)
-        print(mutator.mutable_units)
-        print(mutator.choice_template)
 
     def test_convnd(self):
         unit = L1MutableChannelUnit(8)

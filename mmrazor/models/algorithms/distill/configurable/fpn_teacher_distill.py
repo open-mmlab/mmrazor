@@ -30,15 +30,16 @@ class FpnTeacherDistill(SingleTeacherDistill):
         # If the `override_data` of a delivery is False, the delivery will
         # record the origin data.
         self.distiller.set_deliveries_override(False)
+
+        # Unlike ``SingleTeacherDistill``, teacher will only execute
+        # back + neck, not head, so there will be no loss.
         if self.teacher_trainable:
-            # Unlike ``SingleTeacherDistill``, teacher will only execute
-            # back + neck, not head, so there will be no loss.
             with self.distiller.teacher_recorders, self.distiller.deliveries:
                 _ = self.teacher.extract_feat(batch_inputs)
         else:
             with self.distiller.teacher_recorders, self.distiller.deliveries:
                 with torch.no_grad():
-                    _ = self.teacher(batch_inputs, data_samples, mode='loss')
+                    _ = self.teacher.extract_feat(batch_inputs)
 
         # If the `override_data` of a delivery is True, the delivery will
         # override the origin data with the recorded data.

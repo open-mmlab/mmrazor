@@ -3,7 +3,11 @@ import random
 from typing import Dict, Union
 
 import torch.nn as nn
+from mmcv.cnn.bricks import Conv2dAdaptivePadding
 from mmengine import MMLogger
+from mmengine.model.utils import _BatchNormXd
+from mmengine.utils.dl_utils.parrots_wrapper import \
+    SyncBatchNorm as EngineSyncBatchNorm
 
 from mmrazor.models.architectures import dynamic_ops
 from mmrazor.models.utils import make_divisible
@@ -60,9 +64,14 @@ class SequentialMutableChannelUnit(MutableChannelUnit):
         # register MutableMask
         self._replace_with_dynamic_ops(
             model, {
+                Conv2dAdaptivePadding:
+                dynamic_ops.DynamicConv2dAdaptivePadding,
                 nn.Conv2d: dynamic_ops.DynamicConv2d,
                 nn.BatchNorm2d: dynamic_ops.DynamicBatchNorm2d,
-                nn.Linear: dynamic_ops.DynamicLinear
+                nn.Linear: dynamic_ops.DynamicLinear,
+                nn.SyncBatchNorm: dynamic_ops.DynamicSyncBatchNorm,
+                EngineSyncBatchNorm: dynamic_ops.DynamicSyncBatchNorm,
+                _BatchNormXd: dynamic_ops.DynamicBatchNormXd,
             })
         self._register_channel_container(model, MutableChannelContainer)
         self._register_mutable_channel(self.mutable_channel)

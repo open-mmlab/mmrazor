@@ -119,7 +119,7 @@ class TestGreedySamplerTrainLoop(TestCase):
                 max_iters=12,
                 val_interval=2,
                 score_key='acc',
-                flops_range=None,
+                constraints_range=None,
                 num_candidates=4,
                 num_samples=2,
                 top_k=2,
@@ -190,7 +190,7 @@ class TestGreedySamplerTrainLoop(TestCase):
         loop._iter = loop.val_interval
         subnet = loop.sample_subnet()
         self.assertEqual(subnet, fake_subnet)
-        self.assertEqual(len(loop.top_k_candidates), loop.top_k - 1)
+        self.assertEqual(len(loop.top_k_candidates), loop.top_k)
 
     def test_run(self):
         # test run with _check_constraints
@@ -200,7 +200,7 @@ class TestGreedySamplerTrainLoop(TestCase):
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
         runner.model.sample_subnet = MagicMock(return_value=fake_subnet)
         loop = runner.build_train_loop(cfg.train_cfg)
-        loop._check_constraints = MagicMock(return_value=True)
+        loop._check_constraints = MagicMock(return_value=(True, dict()))
         runner.train()
 
         self.assertEqual(runner.iter, runner.max_iters)

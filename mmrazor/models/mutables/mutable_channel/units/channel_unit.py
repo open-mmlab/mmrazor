@@ -5,12 +5,8 @@ from typing import Dict, List
 import torch.nn as nn
 from mmengine.model import BaseModule
 
-from mmrazor.structures.graph import ModuleGraph
-from mmrazor.structures.graph.channel_graph import ChannelGraph
-from mmrazor.structures.graph.channel_modules import (BaseChannel,
-                                                      BaseChannelUnit)
-from mmrazor.structures.graph.channel_nodes import \
-    default_channel_node_converter
+from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
+from mmrazor.registry import TASK_UTILS
 
 
 class Channel(BaseModule):
@@ -25,7 +21,6 @@ class Channel(BaseModule):
             Channel. Defaults to None.
         is_output_channel (bool, optional): Is the channel output channel.
             Defaults to True.
-        expand_ratio (int, optional): Expand ratio of the mask. Defaults to 1.
     """
 
     # init
@@ -35,11 +30,10 @@ class Channel(BaseModule):
                  module,
                  index,
                  node=None,
-                 is_output_channel=True,
-                 expand_ratio=1) -> None:
+                 is_output_channel=True) -> None:
         super().__init__()
         self.name = name
-        self.module = module
+        self.module: nn.Module = module
         self.index = index
         self.start = index[0]
         self.end = index[1]
@@ -47,7 +41,6 @@ class Channel(BaseModule):
         self.node = node
 
         self.is_output_channel = is_output_channel
-        self.expand_ratio = expand_ratio
 
     @classmethod
     def init_from_cfg(cls, model: nn.Module, config: Dict):
@@ -56,29 +49,13 @@ class Channel(BaseModule):
         name = config['name']
         start = config['start']
         end = config['end']
-        expand_ratio = config['expand_ratio'] \
-            if 'expand_ratio' in config else 1
         is_output_channel = config['is_output_channel']
 
         name2module = dict(model.named_modules())
         name2module.pop('')
         module = name2module[name] if name in name2module else None
         return Channel(
-            name,
-            module, (start, end),
-            is_output_channel=is_output_channel,
-            expand_ratio=expand_ratio)
-
-    @classmethod
-    def init_from_base_channel(cls, base_channel: BaseChannel):
-        """Init from a BaseChannel object."""
-        return cls(
-            base_channel.name,
-            base_channel.module,
-            base_channel.index,
-            node=None,
-            is_output_channel=base_channel.is_output_channel,
-            expand_ratio=base_channel.expand_ratio)
+            name, module, (start, end), is_output_channel=is_output_channel)
 
     # config template
 
@@ -89,7 +66,6 @@ class Channel(BaseModule):
             'name': self.name,
             'start': self.start,
             'end': self.end,
-            'expand_ratio': self.expand_ratio,
             'is_output_channel': self.is_output_channel
         }
 
@@ -103,29 +79,29 @@ class Channel(BaseModule):
     @property
     def is_mutable(self) -> bool:
         """If the channel is prunable."""
-        if isinstance(self.module, nn.Conv2d):
-            # group-wise conv
-            if self.module.groups != 1 and not (self.module.groups ==
-                                                self.module.in_channels ==
-                                                self.module.out_channels):
-                return False
-        return True
+        if self.module is not None:
+            has_prama = len(list(self.module.parameters())) != 0
+            is_dynamic_op = isinstance(self.module, DynamicChannelMixin)
+            return (not has_prama) or is_dynamic_op
+        else:
+            is_unmutable = self.name in [
+                'input_placeholder', 'output_placeholder'
+            ]
+            return not is_unmutable
 
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}('
                 f'{self.name}, index={self.index}, '
                 f'is_output_channel='
                 f'{"true" if self.is_output_channel else "false"}, '
-                f'expand_ratio={self.expand_ratio}'
                 ')')
 
     def __eq__(self, obj: object) -> bool:
-        if isinstance(obj, BaseChannel):
+        if isinstance(obj, Channel):
             return self.name == obj.name \
                 and self.module == obj.module \
                 and self.index == obj.index \
                 and self.is_output_channel == obj.is_output_channel \
-                and self.expand_ratio == obj.expand_ratio \
                 and self.node == obj.node
         else:
             return False
@@ -185,7 +161,7 @@ class ChannelUnit(BaseModule):
                     Channel.init_from_cfg(model, channel_config))
             for channel_config in channels['output_related']:
                 auto_fill_channel_config(channel_config, True)
-                unit.add_ouptut_related(
+                unit.add_output_related(
                     Channel.init_from_cfg(model, channel_config))
         return unit
 
@@ -201,30 +177,16 @@ class ChannelUnit(BaseModule):
         return mutable_unit
 
     @classmethod
-    def init_from_graph(cls,
-                        graph: ModuleGraph,
-                        unit_args={},
-                        num_input_channel=3) -> List['ChannelUnit']:
-        """Parse a module-graph and get ChannelUnits."""
+    def init_from_channel_analyzer(cls, model, analyzer=None):
+        """Init MutableChannelUnits from a ChannelAnalyzer."""
 
-        def init_from_base_channel_unit(base_channel_unit: BaseChannelUnit):
-            unit = cls(len(base_channel_unit.channel_elems), **unit_args)
-            unit.input_related = [
-                Channel.init_from_base_channel(channel)
-                for channel in base_channel_unit.input_related
-            ]
-            unit.output_related = [
-                Channel.init_from_base_channel(channel)
-                for channel in base_channel_unit.output_related
-            ]
-            return unit
-
-        unit_graph = ChannelGraph.copy_from(graph,
-                                            default_channel_node_converter)
-        unit_graph.forward(num_input_channel)
-        units = unit_graph.collect_units()
-        units = [init_from_base_channel_unit(unit) for unit in units]
-        return units
+        if analyzer is None:
+            from mmrazor.models.task_modules.tracer import ChannelAnalyzer
+            analyzer = ChannelAnalyzer()
+        if isinstance(analyzer, dict):
+            analyzer = TASK_UTILS.build(analyzer)
+        unit_config = analyzer.analyze(model)
+        return [cls.init_from_cfg(model, cfg) for cfg in unit_config.values()]
 
     # tools
 
@@ -259,17 +221,15 @@ class ChannelUnit(BaseModule):
 
     # node operations
 
-    def add_ouptut_related(self, channel: Channel):
+    def add_output_related(self, channel: Channel):
         """Add a Channel which is output related."""
         assert channel.is_output_channel
-        assert self.num_channels == channel.num_channels
         if channel not in self.output_related:
             self.output_related.append(channel)
 
     def add_input_related(self, channel: Channel):
         """Add a Channel which is input related."""
         assert channel.is_output_channel is False
-        assert self.num_channels == channel.num_channels
         if channel not in self.input_related:
             self.input_related.append(channel)
 

@@ -42,25 +42,25 @@ model = dict(
             loss_s1=dict(type='ABLoss', loss_weight=0.125)),
         connectors=dict(
             loss_s4_sfeat=dict(
-                type='ConvModuleConncetor',
+                type='ConvModuleConnector',
                 in_channel=512,
                 out_channel=2048,
                 norm_cfg=dict(type='BN'),
                 act_cfg=None),
             loss_s3_sfeat=dict(
-                type='ConvModuleConncetor',
+                type='ConvModuleConnector',
                 in_channel=256,
                 out_channel=1024,
                 norm_cfg=dict(type='BN'),
                 act_cfg=None),
             loss_s2_sfeat=dict(
-                type='ConvModuleConncetor',
+                type='ConvModuleConnector',
                 in_channel=128,
                 out_channel=512,
                 norm_cfg=dict(type='BN'),
                 act_cfg=None),
             loss_s1_sfeat=dict(
-                type='ConvModuleConncetor',
+                type='ConvModuleConnector',
                 in_channel=64,
                 out_channel=256,
                 norm_cfg=dict(type='BN'),

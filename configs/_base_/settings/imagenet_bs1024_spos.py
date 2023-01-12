@@ -9,20 +9,23 @@ preprocess_cfg = dict(
 )
 
 train_pipeline = [
-    dict(type='mmcls.LoadImageFromFile'),
-    dict(type='mmcls.RandomResizedCrop', scale=224),
+    dict(_scope_='mmcls', type='LoadImageFromFile'),
+    dict(_scope_='mmcls', type='RandomResizedCrop', scale=224),
     dict(
-        type='mmcls.ColorJitter', brightness=0.4, contrast=0.4,
+        _scope_='mmcls',
+        type='ColorJitter',
+        brightness=0.4,
+        contrast=0.4,
         saturation=0.4),
-    dict(type='mmcls.RandomFlip', prob=0.5, direction='horizontal'),
-    dict(type='mmcls.PackClsInputs'),
+    dict(_scope_='mmcls', type='RandomFlip', prob=0.5, direction='horizontal'),
+    dict(_scope_='mmcls', type='PackClsInputs'),
 ]
 
 test_pipeline = [
-    dict(type='mmcls.LoadImageFromFile'),
-    dict(type='mmcls.ResizeEdge', scale=256, edge='short'),
-    dict(type='mmcls.CenterCrop', crop_size=224),
-    dict(type='mmcls.PackClsInputs'),
+    dict(_scope_='mmcls', type='LoadImageFromFile'),
+    dict(_scope_='mmcls', type='ResizeEdge', scale=256, edge='short'),
+    dict(_scope_='mmcls', type='CenterCrop', crop_size=224),
+    dict(_scope_='mmcls', type='PackClsInputs'),
 ]
 
 train_dataloader = dict(
@@ -34,7 +37,7 @@ train_dataloader = dict(
         ann_file='meta/train.txt',
         data_prefix='train',
         pipeline=train_pipeline),
-    sampler=dict(type='mmcls.DefaultSampler', shuffle=True),
+    sampler=dict(type='DefaultSampler', shuffle=True),
     persistent_workers=True,
 )
 
@@ -47,10 +50,10 @@ val_dataloader = dict(
         ann_file='meta/val.txt',
         data_prefix='val',
         pipeline=test_pipeline),
-    sampler=dict(type='mmcls.DefaultSampler', shuffle=False),
+    sampler=dict(type='DefaultSampler', shuffle=False),
     persistent_workers=True,
 )
-val_evaluator = dict(type='mmcls.Accuracy', topk=(1, 5))
+val_evaluator = dict(type='Accuracy', topk=(1, 5), _scope_='mmcls')
 
 # If you want standard test, please manually configure the test dataset
 test_dataloader = val_dataloader
@@ -61,13 +64,13 @@ paramwise_cfg = dict(
     bias_decay_mult=0.0, norm_decay_mult=0.0, dwconv_decay_mult=0.0)
 
 optim_wrapper = dict(
-    optimizer=dict(type='mmcls.SGD', lr=0.5, momentum=0.9, weight_decay=4e-5),
+    optimizer=dict(type='SGD', lr=0.5, momentum=0.9, weight_decay=4e-5),
     paramwise_cfg=paramwise_cfg,
     clip_grad=None)
 
 # leanring policy
 param_scheduler = dict(
-    type='mmcls.PolyLR',
+    type='PolyLR',
     power=1.0,
     eta_min=0.0,
     by_epoch=True,

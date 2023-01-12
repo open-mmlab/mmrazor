@@ -1,15 +1,25 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
-from torch.ao.quantization.fx import prepare
-from torch.ao.quantization.fx.custom_config import (FuseCustomConfig,
-                                                    PrepareCustomConfig)
-from torch.ao.quantization.qconfig_mapping import QConfigMapping
-from torch.ao.quantization.quant_type import _quant_type_from_str
-from torch.ao.quantization.quantize_fx import _fuse_fx
 
 from mmrazor.registry import MODELS
 from mmrazor.structures.quantization import BackendConfigs, QConfigHander
 from .base import BaseQuantizer
+
+try:
+    from torch.ao.quantization.fx import prepare
+    from torch.ao.quantization.fx.custom_config import (FuseCustomConfig,
+                                                        PrepareCustomConfig)
+    from torch.ao.quantization.qconfig_mapping import QConfigMapping
+    from torch.ao.quantization.quant_type import _quant_type_from_str
+    from torch.ao.quantization.quantize_fx import _fuse_fx
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    prepare = get_placeholder('torch>=1.13')
+    FuseCustomConfig = get_placeholder('torch>=1.13')
+    PrepareCustomConfig = get_placeholder('torch>=1.13')
+    QConfigMapping = get_placeholder('torch>=1.13')
+    _quant_type_from_str = get_placeholder('torch>=1.13')
+    _fuse_fx = get_placeholder('torch>=1.13')
 
 GLOBAL_DICT_KEY = '_global_'
 OBJECT_TYPE_DICT_KEY = 'object_type'
@@ -23,6 +33,7 @@ PRESERVED_ATTRIBUTES_DICT_KEY = 'preserved_attributes'
 
 @MODELS.register_module()
 class AcademicQuantizer(BaseQuantizer):
+    """tmp."""
 
     def __init__(self,
                  qconfig_mapping,
@@ -37,6 +48,7 @@ class AcademicQuantizer(BaseQuantizer):
         self.example_inputs = (torch.randn(1, 3, 224, 224), )
 
     def prepare(self, model, graph_module):
+        """tmp."""
         preserved_attributes = self.prepare_custom_config.preserved_attributes
         for attr_name in preserved_attributes:
             setattr(graph_module, attr_name, getattr(model, attr_name))
@@ -60,6 +72,7 @@ class AcademicQuantizer(BaseQuantizer):
         return prepared
 
     def gen_qconfig_mapping(self, qconfig_mapping):
+        """tmp."""
         conf = QConfigMapping()
         if GLOBAL_DICT_KEY in qconfig_mapping:
             qconfig = QConfigHander(qconfig_mapping[GLOBAL_DICT_KEY]).convert()
@@ -86,6 +99,7 @@ class AcademicQuantizer(BaseQuantizer):
         return conf
 
     def gen_prepare_custom_config(self, prepare_custom_config):
+        """tmp."""
         conf = PrepareCustomConfig()
         if prepare_custom_config is None:
             return conf

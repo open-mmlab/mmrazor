@@ -9,7 +9,7 @@ from .base_connector import BaseConnector
 
 
 @MODELS.register_module()
-class ConvModuleConncetor(BaseConnector):
+class ConvModuleConnector(BaseConnector):
     """Convolution connector that bundles conv/norm/activation layers.
 
     Args:

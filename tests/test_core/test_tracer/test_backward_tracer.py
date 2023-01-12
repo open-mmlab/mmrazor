@@ -259,6 +259,12 @@ class TestBackwardTracer(TestCase):
         with self.assertRaisesRegex(AssertionError, ''):
             _ = PathList({})
 
+    def test_sum_pseudo_loss(self):
+        model = ResBlock()
+        tracer = BackwardTracer(loss_calculator={'type': 'SumPseudoLoss'})
+        path = tracer.trace(model)
+        print(path)
+
 
 def _test_reset_bn_running_stats(should_fail):
     import os

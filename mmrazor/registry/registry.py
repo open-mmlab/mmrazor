@@ -5,7 +5,7 @@ Each node is a child of the root registry in MMEngine.
 More details can be found at
 https://mmengine.readthedocs.io/en/latest/tutorials/registry.html.
 """
-from typing import Any, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from mmengine.config import Config, ConfigDict
 from mmengine.registry import DATA_SAMPLERS as MMENGINE_DATA_SAMPLERS
@@ -43,9 +43,14 @@ def build_razor_model_from_cfg(
         model = get_model(**cfg)  # type: ignore
         return model
 
-    model = build_from_cfg(cfg, registry, default_args)
-
-    return model
+    return_architecture = False
+    if cfg.get('_return_architecture_', None):
+        return_architecture = cfg.pop('_return_architecture_')
+    razor_model = build_from_cfg(cfg, registry, default_args)
+    if return_architecture:
+        return razor_model.architecture
+    else:
+        return razor_model
 
 
 # Registries For Runner and the related
@@ -98,3 +103,36 @@ TASK_UTILS = Registry('task util', parent=MMENGINE_TASK_UTILS)
 VISUALIZERS = Registry('visualizer', parent=MMENGINE_VISUALIZERS)
 # manage visualizer backend
 VISBACKENDS = Registry('vis_backend', parent=MMENGINE_VISBACKENDS)
+
+
+# manage sub models for downstream repos
+@MODELS.register_module()
+def sub_model(cfg,
+              fix_subnet,
+              mode: str = 'mutable',
+              prefix: str = '',
+              extra_prefix: str = '',
+              init_weight_from_supernet: bool = False,
+              init_cfg: Optional[Dict] = None):
+    model = MODELS.build(cfg)
+    # Save path type cfg process, set init_cfg directly.
+    if init_cfg:
+        # update init_cfg when init_cfg is valid.
+        model.init_cfg = init_cfg
+    if init_weight_from_supernet:
+        # Supernet is modified after load_fix_subnet(), init weight here.
+        model.init_weights()
+    from mmrazor.structures import load_fix_subnet
+
+    load_fix_subnet(
+        model,
+        fix_subnet,
+        load_subnet_mode=mode,
+        prefix=prefix,
+        extra_prefix=extra_prefix)
+
+    if init_weight_from_supernet:
+        # Supernet is modified after load_fix_subnet().
+        model.init_cfg = None
+
+    return model

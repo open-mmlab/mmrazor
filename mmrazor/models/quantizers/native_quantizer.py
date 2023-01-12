@@ -11,6 +11,23 @@ from torch.ao.quantization.quantize_fx import _fuse_fx
 from torch.nn.intrinsic.qat import modules as qat_fused_modules
 from torch.nn.qat import modules as qat_modules
 
+try:
+    from torch.ao.quantization import enable_fake_quant
+    from torch.ao.quantization.fx import prepare
+    from torch.ao.quantization.qconfig_mapping import QConfigMapping
+    from torch.ao.quantization.quantize_fx import _fuse_fx
+    from torch.nn.intrinsic.qat import modules as qat_fused_modules
+    from torch.nn.qat import modules as qat_modules
+except ImportError:
+    from mmrazor.utils import get_package_placeholder, get_placeholder
+    enable_fake_quant = get_placeholder('torch>=1.13')
+    prepare = get_placeholder('torch>=1.13')
+    QConfigMapping = get_placeholder('torch>=1.13')
+    _fuse_fx = get_placeholder('torch>=1.13')
+    qat_fused_modules = get_package_placeholder('torch>=1.13')
+    qat_modules = get_package_placeholder('torch>=1.13')
+
+from mmrazor import digit_version
 from mmrazor.models.task_modules.tracer.fx import (
     del_fakequant_after_function, del_fakequant_after_method,
     del_fakequant_after_module, del_fakequant_after_op,
@@ -21,24 +38,28 @@ from mmrazor.registry import MODELS
 from mmrazor.structures.quantization import BackendConfigs, QConfigHander
 from .base import BaseQuantizer
 
-SUPPORT_QAT_MODULES = (
-    qat_fused_modules.ConvBn1d, qat_fused_modules.ConvBn2d,
-    qat_fused_modules.ConvBn3d, qat_fused_modules.ConvBnReLU1d,
-    qat_fused_modules.ConvBnReLU2d, qat_fused_modules.ConvBnReLU3d,
-    qat_fused_modules.ConvReLU1d, qat_fused_modules.ConvReLU2d,
-    qat_fused_modules.ConvReLU3d, qat_fused_modules.LinearBn1d,
-    qat_fused_modules.LinearReLU, qat_modules.Conv1d, qat_modules.Conv2d,
-    qat_modules.Conv3d, qat_modules.Linear)
+if digit_version(torch.__version__) >= digit_version('1.13.0'):
+    SUPPORT_QAT_MODULES: Tuple = (
+        qat_fused_modules.ConvBn1d, qat_fused_modules.ConvBn2d,
+        qat_fused_modules.ConvBn3d, qat_fused_modules.ConvBnReLU1d,
+        qat_fused_modules.ConvBnReLU2d, qat_fused_modules.ConvBnReLU3d,
+        qat_fused_modules.ConvReLU1d, qat_fused_modules.ConvReLU2d,
+        qat_fused_modules.ConvReLU3d, qat_fused_modules.LinearBn1d,
+        qat_fused_modules.LinearReLU, qat_modules.Conv1d, qat_modules.Conv2d,
+        qat_modules.Conv3d, qat_modules.Linear)
 
-MERGE_BN_MAPPINGS = {
-    qat_fused_modules.ConvBn1d: qat_modules.Conv1d,
-    qat_fused_modules.ConvBn2d: qat_modules.Conv2d,
-    qat_fused_modules.ConvBn3d: qat_modules.Conv3d,
-    qat_fused_modules.ConvBnReLU1d: qat_fused_modules.ConvReLU1d,
-    qat_fused_modules.ConvBnReLU2d: qat_fused_modules.ConvReLU2d,
-    qat_fused_modules.ConvBnReLU3d: qat_fused_modules.ConvReLU3d,
-    qat_fused_modules.LinearBn1d: qat_modules.Linear
-}
+    MERGE_BN_MAPPINGS: Dict = {
+        qat_fused_modules.ConvBn1d: qat_modules.Conv1d,
+        qat_fused_modules.ConvBn2d: qat_modules.Conv2d,
+        qat_fused_modules.ConvBn3d: qat_modules.Conv3d,
+        qat_fused_modules.ConvBnReLU1d: qat_fused_modules.ConvReLU1d,
+        qat_fused_modules.ConvBnReLU2d: qat_fused_modules.ConvReLU2d,
+        qat_fused_modules.ConvBnReLU3d: qat_fused_modules.ConvReLU3d,
+        qat_fused_modules.LinearBn1d: qat_modules.Linear
+    }
+else:
+    SUPPORT_QAT_MODULES = ()
+    MERGE_BN_MAPPINGS = {}
 
 
 @MODELS.register_module()
@@ -115,14 +136,17 @@ class NativeQuantizer(BaseQuantizer):
 
     @property
     def backend(self):
+        """tmp."""
         return 'native'
 
     @property
     def support_w_modes(self):
+        """tmp."""
         return ['per_tensor', 'per_channel']
 
     @property
     def support_a_modes(self):
+        """tmp."""
         return ['per_tensor']
 
     def prepare(self, model, graph_module):
@@ -217,6 +241,7 @@ class NativeQuantizer(BaseQuantizer):
         traverse(observed_module)
 
     def prepare_for_mmdeploy(self, model, dummy_input, checkpoint):
+        """tmp."""
         raise NotImplementedError
 
     def del_redundant_fakequant(self, prepared):
@@ -279,32 +304,40 @@ class NativeQuantizer(BaseQuantizer):
 
     @property
     def module_prev_wo_fakequant(self):
+        """tmp."""
         return tuple()
 
     @property
     def module_next_wo_fakequant(self):
+        """tmp."""
         return tuple()
 
     @property
     def function_prev_wo_fakequant(self):
+        """tmp."""
         return tuple()
 
     @property
     def function_next_wo_fakequant(self):
+        """tmp."""
         return tuple()
 
     @property
     def method_prev_wo_fakequant(self):
+        """tmp."""
         return tuple()
 
     @property
     def method_next_wo_fakequant(self):
+        """tmp."""
         return tuple()
 
     @property
     def op_prev_wo_fakequant(self):
+        """tmp."""
         return tuple()
 
     @property
     def op_next_wo_fakequant(self):
+        """tmp."""
         return tuple()

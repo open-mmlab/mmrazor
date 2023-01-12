@@ -3,9 +3,9 @@ import copy
 
 import torch
 
-from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
 from mmrazor.registry import MODELS
 from mmrazor.utils import IndexDict
+from ...architectures.dynamic_ops.mixins import DynamicChannelMixin
 from .base_mutable_channel import BaseMutableChannel
 from .simple_mutable_channel import SimpleMutableChannel
 
@@ -66,7 +66,7 @@ class MutableChannelContainer(BaseMutableChannel):
 
     def register_mutable(self, mutable_channel: BaseMutableChannel, start: int,
                          end: int):
-        """Register/Store BaseMutableChannel in the MutableChannelContainer  in
+        """Register/Store BaseMutableChannel in the MutableChannelContainer in
         the range [start,end)"""
 
         self.mutable_channels[(start, end)] = mutable_channel
@@ -81,7 +81,7 @@ class MutableChannelContainer(BaseMutableChannel):
         """Register a BaseMutableChannel to a module with
         MutableChannelContainers."""
         if end == -1:
-            end = mutable.num_channels + start
+            end = mutable.current_choice + start
         if is_to_output_channel:
             container: MutableChannelContainer = module.get_mutable_attr(
                 'out_channels')
@@ -100,7 +100,8 @@ class MutableChannelContainer(BaseMutableChannel):
         for start, end in self.mutable_channels:
             assert start == last_end
             last_end = end
-        assert last_end == self.num_channels
+        assert last_end == self.num_channels, (
+            f'channel mismatch: {last_end} vs {self.num_channels}')
 
     def _fill_unregistered_range(self):
         """Fill with SimpleMutableChannels in the range without any stored

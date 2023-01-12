@@ -26,7 +26,7 @@ Models:
         Metrics:
           Top 1 Accuracy: 74.23
           Top 5 Accuracy: 91.73
-    Config: configs/pruning/mmcls/autoslim/autoslim_mbv2_1.5x_subnet_8xb256_in1k_flops-530M.py
+    Config: configs/nas/mmcls/autoslim/autoslim_mbv2_1.5x_subnet_8xb256_in1k_flops-530M.py
     Weights: https://download.openmmlab.com/mmrazor/v1/autoslim/autoslim_mbv2_subnet_8xb256_in1k_flops-530M_acc-74.23_20220715-aa8754fe.pth
   - Name: autoslim_mbv2_1.5x_subnet_8xb256_in1k_flops-320M
     In Collection: AutoSlim
@@ -41,7 +41,7 @@ Models:
         Metrics:
           Top 1 Accuracy: 72.73
           Top 5 Accuracy: 90.84
-    Config: configs/pruning/mmcls/autoslim/autoslim_mbv2_1.5x_subnet_8xb256_in1k_flops-320M.py
+    Config: configs/nas/mmcls/autoslim/autoslim_mbv2_1.5x_subnet_8xb256_in1k_flops-320M.py
     Weights: https://download.openmmlab.com/mmrazor/v1/autoslim/autoslim_mbv2_subnet_8xb256_in1k_flops-320M_acc-72.73_20220715-9aa8f8ae.pth
   - Name: autoslim_mbv2_1.5x_subnet_8xb256_in1k_flops-220M
     In Collection: AutoSlim
@@ -56,5 +56,5 @@ Models:
         Metrics:
           Top 1 Accuracy: 71.4
           Top 5 Accuracy: 90.08
-    Config: configs/pruning/mmcls/autoslim/autoslim_mbv2_1.5x_subnet_8xb256_in1k_flops-220M.py
+    Config: configs/nas/mmcls/autoslim/autoslim_mbv2_1.5x_subnet_8xb256_in1k_flops-220M.py
     Weights: https://download.openmmlab.com/mmrazor/v1/autoslim/autoslim_mbv2_subnet_8xb256_in1k_flops-220M_acc-71.4_20220715-9c288f3b.pth

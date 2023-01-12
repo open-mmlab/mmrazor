@@ -17,8 +17,8 @@ class AutoSlim(BaseAlgorithm):
                  distiller,
                  architecture,
                  data_preprocessor,
-                 init_cfg = None,
-                 num_samples = 2) -> None:
+                 num_random_samples = 2,
+                 init_cfg = None) -> None:
         super().__init__(**kwargs)
         pass
 
@@ -78,8 +78,8 @@ class AutoSlim(BaseAlgorithm):
                  distiller,
                  architecture,
                  data_preprocessor,
-                 init_cfg = None,
-                 num_samples = 2) -> None:
+                 num_random_samples = 2,
+                 init_cfg = None) -> None:
         super(AutoSlim, self).__init__(**kwargs)
         pass
 
@@ -95,24 +95,27 @@ class AutoSlim(BaseAlgorithm):
         batch_inputs, data_samples = self.data_preprocessor(data, True)
 
         total_losses = dict()
-        self.set_max_subnet()
-        with optim_wrapper.optim_context(
-                self), self.distiller.teacher_recorders:  # type: ignore
-            max_subnet_losses = self(batch_inputs, data_samples, mode='loss')
-            parsed_max_subnet_losses, _ = self.parse_losses(max_subnet_losses)
-            optim_wrapper.update_params(parsed_max_subnet_losses)
-        total_losses.update(add_prefix(max_subnet_losses, 'max_subnet'))
-
-        self.set_min_subnet()
-        min_subnet_losses = distill_step(batch_inputs, data_samples)
-        total_losses.update(add_prefix(min_subnet_losses, 'min_subnet'))
-
-        for sample_idx in range(self.num_samples):
-            self.set_subnet(self.sample_subnet())
-            random_subnet_losses = distill_step(batch_inputs, data_samples)
-            total_losses.update(
-                add_prefix(random_subnet_losses,
-                           f'random_subnet_{sample_idx}'))
+        for kind in self.sample_kinds:
+            # update the max subnet loss.
+            if kind == 'max':
+                self.set_max_subnet()
+                with optim_wrapper.optim_context(
+                        self), self.distiller.teacher_recorders:  # type: ignore
+                    max_subnet_losses = self(batch_inputs, data_samples, mode='loss')
+                    parsed_max_subnet_losses, _ = self.parse_losses(max_subnet_losses)
+                    optim_wrapper.update_params(parsed_max_subnet_losses)
+                total_losses.update(add_prefix(max_subnet_losses, 'max_subnet'))
+            # update the min subnet loss.
+            elif kind == 'min':
+                self.set_min_subnet()
+                min_subnet_losses = distill_step(batch_inputs, data_samples)
+                total_losses.update(add_prefix(min_subnet_losses, 'min_subnet'))
+            # update the random subnets loss.
+            elif 'random' in kind:
+                self.set_subnet(self.sample_subnet())
+                random_subnet_losses = distill_step(batch_inputs, data_samples)
+                total_losses.update(
+                    add_prefix(random_subnet_losses, f'{kind}_subnet'))
 
         return total_losses
 ```

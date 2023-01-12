@@ -10,48 +10,45 @@ Object detectors are usually equipped with backbone networks designed for image 
 
 ![pipeline](https://user-images.githubusercontent.com/88702197/187425296-64baa22a-9422-46cd-bd95-47e3e5707f75.jpg)
 
-## Introduction
+## Get Started
 
 ### Step 1: Supernet pre-training on ImageNet
 
 ```bash
-python ./tools/mmcls/train_mmcls.py \
-  configs/nas/detnas/detnas_supernet_shufflenetv2_8xb128_in1k.py \
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/nas/detnas/detnas_supernet_shufflenetv2_8xb128_in1k.py 4 \
   --work-dir $WORK_DIR
 ```
 
 ### Step 2: Supernet fine-tuning on COCO
 
 ```bash
-python ./tools/mmdet/train_mmdet.py \
-  configs/nas/detnas/detnas_supernet_frcnn_shufflenetv2_fpn_1x_coco.py \
-  --work-dir $WORK_DIR \
-  --cfg-options load_from=$STEP1_CKPT
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/nas/detnas/detnas_supernet_frcnn_shufflenetv2_fpn_1x_coco.py 4 \
+  --work-dir $WORK_DIR --cfg-options load_from=$STEP1_CKPT
 ```
 
 ### Step 3: Search for subnet on the trained supernet
 
-```
-python ./tools/mmdet/search_mmdet.py \
-  configs/nas/detnas/detnas_evolution_search_frcnn_shufflenetv2_fpn_coco.py \
-  $STEP2_CKPT \
-  --work-dir $WORK_DIR
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/nas/detnas/detnas_evolution_search_frcnn_shufflenetv2_fpn_coco.py 4 \
+  --work-dir $WORK_DIR --cfg-options load_from=$STEP2_CKPT
 ```
 
 ### Step 4: Subnet retraining on ImageNet
 
-```
-python ./tools/mmcls/train_mmcls.py \
-  configs/nas/detnas/detnas_subnet_shufflenetv2_8xb128_in1k.py \
-  --work-dir $WORK_DIR \
-  --cfg-options algorithm.mutable_cfg=$STEP3_SUBNET_YAML  # or modify the config directly
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/nas/detnas/detnas_subnet_shufflenetv2_8xb128_in1k.py 4 \
+  --work-dir $WORK_DIR --cfg-options algorithm.mutable_cfg=$STEP3_SUBNET_YAML  # or modify the config directly
 ```
 
 ### Step 5: Subnet fine-tuning on COCO
 
-```
-python ./tools/mmdet/train_mmdet.py \
-  configs/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco.py \
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco.py 4 \
   --work-dir $WORK_DIR \
   --cfg-options algorithm.mutable_cfg=$STEP3_SUBNET_YAML load_from=$STEP4_CKPT  # or modify the config directly
 ```
