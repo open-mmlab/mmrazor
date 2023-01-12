@@ -78,7 +78,6 @@ class ModuleWithUntracableMethod(nn.Module):
             x = x * -2
         return x
 
-
 @MODELS.register_module()
 class UntracableBackBone(nn.Module):
 
@@ -122,7 +121,6 @@ class ConvAttnModel(Module):
         x_attn = x1 * attn
         x_last = self.conv2(x_attn)
         return self.head(x_last)
-
 
 @MODELS.register_module()
 class LinearHeadForTest(Module):
@@ -703,7 +701,6 @@ class SampleExpandDerivedMutable(BaseMutable):
     @current_choice.setter
     def current_choice(self, choice):
         super().current_choice(choice)
-
 
 class DynamicLinearModel(nn.Module):
     """

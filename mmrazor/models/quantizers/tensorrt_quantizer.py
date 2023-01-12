@@ -1,6 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
-from torch.ao.quantization import disable_observer
+
+try:
+    from torch.ao.quantization import disable_observer
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    disable_observer = get_placeholder('torch>=1.13')
 
 from mmrazor.models.task_modules.tracer.fx.custom_tracer import \
     build_graphmodule
@@ -24,21 +29,24 @@ class TensorRTQuantizer(NativeQuantizer):
 
     @property
     def backend(self):
+        """tmp."""
         return 'tensorrt'
 
     @property
     def support_w_modes(self):
+        """tmp."""
         return ['per_tensor', 'per_channel']
 
     @property
     def support_a_modes(self):
+        """tmp."""
         return ['per_tensor']
 
     def prepare_for_mmdeploy(self,
                              model,
                              dummy_input=(1, 3, 224, 224),
                              checkpoint=None):
-
+        """tmp."""
         self.swap_ff_with_fxff(model)
         graph = self.tracer.trace(model)
         graph_module = build_graphmodule(model, graph)

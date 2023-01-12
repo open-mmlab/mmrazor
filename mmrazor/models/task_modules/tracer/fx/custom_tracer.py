@@ -5,18 +5,32 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import torch
 import torch.nn as nn
+
+try:
+    from torch._C import ScriptObject  # type: ignore[attr-defined]
+    from torch.ao.quantization.quantize_fx import QuantizationTracer
+    from torch.fx import Graph, GraphModule, Tracer
+    from torch.fx._symbolic_trace import (_autowrap_check,
+                                          _patch_wrapped_functions, _Patcher)
+    from torch.fx.proxy import Proxy
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    ScriptObject = get_placeholder('torch>=1.13')
+    QuantizationTracer = get_placeholder('torch>=1.13')
+    GraphModule = get_placeholder('torch>=1.13')
+    Tracer = get_placeholder('torch>=1.13')
+    Graph = get_placeholder('torch>=1.13')
+    _autowrap_check = get_placeholder('torch>=1.13')
+    _patch_wrapped_functions = get_placeholder('torch>=1.13')
+    _Patcher = get_placeholder('torch>=1.13')
+    Proxy = get_placeholder('torch>=1.13')
+
 from mmengine.utils import import_modules_from_strings
-from torch._C import ScriptObject  # type: ignore[attr-defined]
-from torch.ao.quantization.quantize_fx import QuantizationTracer
-from torch.fx import GraphModule, Tracer
-from torch.fx._symbolic_trace import (Graph, _autowrap_check,
-                                      _patch_wrapped_functions, _Patcher)
-from torch.fx.proxy import Proxy
 
 from mmrazor.registry import TASK_UTILS
 
-_orig_module_call: Callable = torch.nn.Module.__call__
-_orig_module_getattr: Callable = torch.nn.Module.__getattr__
+_orig_module_call: Callable = nn.Module.__call__
+_orig_module_getattr: Callable = nn.Module.__getattr__
 
 
 class UntracedMethodRegistry:
@@ -59,13 +73,12 @@ class UntracedMethodRegistry:
         return wrapped_method
 
 
-def custom_symbolic_trace(
-        root: Union[torch.nn.Module, Callable[..., Any]],
-        concrete_args: Optional[Dict[str, Any]] = None) -> GraphModule:
+def custom_symbolic_trace(root: Union[nn.Module, Callable[..., Any]],
+                          concrete_args: Optional[Dict[str, Any]] = None):
     """Modified `symbolic_trace` function.
 
     Args:
-        root (Union[torch.nn.Module, Callable]): Module or function to be
+        root (Union[nn.Module, Callable]): Module or function to be
             traced and converted into a Graph representation.
         concrete_args (Optional[Dict[str, any]]): Inputs to be partially
             specialized.
@@ -75,12 +88,12 @@ def custom_symbolic_trace(
     """
     tracer = CustomTracer()
     graph = tracer.trace(root, concrete_args)
-    name = root.__class__.__name__ if isinstance(
-        root, torch.nn.Module) else root.__name__
+    name = root.__class__.__name__ if isinstance(root,
+                                                 nn.Module) else root.__name__
     return GraphModule(tracer.root, graph, name)
 
 
-def _prepare_module_dict(model: nn.Module, fx_graph: torch.fx.Graph):
+def _prepare_module_dict(model: nn.Module, fx_graph):
     """If there is a class method that can not be traced by the symbolic
     tracer, a ``call_method`` ``Node`` will be inserted into the ``Graph`` in
     ``CustomTracer``.
@@ -128,7 +141,7 @@ def _prepare_module_dict(model: nn.Module, fx_graph: torch.fx.Graph):
 
     Args:
         model (nn.Module): The original model.
-        fx_graph (torch.fx.Graph): The fx Graph traced by fx tracer.
+        fx_graph (Graph): The fx Graph traced by fx tracer.
     """
 
     def _get_attrs(target, attrs):
@@ -157,9 +170,7 @@ def _prepare_module_dict(model: nn.Module, fx_graph: torch.fx.Graph):
     return module_dict
 
 
-def build_graphmodule(model: nn.Module,
-                      fx_graph: torch.fx.Graph,
-                      name: str = 'GraphModule'):
+def build_graphmodule(model: nn.Module, fx_graph, name: str = 'GraphModule'):
     modules = dict(model.named_modules())
     module_dict = _prepare_module_dict(model, fx_graph)
     modules.update(module_dict)
@@ -228,7 +239,7 @@ class CustomTracer(QuantizationTracer):
             method_registry = UntracedMethodRegistry(method)
             method_registry.__set_name__(imported_cls, method_str)
 
-    def call_method(self, m: torch.nn.Module, name, method, args, kwargs):
+    def call_method(self, m: nn.Module, name, method, args, kwargs):
         """Method that specifies the behavior of this ``Tracer`` when it
         encounters a call to an ``nn.Module`` instance.
 
@@ -266,7 +277,7 @@ class CustomTracer(QuantizationTracer):
         return self.create_proxy('call_method', name, args, kwargs)
 
     def trace(self, root, concrete_args=None):
-        if isinstance(root, torch.nn.Module):
+        if isinstance(root, nn.Module):
             self.root = root
             fn = type(root).forward
             self.submodule_paths = {
@@ -274,7 +285,7 @@ class CustomTracer(QuantizationTracer):
                 for name, mod in root.named_modules()
             }
         else:
-            self.root = torch.nn.Module()
+            self.root = nn.Module()
             fn = root
 
         tracer_cls: Optional[Type['Tracer']] = getattr(self, '__class__', None)
@@ -286,7 +297,7 @@ class CustomTracer(QuantizationTracer):
         # used downstream in create_arg
         self.tensor_attrs: Dict[Union[torch.Tensor, ScriptObject], str] = {}
 
-        def collect_tensor_attrs(m: torch.nn.Module, prefix_atoms: List[str]):
+        def collect_tensor_attrs(m: nn.Module, prefix_atoms: List[str]):
             for k, v in m.__dict__.items():
                 if isinstance(v, (torch.Tensor, ScriptObject)):
                     self.tensor_attrs[v] = '.'.join(prefix_atoms + [k])
@@ -298,8 +309,7 @@ class CustomTracer(QuantizationTracer):
         assert isinstance(fn, FunctionType)
 
         fn_globals = fn.__globals__  # run before it gets patched
-        fn, args = self.create_args_for_root(fn,
-                                             isinstance(root, torch.nn.Module),
+        fn, args = self.create_args_for_root(fn, isinstance(root, nn.Module),
                                              concrete_args)
 
         # Reduce number of get_attr calls
@@ -328,15 +338,12 @@ class CustomTracer(QuantizationTracer):
         with _Patcher() as patcher:
             # allow duplicate patches to support the case of nested calls
             patcher.patch_method(
-                torch.nn.Module,
+                nn.Module,
                 '__getattr__',
                 module_getattr_wrapper,
                 deduplicate=False)
             patcher.patch_method(
-                torch.nn.Module,
-                '__call__',
-                module_call_wrapper,
-                deduplicate=False)
+                nn.Module, '__call__', module_call_wrapper, deduplicate=False)
 
             for name, value in UntracedMethodRegistry.method_dict.items():
                 wrapped = value['wrapped']
@@ -363,8 +370,7 @@ class CustomTracer(QuantizationTracer):
         custom = isinstance(m, mods)
         return custom
 
-    def is_leaf_module(self, m: torch.nn.Module,
-                       module_qualified_name: str) -> bool:
+    def is_leaf_module(self, m: nn.Module, module_qualified_name: str) -> bool:
         # return super().is_leaf_module(m, module_qualified_name)
         leaf = super().is_leaf_module(m, module_qualified_name)
         return leaf
