@@ -7,9 +7,9 @@ import torch.nn as nn
 
 from mmrazor import digit_version
 from mmrazor.models.quantizers.native_quantizer import SUPPORT_QAT_MODULES
+from mmrazor.models.task_modules.tracer import CustomTracer
 from mmrazor.models.task_modules.tracer.fx.custom_tracer import \
     build_graphmodule
-from mmrazor.models.task_modules.tracer import CustomTracer
 from mmrazor.registry import MODELS
 from mmrazor.structures.quantization import BackendConfigs, QConfigHander
 
