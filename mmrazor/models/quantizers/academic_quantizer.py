@@ -36,11 +36,12 @@ class AcademicQuantizer(BaseQuantizer):
     """tmp."""
 
     def __init__(self,
+                 is_qat,
                  qconfig_mapping,
                  tracer=dict(type='mmrazor.CustomTracer'),
                  prepare_custom_config=None,
                  backend_config=BackendConfigs['academic']):
-        super().__init__(tracer)
+        super().__init__(tracer, is_qat)
         self.qconfig_mapping = self.gen_qconfig_mapping(qconfig_mapping)
         self.prepare_custom_config = self.gen_prepare_custom_config(
             prepare_custom_config)
@@ -54,6 +55,9 @@ class AcademicQuantizer(BaseQuantizer):
             setattr(graph_module, attr_name, getattr(model, attr_name))
         fuse_custom_config = FuseCustomConfig().set_preserved_attributes(
             preserved_attributes)
+
+        self.sync_module_training_mode(graph_module, self.is_qat)
+
         graph_module = _fuse_fx(
             graph_module=graph_module,
             is_qat=True,

@@ -26,6 +26,7 @@ model = dict(
     float_checkpoint='/tmp/humu/resnet50_8xb32_in1k_20210831-ea4938fc.pth',
     quantizer=dict(
         type='mmrazor.OpenVINOQuantizer',
+        is_qat=False,
         global_qconfig=global_qconfig,
         tracer=dict(
             type='mmrazor.CustomTracer',

@@ -6,7 +6,9 @@ import torch
 try:
     from torch.ao.quantization import enable_fake_quant
     from torch.ao.quantization.fx import prepare
-    from torch.ao.quantization.qconfig_mapping import QConfigMapping
+    from torch.ao.quantization.qconfig_mapping import (
+        _FIXED_QPARAMS_OP_TO_OBSERVER, FixedQParamsFakeQuantize, QConfig,
+        QConfigMapping, default_weight_fake_quant)
     from torch.ao.quantization.quantize_fx import _fuse_fx
     from torch.nn.intrinsic.qat import modules as qat_fused_modules
     from torch.nn.qat import modules as qat_modules
@@ -18,6 +20,10 @@ except ImportError:
     _fuse_fx = get_placeholder('torch>=1.13')
     qat_fused_modules = get_package_placeholder('torch>=1.13')
     qat_modules = get_package_placeholder('torch>=1.13')
+    _FIXED_QPARAMS_OP_TO_OBSERVER = get_package_placeholder('torch>=1.13')
+    FixedQParamsFakeQuantize = get_package_placeholder('torch>=1.13')
+    QConfig = get_package_placeholder('torch>=1.13')
+    default_weight_fake_quant = get_package_placeholder('torch>=1.13')
 
 from mmrazor import digit_version
 from mmrazor.models.task_modules.tracer.fx import (
@@ -63,6 +69,7 @@ class NativeQuantizer(BaseQuantizer):
     # support_a_modes = ['per_tensor']
 
     def __init__(self,
+                 is_qat,
                  global_qconfig,
                  no_observer_modules=None,
                  tracer=dict(type='CustomTracer'),
@@ -75,7 +82,7 @@ class NativeQuantizer(BaseQuantizer):
                      extra_method_next_wo_fakequant=tuple(),
                      extra_op_prev_wo_fakequant=tuple(),
                      extra_op_next_wo_fakequant=tuple())):
-        super().__init__(tracer)
+        super().__init__(tracer, is_qat)
         self.qconfig = QConfigHander(global_qconfig)
         if self.qconfig.w_qscheme.is_per_channel:
             w_mode = 'per_channel'
@@ -96,6 +103,24 @@ class NativeQuantizer(BaseQuantizer):
                 self.qconfig_mapping.set_object_type(mod, None)
         else:
             self.no_observer_modules = no_observer_modules
+
+        fixed_qparams_observer_to_qconfig = {}
+        for fixed_qparams_op, observer in _FIXED_QPARAMS_OP_TO_OBSERVER.items(
+        ):
+            if observer in fixed_qparams_observer_to_qconfig:
+                fixed_qparams_qconfig = fixed_qparams_observer_to_qconfig[
+                    observer]
+            else:
+                activation = FixedQParamsFakeQuantize.with_args(
+                    observer=observer)
+
+                fixed_qparams_qconfig = QConfig(
+                    activation=activation, weight=default_weight_fake_quant)
+                fixed_qparams_observer_to_qconfig[
+                    observer] = fixed_qparams_qconfig
+            self.qconfig_mapping.set_object_type(fixed_qparams_op,
+                                                 fixed_qparams_qconfig)
+
         self.backend_config = BackendConfigs[self.backend]
         self.example_inputs = (torch.randn(1, 3, 224, 224), )
 
@@ -118,6 +143,8 @@ class NativeQuantizer(BaseQuantizer):
 
     def prepare(self, model, graph_module):
         """tmp."""
+        self.sync_module_training_mode(graph_module, self.is_qat)
+
         graph_module = _fuse_fx(
             graph_module=graph_module,
             is_qat=True,

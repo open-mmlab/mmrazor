@@ -41,6 +41,7 @@ class OpenVINOQuantizer(NativeQuantizer):
                              dummy_input=(1, 3, 224, 224),
                              checkpoint=None):
         """tmp."""
+        self.convert_batchnorm2d(model)
         self.swap_ff_with_fxff(model)
         graph = self.tracer.trace(model)
         graph_module = build_graphmodule(model, graph)

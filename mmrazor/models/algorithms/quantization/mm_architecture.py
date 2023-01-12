@@ -13,10 +13,13 @@ from mmrazor.registry import MODEL_WRAPPERS, MODELS
 from ..base import BaseAlgorithm
 
 try:
-    from torch.ao.quantization import FakeQuantizeBase
+    from torch.ao.quantization import (FakeQuantizeBase, MinMaxObserver,
+                                       PerChannelMinMaxObserver)
 except ImportError:
     from mmrazor.utils import get_placeholder
     FakeQuantizeBase = get_placeholder('torch>=1.13')
+    MinMaxObserver = get_placeholder('torch>=1.13')
+    PerChannelMinMaxObserver = get_placeholder('torch>=1.13')
 
 LossResults = Dict[str, torch.Tensor]
 TensorResults = Union[Tuple[torch.Tensor], torch.Tensor]
@@ -54,21 +57,42 @@ class MMArchitectureQuant(BaseAlgorithm):
                  init_cfg=None):
 
         if data_preprocessor is None:
-            data_preprocessor = {}
-        # The build process is in MMEngine, so we need to add scope here.
-        data_preprocessor.setdefault('type', 'mmcls.ClsDataPreprocessor')
+            data_preprocessor = getattr(architecture, 'data_preprocessor',
+                                        dict())
         super().__init__(architecture, data_preprocessor, init_cfg)
-        if float_checkpoint:
-            _ = load_checkpoint(self.architecture, float_checkpoint)
-            self.architecture._is_init = True
 
         self.quantizer = MODELS.build(quantizer)
         self.input_shapes = input_shapes
         self.forward_modes = forward_modes
 
-        self.qmodels = self._build_qmodels(self.architecture)
+        # Replace syncbn and _BatchNormXd (in mmengine) with batchnorm2d
+        self.quantizer.convert_batchnorm2d(self.architecture)
 
-        self.sync_qparams('predict')
+        if float_checkpoint:
+            _ = load_checkpoint(self.architecture, float_checkpoint)
+            self.architecture._is_init = True
+
+        self.qmodels = self._build_qmodels(self.architecture)
+        self.sync_qparams('tensor')
+        self.reset_observer_and_fakequant_statistics(self)
+
+    def reset_observer_and_fakequant_statistics(self, model):
+        """Reset the statistics in observers and fake quantizers.
+
+        The forward computation in `_build_qmodels` can modify the original
+        statistics in observers and fake quantizers.
+        """
+        for module in model.modules():
+            if isinstance(module, MinMaxObserver):
+                module.reset_min_max_vals()
+            elif isinstance(module, PerChannelMinMaxObserver):
+                min_val = torch.rand(0, )
+                max_val = torch.rand(0, )
+                module.min_val.resize_(min_val.shape).copy_(min_val)
+                module.max_val.resize_(max_val.shape).copy_(max_val)
+            elif isinstance(module, FakeQuantizeBase):
+                module.scale.data = torch.ones_like(module.scale)
+                module.zero_point.data = torch.zeros_like(module.zero_point)
 
     def sync_qparams(self, src_mode):
 
@@ -116,13 +140,24 @@ class MMArchitectureQuant(BaseAlgorithm):
         for mode in self.forward_modes:
             concrete_args = {'mode': mode}
             traced_graph = tracer.trace(model, concrete_args=concrete_args)
-            graph_mopdule = build_graphmodule(model, traced_graph)
-            observed_module = self.quantizer.prepare(model, graph_mopdule)
+            graph_module = build_graphmodule(model, traced_graph)
+            observed_module = self.quantizer.prepare(model, graph_module)
             qmodels[mode] = observed_module
-        # import pdb
-        # pdb.set_trace()
-        # dummy_input = torch.randn(self.input_shapes)
-        # qmodels['predict'](dummy_input, None, 'predict')
+
+        is_training = qmodels['tensor'].training
+        # Avoid random input changing bn's statistics
+        qmodels['tensor'].eval()
+        # Originally, the steps to train a qat model is as follows:
+        # 1. build qmodels 2. convert the model to ddpmodel 3. forward backward
+        # The shape of `scale` and `zero_point` can be modified during forward.
+        # We initialize these parameters with per-tensor mode by default for
+        # convenience. Their shape will be modified during forward if
+        # per-channel mode is used. It's hacky. Hence we need to input a
+        # dummy input to make sure the shape has been modified.
+        device = next(qmodels.parameters()).device
+        dummy_input = torch.randn(self.input_shapes).to(device)
+        qmodels['tensor'](dummy_input, None, 'tensor')
+        qmodels['tensor'].train(mode=is_training)
 
         return qmodels
 
@@ -144,7 +179,7 @@ class MMArchitectureQuant(BaseAlgorithm):
 
 @MODEL_WRAPPERS.register_module()
 class MMArchitectureQuantDDP(MMDistributedDataParallel):
-    """DDPwapper for GeneralQuant."""
+    """DDPwapper for MMArchitectureQuant."""
 
     def __init__(self,
                  *,
@@ -158,6 +193,8 @@ class MMArchitectureQuantDDP(MMDistributedDataParallel):
         # (`model.cuda()`), the buffers in model are different.
         self.module.qmodels = self.module._build_qmodels(
             self.module.architecture)
+        self.module.sync_qparams('tensor')
+        self.module.reset_observer_and_fakequant_statistics(self)
 
     def calibrate_step(self, data):
         return self.module.calibrate_step(data)

@@ -25,6 +25,7 @@ model = dict(
     '_20200708-3b2dc3af.pth',
     quantizer=dict(
         type='mmrazor.OpenVINOQuantizer',
+        is_qat=False,
         global_qconfig=global_qconfig,
         tracer=dict(
             type='mmrazor.CustomTracer',
