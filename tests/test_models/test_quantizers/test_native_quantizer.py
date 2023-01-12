@@ -1,27 +1,34 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import collections
 from unittest import TestCase
-from mmrazor.models.quantizers import NativeQuantizer
-from mmrazor.registry import MODELS
-from mmrazor.models.task_modules import build_graphmodule
-from mmrazor.models.task_modules.tracer import CustomTracer
-from mmrazor.structures.quantization import BackendConfigs, QConfigHander
-from mmengine.config import Config
 
 import torch
 import torch.nn as nn
-from torch.fx import GraphModule
-from torch.ao.quantization.fx.graph_module import ObservedGraphModule
-from torch.ao.quantization.qconfig_mapping import QConfigMapping
-from torch.ao.quantization import QConfig
-from torch.ao.quantization.fx import prepare
-from torch.ao.quantization.quantize_fx import _fuse_fx
 
-from mmrazor.models.quantizers.native_quantizer import \
-    SUPPORT_QAT_MODULES, MERGE_BN_MAPPINGS
-import collections
+from mmrazor import digit_version
+from mmrazor.models.quantizers.native_quantizer import SUPPORT_QAT_MODULES
+from mmrazor.models.task_modules import build_graphmodule
+from mmrazor.models.task_modules.tracer import CustomTracer
+from mmrazor.registry import MODELS
+from mmrazor.structures.quantization import BackendConfigs, QConfigHander
+
+try:
+    from torch.ao.quantization.fx import prepare
+    from torch.ao.quantization.fx.graph_module import ObservedGraphModule
+    from torch.ao.quantization.qconfig_mapping import QConfigMapping
+    from torch.ao.quantization.quantize_fx import _fuse_fx
+    from torch.fx import GraphModule
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    GraphModule = get_placeholder('torch>=1.13')
+    ObservedGraphModule = get_placeholder('torch>=1.13')
+    QConfigMapping = get_placeholder('torch>=1.13')
+    prepare = get_placeholder('torch>=1.13')
+    _fuse_fx = get_placeholder('torch>=1.13')
+
 
 class BasicBlock(nn.Module):
-    
+
     def __init__(self, in_channels, out_channels):
         super(BasicBlock, self).__init__()
         self.in_channels = in_channels
@@ -59,9 +66,10 @@ class BasicBlock(nn.Module):
         out = self.relu(out)
 
         return out
-    
+
+
 class ToyQuantModel(nn.Module):
-    
+
     def __init__(self):
         super().__init__()
         self.stem_layer = nn.Sequential(
@@ -81,31 +89,28 @@ class ToyQuantModel(nn.Module):
         x = x.flatten(1)
         x = self.fc(x)
         return x
-    
+
+
 global_qconfig = dict(
     w_observer=dict(type='mmrazor.PerChannelMinMaxObserver'),
     a_observer=dict(type='mmrazor.MovingAverageMinMaxObserver'),
     w_fake_quant=dict(type='mmrazor.FakeQuantize'),
     a_fake_quant=dict(type='mmrazor.FakeQuantize'),
     w_qscheme=dict(
-        qdtype='qint8',
-        bit=8,
-        is_symmetry=True,
-        is_symmetric_range=True),
+        qdtype='qint8', bit=8, is_symmetry=True, is_symmetric_range=True),
     a_qscheme=dict(
-        qdtype='quint8',
-        bit=8,
-        is_symmetry=True,
-        averaging_constant=0.1))
+        qdtype='quint8', bit=8, is_symmetry=True, averaging_constant=0.1))
 
-no_observer_modules=['torch.nn.Conv2d',]
+no_observer_modules = [
+    'torch.nn.Conv2d',
+]
 
 q_kwargs = dict(
     type='mmrazor.NativeQuantizer',
     global_qconfig=global_qconfig,
     no_observer_modules=no_observer_modules,
     tracer=dict(type='CustomTracer'),
-    )
+)
 
 
 class TestNativeQuantizer(TestCase):
@@ -114,20 +119,26 @@ class TestNativeQuantizer(TestCase):
     Args:
         TestCase (_type_): _description_
     """
+
     def setUp(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
         self.q_kwargs = q_kwargs
         self.tracer = CustomTracer()
         self.backend_config = BackendConfigs['native']
         self.qconfig = QConfigHander(global_qconfig)
         self.qconfig_mapping = QConfigMapping().set_global(
             self.qconfig.convert())
-        self.example_inputs = (torch.randn(1, 3, 224, 224), )   
+        self.example_inputs = (torch.randn(1, 3, 224, 224), )
         self.native_quantizer = MODELS.build(self.q_kwargs)
-    
+
     def tearDown(self):
         pass
-    
+
     def swap_ff_with_fxff(self, model):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         modules_to_swap = []
         for name, module in model.named_children():
             if isinstance(module, torch.ao.nn.quantized.FloatFunctional):
@@ -138,19 +149,23 @@ class TestNativeQuantizer(TestCase):
         for name in modules_to_swap:
             del model._modules[name]
             model._modules[name] = torch.ao.nn.quantized.FXFloatFunctional()
-    
+
     def test_init(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
         native_quantizer = MODELS.build(self.q_kwargs)
         no_ob_dict = collections.OrderedDict()
-        no_ob_dict = no_ob_dict.fromkeys(
-            native_quantizer.no_observer_modules, None)
+        no_ob_dict = no_ob_dict.fromkeys(native_quantizer.no_observer_modules,
+                                         None)
         assert native_quantizer.qconfig_mapping.object_type_qconfigs == \
             no_ob_dict
-        
+
     def test_prepare(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
         toy_model = ToyQuantModel()
         toy_model.eval()
-        
+
         self.swap_ff_with_fxff(toy_model)
         traced_graph = self.tracer.trace(toy_model)
         graph_module = build_graphmodule(toy_model, traced_graph)
@@ -159,7 +174,7 @@ class TestNativeQuantizer(TestCase):
             graph_module=graph_module,
             is_qat=True,
             backend_config=self.backend_config)
-        assert isinstance(graph_module, GraphModule)    
+        assert isinstance(graph_module, GraphModule)
         prepared = prepare(
             model=graph_module,
             qconfig_mapping=self.qconfig_mapping,
@@ -168,15 +183,16 @@ class TestNativeQuantizer(TestCase):
             example_inputs=self.example_inputs,
             backend_config=self.backend_config)
         assert isinstance(prepared, ObservedGraphModule)
-        
+
         prepared = self.native_quantizer.del_redundant_fakequant(prepared)
         assert isinstance(prepared, GraphModule)
-        
 
     def test_post_process_weight_fakequant(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
         toy_model = ToyQuantModel()
         toy_model.eval()
-        
+
         self.swap_ff_with_fxff(toy_model)
         traced_graph = self.tracer.trace(toy_model)
         graph_module = build_graphmodule(toy_model, traced_graph)
@@ -185,7 +201,7 @@ class TestNativeQuantizer(TestCase):
             graph_module=graph_module,
             is_qat=True,
             backend_config=self.backend_config)
-        assert isinstance(graph_module, GraphModule)    
+        assert isinstance(graph_module, GraphModule)
         prepared = prepare(
             model=graph_module,
             qconfig_mapping=self.qconfig_mapping,
@@ -194,7 +210,7 @@ class TestNativeQuantizer(TestCase):
             example_inputs=self.example_inputs,
             backend_config=self.backend_config)
         assert isinstance(prepared, ObservedGraphModule)
-        
+
         prepared = self.native_quantizer.del_redundant_fakequant(prepared)
         assert isinstance(prepared, GraphModule)
 
@@ -202,10 +218,10 @@ class TestNativeQuantizer(TestCase):
 
         self.native_quantizer.post_process_weight_fakequant(prepared)
         for name, child in prepared.named_children():
-                if isinstance(child, SUPPORT_QAT_MODULES):
-                    raise ValueError
-        self.native_quantizer.post_process_weight_fakequant(prepared_no_fq, 
-                                                            True)
+            if isinstance(child, SUPPORT_QAT_MODULES):
+                raise ValueError
+        self.native_quantizer.post_process_weight_fakequant(
+            prepared_no_fq, True)
         for name, child in prepared_no_fq.named_children():
-                if isinstance(child, SUPPORT_QAT_MODULES):
-                    raise ValueError
+            if isinstance(child, SUPPORT_QAT_MODULES):
+                raise ValueError

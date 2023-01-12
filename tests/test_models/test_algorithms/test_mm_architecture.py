@@ -6,9 +6,16 @@ from unittest import TestCase
 
 import torch
 import torch.nn as nn
-from mmengine.model import BaseModel
-from torch.fx import GraphModule
 
+try:
+    from torch.fx import GraphModule
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    GraphModule = get_placeholder('torch>=1.13')
+
+from mmengine.model import BaseModel
+
+from mmrazor import digit_version
 from mmrazor.models.algorithms import MMArchitectureQuant
 from mmrazor.registry import MODELS
 
@@ -81,6 +88,8 @@ class ToyQuantModel(BaseModel):
 class TestMMArchitectureQuant(TestCase):
 
     def setUp(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
         self.temp_dir = tempfile.mkdtemp()
         filename = 'fp_model.pth'
         filename = os.path.join(self.temp_dir, filename)
@@ -121,13 +130,19 @@ class TestMMArchitectureQuant(TestCase):
         self.toy_model = MODELS.build(self.alg_kwargs)
 
     def tearDown(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
         shutil.rmtree(self.temp_dir)
 
     def test_init(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
         assert isinstance(self.toy_model, MMArchitectureQuant)
         assert hasattr(self.toy_model, 'quantizer')
 
     def test_sync_qparams(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
         mode = self.toy_model.forward_modes[0]
         self.toy_model.sync_qparams(mode)
         w_loss = self.toy_model.qmodels['loss'].block.conv1.state_dict(
@@ -140,6 +155,8 @@ class TestMMArchitectureQuant(TestCase):
         assert w_loss.equal(w_tensor)
 
     def test_build_qmodels(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
         for forward_modes in self.toy_model.forward_modes:
             qmodels = self.toy_model.qmodels[forward_modes]
             assert isinstance(qmodels, GraphModule)
