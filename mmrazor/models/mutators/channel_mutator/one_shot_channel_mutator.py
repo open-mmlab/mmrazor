@@ -4,11 +4,13 @@ from typing import Dict, Type, Union
 
 from mmrazor.models.mutables import OneShotMutableChannelUnit
 from mmrazor.registry import MODELS
+from ..group_mixin import DynamicSampleMixin
 from .channel_mutator import ChannelMutator, ChannelUnitType
 
 
 @MODELS.register_module()
-class OneShotChannelMutator(ChannelMutator[OneShotMutableChannelUnit]):
+class OneShotChannelMutator(ChannelMutator[OneShotMutableChannelUnit],
+                            DynamicSampleMixin):
     """OneShotChannelMutator based on ChannelMutator. It use
     OneShotMutableChannelUnit by default.
 

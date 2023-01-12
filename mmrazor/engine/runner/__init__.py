@@ -13,6 +13,6 @@ __all__ = [
     'SingleTeacherDistillValLoop', 'DartsEpochBasedTrainLoop',
     'DartsIterBasedTrainLoop', 'SlimmableValLoop', 'EvolutionSearchLoop',
     'GreedySamplerTrainLoop', 'SubnetValLoop', 'SelfDistillValLoop',
-    'ItePruneValLoop', 'AutoSlimGreedySearchLoop', 'PTQLoop', 
-    'QATEpochBasedLoop'
+    'ItePruneValLoop', 'AutoSlimGreedySearchLoop', 'QATEpochBasedLoop',
+    'PTQLoop'
 ]

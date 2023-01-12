@@ -54,7 +54,11 @@
                     "min_value":1,
                     "min_ratio":0.9
                 },
+<<<<<<< HEAD
                 "choice":0.59375
+=======
+                "choice":0.59374
+>>>>>>> 985a611e (Merge dev-1.x into quantize (#430))
             },
             "backbone.layer2.1.conv1_(0, 128)_128":{
                 "init_args":{
