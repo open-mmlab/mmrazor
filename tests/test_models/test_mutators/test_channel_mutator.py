@@ -1,19 +1,18 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-import sys
 import unittest
 from typing import Union
 
 import torch
 
+# from mmrazor.models.mutables import MutableChannelUnit
 from mmrazor.models.mutables.mutable_channel import (
     L1MutableChannelUnit, SequentialMutableChannelUnit)
 from mmrazor.models.mutators.channel_mutator import ChannelMutator
+from mmrazor.models.task_modules import ChannelAnalyzer
 from mmrazor.registry import MODELS
-from ...data.models import DynamicLinearModel
-from ...test_core.test_graph.test_graph import TestGraph
-
-sys.setrecursionlimit(2000)
+from ...data.models import DynamicAttention, DynamicLinearModel, DynamicMMBlock
+from ...data.tracer_passed_models import backward_passed_library
 
 
 @MODELS.register_module()
@@ -45,8 +44,15 @@ class TestChannelMutator(unittest.TestCase):
         y = model(x)
         self.assertEqual(list(y.shape), [2, 1000])
 
+    def test_init(self):
+        model = backward_passed_library.include_models()[0]()
+        mutator = ChannelMutator(parse_cfg=ChannelAnalyzer())
+        mutator.prepare_from_supernet(model)
+        self.assertGreaterEqual(len(mutator.mutable_units), 1)
+        self._test_a_mutator(mutator, model)
+
     def test_sample_subnet(self):
-        data_models = TestGraph.backward_tracer_passed_models()
+        data_models = backward_passed_library.include_models()[:2]
 
         for i, data in enumerate(data_models):
             with self.subTest(i=i, data=data):
@@ -60,7 +66,7 @@ class TestChannelMutator(unittest.TestCase):
                 self._test_a_mutator(mutator, model)
 
     def test_generic_support(self):
-        data_models = TestGraph.backward_tracer_passed_models()
+        data_models = backward_passed_library.include_models()
 
         for data_model in data_models[:1]:
             for unit_type in DATA_UNITS:
@@ -105,7 +111,7 @@ class TestChannelMutator(unittest.TestCase):
         self._test_a_mutator(mutator2, model2)
 
     def test_mix_config_tracer(self):
-        model = TestGraph.backward_tracer_passed_models()[0]()
+        model = backward_passed_library.include_models()[0]()
 
         model0 = copy.deepcopy(model)
         mutator0 = ChannelMutator()
@@ -134,6 +140,30 @@ class TestChannelMutator(unittest.TestCase):
                     parse_cfg={'type': 'Predefined'})
                 mutator.prepare_from_supernet(model)
                 self._test_a_mutator(mutator, model)
+
+    def test_models_with_predefined_dynamic_op_without_pruning(self):
+        for Model in [
+                DynamicAttention,
+        ]:
+            with self.subTest(model=Model):
+                model = Model()
+                mutator = ChannelMutator(
+                    channel_unit_cfg={
+                        'type': 'OneShotMutableChannelUnit',
+                        'default_args': {
+                            'unit_predefined': True
+                        }
+                    },
+                    parse_cfg={'type': 'Predefined'})
+                mutator.prepare_from_supernet(model)
+                choices = mutator.sample_choices()
+                mutator.set_choices(choices)
+                self.assertGreater(len(mutator.mutable_units), 0)
+                x = torch.rand([2, 3, 224, 224])
+                y = model(x)
+                self.assertEqual(
+                    list(y.shape),
+                    [2, list(mutator.current_choices.values())[0]])
 
     def test_custom_group(self):
         ARCHITECTURE_CFG = dict(
@@ -165,3 +195,25 @@ class TestChannelMutator(unittest.TestCase):
         mutator2.prepare_from_supernet(model2)
 
         self.assertEqual(len(mutator2.search_groups), 24)
+
+    def test_related_shortcut_layer(self):
+        for Model in [
+                DynamicMMBlock,
+        ]:
+            with self.subTest(model=Model):
+                model = Model()
+                mutator = ChannelMutator(
+                    channel_unit_cfg={
+                        'type': 'OneShotMutableChannelUnit',
+                        'default_args': {
+                            'unit_predefined': True
+                        }
+                    },
+                    parse_cfg={'type': 'Predefined'})
+                mutator.prepare_from_supernet(model)
+                choices = mutator.sample_choices()
+                mutator.set_choices(choices)
+                self.assertGreater(len(mutator.mutable_units), 0)
+                x = torch.rand([2, 3, 224, 224])
+                y = model(x)
+                self.assertEqual(list(y[-1].shape), [2, 1984, 1, 1])

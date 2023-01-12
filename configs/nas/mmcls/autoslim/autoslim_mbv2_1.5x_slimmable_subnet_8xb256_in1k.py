@@ -34,14 +34,13 @@ model = dict(
             type='SlimmableChannelUnit',
             units='tests/data/MBV2_slimmable_config.json'),
         parse_cfg=dict(
-            type='BackwardTracer',
-            loss_calculator=dict(type='ImageClassifierPseudoLoss'))))
+            type='ChannelAnalyzer',
+            demo_input=(1, 3, 224, 224),
+            tracer_type='BackwardTracer')))
 
 model_wrapper_cfg = dict(
     type='mmrazor.SlimmableNetworkDDP',
     broadcast_buffers=False,
     find_unused_parameters=True)
-
-optim_wrapper = dict(accumulative_counts=3)
 
 val_cfg = dict(type='mmrazor.SlimmableValLoop')

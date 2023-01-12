@@ -50,7 +50,7 @@ class SearchableShuffleNetV2(BaseBackbone):
             6 initializers, including ``Constant``, ``Xavier``, ``Normal``,
             ``Uniform``, ``Kaiming``, and ``Pretrained``.
 
-    Excamples:
+    Examples:
         >>> mutable_cfg = dict(
         ...     type='OneShotMutableOP',
         ...     candidates=dict(

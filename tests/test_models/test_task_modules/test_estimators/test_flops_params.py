@@ -11,7 +11,7 @@ from torch.nn import Conv2d, Module, Parameter
 from mmrazor.models import OneShotMutableModule, ResourceEstimator
 from mmrazor.models.task_modules.estimators.counters import BaseCounter
 from mmrazor.registry import MODELS, TASK_UTILS
-from mmrazor.structures import export_fix_subnet, load_fix_subnet
+from mmrazor.structures import export_fix_subnet
 
 _FIRST_STAGE_MUTABLE = dict(
     type='OneShotMutableOP',
@@ -54,7 +54,7 @@ ARCHSETTING_CFG = [
 
 NORM_CFG = dict(type='BN')
 BACKBONE_CFG = dict(
-    type='mmrazor.SearchableMobileNet',
+    type='mmrazor.SearchableMobileNetV2',
     first_channels=32,
     last_channels=1280,
     widen_factor=1.0,
@@ -216,10 +216,9 @@ class TestResourceEstimator(TestCase):
         flops_count = results['flops']
         params_count = results['params']
 
-        fix_subnet = export_fix_subnet(model)
-        load_fix_subnet(copied_model, fix_subnet)
+        _, sliced_model = export_fix_subnet(model, slice_weight=True)
         subnet_results = estimator.estimate(
-            model=copied_model, flops_params_cfg=flops_params_cfg)
+            model=sliced_model, flops_params_cfg=flops_params_cfg)
         subnet_flops_count = subnet_results['flops']
         subnet_params_count = subnet_results['params']
 

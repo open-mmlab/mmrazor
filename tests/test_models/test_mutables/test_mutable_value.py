@@ -73,9 +73,6 @@ class TestMutableValue(TestCase):
         assert mul_derived_mv.current_choice == 4
         assert rmul_derived_mv.current_choice == 4
 
-        with pytest.raises(TypeError):
-            _ = mv * 1.2
-
         mv = MutableValue(value_list=[1, 2, 3], default_value=3)
         mc = SquentialMutableChannel(num_channels=4)
 
@@ -113,9 +110,6 @@ class TestMutableValue(TestCase):
         assert derived_mv.current_choice == 15
         mv.current_choice = 136
         assert derived_mv.current_choice == 18
-
-        with pytest.raises(TypeError):
-            _ = mv // 1.2
 
     def test_repr(self) -> None:
         value_list = [2, 4, 6]

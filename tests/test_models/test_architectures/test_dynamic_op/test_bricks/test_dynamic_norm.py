@@ -1,15 +1,18 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import unittest
 from typing import Tuple, Type
 from unittest.mock import MagicMock
 
 import pytest
 import torch
+import torch.distributed as dist
 from torch import nn
 
 from mmrazor.models.architectures.dynamic_ops import (DynamicBatchNorm1d,
                                                       DynamicBatchNorm2d,
                                                       DynamicBatchNorm3d,
-                                                      DynamicMixin)
+                                                      DynamicMixin,
+                                                      DynamicSyncBatchNorm)
 from mmrazor.models.mutables import SquentialMutableChannel
 from mmrazor.structures.subnet import export_fix_subnet, load_fix_subnet
 from ..utils import fix_dynamic_op
@@ -56,7 +59,7 @@ def test_dynamic_bn(dynamic_class: Type[nn.modules.batchnorm._BatchNorm],
     out1 = d_bn(x)
     assert out1.size(1) == 8
 
-    fix_mutables = export_fix_subnet(d_bn)
+    fix_mutables = export_fix_subnet(d_bn)[0]
     with pytest.raises(RuntimeError):
         load_fix_subnet(d_bn, fix_mutables)
     fix_dynamic_op(d_bn, fix_mutables)
@@ -115,3 +118,37 @@ def test_bn_track_running_stats(
     x = torch.rand(*input_shape)
 
     assert torch.equal(d_bn(x), s_bn(x))
+
+
+class TestDynamicSyncBn(unittest.TestCase):
+
+    def test_init(self):
+        if not torch.cuda.is_available():
+            self.skipTest('no cuda')
+        import os
+        os.environ['MASTER_ADDR'] = 'localhost'
+        os.environ['MASTER_PORT'] = '12355'
+
+        # initialize the process group
+        if torch.cuda.is_available():
+            backend = 'nccl'
+            device = torch.device('cuda:0')
+        else:
+            backend = 'gloo'
+            device = torch.device('cpu')
+        dist.init_process_group(backend, rank=0, world_size=1)
+
+        x = torch.rand([2, 8, 224, 224]).to(device)
+        norm = DynamicSyncBatchNorm(8).to(device)
+        _ = norm(x)
+
+        mutable_num_features = SquentialMutableChannel(8)
+        mutable_num_features.current_choice = 4
+        norm.register_mutable_attr('in_channels', mutable_num_features)
+
+        with pytest.raises(Exception):
+            norm(x)
+
+        x = torch.rand([2, 4, 32, 32]).to(device)
+        _ = norm(x)
+        dist.destroy_process_group()

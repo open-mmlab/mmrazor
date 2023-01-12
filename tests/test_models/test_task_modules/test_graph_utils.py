@@ -4,13 +4,21 @@ from unittest import TestCase
 
 import torch
 import torch.nn as nn
-from torch.ao.quantization import QConfigMapping
-from torch.ao.quantization.fake_quantize import FakeQuantizeBase
-from torch.ao.quantization.fx import prepare
-from torch.ao.quantization.quantize_fx import _fuse_fx
 
-from mmrazor.models.task_modules import build_graphmodule
-from mmrazor.models.task_modules.tracer import CustomTracer
+try:
+    from torch.ao.quantization import QConfigMapping
+    from torch.ao.quantization.fake_quantize import FakeQuantizeBase
+    from torch.ao.quantization.fx import prepare
+    from torch.ao.quantization.quantize_fx import _fuse_fx
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    QConfigMapping = get_placeholder('torch>=1.13')
+    FakeQuantizeBase = get_placeholder('torch>=1.13')
+    prepare = get_placeholder('torch>=1.13')
+    _fuse_fx = get_placeholder('torch>=1.13')
+
+from mmrazor import digit_version
+from mmrazor.models.task_modules.tracer import CustomTracer, build_graphmodule
 from mmrazor.models.task_modules.tracer.fx import (
     del_fakequant_after_function, del_fakequant_after_method,
     del_fakequant_after_module, del_fakequant_after_op,
@@ -106,6 +114,9 @@ global_qconfig = dict(
 class TestGraphUtils(TestCase):
 
     def setUp(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         self.tracer = CustomTracer()
         self.backend_config = BackendConfigs['native']
         self.qconfig = QConfigHander(global_qconfig)
@@ -114,6 +125,9 @@ class TestGraphUtils(TestCase):
         self.example_inputs = (torch.randn(1, 3, 224, 224), )
 
     def swap_ff_with_fxff(self, model):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         modules_to_swap = []
         for name, module in model.named_children():
             if isinstance(module, torch.ao.nn.quantized.FloatFunctional):
@@ -126,6 +140,9 @@ class TestGraphUtils(TestCase):
             model._modules[name] = torch.ao.nn.quantized.FXFloatFunctional()
 
     def test_del_fakequant_before_op(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         model_to_quantize = ToyModel()
         model_to_quantize.eval()
 
@@ -170,6 +187,9 @@ class TestGraphUtils(TestCase):
                     _get_attrs(prepared, args[0].target), FakeQuantizeBase)
 
     def test_del_fakequant_after_op(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         model_to_quantize = ToyModel()
         model_to_quantize.eval()
 
@@ -211,6 +231,8 @@ class TestGraphUtils(TestCase):
                     _get_attrs(prepared, node.next.target), FakeQuantizeBase)
 
     def test_del_fakequant_before_method(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
 
         model_to_quantize = ToyModel()
         model_to_quantize.eval()
@@ -259,6 +281,9 @@ class TestGraphUtils(TestCase):
                     _get_attrs(prepared, args[0].target), FakeQuantizeBase)
 
     def test_del_fakequant_after_method(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         model_to_quantize = ToyModel()
         model_to_quantize.eval()
 
@@ -303,6 +328,9 @@ class TestGraphUtils(TestCase):
                     _get_attrs(prepared, node.next.target), FakeQuantizeBase)
 
     def test_del_fakequant_before_function(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         model_to_quantize = ToyModel()
         model_to_quantize.eval()
 
@@ -356,6 +384,9 @@ class TestGraphUtils(TestCase):
                     _get_attrs(prepared, args[1].target), FakeQuantizeBase)
 
     def test_del_fakequant_after_function(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         model_to_quantize = ToyModel()
         model_to_quantize.eval()
 
@@ -400,6 +431,9 @@ class TestGraphUtils(TestCase):
                     _get_attrs(prepared, node.next.target), FakeQuantizeBase)
 
     def test_del_fakequant_before_module(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         model_to_quantize = ToyModel()
         model_to_quantize.eval()
 
@@ -452,6 +486,9 @@ class TestGraphUtils(TestCase):
                         _get_attrs(prepared, args[0].target), FakeQuantizeBase)
 
     def test_del_fakequant_after_module(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         model_to_quantize = ToyModel()
         model_to_quantize.eval()
 

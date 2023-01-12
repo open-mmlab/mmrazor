@@ -29,9 +29,7 @@ CHANNEL_CFG_PATH = 'tests/data/MBV2_slimmable_config.json'
 MUTATOR_CFG = dict(
     type='SlimmableChannelMutator',
     channel_unit_cfg=dict(type='SlimmableChannelUnit', units=CHANNEL_CFG_PATH),
-    parse_cfg=dict(
-        type='BackwardTracer',
-        loss_calculator=dict(type='ImageClassifierPseudoLoss')))
+    parse_cfg=dict(type='ChannelAnalyzer'))
 
 CHANNEL_CFG_PATHS = [
     'tests/data/MBV2_220M.yaml',

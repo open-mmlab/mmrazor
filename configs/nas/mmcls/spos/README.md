@@ -11,32 +11,39 @@ Comprehensive experiments verify that our approach is flexible and effective. It
 
 ![pipeline](https://user-images.githubusercontent.com/88702197/187424862-c2f3fde1-4a48-4eda-9ff7-c65971b683ba.jpg)
 
-## Introduction
+## Get Started
 
-### Supernet pre-training on ImageNet
-
-```bash
-python ./tools/mmcls/train_mmcls.py \
-  configs/nas/spos/spos_supernet_shufflenetv2_8xb128_in1k.py \
-  --work-dir $WORK_DIR
-```
-
-### Search for subnet on the trained supernet
+### Step 1: Supernet pre-training on ImageNet
 
 ```bash
-python ./tools/mmcls/search_mmcls.py \
-  configs/nas/spos/spos_evolution_search_shufflenetv2_8xb2048_in1k.py \
-  $STEP1_CKPT \
-  --work-dir $WORK_DIR
-```
-
-### Subnet retraining on ImageNet
-
-```bash
-python ./tools/mmcls/train_mmcls.py \
-  configs/nas/spos/spos_subnet_shufflenetv2_8xb128_in1k.py \
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/nas/spos/spos_supernet_shufflenetv2_8xb128_in1k.py 4 \
   --work-dir $WORK_DIR \
-  --cfg-options algorithm.mutable_cfg=$STEP2_SUBNET_YAML  # or modify the config directly
+```
+
+### Step 2: Search for subnet on the trained supernet
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/nas/spos/spos_evolution_search_shufflenetv2_8xb2048_in1k.py 4 \
+  --work-dir $WORK_DIR --cfg-options load_from=$STEP1_CKPT
+```
+
+### Step 3: Subnet retraining on ImageNet
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/nas/spos/spos_subnet_shufflenetv2_8xb128_in1k.py 4 \
+  --work-dir $WORK_DIR --cfg-options algorithm.mutable_cfg=$STEP2_SUBNET_YAML  # or modify the config directly
+```
+
+## Step 4: Subnet inference on ImageNet
+
+```bash
+CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
+  configs/nas/spos/spos_subnet_shufflenetv2_8xb128_in1k.py \
+  $SEARCHED_CKPT 1 --work-dir $WORK_DIR \
+  --cfg-options algorithm.mutable_cfg=$STEP2_SUBNET_YAML
 ```
 
 ## Results and models

@@ -10,10 +10,10 @@ model = dict(
     data_preprocessor=dict(
         type='ImgDataPreprocessor',
         # RGB format normalization parameters
-        mean=[123.675, 116.28, 103.53],
-        std=[58.395, 57.12, 57.375],
+        mean=[125.307, 122.961, 113.8575],
+        std=[51.5865, 50.847, 51.255],
         # convert image from BGR to RGB
-        bgr_to_rgb=True),
+        bgr_to_rgb=False),
     architecture=dict(
         cfg_path=  # noqa: E251
         'mmrazor::vanilla/mmcls/wide-resnet/wrn16-w2_b16x8_cifar10.py',
@@ -42,21 +42,21 @@ model = dict(
             loss_3=dict(type='OFDLoss', loss_weight=1.0)),
         connectors=dict(
             loss_1_sfeat=dict(
-                type='ConvModuleConncetor',
+                type='ConvModuleConnector',
                 in_channel=32,
                 out_channel=64,
                 norm_cfg=dict(type='BN'),
                 act_cfg=None),
             loss_1_tfeat=dict(type='OFDTeacherConnector'),
             loss_2_sfeat=dict(
-                type='ConvModuleConncetor',
+                type='ConvModuleConnector',
                 in_channel=64,
                 out_channel=128,
                 norm_cfg=dict(type='BN'),
                 act_cfg=None),
             loss_2_tfeat=dict(type='OFDTeacherConnector'),
             loss_3_sfeat=dict(
-                type='ConvModuleConncetor',
+                type='ConvModuleConnector',
                 in_channel=128,
                 out_channel=256,
                 norm_cfg=dict(type='BN'),

@@ -68,8 +68,10 @@ class DSNAS(BaseAlgorithm):
                  **kwargs):
         super().__init__(architecture, data_preprocessor, **kwargs)
 
-        if estimator_cfg is None:
-            estimator_cfg = dict(type='mmrazor.ResourceEstimator')
+        # initialize estimator
+        estimator_cfg = dict() if estimator_cfg is None else estimator_cfg
+        if 'type' not in estimator_cfg:
+            estimator_cfg['type'] = 'mmrazor.ResourceEstimator'
         self.estimator = TASK_UTILS.build(estimator_cfg)
         if fix_subnet:
             # Avoid circular import
@@ -120,7 +122,7 @@ class DSNAS(BaseAlgorithm):
 
         subnet = self.mutator.sample_choices()
         self.mutator.set_choices(subnet)
-        return export_fix_subnet(self)
+        return export_fix_subnet(self)[0]
 
     def fix_subnet(self):
         """Fix subnet when finetuning."""

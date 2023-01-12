@@ -92,7 +92,7 @@ class Darts(BaseAlgorithm):
 
         subnet = self.mutator.sample_choices()
         self.mutator.set_choices(subnet)
-        return export_fix_subnet(self)
+        return export_fix_subnet(self)[0]
 
     def train(self, mode=True):
         """Convert the model into eval mode while keep normalization layer

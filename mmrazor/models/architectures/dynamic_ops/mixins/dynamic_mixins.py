@@ -74,12 +74,16 @@ class DynamicMixin(ABC):
         Raises:
             RuntimeError: Error if a existing mutable is not fixed.
         """
+        from mmrazor.models.mutables import (DerivedMutable,
+                                             MutableChannelContainer)
 
         def check_fixed(mutable: Optional[BaseMutable]) -> None:
             if mutable is not None and not mutable.is_fixed:
                 raise RuntimeError(f'Mutable {type(mutable)} is not fixed.')
 
         for mutable in self.mutable_attrs.values():  # type: ignore
+            if isinstance(mutable, (MutableChannelContainer, DerivedMutable)):
+                continue
             check_fixed(mutable)
 
     def check_mutable_attr_valid(self, attr):
@@ -114,6 +118,11 @@ class DynamicChannelMixin(DynamicMixin):
         All subclass should implement ``mutable_in_channels`` and
         ``mutable_out_channels`` APIs.
     """
+
+    attr_mappings: Dict[str, str] = {
+        'in_channels': 'in_channels',
+        'out_channels': 'out_channels',
+    }
 
     @staticmethod
     def check_mutable_channels(mutable_channels: BaseMutable) -> None:
@@ -261,8 +270,12 @@ class DynamicBatchNormMixin(DynamicChannelMixin):
 
         if running_mean is not None:
             static_bn.running_mean.copy_(running_mean)
+            static_bn.running_mean = static_bn.running_mean.to(
+                running_mean.device)
         if running_var is not None:
             static_bn.running_var.copy_(running_var)
+            static_bn.running_var = static_bn.running_var.to(
+                running_var.device)
         if weight is not None:
             static_bn.weight = nn.Parameter(weight)
         if bias is not None:
@@ -397,3 +410,46 @@ class DynamicLinearMixin(DynamicChannelMixin):
             static_linear.bias = nn.Parameter(bias)
 
         return static_linear
+
+
+class DynamicResizeMixin(DynamicMixin):
+    """A mixin class for Pytorch InputResizer, which can mutate ``shape``."""
+
+    accepted_mutable_attrs: Set[str] = {'shape'}
+
+    def register_mutable_attr(self, attr, mutable):
+        if attr == 'shape':
+            self._register_mutable_shape(mutable)
+        else:
+            raise NotImplementedError
+
+    def _register_mutable_shape(self, mutable_shape):
+        assert hasattr(self, 'mutable_attrs')
+        current_shape = mutable_shape.current_choice
+        shape_dim = 1 if isinstance(current_shape, int) else len(current_shape)
+        if shape_dim not in [1, 2, 3]:
+            raise ValueError('Expect shape of mutable to be 1, 2 or 3'
+                             f', but got: {shape_dim}.')
+
+        self.mutable_attrs['shape'] = mutable_shape
+
+    def get_dynamic_shape(self):
+        if 'shape' in self.mutable_attrs:
+            current_shape = self.mutable_attrs['shape'].current_choice
+        else:
+            current_shape = None
+        return current_shape
+
+    def to_static_op(self) -> nn.Module:
+        self.check_if_mutables_fixed()
+
+        input_resizer = self.static_op_factory(
+            interpolation_type=self._interpolation_type,  # type:ignore
+            align_corners=self._align_corners,  # type:ignore
+            scale_factor=self._scale_factor)  # type:ignore
+
+        size = self.get_dynamic_shape()
+        if size is not None:
+            input_resizer._size = size
+
+        return input_resizer
