@@ -1,7 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
+import torch.nn as nn
 from mmengine.config import Config
 
 try:
@@ -10,10 +11,12 @@ try:
     from torch.ao.quantization.fx.graph_module import ObservedGraphModule
     from torch.ao.quantization.qconfig_mapping import QConfigMapping
     from torch.ao.quantization.quantize_fx import _fuse_fx
+    from torch.fx.graph_module import GraphModule
     from torch.nn.intrinsic.qat import modules as qat_fused_modules
     from torch.nn.qat import modules as qat_modules
 except ImportError:
     from mmrazor.utils import get_package_placeholder, get_placeholder
+    GraphModule = get_placeholder('torch>=1.13')
     ObservedGraphModule = get_placeholder('torch>=1.13')
     enable_fake_quant = get_placeholder('torch>=1.13')
     prepare = get_placeholder('torch>=1.13')
@@ -62,9 +65,9 @@ class NativeQuantizer(BaseQuantizer):
     """Native class for quantizer.
 
     Args:
-        global_qconfig (Dict): Config for quantization details of weight and
-            activation include observer, quantizer, and qscheme.
-        no_observer_modules ( List | Tuple | Optional): Modules before
+        global_qconfig (Union[Dict, Config]): Config for quantization details
+            of weight and activation include observer, quantizer, and qscheme.
+        no_observer_modules (Union[List, Tuple, None]): Modules before
             observer.
         tracer (Dict): Config for tracer to trace modules for torch fx .
 
@@ -93,8 +96,8 @@ class NativeQuantizer(BaseQuantizer):
     def __init__(self,
                  global_qconfig: Union[Dict, Config],
                  no_observer_modules: Union[List, Tuple, None] = None,
-                 tracer=dict(type='CustomTracer'),
-                 extra_redundant_fakequants=dict(
+                 tracer: dict = dict(type='CustomTracer'),
+                 extra_redundant_fakequants: dict = dict(
                      extra_module_prev_wo_fakequant=tuple(),
                      extra_module_next_wo_fakequant=tuple(),
                      extra_function_prev_wo_fakequant=tuple(),
@@ -235,11 +238,24 @@ class NativeQuantizer(BaseQuantizer):
         observed_module.apply(enable_fake_quant)
         traverse(observed_module)
 
-    def prepare_for_mmdeploy(self, model, dummy_input, checkpoint):
-        """tmp."""
+    def prepare_for_mmdeploy(self, model: nn.Module, dummy_input: tuple,
+                             checkpoint: Optional[str]):
+        """Prepare model to Observed_model."""
         raise NotImplementedError
 
-    def del_redundant_fakequant(self, prepared):
+    def del_redundant_fakequant(self, prepared: GraphModule):
+        """delete redundant fakequant op in prepared model.
+
+        Returns:
+            prepared (GraphModule): prepared model after delete redundant
+                fakequant op.
+
+        Notes:
+             We can configure different ways to delete redundant nodes:
+                @property
+                def module_prev_wo_fakequant(self):
+                    return (torch.nn.ReLU6, torch.nn.Identity)
+        """
         extra_module_prev_wo_fakequant = self.extra_redundant_fakequants.get(
             'extra_module_prev_wo_fakequant', tuple())
         prepared = del_fakequant_before_module(
