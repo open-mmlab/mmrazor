@@ -53,6 +53,7 @@ class UntracedMethodRegistry:
 
     def __init__(self, method: FunctionType):
         self.method = method
+        self.instances: Dict = dict()
         self.owner = None
 
     def __set_name__(self, owner, name):
@@ -302,6 +303,7 @@ class CustomTracer(QuantizationTracer):
             kwargs (Dict): kwargs of the module callsite
 
         Return:
+
             The return value from the Module call. In the case that a
             ``call_module`` node was emitted, this is a ``Proxy`` value.
             Otherwise, it is whatever value was returned from the ``Module``
