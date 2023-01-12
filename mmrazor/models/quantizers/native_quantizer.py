@@ -9,7 +9,9 @@ try:
     from torch.ao.quantization import enable_fake_quant
     from torch.ao.quantization.fx import prepare
     from torch.ao.quantization.fx.graph_module import ObservedGraphModule
-    from torch.ao.quantization.qconfig_mapping import QConfigMapping
+    from torch.ao.quantization.qconfig_mapping import (
+        _FIXED_QPARAMS_OP_TO_OBSERVER, FixedQParamsFakeQuantize, QConfig,
+        QConfigMapping, default_weight_fake_quant)
     from torch.ao.quantization.quantize_fx import _fuse_fx
     from torch.fx.graph_module import GraphModule
     from torch.nn.intrinsic.qat import modules as qat_fused_modules
@@ -24,6 +26,10 @@ except ImportError:
     _fuse_fx = get_placeholder('torch>=1.13')
     qat_fused_modules = get_package_placeholder('torch>=1.13')
     qat_modules = get_package_placeholder('torch>=1.13')
+    _FIXED_QPARAMS_OP_TO_OBSERVER = get_package_placeholder('torch>=1.13')
+    FixedQParamsFakeQuantize = get_package_placeholder('torch>=1.13')
+    QConfig = get_package_placeholder('torch>=1.13')
+    default_weight_fake_quant = get_package_placeholder('torch>=1.13')
 
 from mmrazor import digit_version
 from mmrazor.models.task_modules.tracer import build_graphmodule
@@ -125,6 +131,24 @@ class NativeQuantizer(BaseQuantizer):
                 self.qconfig_mapping.set_object_type(mod, None)
         else:
             self.no_observer_modules = no_observer_modules
+
+        fixed_qparams_observer_to_qconfig = {}
+        for fixed_qparams_op, observer in _FIXED_QPARAMS_OP_TO_OBSERVER.items(
+        ):
+            if observer in fixed_qparams_observer_to_qconfig:
+                fixed_qparams_qconfig = fixed_qparams_observer_to_qconfig[
+                    observer]
+            else:
+                activation = FixedQParamsFakeQuantize.with_args(
+                    observer=observer)
+
+                fixed_qparams_qconfig = QConfig(
+                    activation=activation, weight=default_weight_fake_quant)
+                fixed_qparams_observer_to_qconfig[
+                    observer] = fixed_qparams_qconfig
+            self.qconfig_mapping.set_object_type(fixed_qparams_op,
+                                                 fixed_qparams_qconfig)
+
         self.backend_config = BackendConfigs[self.backend]
         self.example_inputs = (torch.randn(1, 3, 224, 224), )
 
@@ -169,6 +193,8 @@ class NativeQuantizer(BaseQuantizer):
         self.swap_ff_with_fxff(model)
         traced_graph = self.tracer.trace(model, concrete_args=concrete_args)
         graph_module = build_graphmodule(model, traced_graph)
+
+        self.sync_module_training_mode(graph_module)
         graph_module = _fuse_fx(
             graph_module=graph_module,
             is_qat=True,
