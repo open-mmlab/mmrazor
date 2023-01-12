@@ -3,17 +3,11 @@ from typing import Dict, List, Tuple, Union
 
 import torch
 from mmengine.config import Config
-from torch.ao.quantization import enable_fake_quant
-from torch.ao.quantization.fx import prepare
-from torch.ao.quantization.fx.graph_module import ObservedGraphModule
-from torch.ao.quantization.qconfig_mapping import QConfigMapping
-from torch.ao.quantization.quantize_fx import _fuse_fx
-from torch.nn.intrinsic.qat import modules as qat_fused_modules
-from torch.nn.qat import modules as qat_modules
 
 try:
     from torch.ao.quantization import enable_fake_quant
     from torch.ao.quantization.fx import prepare
+    from torch.ao.quantization.fx.graph_module import ObservedGraphModule
     from torch.ao.quantization.qconfig_mapping import QConfigMapping
     from torch.ao.quantization.quantize_fx import _fuse_fx
     from torch.nn.intrinsic.qat import modules as qat_fused_modules
