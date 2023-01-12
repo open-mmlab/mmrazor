@@ -6,8 +6,8 @@ import torch
 
 from .data.model_library import (DefaultModelLibrary, MMClsModelLibrary,
                                  MMDetModelLibrary, MMModelLibrary,
-                                 MMSegModelLibrary, ModelGenerator,
-                                 TorchModelLibrary)
+                                 MMPoseModelLibrary, MMSegModelLibrary,
+                                 ModelGenerator, TorchModelLibrary)
 from .data.models import SingleLineModel
 from .data.tracer_passed_models import (BackwardPassedModelManager,
                                         FxPassedModelManager)
@@ -45,6 +45,16 @@ class TestModelLibrary(unittest.TestCase):
         if not TEST_DATA:
             self.skipTest('not test data to save time.')
         library = MMSegModelLibrary()
+        print(library.short_names())
+
+        self.assertTrue(library.is_default_includes_cover_all_models())
+
+    # New
+    def test_mmpose(self):
+        if not TEST_DATA:
+            self.skipTest('not test data to save time.')
+        library = MMPoseModelLibrary()
+        print(library.short_names())
         self.assertTrue(library.is_default_includes_cover_all_models())
 
     def test_get_model_by_config(self):

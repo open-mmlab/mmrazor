@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .model_library import (MMClsModelLibrary, MMDetModelLibrary,
                             DefaultModelLibrary, TorchModelLibrary,
-                            MMSegModelLibrary)
+                            MMPoseModelLibrary, MMSegModelLibrary)
 
 
 class PassedModelManager:
@@ -32,6 +32,7 @@ class FxPassedModelManager(PassedModelManager):
     _mmcls_library = None
     _mmseg_library = None
     _mmdet_library = None
+    _mmpose_library = None
 
     def libraries(self, full=False):
         if full:
@@ -41,6 +42,7 @@ class FxPassedModelManager(PassedModelManager):
                 self.__class__.mmcls_library(),
                 self.__class__.mmseg_library(),
                 self.__class__.mmdet_library(),
+                self.__class__.mmpose_library(),
             ]
         else:
             return [self.__class__.default_library()]
@@ -304,6 +306,21 @@ class FxPassedModelManager(PassedModelManager):
             cls._mmseg_library = MMSegModelLibrary(include=include)
         return cls._mmseg_library
 
+
+    @classmethod
+    def mmpose_library(cls):
+        mmpose_include = [
+            'hand',
+            'face',
+            'wholebody',
+            'body',
+            'animal',
+        ]
+        if cls._mmpose_library is None:
+            cls._mmpose_library = MMPoseModelLibrary(include=mmpose_include)
+        
+        return cls._mmpose_library
+
     # for backward tracer
 
 
@@ -314,6 +331,8 @@ class BackwardPassedModelManager(PassedModelManager):
     _mmcls_library = None
     _mmseg_library = None
     _mmdet_library = None
+    _mmpose_library = None
+
 
     def libraries(self, full=False):
         if full:
@@ -323,6 +342,7 @@ class BackwardPassedModelManager(PassedModelManager):
                 self.__class__.mmcls_library(),
                 self.__class__.mmseg_library(),
                 self.__class__.mmdet_library(),
+                self.__class__.mmpose_library(),
             ]
         else:
             return [self.__class__.default_library()]
@@ -480,6 +500,20 @@ class BackwardPassedModelManager(PassedModelManager):
         if cls._mmseg_library is None:
             cls._mmseg_library = MMSegModelLibrary(include=include)
         return cls._mmseg_library
+
+    @classmethod
+    def mmpose_library(cls):
+        mmpose_include = [
+            'hand',
+            'face',
+            'wholebody',
+            'body',
+            'animal',
+        ]
+
+        if cls._mmpose_library is None:
+            cls._mmpose_library = MMPoseModelLibrary(include=mmpose_include)
+        return cls._mmpose_library
 
 
 fx_passed_library = FxPassedModelManager()
