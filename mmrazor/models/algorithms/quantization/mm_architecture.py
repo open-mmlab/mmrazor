@@ -24,10 +24,10 @@ class MMArchitectureQuant(BaseAlgorithm):
     """General quantization.
 
     Args:
-        architecture (dict | :obj:`BaseModel`): The config of
-            :class:`BaseModel` or built model.
-        quantizer (dict | :obj:`BaseModel`): The config of
-            :class:`BaseQuantizer` or built model.
+        architecture (dict | :obj:`BaseModel`): The config of model to be
+            quantized.
+        quantizer (dict | :obj:`BaseModel`): The quantizer to support different
+            backend type.
         qmodel_modes (list): The available mode of runner.
         data_preprocessor (dict | torch.nn.Module | None): The pre-process
             config of :class:`BaseDataPreprocessor`. Defaults to None.
