@@ -14,6 +14,7 @@ try:
     from torch.nn.qat import modules as qat_modules
 except ImportError:
     from mmrazor.utils import get_package_placeholder, get_placeholder
+    ObservedGraphModule = get_placeholder('torch>=1.13')
     enable_fake_quant = get_placeholder('torch>=1.13')
     prepare = get_placeholder('torch>=1.13')
     QConfigMapping = get_placeholder('torch>=1.13')
