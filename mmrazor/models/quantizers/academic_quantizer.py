@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Dict, Optional
+
 import torch
 
 from mmrazor.registry import MODELS
@@ -27,28 +29,79 @@ MODULE_NAME_REGEX_DICT_KEY = 'module_name_regex'
 MODULE_NAME_DICT_KEY = 'module_name'
 MODULE_NAME_OBJECT_TYPE_ORDER_DICT_KEY = 'module_name_object_type_order'
 
+# keys can be used in `prepare_custom_config` of `AcademicQuantizer`.
 FLOAT_TO_OBSERVED_DICT_KEY = 'float_to_observed_custom_module_class'
 PRESERVED_ATTRIBUTES_DICT_KEY = 'preserved_attributes'
 
 
 @MODELS.register_module()
 class AcademicQuantizer(BaseQuantizer):
-    """tmp."""
+    """Quantizer for academic researching. Different from some quantizers for
+    deploying, `AcademicQuantizer` is without the interfaces for deployment,
+    but it has more flexible functions for quantizing your model. With its
+    help, you can custom configuration qconfig for differenet OP by
+    `qconfig_mapping` to implement customized experiments, including using
+    custom fakquant, trying mixed precision quantization, comparing different
+    quantization scheme and so on.
+
+    Args:
+        qconfig_mapping (Dict): Mapping from model ops to qconfig to configure
+            how a model is quantized. You can specify qconfigs using the
+            following keys (in increasing match priority):
+                ``_global_`` : sets the global (default) qconfig
+                ``object_type`` : sets the qconfig for a given module type,
+                    function, or method name
+                ``module_name_regex`` : sets the qconfig for modules matching
+                    the given regex string
+                ``module_name`` : sets the qconfig for modules matching the
+                    given module name
+                ``module_name_object_type_order`` : sets the qconfig for
+                    modules matching a combination of the given module name,
+                    object type, and the index at which the module appears
+        tracer (Dict): It can be used to trace the float model to generate the
+            corresponding graph, which contributes to prepare for quantizing
+            the float model with code-free. Default to
+            `dict(type='mmrazor.CustomTracer')`.
+        prepare_custom_config (Optional[Dict]): Custom configuration for
+            :func:`~torch.ao.quantization.fx.prepare`. You can specify the
+            follow:
+                ``float_to_observed_custom_module_class`` : a list of dict that
+                    mapping from float module classes to observed module
+                    classes, e.g.
+                    `[dict(FloatCustomModule=ObservedCustomModule)]`
+                ``preserved_attributes``: a list of attributes that persist
+                    even if they are not used in ``forward``, e.g.
+                    `[attr1, attr2]`
+    """
 
     def __init__(self,
-                 qconfig_mapping,
-                 tracer=dict(type='mmrazor.CustomTracer'),
-                 prepare_custom_config=None,
-                 backend_config=BackendConfigs['academic']):
+                 qconfig_mapping: Dict,
+                 tracer: Dict = dict(type='mmrazor.CustomTracer'),
+                 prepare_custom_config: Optional[Dict] = None):
         super().__init__(tracer)
         self.qconfig_mapping = self.gen_qconfig_mapping(qconfig_mapping)
         self.prepare_custom_config = self.gen_prepare_custom_config(
             prepare_custom_config)
-        self.backend_config = backend_config
+        self.backend_config = BackendConfigs[self.backend]
         self.example_inputs = (torch.randn(1, 3, 224, 224), )
 
+    @property
+    def backend(self):
+        """The key of the corresponding backend config."""
+        return 'academic'
+
     def prepare(self, model, graph_module):
-        """tmp."""
+        """Prepare for quantizing model, which includes as follows:
+
+        1. Swap floatfunctional with FXFloatFunctional;
+        2. Trace model to generate `GraphModule`;
+        2. Fuse some OPs combination, such as conv + bn, conv + relu and so on;
+        3. Swap some conv or linear module with QAT Modules which contain
+        weight fakequant nodes;
+        4. Insert required fakequant nodes for activation.
+        step 3 and step 4 are implemented in
+        :func:`~torch.ao.quantization.fx.prepare`
+        """
         preserved_attributes = self.prepare_custom_config.preserved_attributes
         for attr_name in preserved_attributes:
             setattr(graph_module, attr_name, getattr(model, attr_name))
@@ -71,8 +124,12 @@ class AcademicQuantizer(BaseQuantizer):
 
         return prepared
 
-    def gen_qconfig_mapping(self, qconfig_mapping):
-        """tmp."""
+    def gen_qconfig_mapping(self, qconfig_mapping: Dict):
+        """Convert qconfig_mapping in config file to `QConfigMapping`.
+
+        `QConfigMapping` is a custom class for mapping from model ops to
+        :class:`torch.ao.quantization.QConfig` s.
+        """
         conf = QConfigMapping()
         if GLOBAL_DICT_KEY in qconfig_mapping:
             qconfig = QConfigHandler(
@@ -99,8 +156,13 @@ class AcademicQuantizer(BaseQuantizer):
 
         return conf
 
-    def gen_prepare_custom_config(self, prepare_custom_config):
-        """tmp."""
+    def gen_prepare_custom_config(self, prepare_custom_config: Optional[Dict]):
+        """Convert prepare_custom_config in config file to
+        `PrepareCustomConfig`.
+
+        `PrepareCustomConfig` is a custom class for custom configurating
+        :func:`~torch.ao.quantization.fx.prepare`.
+        """
         conf = PrepareCustomConfig()
         if prepare_custom_config is None:
             return conf
