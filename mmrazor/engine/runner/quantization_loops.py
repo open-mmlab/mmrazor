@@ -73,7 +73,7 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
         self.runner.model.apply(enable_fake_quant)
         self.runner.model.apply(disable_observer)
 
-    def run(self) -> torch.nn.Module:
+    def run(self):
         """Launch training."""
         self.runner.call_hook('before_train')
 
@@ -87,7 +87,7 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
                     and self._epoch % self.val_interval == 0):
                 # observer disabled during evaluation
                 self.prepare_for_val()
-                self.runner.model.sync_qparams(src='loss')
+                self.runner.model.sync_qparams(src_mode='loss')
                 self.runner.val_loop.run()
 
         self.runner.call_hook('after_train')
@@ -97,11 +97,12 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
         self.runner.call_hook('before_train_epoch')
         self.runner.model.train()
 
-        # TODO freeze bn
-        if self._epoch >= self.disable_observer_begin:
+        # The initialized _epoch equals to 0 so _epoch + 1
+        # equal to the current epoch
+        if self._epoch + 1 >= self.disable_observer_begin:
             self.runner.model.apply(disable_observer)
 
-        if self._epoch >= self.freeze_bn_begin:
+        if self._epoch + 1 >= self.freeze_bn_begin:
             self.runner.model.apply(freeze_bn_stats)
 
         for idx, data_batch in enumerate(self.dataloader):
@@ -168,7 +169,7 @@ class LSQEpochBasedLoop(QATEpochBasedLoop):
         self.runner.model.train()
 
         # TODO freeze bn
-        if self._epoch >= self.freeze_bn_begin:
+        if self._epoch + 1 >= self.freeze_bn_begin:
             self.runner.model.apply(freeze_bn_stats)
 
         for idx, data_batch in enumerate(self.dataloader):

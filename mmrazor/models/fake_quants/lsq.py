@@ -261,15 +261,13 @@ class LearnableFakeQuantize(FakeQuantizeBase):
     @torch.jit.export
     def extra_repr(self):
         """The printable representational string."""
-        repr_str = self.__class__.__name__
-        repr_str += '('
-        repr_str += f'static_enabled={self.static_enabled}, '
-        repr_str += f'fake_quant_enabled={self.fake_quant_enabled}'
-        repr_str += f'quant_min={self.activation_post_process.quant_min}'
-        repr_str += f'quant_max={self.activation_post_process.quant_max}'
-        repr_str += f'dtype={self.dtype}'
-        repr_str += f'qscheme={self.qscheme}'
-        repr_str += f'scale={self.scale}'
-        repr_str += f'zero_point={self.zero_point}'
-        repr_str += ')'
+        repr_str = f'static_enabled={self.static_enabled}, '
+        repr_str += f'fake_quant_enabled={self.fake_quant_enabled}, '
+        repr_str += f'quant_min={self.activation_post_process.quant_min}, '
+        repr_str += f'quant_max={self.activation_post_process.quant_max}, '
+        repr_str += f'dtype={self.dtype}, '
+        repr_str += f'qscheme={self.qscheme}, '
+        repr_str += f'scale={self.scale}, '
+        repr_str += f'zero_point={self.zero_point}, '
+        repr_str += f'zero_point_trainable={self.zero_point_trainable}'
         return repr_str
