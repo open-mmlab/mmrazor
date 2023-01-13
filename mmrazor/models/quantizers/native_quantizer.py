@@ -67,8 +67,9 @@ class NativeQuantizer(BaseQuantizer):
     Args:
         global_qconfig (Union[Dict, Config]): Config for quantization details
             of weight and activation include observer, quantizer, and qscheme.
-        no_observer_modules (Union[List, Tuple, None]): Modules before
-            observer.
+        no_observer_modules (Optional[List]): Modules don't need observer.
+            To fit different backend, we need qconfig to determine the modules
+            which don't need observer.
         tracer (Dict): Config for tracer to trace modules for torch fx .
 
     Raises:
@@ -95,9 +96,9 @@ class NativeQuantizer(BaseQuantizer):
 
     def __init__(self,
                  global_qconfig: Union[Dict, Config],
-                 no_observer_modules: Union[List, Tuple, None] = None,
-                 tracer: dict = dict(type='CustomTracer'),
-                 extra_redundant_fakequants: dict = dict(
+                 no_observer_modules: Optional[List] = None,
+                 tracer: Dict = dict(type='CustomTracer'),
+                 extra_redundant_fakequants: Dict = dict(
                      extra_module_prev_wo_fakequant=tuple(),
                      extra_module_next_wo_fakequant=tuple(),
                      extra_function_prev_wo_fakequant=tuple(),
@@ -238,7 +239,7 @@ class NativeQuantizer(BaseQuantizer):
         observed_module.apply(enable_fake_quant)
         traverse(observed_module)
 
-    def prepare_for_mmdeploy(self, model: nn.Module, dummy_input: tuple,
+    def prepare_for_mmdeploy(self, model: nn.Module, dummy_input: Tuple,
                              checkpoint: Optional[str]):
         """Prepare model to Observed_model."""
         raise NotImplementedError

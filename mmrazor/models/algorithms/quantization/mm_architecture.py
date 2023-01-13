@@ -33,31 +33,31 @@ class MMArchitectureQuant(BaseAlgorithm):
             quantized.
         quantizer (Union[Dict, BaseModel]): The quantizer to support different
             backend type.
-        qmodel_modes (list): The available mode of runner.
-        data_preprocessor (Optional[dict]): The pre-process
+        qmodel_modes (List): The available mode of runner.
+        data_preprocessor (Optional[Dict]): The pre-process
             config of :class:`BaseDataPreprocessor`. Defaults to None.
-        forward_modes (tuple): The modes in forward method in OpenMMLab
+        forward_modes (Tuple): The modes in forward method in OpenMMLab
             architecture could be tensor, predict, or loss. It can generate
             different graph of quantized model.
         float_checkpoint (Optional[str]): The path of pretrained FP checkpoint.
             Quantization is different from or task, we recommend to use
             `float_checkpoint` as pretrain model. Defaults to None.
-        init_cfg (Optional[dict]): The weight initialized config for:
+        init_cfg (Optional[Dict]): The weight initialized config for:
             class:`BaseModule`.
 
     Note:
-        forward_modes (tuple): In OpenMMLab architecture, differenet modes
+        forward_modes (Tuple): In OpenMMLab architecture, differenet modes
             will trace a different graph of quantized model.
     """
 
     def __init__(self,
                  architecture: Union[Dict, BaseModel],
                  quantizer: Union[Dict, BaseModel],
-                 data_preprocessor: Optional[dict] = None,
-                 forward_modes: tuple = ('tensor', 'predict', 'loss'),
+                 data_preprocessor: Optional[Dict] = None,
+                 forward_modes: Tuple = ('tensor', 'predict', 'loss'),
                  float_checkpoint: Optional[str] = None,
-                 input_shapes: tuple = (1, 3, 224, 224),
-                 init_cfg: Optional[dict] = None):
+                 input_shapes: Tuple = (1, 3, 224, 224),
+                 init_cfg: Optional[Dict] = None):
 
         if data_preprocessor is None:
             data_preprocessor = {}
@@ -76,7 +76,7 @@ class MMArchitectureQuant(BaseAlgorithm):
 
         self.qmodels = self._build_qmodels(self.architecture)
 
-        self.sync_qparams(forward_modes[1])
+        self.sync_qparams('predict')
 
     def sync_qparams(self, src_mode: str):
         """Sync all quantize parameters in different `forward_modes`. We have
@@ -128,11 +128,11 @@ class MMArchitectureQuant(BaseAlgorithm):
                 continue
             traverse(self.qmodels[mode], '')
 
-    def _build_qmodels(self, model: dict):
+    def _build_qmodels(self, model: BaseModel):
         """Build quantized models from the given model.
 
         Args:
-            model (dict | :obj:`BaseModel`): the given fp model.
+            model (BaseModel): the given fp model.
 
         Example:
             The main body of the graph is all the same, but the last one or two
@@ -183,7 +183,7 @@ class MMArchitectureQuant(BaseAlgorithm):
         else:
             return self.architecture(inputs, data_samples, mode)
 
-    def calibrate_step(self, data: Union[dict, tuple, list]):
+    def calibrate_step(self, data: Union[Dict, Tuple, List]):
         """PTQ method need calibrate by cali data."""
 
         data = self.data_preprocessor(data, False)
@@ -213,7 +213,7 @@ class MMArchitectureQuantDDP(MMDistributedDataParallel):
         self.module.qmodels = self.module._build_qmodels(
             self.module.architecture)
 
-    def calibrate_step(self, data: Union[dict, tuple, list]):
+    def calibrate_step(self, data: Union[Dict, Tuple, List]):
         """PTQ method need calibrate by cali data."""
 
         return self.module.calibrate_step(data)
