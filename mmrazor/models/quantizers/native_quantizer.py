@@ -164,8 +164,11 @@ class NativeQuantizer(BaseQuantizer):
 
         Notes:
             Keep `is_qat` is True is because in Pytorch when `is_qat` is false,
-            the `_fuse_fx()` function only fuse module into `nn.Squential` ,
-            but we need it to be fused into `SUPPORT_QAT_MODULES` type.
+            the `_fuse_fx()` function only fuse module into `nn.Squential`.
+            In mmrazor, we aim to add more ptq algorithm into our pipeline such
+            as Adaround, these kind of ptq method have some additional
+            fake_quant  operations that we need it to be fused into our
+            `SUPPORT_QAT_MODULES` type, which is a tricky way to deal with it.
         """
 
         graph_module = _fuse_fx(
@@ -213,7 +216,7 @@ class NativeQuantizer(BaseQuantizer):
 
                     # `to_float()` function fuse BN into conv or conv_relu, and
                     # also convert a qat module to a normal module.
-                    # source url: torch.nn.intrinsic.qat.modules.conv_fused.py
+                    # source url: https://github.com/pytorch/pytorch/blob/master/torch/nn/intrinsic/qat/modules/conv_fused.py # noqa: E501
                     float_child = child.to_float()
 
                     # This is decided by backend type, some backend need
