@@ -89,13 +89,8 @@ class MMArchitectureQuant(BaseAlgorithm):
         statistics in observers and fake quantizers.
         """
         for module in model.modules():
-            if isinstance(module, MinMaxObserver):
+            if isinstance(module, (MinMaxObserver, PerChannelMinMaxObserver)):
                 module.reset_min_max_vals()
-            elif isinstance(module, PerChannelMinMaxObserver):
-                min_val = torch.rand(0, )
-                max_val = torch.rand(0, )
-                module.min_val.resize_(min_val.shape).copy_(min_val)
-                module.max_val.resize_(max_val.shape).copy_(max_val)
             elif isinstance(module, FakeQuantizeBase):
                 module.scale.data = torch.ones_like(module.scale)
                 module.zero_point.data = torch.zeros_like(module.zero_point)
