@@ -79,9 +79,9 @@ class MMArchitectureQuant(BaseAlgorithm):
         self.sync_qparams('predict')
 
     def sync_qparams(self, src_mode: str):
-        """Sync all quantize parameters in different `forward_modes`. We could 
-        have more than one forward mode to generate graphs, each mode will 
-        generate one graph. But in training, only one graph will be update, so 
+        """Sync all quantize parameters in different `forward_modes`. We could
+        have more than one forward mode to generate graphs, each mode will
+        generate one graph. But in training, only one graph will be update, so
         we need to sync qparams in the other graphs.
 
         Args:
@@ -221,7 +221,7 @@ class MMArchitectureQuantDDP(MMDistributedDataParallel):
 
     def sync_qparams(self, src: str):
         """Same as in 'MMArchitectureQuant'. Sync all quantize parameters in
-        different `forward_modes`. We could have several modes to generate 
+        different `forward_modes`. We could have several modes to generate
         graphs, but in training, only one graph will be update, so we need to
         sync qparams on the other graphs.
 
