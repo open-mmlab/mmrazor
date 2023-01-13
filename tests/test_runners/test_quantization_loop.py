@@ -15,7 +15,6 @@ from mmengine.model import BaseModel
 from mmengine.optim import OptimWrapper
 from mmengine.registry import DATASETS, HOOKS, METRICS, MODELS, OPTIM_WRAPPERS
 from mmengine.runner import Runner
-from torch.ao.quantization.qconfig_mapping import get_default_qconfig_mapping
 from torch.nn.intrinsic.qat import ConvBnReLU2d
 from torch.utils.data import Dataset
 
@@ -26,6 +25,8 @@ try:
     from torch.ao.quantization import QConfigMapping
     from torch.ao.quantization.fake_quantize import FakeQuantizeBase
     from torch.ao.quantization.fx import prepare
+    from torch.ao.quantization.qconfig_mapping import \
+        get_default_qconfig_mapping
     from torch.ao.quantization.quantize_fx import _fuse_fx
 except ImportError:
     from mmrazor.utils import get_placeholder
@@ -33,6 +34,7 @@ except ImportError:
     FakeQuantizeBase = get_placeholder('torch>=1.13')
     prepare = get_placeholder('torch>=1.13')
     _fuse_fx = get_placeholder('torch>=1.13')
+    get_default_qconfig_mapping = get_placeholder('torch>=1.13')
 
 from mmrazor import digit_version
 
