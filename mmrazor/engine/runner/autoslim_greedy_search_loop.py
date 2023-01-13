@@ -67,15 +67,16 @@ class AutoSlimGreedySearchLoop(TestLoop):
         else:
             self.model = runner.model
 
-        assert hasattr(self.model, 'mutator')
-        search_groups = self.model.mutator.search_groups
+        assert hasattr(self.model, 'search_space')
+        search_space = self.model.search_space
+
         self.candidate_choices = {}
-        for group_id, modules in search_groups.items():
-            self.candidate_choices[group_id] = modules[0].candidate_choices
+        for name, mutables in search_space.items():
+            self.candidate_choices[name] = mutables[0].candidate_choices
 
         self.max_subnet = {}
-        for group_id, candidate_choices in self.candidate_choices.items():
-            self.max_subnet[group_id] = len(candidate_choices)
+        for name, candidate_choices in self.candidate_choices.items():
+            self.max_subnet[name] = len(candidate_choices)
         self.current_subnet = self.max_subnet
 
         current_subnet_choices = self._channel_bins2choices(
@@ -106,7 +107,8 @@ class AutoSlimGreedySearchLoop(TestLoop):
                 continue
 
             while self.current_flops > target:
-                best_score, best_subnet = 0., None
+                best_score, best_subnet = None, None
+
                 for unit_name in sorted(self.current_subnet.keys()):
                     if self.current_subnet[unit_name] == 1:
                         # The number of channel_bin has reached the minimum
@@ -123,7 +125,7 @@ class AutoSlimGreedySearchLoop(TestLoop):
                     self.runner.logger.info(
                         f'Slimming unit {unit_name}, {self.score_key}: {score}'
                     )
-                    if score >= best_score:
+                    if best_score is None or score > best_score:
                         best_score = score
                         best_subnet = pruned_subnet
 
