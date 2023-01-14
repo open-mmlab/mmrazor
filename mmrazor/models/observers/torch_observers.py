@@ -12,7 +12,7 @@ try:
 except ImportError:
     from mmrazor.utils import get_package_placeholder
     torch_observer_src = get_package_placeholder('torch>=1.13')
-    UniformQuantizationObserverBase = get_package_placeholder('torch>=1.13')
+    PerChannelMinMaxObserver = get_package_placeholder('torch>=1.13')
 
 
 @torch.jit.export

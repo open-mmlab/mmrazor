@@ -22,6 +22,7 @@ from mmrazor.engine import (LSQEpochBasedLoop, PTQLoop, QATEpochBasedLoop,
                             QATValLoop)
 
 try:
+    from torch.ao.nn.quantized import FloatFunctional, FXFloatFunctional
     from torch.ao.quantization import QConfigMapping
     from torch.ao.quantization.fake_quantize import FakeQuantizeBase
     from torch.ao.quantization.fx import prepare
@@ -35,6 +36,8 @@ except ImportError:
     prepare = get_placeholder('torch>=1.13')
     _fuse_fx = get_placeholder('torch>=1.13')
     get_default_qconfig_mapping = get_placeholder('torch>=1.13')
+    FloatFunctional = get_placeholder('torch>=1.13')
+    FXFloatFunctional = get_placeholder('torch>=1.13')
 
 from mmrazor import digit_version
 
@@ -71,14 +74,14 @@ class MMArchitectureQuant(BaseModel):
 
         modules_to_swap = []
         for name, module in model.named_children():
-            if isinstance(module, torch.ao.nn.quantized.FloatFunctional):
+            if isinstance(module, FloatFunctional):
                 modules_to_swap.append(name)
             else:
                 self.swap_ff_with_fxff(module)
 
         for name in modules_to_swap:
             del model._modules[name]
-            model._modules[name] = torch.ao.nn.quantized.FXFloatFunctional()
+            model._modules[name] = FXFloatFunctional()
 
     def sync_qparams(self, src_mode):
         pass
