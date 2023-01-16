@@ -34,6 +34,8 @@ class ConvBNReLU(nn.Module):
                                       stride, padding, dilation, groups, bias,
                                       conv_cfg, norm_cfg, act_cfg, inplace,
                                       with_spectral_norm, padding_mode, order)
+        self.toy_attr1 = 1
+        self.toy_attr2 = 2
 
     def forward(self, x):
         x = self.conv_module.conv(x)

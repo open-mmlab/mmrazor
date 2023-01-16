@@ -3,6 +3,8 @@ from typing import Dict, Optional
 
 import torch
 
+from mmrazor.models.task_modules import build_graphmodule
+from mmrazor.models.utils import str2class
 from mmrazor.registry import MODELS
 from mmrazor.structures.quantization import BackendConfigs, QConfigHandler
 from .base import BaseQuantizer
@@ -12,7 +14,6 @@ try:
     from torch.ao.quantization.fx.custom_config import (FuseCustomConfig,
                                                         PrepareCustomConfig)
     from torch.ao.quantization.qconfig_mapping import QConfigMapping
-    from torch.ao.quantization.quant_type import _quant_type_from_str
     from torch.ao.quantization.quantize_fx import _fuse_fx
 except ImportError:
     from mmrazor.utils import get_placeholder
@@ -20,14 +21,11 @@ except ImportError:
     FuseCustomConfig = get_placeholder('torch>=1.13')
     PrepareCustomConfig = get_placeholder('torch>=1.13')
     QConfigMapping = get_placeholder('torch>=1.13')
-    _quant_type_from_str = get_placeholder('torch>=1.13')
     _fuse_fx = get_placeholder('torch>=1.13')
 
 GLOBAL_DICT_KEY = '_global_'
 OBJECT_TYPE_DICT_KEY = 'object_type'
-MODULE_NAME_REGEX_DICT_KEY = 'module_name_regex'
 MODULE_NAME_DICT_KEY = 'module_name'
-MODULE_NAME_OBJECT_TYPE_ORDER_DICT_KEY = 'module_name_object_type_order'
 
 # keys can be used in `prepare_custom_config` of `AcademicQuantizer`.
 FLOAT_TO_OBSERVED_DICT_KEY = 'float_to_observed_custom_module_class'
@@ -51,13 +49,8 @@ class AcademicQuantizer(BaseQuantizer):
                 ``_global_`` : sets the global (default) qconfig
                 ``object_type`` : sets the qconfig for a given module type,
                     function, or method name
-                ``module_name_regex`` : sets the qconfig for modules matching
-                    the given regex string
                 ``module_name`` : sets the qconfig for modules matching the
                     given module name
-                ``module_name_object_type_order`` : sets the qconfig for
-                    modules matching a combination of the given module name,
-                    object type, and the index at which the module appears
         tracer (Dict): It can be used to trace the float model to generate the
             corresponding graph, which contributes to prepare for quantizing
             the float model with code-free. Default to
@@ -68,10 +61,10 @@ class AcademicQuantizer(BaseQuantizer):
                 ``float_to_observed_custom_module_class`` : a list of dict that
                     mapping from float module classes to observed module
                     classes, e.g.
-                    `[dict(FloatCustomModule=ObservedCustomModule)]`
+                    `[('FloatCustomModule', 'ObservedCustomModule')]`
                 ``preserved_attributes``: a list of attributes that persist
                     even if they are not used in ``forward``, e.g.
-                    `[attr1, attr2]`
+                    `['attr1', 'attr2']`
     """
 
     def __init__(self,
@@ -90,7 +83,7 @@ class AcademicQuantizer(BaseQuantizer):
         """The key of the corresponding backend config."""
         return 'academic'
 
-    def prepare(self, model, graph_module):
+    def prepare(self, model, concrete_args=None):
         """Prepare for quantizing model, which includes as follows:
 
         1. Swap floatfunctional with FXFloatFunctional;
@@ -102,6 +95,9 @@ class AcademicQuantizer(BaseQuantizer):
         step 3 and step 4 are implemented in
         :func:`~torch.ao.quantization.fx.prepare`
         """
+        self.swap_ff_with_fxff(model)
+        traced_graph = self.tracer.trace(model, concrete_args=concrete_args)
+        graph_module = build_graphmodule(model, traced_graph)
         preserved_attributes = self.prepare_custom_config.preserved_attributes
         for attr_name in preserved_attributes:
             setattr(graph_module, attr_name, getattr(model, attr_name))
@@ -135,24 +131,16 @@ class AcademicQuantizer(BaseQuantizer):
             qconfig = QConfigHandler(
                 qconfig_mapping[GLOBAL_DICT_KEY]).convert()
             conf.set_global(qconfig)
+
         for object_type, qconfig in qconfig_mapping.get(
                 OBJECT_TYPE_DICT_KEY, []):
-            qconfig = QConfigHandler(qconfig).convert()
-            conf.set_object_type(object_type, qconfig)
+            qconfig = QConfigHander(qconfig).convert()
+            conf.set_object_type(str2class(object_type), qconfig)
 
-        for module_name_regex, qconfig in qconfig_mapping.get(
-                MODULE_NAME_REGEX_DICT_KEY, []):
-            qconfig = QConfigHandler(qconfig).convert()
-            conf.set_module_name_regex(module_name_regex, qconfig)
         for module_name, qconfig in qconfig_mapping.get(
                 MODULE_NAME_DICT_KEY, []):
             qconfig = QConfigHandler(qconfig).convert()
             conf.set_module_name(module_name, qconfig)
-        for module_name, object_type, index, qconfig in qconfig_mapping.get(
-                MODULE_NAME_OBJECT_TYPE_ORDER_DICT_KEY, []):
-            qconfig = QConfigHandler(qconfig).convert()
-            conf.set_module_name_object_type_order(module_name, object_type,
-                                                   index, qconfig)
 
         return conf
 
@@ -167,17 +155,11 @@ class AcademicQuantizer(BaseQuantizer):
         if prepare_custom_config is None:
             return conf
         else:
-            for quant_type_name, custom_module_mapping in \
-                prepare_custom_config.get(
-                    FLOAT_TO_OBSERVED_DICT_KEY, {}).items():
-                quant_type = _quant_type_from_str(quant_type_name)
-                mapping_items = custom_module_mapping.items()
-                for float_class_str, observed_class_str in mapping_items:
-                    float_class = MODELS.get(float_class_str)
-                    observed_class = MODELS.get(observed_class_str)
-                    conf.set_float_to_observed_mapping(float_class,
-                                                       observed_class,
-                                                       quant_type)
+            for float_class_str, observed_class_str in prepare_custom_config.get(  # noqa: E501
+                    FLOAT_TO_OBSERVED_DICT_KEY, []):
+                float_class = MODELS.get(float_class_str)
+                observed_class = MODELS.get(observed_class_str)
+                conf.set_float_to_observed_mapping(float_class, observed_class)
             conf.set_preserved_attributes(
                 prepare_custom_config.get(PRESERVED_ATTRIBUTES_DICT_KEY, []))
             return conf

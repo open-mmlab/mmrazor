@@ -8,7 +8,6 @@ from mmengine.runner import load_checkpoint
 from mmengine.structures import BaseDataElement
 from torch import nn
 
-from mmrazor.models.task_modules.tracer import build_graphmodule
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
 from ..base import BaseAlgorithm, BaseModel
 
@@ -156,20 +155,10 @@ class MMArchitectureQuant(BaseAlgorithm):
         """
 
         qmodels = nn.ModuleDict()
-
-        self.quantizer.swap_ff_with_fxff(model)
-        tracer = self.quantizer.tracer
-
         for mode in self.forward_modes:
             concrete_args = {'mode': mode}
-            traced_graph = tracer.trace(model, concrete_args=concrete_args)
-            graph_mopdule = build_graphmodule(model, traced_graph)
-            observed_module = self.quantizer.prepare(model, graph_mopdule)
+            observed_module = self.quantizer.prepare(model, concrete_args)
             qmodels[mode] = observed_module
-        # import pdb
-        # pdb.set_trace()
-        # dummy_input = torch.randn(self.input_shapes)
-        # qmodels['predict'](dummy_input, None, 'predict')
 
         return qmodels
 
