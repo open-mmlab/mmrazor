@@ -1,6 +1,14 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from torch.ao.quantization.backend_config import BackendConfig
+try:
+    from torch.ao.quantization.backend_config import BackendConfig
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    BackendConfig = get_placeholder('torch>=1.13')
 
+import pytest
+import torch
+
+from mmrazor import digit_version
 from mmrazor.structures.quantization.backend_config import (
     BackendConfigs, get_academic_backend_config,
     get_academic_backend_config_dict, get_native_backend_config,
@@ -9,7 +17,11 @@ from mmrazor.structures.quantization.backend_config import (
     get_tensorrt_backend_config_dict)
 
 
+@pytest.mark.skipif(
+    digit_version(torch.__version__) < digit_version('1.13.0'),
+    reason='version of torch < 1.13.0')
 def test_get_backend_config():
+
     # test get_native_backend_config
     native_backend_config = get_native_backend_config()
     assert isinstance(native_backend_config, BackendConfig)
@@ -39,7 +51,11 @@ def test_get_backend_config():
     assert isinstance(tensorrt_backend_config_dict, dict)
 
 
+@pytest.mark.skipif(
+    digit_version(torch.__version__) < digit_version('1.13.0'),
+    reason='version of torch < 1.13.0')
 def test_backendconfigs_mapping():
+
     mapping = BackendConfigs
     assert isinstance(mapping, dict)
     assert 'academic' in mapping.keys()

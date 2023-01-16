@@ -18,7 +18,7 @@ from .common_operator_config_utils import (_get_conv_configs,
 
 def get_academic_backend_config() -> BackendConfig:
     """Return the `BackendConfig` for academic reseaching.
-    
+
     Note:
         Learn more about BackendConfig, please refer to:
         https://github.com/pytorch/pytorch/tree/master/torch/ao/quantization/backend_config # noqa: E501
