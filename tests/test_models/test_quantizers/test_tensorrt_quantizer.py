@@ -1,34 +1,56 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import os
+import shutil
+import tempfile
+from copy import copy
 from unittest import TestCase
 
-import torch.nn as nn
+import torch
+from torch.ao.quantization.fx.graph_module import ObservedGraphModule
+
+from mmrazor.models.quantizers import TensorRTQuantizer
+from mmrazor.testing import ConvBNReLU
 
 
-class ToyModel(nn.Module):
+class TestTensorRTQuantizer(TestCase):
 
-    def __init__(self) -> None:
-        super().__init__()
-        # TODO
+    def setUp(self):
+        self.global_qconfig = dict(
+            w_observer=dict(type='mmrazor.PerChannelMinMaxObserver'),
+            a_observer=dict(type='mmrazor.MinMaxObserver'),
+            w_fake_quant=dict(type='mmrazor.FakeQuantize'),
+            a_fake_quant=dict(type='mmrazor.FakeQuantize'),
+            w_qscheme=dict(qdtype='qint8', bit=8, is_symmetry=True),
+            a_qscheme=dict(qdtype='quint8', bit=8, is_symmetry=True),
+        )
+        self.temp_dir = tempfile.mkdtemp()
+        self.model = ConvBNReLU(3, 3, norm_cfg=dict(type='BN'))
 
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
 
-class TestTRTQuantizer(TestCase):
-    """TODO.
+    def test_property(self):
+        global_qconfig = copy(self.global_qconfig)
+        quantizer = TensorRTQuantizer(global_qconfig=global_qconfig)
+        assert quantizer.backend == 'tensorrt'
+        assert quantizer.support_w_modes == ('per_tensor', 'per_channel')
+        assert quantizer.support_a_modes == ('per_tensor')
 
-    Args:
-        TestCase (_type_): _description_
-    """
+    def test_prepare_for_mmdeploy(self):
+        global_qconfig = copy(self.global_qconfig)
+        quantizer = TensorRTQuantizer(global_qconfig=global_qconfig)
+        model = copy(self.model)
 
-    def test_init(self):
-        pass
+        # test checkpoint is None
+        prepared_deploy = quantizer.prepare_for_mmdeploy(model=model)
+        assert isinstance(prepared_deploy, ObservedGraphModule)
 
-    def test_prepare(self):
-        pass
-
-    def test_convert(self):
-        pass
-
-    def test_states(self):
-        pass
-
-    def test_forward(self):
-        pass
+        # test checkpoint is not None
+        ckpt_path = os.path.join(self.temp_dir,
+                                 'test_prepare_for_mmdeploy.pth')
+        model = copy(self.model)
+        prepared = quantizer.prepare(model)
+        torch.save({'state_dict': prepared.state_dict()}, ckpt_path)
+        prepared_deploy = quantizer.prepare_for_mmdeploy(
+            model=model, checkpoint=ckpt_path)
+        assert isinstance(prepared_deploy, ObservedGraphModule)

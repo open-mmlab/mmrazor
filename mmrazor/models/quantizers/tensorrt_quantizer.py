@@ -9,8 +9,6 @@ except ImportError:
     from mmrazor.utils import get_placeholder
     disable_observer = get_placeholder('torch>=1.13')
 
-from mmrazor.models.task_modules.tracer.fx.custom_tracer import \
-    build_graphmodule
 from mmrazor.registry import MODELS
 from .native_quantizer import NativeQuantizer
 
@@ -24,8 +22,8 @@ class TensorRTQuantizer(NativeQuantizer):
     match the backend's features in quantization.
 
     TensorRT's some important features about quantization is as follows:
-    * support_w_mode = ['per_tensor', 'per_channel']
-    * support_a_mode = ['per_tensor']
+    * support_w_mode = ('per_tensor', 'per_channel')
+    * support_a_mode = ('per_tensor')
     """
 
     @property
@@ -38,13 +36,13 @@ class TensorRTQuantizer(NativeQuantizer):
     def support_w_modes(self):
         """Supported quantization modes for weight about per_tensor or
         per_channel."""
-        return ['per_tensor', 'per_channel']
+        return ('per_tensor', 'per_channel')
 
     @property
     def support_a_modes(self):
         """Supported quantization modes for activation about per_tensor or
         per_channel."""
-        return ['per_tensor']
+        return ('per_tensor')
 
     def prepare_for_mmdeploy(self,
                              model: torch.nn.Module,
@@ -59,11 +57,7 @@ class TensorRTQuantizer(NativeQuantizer):
         3. post process weight fakequant for exporting .onnx that meet
         the backend's requirement.
         """
-
-        self.swap_ff_with_fxff(model)
-        graph = self.tracer.trace(model)
-        graph_module = build_graphmodule(model, graph)
-        observed_model = self.prepare(model, graph_module)
+        observed_model = self.prepare(model)
         if dummy_input is not None:
             observed_model(torch.randn(dummy_input))
         if checkpoint is not None:

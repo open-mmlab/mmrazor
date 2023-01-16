@@ -25,7 +25,7 @@ class BaseQuantizer(BaseModule):
         self.tracer = TASK_UTILS.build(tracer)
 
     @abstractmethod
-    def prepare(self, model, graph_module):
+    def prepare(self, model):
         """Prepare for quantizing model, which usually includes as follows:
 
         1. Swap floatfunctional with FXFloatFunctional;

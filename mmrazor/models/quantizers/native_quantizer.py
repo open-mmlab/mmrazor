@@ -147,8 +147,8 @@ class NativeQuantizer(BaseQuantizer):
     def support_a_modes(self):
         """tmp."""
         return ['per_tensor']
-
-    def prepare(self, model, graph_module):
+        
+    def prepare(self, model, concrete_args=None):
         """prepare graph to ObservedGraphModule.
 
         Args:
@@ -170,7 +170,9 @@ class NativeQuantizer(BaseQuantizer):
             fake_quant  operations that we need it to be fused into our
             `SUPPORT_QAT_MODULES` type, which is a tricky way to deal with it.
         """
-
+        self.swap_ff_with_fxff(model)
+        traced_graph = self.tracer.trace(model, concrete_args=concrete_args)
+        graph_module = build_graphmodule(model, traced_graph)
         graph_module = _fuse_fx(
             graph_module=graph_module,
             is_qat=True,
