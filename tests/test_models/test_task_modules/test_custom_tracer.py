@@ -16,9 +16,10 @@ except ImportError:
     Graph = get_placeholder('torch>=1.13')
 
 from mmrazor import digit_version
-from mmrazor.models.task_modules import (CustomTracer, UntracedMethodRegistry,
-                                         build_graphmodule,
-                                         custom_symbolic_trace)
+from mmrazor.models.task_modules.tracer import (CustomTracer,
+                                                UntracedMethodRegistry,
+                                                build_graphmodule,
+                                                custom_symbolic_trace)
 from mmrazor.models.task_modules.tracer.fx.custom_tracer import \
     _prepare_module_dict
 
