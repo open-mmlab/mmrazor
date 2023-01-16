@@ -154,8 +154,6 @@ def export_fix_subnet(
         raise ValueError(f'Invalid export_subnet_mode {export_subnet_mode}, '
                          'only mutable or mutator is supported.')
 
-    load_fix_subnet(static_model, fix_subnet)
-
     if slice_weight:
         # export subnet ckpt
         print_log('Exporting fixed subnet weight')
