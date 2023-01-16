@@ -20,8 +20,12 @@ from .common_operator_config_utils import (  # noqa: F401,F403
 
 
 def get_native_backend_config() -> BackendConfig:
-    """Return the `BackendConfig` for PyTorch Native backend
-    (fbgemm/qnnpack)."""
+    """Return the `BackendConfig` for PyTorch Native backend (fbgemm/qnnpack).
+
+    Note:
+        Learn more about BackendConfig, please refer to:
+        https://github.com/pytorch/pytorch/tree/master/torch/ao/quantization/backend_config # noqa: E501
+    """
     # TODO: express this BackendConfig as a union of the FBGEMM and QNNPACK
     # BackendConfigs
 

@@ -20,7 +20,12 @@ from .common_operator_config_utils import (_get_binary_op_configs,
 
 
 def get_tensorrt_backend_config() -> BackendConfig:
-    """Return the `BackendConfig` for the TensorRT backend."""
+    """Return the `BackendConfig` for the TensorRT backend.
+
+    Note:
+        Learn more about BackendConfig, please refer to:
+        https://github.com/pytorch/pytorch/tree/master/torch/ao/quantization/backend_config # noqa: E501
+    """
     # dtype configs
     weighted_op_qint8_dtype_config = DTypeConfig(
         input_dtype=torch.qint8,
