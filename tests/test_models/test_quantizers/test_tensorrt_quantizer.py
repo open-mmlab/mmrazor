@@ -6,8 +6,14 @@ from copy import copy
 from unittest import TestCase
 
 import torch
-from torch.ao.quantization.fx.graph_module import ObservedGraphModule
 
+try:
+    from torch.ao.quantization.fx.graph_module import ObservedGraphModule
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    ObservedGraphModule = get_placeholder('torch>=1.13')
+
+from mmrazor import digit_version
 from mmrazor.models.quantizers import TensorRTQuantizer
 from mmrazor.testing import ConvBNReLU
 
@@ -15,6 +21,9 @@ from mmrazor.testing import ConvBNReLU
 class TestTensorRTQuantizer(TestCase):
 
     def setUp(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         self.global_qconfig = dict(
             w_observer=dict(type='mmrazor.PerChannelMinMaxObserver'),
             a_observer=dict(type='mmrazor.MinMaxObserver'),
@@ -27,9 +36,15 @@ class TestTensorRTQuantizer(TestCase):
         self.model = ConvBNReLU(3, 3, norm_cfg=dict(type='BN'))
 
     def tearDown(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         shutil.rmtree(self.temp_dir)
 
     def test_property(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         global_qconfig = copy(self.global_qconfig)
         quantizer = TensorRTQuantizer(global_qconfig=global_qconfig)
         assert quantizer.backend == 'tensorrt'
@@ -37,6 +52,9 @@ class TestTensorRTQuantizer(TestCase):
         assert quantizer.support_a_modes == ('per_tensor')
 
     def test_prepare_for_mmdeploy(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         global_qconfig = copy(self.global_qconfig)
         quantizer = TensorRTQuantizer(global_qconfig=global_qconfig)
         model = copy(self.model)

@@ -2,14 +2,26 @@
 from copy import copy
 from unittest import TestCase
 
+import torch
 from mmengine.model import BaseModule
-from torch.ao.nn.intrinsic import ConvBnReLU2d
-from torch.ao.quantization.backend_config import BackendConfig
-from torch.ao.quantization.fx.custom_config import PrepareCustomConfig
-from torch.ao.quantization.fx.graph_module import ObservedGraphModule
-from torch.ao.quantization.qconfig_mapping import QConfigMapping
-from torch.ao.quantization.quant_type import QuantType
 
+try:
+    from torch.ao.nn.intrinsic import ConvBnReLU2d
+    from torch.ao.quantization.backend_config import BackendConfig
+    from torch.ao.quantization.fx.custom_config import PrepareCustomConfig
+    from torch.ao.quantization.fx.graph_module import ObservedGraphModule
+    from torch.ao.quantization.qconfig_mapping import QConfigMapping
+    from torch.ao.quantization.quant_type import QuantType
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    ConvBnReLU2d = get_placeholder('torch>=1.13')
+    BackendConfig = get_placeholder('torch>=1.13')
+    PrepareCustomConfig = get_placeholder('torch>=1.13')
+    ConObservedGraphModuleBnReLU2d = get_placeholder('torch>=1.13')
+    QConfigMapping = get_placeholder('torch>=1.13')
+    QuantType = get_placeholder('torch>=1.13')
+
+from mmrazor import digit_version
 from mmrazor.models.quantizers import AcademicQuantizer
 from mmrazor.models.quantizers.academic_quantizer import (
     FLOAT_TO_OBSERVED_DICT_KEY, GLOBAL_DICT_KEY, MODULE_NAME_DICT_KEY,
@@ -35,6 +47,9 @@ class ToyObservedModel(BaseModule):
 class TestAcademicQuantizer(TestCase):
 
     def setUp(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         self.global_qconfig = dict(
             w_observer=dict(type='mmrazor.PerChannelMinMaxObserver'),
             a_observer=dict(type='mmrazor.MinMaxObserver'),
@@ -54,6 +69,9 @@ class TestAcademicQuantizer(TestCase):
         self.model = ConvBNReLU(3, 3, norm_cfg=dict(type='BN'))
 
     def test_gen_qconfig_mapping(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         # test set GLOBAL_DICT_KEY by QConfigMapping
         global_qconfig = copy(self.global_qconfig)
         qconfig_mapping = {GLOBAL_DICT_KEY: global_qconfig}
@@ -85,6 +103,9 @@ class TestAcademicQuantizer(TestCase):
             'conv_module.conv')
 
     def test_gen_prepare_custom_config(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         # test prepare_custom_config is None
         global_qconfig = copy(self.global_qconfig)
         qconfig_mapping = {GLOBAL_DICT_KEY: global_qconfig}
@@ -117,6 +138,9 @@ class TestAcademicQuantizer(TestCase):
         assert attributes == preserved_attributes_list
 
     def test_init(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         global_qconfig = copy(self.global_qconfig)
         qconfig_mapping = {GLOBAL_DICT_KEY: global_qconfig}
         quantizer = AcademicQuantizer(qconfig_mapping=qconfig_mapping)
@@ -124,6 +148,9 @@ class TestAcademicQuantizer(TestCase):
         assert isinstance(quantizer.backend_config, BackendConfig)
 
     def test_prepare(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         global_qconfig = copy(self.global_qconfig)
         qconfig_mapping = {GLOBAL_DICT_KEY: global_qconfig}
         preserved_attributes_list = ['toy_attr1', 'toy_attr2']
