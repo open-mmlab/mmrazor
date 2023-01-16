@@ -1,13 +1,21 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from unittest import TestCase
 
-import torch.nn as nn
+import pytest
+import torch
 from mmcls.models.backbones.resnet import ResLayer
 from mmengine.config import Config
 from mmengine.registry import MODELS
-from torch.fx import GraphModule
-from torch.fx._symbolic_trace import Graph
 
+try:
+    from torch.fx import GraphModule
+    from torch.fx._symbolic_trace import Graph
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    GraphModule = get_placeholder('torch>=1.13')
+    Graph = get_placeholder('torch>=1.13')
+
+from mmrazor import digit_version
 from mmrazor.models.task_modules import (CustomTracer, UntracedMethodRegistry,
                                          build_graphmodule,
                                          custom_symbolic_trace)
@@ -15,7 +23,7 @@ from mmrazor.models.task_modules.tracer.fx.custom_tracer import \
     _prepare_module_dict
 
 
-class ToyModel(nn.Module):
+class ToyModel(torch.nn.Module):
 
     def __init__(self):
         super.__init__()
@@ -35,6 +43,9 @@ class ToyModel(nn.Module):
 class testUntracedMethodRgistry(TestCase):
 
     def test_init(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         method = ToyModel.get_loss
         method_registry = UntracedMethodRegistry(method)
         assert hasattr(method_registry, 'method')
@@ -42,6 +53,9 @@ class testUntracedMethodRgistry(TestCase):
         assert len(method_registry.method_dict) == 0
 
     def test_registry_method(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         model = ToyModel
         method = ToyModel.get_loss
         method_registry = UntracedMethodRegistry(method)
@@ -63,6 +77,9 @@ class testCustomTracer(TestCase):
         self.skipped_module_classes = [ResLayer]
 
     def test_init(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         # init without skipped_methods
         tracer = CustomTracer()
         assert hasattr(tracer, 'skipped_methods')
@@ -84,6 +101,9 @@ class testCustomTracer(TestCase):
             CustomTracer(skipped_methods='_get_loss')
 
     def test_trace(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
         # test trace with skipped_methods
         model = MODELS.build(self.cfg.model)
         UntracedMethodRegistry.method_dict = dict()
@@ -129,6 +149,9 @@ class testCustomTracer(TestCase):
         assert skip_flag
 
 
+@pytest.mark.skipif(
+    digit_version(torch.__version__) < digit_version('1.13.0'),
+    reason='version of torch < 1.13.0')
 def test_custom_symbolic_trace():
     cfg = Config.fromfile(
         'tests/data/test_models/test_task_modules/mmcls_cfg.py')
@@ -139,6 +162,9 @@ def test_custom_symbolic_trace():
     assert isinstance(graph_module, GraphModule)
 
 
+@pytest.mark.skipif(
+    digit_version(torch.__version__) < digit_version('1.13.0'),
+    reason='version of torch < 1.13.0')
 def test_build_graphmodule():
     skipped_methods = ['mmcls.models.heads.ClsHead._get_predictions']
     cfg = Config.fromfile(
@@ -154,5 +180,5 @@ def test_build_graphmodule():
     modules = dict(model.named_modules())
     module_dict = _prepare_module_dict(model, graph_predict)
     for k, v in module_dict.items():
-        assert isinstance(v, nn.Module)
+        assert isinstance(v, torch.nn.Module)
         assert not isinstance(v, modules[k].__class__)
