@@ -140,24 +140,23 @@ def export_fix_subnet(
         static_model (Optional[Dict]): Exported static model state_dict.
             Valid when `slice_weight`=True.
     """
-
-    static_model = copy.deepcopy(model)
-
     fix_subnet = dict()
     if export_subnet_mode == 'mutable':
-        fix_subnet = _export_subnet_by_mutable(static_model)
+        fix_subnet = _export_subnet_by_mutable(model)
     elif export_subnet_mode == 'mutator':
-        fix_subnet = _export_subnet_by_mutator(static_model)
+        fix_subnet = _export_subnet_by_mutator(model)
     else:
         raise ValueError(f'Invalid export_subnet_mode {export_subnet_mode}, '
                          'only mutable or mutator is supported.')
 
     if slice_weight:
         # export subnet ckpt
-        _dynamic_to_static(static_model)
-        if next(static_model.parameters()).is_cuda:
-            static_model.cuda()
-        return fix_subnet, static_model
+        copied_model = copy.deepcopy(model)
+        load_fix_subnet(
+            copied_model, fix_subnet, load_subnet_mode=export_subnet_mode)
+        if next(copied_model.parameters()).is_cuda:
+            copied_model.cuda()
+        return fix_subnet, copied_model
     else:
         return fix_subnet, None
 
