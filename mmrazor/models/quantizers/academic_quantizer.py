@@ -3,7 +3,7 @@ from typing import Dict, Optional
 
 import torch
 
-from mmrazor.models.task_modules import build_graphmodule
+from mmrazor.models.task_modules.tracer import build_graphmodule
 from mmrazor.models.utils import str2class
 from mmrazor.registry import MODELS
 from mmrazor.structures.quantization import BackendConfigs, QConfigHandler
