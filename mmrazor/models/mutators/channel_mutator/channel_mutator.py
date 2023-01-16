@@ -26,7 +26,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
                 channel_unit_cfg = dict(
                     # type of used MutableChannelUnit
                     type ='XxxMutableChannelUnit',
-                    # default args for MutableChananelUnit
+                    # default args for MutableChannelUnit
                     default_args={},
                     units = {
                         # config of a unit

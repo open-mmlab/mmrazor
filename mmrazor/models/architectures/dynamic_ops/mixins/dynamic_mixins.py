@@ -79,7 +79,7 @@ class DynamicMixin(ABC):
 
         def check_fixed(mutable: Optional[BaseMutable]) -> None:
             if mutable is not None and not mutable.is_fixed:
-                raise RuntimeError(f'Mutable {type(mutable)} is not fixed.')
+                raise RuntimeError(f'Mutable `{mutable.alias}` is not fixed.')
 
         for mutable in self.mutable_attrs.values():  # type: ignore
             if isinstance(mutable, (MutableChannelContainer, DerivedMutable)):
