@@ -26,13 +26,13 @@ model = dict(
     type='mmrazor.MMArchitectureQuant',
     architecture=_base_.model,
     float_checkpoint=float_checkpoint,
-    type='mmrazor.OpenVINOQuantizer',
-    global_qconfig=global_qconfig,
-    tracer=dict(
-        type='mmrazor.CustomTracer',
-        skipped_methods=[
-            'mmcls.models.heads.ClsHead._get_loss',
-            'mmcls.models.heads.ClsHead._get_predictions'
-        ]))
-
+    quantizer=dict(
+        type='mmrazor.OpenVINOQuantizer',
+        global_qconfig=global_qconfig,
+        tracer=dict(
+            type='mmrazor.CustomTracer',
+            skipped_methods=[
+                'mmcls.models.heads.ClsHead._get_loss',
+                'mmcls.models.heads.ClsHead._get_predictions'
+            ])))
 model_wrapper_cfg = dict(type='mmrazor.MMArchitectureQuantDDP', )
