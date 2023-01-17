@@ -74,7 +74,7 @@ class UntracedMethodRegistry:
         return wrapped_method
 
 
-def _prepare_module_dict(model: torch.nn.Module, fx_graph: torch.fx.Graph):
+def _prepare_module_dict(model: torch.nn.Module, fx_graph):
     """If there is a class method that can not be traced by the symbolic
     tracer, a ``call_method`` ``Node`` will be inserted into the ``Graph`` in
     ``CustomTracer``.
@@ -153,7 +153,7 @@ def _prepare_module_dict(model: torch.nn.Module, fx_graph: torch.fx.Graph):
 
 
 def build_graphmodule(model: torch.nn.Module,
-                      fx_graph: torch.fx.Graph,
+                      fx_graph,
                       name: str = 'GraphModule'):
     """To build GraphModule with the generated graph by CustomTracer. The
     implement of skipping methods in CustomTracer will cause the confliction of
