@@ -23,7 +23,7 @@ model = dict(
                 mode='original',
                 loss_weight=1.0),
             topk=(1, 5))),
-    mutator=dict(type='mmrazor.DiffModuleMutator'),
+    mutator=dict(type='mmrazor.NasMutator'),
     pretrain_epochs=15,
     finetune_epochs=_base_.search_epochs,
 )

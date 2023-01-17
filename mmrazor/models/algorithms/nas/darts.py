@@ -12,8 +12,10 @@ from torch.nn.modules.batchnorm import _BatchNorm
 from mmrazor.models.mutators import NasMutator
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
-from mmrazor.utils import FixMutable
+from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm
+
+VALID_MUTATOR_TYPE = Union[NasMutator, Dict]
 
 
 @MODELS.register_module()
@@ -27,27 +29,23 @@ class Darts(BaseAlgorithm):
     Args:
         architecture (dict|:obj:`BaseModel`): The config of :class:`BaseModel`
             or built model. Corresponding to supernet in NAS algorithm.
-        mutator (dict|:obj:`DiffModuleMutator`): The config of
-            :class:`DiffModuleMutator` or built mutator.
+        mutator (VALID_MUTATOR_TYPE): The config of :class:`NasMutator` or
+            built mutator.
         fix_subnet (str | dict | :obj:`FixSubnet`): The path of yaml file or
             loaded dict or built :obj:`FixSubnet`.
         norm_training (bool): Whether to set norm layers to training mode,
             namely, not freeze running stats (mean and var). Note: Effect on
             Batch Norm and its variants only. Defaults to False.
-        data_preprocessor (dict, optional): The pre-process config of
-            :class:`BaseDataPreprocessor`. Defaults to None.
-        init_cfg (dict): Init config for ``BaseModule``.
-
-    Note:
-        Darts has two training mode: supernet training and subnet retraining.
-        If `fix_subnet` is None, it means supernet training.
-        If `fix_subnet` is not None, it means subnet training.
+        data_preprocessor (Optional[Union[dict, nn.Module]]): The pre-process
+            config of :class:`BaseDataPreprocessor`. Defaults to None.
+        init_cfg (Optional[dict]): Init config for ``BaseModule``.
+            Defaults to None.
     """
 
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
-                 mutator: Union[NasMutator, Dict] = None,
-                 fix_subnet: Optional[FixMutable] = None,
+                 mutator: VALID_MUTATOR_TYPE = None,
+                 fix_subnet: Optional[ValidFixMutable] = None,
                  unroll: bool = False,
                  norm_training: bool = False,
                  data_preprocessor: Optional[Union[dict, nn.Module]] = None,
@@ -64,17 +62,7 @@ class Darts(BaseAlgorithm):
             load_fix_subnet(self.architecture, fix_subnet)
             self.is_supernet = False
         else:
-            assert mutator is not None, \
-                'mutator cannot be None when fix_subnet is None.'
-            if isinstance(mutator, NasMutator):
-                self.mutator = mutator
-            elif isinstance(mutator, dict):
-                self.mutator = MODELS.build(mutator)
-            else:
-                raise TypeError('mutator should be a `dict` or '
-                                f'`DiffModuleMutator` instance, but got '
-                                f'{type(mutator)}')
-
+            self.mutator = self._build_mutator(mutator)
             # Mutator is an essential component of the NAS algorithm. It
             # provides some APIs commonly used by NAS.
             # Before using it, you must do some preparation according to
@@ -85,6 +73,15 @@ class Darts(BaseAlgorithm):
 
         self.norm_training = norm_training
         self.unroll = unroll
+
+    def _build_mutator(self, mutator: VALID_MUTATOR_TYPE = None) -> NasMutator:
+        """Build mutator."""
+        if isinstance(mutator, dict):
+            mutator = MODELS.build(mutator)
+        if not isinstance(mutator, NasMutator):
+            raise TypeError('mutator should be a `dict` or `NasMutator` '
+                            f'instance, but got {type(mutator)}.')
+        return mutator
 
     def train(self, mode=True):
         """Convert the model into eval mode while keep normalization layer

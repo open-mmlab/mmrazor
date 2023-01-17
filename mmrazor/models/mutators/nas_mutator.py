@@ -6,7 +6,7 @@ import torch.nn as nn
 from mmengine.model import ModuleList
 from torch.nn import Module
 
-from mmrazor.models.mutables import BaseMutable, ChannelUnitType
+from mmrazor.models.mutables import BaseMutable
 from mmrazor.registry import MODELS
 from .base_mutator import MUTABLE_TYPE, BaseMutator
 from .group_mixin import GroupMixin
@@ -30,7 +30,7 @@ class NasMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
         if custom_groups is None:
             custom_groups = []
         self._custom_groups = custom_groups
-        self._search_groups: Dict[str, List[MUTABLE_TYPE]] = None
+        self._search_groups: Optional[Dict[str, List[MUTABLE_TYPE]]] = None
 
     def prepare_from_supernet(self, supernet: Module) -> None:
         """Do some necessary preparations with supernet.
@@ -45,8 +45,8 @@ class NasMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
         self._search_groups = dict()
 
         # prepare for channel mutables
-        self.units = self._prepare_from_predefined_model(supernet)
-        mutable_units = [unit for unit in self.units if unit.is_mutable]
+        units = self._prepare_from_predefined_model(supernet)
+        mutable_units = [unit for unit in units if unit.is_mutable]
 
         _channel_groups = dict()
         for id, unit in enumerate(ModuleList(mutable_units)):
@@ -54,7 +54,8 @@ class NasMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
         self._search_groups.update(_channel_groups)
 
         # prepare for value mutables
-        _value_groups = self.build_search_groups(supernet, self._custom_groups)
+        _value_groups: Dict[str, List[MUTABLE_TYPE]] = \
+            self.build_search_groups(supernet, self._custom_groups)
         self._search_groups.update(_value_groups)
 
     def prepare_arch_params(self):
@@ -94,7 +95,7 @@ class NasMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
         return self._search_groups
 
     @property
-    def arch_params(self) -> Dict[str, List[MUTABLE_TYPE]]:
+    def arch_params(self) -> nn.ParameterDict:
         """Search params of supernet.
 
         Note:
@@ -117,7 +118,7 @@ class NasMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
         mutable-channels."""
         from mmrazor.models.mutables import OneShotMutableChannelUnit
 
-        self._name2unit: Dict[str, ChannelUnitType] = {}
+        self._name2unit: Dict = {}
         units = OneShotMutableChannelUnit.init_from_predefined_model(model)
 
         for unit in units:
@@ -168,7 +169,7 @@ class NasMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
                 choice = choices[name]
 
             for mutable in mutables:
-                mutable.current_choice = choice
+                mutable.current_choice = choice  # type: ignore
 
     def fix_choices(self):
         """Fix choices."""

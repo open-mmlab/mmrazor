@@ -11,15 +11,14 @@ from torch import nn
 from mmrazor.models.architectures.ops.mobilenet_series import MBBlock
 from mmrazor.models.architectures.utils import set_dropout
 from mmrazor.models.distillers import ConfigurableDistiller
-from mmrazor.models.mutators.base_mutator import BaseMutator
+from mmrazor.models.mutators import NasMutator
 from mmrazor.models.utils import (add_prefix,
                                   reinitialize_optim_wrapper_count_status)
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
 from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm
 
-VALID_MUTATOR_TYPE = Union[BaseMutator, Dict]
-VALID_MUTATORS_TYPE = Dict[str, Union[BaseMutator, Dict]]
+VALID_MUTATOR_TYPE = Union[NasMutator, Dict]
 VALID_DISTILLER_TYPE = Union[ConfigurableDistiller, Dict]
 
 
@@ -42,8 +41,10 @@ class BigNAS(BaseAlgorithm):
     Args:
         architecture (dict|:obj:`BaseModel`): The config of :class:`BaseModel`
             or built model. Corresponding to supernet in NAS algorithm.
-        mutators (VALID_MUTATORS_TYPE): Configs to build different mutators.
-        distiller (VALID_DISTILLER_TYPE): Configs to build a distiller.
+        mutator (VALID_MUTATOR_TYPE): The config of :class:`NasMutator` or
+            built mutator.
+        distiller (VALID_DISTILLER_TYPE): Cfg of :class:`ConfigurableDistiller`
+            or built distiller.
         fix_subnet (str | dict | :obj:`FixSubnet`): The path of yaml file or
             loaded dict or built :obj:`FixSubnet`. Defaults to None.
         data_preprocessor (Optional[Union[dict, nn.Module]]): The pre-process
@@ -55,18 +56,12 @@ class BigNAS(BaseAlgorithm):
             [6, 7].
         init_cfg (Optional[dict]): Init config for ``BaseModule``.
             Defaults to None.
-
-    Note:
-        BigNAS uses two mutators which are ``DynamicValueMutator`` and
-        ``ChannelMutator``. `DynamicValueMutator` handle the mutable object
-        ``OneShotMutableValue`` in BigNAS while ChannelMutator handle
-        the mutable object ``OneShotMutableChannel`` in BigNAS.
     """
 
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
-                 mutator: VALID_MUTATORS_TYPE,
-                 distiller: VALID_DISTILLER_TYPE,
+                 mutator: VALID_MUTATOR_TYPE = None,
+                 distiller: VALID_DISTILLER_TYPE = None,
                  fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  num_random_samples: int = 2,
@@ -83,25 +78,11 @@ class BigNAS(BaseAlgorithm):
             load_fix_subnet(self, fix_subnet)
             self.is_supernet = False
         else:
-            if isinstance(mutator, dict):
-                mutator = MODELS.build(mutator)
-                mutator.prepare_from_supernet(self.architecture)
-                self.mutator = mutator
-                # for name, mutator_cfg in mutators.items():
-                #     if 'parse_cfg' in mutator_cfg and isinstance(
-                #             mutator_cfg['parse_cfg'], dict):
-                #         assert mutator_cfg['parse_cfg'][
-                #             'type'] == 'Predefined', \
-                #                 'BigNAS only support predefined.'
-                #     mutator: BaseMutator = MODELS.build(mutator_cfg)
-                #     built_mutators[name] = mutator
-                #     mutator.prepare_from_supernet(self.architecture)
-                # self.mutators = built_mutators
-            else:
-                raise TypeError('mutator should be a `dict` but got '
-                                f'{type(mutator)}')
+            self.mutator = self._build_mutator(mutator)
+            # NOTE: `mutator.prepare_from_supernet` must be called
+            # before distiller initialized.
+            self.mutator.prepare_from_supernet(self.architecture)
 
-            # self._build_search_space()
             self.distiller = self._build_distiller(distiller)
             self.distiller.prepare_from_teacher(self.architecture)
             self.distiller.prepare_from_student(self.architecture)
@@ -109,24 +90,26 @@ class BigNAS(BaseAlgorithm):
             self.sample_kinds = ['max', 'min']
             for i in range(num_random_samples):
                 self.sample_kinds.append('random' + str(i))
+
             self.is_supernet = True
 
         self.drop_path_rate = drop_path_rate
         self.backbone_dropout_stages = backbone_dropout_stages
         self._optim_wrapper_count_status_reinitialized = False
 
-    def _build_mutator(self, mutator: VALID_MUTATOR_TYPE) -> BaseMutator:
-        """build mutator."""
+    def _build_mutator(self, mutator: VALID_MUTATOR_TYPE = None) -> NasMutator:
+        """Build mutator."""
         if isinstance(mutator, dict):
             mutator = MODELS.build(mutator)
-        if not isinstance(mutator, BaseMutator):
-            raise TypeError('mutator should be a `dict` or '
-                            '`OneShotModuleMutator` instance, but got '
-                            f'{type(mutator)}')
+        if not isinstance(mutator, NasMutator):
+            raise TypeError('mutator should be a `dict` or `NasMutator` '
+                            f'instance, but got {type(mutator)}.')
         return mutator
 
     def _build_distiller(
-            self, distiller: VALID_DISTILLER_TYPE) -> ConfigurableDistiller:
+            self,
+            distiller: VALID_DISTILLER_TYPE = None) -> ConfigurableDistiller:
+        """Build distiller."""
         if isinstance(distiller, dict):
             distiller = MODELS.build(distiller)
         if not isinstance(distiller, ConfigurableDistiller):

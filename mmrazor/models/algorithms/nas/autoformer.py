@@ -6,14 +6,16 @@ from mmengine.model import BaseModel
 from mmengine.structures import BaseDataElement
 from torch import nn
 
+from mmrazor.models.mutators.base_mutator import BaseMutator
 from mmrazor.registry import MODELS
 from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm, LossResults
-from ..space_mixin import SpaceMixin
+
+VALID_MUTATOR_TYPE = Union[BaseMutator, Dict]
 
 
 @MODELS.register_module()
-class Autoformer(BaseAlgorithm, SpaceMixin):
+class Autoformer(BaseAlgorithm):
     """Implementation of `Autoformer <https://arxiv.org/abs/2107.00651>`_
 
     AutoFormer is dedicated to vision transformer search. AutoFormer
@@ -25,25 +27,19 @@ class Autoformer(BaseAlgorithm, SpaceMixin):
     Args:
         architecture (dict|:obj:`BaseModel`): The config of :class:`BaseModel`
             or built model. Corresponding to supernet in NAS algorithm.
-        mutators (Optional[dict]): The dict of different Mutators config.
-            Defaults to None.
+        mutator (VALID_MUTATOR_TYPE): The config of :class:`NasMutator` or
+            built mutator.
         fix_subnet (str | dict | :obj:`FixSubnet`): The path of yaml file or
             loaded dict or built :obj:`FixSubnet`. Defaults to None.
         data_preprocessor (Optional[Union[dict, nn.Module]]): The pre-process
             config of :class:`BaseDataPreprocessor`. Defaults to None.
         init_cfg (Optional[dict]): Init config for ``BaseModule``.
             Defaults to None.
-
-    Note:
-        Autoformer uses two mutators which are ``DynamicValueMutator`` and
-        ``ChannelMutator``. `DynamicValueMutator` handle the mutable object
-        ``OneShotMutableValue`` in Autoformer while ChannelMutator handle
-        the mutable object ``OneShotMutableChannel`` in Autoformer.
     """
 
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
-                 mutators: Optional[Dict] = None,
+                 mutator: VALID_MUTATOR_TYPE = None,
                  fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[dict, nn.Module]] = None,
                  init_cfg: Optional[dict] = None):
@@ -59,25 +55,19 @@ class Autoformer(BaseAlgorithm, SpaceMixin):
             load_fix_subnet(self.architecture, fix_subnet)
             self.is_supernet = False
         else:
-            assert mutators is not None, \
-                'mutator cannot be None when fix_subnet is None.'
-            if isinstance(mutators, dict):
-                built_mutators: Dict = dict()
-                for name, mutator_cfg in mutators.items():
-                    if 'parse_cfg' in mutator_cfg and isinstance(
-                            mutator_cfg['parse_cfg'], dict):
-                        assert mutator_cfg['parse_cfg'][
-                            'type'] == 'Predefined', \
-                                'autoformer only support predefined.'
-                    mutator = MODELS.build(mutator_cfg)
-                    built_mutators[name] = mutator
-                    mutator.prepare_from_supernet(self.architecture)
-                self.mutators = built_mutators
-            else:
-                raise TypeError('mutator should be a `dict` but got '
-                                f'{type(mutator)}')
-            self._build_search_space()
+            self.mutator = self._build_mutator(mutator)
+            self.mutator.prepare_from_supernet(self.architecture)
             self.is_supernet = True
+
+    def _build_mutator(self,
+                       mutator: VALID_MUTATOR_TYPE = None) -> BaseMutator:
+        """build mutator."""
+        if isinstance(mutator, dict):
+            mutator = MODELS.build(mutator)
+        if not isinstance(mutator, BaseMutator):
+            raise TypeError('mutator should be a `dict` or `NasMutator` '
+                            f'instance, but got {type(mutator)}.')
+        return mutator
 
     def loss(
         self,
@@ -86,5 +76,5 @@ class Autoformer(BaseAlgorithm, SpaceMixin):
     ) -> LossResults:
         """Calculate losses from a batch of inputs and data samples."""
         if self.is_supernet:
-            self.set_subnet(self.sample_subnet())
+            self.mutator.set_choices(self.mutator.sample_choices())
         return self.architecture(batch_inputs, data_samples, mode='loss')

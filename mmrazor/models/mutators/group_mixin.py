@@ -6,13 +6,13 @@ from torch.nn import Module
 
 from mmrazor.models.mutables import MutableValue
 from mmrazor.models.mutables.mutable_module import MutableModule
-from ..mutables import BaseMutable
+from .base_mutator import MUTABLE_TYPE
 
 
 class GroupMixin():
     """A mixin for :class:`BaseMutator`, which can group mutables by
     ``custom_group`` and ``alias``(see more information in
-    :class:`BaseMutable`). Grouping by alias and module name are both
+    :class:`MUTABLE_TYPE`). Grouping by alias and module name are both
     supported.
 
     Note:
@@ -71,9 +71,9 @@ class GroupMixin():
         return False
 
     def _build_name_mutable_mapping(
-            self, supernet: Module) -> Dict[str, BaseMutable]:
+            self, supernet: Module) -> Dict[str, MUTABLE_TYPE]:
         """Mapping module name to mutable."""
-        name2mutable: Dict[str, BaseMutable] = dict()
+        name2mutable: Dict[str, MUTABLE_TYPE] = dict()
         for name, module in supernet.named_modules():
             if self.is_supported_mutable(module):
                 name2mutable[name] = module
@@ -110,11 +110,12 @@ class GroupMixin():
 
         return alias2mutable_names
 
-    def build_search_groups(self, supernet: Module,
-                            custom_groups: List[List[str]]) -> Dict[int, List]:
+    def build_search_groups(
+            self, supernet: Module,
+            custom_groups: List[List[str]]) -> Dict[str, List[MUTABLE_TYPE]]:
         """Build search group with ``custom_group`` and ``alias``(see more
-        information in :class:`BaseMutable`). Grouping by alias and module name
-        are both supported.
+        information in :class:`MUTABLE_TYPE`). Grouping by alias and module
+        name are both supported.
 
         Args:
             supernet (:obj:`torch.nn.Module`): The supernet to be searched
@@ -123,9 +124,13 @@ class GroupMixin():
             custom_group (list, optional): User-defined search groups.
                 All searchable modules that are not in ``custom_group`` will be
                 grouped separately.
+
+        Return:
+            search_groups (Dict[str, List[MUTABLE_TYPE]]): The built
+                search_groups.
         """
         name2mutable: Dict[
-            str, BaseMutable] = self._build_name_mutable_mapping(supernet)
+            str, MUTABLE_TYPE] = self._build_name_mutable_mapping(supernet)
         alias2mutable_names = self._build_alias_names_mapping(supernet)
 
         # Check whether the custom group is valid
@@ -134,7 +139,7 @@ class GroupMixin():
                                      custom_groups)
 
         # Construct search_groups based on user-defined group
-        search_groups: Dict[int, List[BaseMutable]] = dict()
+        search_groups: Dict[str, List[MUTABLE_TYPE]] = dict()
 
         current_group_nums = 0
         grouped_mutable_names: List[str] = list()
@@ -187,7 +192,7 @@ class GroupMixin():
                 if name in grouped_mutable_names:
                     continue
                 else:
-                    prefix = name2mutable[mutable_names[0]].mutable_prefix
+                    prefix = module.mutable_prefix
                     group_name = prefix + '_' + str(current_group_nums)
                     search_groups[group_name] = [module]
                     current_group_nums += 1
@@ -197,8 +202,7 @@ class GroupMixin():
                         if name in grouped_mutable_names:
                             continue
                         else:
-                            prefix = \
-                                name2mutable[mutable_names[0]].mutable_prefix
+                            prefix = each_mutable.mutable_prefix
                             group_name = prefix + '_' + str(current_group_nums)
                             search_groups[group_name] = [each_mutable]
                             current_group_nums += 1
@@ -220,7 +224,7 @@ class GroupMixin():
         return search_groups
 
     def _check_valid_groups(self, alias2mutable_names: Dict[str, List[str]],
-                            name2mutable: Dict[str, BaseMutable],
+                            name2mutable: Dict[str, MUTABLE_TYPE],
                             custom_group: List[List[str]]) -> None:
         """Check if all keys are legal."""
         aliases = [*alias2mutable_names.keys()]

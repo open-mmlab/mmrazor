@@ -22,7 +22,7 @@ model = dict(
             loss=dict(type='CrossEntropyLoss', loss_weight=1.0),
             topk=(1, 5),
             cal_acc=True)),
-    mutator=dict(type='mmrazor.DiffModuleMutator'),
+    mutator=dict(type='mmrazor.NasMutator'),
     unroll=True)
 
 model_wrapper_cfg = dict(

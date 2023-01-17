@@ -102,7 +102,8 @@ class TestBigNAS(TestCase):
         ALGORITHM_CFG_SUPERNET['mutator'] = None
         none_type = type(ALGORITHM_CFG_SUPERNET['mutator'])
         with self.assertRaisesRegex(
-                TypeError, f'mutator should be a `dict` but got {none_type}'):
+                TypeError, 'mutator should be a `dict` or `NasMutator` '
+                f'instance, but got {none_type}.'):
             _ = BigNAS(**ALGORITHM_CFG_SUPERNET)
 
     def test_loss(self):
