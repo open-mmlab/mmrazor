@@ -1,17 +1,23 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
+import torch.nn as nn
+from mmengine.config import Config
 
 try:
     from torch.ao.quantization import enable_fake_quant
     from torch.ao.quantization.fx import prepare
+    from torch.ao.quantization.fx.graph_module import ObservedGraphModule
     from torch.ao.quantization.qconfig_mapping import QConfigMapping
     from torch.ao.quantization.quantize_fx import _fuse_fx
+    from torch.fx.graph_module import GraphModule
     from torch.nn.intrinsic.qat import modules as qat_fused_modules
     from torch.nn.qat import modules as qat_modules
 except ImportError:
     from mmrazor.utils import get_package_placeholder, get_placeholder
+    GraphModule = get_placeholder('torch>=1.13')
+    ObservedGraphModule = get_placeholder('torch>=1.13')
     enable_fake_quant = get_placeholder('torch>=1.13')
     prepare = get_placeholder('torch>=1.13')
     QConfigMapping = get_placeholder('torch>=1.13')
@@ -56,17 +62,43 @@ else:
 
 @MODELS.register_module()
 class NativeQuantizer(BaseQuantizer):
-    """tmp."""
+    """Native class for quantizer.
+
+    Args:
+        global_qconfig (Union[Dict, Config]): Config for quantization details
+            of weight and activation include observer, quantizer, and qscheme.
+        no_observer_modules (Optional[List]): Modules don't need observer.
+            To fit different backend, we need qconfig to determine the modules
+            which don't need observer.
+        tracer (Dict): Config for tracer to trace modules for torch fx .
+
+    Raises:
+        NotImplementedError: _description_
+
+    Examples:
+        >>> global_qconfig = dict(
+        ...     w_observer=dict(type='mmrazor.PerChannelMinMaxObserver'),
+        ...     a_observer=dict(type='mmrazor.MovingAverageMinMaxObserver'),
+        ...     w_fake_quant=dict(type='mmrazor.FakeQuantize'),
+        ...     a_fake_quant=dict(type='mmrazor.FakeQuantize'),
+        ...     w_qscheme=dict(
+        ...         qdtype='qint8', bit=8, is_symmetry=True,
+        ...         is_symmetric_range=True),
+        ...     a_qscheme=dict(
+        ...         qdtype='quint8', bit=8, is_symmetry=True,
+        ...         averaging_constant=0.1),
+)
+    """
 
     # backend: 'native'
     # support_w_modes = ['per_tensor', 'per_channel']
     # support_a_modes = ['per_tensor']
 
     def __init__(self,
-                 global_qconfig,
-                 no_observer_modules=None,
-                 tracer=dict(type='CustomTracer'),
-                 extra_redundant_fakequants=dict(
+                 global_qconfig: Union[Dict, Config],
+                 no_observer_modules: Optional[List] = None,
+                 tracer: Dict = dict(type='CustomTracer'),
+                 extra_redundant_fakequants: Dict = dict(
                      extra_module_prev_wo_fakequant=tuple(),
                      extra_module_next_wo_fakequant=tuple(),
                      extra_function_prev_wo_fakequant=tuple(),
@@ -117,7 +149,28 @@ class NativeQuantizer(BaseQuantizer):
         return ['per_tensor']
 
     def prepare(self, model, graph_module):
-        """tmp."""
+        """prepare graph to ObservedGraphModule.
+
+        Args:
+            graph_module (_type_): GraphModules before fuse.
+
+        Returns:
+            ObservedGraphModule: GraphModules after fuse and observer.
+
+        Notes:
+            'graph_module' after '_fuse_fx()' function will fuse conv, BN, ReLU
+            into modules in SUPPORT_QAT_MODULES.
+            'graph_module' after 'prepare()' function will become observed.
+
+        Notes:
+            Keep `is_qat` is True is because in Pytorch when `is_qat` is false,
+            the `_fuse_fx()` function only fuse module into `nn.Squential`.
+            In mmrazor, we aim to add more ptq algorithm into our pipeline such
+            as Adaround, these kind of ptq method have some additional
+            fake_quant  operations that we need it to be fused into our
+            `SUPPORT_QAT_MODULES` type, which is a tricky way to deal with it.
+        """
+
         graph_module = _fuse_fx(
             graph_module=graph_module,
             is_qat=True,
@@ -134,18 +187,41 @@ class NativeQuantizer(BaseQuantizer):
         return prepared
 
     def post_process_weight_fakequant(self,
-                                      observed_module,
-                                      keep_fake_quant=False):
-        """tmp."""
+                                      observed_module: ObservedGraphModule,
+                                      keep_fake_quant: bool = False):
+        """weight fake-quant for supported QAT modules.
+
+        Args:
+            observed_module (ObservedGraphModule): Modules after fused and
+                observed.
+            keep_fake_quant (bool, optional): Bool to determine whether to keep
+            fake-quant op, depending on the backend. Defaults to False.
+
+        Note:
+            `post_process_weight_fakequant()` function is necessary that the
+                `SUPPORT_QAT_MODULES` will be convert to normal modules, and
+                BN will be really integrated into conv layers.
+        """
 
         def traverse(module):
             for name, child in module.named_children():
+                # Trace `SUPPORT_QAT_MODULES` recursively.
                 if isinstance(child, SUPPORT_QAT_MODULES):
+                    # We add w_fakequant once in case some ptq methods have
+                    # specific operations such as Adaround. So we do Quantize
+                    # to perform these operations and do dequantize to
+                    # introduce quantization loss in advance.
                     weight_fakequant = child.weight_fake_quant
                     child.weight.data = weight_fakequant(child.weight.data)
 
+                    # `to_float()` function fuse BN into conv or conv_relu, and
+                    # also convert a qat module to a normal module.
+                    # source url: https://github.com/pytorch/pytorch/blob/master/torch/nn/intrinsic/qat/modules/conv_fused.py # noqa: E501
                     float_child = child.to_float()
 
+                    # This is decided by backend type, some backend need
+                    # explicitly keep the fake quant structure, others don't.
+                    # TODO add deploy doc link
                     if keep_fake_quant:
                         for m in float_child.modules():
                             setattr(m, 'qconfig', self.qconfig.convert())
@@ -166,12 +242,24 @@ class NativeQuantizer(BaseQuantizer):
         observed_module.apply(enable_fake_quant)
         traverse(observed_module)
 
-    def prepare_for_mmdeploy(self, model, dummy_input, checkpoint):
-        """tmp."""
+    def prepare_for_mmdeploy(self, model: nn.Module, dummy_input: Tuple,
+                             checkpoint: Optional[str]):
+        """Prepare model to Observed_model."""
         raise NotImplementedError
 
-    def del_redundant_fakequant(self, prepared):
-        """tmp."""
+    def del_redundant_fakequant(self, prepared: GraphModule):
+        """delete redundant fakequant op in prepared model.
+
+        Returns:
+            prepared (GraphModule): prepared model after delete redundant
+                fakequant op.
+
+        Notes:
+             We can configure different ways to delete redundant nodes:
+                @property
+                def module_prev_wo_fakequant(self):
+                    return (torch.nn.ReLU6, torch.nn.Identity)
+        """
         extra_module_prev_wo_fakequant = self.extra_redundant_fakequants.get(
             'extra_module_prev_wo_fakequant', tuple())
         prepared = del_fakequant_before_module(

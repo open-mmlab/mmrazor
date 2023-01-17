@@ -17,12 +17,13 @@ global_qconfig = dict(
         qdtype='quint8', bit=8, is_symmetry=True, averaging_constant=0.1),
 )
 
+float_checkpoint = 'https://download.openmmlab.com/mmclassification/v0/mobilenet_v2/mobilenet_v2_batch256_imagenet_20200708-3b2dc3af.pth'  # noqa: E501
+
 model = dict(
     _delete_=True,
     type='mmrazor.MMArchitectureQuant',
     architecture=_base_.model,
-    float_checkpoint='/tmp/humu/mobilenet_v2_batch256_imagenet' +
-    '_20200708-3b2dc3af.pth',
+    float_checkpoint=float_checkpoint,
     quantizer=dict(
         type='mmrazor.OpenVINOQuantizer',
         global_qconfig=global_qconfig,
@@ -32,3 +33,8 @@ model = dict(
                 'mmcls.models.heads.ClsHead._get_loss',
                 'mmcls.models.heads.ClsHead._get_predictions'
             ])))
+
+model_wrapper_cfg = dict(
+    type='mmrazor.MMArchitectureQuantDDP',
+    broadcast_buffers=False,
+    find_unused_parameters=True)
