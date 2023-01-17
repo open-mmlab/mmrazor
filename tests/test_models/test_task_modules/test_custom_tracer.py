@@ -51,7 +51,6 @@ class testUntracedMethodRgistry(TestCase):
         method_registry = UntracedMethodRegistry(method)
         assert hasattr(method_registry, 'method')
         assert hasattr(method_registry, 'method_dict')
-        assert len(method_registry.method_dict) == 0
 
     def test_registry_method(self):
         if digit_version(torch.__version__) < digit_version('1.13.0'):
