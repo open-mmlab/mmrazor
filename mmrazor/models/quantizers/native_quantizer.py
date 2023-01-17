@@ -26,6 +26,7 @@ except ImportError:
     qat_modules = get_package_placeholder('torch>=1.13')
 
 from mmrazor import digit_version
+from mmrazor.models.task_modules.tracer import build_graphmodule
 from mmrazor.models.task_modules.tracer.fx import (
     del_fakequant_after_function, del_fakequant_after_method,
     del_fakequant_after_module, del_fakequant_after_op,
@@ -90,10 +91,6 @@ class NativeQuantizer(BaseQuantizer):
 )
     """
 
-    # backend: 'native'
-    # support_w_modes = ['per_tensor', 'per_channel']
-    # support_a_modes = ['per_tensor']
-
     def __init__(self,
                  global_qconfig: Union[Dict, Config],
                  no_observer_modules: Optional[List] = None,
@@ -135,24 +132,23 @@ class NativeQuantizer(BaseQuantizer):
 
     @property
     def backend(self):
-        """tmp."""
+        """The key of the corresponding backend config."""
         return 'native'
 
     @property
     def support_w_modes(self):
-        """tmp."""
-        return ['per_tensor', 'per_channel']
+        """Supported quantization modes for weight about per_tensor or
+        per_channel."""
+        return ('per_tensor', 'per_channel')
 
     @property
     def support_a_modes(self):
-        """tmp."""
-        return ['per_tensor']
+        """Supported quantization modes for activation about per_tensor or
+        per_channel."""
+        return ('per_tensor')
 
-    def prepare(self, model, graph_module):
+    def prepare(self, model, concrete_args=None):
         """prepare graph to ObservedGraphModule.
-
-        Args:
-            graph_module (_type_): GraphModules before fuse.
 
         Returns:
             ObservedGraphModule: GraphModules after fuse and observer.
@@ -170,7 +166,9 @@ class NativeQuantizer(BaseQuantizer):
             fake_quant  operations that we need it to be fused into our
             `SUPPORT_QAT_MODULES` type, which is a tricky way to deal with it.
         """
-
+        self.swap_ff_with_fxff(model)
+        traced_graph = self.tracer.trace(model, concrete_args=concrete_args)
+        graph_module = build_graphmodule(model, traced_graph)
         graph_module = _fuse_fx(
             graph_module=graph_module,
             is_qat=True,
@@ -319,40 +317,48 @@ class NativeQuantizer(BaseQuantizer):
 
     @property
     def module_prev_wo_fakequant(self):
-        """tmp."""
+        """Configurate the modules that their previous nodes are redundant
+        fakequants."""
         return tuple()
 
     @property
     def module_next_wo_fakequant(self):
-        """tmp."""
+        """Configurate the modules that their next nodes are redundant
+        fakequants."""
         return tuple()
 
     @property
     def function_prev_wo_fakequant(self):
-        """tmp."""
+        """Configurate the functions that their previous nodes are redundant
+        fakequants."""
         return tuple()
 
     @property
     def function_next_wo_fakequant(self):
-        """tmp."""
+        """Configurate the functions that their next nodes are redundant
+        fakequants."""
         return tuple()
 
     @property
     def method_prev_wo_fakequant(self):
-        """tmp."""
+        """Configurate the methods that their previous nodes are redundant
+        fakequants."""
         return tuple()
 
     @property
     def method_next_wo_fakequant(self):
-        """tmp."""
+        """Configurate the methods that their next nodes are redundant
+        fakequants."""
         return tuple()
 
     @property
     def op_prev_wo_fakequant(self):
-        """tmp."""
+        """Configurate the OPs that their previous nodes are redundant
+        fakequants."""
         return tuple()
 
     @property
     def op_next_wo_fakequant(self):
-        """tmp."""
+        """Configurate the OPs that their next nodes are redundant
+        fakequants."""
         return tuple()
