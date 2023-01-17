@@ -148,7 +148,7 @@ class NativeQuantizer(BaseQuantizer):
     def support_a_modes(self):
         """tmp."""
         return ['per_tensor']
-        
+
     def prepare(self, model, concrete_args=None):
         """prepare graph to ObservedGraphModule.
 

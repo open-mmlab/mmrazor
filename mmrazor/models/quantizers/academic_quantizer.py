@@ -134,7 +134,7 @@ class AcademicQuantizer(BaseQuantizer):
 
         for object_type, qconfig in qconfig_mapping.get(
                 OBJECT_TYPE_DICT_KEY, []):
-            qconfig = QConfigHander(qconfig).convert()
+            qconfig = QConfigHandler(qconfig).convert()
             conf.set_object_type(str2class(object_type), qconfig)
 
         for module_name, qconfig in qconfig_mapping.get(
