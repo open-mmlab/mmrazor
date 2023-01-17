@@ -24,7 +24,7 @@ from mmrazor.models.task_modules.tracer.fx import (
     del_fakequant_after_module, del_fakequant_after_op,
     del_fakequant_before_function, del_fakequant_before_method,
     del_fakequant_before_module, del_fakequant_before_op)
-from mmrazor.structures.quantization import BackendConfigs, QConfigHander
+from mmrazor.structures.quantization import BackendConfigs, QConfigHandler
 
 
 def _get_attrs(target, attrs):
@@ -119,7 +119,7 @@ class TestGraphUtils(TestCase):
 
         self.tracer = CustomTracer()
         self.backend_config = BackendConfigs['native']
-        self.qconfig = QConfigHander(global_qconfig)
+        self.qconfig = QConfigHandler(global_qconfig)
         self.qconfig_mapping = QConfigMapping().set_global(
             self.qconfig.convert())
         self.example_inputs = (torch.randn(1, 3, 224, 224), )

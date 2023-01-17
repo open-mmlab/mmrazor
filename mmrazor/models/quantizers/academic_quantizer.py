@@ -2,7 +2,7 @@
 import torch
 
 from mmrazor.registry import MODELS
-from mmrazor.structures.quantization import BackendConfigs, QConfigHander
+from mmrazor.structures.quantization import BackendConfigs, QConfigHandler
 from .base import BaseQuantizer
 
 try:
@@ -75,24 +75,25 @@ class AcademicQuantizer(BaseQuantizer):
         """tmp."""
         conf = QConfigMapping()
         if GLOBAL_DICT_KEY in qconfig_mapping:
-            qconfig = QConfigHander(qconfig_mapping[GLOBAL_DICT_KEY]).convert()
+            qconfig = QConfigHandler(
+                qconfig_mapping[GLOBAL_DICT_KEY]).convert()
             conf.set_global(qconfig)
         for object_type, qconfig in qconfig_mapping.get(
                 OBJECT_TYPE_DICT_KEY, []):
-            qconfig = QConfigHander(qconfig).convert()
+            qconfig = QConfigHandler(qconfig).convert()
             conf.set_object_type(object_type, qconfig)
 
         for module_name_regex, qconfig in qconfig_mapping.get(
                 MODULE_NAME_REGEX_DICT_KEY, []):
-            qconfig = QConfigHander(qconfig).convert()
+            qconfig = QConfigHandler(qconfig).convert()
             conf.set_module_name_regex(module_name_regex, qconfig)
         for module_name, qconfig in qconfig_mapping.get(
                 MODULE_NAME_DICT_KEY, []):
-            qconfig = QConfigHander(qconfig).convert()
+            qconfig = QConfigHandler(qconfig).convert()
             conf.set_module_name(module_name, qconfig)
         for module_name, object_type, index, qconfig in qconfig_mapping.get(
                 MODULE_NAME_OBJECT_TYPE_ORDER_DICT_KEY, []):
-            qconfig = QConfigHander(qconfig).convert()
+            qconfig = QConfigHandler(qconfig).convert()
             conf.set_module_name_object_type_order(module_name, object_type,
                                                    index, qconfig)
 
