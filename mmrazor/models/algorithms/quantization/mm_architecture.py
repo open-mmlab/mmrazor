@@ -166,6 +166,7 @@ class MMArchitectureQuant(BaseAlgorithm):
                 inputs: torch.Tensor,
                 data_samples: Optional[List[BaseDataElement]] = None,
                 mode: str = 'tensor') -> ForwardResults:
+        """Forward with qmodels in quantization."""
 
         if mode in self.qmodels:
             qmodel = self.qmodels[mode]

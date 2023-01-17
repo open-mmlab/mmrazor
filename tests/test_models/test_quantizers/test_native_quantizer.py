@@ -11,7 +11,7 @@ from mmrazor.models.task_modules.tracer import CustomTracer
 from mmrazor.models.task_modules.tracer.fx.custom_tracer import \
     build_graphmodule
 from mmrazor.registry import MODELS
-from mmrazor.structures.quantization import BackendConfigs, QConfigHander
+from mmrazor.structures.quantization import BackendConfigs, QConfigHandler
 
 try:
     from torch.ao.quantization.fx import prepare
@@ -127,7 +127,7 @@ class TestNativeQuantizer(TestCase):
         self.q_kwargs = q_kwargs
         self.tracer = CustomTracer()
         self.backend_config = BackendConfigs['native']
-        self.qconfig = QConfigHander(global_qconfig)
+        self.qconfig = QConfigHandler(global_qconfig)
         self.qconfig_mapping = QConfigMapping().set_global(
             self.qconfig.convert())
         self.example_inputs = (torch.randn(1, 3, 224, 224), )
