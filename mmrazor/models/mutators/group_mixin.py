@@ -1,9 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from collections import Counter
-from typing import Dict, List, Type
+from typing import Dict, List
 
 from torch.nn import Module
 
+from mmrazor.models.mutables import MutableValue
+from mmrazor.models.mutables.mutable_module import MutableModule
 from ..mutables import BaseMutable
 
 
@@ -61,26 +63,31 @@ class GroupMixin():
 
     """
 
+    def is_supported_mutable(self, module):
+        """Judge whether is a supported mutable."""
+        for mutable_type in [MutableModule, MutableValue]:
+            if isinstance(module, mutable_type):
+                return True
+        return False
+
     def _build_name_mutable_mapping(
-            self, supernet: Module,
-            support_mutables: Type) -> Dict[str, BaseMutable]:
+            self, supernet: Module) -> Dict[str, BaseMutable]:
         """Mapping module name to mutable."""
         name2mutable: Dict[str, BaseMutable] = dict()
         for name, module in supernet.named_modules():
-            if isinstance(module, support_mutables):
+            if self.is_supported_mutable(module):
                 name2mutable[name] = module
             elif hasattr(module, 'source_mutables'):
-                for each_mutables in module.source_mutables:
-                    if isinstance(each_mutables, support_mutables):
-                        name2mutable[name] = each_mutables
+                for each_mutable in module.source_mutables:
+                    if self.is_supported_mutable(each_mutable):
+                        name2mutable[name] = each_mutable
 
         self._name2mutable = name2mutable
 
         return name2mutable
 
-    def _build_alias_names_mapping(
-            self, supernet: Module,
-            support_mutables: Type) -> Dict[str, List[str]]:
+    def _build_alias_names_mapping(self,
+                                   supernet: Module) -> Dict[str, List[str]]:
         """Mapping alias to module names."""
         alias2mutable_names: Dict[str, List[str]] = dict()
 
@@ -91,19 +98,19 @@ class GroupMixin():
                 dict[key].append(name)
 
         for name, module in supernet.named_modules():
-            if isinstance(module, support_mutables):
+            if self.is_supported_mutable(module):
                 if module.alias is not None:
                     _append(module.alias, alias2mutable_names, name)
             elif hasattr(module, 'source_mutables'):
-                for each_mutables in module.source_mutables:
-                    if isinstance(each_mutables, support_mutables):
-                        if each_mutables.alias is not None:
-                            _append(each_mutables.alias, alias2mutable_names,
+                for each_mutable in module.source_mutables:
+                    if self.is_supported_mutable(each_mutable):
+                        if each_mutable.alias is not None:
+                            _append(each_mutable.alias, alias2mutable_names,
                                     name)
 
         return alias2mutable_names
 
-    def build_search_groups(self, supernet: Module, support_mutables: Type,
+    def build_search_groups(self, supernet: Module,
                             custom_groups: List[List[str]]) -> Dict[int, List]:
         """Build search group with ``custom_group`` and ``alias``(see more
         information in :class:`BaseMutable`). Grouping by alias and module name
@@ -117,11 +124,9 @@ class GroupMixin():
                 All searchable modules that are not in ``custom_group`` will be
                 grouped separately.
         """
-        name2mutable: Dict[str,
-                           BaseMutable] = self._build_name_mutable_mapping(
-                               supernet, support_mutables)
-        alias2mutable_names = self._build_alias_names_mapping(
-            supernet, support_mutables)
+        name2mutable: Dict[
+            str, BaseMutable] = self._build_name_mutable_mapping(supernet)
+        alias2mutable_names = self._build_alias_names_mapping(supernet)
 
         # Check whether the custom group is valid
         if len(custom_groups) > 0:
@@ -149,7 +154,10 @@ class GroupMixin():
                     group_mutables.append(name2mutable[item])
                     grouped_mutable_names.append(item)
 
-            search_groups[current_group_nums] = group_mutables
+            # TODO: fix prefix when constructing custom groups.
+            prefix = name2mutable[item].mutable_prefix
+            group_name = prefix + '_' + str(current_group_nums)
+            search_groups[group_name] = group_mutables
             current_group_nums += 1
 
         # Construct search_groups based on alias
@@ -163,29 +171,36 @@ class GroupMixin():
 
                 # If not all mutables are already grouped
                 if not flag_all_grouped:
-                    search_groups[current_group_nums] = []
+                    prefix = name2mutable[mutable_names[0]].mutable_prefix
+                    group_name = prefix + '_' + str(current_group_nums)
+                    search_groups[group_name] = []
                     for mutable_name in mutable_names:
                         if mutable_name not in grouped_mutable_names:
-                            search_groups[current_group_nums].append(
+                            search_groups[group_name].append(
                                 name2mutable[mutable_name])
                             grouped_mutable_names.append(mutable_name)
                     current_group_nums += 1
 
         # check whether all the mutable objects are in the search_groups
         for name, module in supernet.named_modules():
-            if isinstance(module, support_mutables):
+            if self.is_supported_mutable(module):
                 if name in grouped_mutable_names:
                     continue
                 else:
-                    search_groups[current_group_nums] = [module]
+                    prefix = name2mutable[mutable_names[0]].mutable_prefix
+                    group_name = prefix + '_' + str(current_group_nums)
+                    search_groups[group_name] = [module]
                     current_group_nums += 1
             elif hasattr(module, 'source_mutables'):
-                for each_mutables in module.source_mutables:
-                    if isinstance(each_mutables, support_mutables):
+                for each_mutable in module.source_mutables:
+                    if self.is_supported_mutable(each_mutable):
                         if name in grouped_mutable_names:
                             continue
                         else:
-                            search_groups[current_group_nums] = [each_mutables]
+                            prefix = \
+                                name2mutable[mutable_names[0]].mutable_prefix
+                            group_name = prefix + '_' + str(current_group_nums)
+                            search_groups[group_name] = [each_mutable]
                             current_group_nums += 1
 
         grouped_counter = Counter(grouped_mutable_names)

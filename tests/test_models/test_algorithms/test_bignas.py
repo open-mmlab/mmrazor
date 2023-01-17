@@ -4,7 +4,7 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models import BigNAS
+from mmrazor.models import BigNAS, NasMutator
 from mmrazor.registry import MODELS
 
 arch_setting = dict(
@@ -36,17 +36,7 @@ arch_setting = dict(
         [72, 72, 8],  # last layer
     ])
 
-MUTATOR_CFG = dict(
-    channel_mutator=dict(
-        type='mmrazor.OneShotChannelMutator',
-        channel_unit_cfg={
-            'type': 'OneShotMutableChannelUnit',
-            'default_args': {
-                'unit_predefined': True
-            }
-        },
-        parse_cfg={'type': 'Predefined'}),
-    value_mutator=dict(type='mmrazor.DynamicValueMutator'))
+MUTATOR_CFG = dict(type='NasMutator')
 
 DISTILLER_CFG = dict(
     _scope_='mmrazor',
@@ -87,7 +77,7 @@ ARCHITECTURE_CFG = dict(
 ALGORITHM_CFG = dict(
     type='mmrazor.BigNAS',
     architecture=ARCHITECTURE_CFG,
-    mutators=MUTATOR_CFG,
+    mutator=MUTATOR_CFG,
     distiller=DISTILLER_CFG)
 
 
@@ -98,12 +88,10 @@ class TestBigNAS(TestCase):
         # initiate bignas with built `algorithm`.
         bignas_algo = MODELS.build(ALGORITHM_CFG_SUPERNET)
         self.assertIsInstance(bignas_algo, BigNAS)
-        # bignas mutators include channel_mutator and value_mutator
-        assert 'channel_mutator' in bignas_algo.mutators
-        assert 'value_mutator' in bignas_algo.mutators
+        self.assertIsInstance(bignas_algo.mutator, NasMutator)
 
         # bignas search_groups
-        random_subnet = bignas_algo.sample_subnet()
+        random_subnet = bignas_algo.mutator.sample_choices()
         self.assertIsInstance(random_subnet, dict)
 
         # bignas_algo support training
@@ -111,28 +99,10 @@ class TestBigNAS(TestCase):
 
         # initiate bignas without any `mutator`.
         ALGORITHM_CFG_SUPERNET.pop('type')
-        ALGORITHM_CFG_SUPERNET['mutators'] = None
-        none_type = type(ALGORITHM_CFG_SUPERNET['mutators'])
+        ALGORITHM_CFG_SUPERNET['mutator'] = None
+        none_type = type(ALGORITHM_CFG_SUPERNET['mutator'])
         with self.assertRaisesRegex(
                 TypeError, f'mutator should be a `dict` but got {none_type}'):
-            _ = BigNAS(**ALGORITHM_CFG_SUPERNET)
-
-        # initiate bignas with error type `mutator`.
-        backwardtracer_cfg = dict(
-            type='OneShotChannelMutator',
-            channel_unit_cfg=dict(
-                type='OneShotMutableChannelUnit',
-                default_args=dict(
-                    candidate_choices=list(i / 12 for i in range(2, 13)),
-                    choice_mode='ratio')),
-            parse_cfg=dict(
-                type='BackwardTracer',
-                loss_calculator=dict(type='ImageClassifierPseudoLoss')))
-        ALGORITHM_CFG_SUPERNET['mutators'] = dict(
-            channel_mutator=backwardtracer_cfg,
-            value_mutator=dict(type='mmrazor.DynamicValueMutator'))
-        with self.assertRaisesRegex(AssertionError,
-                                    'BigNAS only support predefined.'):
             _ = BigNAS(**ALGORITHM_CFG_SUPERNET)
 
     def test_loss(self):

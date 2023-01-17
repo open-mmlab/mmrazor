@@ -151,9 +151,14 @@ def export_fix_subnet(
 
     if slice_weight:
         # export subnet ckpt
+        from mmrazor.models.mutators import ChannelMutator
+
         copied_model = copy.deepcopy(model)
-        load_fix_subnet(
-            copied_model, fix_subnet, load_subnet_mode=export_subnet_mode)
+        if isinstance(model.mutator, ChannelMutator):
+            _dynamic_to_static(copied_model)
+        else:
+            load_fix_subnet(copied_model, fix_subnet)
+
         if next(copied_model.parameters()).is_cuda:
             copied_model.cuda()
         return fix_subnet, copied_model

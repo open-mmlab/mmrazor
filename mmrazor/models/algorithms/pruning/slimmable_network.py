@@ -16,7 +16,6 @@ from mmrazor.models.utils import (add_prefix,
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
 from mmrazor.structures.subnet.fix_subnet import _dynamic_to_static
 from ..base import BaseAlgorithm
-from ..space_mixin import SpaceMixin
 
 VALID_MUTATOR_TYPE = Union[SlimmableChannelMutator, Dict]
 VALID_PATH_TYPE = Union[str, Path]
@@ -24,7 +23,7 @@ VALID_CHANNEL_CFG_PATH_TYPE = Union[VALID_PATH_TYPE, List[VALID_PATH_TYPE]]
 
 
 @MODELS.register_module()
-class SlimmableNetwork(BaseAlgorithm, SpaceMixin):
+class SlimmableNetwork(BaseAlgorithm):
     """Slimmable Neural Networks.
 
     Please refer to paper
@@ -58,7 +57,6 @@ class SlimmableNetwork(BaseAlgorithm, SpaceMixin):
         else:
             self.mutator = mutator
         self.mutator.prepare_from_supernet(self.architecture)
-        self._build_search_space()
         self.num_subnet = len(self.mutator.subnets)
 
         # must after `prepare_from_supernet`
@@ -104,7 +102,7 @@ class SlimmableNetwork(BaseAlgorithm, SpaceMixin):
         total_losses = dict()
 
         for subnet_idx, subnet in enumerate(self.mutator.subnets):
-            self.set_subnet(subnet)
+            self.mutator.set_choices(subnet)
             with optim_wrapper.optim_context(self):
                 losses = self(batch_inputs, data_samples, mode='loss')
             parsed_losses, _ = self.parse_losses(losses)
@@ -135,7 +133,7 @@ class SlimmableNetwork(BaseAlgorithm, SpaceMixin):
                     module.fix_chosen(None)
 
     def _deploy(self, index: int):
-        self.set_subnet(self.mutator.subnets[index])
+        self.mutator.set_choices(self.mutator.subnets[index])
         self.mutator.fix_channel_mutables()
         self._fix_archtecture()
         _dynamic_to_static(self.architecture)
@@ -186,7 +184,7 @@ class SlimmableNetworkDDP(MMDistributedDataParallel):
         total_losses = dict()
 
         for subnet_idx, subnet in enumerate(self.module.mutator.subnets):
-            self.module.set_subnet(subnet)
+            self.module.mutator.set_choices(subnet)
             with optim_wrapper.optim_context(self):
                 losses = self(batch_inputs, data_samples, mode='loss')
             parsed_losses, _ = self.module.parse_losses(losses)

@@ -90,10 +90,10 @@ class DCFF(ItePruneAlgorithm):
         In DCFF, prune_times is set by step_freq and self._max_iters.
         """
         if self.target_pruning_ratio is None:
-            group_target_ratio = self.current_subnet
+            group_target_ratio = self.mutator.current_choices
         else:
             group_target_ratio = self.group_target_pruning_ratio(
-                self.target_pruning_ratio, self.search_space)
+                self.target_pruning_ratio, self.mutator.search_groups)
 
         if self.by_epoch:
             # step_freq based on iterations
@@ -113,7 +113,7 @@ class DCFF(ItePruneAlgorithm):
         # message_hub['max_epoch'] unaccessible when init
         prune_config_manager = ItePruneConfigManager(
             group_target_ratio,
-            self.current_subnet,
+            self.mutator.current_choices,
             self.step_freq,
             prune_times=self.prune_times,
             linear_schedule=self.linear_schedule)
@@ -135,7 +135,7 @@ class DCFF(ItePruneAlgorithm):
                 self.prune_config_manager = self._init_prune_config_manager()
             if self.prune_config_manager.is_prune_time(self._iter):
                 config = self.prune_config_manager.prune_at(self._iter)
-                self.set_subnet(config)
+                self.mutator.set_choices(config)
 
                 # calc fusion channel
                 temperature = self._calc_temperature(self._iter,

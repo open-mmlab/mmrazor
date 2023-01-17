@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import Dict, Generic, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, Generic, List, Optional, Tuple, Type, Union
 
 from mmengine import fileio
 from torch.nn import Module, ModuleList
@@ -12,11 +12,10 @@ from mmrazor.models.mutables.mutable_channel.units.channel_unit import \
 from mmrazor.models.task_modules.tracer.channel_analyzer import ChannelAnalyzer
 from mmrazor.registry import MODELS, TASK_UTILS
 from ..base_mutator import BaseMutator
-from ..group_mixin import GroupMixin
 
 
 @MODELS.register_module()
-class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
+class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
     """ChannelMutator manages the pruning structure of a model.
 
     Args:
@@ -124,11 +123,10 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
             self._name2unit[unit.name] = unit
         self.units = ModuleList(units)
 
-        self._search_groups = self.build_search_groups(
-            ModuleList(self.mutable_units), self.mutable_class_type,
-            self._custom_groups)
-
-    # ~
+        _search_groups = dict()
+        for id, unit in enumerate(ModuleList(self.mutable_units)):
+            _search_groups[id] = [unit]
+        self._search_groups = _search_groups
 
     @property
     def mutable_units(self) -> List[ChannelUnitType]:
@@ -203,6 +201,48 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
 
     # choice manage
 
+    def sample_choices(self, kind: str = 'random') -> Dict[int, Any]:
+        """Sampling by search groups.
+
+        The sampling result of the first mutable of each group is the sampling
+        result of this group.
+
+        Returns:
+            Dict[int, Any]: Random choices dict.
+        """
+        assert kind == 'random', f'unsupported the {kind} sample method.'
+        random_choices = dict()
+        for group_id, modules in self.search_groups.items():
+            random_choices[group_id] = modules[0].sample_choice()
+
+        return random_choices
+
+    def set_choices(self, choices: Dict[int, Any]) -> None:
+        """Set mutables' current choice according to choices sample by
+        :func:`sample_choices`.
+
+        Args:
+            choices (Dict[int, Any]): Choices dict. The key is group_id in
+                search groups, and the value is the sampling results
+                corresponding to this group.
+        """
+        for group_id, modules in self.search_groups.items():
+            if group_id not in choices:
+                # allow optional target_prune_ratio
+                continue
+            choice = choices[group_id]
+            for module in modules:
+                module.current_choice = choice
+
+    @property
+    def current_choices(self) -> Dict:
+        """Get current choices."""
+        current_choices = dict()
+        for group_id, modules in self.search_groups.items():
+            current_choices[group_id] = modules[0].current_choice
+
+        return current_choices
+
     @property
     def choice_template(self) -> Dict:
         """Get the chocie template of the Mutator.
@@ -232,11 +272,6 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
             dict: Search group.
         """
         return self._search_groups
-
-    @property
-    def mutable_class_type(self) -> Type[ChannelUnitType]:
-        """Mutable class type supported by this mutator."""
-        return self.unit_class
 
     # private methods
 

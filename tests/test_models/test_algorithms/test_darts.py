@@ -14,7 +14,7 @@ from mmengine.optim.optimizer import OptimWrapper, OptimWrapperDict
 from torch import Tensor
 from torch.optim import SGD
 
-from mmrazor.models import Darts, DiffModuleMutator, DiffMutableOP
+from mmrazor.models import Darts, DiffMutableOP, NasMutator
 from mmrazor.models.algorithms.nas.darts import DartsDDP
 from mmrazor.registry import MODELS
 
@@ -87,21 +87,21 @@ class TestDarts(TestCase):
     def test_init(self) -> None:
         # initiate darts when `norm_training` is True.
         model = ToyDiffModule2()
-        mutator = DiffModuleMutator()
+        mutator = NasMutator()
         algo = Darts(architecture=model, mutator=mutator, norm_training=True)
         algo.eval()
         self.assertTrue(model.bn.training)
 
         # initiate darts with built mutator
         model = ToyDiffModule2()
-        mutator = DiffModuleMutator()
+        mutator = NasMutator()
         algo = Darts(model, mutator)
         self.assertIs(algo.mutator, mutator)
 
         # initiate darts with unbuilt mutator
-        mutator = dict(type='DiffModuleMutator')
+        mutator = dict(type='NasMutator')
         algo = Darts(model, mutator)
-        self.assertIsInstance(algo.mutator, DiffModuleMutator)
+        self.assertIsInstance(algo.mutator, NasMutator)
 
         # initiate darts when `fix_subnet` is not None
         fix_subnet = {
@@ -121,8 +121,10 @@ class TestDarts(TestCase):
         model = ToyDiffModule2()
 
         # supernet
-        mutator = DiffModuleMutator()
+        mutator = NasMutator()
         mutator.prepare_from_supernet(model)
+        mutator.prepare_arch_params()
+
         algo = Darts(model, mutator)
         loss = algo(inputs, mode='loss')
         self.assertIsInstance(loss, dict)
@@ -149,16 +151,20 @@ class TestDarts(TestCase):
     def test_search_subnet(self) -> None:
         model = ToyDiffModule2()
 
-        mutator = DiffModuleMutator()
+        mutator = NasMutator()
         mutator.prepare_from_supernet(model)
+        mutator.prepare_arch_params()
+
         algo = Darts(model, mutator)
-        subnet = algo.sample_subnet()
+        subnet = algo.mutator.sample_choices()
         self.assertIsInstance(subnet, dict)
 
     def test_darts_train_step(self) -> None:
         model = ToyDiffModule2()
-        mutator = DiffModuleMutator()
+
+        mutator = NasMutator()
         mutator.prepare_from_supernet(model)
+        mutator.prepare_arch_params()
 
         # data is tensor
         algo = Darts(model, mutator)
@@ -173,22 +179,24 @@ class TestDarts(TestCase):
         data = [self._prepare_fake_data() for _ in range(2)]
         optim_wrapper_dict = OptimWrapperDict(
             architecture=OptimWrapper(SGD(model.parameters(), lr=0.1)),
-            search_params=OptimWrapper(SGD(model.parameters(), lr=0.01)))
+            mutator=OptimWrapper(SGD(model.parameters(), lr=0.01)))
         loss = algo.train_step(data, optim_wrapper_dict)
 
         self.assertIsNotNone(loss)
 
     def test_darts_with_unroll(self) -> None:
         model = ToyDiffModule2()
-        mutator = DiffModuleMutator()
+
+        mutator = NasMutator()
         mutator.prepare_from_supernet(model)
+        mutator.prepare_arch_params()
 
         # data is tuple or list
         algo = Darts(model, mutator, unroll=True)
         data = [self._prepare_fake_data() for _ in range(2)]
         optim_wrapper_dict = OptimWrapperDict(
             architecture=OptimWrapper(SGD(model.parameters(), lr=0.1)),
-            search_params=OptimWrapper(SGD(model.parameters(), lr=0.01)))
+            mutator=OptimWrapper(SGD(model.parameters(), lr=0.01)))
         loss = algo.train_step(data, optim_wrapper_dict)
 
         self.assertIsNotNone(loss)
@@ -209,8 +217,10 @@ class TestDartsDDP(TestDarts):
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         model = ToyDiffModule2()
-        mutator = DiffModuleMutator()
+
+        mutator = NasMutator()
         mutator.prepare_from_supernet(model)
+        mutator.prepare_arch_params()
 
         algo = Darts(model, mutator, unroll=unroll).to(self.device)
 
@@ -241,7 +251,7 @@ class TestDartsDDP(TestDarts):
         data = [self._prepare_fake_data() for _ in range(2)]
         optim_wrapper_dict = OptimWrapperDict(
             architecture=OptimWrapper(SGD(ddp_model.parameters(), lr=0.1)),
-            search_params=OptimWrapper(SGD(ddp_model.parameters(), lr=0.01)))
+            mutator=OptimWrapper(SGD(ddp_model.parameters(), lr=0.01)))
         loss = ddp_model.train_step(data, optim_wrapper_dict)
 
         self.assertIsNotNone(loss)
@@ -252,7 +262,7 @@ class TestDartsDDP(TestDarts):
         data = [self._prepare_fake_data() for _ in range(2)]
         optim_wrapper_dict = OptimWrapperDict(
             architecture=OptimWrapper(SGD(ddp_model.parameters(), lr=0.1)),
-            search_params=OptimWrapper(SGD(ddp_model.parameters(), lr=0.01)))
+            mutator=OptimWrapper(SGD(ddp_model.parameters(), lr=0.01)))
         loss = ddp_model.train_step(data, optim_wrapper_dict)
 
         self.assertIsNotNone(loss)

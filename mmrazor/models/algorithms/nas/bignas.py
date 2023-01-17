@@ -17,7 +17,6 @@ from mmrazor.models.utils import (add_prefix,
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
 from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm
-from ..space_mixin import SpaceMixin
 
 VALID_MUTATOR_TYPE = Union[BaseMutator, Dict]
 VALID_MUTATORS_TYPE = Dict[str, Union[BaseMutator, Dict]]
@@ -25,7 +24,7 @@ VALID_DISTILLER_TYPE = Union[ConfigurableDistiller, Dict]
 
 
 @MODELS.register_module()
-class BigNAS(BaseAlgorithm, SpaceMixin):
+class BigNAS(BaseAlgorithm):
     """Implementation of `BigNas <https://arxiv.org/pdf/2003.11142>`_
 
     BigNAS is a NAS algorithm which searches the following items in MobileNetV3
@@ -66,7 +65,7 @@ class BigNAS(BaseAlgorithm, SpaceMixin):
 
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
-                 mutators: VALID_MUTATORS_TYPE,
+                 mutator: VALID_MUTATORS_TYPE,
                  distiller: VALID_DISTILLER_TYPE,
                  fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
@@ -84,23 +83,25 @@ class BigNAS(BaseAlgorithm, SpaceMixin):
             load_fix_subnet(self, fix_subnet)
             self.is_supernet = False
         else:
-            if isinstance(mutators, dict):
-                built_mutators: Dict = dict()
-                for name, mutator_cfg in mutators.items():
-                    if 'parse_cfg' in mutator_cfg and isinstance(
-                            mutator_cfg['parse_cfg'], dict):
-                        assert mutator_cfg['parse_cfg'][
-                            'type'] == 'Predefined', \
-                                'BigNAS only support predefined.'
-                    mutator: BaseMutator = MODELS.build(mutator_cfg)
-                    built_mutators[name] = mutator
-                    mutator.prepare_from_supernet(self.architecture)
-                self.mutators = built_mutators
+            if isinstance(mutator, dict):
+                mutator = MODELS.build(mutator)
+                mutator.prepare_from_supernet(self.architecture)
+                self.mutator = mutator
+                # for name, mutator_cfg in mutators.items():
+                #     if 'parse_cfg' in mutator_cfg and isinstance(
+                #             mutator_cfg['parse_cfg'], dict):
+                #         assert mutator_cfg['parse_cfg'][
+                #             'type'] == 'Predefined', \
+                #                 'BigNAS only support predefined.'
+                #     mutator: BaseMutator = MODELS.build(mutator_cfg)
+                #     built_mutators[name] = mutator
+                #     mutator.prepare_from_supernet(self.architecture)
+                # self.mutators = built_mutators
             else:
                 raise TypeError('mutator should be a `dict` but got '
-                                f'{type(mutators)}')
+                                f'{type(mutator)}')
 
-            self._build_search_space()
+            # self._build_search_space()
             self.distiller = self._build_distiller(distiller)
             self.distiller.prepare_from_teacher(self.architecture)
             self.distiller.prepare_from_student(self.architecture)
@@ -169,7 +170,7 @@ class BigNAS(BaseAlgorithm, SpaceMixin):
             for kind in self.sample_kinds:
                 # update the max subnet loss.
                 if kind == 'max':
-                    self.set_max_subnet()
+                    self.mutator.set_max_choices()
                     set_dropout(
                         layers=self.architecture.backbone.layers[:-1],
                         module=MBBlock,
@@ -187,7 +188,7 @@ class BigNAS(BaseAlgorithm, SpaceMixin):
                         add_prefix(max_subnet_losses, 'max_subnet'))
                 # update the min subnet loss.
                 elif kind == 'min':
-                    self.set_min_subnet()
+                    self.mutator.set_min_choices()
                     set_dropout(
                         layers=self.architecture.backbone.layers[:-1],
                         module=MBBlock,
@@ -199,7 +200,7 @@ class BigNAS(BaseAlgorithm, SpaceMixin):
                         add_prefix(min_subnet_losses, 'min_subnet'))
                 # update the random subnets loss.
                 elif 'random' in kind:
-                    self.set_subnet(self.sample_subnet())
+                    self.mutator.set_choices(self.mutator.sample_choices())
                     set_dropout(
                         layers=self.architecture.backbone.layers[:-1],
                         module=MBBlock,
@@ -263,7 +264,7 @@ class BigNASDDP(MMDistributedDataParallel):
             for kind in self.module.sample_kinds:
                 # update the max subnet loss.
                 if kind == 'max':
-                    self.module.set_max_subnet()
+                    self.module.mutator.set_max_choices()
                     set_dropout(
                         layers=self.module.architecture.backbone.layers[:-1],
                         module=MBBlock,
@@ -281,7 +282,7 @@ class BigNASDDP(MMDistributedDataParallel):
                         add_prefix(max_subnet_losses, 'max_subnet'))
                 # update the min subnet loss.
                 elif kind == 'min':
-                    self.module.set_min_subnet()
+                    self.module.mutator.set_min_choices()
                     set_dropout(
                         layers=self.module.architecture.backbone.layers[:-1],
                         module=MBBlock,
@@ -293,7 +294,8 @@ class BigNASDDP(MMDistributedDataParallel):
                         add_prefix(min_subnet_losses, 'min_subnet'))
                 # update the random subnets loss.
                 elif 'random' in kind:
-                    self.module.set_subnet(self.module.sample_subnet())
+                    self.module.mutator.set_choices(
+                        self.module.mutator.sample_choices())
                     set_dropout(
                         layers=self.module.architecture.backbone.layers[:-1],
                         module=MBBlock,

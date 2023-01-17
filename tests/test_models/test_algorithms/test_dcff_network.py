@@ -122,6 +122,7 @@ class TestDCFFAlgorithm(unittest.TestCase):
         model = MODELS.build(MODEL_CFG)
         mutator = MODELS.build(MUTATOR_CONFIG_FLOAT)
         mutator.prepare_from_supernet(model)
+        mutator.set_choices(mutator.sample_choices())
         prune_target = mutator.choice_template
 
         iter_per_epoch = 10
@@ -145,12 +146,12 @@ class TestDCFFAlgorithm(unittest.TestCase):
                 self.assertEqual(epoch_step * iter_per_epoch,
                                  algorithm.step_freq)
 
-        current_subnet = algorithm.current_subnet
+        current_choices = algorithm.mutator.current_choices
         group_prune_target = algorithm.group_target_pruning_ratio(
-            prune_target, algorithm.search_space)
-        for key in current_subnet:
+            prune_target, mutator.search_groups)
+        for key in current_choices:
             self.assertAlmostEqual(
-                current_subnet[key], group_prune_target[key], delta=0.1)
+                current_choices[key], group_prune_target[key], delta=0.1)
 
     def test_load_pretrained(self):
         iter_per_epoch = 10
@@ -186,6 +187,7 @@ class TestDCFFAlgorithm(unittest.TestCase):
         model = MODELS.build(MODEL_CFG)
         mutator = MODELS.build(MUTATOR_CONFIG_FLOAT)
         mutator.prepare_from_supernet(model)
+        mutator.set_choices(mutator.sample_choices())
         prune_target = mutator.choice_template
 
         custom_groups = [[
@@ -236,6 +238,7 @@ class TestDCFFAlgorithm(unittest.TestCase):
         model = MODELS.build(MODEL_CFG)
         mutator = MODELS.build(MUTATOR_CONFIG_FLOAT)
         mutator.prepare_from_supernet(model)
+        mutator.set_choices(mutator.sample_choices())
 
         custom_groups = [[
             'backbone.layer1.0.conv1_(0, 64)_64',

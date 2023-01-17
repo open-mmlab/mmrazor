@@ -33,6 +33,16 @@ class SlimmableChannelMutator(ChannelMutator[SlimmableChannelUnit]):
 
         self.subnets = self._prepare_subnets(self.units_cfg)
 
+    def set_choices(self, config: Dict[str, float]):  # type: ignore[override]
+        """Set choices."""
+        for name, choice in config.items():
+            unit = self._name2unit[name]
+            unit.current_choice = choice
+
+    def sample_choices(self):
+        """Sample choices(pruning structure)."""
+        raise RuntimeError
+
     # private methods
 
     def _prepare_subnets(self, unit_cfg: Dict) -> List[Dict[str, int]]:

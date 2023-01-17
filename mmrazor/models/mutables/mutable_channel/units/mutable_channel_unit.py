@@ -121,6 +121,11 @@ class MutableChannelUnit(ChannelUnit):
     # properties
 
     @property
+    def mutable_prefix(self) -> str:
+        """Mutable prefix."""
+        return 'channel'
+
+    @property
     def is_mutable(self) -> bool:
         """If the channel-unit is prunable."""
 
