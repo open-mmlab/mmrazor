@@ -104,7 +104,8 @@ class AcademicQuantizer(BaseQuantizer):
         fuse_custom_config = FuseCustomConfig().set_preserved_attributes(
             preserved_attributes)
 
-        self.sync_module_training_mode(graph_module)
+        # set the training modes of all modules to True to `_fuse_fx` correctly
+        self.sync_module_training_mode(graph_module, mode=True)
 
         graph_module = _fuse_fx(
             graph_module=graph_module,

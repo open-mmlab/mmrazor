@@ -39,8 +39,6 @@ except ImportError:
     FloatFunctional = get_placeholder('torch>=1.13')
     FXFloatFunctional = get_placeholder('torch>=1.13')
 
-from mmrazor import digit_version
-
 
 class ToyDataset(Dataset):
     METAINFO = dict()  # type: ignore
@@ -67,21 +65,6 @@ class MMArchitectureQuant(BaseModel):
     def calibrate_step(self, data):
         data = self.data_preprocessor(data, False)
         return self.architecture(**data)
-
-    def swap_ff_with_fxff(self, model):
-        if digit_version(torch.__version__) < digit_version('1.13.0'):
-            self.skipTest('version of torch < 1.13.0')
-
-        modules_to_swap = []
-        for name, module in model.named_children():
-            if isinstance(module, FloatFunctional):
-                modules_to_swap.append(name)
-            else:
-                self.swap_ff_with_fxff(module)
-
-        for name in modules_to_swap:
-            del model._modules[name]
-            model._modules[name] = FXFloatFunctional()
 
     def sync_qparams(self, src_mode):
         pass

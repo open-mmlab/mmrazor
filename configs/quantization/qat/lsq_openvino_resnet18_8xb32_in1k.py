@@ -29,7 +29,6 @@ model = dict(
     float_checkpoint=float_checkpoint,
     quantizer=dict(
         type='mmrazor.OpenVINOQuantizer',
-        is_qat=True,
         global_qconfig=global_qconfig,
         tracer=dict(
             type='mmrazor.CustomTracer',

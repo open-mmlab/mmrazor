@@ -123,15 +123,21 @@ class NativeQuantizer(BaseQuantizer):
         assert w_mode in self.support_w_modes
         assert a_mode in self.support_a_modes
 
-        self.qconfig_mapping = self.get_qconfig_mapping(no_observer_modules)
+        self.qconfig_mapping = self.gen_qconfig_mapping(
+            self.qconfig, no_observer_modules)
 
         self.backend_config = BackendConfigs[self.backend]
         self.example_inputs = (torch.randn(1, 3, 224, 224), )
 
         self.extra_redundant_fakequants = extra_redundant_fakequants
 
-    def get_qconfig_mapping(self, no_observer_modules):
-        qconfig_mapping = QConfigMapping().set_global(self.qconfig.convert())
+    def gen_qconfig_mapping(self, qconfig, no_observer_modules):
+        """Convert qconfig in config file to `QConfigMapping`.
+
+        `QConfigMapping` is a custom class for mapping from model ops to
+        :class:`torch.ao.quantization.QConfig` s.
+        """
+        qconfig_mapping = QConfigMapping().set_global(qconfig.convert())
 
         if no_observer_modules is not None:
             no_observer_modules = str2class(no_observer_modules)
@@ -197,7 +203,9 @@ class NativeQuantizer(BaseQuantizer):
         traced_graph = self.tracer.trace(model, concrete_args=concrete_args)
         graph_module = build_graphmodule(model, traced_graph)
 
-        self.sync_module_training_mode(graph_module)
+        # set the training modes of all modules to True to `_fuse_fx` correctly
+        self.sync_module_training_mode(graph_module, mode=True)
+
         graph_module = _fuse_fx(
             graph_module=graph_module,
             is_qat=True,

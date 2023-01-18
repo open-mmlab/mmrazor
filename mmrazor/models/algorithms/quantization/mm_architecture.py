@@ -178,6 +178,9 @@ class MMArchitectureQuant(BaseAlgorithm):
             observed_module = self.quantizer.prepare(model, concrete_args)
             qmodels[mode] = observed_module
 
+        # data_samples can not be None in detectors during prediction.
+        # But we need to make the dummy prediction in _build_qmodels.
+        # It is more convenient to use `tensor` mode.
         is_training = qmodels['tensor'].training
         # Avoid random input changing bn's statistics
         qmodels['tensor'].eval()
