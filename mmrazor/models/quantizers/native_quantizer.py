@@ -125,6 +125,7 @@ class NativeQuantizer(BaseQuantizer):
 
         self.qconfig_mapping = self.gen_qconfig_mapping(
             self.qconfig, no_observer_modules)
+        self.no_observer_modules = no_observer_modules
 
         self.backend_config = BackendConfigs[self.backend]
         self.example_inputs = (torch.randn(1, 3, 224, 224), )
