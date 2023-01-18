@@ -59,6 +59,7 @@ class OpenVINOQuantizer(NativeQuantizer):
         3. post process weight fakequant for exporting .onnx that meet
         the backend's requirement.
         """
+        self.convert_batchnorm2d(model)
         observed_model = self.prepare(model)
         if dummy_input is not None:
             observed_model(torch.randn(dummy_input))
