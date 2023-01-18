@@ -184,7 +184,7 @@ class TestQATEpochBasedLoop(TestCase):
 
     def test_init(self):
         cfg = copy.deepcopy(self.default_cfg)
-        cfg.experiment_name = 'test_init'
+        cfg.experiment_name = 'test_init_qat_train_loop'
         runner = Runner(**cfg)
         self.assertIsInstance(runner, Runner)
         self.assertIsInstance(runner.train_loop, QATEpochBasedLoop)
@@ -283,7 +283,7 @@ class TestLSQEpochBasedLoop(TestCase):
 
     def test_init(self):
         cfg = copy.deepcopy(self.default_cfg)
-        cfg.experiment_name = 'test_init'
+        cfg.experiment_name = 'test_init_lsq_train_loop'
         runner = Runner(**cfg)
         self.assertIsInstance(runner, Runner)
         self.assertIsInstance(runner.train_loop, LSQEpochBasedLoop)
@@ -349,7 +349,7 @@ class TestQATValLoop(TestCase):
 
     def test_init(self):
         cfg = copy.deepcopy(self.default_cfg)
-        cfg.experiment_name = 'test_init'
+        cfg.experiment_name = 'test_init_qat_val_loop'
         runner = Runner(**cfg)
         self.assertIsInstance(runner, Runner)
         self.assertIsInstance(runner.val_loop, QATValLoop)
@@ -401,7 +401,7 @@ class TestPTQLoop(TestCase):
 
     def test_init(self):
         cfg = copy.deepcopy(self.default_cfg)
-        cfg.experiment_name = 'test_init'
+        cfg.experiment_name = 'test_init_ptq_loop'
         runner = Runner(**cfg)
         self.assertIsInstance(runner, Runner)
         self.assertIsInstance(runner.test_loop, PTQLoop)
