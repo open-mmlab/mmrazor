@@ -105,6 +105,7 @@ class AcademicQuantizer(BaseQuantizer):
             preserved_attributes)
 
         # set the training modes of all modules to True to `_fuse_fx` correctly
+        # todo: check freezebn
         self.sync_module_training_mode(graph_module, mode=True)
 
         graph_module = _fuse_fx(
