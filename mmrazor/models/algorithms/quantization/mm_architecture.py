@@ -61,9 +61,6 @@ class MMArchitectureQuant(BaseAlgorithm):
                  input_shapes: Tuple = (1, 3, 224, 224),
                  init_cfg: Optional[Dict] = None):
 
-        if data_preprocessor is None:
-            data_preprocessor = getattr(architecture, 'data_preprocessor',
-                                        dict())
         super().__init__(architecture, data_preprocessor, init_cfg)
 
         self.quantizer = MODELS.build(quantizer)

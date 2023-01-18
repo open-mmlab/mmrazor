@@ -61,11 +61,10 @@ class BasicBlock(nn.Module):
         return out
 
 
-@MODELS.register_module()
-class ToyQuantModel(BaseModel):
+class ToyModel(nn.Module):
 
     def __init__(self):
-        super().__init__()
+        super(ToyModel, self).__init__()
         self.stem_layer = nn.Sequential(
             nn.Conv2d(3, 3, 1), nn.BatchNorm2d(3), nn.ReLU())
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -85,15 +84,34 @@ class ToyQuantModel(BaseModel):
         return x
 
 
+class ToyQuantModel(BaseModel):
+
+    def __init__(self):
+        super().__init__()
+        self.architecture = ToyModel()
+
+    def loss(self, outputs, data_samples):
+        return dict(loss=outputs.sum() - data_samples.sum())
+
+    def forward(self, inputs, data_samples, mode: str = 'tensor'):
+        if isinstance(inputs, list):
+            inputs = torch.stack(inputs)
+        outputs = self.architecture(inputs)
+
+        return outputs
+
+
 class TestMMArchitectureQuant(TestCase):
 
     def setUp(self):
         if digit_version(torch.__version__) < digit_version('1.13.0'):
             self.skipTest('version of torch < 1.13.0')
+
+        MODELS.register_module(module=ToyQuantModel, force=True)
+
         self.temp_dir = tempfile.mkdtemp()
         filename = 'fp_model.pth'
         filename = os.path.join(self.temp_dir, filename)
-        # import pdb; pdb.set_trace()
         toymodel = ToyQuantModel()
         torch.save(toymodel.state_dict(), filename)
 
@@ -120,18 +138,14 @@ class TestMMArchitectureQuant(TestCase):
             quantizer=dict(
                 type='mmrazor.OpenVINOQuantizer',
                 global_qconfig=global_qconfig,
-                tracer=dict(
-                    type='mmrazor.CustomTracer',
-                    skipped_methods=[
-                        'mmcls.models.heads.ClsHead._get_loss',
-                        'mmcls.models.heads.ClsHead._get_predictions'
-                    ])))
+                tracer=dict(type='mmrazor.CustomTracer')))
         self.alg_kwargs = alg_kwargs
         self.toy_model = MODELS.build(self.alg_kwargs)
 
     def tearDown(self):
         if digit_version(torch.__version__) < digit_version('1.13.0'):
             self.skipTest('version of torch < 1.13.0')
+        MODELS.module_dict.pop('ToyQuantModel')
         shutil.rmtree(self.temp_dir)
 
     def test_init(self):
@@ -145,12 +159,12 @@ class TestMMArchitectureQuant(TestCase):
             self.skipTest('version of torch < 1.13.0')
         mode = self.toy_model.forward_modes[0]
         self.toy_model.sync_qparams(mode)
-        w_loss = self.toy_model.qmodels['loss'].block.conv1.state_dict(
-        )['weight']
-        w_tensor = self.toy_model.qmodels['tensor'].block.conv1.state_dict(
-        )['weight']
-        w_pred = self.toy_model.qmodels['predict'].block.conv1.state_dict(
-        )['weight']
+        w_loss = self.toy_model.qmodels[
+            'loss'].architecture.block.conv1.state_dict()['weight']
+        w_tensor = self.toy_model.qmodels[
+            'tensor'].architecture.block.conv1.state_dict()['weight']
+        w_pred = self.toy_model.qmodels[
+            'predict'].architecture.block.conv1.state_dict()['weight']
         assert w_loss.equal(w_pred)
         assert w_loss.equal(w_tensor)
 
