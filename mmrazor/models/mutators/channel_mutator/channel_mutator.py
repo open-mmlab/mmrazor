@@ -73,7 +73,6 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
                      type='ChannelAnalyzer',
                      demo_input=(1, 3, 224, 224),
                      tracer_type='BackwardTracer'),
-                 custom_groups: Optional[List[List[str]]] = None,
                  init_cfg: Optional[Dict] = None) -> None:
 
         super().__init__(init_cfg)
@@ -94,10 +93,6 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
         self.unit_class, self.unit_default_args, self.units_cfg = \
             self._parse_channel_unit_cfg(
                 channel_unit_cfg)
-
-        if custom_groups is None:
-            custom_groups = []
-        self._custom_groups = custom_groups
 
     def prepare_from_supernet(self, supernet: Module) -> None:
         """Prepare from a model for pruning.
@@ -122,11 +117,6 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
             unit.prepare_for_pruning(supernet)
             self._name2unit[unit.name] = unit
         self.units = ModuleList(units)
-
-        _search_groups = dict()
-        for id, unit in enumerate(ModuleList(self.mutable_units)):
-            _search_groups[id] = [unit]
-        self._search_groups = _search_groups
 
     @property
     def mutable_units(self) -> List[ChannelUnitType]:
@@ -201,7 +191,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
 
     # choice manage
 
-    def sample_choices(self, kind: str = 'random') -> Dict[int, Any]:
+    def sample_choices(self, kind: str = 'random') -> Dict[str, Any]:
         """Sampling by search groups.
 
         The sampling result of the first mutable of each group is the sampling
@@ -211,13 +201,12 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
             Dict[int, Any]: Random choices dict.
         """
         assert kind == 'random', f'unsupported the {kind} sample method.'
-        random_choices = dict()
-        for group_id, modules in self.search_groups.items():
-            random_choices[group_id] = modules[0].sample_choice()
+        template = self.choice_template
+        for key in template:
+            template[key] = self._name2unit[key].sample_choice()
+        return template
 
-        return random_choices
-
-    def set_choices(self, choices: Dict[int, Any]) -> None:
+    def set_choices(self, choices: Dict[str, Any]) -> None:
         """Set mutables' current choice according to choices sample by
         :func:`sample_choices`.
 
@@ -226,22 +215,17 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
                 search groups, and the value is the sampling results
                 corresponding to this group.
         """
-        for group_id, modules in self.search_groups.items():
-            if group_id not in choices:
-                # allow optional target_prune_ratio
-                continue
-            choice = choices[group_id]
-            for module in modules:
-                module.current_choice = choice
+        for name, choice in choices.items():
+            unit = self._name2unit[name]
+            unit.current_choice = choice
 
     @property
     def current_choices(self) -> Dict:
         """Get current choices."""
-        current_choices = dict()
-        for group_id, modules in self.search_groups.items():
-            current_choices[group_id] = modules[0].current_choice
-
-        return current_choices
+        config = self.choice_template
+        for unit in self.mutable_units:
+            config[unit.name] = unit.current_choice
+        return config
 
     @property
     def choice_template(self) -> Dict:
