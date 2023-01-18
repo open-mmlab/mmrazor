@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import functools
+from copy import deepcopy
 from types import FunctionType
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
@@ -152,6 +153,33 @@ def _prepare_module_dict(model: torch.nn.Module, fx_graph):
     return module_dict
 
 
+def duplicate_reused_nodes(graph: Graph, modules: Dict[str, Any] = {}):
+    """Deepcopy the shared modules (e.g. shared detection head in RetinaNet) to
+    make sure modules can be fused correctly.
+
+    Modified from https://github.com/ModelTC/MQBench/blob/main/mqbench/prepare_by_platform.py  # noqa: E501
+    """
+    _dup_prefix = '_dup'
+    target_dict = dict()
+    dup_modules = dict()
+    for node in graph.nodes:
+        if node.op == 'call_module':
+            if node.target not in target_dict:
+                target_dict[node.target] = [node]
+            else:
+                target_dict[node.target].append(node)
+    for key in target_dict:
+        if len(target_dict[key]) > 1:
+            for idx, node in enumerate(target_dict[key]):
+                if idx == 0:
+                    continue
+                module = deepcopy(modules[node.target])
+                node.target += _dup_prefix + str(idx)
+                dup_modules[node.target] = module
+    graph.lint()
+    return graph, dup_modules
+
+
 def build_graphmodule(model: torch.nn.Module,
                       fx_graph,
                       name: str = 'GraphModule'):
@@ -180,7 +208,9 @@ def build_graphmodule(model: torch.nn.Module,
     """
     modules = dict(model.named_modules())
     module_dict = _prepare_module_dict(model, fx_graph)
+    fx_graph, duplicated_modules = duplicate_reused_nodes(fx_graph, modules)
     modules.update(module_dict)
+    modules.update(duplicated_modules)
     return GraphModule(modules, fx_graph, name)
 
 
@@ -272,6 +302,7 @@ class CustomTracer(QuantizationTracer):
             kwargs (Dict): kwargs of the module callsite
 
         Return:
+
             The return value from the Module call. In the case that a
             ``call_module`` node was emitted, this is a ``Proxy`` value.
             Otherwise, it is whatever value was returned from the ``Module``

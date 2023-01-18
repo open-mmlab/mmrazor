@@ -103,6 +103,11 @@ class AcademicQuantizer(BaseQuantizer):
             setattr(graph_module, attr_name, getattr(model, attr_name))
         fuse_custom_config = FuseCustomConfig().set_preserved_attributes(
             preserved_attributes)
+
+        # set the training modes of all modules to True to `_fuse_fx` correctly
+        # todo: check freezebn
+        self.sync_module_training_mode(graph_module, mode=True)
+
         graph_module = _fuse_fx(
             graph_module=graph_module,
             is_qat=True,

@@ -2,13 +2,33 @@
 import inspect
 from typing import List
 
+import torch
+
 from mmrazor.registry import MODELS
 
 try:
     import torch.ao.quantization.observer as torch_observer_src
+    from torch.ao.quantization.observer import PerChannelMinMaxObserver
 except ImportError:
     from mmrazor.utils import get_package_placeholder
     torch_observer_src = get_package_placeholder('torch>=1.13')
+    PerChannelMinMaxObserver = get_package_placeholder('torch>=1.13')
+
+
+@torch.jit.export
+def reset_min_max_vals(self):
+    """Resets the min/max values.
+
+    `min_val` and `max_val` are always be on cpu in the pytorch version of this
+    method.
+    """
+    min_val = torch.rand(0, )
+    max_val = torch.rand(0, )
+    self.min_val.resize_(min_val.shape).copy_(min_val)
+    self.max_val.resize_(max_val.shape).copy_(max_val)
+
+
+PerChannelMinMaxObserver.reset_min_max_vals = reset_min_max_vals
 
 
 def register_torch_observers() -> List[str]:

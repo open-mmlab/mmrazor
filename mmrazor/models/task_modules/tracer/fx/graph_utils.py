@@ -6,9 +6,11 @@ import torch
 
 try:
     from torch.ao.quantization.fake_quantize import FakeQuantizeBase
+    from torch.fx import Node
 except ImportError:
     from mmrazor.utils import get_placeholder
     FakeQuantizeBase = get_placeholder('torch>=1.13')
+    Node = get_placeholder('torch>=1.13')
 
 
 def _get_attrs(target: torch.nn.Module, attr: str) -> Any:
@@ -61,11 +63,11 @@ def recursive_find_erased_nodes(node, prepared_model):
 
     nodes_to_erase = []
     for prev_node in node.args:
-        if isinstance(prev_node, torch.fx.Node):
+        if isinstance(prev_node, Node):
             nodes_to_erase.extend(
                 recursive_find_erased_nodes(prev_node, prepared_model))
     for prev_node in node.kwargs.values():
-        if isinstance(prev_node, torch.fx.Node):
+        if isinstance(prev_node, Node):
             nodes_to_erase.extend(
                 recursive_find_erased_nodes(prev_node, prepared_model))
 
@@ -94,7 +96,7 @@ def del_fakequant_before_op(prepared_model,
     new_graph = copy.deepcopy(prepared_model.graph)
     for node in new_graph.nodes:
         if node.op in target_ops:
-            nodes_to_erase: List[torch.fx.Node] = recursive_find_erased_nodes(
+            nodes_to_erase: List[Node] = recursive_find_erased_nodes(
                 node, prepared_model)
             for to_erase in nodes_to_erase:
                 assert to_erase.op == 'call_module' and isinstance(
@@ -172,7 +174,7 @@ def del_fakequant_before_method(prepared_model,
     new_graph = copy.deepcopy(prepared_model.graph)
     for node in new_graph.nodes:
         if node.op == 'call_method' and node.target in method_patterns:
-            nodes_to_erase: List[torch.fx.Node] = recursive_find_erased_nodes(
+            nodes_to_erase: List[Node] = recursive_find_erased_nodes(
                 node, prepared_model)
             for to_erase in nodes_to_erase:
                 assert to_erase.op == 'call_module' and isinstance(
@@ -251,7 +253,7 @@ def del_fakequant_before_function(prepared_model,
     new_graph = copy.deepcopy(prepared_model.graph)
     for node in new_graph.nodes:
         if node.op == 'call_function' and node.target in function_patterns:
-            nodes_to_erase: List[torch.fx.Node] = recursive_find_erased_nodes(
+            nodes_to_erase: List[Node] = recursive_find_erased_nodes(
                 node, prepared_model)
             for to_erase in nodes_to_erase:
                 assert to_erase.op == 'call_module' and isinstance(

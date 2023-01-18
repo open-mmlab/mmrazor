@@ -3,7 +3,9 @@ from abc import abstractmethod
 from typing import Dict
 
 import torch
+import torch.nn as nn
 from mmengine.model import BaseModule
+from mmengine.model.utils import _BatchNormXd
 
 from mmrazor.registry import TASK_UTILS
 
@@ -23,6 +25,38 @@ class BaseQuantizer(BaseModule):
     def __init__(self, tracer: Dict):
         super().__init__()
         self.tracer = TASK_UTILS.build(tracer)
+
+    def sync_module_training_mode(self, model, mode=True):
+        """Synchronize the training modes.
+
+        Note that modes of conv and bn must be the same during ``_fuse_fx``.
+        """
+        for module in model.modules():
+            module.training = mode
+        return
+
+    @staticmethod
+    def convert_batchnorm2d(model):
+        """Helper function to convert all :attr:`_BatchNormXd` layers and
+        :class:`torch.nn.SyncBatchNorm` layers in the model to
+        :class:`torch.nn.BatchNorm2d` layers.
+        """
+        # todo: Convert all `_BatchNormXd` and `SyncBatchNorm`
+        #  layers to `BatchNorm2d` layers but they may be :attr:`BatchNorm*D`
+        #  layers
+        module_checklist = [nn.modules.batchnorm.SyncBatchNorm, _BatchNormXd]
+
+        def traverse(module: nn.Module):
+            for child_name, child in module.named_children():
+                if isinstance(child, tuple(module_checklist)):
+                    bn = nn.BatchNorm2d(child.num_features, child.eps,
+                                        child.momentum, child.affine,
+                                        child.track_running_stats)
+                    setattr(module, child_name, bn)
+                else:
+                    traverse(child)
+
+        traverse(model)
 
     @abstractmethod
     def prepare(self, model):
