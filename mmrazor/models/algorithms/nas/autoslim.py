@@ -133,7 +133,7 @@ class AutoSlim(BaseAlgorithm):
         for kind in self.sample_kinds:
             # update the max subnet loss.
             if kind == 'max':
-                self.mutator.set_choices(self.mutator.max_choice)
+                self.mutator.set_choices(self.mutator.max_choices)
                 with optim_wrapper.optim_context(
                         self
                 ), self.distiller.teacher_recorders:  # type: ignore
@@ -146,7 +146,7 @@ class AutoSlim(BaseAlgorithm):
                     add_prefix(max_subnet_losses, 'max_subnet'))
             # update the min subnet loss.
             elif kind == 'min':
-                self.mutator.set_choices(self.mutator.min_choice)
+                self.mutator.set_choices(self.mutator.min_choices)
                 min_subnet_losses = distill_step(batch_inputs, data_samples)
                 total_losses.update(
                     add_prefix(min_subnet_losses, 'min_subnet'))

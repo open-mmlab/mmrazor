@@ -152,18 +152,17 @@ class NasMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
                     choices[name] = mutables[0].max_choice
                 elif kind == 'min':
                     choices[name] = mutables[0].min_choice
-                else:
+                elif kind == 'random':
                     choices[name] = mutables[0].sample_choice()
+                else:
+                    raise NotImplementedError()
         return choices
 
     def set_choices(self, choices: Dict) -> None:
         """Set choices for each mutable in search space."""
         for name, mutables in self.search_groups.items():
             if name not in choices:
-                if mutables[0].alias not in choices:
-                    # allow optional target_prune_ratio
-                    continue
-                else:
+                if mutables[0].alias in choices:
                     choice = choices[mutables[0].alias]
             else:
                 choice = choices[name]
