@@ -24,6 +24,14 @@ float_checkpoint = 'https://download.openmmlab.com/mmclassification/v0/resnet/re
 model = dict(
     _delete_=True,
     type='mmrazor.MMArchitectureQuant',
+    data_preprocessor=dict(
+        type='mmcls.ClsDataPreprocessor',
+        num_classes=1000,
+        # RGB format normalization parameters
+        mean=[123.675, 116.28, 103.53],
+        std=[58.395, 57.12, 57.375],
+        # convert image from BGR to RGB
+        to_rgb=True),
     architecture=_base_.model,
     float_checkpoint=float_checkpoint,
     quantizer=dict(

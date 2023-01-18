@@ -1,7 +1,7 @@
 _base_ = ['mmcls::resnet/resnet18_8xb32_in1k.py']
 
 resnet = _base_.model
-float_ckpt = '/mnt/petrelfs/caoweihan.p/ckpt/resnet18_8xb32_in1k_20210831-fbbb1da6.pth'  # noqa: E501
+float_checkpoint = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_8xb32_in1k_20210831-fbbb1da6.pth'  # noqa: E501
 
 global_qconfig = dict(
     w_observer=dict(type='mmrazor.LSQPerChannelObserver'),
@@ -26,7 +26,7 @@ model = dict(
         # convert image from BGR to RGB
         to_rgb=True),
     architecture=resnet,
-    float_checkpoint=float_ckpt,
+    float_checkpoint=float_checkpoint,
     quantizer=dict(
         type='mmrazor.OpenVINOQuantizer',
         is_qat=True,
@@ -63,9 +63,3 @@ train_cfg = dict(
     val_interval=1)
 val_cfg = dict(_delete_=True, type='mmrazor.QATValLoop')
 test_cfg = val_cfg
-
-default_hooks = dict(
-    checkpoint=dict(
-        type='CheckpointHook',
-        interval=-1,
-        out_dir='/mnt/petrelfs/caoweihan.p/training_ckpt/lsq'))
