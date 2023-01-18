@@ -356,7 +356,7 @@ class TestQATValLoop(TestCase):
 
     def test_run(self):
         cfg = copy.deepcopy(self.default_cfg)
-        cfg.experiment_name = 'test_val'
+        cfg.experiment_name = 'test_qat_val'
         cfg.pop('train_dataloader')
         cfg.pop('train_cfg')
         cfg.pop('optim_wrapper')
@@ -408,6 +408,6 @@ class TestPTQLoop(TestCase):
 
     def test_run(self):
         cfg = copy.deepcopy(self.default_cfg)
-        cfg.experiment_name = 'test_val'
+        cfg.experiment_name = 'test_ptq_run'
         runner = Runner.from_cfg(cfg)
         runner.test()
