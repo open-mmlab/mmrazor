@@ -53,7 +53,6 @@ class UntracedMethodRegistry:
 
     def __init__(self, method: FunctionType):
         self.method = method
-        self.instances: Dict = dict()
         self.owner = None
 
     def __set_name__(self, owner, name):
