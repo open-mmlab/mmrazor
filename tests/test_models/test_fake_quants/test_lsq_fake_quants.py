@@ -4,6 +4,7 @@ from unittest import TestCase
 import torch
 from torch.nn.parameter import Parameter
 
+from mmrazor import digit_version
 from mmrazor.models import LearnableFakeQuantize
 
 try:
@@ -16,6 +17,8 @@ except ImportError:
 class TestLearnableFakeQuantize(TestCase):
 
     def setUp(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
         self.zero_point_trainable_fakequant = LearnableFakeQuantize.with_args(
             observer=MovingAverageMinMaxObserver,
             quant_min=0,

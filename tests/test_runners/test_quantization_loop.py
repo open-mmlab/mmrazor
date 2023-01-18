@@ -18,6 +18,7 @@ from mmengine.runner import Runner
 from torch.nn.intrinsic.qat import ConvBnReLU2d
 from torch.utils.data import Dataset
 
+from mmrazor import digit_version
 from mmrazor.engine import (LSQEpochBasedLoop, PTQLoop, QATEpochBasedLoop,
                             QATValLoop)
 
@@ -150,6 +151,8 @@ DEFAULT_CFG = ConfigDict(
 class TestQATEpochBasedLoop(TestCase):
 
     def setUp(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
         self.temp_dir = tempfile.mkdtemp()
         MODELS.register_module(module=MMArchitectureQuant, force=True)
         DATASETS.register_module(module=ToyDataset, force=True)
@@ -248,6 +251,8 @@ class TestQATEpochBasedLoop(TestCase):
 class TestLSQEpochBasedLoop(TestCase):
 
     def setUp(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
         self.temp_dir = tempfile.mkdtemp()
         MODELS.register_module(module=MMArchitectureQuant, force=True)
         DATASETS.register_module(module=ToyDataset, force=True)
@@ -318,6 +323,8 @@ class TestLSQEpochBasedLoop(TestCase):
 class TestQATValLoop(TestCase):
 
     def setUp(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
         self.temp_dir = tempfile.mkdtemp()
         MODELS.register_module(module=MMArchitectureQuant, force=True)
         DATASETS.register_module(module=ToyDataset, force=True)
@@ -363,6 +370,8 @@ class TestQATValLoop(TestCase):
 class TestPTQLoop(TestCase):
 
     def setUp(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
         self.temp_dir = tempfile.mkdtemp()
         MODELS.register_module(module=MMArchitectureQuant, force=True)
         DATASETS.register_module(module=ToyDataset, force=True)

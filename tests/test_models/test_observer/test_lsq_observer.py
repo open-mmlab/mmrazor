@@ -3,12 +3,15 @@ from unittest import TestCase
 
 import torch
 
+from mmrazor import digit_version
 from mmrazor.models import LSQObserver, LSQPerChannelObserver
 
 
 class TestLSQObserver(TestCase):
 
     def setUp(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
         self.lsq = LSQObserver.with_args(
             dtype=torch.quint8,
             qscheme=torch.per_tensor_symmetric,
@@ -42,6 +45,8 @@ class TestLSQObserver(TestCase):
 class TestLSQPerChannelObserver(TestCase):
 
     def setUp(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
         self.lsq = LSQPerChannelObserver.with_args(
             dtype=torch.qint8,
             qscheme=torch.per_channel_symmetric,
