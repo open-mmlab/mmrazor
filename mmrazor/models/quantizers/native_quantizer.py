@@ -123,14 +123,20 @@ class NativeQuantizer(BaseQuantizer):
         assert w_mode in self.support_w_modes
         assert a_mode in self.support_a_modes
 
-        self.qconfig_mapping = QConfigMapping().set_global(
-            self.qconfig.convert())
-        if no_observer_modules:
-            self.no_observer_modules = str2class(no_observer_modules)
-            for mod in self.no_observer_modules:
-                self.qconfig_mapping.set_object_type(mod, None)
-        else:
-            self.no_observer_modules = no_observer_modules
+        self.qconfig_mapping = self.get_qconfig_mapping(no_observer_modules)
+
+        self.backend_config = BackendConfigs[self.backend]
+        self.example_inputs = (torch.randn(1, 3, 224, 224), )
+
+        self.extra_redundant_fakequants = extra_redundant_fakequants
+
+    def get_qconfig_mapping(self, no_observer_modules):
+        qconfig_mapping = QConfigMapping().set_global(self.qconfig.convert())
+
+        if no_observer_modules is not None:
+            no_observer_modules = str2class(no_observer_modules)
+            for mod in no_observer_modules:
+                qconfig_mapping.set_object_type(mod, None)
 
         fixed_qparams_observer_to_qconfig = {}
         for fixed_qparams_op, observer in _FIXED_QPARAMS_OP_TO_OBSERVER.items(
@@ -146,13 +152,10 @@ class NativeQuantizer(BaseQuantizer):
                     activation=activation, weight=default_weight_fake_quant)
                 fixed_qparams_observer_to_qconfig[
                     observer] = fixed_qparams_qconfig
-            self.qconfig_mapping.set_object_type(fixed_qparams_op,
-                                                 fixed_qparams_qconfig)
+            qconfig_mapping.set_object_type(fixed_qparams_op,
+                                            fixed_qparams_qconfig)
 
-        self.backend_config = BackendConfigs[self.backend]
-        self.example_inputs = (torch.randn(1, 3, 224, 224), )
-
-        self.extra_redundant_fakequants = extra_redundant_fakequants
+        return qconfig_mapping
 
     @property
     def backend(self):
