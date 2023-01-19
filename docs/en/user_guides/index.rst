@@ -16,4 +16,8 @@ Useful Tools
 
 Quantization
 ************
-quantization_user_guide.md
+
+.. toctree::
+   :maxdepth: 1
+
+   quantization_user_guide.md
