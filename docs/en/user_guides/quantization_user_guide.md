@@ -13,7 +13,9 @@ MMRazor's quantization is OpenMMLab's quantization toolkit, which has got throug
 
 ## Quick run
 
+```{note}
 MMRazor's quantization is based on `torch==1.13`. Other requirements are the same as MMRazor's
+```
 
 Model quantization is in mmrazor, but quantized model deployment is in mmdeploy. So we need to use two branches as follows:
 
@@ -162,9 +164,11 @@ As shown above, `global_qconfig` contains server common core args as follows:
 
 - Observes
 
-> In `forward`, they will update the statistics of the observed Tensor. And they should provide a `calculate_qparams` function that computes the quantization parameters given the collected statistics.
+In `forward`, they will update the statistics of the observed Tensor. And they should provide a `calculate_qparams` function that computes the quantization parameters given the collected statistics.
 
+```{note}
 Whether it is per channel quantization depends on whether `PerChannel` is in the observer name.
+```
 
 Because mmrazor's quantization has been compatible with PyTorch's observers, we can use observers in PyTorch and our custom observers.
 
@@ -187,7 +191,7 @@ UniformQuantizationObserverBase
 
 - Fake quants
 
-> In `forward`, they will update the statistics of the observed Tensor and fake quantize the input. They should also provide a `calculate_qparams` function that computes the quantization parameters given the collected statistics.
+In `forward`, they will update the statistics of the observed Tensor and fake quantize the input. They should also provide a `calculate_qparams` function that computes the quantization parameters given the collected statistics.
 
 Because mmrazor's quantization has been compatible with PyTorch's fakequants, we can use fakequants in PyTorch and our custom fakequants.
 
@@ -202,13 +206,13 @@ FusedMovingAvgObsFakeQuantize
 
 - Qschemes
 
-> Include some basic quantization configurations.
->
-> `qdtype`: to specify whether quantized data type is sign or unsign. It can be chosen from \[ 'qint8',  'quint8' \]
->
-> `bit`: to specify the quantized data bit. It can be chosen from \[1 ~ 16\].
->
-> `is_symmetry`: to specify whether to use symmetry quantization. It can be chosen from \[ True, False \]
+Include some basic quantization configurations.
+
+`qdtype`: to specify whether quantized data type is sign or unsign. It can be chosen from \[ 'qint8',  'quint8' \]
+
+`bit`: to specify the quantized data bit. It can be chosen from \[1 ~ 16\].
+
+`is_symmetry`: to specify whether to use symmetry quantization. It can be chosen from \[ True, False \]
 
 The specified qscheme is actually implemented by observers, so how to configurate other args needs to be based on the given observers, such as `is_symmetric_range` and `averaging_constant`.
 

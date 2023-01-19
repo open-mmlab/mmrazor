@@ -10,10 +10,6 @@ Train & Test
    3_train_with_different_devices.md
    4_test_a_model.md
 
-Useful Tools
-************
-   please refer to upstream applied repositories' docs
-
 Quantization
 ************
 
@@ -21,3 +17,8 @@ Quantization
    :maxdepth: 1
 
    quantization_user_guide.md
+
+Useful Tools
+************
+
+please refer to upstream applied repositories' docs
