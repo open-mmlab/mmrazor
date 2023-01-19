@@ -13,3 +13,7 @@ Train & Test
 Useful Tools
 ************
    please refer to upstream applied repositories' docs
+
+Quantization
+************
+quantization_user_guide.md
