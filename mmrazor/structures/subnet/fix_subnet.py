@@ -4,6 +4,7 @@ from typing import Dict, Optional, Tuple
 
 from mmengine import fileio
 from mmengine.logging import print_log
+from mmengine.model import is_model_wrapper
 from torch import nn
 
 from mmrazor.registry import MODELS
@@ -191,6 +192,8 @@ def _export_subnet_by_mutable(model: nn.Module) -> Dict:
 
 
 def _export_subnet_by_mutator(model: nn.Module) -> Dict:
+    if is_model_wrapper(model):
+        model = model.module
     if not hasattr(model, 'mutator'):
         raise ValueError('model should contain `mutator` attribute, but got '
                          f'{type(model)} model')
