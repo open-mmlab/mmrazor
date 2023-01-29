@@ -53,7 +53,7 @@ optim_wrapper = dict(
         optimizer=dict(
             type='mmcls.SGD', lr=0.025, momentum=0.9, weight_decay=3e-4),
         clip_grad=dict(max_norm=5, norm_type=2)),
-    search_params=dict(
+    mutator=dict(
         optimizer=dict(type='mmcls.Adam', lr=3e-4, weight_decay=1e-3)))
 
 search_epochs = 50

@@ -114,7 +114,7 @@ class EstimateResourcesHook(Hook):
                     delattr(module, 'arch_weights')
 
         copied_model = copy.deepcopy(model)
-        copied_model.set_subnet(copied_model.sample_subnet())
+        copied_model.mutator.set_choices(copied_model.mutator.sample_choices())
 
         subnet_dict = export_fix_subnet(copied_model)[0]
         load_fix_subnet(copied_model, subnet_dict)

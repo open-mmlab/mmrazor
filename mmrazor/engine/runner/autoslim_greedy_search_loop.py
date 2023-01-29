@@ -67,12 +67,12 @@ class AutoSlimGreedySearchLoop(TestLoop):
         else:
             self.model = runner.model
 
-        assert hasattr(self.model, 'search_space')
-        search_space = self.model.search_space
+        assert hasattr(self.model, 'mutator')
+        units = self.model.mutator.mutable_units
 
         self.candidate_choices = {}
-        for name, mutables in search_space.items():
-            self.candidate_choices[name] = mutables[0].candidate_choices
+        for unit in units:
+            self.candidate_choices[unit.alias] = unit.candidate_choices
 
         self.max_subnet = {}
         for name, candidate_choices in self.candidate_choices.items():
@@ -118,7 +118,7 @@ class AutoSlimGreedySearchLoop(TestLoop):
                     pruned_subnet[unit_name] -= 1
                     pruned_subnet_choices = self._channel_bins2choices(
                         pruned_subnet)
-                    self.model.set_subnet(pruned_subnet_choices)
+                    self.model.mutator.set_choices(pruned_subnet_choices)
                     metrics = self._val_subnet()
                     score = metrics[self.score_key] \
                         if len(metrics) != 0 else 0.
@@ -202,7 +202,7 @@ class AutoSlimGreedySearchLoop(TestLoop):
         for subnet, flops in zip(self.searched_subnet,
                                  self.searched_subnet_flops):
             subnet_choice = self._channel_bins2choices(subnet)
-            self.model.set_subnet(subnet_choice)
+            self.model.mutator.set_choices(subnet_choice)
             fixed_subnet, _ = export_fix_subnet(self.model)
             save_name = 'FLOPS_{:.2f}M.yaml'.format(flops)
             fixed_subnet = convert_fix_subnet(fixed_subnet)

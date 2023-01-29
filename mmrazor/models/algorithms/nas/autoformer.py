@@ -6,12 +6,12 @@ from mmengine.model import BaseModel
 from mmengine.structures import BaseDataElement
 from torch import nn
 
-from mmrazor.models.mutators.base_mutator import BaseMutator
+from mmrazor.models.mutators import NasMutator
 from mmrazor.registry import MODELS
 from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm, LossResults
 
-VALID_MUTATOR_TYPE = Union[BaseMutator, Dict]
+VALID_MUTATOR_TYPE = Union[NasMutator, Dict]
 
 
 @MODELS.register_module()
@@ -59,12 +59,11 @@ class Autoformer(BaseAlgorithm):
             self.mutator.prepare_from_supernet(self.architecture)
             self.is_supernet = True
 
-    def _build_mutator(self,
-                       mutator: VALID_MUTATOR_TYPE = None) -> BaseMutator:
+    def _build_mutator(self, mutator: VALID_MUTATOR_TYPE = None) -> NasMutator:
         """build mutator."""
         if isinstance(mutator, dict):
             mutator = MODELS.build(mutator)
-        if not isinstance(mutator, BaseMutator):
+        if not isinstance(mutator, NasMutator):
             raise TypeError('mutator should be a `dict` or `NasMutator` '
                             f'instance, but got {type(mutator)}.')
         return mutator

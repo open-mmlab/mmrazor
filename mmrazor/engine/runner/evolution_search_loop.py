@@ -220,7 +220,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         """Validate candicate one by one from the candicate pool, and update
         top-k candicates."""
         for i, candidate in enumerate(self.candidates.subnets):
-            self.model.set_subnet(candidate)
+            self.model.mutator.set_choices(candidate)
             metrics = self._val_candidate(use_predictor=self.use_predictor)
             score = round(metrics[self.score_key], 2) \
                 if len(metrics) != 0 else 0.
@@ -311,7 +311,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         """Save best subnet in searched top-k candidates."""
         if self.runner.rank == 0:
             best_random_subnet = self.top_k_candidates.subnets[0]
-            self.model.set_subnet(best_random_subnet)
+            self.model.mutator.set_choices(best_random_subnet)
 
             best_fix_subnet, sliced_model = \
                 export_fix_subnet(self.model, slice_weight=True)

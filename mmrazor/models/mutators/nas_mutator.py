@@ -161,11 +161,7 @@ class NasMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
     def set_choices(self, choices: Dict) -> None:
         """Set choices for each mutable in search space."""
         for name, mutables in self.search_groups.items():
-            if name not in choices:
-                if mutables[0].alias in choices:
-                    choice = choices[mutables[0].alias]
-            else:
-                choice = choices[name]
+            choice = choices[name]
 
             for mutable in mutables:
                 mutable.current_choice = choice  # type: ignore

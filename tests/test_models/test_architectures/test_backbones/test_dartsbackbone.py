@@ -54,7 +54,7 @@ class TestDartsBackbone(TestCase):
             route_cfg=self.route_cfg)
 
         self.mutator_cfg = dict(
-            type='DiffModuleMutator',
+            type='NasMutator',
             custom_groups=None,
         )
 

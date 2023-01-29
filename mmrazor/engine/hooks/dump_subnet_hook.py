@@ -122,7 +122,7 @@ class DumpSubnetHook(Hook):
                     delattr(module, 'arch_weights')
 
         copied_model = copy.deepcopy(model)
-        copied_model.set_subnet(copied_model.sample_subnet())
+        copied_model.mutator.set_choices(copied_model.sample_choices())
 
         subnet_dict = export_fix_subnet(copied_model)[0]
         subnet_dict = convert_fix_subnet(subnet_dict)

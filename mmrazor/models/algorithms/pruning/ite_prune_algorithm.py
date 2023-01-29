@@ -136,33 +136,24 @@ class ItePruneAlgorithm(BaseAlgorithm):
         self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
         self.mutator.prepare_from_supernet(self.architecture)
 
-    def group_target_pruning_ratio(
-        self, target: Dict[str, float],
-        search_groups: Dict[int,
-                            List[MutableChannelUnit]]) -> Dict[int, float]:
+    def set_target_pruning_ratio(
+            self, target: Dict[str, float],
+            units: List[MutableChannelUnit]) -> Dict[str, float]:
         """According to the target pruning ratio of each unit, set the target
-        ratio of each search group."""
-        group_target: Dict[int, float] = dict()
-        for group_id, units in search_groups.items():
-            for unit in units:
-                unit_name = unit.name
-                # The config of target pruning ratio does not
-                # contain all units.
-                if unit_name not in target:
-                    continue
-                if group_id in group_target:
-                    unit_target = target[unit_name]
-                    if unit_target != group_target[group_id]:
-                        group_names = [u.name for u in units]
-                        raise ValueError(
-                            f"'{unit_name}' target ratio is different from "
-                            f'other units in the same group {group_names}. '
-                            'Pls check your target pruning ratio config.')
-                else:
-                    unit_target = target[unit_name]
-                    assert isinstance(unit_target, (float, int))
-                    group_target[group_id] = unit_target
-        return group_target
+        ratio of each unit in units."""
+        target_pruning_ratio: Dict[str, float] = dict()
+        for unit in units:
+            assert isinstance(unit, MutableChannelUnit), (
+                f'unit should be `MutableChannelUnit`, but got {type(unit)}.')
+            unit_name = unit.name
+            # The config of target pruning ratio does not
+            # contain all units.
+            if unit_name not in target:
+                continue
+            unit_target = target[unit_name]
+            assert isinstance(unit_target, (float, int))
+            target_pruning_ratio[unit_name] = unit_target
+        return target_pruning_ratio
 
     def check_prune_target(self, config: Dict):
         """Check if the prune-target is supported."""
@@ -175,10 +166,10 @@ class ItePruneAlgorithm(BaseAlgorithm):
         message_hub['max_epoch/iter'] unaccessible when initiation.
         """
         if self.target_pruning_ratio is None:
-            group_target_ratio = self.mutator.current_choices
+            target_pruning_ratio = self.mutator.current_choices
         else:
-            group_target_ratio = self.group_target_pruning_ratio(
-                self.target_pruning_ratio, self.mutator.search_groups)
+            target_pruning_ratio = self.set_target_pruning_ratio(
+                self.target_pruning_ratio, self.mutator.mutable_units)
 
         if self.by_epoch:
             # step_freq based on iterations
@@ -187,7 +178,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
         # config_manager move to forward.
         # message_hub['max_epoch'] unaccessible when init
         prune_config_manager = ItePruneConfigManager(
-            group_target_ratio,
+            target_pruning_ratio,
             self.mutator.current_choices,
             self.step_freq,
             prune_times=self.prune_times,

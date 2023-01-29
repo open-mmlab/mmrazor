@@ -90,10 +90,10 @@ class DCFF(ItePruneAlgorithm):
         In DCFF, prune_times is set by step_freq and self._max_iters.
         """
         if self.target_pruning_ratio is None:
-            group_target_ratio = self.mutator.current_choices
+            target_pruning_ratio = self.mutator.current_choices
         else:
-            group_target_ratio = self.group_target_pruning_ratio(
-                self.target_pruning_ratio, self.mutator.search_groups)
+            target_pruning_ratio = self.set_target_pruning_ratio(
+                self.target_pruning_ratio, self.mutator.mutable_units)
 
         if self.by_epoch:
             # step_freq based on iterations
@@ -112,7 +112,7 @@ class DCFF(ItePruneAlgorithm):
         # config_manager move to forward.
         # message_hub['max_epoch'] unaccessible when init
         prune_config_manager = ItePruneConfigManager(
-            group_target_ratio,
+            target_pruning_ratio,
             self.mutator.current_choices,
             self.step_freq,
             prune_times=self.prune_times,

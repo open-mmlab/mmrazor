@@ -6,6 +6,7 @@ model_cfg = dict(
     type='sub_model',
     cfg=dict(
         cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False),
+    fix_subnet='configs/pruning/mmcls/dcff/fix_subnet.json',
     mode='mutator',
     init_cfg=dict(
         type='Pretrained',

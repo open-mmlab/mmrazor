@@ -154,7 +154,8 @@ def export_fix_subnet(
         from mmrazor.models.mutators import ChannelMutator
 
         copied_model = copy.deepcopy(model)
-        if isinstance(model.mutator, ChannelMutator):
+        if hasattr(model, 'mutator') and \
+                isinstance(model.mutator, ChannelMutator):
             _dynamic_to_static(copied_model)
         else:
             load_fix_subnet(copied_model, fix_subnet)

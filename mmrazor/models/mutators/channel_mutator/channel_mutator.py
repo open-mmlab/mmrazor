@@ -45,10 +45,6 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
                      demo_input=(1, 3, 224, 224),
                      tracer_type='BackwardTracer')
 
-        custom_groups (list[list[str]], optional): User-defined search groups.
-            All searchable modules that are not in ``custom_group`` will be
-            grouped separately.
-
         init_cfg (dict, optional): initialization configuration dict for
             BaseModule.
 
