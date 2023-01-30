@@ -21,7 +21,7 @@
 <!--算法库 Badges-->
 
 [![PyPI](https://img.shields.io/pypi/v/mmrazor)](https://pypi.org/project/mmrazor)
-[![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmrazor.readthedocs.io/en/dev-1.x/)
+[![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmrazor.readthedocs.io/en/quantize/)
 [![badge](https://github.com/open-mmlab/mmrazor/workflows/build/badge.svg)](https://github.com/open-mmlab/mmrazor/actions)
 [![codecov](https://codecov.io/gh/open-mmlab/mmrazor/branch/master/graph/badge.svg)](https://codecov.io/gh/open-mmlab/mmrazor)
 [![license](https://img.shields.io/github/license/open-mmlab/mmrazor.svg)](https://github.com/open-mmlab/mmrazor/blob/master/LICENSE)
@@ -32,9 +32,9 @@
 
 <!--Note:请根据各算法库自身情况设置项目和链接-->
 
-[📘Documentation](https://mmrazor.readthedocs.io/en/dev-1.x/) |
-[🛠️Installation](https://mmrazor.readthedocs.io/en/dev-1.x/get_started/installation.html) |
-[👀Model Zoo](https://mmrazor.readthedocs.io/en/dev-1.x/get_started/model_zoo.html) |
+[📘Documentation](https://mmrazor.readthedocs.io/en/quantize/) |
+[🛠️Installation](https://mmrazor.readthedocs.io/en/quantize/get_started/installation.html) |
+[👀Model Zoo](https://mmrazor.readthedocs.io/en/quantize/get_started/model_zoo.html) |
 [🤔Reporting Issues](https://github.com/open-mmlab/mmrazor/issues/new/choose)
 
 </div>
@@ -68,7 +68,7 @@ MMRazor is a model compression toolkit for model slimming and AutoML, which incl
 - Neural Architecture Search (NAS)
 - Pruning
 - Knowledge Distillation (KD)
-- Quantization (come soon)
+- Quantization
 
 It is a part of the [OpenMMLab](https://openmmlab.com/) project.
 
@@ -86,7 +86,7 @@ Major features:
 
   With better modular design, developers can implement new model compression algorithms with only a few codes, or even by simply modifying config files.
 
-Below is an overview of MMRazor's design and implementation, please refer to [tutorials](https://mmrazor.readthedocs.io/en/dev-1.x/get_started/overview.html) for more details.
+Below is an overview of MMRazor's design and implementation, please refer to [tutorials](https://mmrazor.readthedocs.io/en/quantize/get_started/overview.html) for more details.
 
 <div align="center">
   <img src="resources/design_and_implement.png" style="zoom:100%"/>
@@ -164,7 +164,7 @@ Please refer to [installation.md](/docs/en/get_started/installation.md) for more
 
 ## Getting Started
 
-Please refer to [user guides](https://mmrazor.readthedocs.io/en/dev-1.x/user_guides/index.html) for the basic usage of MMRazor. There are also [advanced guides](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/index.html):
+Please refer to [user guides](https://mmrazor.readthedocs.io/en/quantize/user_guides/index.html) for the basic usage of MMRazor. There are also [advanced guides](https://mmrazor.readthedocs.io/en/quantize/advanced_guides/index.html):
 
 ## Contributing
 
