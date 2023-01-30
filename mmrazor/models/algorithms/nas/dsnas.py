@@ -144,7 +144,8 @@ class DSNAS(BaseAlgorithm):
                 # synchronize arch params to start the finetune stage.
                 for k, v in self.mutator.arch_params.items():
                     dist.broadcast(v, src=0)
-                self.mutator.fix_choices()
+                self._fix_archtecture()
+                self.is_supernet = False
 
             # 1. update architecture
             with optim_wrapper['architecture'].optim_context(self):
@@ -184,6 +185,14 @@ class DSNAS(BaseAlgorithm):
             optim_wrapper.update_params(parsed_losses)
 
         return log_vars
+
+    def _fix_archtecture(self):
+        """Fix architecture based on current choice."""
+        self.mutator.set_choices(self.mutator.sample_choices())
+        for module in self.architecture.modules():
+            if isinstance(module, BaseMutable):
+                if not module.is_fixed:
+                    module.fix_chosen(module.current_choice)
 
     def _get_module_resources(self):
         """Get resources of spec modules."""
@@ -295,7 +304,8 @@ class DSNASDDP(MMDistributedDataParallel):
                 # synchronize arch params to start the finetune stage.
                 for k, v in self.module.mutator.arch_params.items():
                     dist.broadcast(v, src=0)
-                self.mutator.fix_choices()
+                self.module._fix_archtecture()
+                self.module.is_supernet = False
 
             # 1. update architecture
             with optim_wrapper['architecture'].optim_context(self):

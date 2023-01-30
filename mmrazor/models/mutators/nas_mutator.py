@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import warnings
 from typing import Dict, List, Optional
 
 import torch
@@ -6,7 +7,8 @@ import torch.nn as nn
 from mmengine.model import ModuleList
 from torch.nn import Module
 
-from mmrazor.models.mutables import BaseMutable
+from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
+from mmrazor.models.mutables.mutable_module import MutableModule
 from mmrazor.registry import MODELS
 from .base_mutator import MUTABLE_TYPE, BaseMutator
 from .group_mixin import GroupMixin
@@ -45,13 +47,16 @@ class NasMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
         self._search_groups = dict()
 
         # prepare for channel mutables
-        units = self._prepare_from_predefined_model(supernet)
-        mutable_units = [unit for unit in units if unit.is_mutable]
+        if self.has_channel(supernet):
+            units = self._prepare_from_predefined_model(supernet)
+            self.mutable_units = [unit for unit in units if unit.is_mutable]
 
-        _channel_groups = dict()
-        for id, unit in enumerate(ModuleList(mutable_units)):
-            _channel_groups['channel' + '_' + str(id)] = [unit]
-        self._search_groups.update(_channel_groups)
+            _channel_groups = dict()
+            for id, unit in enumerate(ModuleList(self.mutable_units)):
+                _channel_groups['channel' + '_' + str(id)] = [unit]
+            self._search_groups.update(_channel_groups)
+        else:
+            self.mutable_units = []
 
         # prepare for value mutables
         _value_groups: Dict[str, List[MUTABLE_TYPE]] = \
@@ -61,19 +66,28 @@ class NasMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
     def prepare_arch_params(self):
         """This function will build searchable params for each layer, which are
         generally used in differentiable search algorithms, such as Darts'
-        series. Each name corresponds to an search param, so the Mutables with
-        the same name share the same search param.
+        series.
 
-        Returns:
-            torch.nn.ParameterDict: search params got by the search_space.
+        Each name corresponds to an search param, so the Mutables with the same
+        name share the same search param.
         """
         self._arch_params = nn.ParameterDict()
 
         for name, mutables in self.search_groups.items():
-            self._arch_params[name] = nn.Parameter(
-                torch.randn(mutables[0].num_choices) * 1e-3)
+            if isinstance(mutables[0], MutableModule):
+                self._arch_params[name] = nn.Parameter(
+                    torch.randn(mutables[0].num_choices) * 1e-3)
 
         self._modify_supernet_forward()
+
+    def has_channel(self, supernet):
+        """Whether to build channel space."""
+        for module in supernet.modules():
+            if isinstance(module, DynamicChannelMixin):
+                if module.get_mutable_attr('out_channels') or \
+                        module.get_mutable_attr('in_channels'):
+                    return True
+        return False
 
     @property
     def search_groups(self) -> Dict[str, List[MUTABLE_TYPE]]:
@@ -136,7 +150,8 @@ class NasMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
         """
         for name, mutables in self.search_groups.items():
             for mutable in mutables:
-                mutable.set_forward_args(arch_param=self.arch_params[name])
+                if isinstance(mutable, MutableModule):
+                    mutable.set_forward_args(arch_param=self.arch_params[name])
 
     # choice manage
 
@@ -144,7 +159,8 @@ class NasMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
         """Random sample choices by search space."""
         choices = dict()
         for name, mutables in self.search_groups.items():
-            if hasattr(self, 'arch_params'):
+            if hasattr(self,
+                       'arch_params') and name in self.arch_params.keys():
                 arch_param = self.arch_params[name]
                 choices[name] = mutables[0].sample_choice(arch_param)
             else:
@@ -166,21 +182,23 @@ class NasMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
             for mutable in mutables:
                 mutable.current_choice = choice  # type: ignore
 
-    def fix_choices(self):
-        """Fix choices."""
-        self.set_choices(self.sample_choices())
-        for module in self.architecture.modules():
-            if isinstance(module, BaseMutable):
-                if not module.is_fixed:
-                    module.fix_chosen(module.current_choice)
-        self.is_supernet = False
-
     @property
     def max_choices(self) -> Dict:
         """Get max choices for each mutable in search space."""
         max_choices = dict()
+        warned = False
         for name, mutables in self.search_groups.items():
-            max_choices[name] = mutables[0].max_choice
+            if hasattr(self,
+                       'arch_params') and name in self.arch_params.keys():
+                arch_param = self.arch_params[name]
+                max_choices[name] = mutables[0].sample_choice(arch_param)
+                if not warned:
+                    warnings.warn('mutables with `arch param` detected. '
+                                  'which is not supposed to have max choices. '
+                                  'Sample by arch params instead.')
+                    warned = True
+            else:
+                max_choices[name] = mutables[0].max_choice
 
         return max_choices
 
@@ -188,8 +206,19 @@ class NasMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
     def min_choices(self) -> Dict:
         """Get min choices for each mutable in search space."""
         min_choices = dict()
+        warned = False
         for name, mutables in self.search_groups.items():
-            min_choices[name] = mutables[0].min_choice
+            if hasattr(self,
+                       'arch_params') and name in self.arch_params.keys():
+                arch_param = self.arch_params[name]
+                min_choices[name] = mutables[0].sample_choice(arch_param)
+                if not warned:
+                    warnings.warn('mutables with `arch param` detected. '
+                                  'which is not supposed to have min choices. '
+                                  'Sample by arch params instead.')
+                    warned = True
+            else:
+                min_choices[name] = mutables[0].min_choice
 
         return min_choices
 
@@ -204,14 +233,28 @@ class NasMutator(BaseMutator[MUTABLE_TYPE], GroupMixin):
 
     def set_max_choices(self):
         """Set max choices for each mutable in search space."""
+        warned = False
         for name, mutables in self.search_groups.items():
             choice = self.max_choices[name]
+            if hasattr(self,
+                       'arch_params') and name in self.arch_params.keys():
+                if not warned:
+                    warnings.warn('mutables with `arch param` detected. '
+                                  '`set_max_choices` is not available for it.')
+                    warned = True
             for mutable in mutables:
                 mutable.current_choice = choice
 
     def set_min_choices(self):
         """Set min choices for each mutable in search space."""
+        warned = False
         for name, mutables in self.search_groups.items():
             choice = self.min_choices[name]
+            if hasattr(self,
+                       'arch_params') and name in self.arch_params.keys():
+                if not warned:
+                    warnings.warn('mutables with `arch param` detected. '
+                                  '`set_max_choices` is not available for it.')
+                    warned = True
             for mutable in mutables:
                 mutable.current_choice = choice
