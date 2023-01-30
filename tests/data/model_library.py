@@ -647,8 +647,27 @@ class MMSegModelLibrary(MMModelLibrary):
         return config
 
 
-# tools
+class MMPoseModelLibrary(MMModelLibrary):
+    default_includes: List = [
+        'hand',
+        'face',
+        'wholebody',
+        'body',
+        'animal',
+    ]
+    base_config_path = '/'
+    repo = 'mmpose'
 
+    def __init__(self, include=default_includes, exclude=[]) -> None:
+        super().__init__(include, exclude=exclude)
+
+    @classmethod
+    def _config_process(cls, config: Dict):
+        config['_scope_'] = 'mmpose'
+        return config
+
+
+# tools
 
 def revert_sync_batchnorm(module):
     # this is very similar to the function that it is trying to revert:
