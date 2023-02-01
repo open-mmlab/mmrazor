@@ -104,22 +104,17 @@ jobs:
           mim install 'mmcv >= 2.0.0rc1'
       - name: Install MMCls
         run: pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
-      - name: Install MMDet
-        run: pip install git+https://github.com/open-mmlab/mmdetection.git@dev-3.x
-      - name: Install MMSeg
-        if: success() || failure()
-        run: pip install git+https://github.com/open-mmlab/mmsegmentation.git@dev-1.x
-      - name: Install MMPose
-        if: success() || failure()
-        run: pip install git+https://github.com/open-mmlab/mmpose.git@dev-1.x
+      - name: Install downstream dependencies for mmrazor (optional)
+        run:
+          command: |
+            mim install 'mmdet <= 3.0.0rc5'
+            pip install git+https://github.com/open-mmlab/mmsegmentation.git@dev-1.x
+            pip install git+https://github.com/open-mmlab/mmpose.git@dev-1.x
       - name: Install other dependencies
-        if: success() || failure()
         run: pip install -r requirements.txt
       - name: Build and install
-        if: success() || failure()
         run: rm -rf .eggs && pip install -e .
       - name: Run unittests and generate coverage report
-        if: success() || failure()
         run: |
           coverage run --branch --source mmrazor -m pytest tests/
           coverage xml

@@ -72,17 +72,15 @@ jobs:
       - run:
           name: Install downstream dependencies for mmrazor (optional)
           command: |
-            pip install git+https://github.com/open-mmlab/mmdetection.git@dev-3.x
+            mim install 'mmdet <= 3.0.0rc5'
             pip install git+https://github.com/open-mmlab/mmsegmentation.git@dev-1.x
             pip install git+https://github.com/open-mmlab/mmpose.git@dev-1.x
       - run:
           name: Build and install
-          if: success() || failure()
           command: |
             pip install -e .
       - run:
           name: Run unittests
-          if: success() || failure()
           command: |
             coverage run --branch --source mmrazor -m pytest tests/
             coverage xml
@@ -128,17 +126,15 @@ jobs:
       - run:
           name: Install downstream dependencies for mmrazor (optional)
           command: |
-            docker exec mmrazor pip install -e /mmdetection
+            docker exec mmrazor mim install 'mmdet <= 3.0.0rc5'
             docker exec mmrazor pip install -e /mmsegmentation
             docker exec mmrazor pip install -e /mmpose
       - run:
           name: Build and install
-          if: success() || failure()
           command: |
             docker exec mmrazor pip install -e .
       - run:
           name: Run unittests
-          if: success() || failure()
           command: |
             docker exec mmrazor pytest tests/
 
