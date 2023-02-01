@@ -11,7 +11,7 @@ from mmengine.runner import TestLoop
 from torch.utils.data import DataLoader
 
 from mmrazor.registry import LOOPS, TASK_UTILS
-from mmrazor.structures import export_fix_subnet
+from mmrazor.structures import convert_fix_subnet, export_fix_subnet
 from .utils import check_subnet_resources
 
 
@@ -68,14 +68,15 @@ class AutoSlimGreedySearchLoop(TestLoop):
             self.model = runner.model
 
         assert hasattr(self.model, 'mutator')
-        search_groups = self.model.mutator.search_groups
+        units = self.model.mutator.mutable_units
+
         self.candidate_choices = {}
-        for group_id, modules in search_groups.items():
-            self.candidate_choices[group_id] = modules[0].candidate_choices
+        for unit in units:
+            self.candidate_choices[unit.alias] = unit.candidate_choices
 
         self.max_subnet = {}
-        for group_id, candidate_choices in self.candidate_choices.items():
-            self.max_subnet[group_id] = len(candidate_choices)
+        for name, candidate_choices in self.candidate_choices.items():
+            self.max_subnet[name] = len(candidate_choices)
         self.current_subnet = self.max_subnet
 
         current_subnet_choices = self._channel_bins2choices(
@@ -117,7 +118,7 @@ class AutoSlimGreedySearchLoop(TestLoop):
                     pruned_subnet[unit_name] -= 1
                     pruned_subnet_choices = self._channel_bins2choices(
                         pruned_subnet)
-                    self.model.set_subnet(pruned_subnet_choices)
+                    self.model.mutator.set_choices(pruned_subnet_choices)
                     metrics = self._val_subnet()
                     score = metrics[self.score_key] \
                         if len(metrics) != 0 else 0.
@@ -195,27 +196,16 @@ class AutoSlimGreedySearchLoop(TestLoop):
 
     def _save_searched_subnet(self):
         """Save the final searched subnet dict."""
-
-        def _convert_fix_subnet(fixed_subnet: Dict[str, Any]):
-            from mmrazor.utils.typing import DumpChosen
-
-            converted_fix_subnet = dict()
-            for key, val in fixed_subnet.items():
-                assert isinstance(val, DumpChosen)
-                converted_fix_subnet[key] = dict(val._asdict())
-
-            return converted_fix_subnet
-
         if self.runner.rank != 0:
             return
         self.runner.logger.info('Search finished:')
         for subnet, flops in zip(self.searched_subnet,
                                  self.searched_subnet_flops):
             subnet_choice = self._channel_bins2choices(subnet)
-            self.model.set_subnet(subnet_choice)
+            self.model.mutator.set_choices(subnet_choice)
             fixed_subnet, _ = export_fix_subnet(self.model)
             save_name = 'FLOPS_{:.2f}M.yaml'.format(flops)
-            fixed_subnet = _convert_fix_subnet(fixed_subnet)
+            fixed_subnet = convert_fix_subnet(fixed_subnet)
             fileio.dump(fixed_subnet, osp.join(self.runner.work_dir,
                                                save_name))
             self.runner.logger.info(

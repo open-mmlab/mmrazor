@@ -80,7 +80,8 @@ class SubnetValLoop(ValLoop, CalibrateBNMixin):
                     metrics = self._evaluate_once()
                     all_metrics.update(add_prefix(metrics, 'min_subnet'))
                 elif 'random' in kind:
-                    self.model.set_subnet(self.model.sample_subnet())
+                    self.model.mutator.set_choices(
+                        self.model.mutator.sample_choices())
                     metrics = self._evaluate_once()
                     all_metrics.update(add_prefix(metrics, f'{kind}_subnet'))
 

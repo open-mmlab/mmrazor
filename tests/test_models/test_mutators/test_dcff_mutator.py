@@ -93,13 +93,8 @@ def test_DCFF_channel_mutator() -> None:
     # ResBlock
     mutator = DCFFChannelMutator(channel_unit_cfg=dict(type='DCFFChannelUnit'))
 
-    target_pruning_ratio = {
-        0: 0.5,
-    }
-
     model = ResBlock()
     mutator.prepare_from_supernet(model)
-    mutator.set_choices(target_pruning_ratio)
     mutator.calc_information(1.0)
     out3 = model(imgs)
 

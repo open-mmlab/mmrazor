@@ -21,7 +21,7 @@ from mmrazor.registry import DATASETS, METRICS, MODELS
 @MODELS.register_module()
 class ToyModel_GreedySamplerTrainLoop(BaseModel):
 
-    @patch('mmrazor.models.mutators.OneShotModuleMutator')
+    @patch('mmrazor.models.mutators.NasMutator')
     def __init__(self, mock_mutator):
         super().__init__()
         self.linear1 = nn.Linear(2, 2)

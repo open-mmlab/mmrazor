@@ -45,8 +45,8 @@ class SlimmableNetwork(BaseAlgorithm):
     """
 
     def __init__(self,
-                 mutator: VALID_MUTATOR_TYPE,
                  architecture: Union[BaseModel, Dict],
+                 mutator: VALID_MUTATOR_TYPE = None,
                  deploy_index=-1,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  init_cfg: Optional[Dict] = None) -> None:

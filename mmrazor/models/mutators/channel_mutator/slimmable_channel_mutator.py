@@ -29,7 +29,7 @@ class SlimmableChannelMutator(ChannelMutator[SlimmableChannelUnit]):
                      tracer_type='BackwardTracer'),
                  init_cfg: Optional[Dict] = None) -> None:
 
-        super().__init__(channel_unit_cfg, parse_cfg, None, init_cfg)
+        super().__init__(channel_unit_cfg, parse_cfg, init_cfg)
 
         self.subnets = self._prepare_subnets(self.units_cfg)
 
@@ -65,7 +65,6 @@ class SlimmableChannelMutator(ChannelMutator[SlimmableChannelUnit]):
         Returns:
             List[Dict[str, int]]: config of the subnets.
         """
-        """Prepare subnet config."""
         subnets: List[Dict[str, int]] = []
         num_subnets = 0
         for key in unit_cfg:

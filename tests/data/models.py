@@ -859,6 +859,7 @@ class DynamicMMBlock(nn.Module):
         self, 
         conv_cfg: Dict = dict(type='mmrazor.BigNasConv2d'),
         norm_cfg: Dict = dict(type='mmrazor.DynamicBatchNorm2d'),
+        fine_grained_mode: bool = False,
     ) -> None:
         super().__init__()
 
@@ -875,6 +876,8 @@ class DynamicMMBlock(nn.Module):
             parse_values(self.arch_setting['num_out_channels'])
         assert len(self.kernel_size_list) == len(self.num_blocks_list) == \
             len(self.expand_ratio_list) == len(self.num_channels_list)
+
+        self.fine_grained_mode = fine_grained_mode
         self.with_attentive_shortcut = True
         self.in_channels = 24
 
@@ -997,17 +1000,28 @@ class DynamicMMBlock(nn.Module):
                 candidate_choices=out_channels,
                 num_channels=max(out_channels))
 
-            mutable_kernel_size = OneShotMutableValue(
-                alias=prefix + 'kernel_size', value_list=kernel_sizes)
+            if not self.fine_grained_mode:
+                mutable_kernel_size = OneShotMutableValue(
+                    alias=prefix + 'kernel_size', value_list=kernel_sizes)
 
-            mutable_expand_ratio = OneShotMutableValue(
-                alias=prefix + 'expand_ratio', value_list=expand_ratios)
+                mutable_expand_ratio = OneShotMutableValue(
+                    alias=prefix + 'expand_ratio', value_list=expand_ratios)
 
             mutable_depth = OneShotMutableValue(
                 alias=prefix + 'depth', value_list=num_blocks)
             layer.register_mutable_attr('depth', mutable_depth)
 
             for k in range(max(self.num_blocks_list[i])):
+
+                if self.fine_grained_mode:
+                    mutable_kernel_size = OneShotMutableValue(
+                        alias=prefix + str(k) + '.kernel_size',
+                        value_list=kernel_sizes)
+
+                    mutable_expand_ratio = OneShotMutableValue(
+                        alias=prefix + str(k) + '.expand_ratio',
+                        value_list=expand_ratios)
+
                 mutate_mobilenet_layer(layer[k], mid_mutable,
                                        mutable_out_channels,
                                        mutable_expand_ratio,
