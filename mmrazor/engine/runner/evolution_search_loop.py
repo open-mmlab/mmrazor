@@ -130,7 +130,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         self.predictor_cfg = predictor_cfg
         if self.predictor_cfg is not None:
             self.predictor_cfg['score_key'] = self.score_key
-            self.predictor_cfg['search_groups'] = self.model.search_space
+            self.predictor_cfg['search_groups'] = \
+                self.model.mutator.search_groups
             self.predictor = TASK_UTILS.build(self.predictor_cfg)
 
     def run(self) -> None:

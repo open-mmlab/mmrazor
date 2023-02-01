@@ -227,12 +227,9 @@ class DSNAS(BaseAlgorithm):
         flops_loss = 0.0
         for name, module in self.architecture.named_modules():
             if isinstance(module, BaseMutable):
-                k = str(self.search_space_name_list.index(name))
-                # NOTE: with `ModuleMutable` as mutable, the keys in
-                # self.mutator.arch_params must contain the prefix `module`.
-                # See `prepare_from_supernet` in `NasMutator` for details.
-                probs = F.softmax(self.mutator.arch_params['module_' + str(k)],
-                                  -1)
+                k = module.mutable_prefix + '_' + \
+                    str(self.search_space_name_list.index(name))
+                probs = F.softmax(self.mutator.arch_params[k], -1)
                 arch_loss += torch.log(
                     (module.arch_weights * probs).sum(-1)).sum()
 
@@ -261,11 +258,9 @@ class DSNAS(BaseAlgorithm):
         """Handle grads of arch params & arch weights."""
         for name, module in self.architecture.named_modules():
             if isinstance(module, BaseMutable):
-                k = str(self.search_space_name_list.index(name))
-                # NOTE: with `ModuleMutable` as mutable, the keys in
-                # self.mutator.arch_params must contain the prefix `module`.
-                # See `prepare_from_supernet` in `NasMutator` for details.
-                self.mutator.arch_params['module_' + str(k)].grad.data.mul_(
+                k = module.mutable_prefix + '_' + \
+                    str(self.search_space_name_list.index(name))
+                self.mutator.arch_params[k].grad.data.mul_(
                     module.arch_weights.grad.data.sum())
                 module.arch_weights.grad.zero_()
 
