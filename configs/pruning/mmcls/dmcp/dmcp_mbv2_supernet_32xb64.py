@@ -1,34 +1,32 @@
 _base_ = [
-    'mmcls::_base_/datasets/imagenet_bs32.py',
     'mmcls::_base_/schedules/imagenet_bs256.py',
-    'mmcls::_base_/default_runtime.py'
+    'mmcls::_base_/default_runtime.py',
+    '../../../_base_/settings/imagenet_bs2048_dmcp.py',
 ]
-optim_wrapper = dict(
-    _delete_=True,
-    constructor='mmrazor.SeparateOptimWrapperConstructor',
-    architecture=dict(
-        type='OptimWrapper',
-        optimizer=dict(type='SGD', lr=0.025, momentum=0.9, weight_decay=3e-4),
-        clip_grad=dict(max_norm=5, norm_type=2)),
-    mutator=dict(
-        type='OptimWrapper',
-        optimizer=dict(type='Adam', lr=3e-4, weight_decay=1e-3)))
-
-param_scheduler = dict(
-    type='MultiStepLR', by_epoch=True, milestones=[30, 60, 90], gamma=0.1)
-
-train_cfg = dict(by_epoch=True, max_epochs=120, val_interval=1)
-
-data_preprocessor = {'type': 'mmcls.ClsDataPreprocessor'}
-
-custom_hooks = [dict(type='DMCPSubnetHook')]
 
 # model settings
+supernet = dict(
+    _scope_='mmcls',
+    type='ImageClassifier',
+    backbone=dict(type='MobileNetV2', widen_factor=1.0),
+    neck=dict(type='GlobalAveragePooling'),
+    head=dict(
+        type='LinearClsHead',
+        num_classes=1000,
+        in_channels=1280,
+        loss=dict(
+            type='mmcls.LabelSmoothLoss',
+            mode='original',
+            num_classes=1000,
+            label_smooth_val=0.1,
+            loss_weight=1.0),
+        topk=(1, 5),
+    ))
+
 model = dict(
     _scope_='mmrazor',
     type='DMCP',
-    architecture=dict(
-        cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False),
+    architecture=supernet,
     distiller=dict(
         type='ConfigurableDistiller',
         teacher_recorders=dict(
@@ -48,15 +46,17 @@ model = dict(
         parse_cfg=dict(
             type='ChannelAnalyzer',
             demo_input=(1, 3, 224, 224),
-            tracer_type='BackwardTracer',
-            loss_calculator=dict(type='ImageClassifierPseudoLoss'))),
-    arch_start_train=10000,
-    step_freq=500,
+            tracer_type='BackwardTracer')),
+    strategy=['max', 'min', 'scheduled_random', 'arch_random'],
+    arch_start_train=5000,
+    arch_train_freq=500,
     flop_loss_weight=0.1,
-    distillation_times=20000,
-    target_flops=2000)
+    distillation_times=10000,
+    target_flops=100)
 
 model_wrapper_cfg = dict(
     type='mmrazor.DMCPDDP',
     broadcast_buffers=False,
     find_unused_parameters=True)
+
+randomness = dict(seed=0, diff_rank_seed=True)

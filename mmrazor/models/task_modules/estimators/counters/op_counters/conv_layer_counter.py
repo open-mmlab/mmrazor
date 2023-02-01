@@ -67,6 +67,8 @@ class DynamicConv2dCounter(ConvCounter):
 
     @staticmethod
     def add_count_hook(module: nn.Conv2d, input, output):
+        """Calculate FLOPs and params based on the dynamic channels of conv
+        layers."""
         input = input[0]
 
         batch_size = input.shape[0]

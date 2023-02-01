@@ -69,14 +69,10 @@ class DMCP(BaseAlgorithm):
         super().__init__(architecture, data_preprocessor, init_cfg)
 
         self.arch_start_train = arch_start_train
+        self.arch_train_freq = arch_train_freq
         self.strategy = strategy
         self.distillation_times = distillation_times
         self.target_flops = target_flops
-
-        if distiller:
-            self.distiller = self._build_distiller(distiller)
-            self.distiller.prepare_from_teacher(self.architecture)
-            self.distiller.prepare_from_student(self.architecture)
 
         self.flops_loss_type = flops_loss_type
         self.flop_loss_weight = flop_loss_weight
@@ -86,6 +82,10 @@ class DMCP(BaseAlgorithm):
         self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
         self.mutator.prepare_from_supernet(self.architecture)
 
+        self.distiller = self._build_distiller(distiller)
+        self.distiller.prepare_from_teacher(self.architecture)
+        self.distiller.prepare_from_student(self.architecture)
+
         if fix_subnet:
             self._load_fix_subnet(fix_subnet)
             self.is_supernet = False
@@ -93,13 +93,16 @@ class DMCP(BaseAlgorithm):
             self.is_supernet = True
 
     def _load_fix_subnet(self, save_path):
+        """Load sub-network structure and fix."""
         from mmrazor.structures import load_fix_subnet
         with open(save_path) as file:
-            self.mutator.set_choices(yaml.load(file.read()))
+            self.mutator.set_choices(
+                yaml.load(file.read(), Loader=yaml.FullLoader))
         load_fix_subnet(self.architecture, save_path)
 
     def _build_distiller(
             self, distiller: VALID_DISTILLER_TYPE) -> ConfigurableDistiller:
+        """Build distiller."""
         if isinstance(distiller, dict):
             distiller = MODELS.build(distiller)
         if not isinstance(distiller, ConfigurableDistiller):
@@ -118,7 +121,7 @@ class DMCP(BaseAlgorithm):
 
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
-
+        """The iteration step during training."""
         if not self.arch_train and \
                 self._iter > self.arch_start_train:
             self.arch_train = True
@@ -133,10 +136,10 @@ class DMCP(BaseAlgorithm):
                         self
                 ), self.distiller.student_recorders:  # type: ignore
                     hard_loss = self(batch_inputs, data_samples, mode='loss')
-                    soft_loss = self.distiller.compute_distill_losses()
-
                     subnet_losses.update(hard_loss)
+
                     if self._iter > self.distillation_times:
+                        soft_loss = self.distiller.compute_distill_losses()
                         subnet_losses.update(soft_loss)
 
                     parsed_subnet_losses, _ = self.parse_losses(subnet_losses)
@@ -147,9 +150,10 @@ class DMCP(BaseAlgorithm):
 
             batch_inputs, data_samples = self.data_preprocessor(data,
                                                                 True).values()
-            total_losses = dict()
 
+            total_losses = dict()
             # update model parameters
+            max_net_num = min_net_num = random_net_num = direct_net_num = 1
             for kind in self.strategy:
                 if kind in ('max'):
                     self.set_subnet(mode='max')
@@ -163,26 +167,34 @@ class DMCP(BaseAlgorithm):
                         optim_wrapper['architecture'].update_params(
                             parsed_max_subnet_losses)
                     total_losses.update(
-                        add_prefix(max_subnet_losses, 'max_subnet'))
+                        add_prefix(max_subnet_losses,
+                                   f'max_subnet{max_net_num}'))
+                    max_net_num += 1
                 elif kind in ('min'):
                     self.set_subnet(mode='min')
                     min_subnet_losses =\
                         distill_step(batch_inputs, data_samples)
                     total_losses.update(
-                        add_prefix(min_subnet_losses, 'min_subnet'))
+                        add_prefix(min_subnet_losses,
+                                   f'min_subnet{min_net_num}'))
+                    min_net_num += 1
                 elif kind in ('arch_random'):
                     if self.arch_train:
                         self.set_subnet(mode='direct')
                         direct_subnet_losses = distill_step(
                             batch_inputs, data_samples)
                         total_losses.update(
-                            add_prefix(direct_subnet_losses, 'direct_subnet'))
+                            add_prefix(direct_subnet_losses,
+                                       f'direct_subnet{direct_net_num}'))
+                        direct_net_num += 1
                     else:
                         self.set_subnet(mode='random')
                         random_subnet_losses = distill_step(
                             batch_inputs, data_samples)
                         total_losses.update(
-                            add_prefix(random_subnet_losses, 'random_subnet'))
+                            add_prefix(random_subnet_losses,
+                                       f'random_subnet{random_net_num}'))
+                        random_net_num += 1
                 elif kind in ('scheduled_random'):
                     if random.uniform(0, 1) > self.cur_sample_prob\
                        and self.arch_train:
@@ -190,13 +202,17 @@ class DMCP(BaseAlgorithm):
                         direct_subnet_losses = distill_step(
                             batch_inputs, data_samples)
                         total_losses.update(
-                            add_prefix(direct_subnet_losses, 'direct_subnet'))
+                            add_prefix(direct_subnet_losses,
+                                       f'direct_subnet{direct_net_num}'))
+                        direct_net_num += 1
                     else:
                         self.set_subnet(mode='random')
                         random_subnet_losses = distill_step(
                             batch_inputs, data_samples)
                         total_losses.update(
-                            add_prefix(random_subnet_losses, 'random_subnet'))
+                            add_prefix(random_subnet_losses,
+                                       f'random_subnet{random_net_num}'))
+                        random_net_num += 1
                     self.cur_sample_prob *= 0.9999
 
             # update arch parameters
@@ -216,6 +232,15 @@ class DMCP(BaseAlgorithm):
                             data_samples: Optional[List[BaseDataElement]],
                             optim_wrapper: OptimWrapper,
                             mode: str = 'loss') -> Dict:
+        """Update the arch parameters in mutator.
+
+        Returns:
+            dict: It should contain 2 keys: ``arch_loss``, ``flops_loss``.
+                ``arch_loss`` is a tensor for back propagation, which can be a
+                weighted sum of multiple losses.
+                ``flops_loss`` contains all the variables to be sent to the
+                logger.
+        """
         arch_params_loss = dict()
         self.eval()
         # update arch_loss
@@ -240,10 +265,18 @@ class DMCP(BaseAlgorithm):
     def _compute_flops_loss(self, expected_flops):
         """Calculation of loss functions of arch parameters.
 
-        Calculate the difference between the expected FLOPs and the target
-        FLOPs in the units of M.
+        Calculate the difference between the calculated FLOPs and the target
+        FLOPs(MFLOPs).
+
+        Args:
+            expected_flops (tensor|float): FLOPs calculated from the current
+                number of sampling channels
+        Returns:
+            tensor|float: A loss calculated from the input expected FLOPs and
+                the target FLOPs. And the type of this loss should be the same
+                as the expected FLOPs.
         """
-        flops_error = expected_flops - self.target_flops
+        flops_error = expected_flops - self.target_flops * 1e6
 
         if self.flops_loss_type == 'l2':
             floss = torch.pow(flops_error, 2)
@@ -270,9 +303,12 @@ class DMCP(BaseAlgorithm):
         return floss * self.flop_loss_weight
 
     def calc_current_flops(self):
-        estimator = ResourceEstimator(units=None)
+        """Calculate the FLOPs under the current sampled network."""
+        estimator = ResourceEstimator()
         model = getattr(self, 'module', self)
-        estimation = estimator.estimate(model=model.architecture.backbone)
+        estimation = estimator.estimate(
+            model=model.architecture.backbone,
+            flops_params_cfg=dict(units=None))
         return estimation['flops']
 
     def forward(self,
@@ -295,6 +331,7 @@ class DMCP(BaseAlgorithm):
 
 @MODEL_WRAPPERS.register_module()
 class DMCPDDP(MMDistributedDataParallel):
+    """DDP for DMCP and rewrite train_step of MMDDP."""
 
     def __init__(self,
                  *,
@@ -307,7 +344,7 @@ class DMCPDDP(MMDistributedDataParallel):
 
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
-
+        """The iteration step during training."""
         if not self.module.arch_train and \
                 self.module._iter > self.module.arch_start_train:
             self.module.arch_train = True
@@ -321,10 +358,10 @@ class DMCPDDP(MMDistributedDataParallel):
                 with optim_wrapper['architecture'].optim_context(
                         self), self.module.distiller.student_recorders:
                     hard_loss = self(batch_inputs, data_samples, mode='loss')
-                    soft_loss = self.module.distiller.compute_distill_losses()
-
                     subnet_losses.update(hard_loss)
                     if self.module._iter > self.module.distillation_times:
+                        soft_loss = \
+                            self.module.distiller.compute_distill_losses()
                         subnet_losses.update(soft_loss)
 
                     parsed_subnet_losses, _ = \
@@ -336,6 +373,7 @@ class DMCPDDP(MMDistributedDataParallel):
 
             batch_inputs, data_samples = self.module.data_preprocessor(
                 data, True).values()
+
             total_losses = dict()
             # update model parameters
             max_net_num = min_net_num = random_net_num = direct_net_num = 1
@@ -399,12 +437,6 @@ class DMCPDDP(MMDistributedDataParallel):
                                        f'random_subnet{random_net_num}'))
                         random_net_num += 1
                     self.module.cur_sample_prob *= 0.9999
-
-            with optim_wrapper['mutator'].optim_context(self):
-                optim_wrapper['mutator'].zero_grad()
-                mutator_loss = self.module._update_arch_params(
-                    batch_inputs, data_samples, optim_wrapper, mode='loss')
-            total_losses.update(mutator_loss)
 
             # update arch parameters
             if self.module.arch_train \

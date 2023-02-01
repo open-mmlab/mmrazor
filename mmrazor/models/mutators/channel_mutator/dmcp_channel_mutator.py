@@ -53,7 +53,9 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
         """Build learnable architecture parameters."""
         return nn.Parameter(torch.zeros(num_choices))
 
-    def prepare_arch_params(self, supernet: Module):
+    def prepare_arch_params(self, supernet: Module) -> None:
+        """Prepare the arch parameters and associate them with the
+        corresponding op."""
         self.arch_params = nn.ParameterDict()
         self._op_arch_align = dict()
         self._arch_params_attr = dict()
@@ -95,7 +97,9 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
 
         return (group_size, num_groups, min_ch)
 
-    def modify_supernet_forward(self, arch_train: str):
+    def modify_supernet_forward(self, arch_train: str) -> None:
+        """According to the arch_train, assign the arch parameter to the
+        forward of the corresponding op."""
         for module, group_id in self._bn_arch_align.items():
             arch_param: Optional[nn.Parameter] = None
             arch_params_attr: Optional[Tuple] = None
@@ -106,6 +110,7 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
                 arch_param=arch_param, arch_attr=arch_params_attr)
 
     def sample_subnet(self, mode: str, arch_train: str) -> None:
+        """Sampling according to the input mode."""
         choices = dict()
         for group_id, _ in self.search_groups.items():
             choices[group_id] = self._prune_by_arch(mode, group_id)

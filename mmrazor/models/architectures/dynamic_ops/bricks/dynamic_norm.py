@@ -401,29 +401,18 @@ class DMCPBatchNorm2d(DynamicBatchNorm2d):
         super().__init__(*args, **kwargs)
         self.mutable_attrs: Dict[str, Optional[BaseMutable]] = nn.ModuleDict()
 
-    @classmethod
-    def convert_from(cls, module: _BatchNorm):
-        """Convert a _BatchNorm module to a DynamicBatchNorm.
-
-        Args:
-            module (:obj:`torch.nn._BatchNorm`): The original BatchNorm module.
-        """
-        dynamic_bn = cls(
-            num_features=module.num_features,
-            eps=module.eps,
-            momentum=module.momentum,
-            affine=module.affine,
-            track_running_stats=module.track_running_stats)
-        return dynamic_bn
-
-    def forward(self, input: Tensor, arch_param=None, arch_attr=None):
+    def forward(self,
+                input: Tensor,
+                arch_param=None,
+                arch_attr=None) -> Tensor:
+        """Forward of dynamic DMCPBatchNorm2d."""
         out = self.forward_batchnorm(input)
         if arch_param is not None:
             out = self.forward_arch_param(out, arch_param, arch_attr)
         return out
 
     def forward_batchnorm(self, input: Tensor) -> Tensor:
-        """Forward of dynamic BatchNormxd OP."""
+        """Forward of BatchNorm2d."""
         self._check_input_dim(input)
 
         if self.momentum is None:
@@ -460,7 +449,9 @@ class DMCPBatchNorm2d(DynamicBatchNorm2d):
 
         return out
 
-    def forward_arch_param(self, input: Tensor, arch_param, arch_attr):
+    def forward_arch_param(self, input: Tensor, arch_param,
+                           arch_attr) -> Tensor:
+        """Forward of arch parameters."""
         size_x = input.size()
         (group_size, num_groups, min_ch) = arch_attr
 
