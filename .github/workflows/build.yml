@@ -101,7 +101,7 @@ jobs:
       - name: Install MMCV
         run: |
           pip install -U openmim
-          mim install 'mmcv >= 2.0.0rc1'
+          mim install 'mmcv <= 2.0.0rc3'
       - name: Install MMCls
         run: pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
       - name: Install MMDet

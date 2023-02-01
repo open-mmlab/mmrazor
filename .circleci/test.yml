@@ -116,7 +116,7 @@ jobs:
           command: |
             docker exec mmrazor pip install -e /mmengine
             docker exec mmrazor pip install -U openmim
-            docker exec mmrazor mim install 'mmcv >= 2.0.0rc1'
+            docker exec mmrazor mim install 'mmcv <= 2.0.0rc3'
             docker exec mmrazor pip install -e /mmdetection
             docker exec mmrazor pip install -e /mmclassification
             docker exec mmrazor pip install -e /mmsegmentation
