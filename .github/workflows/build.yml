@@ -107,7 +107,7 @@ jobs:
       - name: Install MMDet
         run: pip install git+https://github.com/open-mmlab/mmdetection.git@v3.0.0rc5
       - name: Install MMSeg
-        run: pip install git+https://github.com/open-mmlab/mmsegmentation.git@dev-1.x
+        run: pip install git+https://github.com/open-mmlab/mmsegmentation.git@v1.0.0rc4
       - name: Install other dependencies
         run: pip install -r requirements.txt
       - name: Build and install
