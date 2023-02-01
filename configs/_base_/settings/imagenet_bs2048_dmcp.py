@@ -23,9 +23,7 @@ param_scheduler = [
 ]
 
 # optimizer setting
-paramwise_cfg = dict(
-    norm_decay_mult=0.0,
-    bias_decay_mult=0.0)
+paramwise_cfg = dict(norm_decay_mult=0.0, bias_decay_mult=0.0)
 
 optim_wrapper = dict(
     _delete_=True,

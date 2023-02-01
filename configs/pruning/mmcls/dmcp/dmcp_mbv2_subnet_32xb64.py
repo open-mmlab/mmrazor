@@ -1,16 +1,10 @@
 _base_ = ['dmcp_mbv2_supernet_32xb64.py']
 
-paramwise_cfg = dict(
-    norm_decay_mult=0.0,
-    bias_decay_mult=0.0)
+paramwise_cfg = dict(norm_decay_mult=0.0, bias_decay_mult=0.0)
 
 _base_.optim_wrapper = dict(
     optimizer=dict(
-        type='SGD',
-        lr=0.8,
-        momentum=0.9,
-        weight_decay=0.00004,
-        nesterov=True),
+        type='SGD', lr=0.8, momentum=0.9, weight_decay=0.00004, nesterov=True),
     paramwise_cfg=paramwise_cfg)
 
 max_epochs = 250
