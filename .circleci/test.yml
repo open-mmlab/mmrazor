@@ -103,7 +103,7 @@ jobs:
           name: Clone Repos
           command: |
             git clone -b main --depth 1 https://github.com/open-mmlab/mmengine.git /home/circleci/mmengine
-            git clone -b dev-3.x --depth 1 https://github.com/open-mmlab/mmdetection.git /home/circleci/mmdetection
+            git clone -b v3.0.0rc5 --depth 1 https://github.com/open-mmlab/mmdetection.git /home/circleci/mmdetection
             git clone -b dev-1.x --depth 1 https://github.com/open-mmlab/mmclassification.git /home/circleci/mmclassification
             git clone -b dev-1.x --depth 1 https://github.com/open-mmlab/mmsegmentation.git /home/circleci/mmsegmentation
       - run:

@@ -105,7 +105,7 @@ jobs:
       - name: Install MMCls
         run: pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
       - name: Install MMDet
-        run: pip install git+https://github.com/open-mmlab/mmdetection.git@dev-3.x
+        run: pip install git+https://github.com/open-mmlab/mmdetection.git@v3.0.0rc5
       - name: Install MMSeg
         run: pip install git+https://github.com/open-mmlab/mmsegmentation.git@dev-1.x
       - name: Install other dependencies
