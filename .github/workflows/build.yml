@@ -107,12 +107,19 @@ jobs:
       - name: Install MMDet
         run: pip install git+https://github.com/open-mmlab/mmdetection.git@dev-3.x
       - name: Install MMSeg
+        if: success() || failure()
         run: pip install git+https://github.com/open-mmlab/mmsegmentation.git@dev-1.x
+      - name: Install MMPose
+        if: success() || failure()
+        run: pip install git+https://github.com/open-mmlab/mmpose.git@dev-1.x
       - name: Install other dependencies
+        if: success() || failure()
         run: pip install -r requirements.txt
       - name: Build and install
+        if: success() || failure()
         run: rm -rf .eggs && pip install -e .
       - name: Run unittests and generate coverage report
+        if: success() || failure()
         run: |
           coverage run --branch --source mmrazor -m pytest tests/
           coverage xml

@@ -68,16 +68,21 @@ jobs:
             pip install -U openmim
             mim install 'mmcv >= 2.0.0rc1'
             pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
-            pip install git+https://github.com/open-mmlab/mmdetection.git@dev-3.x
-            pip install git+https://github.com/open-mmlab/mmsegmentation.git@dev-1.x
-            python -m pip install git+ssh://git@github.com/open-mmlab/mmpose.git@dev-1.x
             pip install -r requirements.txt
       - run:
+          name: Install downstream dependencies for mmrazor (optional)
+          command: |
+            pip install git+https://github.com/open-mmlab/mmdetection.git@dev-3.x
+            pip install git+https://github.com/open-mmlab/mmsegmentation.git@dev-1.x
+            pip install git+https://github.com/open-mmlab/mmpose.git@dev-1.x
+      - run:
           name: Build and install
+          if: success() || failure()
           command: |
             pip install -e .
       - run:
           name: Run unittests
+          if: success() || failure()
           command: |
             coverage run --branch --source mmrazor -m pytest tests/
             coverage xml
@@ -103,9 +108,10 @@ jobs:
           name: Clone Repos
           command: |
             git clone -b main --depth 1 https://github.com/open-mmlab/mmengine.git /home/circleci/mmengine
-            git clone -b dev-3.x --depth 1 https://github.com/open-mmlab/mmdetection.git /home/circleci/mmdetection
             git clone -b dev-1.x --depth 1 https://github.com/open-mmlab/mmclassification.git /home/circleci/mmclassification
+            git clone -b dev-3.x --depth 1 https://github.com/open-mmlab/mmdetection.git /home/circleci/mmdetection
             git clone -b dev-1.x --depth 1 https://github.com/open-mmlab/mmsegmentation.git /home/circleci/mmsegmentation
+            git clone -b dev-1.x --depth 1 https://github.com/open-mmlab/mmpose.git /home/circleci/mmpose
       - run:
           name: Build Docker image
           command: |
@@ -117,16 +123,22 @@ jobs:
             docker exec mmrazor pip install -e /mmengine
             docker exec mmrazor pip install -U openmim
             docker exec mmrazor mim install 'mmcv >= 2.0.0rc1'
-            docker exec mmrazor pip install -e /mmdetection
             docker exec mmrazor pip install -e /mmclassification
-            docker exec mmrazor pip install -e /mmsegmentation
             docker exec mmrazor pip install -r requirements.txt
       - run:
+          name: Install downstream dependencies for mmrazor (optional)
+          command: |
+            docker exec mmrazor pip install -e /mmdetection
+            docker exec mmrazor pip install -e /mmsegmentation
+            docker exec mmrazor pip install -e /mmpose
+      - run:
           name: Build and install
+          if: success() || failure()
           command: |
             docker exec mmrazor pip install -e .
       - run:
           name: Run unittests
+          if: success() || failure()
           command: |
             docker exec mmrazor pytest tests/
 
