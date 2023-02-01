@@ -62,8 +62,9 @@ class Channel(BaseModule):
     def config_template(self):
         """Generate a config template which can be used to initialize a Channel
         by cls.init_from_cfg(**kwargs)"""
+
         return {
-            'name': self.name,
+            'name': str(self.name),
             'start': self.start,
             'end': self.end,
             'is_output_channel': self.is_output_channel
