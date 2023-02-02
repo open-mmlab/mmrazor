@@ -37,8 +37,6 @@ DATA_UNITS = [
 class TestChannelMutator(unittest.TestCase):
 
     def _test_a_mutator(self, mutator: ChannelMutator, model):
-        choices = mutator.sample_choices()
-        mutator.set_choices(choices)
         self.assertGreater(len(mutator.mutable_units), 0)
         x = torch.rand([2, 3, 224, 224])
         y = model(x)
@@ -156,45 +154,10 @@ class TestChannelMutator(unittest.TestCase):
                     },
                     parse_cfg={'type': 'Predefined'})
                 mutator.prepare_from_supernet(model)
-                choices = mutator.sample_choices()
-                mutator.set_choices(choices)
                 self.assertGreater(len(mutator.mutable_units), 0)
                 x = torch.rand([2, 3, 224, 224])
                 y = model(x)
-                self.assertEqual(
-                    list(y.shape),
-                    [2, list(mutator.current_choices.values())[0]])
-
-    def test_custom_group(self):
-        ARCHITECTURE_CFG = dict(
-            type='mmcls.ImageClassifier',
-            backbone=dict(type='mmcls.MobileNetV2', widen_factor=1.5),
-            neck=dict(type='mmcls.GlobalAveragePooling'),
-            head=dict(
-                type='mmcls.LinearClsHead',
-                num_classes=1000,
-                in_channels=1920,
-                loss=dict(type='mmcls.CrossEntropyLoss', loss_weight=1.0),
-                topk=(1, 5)))
-        model = MODELS.build(ARCHITECTURE_CFG)
-
-        # generate config
-        model1 = copy.deepcopy(model)
-        mutator1 = ChannelMutator()
-        mutator1.prepare_from_supernet(model1)
-
-        self.assertEqual(len(mutator1.search_groups), 25)
-
-        custom_groups = [[
-            'backbone.layer2.1.conv.0.conv_(0, 240)_240',
-            'backbone.layer3.0.conv.0.conv_(0, 240)_240'
-        ]]
-
-        model2 = copy.deepcopy(model)
-        mutator2 = ChannelMutator(custom_groups=custom_groups)
-        mutator2.prepare_from_supernet(model2)
-
-        self.assertEqual(len(mutator2.search_groups), 24)
+                self.assertEqual(list(y.shape), [2, 624])
 
     def test_related_shortcut_layer(self):
         for Model in [
@@ -211,8 +174,6 @@ class TestChannelMutator(unittest.TestCase):
                     },
                     parse_cfg={'type': 'Predefined'})
                 mutator.prepare_from_supernet(model)
-                choices = mutator.sample_choices()
-                mutator.set_choices(choices)
                 self.assertGreater(len(mutator.mutable_units), 0)
                 x = torch.rand([2, 3, 224, 224])
                 y = model(x)

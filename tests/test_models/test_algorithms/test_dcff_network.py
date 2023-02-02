@@ -147,11 +147,11 @@ class TestDCFFAlgorithm(unittest.TestCase):
                                  algorithm.step_freq)
 
         current_choices = algorithm.mutator.current_choices
-        group_prune_target = algorithm.group_target_pruning_ratio(
-            prune_target, mutator.search_groups)
+        target_pruning_ratio = algorithm.set_target_pruning_ratio(
+            prune_target, mutator.mutable_units)
         for key in current_choices:
             self.assertAlmostEqual(
-                current_choices[key], group_prune_target[key], delta=0.1)
+                current_choices[key], target_pruning_ratio[key], delta=0.1)
 
     def test_load_pretrained(self):
         iter_per_epoch = 10
@@ -190,13 +190,6 @@ class TestDCFFAlgorithm(unittest.TestCase):
         mutator.set_choices(mutator.sample_choices())
         prune_target = mutator.choice_template
 
-        custom_groups = [[
-            'backbone.layer1.0.conv1_(0, 64)_64',
-            'backbone.layer1.1.conv1_(0, 64)_64'
-        ]]
-        mutator_cfg = copy.deepcopy(MUTATOR_CONFIG_FLOAT)
-        mutator_cfg['custom_groups'] = custom_groups
-
         iter_per_epoch = 10
         epoch_step = 2
         epoch = 6
@@ -208,7 +201,7 @@ class TestDCFFAlgorithm(unittest.TestCase):
         algorithm = DCFF(
             MODEL_CFG,
             target_pruning_ratio=prune_target,
-            mutator_cfg=mutator_cfg,
+            mutator_cfg=MUTATOR_CONFIG_FLOAT,
             step_freq=epoch_step).to(DEVICE)
 
         algorithm.init_weights()
@@ -216,36 +209,12 @@ class TestDCFFAlgorithm(unittest.TestCase):
         algorithm.forward(data['inputs'], data['data_samples'], mode='loss')
         self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
 
-        prune_target['backbone.layer1.0.conv1_(0, 64)_64'] = 0.1
-        prune_target['backbone.layer1.1.conv1_(0, 64)_64'] = 0.2
-
-        with self.assertRaises(ValueError):
-
-            algorithm = DCFF(
-                MODEL_CFG,
-                target_pruning_ratio=prune_target,
-                mutator_cfg=mutator_cfg,
-                step_freq=epoch_step).to(DEVICE)
-
-            algorithm.init_weights()
-            self._set_epoch_ite(1, 2, epoch)
-            algorithm.forward(
-                data['inputs'], data['data_samples'], mode='loss')
-            self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
-
     def test_export_subnet(self):
 
         model = MODELS.build(MODEL_CFG)
         mutator = MODELS.build(MUTATOR_CONFIG_FLOAT)
         mutator.prepare_from_supernet(model)
         mutator.set_choices(mutator.sample_choices())
-
-        custom_groups = [[
-            'backbone.layer1.0.conv1_(0, 64)_64',
-            'backbone.layer1.1.conv1_(0, 64)_64'
-        ]]
-        mutator_cfg = copy.deepcopy(MUTATOR_CONFIG_FLOAT)
-        mutator_cfg['custom_groups'] = custom_groups
 
         iter_per_epoch = 10
         epoch_step = 2
@@ -303,7 +272,7 @@ class TestDCFFAlgorithm(unittest.TestCase):
         algorithm = DCFF(
             MODEL_CFG,
             target_pruning_ratio=target_pruning_ratio,
-            mutator_cfg=mutator_cfg,
+            mutator_cfg=MUTATOR_CONFIG_FLOAT,
             step_freq=epoch_step).to(DEVICE)
 
         algorithm.init_weights()

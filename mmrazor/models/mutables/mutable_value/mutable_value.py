@@ -58,6 +58,11 @@ class MutableValue(BaseMutable, DerivedMethodMixin):
                     f'and type {type(value_list[i])} exist.')
 
     @property
+    def mutable_prefix(self) -> str:
+        """Mutable prefix."""
+        return 'value'
+
+    @property
     def choices(self) -> List[Any]:
         """List of choices."""
         return self._value_list

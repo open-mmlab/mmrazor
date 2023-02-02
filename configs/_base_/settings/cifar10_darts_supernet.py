@@ -48,36 +48,26 @@ test_evaluator = val_evaluator
 
 # optimizer
 optim_wrapper = dict(
+    constructor='mmrazor.SeparateOptimWrapperConstructor',
     architecture=dict(
-        type='mmcls.SGD', lr=0.025, momentum=0.9, weight_decay=3e-4),
-    mutator=dict(type='mmcls.Adam', lr=3e-4, weight_decay=1e-3),
-    clip_grad=dict(max_norm=5, norm_type=2))
+        optimizer=dict(
+            type='mmcls.SGD', lr=0.025, momentum=0.9, weight_decay=3e-4),
+        clip_grad=dict(max_norm=5, norm_type=2)),
+    mutator=dict(
+        optimizer=dict(type='mmcls.Adam', lr=3e-4, weight_decay=1e-3)))
 
+search_epochs = 50
 # leanring policy
-# TODO support different optim use different scheduler (wait mmengine)
 param_scheduler = [
     dict(
         type='mmcls.CosineAnnealingLR',
-        T_max=50,
+        T_max=search_epochs,
         eta_min=1e-3,
         begin=0,
-        end=50),
+        end=search_epochs),
 ]
-# param_scheduler = dict(
-#     architecture = dict(
-#         type='mmcls.CosineAnnealingLR',
-#         T_max=50,
-#         eta_min=1e-3,
-#         begin=0,
-#         end=50),
-#     mutator = dict(
-#         type='mmcls.ConstantLR',
-#         factor=1,
-#         begin=0,
-#         end=50))
 
 # train, val, test setting
-# TODO split cifar dataset
 train_cfg = dict(
     type='mmrazor.DartsEpochBasedTrainLoop',
     mutator_dataloader=dict(
@@ -92,7 +82,7 @@ train_cfg = dict(
         sampler=dict(type='mmcls.DefaultSampler', shuffle=True),
         persistent_workers=True,
     ),
-    max_epochs=50)
+    max_epochs=search_epochs)
 
 val_cfg = dict()  # validate each epoch
 test_cfg = dict()  # dataset settings

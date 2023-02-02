@@ -2,13 +2,9 @@
 from .channel_mutator import (ChannelMutator, DCFFChannelMutator,
                               DMCPChannelMutator, OneShotChannelMutator,
                               SlimmableChannelMutator)
-from .module_mutator import (DiffModuleMutator, ModuleMutator,
-                             OneShotModuleMutator)
-from .value_mutator import DynamicValueMutator, ValueMutator
+from .nas_mutator import NasMutator
 
 __all__ = [
-    'OneShotModuleMutator', 'DiffModuleMutator', 'ModuleMutator',
-    'ChannelMutator', 'OneShotChannelMutator', 'SlimmableChannelMutator',
-    'ValueMutator', 'DynamicValueMutator', 'DCFFChannelMutator',
-    'DMCPChannelMutator'
+    'ChannelMutator', 'DCFFChannelMutator', 'DMCPChannelMutator',
+    'SlimmableChannelMutator', 'NasMutator', 'OneShotChannelMutator'
 ]

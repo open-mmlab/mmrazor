@@ -59,14 +59,14 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
         self.arch_params = nn.ParameterDict()
         self._op_arch_align = dict()
         self._arch_params_attr = dict()
-        for group_id, module in self.search_groups.items():
+        for group_id, module in enumerate(self.units):
             arch_message = self._generate_arch_message(
-                module[0].mutable_channel.num_channels)
+                module.mutable_channel.num_channels)
             self._arch_params_attr[str(group_id)] = arch_message
             group_arch_param = self._build_arch_param(arch_message[1])
             self.arch_params[str(group_id)] = group_arch_param
 
-            for unit in module[0].output_related:
+            for unit in module.output_related:
                 self._op_arch_align[str(unit.name)] = str(group_id)
 
         self._bn_arch_align = dict()
@@ -112,8 +112,9 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
     def sample_subnet(self, mode: str, arch_train: str) -> None:
         """Sampling according to the input mode."""
         choices = dict()
-        for group_id, _ in self.search_groups.items():
-            choices[group_id] = self._prune_by_arch(mode, group_id)
+
+        for group_id, _ in enumerate(self.units):
+            choices[str(group_id)] = self._prune_by_arch(mode, group_id)
         self.set_choices(choices)
 
         self.modify_supernet_forward(arch_train)
@@ -123,7 +124,7 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
 
         Inputs:
             mode (list): one of ['max', 'min', 'random', 'direct', 'expected']
-            group_id (int): number of search_groups
+            group_id (int): index of units
 
         Outputs:
             channels (int): for mode 'max'/'min'/'random'/'dirext'
@@ -159,20 +160,19 @@ class DMCPChannelMutator(ChannelMutator[DMCPChannelUnit]):
             else:
                 raise NotImplementedError
 
-    def set_choices(self, choices: Dict[int, Any]) -> None:
+    def set_choices(self, choices: Dict[str, Any]) -> None:
         """Set mutables' current choice according to choices sample by
         :func:`sample_choices`.
 
         Args:
-            choices (Dict[int, Any]): Choices dict. The key is group_id in
+            choices (Dict[str, Any]): Choices dict. The key is group_id in
                 search groups, and the value is the sampling results
                 corresponding to this group.
         """
-        for group_id, modules in self.search_groups.items():
-            if group_id not in choices:
+        for group_id, module in enumerate(self.units):
+            if str(group_id) not in choices.keys():
                 # allow optional target_prune_ratio
                 continue
-            choice = choices[group_id]
-            for module in modules:
-                module.current_choice = choice
-                module.mutable_channel.activated_tensor_channels = choice
+            choice = choices[str(group_id)]
+            module.current_choice = choice
+            module.mutable_channel.activated_tensor_channels = choice

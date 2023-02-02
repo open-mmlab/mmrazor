@@ -25,6 +25,6 @@ supernet = dict(
 model = dict(
     type='mmrazor.SPOS',
     architecture=supernet,
-    mutator=dict(type='mmrazor.OneShotModuleMutator'))
+    mutator=dict(type='mmrazor.NasMutator'))
 
 find_unused_parameters = True

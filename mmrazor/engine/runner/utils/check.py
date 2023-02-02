@@ -29,8 +29,8 @@ def check_subnet_resources(
     if constraints_range is None:
         return True, dict()
 
-    assert hasattr(model, 'set_subnet') and hasattr(model, 'architecture')
-    model.set_subnet(subnet)
+    assert hasattr(model, 'mutator') and hasattr(model, 'architecture')
+    model.mutator.set_choices(subnet)
     _, sliced_model = export_fix_subnet(model, slice_weight=True)
 
     model_to_check = sliced_model.architecture  # type: ignore
