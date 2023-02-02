@@ -32,6 +32,8 @@ class SingleTeacherDistill(BaseAlgorithm):
             to True.
         calculate_student_loss (bool): Whether to calculate student loss
             (original task loss) to update student model. Defaults to True.
+        teacher_module_inplace(bool): Whether to allow teacher module inplace
+            attribute True. Defaults to False.
     """
 
     def __init__(self,
@@ -42,6 +44,7 @@ class SingleTeacherDistill(BaseAlgorithm):
                  teacher_norm_eval: bool = True,
                  student_trainable: bool = True,
                  calculate_student_loss: bool = True,
+                 teacher_module_inplace: bool = False,
                  **kwargs) -> None:
         super().__init__(**kwargs)
 
@@ -56,6 +59,13 @@ class SingleTeacherDistill(BaseAlgorithm):
                             f'{type(teacher)}')
 
         self.teacher = teacher
+
+        # Find all nn.Modules in the model that contain the 'inplace' attribute
+        # and set them to False.
+        self.teacher_module_inplace = teacher_module_inplace
+        if not self.teacher_module_inplace:
+            self.set_module_inplace_false(teacher, 'self.teacher')
+
         if teacher_ckpt:
             # avoid loaded parameters be overwritten
             self.teacher.init_weights()
