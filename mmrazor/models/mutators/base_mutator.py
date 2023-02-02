@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import ABC, abstractmethod
-from typing import Dict, Generic, Optional, Type, TypeVar
+from typing import Dict, Generic, Optional, TypeVar
 
 from mmengine.model import BaseModule
 from torch.nn import Module
@@ -51,9 +51,3 @@ class BaseMutator(ABC, BaseModule, Generic[MUTABLE_TYPE]):
         Returns:
             dict: Search group.
         """
-
-    @property
-    @abstractmethod
-    def mutable_class_type(self) -> Type[MUTABLE_TYPE]:
-        """Corresponding mutable class type."""
-        pass

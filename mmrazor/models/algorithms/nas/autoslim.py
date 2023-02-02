@@ -8,15 +8,16 @@ from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper
 from mmengine.structures import BaseDataElement
 from torch import nn
+from torch.nn.modules.batchnorm import _BatchNorm
 
 from mmrazor.models.distillers import ConfigurableDistiller
-from mmrazor.models.mutators import OneShotChannelMutator
+from mmrazor.models.mutators import ChannelMutator
 from mmrazor.models.utils import (add_prefix,
                                   reinitialize_optim_wrapper_count_status)
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
 from ..base import BaseAlgorithm
 
-VALID_MUTATOR_TYPE = Union[OneShotChannelMutator, Dict]
+VALID_MUTATOR_TYPE = Union[ChannelMutator, Dict]
 VALID_DISTILLER_TYPE = Union[ConfigurableDistiller, Dict]
 VALID_PATH_TYPE = Union[str, Path]
 VALID_CHANNEL_CFG_PATH_TYPE = Union[VALID_PATH_TYPE, List[VALID_PATH_TYPE]]
@@ -28,28 +29,39 @@ class AutoSlim(BaseAlgorithm):
     https://arxiv.org/abs/1903.11728 for more details.
 
     Args:
-        mutator (VALID_MUTATOR_TYPE): config of mutator.
-        distiller (VALID_DISTILLER_TYPE): config of  distiller.
-        architecture (Union[BaseModel, Dict]): the model to be searched.
-        data_preprocessor (Optional[Union[Dict, nn.Module]], optional):
-            data prepocessor. Defaults to None.
+        architecture (dict|:obj:`BaseModel`): The config of :class:`BaseModel`
+            or built model. Corresponding to supernet in NAS algorithm.
+        mutator (VALID_MUTATOR_TYPE): The config of :class:`ChannelMutator` or
+            built mutator.
+        distiller (VALID_DISTILLER_TYPE): Cfg of :class:`ConfigurableDistiller`
+            or built distiller.
+        norm_training (bool): Whether set bn to training mode when model is
+            set to eval mode. Note that in slimmable networks, accumulating
+            different numbers of channels results in different feature means
+            and variances, which further leads to inaccurate statistics of
+            shared BN. Set ``norm_training`` to True to use the feature
+            means and variances in a batch.
+        data_preprocessor (Optional[Union[dict, nn.Module]]): The pre-process
+            config of :class:`BaseDataPreprocessor`. Defaults to None.
         num_random_samples (int): number of random sample subnets.
             Defaults to 2.
-        init_cfg (Optional[Dict], optional): config of initialization.
+        init_cfg (Optional[dict]): Init config for ``BaseModule``.
             Defaults to None.
     """
 
     def __init__(self,
-                 mutator: VALID_MUTATOR_TYPE,
-                 distiller: VALID_DISTILLER_TYPE,
                  architecture: Union[BaseModel, Dict],
+                 mutator: VALID_MUTATOR_TYPE = None,
+                 distiller: VALID_DISTILLER_TYPE = None,
+                 norm_training: bool = False,
                  num_random_samples: int = 2,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
 
-        self.mutator: OneShotChannelMutator = MODELS.build(mutator)
-        # prepare_from_supernet` must be called before distiller initialized
+        self.mutator = self._build_mutator(mutator)
+        # NOTE: `mutator.prepare_from_supernet` must be called
+        # before distiller initialized.
         self.mutator.prepare_from_supernet(self.architecture)
 
         self.distiller = self._build_distiller(distiller)
@@ -61,21 +73,21 @@ class AutoSlim(BaseAlgorithm):
             self.sample_kinds.append('random' + str(i))
 
         self._optim_wrapper_count_status_reinitialized = False
+        self.norm_training = norm_training
 
     def _build_mutator(self,
-                       mutator: VALID_MUTATOR_TYPE) -> OneShotChannelMutator:
+                       mutator: VALID_MUTATOR_TYPE = None) -> ChannelMutator:
         """Build mutator."""
         if isinstance(mutator, dict):
             mutator = MODELS.build(mutator)
-        if not isinstance(mutator, OneShotChannelMutator):
-            raise TypeError('mutator should be a `dict` or '
-                            '`OneShotModuleMutator` instance, but got '
-                            f'{type(mutator)}')
-
+        if not isinstance(mutator, ChannelMutator):
+            raise TypeError('mutator should be a `dict` or `ChannelMutator` '
+                            f'instance, but got {type(mutator)}.')
         return mutator
 
     def _build_distiller(
-            self, distiller: VALID_DISTILLER_TYPE) -> ConfigurableDistiller:
+            self,
+            distiller: VALID_DISTILLER_TYPE = None) -> ConfigurableDistiller:
         """Build distiller."""
         if isinstance(distiller, dict):
             distiller = MODELS.build(distiller)
@@ -83,24 +95,7 @@ class AutoSlim(BaseAlgorithm):
             raise TypeError('distiller should be a `dict` or '
                             '`ConfigurableDistiller` instance, but got '
                             f'{type(distiller)}')
-
         return distiller
-
-    def sample_subnet(self) -> Dict:
-        """Sample a subnet."""
-        return self.mutator.sample_choices()
-
-    def set_subnet(self, subnet) -> None:
-        """Set a subnet."""
-        self.mutator.set_choices(subnet)
-
-    def set_max_subnet(self) -> None:
-        """Set max subnet."""
-        self.mutator.set_choices(self.mutator.max_choice)
-
-    def set_min_subnet(self) -> None:
-        """Set min subnet."""
-        self.mutator.set_choices(self.mutator.min_choice)
 
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
@@ -138,7 +133,7 @@ class AutoSlim(BaseAlgorithm):
         for kind in self.sample_kinds:
             # update the max subnet loss.
             if kind == 'max':
-                self.set_max_subnet()
+                self.mutator.set_choices(self.mutator.max_choices)
                 with optim_wrapper.optim_context(
                         self
                 ), self.distiller.teacher_recorders:  # type: ignore
@@ -151,18 +146,33 @@ class AutoSlim(BaseAlgorithm):
                     add_prefix(max_subnet_losses, 'max_subnet'))
             # update the min subnet loss.
             elif kind == 'min':
-                self.set_min_subnet()
+                self.mutator.set_choices(self.mutator.min_choices)
                 min_subnet_losses = distill_step(batch_inputs, data_samples)
                 total_losses.update(
                     add_prefix(min_subnet_losses, 'min_subnet'))
             # update the random subnets loss.
             elif 'random' in kind:
-                self.set_subnet(self.sample_subnet())
+                self.mutator.set_choices(self.mutator.sample_choices())
                 random_subnet_losses = distill_step(batch_inputs, data_samples)
                 total_losses.update(
                     add_prefix(random_subnet_losses, f'{kind}_subnet'))
 
         return total_losses
+
+    def train(self, mode=True):
+        """Overwrite the train method in ``nn.Module`` to set ``nn.BatchNorm``
+        to training mode when model is set to eval mode when
+        ``self.norm_training`` is ``True``.
+
+        Args:
+            mode (bool): whether to set training mode (``True``) or evaluation
+                mode (``False``). Default: ``True``.
+        """
+        super(AutoSlim, self).train(mode)
+        if not mode and self.norm_training:
+            for module in self.modules():
+                if isinstance(module, _BatchNorm):
+                    module.training = True
 
 
 @MODEL_WRAPPERS.register_module()
@@ -215,7 +225,7 @@ class AutoSlimDDP(MMDistributedDataParallel):
         for kind in self.module.sample_kinds:
             # update the max subnet loss.
             if kind == 'max':
-                self.module.set_max_subnet()
+                self.module.mutator.set_max_choices()
                 with optim_wrapper.optim_context(
                         self
                 ), self.module.distiller.teacher_recorders:  # type: ignore
@@ -228,13 +238,14 @@ class AutoSlimDDP(MMDistributedDataParallel):
                     add_prefix(max_subnet_losses, 'max_subnet'))
             # update the min subnet loss.
             elif kind == 'min':
-                self.module.set_min_subnet()
+                self.module.mutator.set_min_choices()
                 min_subnet_losses = distill_step(batch_inputs, data_samples)
                 total_losses.update(
                     add_prefix(min_subnet_losses, 'min_subnet'))
             # update the random subnets loss.
             elif 'random' in kind:
-                self.module.set_subnet(self.module.sample_subnet())
+                self.module.mutator.set_choices(
+                    self.module.mutator.sample_choices())
                 random_subnet_losses = distill_step(batch_inputs, data_samples)
                 total_losses.update(
                     add_prefix(random_subnet_losses, f'{kind}_subnet'))

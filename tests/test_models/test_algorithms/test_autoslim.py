@@ -92,6 +92,30 @@ class ToyDataPreprocessor(torch.nn.Module):
 class TestAutoSlim(TestCase):
     device: str = 'cpu'
 
+    def _prepare_fake_data(self) -> Dict:
+        imgs = torch.randn(16, 3, 224, 224).to(self.device)
+        data_samples = [
+            ClsDataSample().set_gt_label(torch.randint(0, 1000,
+                                                       (16, ))).to(self.device)
+        ]
+
+        return {'inputs': imgs, 'data_samples': data_samples}
+
+    def prepare_model(self,
+                      mutator_cfg: MUTATOR_TYPE = MUTATOR_CFG,
+                      distiller_cfg: DISTILLER_TYPE = DISTILLER_CFG,
+                      architecture_cfg: Dict = ARCHITECTURE_CFG,
+                      num_random_samples: int = 2) -> AutoSlim:
+        model = AutoSlim(
+            mutator=mutator_cfg,
+            distiller=distiller_cfg,
+            architecture=architecture_cfg,
+            data_preprocessor=ToyDataPreprocessor(),
+            num_random_samples=num_random_samples)
+        model.to(self.device)
+
+        return model
+
     def test_init(self) -> None:
         mutator_wrong_type = FakeMutator()
         with pytest.raises(Exception):
@@ -128,30 +152,6 @@ class TestAutoSlim(TestCase):
 
         losses = algo.train_step(data, optim_wrapper)
         assert algo._optim_wrapper_count_status_reinitialized
-
-    def _prepare_fake_data(self) -> Dict:
-        imgs = torch.randn(16, 3, 224, 224).to(self.device)
-        data_samples = [
-            ClsDataSample().set_gt_label(torch.randint(0, 1000,
-                                                       (16, ))).to(self.device)
-        ]
-
-        return {'inputs': imgs, 'data_samples': data_samples}
-
-    def prepare_model(self,
-                      mutator_cfg: MUTATOR_TYPE = MUTATOR_CFG,
-                      distiller_cfg: DISTILLER_TYPE = DISTILLER_CFG,
-                      architecture_cfg: Dict = ARCHITECTURE_CFG,
-                      num_random_samples: int = 2) -> AutoSlim:
-        model = AutoSlim(
-            mutator=mutator_cfg,
-            distiller=distiller_cfg,
-            architecture=architecture_cfg,
-            data_preprocessor=ToyDataPreprocessor(),
-            num_random_samples=num_random_samples)
-        model.to(self.device)
-
-        return model
 
 
 class TestAutoSlimDDP(TestAutoSlim):

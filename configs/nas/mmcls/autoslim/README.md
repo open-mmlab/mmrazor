@@ -11,51 +11,50 @@ Notably, by setting optimized channel numbers, our AutoSlim-MobileNet-v2 at 305M
 
 ![pipeline](https://user-images.githubusercontent.com/88702197/187425354-d90e4b36-e033-4dc0-b951-64a536e61b71.png)
 
-## Introduction
+## Get Started
 
 ### Supernet pre-training on ImageNet
 
-<pre>
-python ./tools/mmcls/train_mmcls.py \
-  configs/pruning/autoslim/autoslim_mbv2_supernet_8xb256_in1k.py \
-  --work-dir <em>your_work_dir</em>
-</pre>
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/pruning/autoslim/autoslim_mbv2_supernet_8xb256_in1k.py 4 \
+  --work-dir $WORK_DIR
+```
 
 ### Search for subnet on the trained supernet
 
-<pre>
-python ./tools/mmcls/search_mmcls.py \
-  configs/pruning/autoslim/autoslim_mbv2_search_8xb1024_in1k.py \
-  <em>your_pre-training_checkpoint_path</em> \
-  --work-dir <em>your_work_dir</em>
-</pre>
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/pruning/autoslim/autoslim_mbv2_search_8xb1024_in1k.py 4 \
+  --work-dir $WORK_DIR --cfg-options load_from=$STEP1_CKPT
+```
 
 ### Subnet retraining on ImageNet
 
-<pre>
-python ./tools/mmcls/train_mmcls.py \
-  configs/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k.py \
-  --work-dir <em>your_work_dir</em> \
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k.py 4 \
+  --work-dir $WORK_DIR \
   --cfg-options algorithm.channel_cfg=configs/pruning/autoslim/AUTOSLIM_MBV2_530M_OFFICIAL.yaml,configs/pruning/autoslim/AUTOSLIM_MBV2_320M_OFFICIAL.yaml,configs/pruning/autoslim/AUTOSLIM_MBV2_220M_OFFICIAL.yaml
-</pre>
+```
 
 ### Split checkpoint
 
-<pre>
+```bash
 python ./tools/model_converters/split_checkpoint.py \
   configs/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k.py \
-  <em>your_retraining_checkpoint_path</em> \
+  $RETRAINED_CKPT \
   --channel-cfgs configs/pruning/autoslim/AUTOSLIM_MBV2_530M_OFFICIAL.yaml configs/pruning/autoslim/AUTOSLIM_MBV2_320M_OFFICIAL.yaml configs/pruning/autoslim/AUTOSLIM_MBV2_220M_OFFICIAL.yaml
-</pre>
+```
 
-### Test a subnet
+### Subnet inference
 
-<pre>
-python ./tools/mmcls/test_mmcls.py \
+```bash
+CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
   configs/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k.py \
-  <em>your_splitted_checkpoint_path</em> --metrics accuracy \
+  $SEARCHED_CKPT 1 --work-dir $WORK_DIR \
   --cfg-options algorithm.channel_cfg=configs/pruning/autoslim/AUTOSLIM_MBV2_530M_OFFICIAL.yaml  # or modify the config directly
-</pre>
+```
 
 ## Results and models
 

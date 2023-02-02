@@ -53,17 +53,7 @@ model = dict(
     type='mmrazor.Autoformer',
     architecture=supernet,
     fix_subnet=None,
-    mutators=dict(
-        channel_mutator=dict(
-            type='mmrazor.OneShotChannelMutator',
-            channel_unit_cfg={
-                'type': 'OneShotMutableChannelUnit',
-                'default_args': {
-                    'unit_predefined': True
-                }
-            },
-            parse_cfg={'type': 'Predefined'}),
-        value_mutator=dict(type='mmrazor.DynamicValueMutator')))
+    mutator=dict(type='mmrazor.NasMutator'))
 
 # runtime setting
 custom_hooks = [dict(type='EMAHook', momentum=4e-5, priority='ABOVE_NORMAL')]

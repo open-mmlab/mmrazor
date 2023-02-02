@@ -62,16 +62,16 @@ class TestSlimmable(TestCase):
 
         mutator_wrong_type = FakeMutator()
         with pytest.raises(AttributeError):
-            _ = self.prepare_model(mutator_wrong_type, MODEL_CFG)
+            _ = self.prepare_model(MODEL_CFG, mutator_wrong_type)
 
         # assert has prunable units
-        algo = SlimmableNetwork(MUTATOR_CFG, MODEL_CFG)
+        algo = SlimmableNetwork(MODEL_CFG, MUTATOR_CFG)
         self.assertGreater(len(algo.mutator.mutable_units), 0)
 
         # assert can generate config template
         mutator_cfg = copy.deepcopy(MUTATOR_CFG)
         mutator_cfg['channel_unit_cfg']['units'] = {}
-        algo = SlimmableNetwork(mutator_cfg, MODEL_CFG)
+        algo = SlimmableNetwork(MODEL_CFG, mutator_cfg)
         try:
             algo.mutator.config_template()
         except Exception:
@@ -79,11 +79,11 @@ class TestSlimmable(TestCase):
 
     def test_is_deployed(self) -> None:
         slimmable_should_not_deployed = \
-            SlimmableNetwork(MUTATOR_CFG, MODEL_CFG)
+            SlimmableNetwork(MODEL_CFG, MUTATOR_CFG)
         assert not slimmable_should_not_deployed.is_deployed
 
         slimmable_should_deployed = \
-            SlimmableNetwork(MUTATOR_CFG, MODEL_CFG, deploy_index=0)
+            SlimmableNetwork(MODEL_CFG, MUTATOR_CFG, deploy_index=0)
         assert slimmable_should_deployed.is_deployed
 
     def test_slimmable_train_step(self) -> None:
@@ -129,20 +129,18 @@ class TestSlimmable(TestCase):
         return {'inputs': imgs, 'data_samples': data_samples}
 
     def prepare_slimmable_model(self) -> SlimmableNetwork:
-        return self.prepare_model(MUTATOR_CFG, MODEL_CFG)
+        return self.prepare_model(MODEL_CFG, MUTATOR_CFG)
 
     def prepare_fixed_model(self) -> SlimmableNetwork:
-
-        return self.prepare_model(MUTATOR_CFG, MODEL_CFG, deploy=0)
+        return self.prepare_model(MODEL_CFG, MUTATOR_CFG, deploy=0)
 
     def prepare_model(self,
-                      mutator_cfg: Dict,
                       model_cfg: Dict,
+                      mutator_cfg: Dict,
                       deploy=-1) -> SlimmableNetwork:
-        model = SlimmableNetwork(mutator_cfg, model_cfg, deploy,
+        model = SlimmableNetwork(model_cfg, mutator_cfg, deploy,
                                  ToyDataPreprocessor())
         model.to(self.device)
-
         return model
 
 
@@ -162,10 +160,10 @@ class TestSlimmableDDP(TestSlimmable):
         dist.init_process_group(backend, rank=0, world_size=1)
 
     def prepare_model(self,
-                      mutator_cfg: Dict,
                       model_cfg: Dict,
+                      mutator_cfg: Dict,
                       deploy=-1) -> SlimmableNetwork:
-        model = super().prepare_model(mutator_cfg, model_cfg, deploy)
+        model = super().prepare_model(model_cfg, mutator_cfg, deploy)
         return SlimmableNetworkDDP(module=model, find_unused_parameters=True)
 
     def test_is_deployed(self) -> None:

@@ -40,6 +40,23 @@ class MutableModule(BaseMutable):
         self._current_choice = None
 
     @property
+    def mutable_prefix(self) -> str:
+        """Mutable prefix."""
+        return 'module'
+
+    @property
+    def max_choice(self):
+        """max_choice shouldn't exist."""
+        raise AttributeError(
+            'MutableModule does not have the attr `max choice`.')
+
+    @property
+    def min_choice(self):
+        """min_choice shouldn't exist."""
+        raise AttributeError(
+            'MutableModule does not have the attr `min choice`.')
+
+    @property
     def current_choice(self):
         """Current choice will affect :meth:`forward` and will be used in
         :func:`mmrazor.core.subnet.utils.export_fix_subnet` or mutator.

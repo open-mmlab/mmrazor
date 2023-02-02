@@ -1,6 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
+import json
 import os
+import os.path as osp
 import unittest
 
 import torch
@@ -12,6 +14,7 @@ from mmrazor.models.algorithms.pruning.dcff import DCFF
 from mmrazor.models.algorithms.pruning.ite_prune_algorithm import \
     ItePruneConfigManager
 from mmrazor.registry import MODELS
+from mmrazor.structures import export_fix_subnet
 
 
 # @TASK_UTILS.register_module()
@@ -144,11 +147,11 @@ class TestDCFFAlgorithm(unittest.TestCase):
                                  algorithm.step_freq)
 
         current_choices = algorithm.mutator.current_choices
-        group_prune_target = algorithm.group_target_pruning_ratio(
-            prune_target, mutator.search_groups)
+        target_pruning_ratio = algorithm.set_target_pruning_ratio(
+            prune_target, mutator.mutable_units)
         for key in current_choices:
             self.assertAlmostEqual(
-                current_choices[key], group_prune_target[key], delta=0.1)
+                current_choices[key], target_pruning_ratio[key], delta=0.1)
 
     def test_load_pretrained(self):
         iter_per_epoch = 10
@@ -187,13 +190,6 @@ class TestDCFFAlgorithm(unittest.TestCase):
         mutator.set_choices(mutator.sample_choices())
         prune_target = mutator.choice_template
 
-        custom_groups = [[
-            'backbone.layer1.0.conv1_(0, 64)_64',
-            'backbone.layer1.1.conv1_(0, 64)_64'
-        ]]
-        mutator_cfg = copy.deepcopy(MUTATOR_CONFIG_FLOAT)
-        mutator_cfg['custom_groups'] = custom_groups
-
         iter_per_epoch = 10
         epoch_step = 2
         epoch = 6
@@ -205,7 +201,7 @@ class TestDCFFAlgorithm(unittest.TestCase):
         algorithm = DCFF(
             MODEL_CFG,
             target_pruning_ratio=prune_target,
-            mutator_cfg=mutator_cfg,
+            mutator_cfg=MUTATOR_CONFIG_FLOAT,
             step_freq=epoch_step).to(DEVICE)
 
         algorithm.init_weights()
@@ -213,19 +209,86 @@ class TestDCFFAlgorithm(unittest.TestCase):
         algorithm.forward(data['inputs'], data['data_samples'], mode='loss')
         self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
 
-        prune_target['backbone.layer1.0.conv1_(0, 64)_64'] = 0.1
-        prune_target['backbone.layer1.1.conv1_(0, 64)_64'] = 0.2
+    def test_export_subnet(self):
 
-        with self.assertRaises(ValueError):
+        model = MODELS.build(MODEL_CFG)
+        mutator = MODELS.build(MUTATOR_CONFIG_FLOAT)
+        mutator.prepare_from_supernet(model)
+        mutator.set_choices(mutator.sample_choices())
 
-            algorithm = DCFF(
-                MODEL_CFG,
-                target_pruning_ratio=prune_target,
-                mutator_cfg=mutator_cfg,
-                step_freq=epoch_step).to(DEVICE)
+        iter_per_epoch = 10
+        epoch_step = 2
+        epoch = 6
+        data = self.fake_cifar_data()
 
-            algorithm.init_weights()
-            self._set_epoch_ite(1, 2, epoch)
-            algorithm.forward(
-                data['inputs'], data['data_samples'], mode='loss')
-            self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
+        stage_ratio_1 = 0.65
+        stage_ratio_2 = 0.6
+        stage_ratio_3 = 0.9
+        stage_ratio_4 = 0.7
+
+        target_pruning_ratio = {
+            'backbone.layer1.0.conv1_(0, 64)_64': stage_ratio_1,
+            'backbone.layer1.0.conv2_(0, 64)_64': stage_ratio_2,
+            'backbone.layer1.0.conv3_(0, 256)_256': stage_ratio_3,
+            'backbone.layer1.1.conv1_(0, 64)_64': stage_ratio_1,
+            'backbone.layer1.1.conv2_(0, 64)_64': stage_ratio_2,
+            'backbone.layer1.2.conv1_(0, 64)_64': stage_ratio_1,
+            'backbone.layer1.2.conv2_(0, 64)_64': stage_ratio_2,
+            # block 1 [0.65, 0.6] downsample=[0.9]
+            'backbone.layer2.0.conv1_(0, 128)_128': stage_ratio_1,
+            'backbone.layer2.0.conv2_(0, 128)_128': stage_ratio_2,
+            'backbone.layer2.0.conv3_(0, 512)_512': stage_ratio_3,
+            'backbone.layer2.1.conv1_(0, 128)_128': stage_ratio_1,
+            'backbone.layer2.1.conv2_(0, 128)_128': stage_ratio_2,
+            'backbone.layer2.2.conv1_(0, 128)_128': stage_ratio_1,
+            'backbone.layer2.2.conv2_(0, 128)_128': stage_ratio_2,
+            'backbone.layer2.3.conv1_(0, 128)_128': stage_ratio_1,
+            'backbone.layer2.3.conv2_(0, 128)_128': stage_ratio_2,
+            # block 2 [0.65, 0.6] downsample=[0.9]
+            'backbone.layer3.0.conv1_(0, 256)_256': stage_ratio_1,
+            'backbone.layer3.0.conv2_(0, 256)_256': stage_ratio_2,
+            'backbone.layer3.0.conv3_(0, 1024)_1024': stage_ratio_3,
+            'backbone.layer3.1.conv1_(0, 256)_256': stage_ratio_1,
+            'backbone.layer3.1.conv2_(0, 256)_256': stage_ratio_2,
+            'backbone.layer3.2.conv1_(0, 256)_256': stage_ratio_1,
+            'backbone.layer3.2.conv2_(0, 256)_256': stage_ratio_2,
+            'backbone.layer3.3.conv1_(0, 256)_256': stage_ratio_4,
+            'backbone.layer3.3.conv2_(0, 256)_256': stage_ratio_4,
+            'backbone.layer3.4.conv1_(0, 256)_256': stage_ratio_4,
+            'backbone.layer3.4.conv2_(0, 256)_256': stage_ratio_4,
+            'backbone.layer3.5.conv1_(0, 256)_256': stage_ratio_4,
+            'backbone.layer3.5.conv2_(0, 256)_256': stage_ratio_4,
+            # block 3 [0.65, 0.6]*2+[0.7, 0.7]*2 downsample=[0.9]
+            'backbone.layer4.0.conv1_(0, 512)_512': stage_ratio_4,
+            'backbone.layer4.0.conv2_(0, 512)_512': stage_ratio_4,
+            'backbone.layer4.0.conv3_(0, 2048)_2048': stage_ratio_3,
+            'backbone.layer4.1.conv1_(0, 512)_512': stage_ratio_4,
+            'backbone.layer4.1.conv2_(0, 512)_512': stage_ratio_4,
+            'backbone.layer4.2.conv1_(0, 512)_512': stage_ratio_4,
+            'backbone.layer4.2.conv2_(0, 512)_512': stage_ratio_4
+            # block 4 [0.7, 0.7] downsample=[0.9]
+        }
+
+        algorithm = DCFF(
+            MODEL_CFG,
+            target_pruning_ratio=target_pruning_ratio,
+            mutator_cfg=MUTATOR_CONFIG_FLOAT,
+            step_freq=epoch_step).to(DEVICE)
+
+        algorithm.init_weights()
+        self._set_epoch_ite(0, 0, epoch)
+        algorithm.forward(data['inputs'], data['data_samples'], mode='loss')
+        self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
+
+        fix_subnet, static_model = export_fix_subnet(
+            algorithm, export_subnet_mode='mutator', slice_weight=True)
+        fix_subnet = json.dumps(fix_subnet, indent=4, separators=(',', ':'))
+        subnet_name = 'subnet.json'
+        weight_name = 'subnet_weight.pth'
+        with open(osp.join('tests/data/test_registry/', subnet_name),
+                  'w') as file:
+            file.write(fix_subnet)
+        torch.save({
+            'state_dict': static_model.state_dict(),
+            'meta': {}
+        }, osp.join('tests/data/test_registry/', weight_name))

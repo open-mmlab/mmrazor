@@ -16,7 +16,8 @@ from mmengine.utils import is_list_of
 from torch.utils.data import DataLoader
 
 from mmrazor.registry import LOOPS, TASK_UTILS
-from mmrazor.structures import Candidates, export_fix_subnet
+from mmrazor.structures import (Candidates, convert_fix_subnet,
+                                export_fix_subnet)
 from mmrazor.utils import SupportRandomSubnet
 from .utils import CalibrateBNMixin, check_subnet_resources, crossover
 
@@ -177,7 +178,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
 
         self.candidates.extend(self.top_k_candidates)
         self.candidates.sort_by(key_indicator='score', reverse=True)
-        self.top_k_candidates = Candidates(self.candidates[:self.top_k])
+        self.top_k_candidates = \
+            Candidates(self.candidates[:self.top_k])  # type: ignore
 
         scores_after = self.top_k_candidates.scores
         self.runner.logger.info(f'top k scores after update: '
@@ -210,7 +212,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                 if is_pass:
                     self.candidates.append(candidate)
                     candidates_resources.append(result)
-            self.candidates = Candidates(self.candidates)
+            self.candidates = Candidates(self.candidates.data)
         else:
             self.candidates = Candidates([dict(a=0)] * self.num_candidates)
 
@@ -228,7 +230,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         """Validate candicate one by one from the candicate pool, and update
         top-k candicates."""
         for i, candidate in enumerate(self.candidates.subnets):
-            self.model.set_subnet(candidate)
+            self.model.mutator.set_choices(candidate)
             metrics = self._val_candidate(use_predictor=self.use_predictor)
             score = round(metrics[self.score_key], 2) \
                 if len(metrics) != 0 else 0.
@@ -321,7 +323,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         """Save best subnet in searched top-k candidates."""
         if self.runner.rank == 0:
             best_random_subnet = self.top_k_candidates.subnets[0]
-            self.model.set_subnet(best_random_subnet)
+            self.model.mutator.set_choices(best_random_subnet)
 
             best_fix_subnet, sliced_model = \
                 export_fix_subnet(self.model, slice_weight=True)
@@ -337,24 +339,13 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                                     f'{self.runner.work_dir}')
 
             save_name = 'best_fix_subnet.yaml'
-            best_fix_subnet = self._convert_fix_subnet(best_fix_subnet)
+            best_fix_subnet = convert_fix_subnet(best_fix_subnet)
             fileio.dump(best_fix_subnet,
                         osp.join(self.runner.work_dir, save_name))
             self.runner.logger.info(
                 f'Subnet config {save_name} saved in {self.runner.work_dir}.')
 
             self.runner.logger.info('Search finished.')
-
-    def _convert_fix_subnet(self, fix_subnet: Dict[str, Any]):
-        """Convert the fixed subnet to avoid python typing error."""
-        from mmrazor.utils.typing import DumpChosen
-
-        converted_fix_subnet = dict()
-        for k, v in fix_subnet.items():
-            assert isinstance(v, DumpChosen)
-            converted_fix_subnet[k] = dict(chosen=v.chosen)
-
-        return converted_fix_subnet
 
     @torch.no_grad()
     def _val_candidate(self, use_predictor: bool = False) -> Dict:

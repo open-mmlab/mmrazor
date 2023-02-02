@@ -54,7 +54,7 @@ class TestDartsBackbone(TestCase):
             route_cfg=self.route_cfg)
 
         self.mutator_cfg = dict(
-            type='DiffModuleMutator',
+            type='NasMutator',
             custom_groups=None,
         )
 
@@ -68,7 +68,7 @@ class TestDartsBackbone(TestCase):
         assert mutator is not None
 
         mutator.prepare_from_supernet(model)
-        mutator.modify_supernet_forward(mutator.arch_params)
+        # mutator.modify_supernet_forward(mutator.arch_params)
 
         inputs = torch.randn(4, 3, 224, 224)
         outputs = model(inputs)
@@ -85,7 +85,7 @@ class TestDartsBackbone(TestCase):
         mutator = MODELS.build(self.mutator_cfg)
         assert mutator is not None
         mutator.prepare_from_supernet(model)
-        mutator.modify_supernet_forward(mutator.arch_params)
+        # mutator.modify_supernet_forward(mutator.arch_params)
 
         inputs = torch.randn(4, 3, 224, 224)
         outputs = model(inputs)

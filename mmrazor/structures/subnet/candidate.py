@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Union
 class Candidates(UserList):
     """The data structure of sampled candidate. The format is Union[Dict[str,
     Dict], List[Dict[str, Dict]]].
+
     Examples:
         >>> candidates = Candidates()
         >>> subnet_1 = {'1': 'choice1', '2': 'choice2'}

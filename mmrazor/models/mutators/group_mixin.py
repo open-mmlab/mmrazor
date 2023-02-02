@@ -1,22 +1,18 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import sys
 from collections import Counter
-from typing import Dict, List, Type
+from typing import Dict, List
 
 from torch.nn import Module
 
-from ..mutables import BaseMutable
-
-if sys.version_info < (3, 8):
-    from typing_extensions import Protocol
-else:
-    from typing import Protocol
+from mmrazor.models.mutables import MutableValue
+from mmrazor.models.mutables.mutable_module import MutableModule
+from .base_mutator import MUTABLE_TYPE
 
 
 class GroupMixin():
     """A mixin for :class:`BaseMutator`, which can group mutables by
     ``custom_group`` and ``alias``(see more information in
-    :class:`BaseMutable`). Grouping by alias and module name are both
+    :class:`MUTABLE_TYPE`). Grouping by alias and module name are both
     supported.
 
     Note:
@@ -67,26 +63,31 @@ class GroupMixin():
 
     """
 
+    def is_supported_mutable(self, module):
+        """Judge whether is a supported mutable."""
+        for mutable_type in [MutableModule, MutableValue]:
+            if isinstance(module, mutable_type):
+                return True
+        return False
+
     def _build_name_mutable_mapping(
-            self, supernet: Module,
-            support_mutables: Type) -> Dict[str, BaseMutable]:
+            self, supernet: Module) -> Dict[str, MUTABLE_TYPE]:
         """Mapping module name to mutable."""
-        name2mutable: Dict[str, BaseMutable] = dict()
+        name2mutable: Dict[str, MUTABLE_TYPE] = dict()
         for name, module in supernet.named_modules():
-            if isinstance(module, support_mutables):
+            if self.is_supported_mutable(module):
                 name2mutable[name] = module
             elif hasattr(module, 'source_mutables'):
-                for each_mutables in module.source_mutables:
-                    if isinstance(each_mutables, support_mutables):
-                        name2mutable[name] = each_mutables
+                for each_mutable in module.source_mutables:
+                    if self.is_supported_mutable(each_mutable):
+                        name2mutable[name] = each_mutable
 
         self._name2mutable = name2mutable
 
         return name2mutable
 
-    def _build_alias_names_mapping(
-            self, supernet: Module,
-            support_mutables: Type) -> Dict[str, List[str]]:
+    def _build_alias_names_mapping(self,
+                                   supernet: Module) -> Dict[str, List[str]]:
         """Mapping alias to module names."""
         alias2mutable_names: Dict[str, List[str]] = dict()
 
@@ -97,23 +98,24 @@ class GroupMixin():
                 dict[key].append(name)
 
         for name, module in supernet.named_modules():
-            if isinstance(module, support_mutables):
+            if self.is_supported_mutable(module):
                 if module.alias is not None:
                     _append(module.alias, alias2mutable_names, name)
             elif hasattr(module, 'source_mutables'):
-                for each_mutables in module.source_mutables:
-                    if isinstance(each_mutables, support_mutables):
-                        if each_mutables.alias is not None:
-                            _append(each_mutables.alias, alias2mutable_names,
+                for each_mutable in module.source_mutables:
+                    if self.is_supported_mutable(each_mutable):
+                        if each_mutable.alias is not None:
+                            _append(each_mutable.alias, alias2mutable_names,
                                     name)
 
         return alias2mutable_names
 
-    def build_search_groups(self, supernet: Module, support_mutables: Type,
-                            custom_groups: List[List[str]]) -> Dict[int, List]:
+    def build_search_groups(
+            self, supernet: Module,
+            custom_groups: List[List[str]]) -> Dict[str, List[MUTABLE_TYPE]]:
         """Build search group with ``custom_group`` and ``alias``(see more
-        information in :class:`BaseMutable`). Grouping by alias and module name
-        are both supported.
+        information in :class:`MUTABLE_TYPE`). Grouping by alias and module
+        name are both supported.
 
         Args:
             supernet (:obj:`torch.nn.Module`): The supernet to be searched
@@ -122,12 +124,14 @@ class GroupMixin():
             custom_group (list, optional): User-defined search groups.
                 All searchable modules that are not in ``custom_group`` will be
                 grouped separately.
+
+        Return:
+            search_groups (Dict[str, List[MUTABLE_TYPE]]): The built
+                search_groups.
         """
-        name2mutable: Dict[str,
-                           BaseMutable] = self._build_name_mutable_mapping(
-                               supernet, support_mutables)
-        alias2mutable_names = self._build_alias_names_mapping(
-            supernet, support_mutables)
+        name2mutable: Dict[
+            str, MUTABLE_TYPE] = self._build_name_mutable_mapping(supernet)
+        alias2mutable_names = self._build_alias_names_mapping(supernet)
 
         # Check whether the custom group is valid
         if len(custom_groups) > 0:
@@ -135,7 +139,7 @@ class GroupMixin():
                                      custom_groups)
 
         # Construct search_groups based on user-defined group
-        search_groups: Dict[int, List[BaseMutable]] = dict()
+        search_groups: Dict[str, List[MUTABLE_TYPE]] = dict()
 
         current_group_nums = 0
         grouped_mutable_names: List[str] = list()
@@ -155,7 +159,10 @@ class GroupMixin():
                     group_mutables.append(name2mutable[item])
                     grouped_mutable_names.append(item)
 
-            search_groups[current_group_nums] = group_mutables
+            # TODO: fix prefix when constructing custom groups.
+            prefix = name2mutable[item].mutable_prefix
+            group_name = prefix + '_' + str(current_group_nums)
+            search_groups[group_name] = group_mutables
             current_group_nums += 1
 
         # Construct search_groups based on alias
@@ -169,29 +176,35 @@ class GroupMixin():
 
                 # If not all mutables are already grouped
                 if not flag_all_grouped:
-                    search_groups[current_group_nums] = []
+                    prefix = name2mutable[mutable_names[0]].mutable_prefix
+                    group_name = prefix + '_' + str(current_group_nums)
+                    search_groups[group_name] = []
                     for mutable_name in mutable_names:
                         if mutable_name not in grouped_mutable_names:
-                            search_groups[current_group_nums].append(
+                            search_groups[group_name].append(
                                 name2mutable[mutable_name])
                             grouped_mutable_names.append(mutable_name)
                     current_group_nums += 1
 
         # check whether all the mutable objects are in the search_groups
         for name, module in supernet.named_modules():
-            if isinstance(module, support_mutables):
+            if self.is_supported_mutable(module):
                 if name in grouped_mutable_names:
                     continue
                 else:
-                    search_groups[current_group_nums] = [module]
+                    prefix = module.mutable_prefix
+                    group_name = prefix + '_' + str(current_group_nums)
+                    search_groups[group_name] = [module]
                     current_group_nums += 1
             elif hasattr(module, 'source_mutables'):
-                for each_mutables in module.source_mutables:
-                    if isinstance(each_mutables, support_mutables):
+                for each_mutable in module.source_mutables:
+                    if self.is_supported_mutable(each_mutable):
                         if name in grouped_mutable_names:
                             continue
                         else:
-                            search_groups[current_group_nums] = [each_mutables]
+                            prefix = each_mutable.mutable_prefix
+                            group_name = prefix + '_' + str(current_group_nums)
+                            search_groups[group_name] = [each_mutable]
                             current_group_nums += 1
 
         grouped_counter = Counter(grouped_mutable_names)
@@ -219,7 +232,7 @@ class GroupMixin():
         return new_search_groups
 
     def _check_valid_groups(self, alias2mutable_names: Dict[str, List[str]],
-                            name2mutable: Dict[str, BaseMutable],
+                            name2mutable: Dict[str, MUTABLE_TYPE],
                             custom_group: List[List[str]]) -> None:
         """Check if all keys are legal."""
         aliases = [*alias2mutable_names.keys()]
@@ -254,54 +267,3 @@ class GroupMixin():
                         f'When a mutable is set alias attribute :{alias_key},'
                         f'the corresponding module name {mutable_name} should '
                         f'not be used in `custom_group` {custom_group}.')
-
-
-class MutatorProtocol(Protocol):  # pragma: no cover
-
-    @property
-    def mutable_class_type(self) -> Type[BaseMutable]:
-        ...
-
-    @property
-    def search_groups(self) -> Dict:
-        ...
-
-
-class DynamicSampleMixin():
-
-    def sample_choices(self: MutatorProtocol, kind: str = 'random') -> Dict:
-        """Sample choices for each group in search_groups."""
-        random_choices = dict()
-        for group_id, modules in self.search_groups.items():
-            if kind == 'max':
-                random_choices[group_id] = modules[0].max_choice
-            elif kind == 'min':
-                random_choices[group_id] = modules[0].min_choice
-            else:
-                random_choices[group_id] = modules[0].sample_choice()
-        return random_choices
-
-    def set_choices(self: MutatorProtocol, choices: Dict) -> None:
-        """Set choices for each group in search_groups."""
-        for group_id, modules in self.search_groups.items():
-            choice = choices[modules[0].alias]
-            for module in modules:
-                module.current_choice = choice
-
-    @property
-    def max_choice(self: MutatorProtocol) -> Dict:
-        """Get max choices for each group in search_groups."""
-        max_choice = dict()
-        for group_id, modules in self.search_groups.items():
-            max_choice[group_id] = modules[0].max_choice
-
-        return max_choice
-
-    @property
-    def min_choice(self: MutatorProtocol) -> Dict:
-        """Get min choices for each group in search_groups."""
-        min_choice = dict()
-        for group_id, modules in self.search_groups.items():
-            min_choice[group_id] = modules[0].min_choice
-
-        return min_choice

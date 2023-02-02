@@ -4,7 +4,7 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.models import Autoformer
+from mmrazor.models import Autoformer, NasMutator
 from mmrazor.registry import MODELS
 
 arch_setting = dict(
@@ -13,17 +13,7 @@ arch_setting = dict(
     depth=[14, 15, 16],
     embed_dims=[528, 576, 624])
 
-MUTATOR_CFG = dict(
-    channel_mutator=dict(
-        type='mmrazor.OneShotChannelMutator',
-        channel_unit_cfg={
-            'type': 'OneShotMutableChannelUnit',
-            'default_args': {
-                'unit_predefined': True
-            }
-        },
-        parse_cfg={'type': 'Predefined'}),
-    value_mutator=dict(type='mmrazor.DynamicValueMutator'))
+MUTATOR_CFG = dict(type='NasMutator')
 
 ARCHITECTURE_CFG = dict(
     _scope_='mmrazor',
@@ -50,23 +40,21 @@ ARCHITECTURE_CFG = dict(
 ALGORITHM_CFG = dict(
     type='mmrazor.Autoformer',
     architecture=ARCHITECTURE_CFG,
-    fix_subnet=None,
-    mutators=MUTATOR_CFG)
+    mutator=MUTATOR_CFG,
+    fix_subnet=None)
 
 
-class TestAUTOFORMER(TestCase):
+class TestAutoFormer(TestCase):
 
     def test_init(self):
         ALGORITHM_CFG_SUPERNET = copy.deepcopy(ALGORITHM_CFG)
         # initiate autoformer with built `algorithm`.
         autoformer_algo = MODELS.build(ALGORITHM_CFG_SUPERNET)
         self.assertIsInstance(autoformer_algo, Autoformer)
-        # autoformer mutators include channel_mutator and value_mutator
-        assert 'channel_mutator' in autoformer_algo.mutators
-        assert 'value_mutator' in autoformer_algo.mutators
+        self.assertIsInstance(autoformer_algo.mutator, NasMutator)
 
         # autoformer search_groups
-        random_subnet = autoformer_algo.sample_subnet()
+        random_subnet = autoformer_algo.mutator.sample_choices()
         self.assertIsInstance(random_subnet, dict)
 
         # autoformer_algo support training
@@ -74,29 +62,11 @@ class TestAUTOFORMER(TestCase):
 
         # initiate autoformer without any `mutator`.
         ALGORITHM_CFG_SUPERNET.pop('type')
-        ALGORITHM_CFG_SUPERNET['mutators'] = None
+        ALGORITHM_CFG_SUPERNET['mutator'] = None
+        none_type = type(ALGORITHM_CFG_SUPERNET['mutator'])
         with self.assertRaisesRegex(
-                AssertionError,
-                'mutator cannot be None when fix_subnet is None.'):
-            _ = Autoformer(**ALGORITHM_CFG_SUPERNET)
-
-        # initiate autoformer with error type `mutator`.
-        backwardtracer_cfg = dict(
-            type='OneShotChannelMutator',
-            channel_unit_cfg=dict(
-                type='OneShotMutableChannelUnit',
-                default_args=dict(
-                    candidate_choices=list(i / 12 for i in range(2, 13)),
-                    choice_mode='ratio')),
-            parse_cfg=dict(
-                type='ChannelAnalyzer',
-                demo_input=(1, 3, 224, 224),
-                tracer_type='BackwardTracer'))
-        ALGORITHM_CFG_SUPERNET['mutators'] = dict(
-            channel_mutator=backwardtracer_cfg,
-            value_mutator=dict(type='mmrazor.DynamicValueMutator'))
-        with self.assertRaisesRegex(AssertionError,
-                                    'autoformer only support predefined.'):
+                TypeError, 'mutator should be a `dict` or `NasMutator` '
+                f'instance, but got {none_type}.'):
             _ = Autoformer(**ALGORITHM_CFG_SUPERNET)
 
     def test_loss(self):

@@ -60,7 +60,7 @@ class BaseSamplerTrainLoop(IterBasedTrainLoop):
         # synchronization during gradient accumulation process.
         # outputs should be a dict of loss.
         subnet = self.sample_subnet()
-        self.model.set_subnet(subnet)
+        self.model.mutator.set_choices(subnet)
         outputs = self.runner.model.train_step(
             data_batch, optim_wrapper=self.runner.optim_wrapper)
         self.runner.message_hub.update_info('train_logs', outputs)
@@ -290,7 +290,7 @@ class GreedySamplerTrainLoop(BaseSamplerTrainLoop):
         """Update candidates' scores, which are validated with the
         `dataloader_val`."""
         for i, candidate in enumerate(self.candidates.subnets):
-            self.model.set_subnet(candidate)
+            self.model.mutator.set_choices(candidate)
             metrics = self._val_candidate()
             score = metrics[self.score_key] if len(metrics) != 0 else 0.
             self.candidates.set_resource(i, score, 'score')

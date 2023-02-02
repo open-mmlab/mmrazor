@@ -28,8 +28,6 @@ class TestSequentialMutableChannelUnit(TestCase):
             },
             parse_cfg={'type': 'Predefined'})
         mutator.prepare_from_supernet(model)
-        choices = mutator.sample_choices()
-        mutator.set_choices(choices)
         self.assertSequenceEqual(mutator.units[0].candidate_choices,
                                  [576, 624])
         self.assertSequenceEqual(mutator.units[1].candidate_choices, [64])

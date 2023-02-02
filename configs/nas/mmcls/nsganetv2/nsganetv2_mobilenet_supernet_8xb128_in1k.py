@@ -29,17 +29,7 @@ model = dict(
     type='NSGANetV2',
     architecture=supernet,
     data_preprocessor=_base_.data_preprocessor,
-    mutators=dict(
-        channel_mutator=dict(
-            type='mmrazor.OneShotChannelMutator',
-            channel_unit_cfg={
-                'type': 'OneShotMutableChannelUnit',
-                'default_args': {
-                    'unit_predefined': True
-                }
-            },
-            parse_cfg={'type': 'Predefined'}),
-        value_mutator=dict(type='DynamicValueMutator')))
+    mutator=dict(type='mmrazor.NasMutator'))
 
 find_unused_parameters = True
 

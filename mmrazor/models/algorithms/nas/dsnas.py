@@ -13,13 +13,15 @@ from mmengine.optim import OptimWrapper, OptimWrapperDict
 from torch import nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
-from mmrazor.models.mutables.base_mutable import BaseMutable
-from mmrazor.models.mutators import DiffModuleMutator
+from mmrazor.models.mutables import BaseMutable
+from mmrazor.models.mutators import NasMutator
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import MODEL_WRAPPERS, MODELS, TASK_UTILS
-from mmrazor.structures import load_fix_subnet
-from mmrazor.utils import FixMutable
+from mmrazor.structures import export_fix_subnet, load_fix_subnet
+from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm
+
+VALID_MUTATOR_TYPE = Union[NasMutator, Dict]
 
 
 @MODELS.register_module()
@@ -29,8 +31,8 @@ class DSNAS(BaseAlgorithm):
     Args:
         architecture (dict|:obj:`BaseModel`): The config of :class:`BaseModel`
             or built model. Corresponding to supernet in NAS algorithm.
-        mutator (dict|:obj:`DiffModuleMutator`): The config of
-            :class:`DiffModuleMutator` or built mutator.
+        mutator (VALID_MUTATOR_TYPE): The config of :class:`NasMutator` or
+            built mutator.
         fix_subnet (str | dict | :obj:`FixSubnet`): The path of yaml file or
             loaded dict or built :obj:`FixSubnet`.
         pretrain_epochs (int): Num of epochs for supernet pretraining.
@@ -56,51 +58,41 @@ class DSNAS(BaseAlgorithm):
 
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
-                 mutator: Optional[Union[DiffModuleMutator, Dict]] = None,
-                 fix_subnet: Optional[FixMutable] = None,
+                 mutator: VALID_MUTATOR_TYPE = None,
+                 fix_subnet: Optional[ValidFixMutable] = None,
                  pretrain_epochs: int = 0,
                  finetune_epochs: int = 80,
                  flops_constraints: float = 300.0,
                  estimator_cfg: Dict[str, Any] = None,
                  norm_training: bool = False,
                  data_preprocessor: Optional[Union[dict, nn.Module]] = None,
-                 init_cfg: Optional[dict] = None,
-                 **kwargs):
-        super().__init__(architecture, data_preprocessor, **kwargs)
+                 init_cfg: Optional[dict] = None):
+        super().__init__(architecture, data_preprocessor, init_cfg)
 
         # initialize estimator
         estimator_cfg = dict() if estimator_cfg is None else estimator_cfg
         if 'type' not in estimator_cfg:
             estimator_cfg['type'] = 'mmrazor.ResourceEstimator'
         self.estimator = TASK_UTILS.build(estimator_cfg)
-        if fix_subnet:
-            # Avoid circular import
-            from mmrazor.structures import load_fix_subnet
 
+        if fix_subnet:
             # According to fix_subnet, delete the unchosen part of supernet
             load_fix_subnet(self.architecture, fix_subnet)
             self.is_supernet = False
         else:
-            assert mutator is not None, \
-                'mutator cannot be None when fix_subnet is None.'
-            if isinstance(mutator, DiffModuleMutator):
-                self.mutator = mutator
-            elif isinstance(mutator, dict):
-                self.mutator = MODELS.build(mutator)
-            else:
-                raise TypeError('mutator should be a `dict` or '
-                                f'`DiffModuleMutator` instance, but got '
-                                f'{type(mutator)}')
-
-            self.mutable_module_resources = self._get_module_resources()
+            self.mutator = self._build_mutator(mutator)
             # Mutator is an essential component of the NAS algorithm. It
             # provides some APIs commonly used by NAS.
-            # Before using it, you must do some preparations according to
+            # Before using it, you must do some preparation according to
             # the supernet.
             self.mutator.prepare_from_supernet(self.architecture)
-            self.is_supernet = True
+            self.mutator.prepare_arch_params()
+
+            self.mutable_module_resources = self._get_module_resources()
             self.search_space_name_list = list(
-                self.mutator.name2mutable.keys())
+                self.mutator._name2mutable.keys())
+
+            self.is_supernet = True
 
         self.norm_training = norm_training
         self.pretrain_epochs = pretrain_epochs
@@ -114,25 +106,14 @@ class DSNAS(BaseAlgorithm):
         self.flops_constraints = flops_constraints
         _, self.world_size = get_dist_info()
 
-    def search_subnet(self):
-        """Search subnet by mutator."""
-
-        # Avoid circular import
-        from mmrazor.structures import export_fix_subnet
-
-        subnet = self.mutator.sample_choices()
-        self.mutator.set_choices(subnet)
-        return export_fix_subnet(self)[0]
-
-    def fix_subnet(self):
-        """Fix subnet when finetuning."""
-        subnet = self.mutator.sample_choices()
-        self.mutator.set_choices(subnet)
-        for module in self.architecture.modules():
-            if isinstance(module, BaseMutable):
-                if not module.is_fixed:
-                    module.fix_chosen(module.current_choice)
-        self.is_supernet = False
+    def _build_mutator(self, mutator: VALID_MUTATOR_TYPE = None) -> NasMutator:
+        """Build mutator."""
+        if isinstance(mutator, dict):
+            mutator = MODELS.build(mutator)
+        if not isinstance(mutator, NasMutator):
+            raise TypeError('mutator should be a `dict` or `NasMutator` '
+                            f'instance, but got {type(mutator)}.')
+        return mutator
 
     def train(self, mode=True):
         """Convert the model into eval mode while keep normalization layer
@@ -159,12 +140,12 @@ class DSNAS(BaseAlgorithm):
             cur_epoch = self.message_hub.get_info('epoch')
             need_update_mutator = self.need_update_mutator(cur_epoch)
 
-            # TODO process the input
             if cur_epoch == self.finetune_epochs and self.is_supernet:
                 # synchronize arch params to start the finetune stage.
                 for k, v in self.mutator.arch_params.items():
                     dist.broadcast(v, src=0)
-                self.fix_subnet()
+                self._fix_archtecture()
+                self.is_supernet = False
 
             # 1. update architecture
             with optim_wrapper['architecture'].optim_context(self):
@@ -205,9 +186,16 @@ class DSNAS(BaseAlgorithm):
 
         return log_vars
 
+    def _fix_archtecture(self):
+        """Fix architecture based on current choice."""
+        self.mutator.set_choices(self.mutator.sample_choices())
+        for module in self.architecture.modules():
+            if isinstance(module, BaseMutable):
+                if not module.is_fixed:
+                    module.fix_chosen(module.current_choice)
+
     def _get_module_resources(self):
         """Get resources of spec modules."""
-
         spec_modules = []
         for name, module in self.architecture.named_modules():
             if isinstance(module, BaseMutable):
@@ -239,7 +227,8 @@ class DSNAS(BaseAlgorithm):
         flops_loss = 0.0
         for name, module in self.architecture.named_modules():
             if isinstance(module, BaseMutable):
-                k = str(self.search_space_name_list.index(name))
+                k = module.mutable_prefix + '_' + \
+                    str(self.search_space_name_list.index(name))
                 probs = F.softmax(self.mutator.arch_params[k], -1)
                 arch_loss += torch.log(
                     (module.arch_weights * probs).sum(-1)).sum()
@@ -253,8 +242,10 @@ class DSNAS(BaseAlgorithm):
         mutator_loss = dict(arch_loss=arch_loss / self.world_size)
 
         copied_model = copy.deepcopy(self)
-        fix_mutable = copied_model.search_subnet()
-        load_fix_subnet(copied_model, fix_mutable)
+        copied_model.mutator.set_choices(copied_model.mutator.sample_choices())
+
+        subnet_dict = export_fix_subnet(copied_model)[0]
+        load_fix_subnet(copied_model, subnet_dict)
 
         subnet_flops = self.estimator.estimate(copied_model)['flops']
         if subnet_flops >= self.flops_constraints:
@@ -267,7 +258,8 @@ class DSNAS(BaseAlgorithm):
         """Handle grads of arch params & arch weights."""
         for name, module in self.architecture.named_modules():
             if isinstance(module, BaseMutable):
-                k = str(self.search_space_name_list.index(name))
+                k = module.mutable_prefix + '_' + \
+                    str(self.search_space_name_list.index(name))
                 self.mutator.arch_params[k].grad.data.mul_(
                     module.arch_weights.grad.data.sum())
                 module.arch_weights.grad.zero_()
@@ -307,7 +299,8 @@ class DSNASDDP(MMDistributedDataParallel):
                 # synchronize arch params to start the finetune stage.
                 for k, v in self.module.mutator.arch_params.items():
                     dist.broadcast(v, src=0)
-                self.module.fix_subnet()
+                self.module._fix_archtecture()
+                self.module.is_supernet = False
 
             # 1. update architecture
             with optim_wrapper['architecture'].optim_context(self):

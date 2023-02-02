@@ -44,22 +44,15 @@ model = dict(
             loss_kl=dict(
                 preds_S=dict(recorder='fc', from_student=True),
                 preds_T=dict(recorder='fc', from_student=False)))),
-    mutators=dict(
-        channel_mutator=dict(
-            type='mmrazor.OneShotChannelMutator',
-            channel_unit_cfg={
-                'type': 'OneShotMutableChannelUnit',
-                'default_args': {
-                    'unit_predefined': True
-                }
-            },
-            parse_cfg={'type': 'Predefined'}),
-        value_mutator=dict(type='DynamicValueMutator')))
+    mutator=dict(type='mmrazor.NasMutator'))
 
 model_wrapper_cfg = dict(
     type='mmrazor.BigNASDDP',
     broadcast_buffers=False,
     find_unused_parameters=True)
+
+optim_wrapper_cfg = dict(
+    type='OptimWrapper', clip_grad=dict(type='value', clip_value=0.2))
 
 default_hooks = dict(
     checkpoint=dict(

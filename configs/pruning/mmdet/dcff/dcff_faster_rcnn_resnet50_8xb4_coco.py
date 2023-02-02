@@ -65,10 +65,6 @@ param_scheduler = dict(
     _delete_=True)
 train_cfg = dict(max_epochs=120, val_interval=1)
 
-# !dataset config
-# ==========================================================================
-# data preprocessor
-
 model = dict(
     _scope_='mmrazor',
     type='DCFF',
@@ -76,18 +72,16 @@ model = dict(
     mutator_cfg=dict(
         type='DCFFChannelMutator',
         channel_unit_cfg=dict(
-            type='DCFFChannelUnit',
-            units='configs/pruning/mmdet/dcff/resnet_det.json'),
+            type='DCFFChannelUnit', default_args=dict(choice_mode='ratio')),
         parse_cfg=dict(
             type='ChannelAnalyzer',
             demo_input=(1, 3, 224, 224),
-            tracer_type='BackwardTracer')),
+            tracer_type='FxTracer')),
     target_pruning_ratio=target_pruning_ratio,
     step_freq=1,
-    linear_schedule=False,
-    is_deployed=False)
+    linear_schedule=False)
 
 model_wrapper = dict(
     type='mmcv.MMDistributedDataParallel', find_unused_parameters=True)
 
-val_cfg = dict(_delete_=True)
+val_cfg = dict(_delete_=True, type='mmrazor.ItePruneValLoop')

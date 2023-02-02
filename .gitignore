@@ -113,6 +113,7 @@ venv.bak/
 *.log.json
 /work_dirs
 /mmrazor/.mim
+*.out
 
 # Pytorch
 *.pth

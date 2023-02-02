@@ -5,8 +5,10 @@ import torch
 import torch.nn as nn
 from mmengine.model import BaseModel
 
-from mmrazor.models import SPOS, OneShotModuleMutator, OneShotMutableOP
+from mmrazor.models import SPOS, NasMutator, OneShotMutableOP
 from mmrazor.registry import MODELS
+
+MUTATOR_CFG = dict(type='NasMutator')
 
 
 @MODELS.register_module()
@@ -39,21 +41,21 @@ class TestSPOS(TestCase):
     def test_init(self):
         # initiate spos when `norm_training` is True.
         model = ToySearchableModel()
-        mutator = OneShotModuleMutator()
+        mutator = MODELS.build(MUTATOR_CFG)
         alg = SPOS(model, mutator, norm_training=True)
         alg.eval()
         self.assertTrue(model.bn.training)
 
         # initiate spos with built `mutator`.
         model = ToySearchableModel()
-        mutator = OneShotModuleMutator()
+        mutator = MODELS.build(MUTATOR_CFG)
         alg = SPOS(model, mutator)
         self.assertIs(alg.mutator, mutator)
 
         # initiate spos with unbuilt `mutator`.
-        mutator = dict(type='OneShotModuleMutator')
+        mutator = dict(type='NasMutator')
         alg = SPOS(model, mutator)
-        self.assertIsInstance(alg.mutator, OneShotModuleMutator)
+        self.assertIsInstance(alg.mutator, NasMutator)
 
         # initiate spos when `fix_subnet` is not None.
         fix_subnet = {'mutable': {'chosen': 'conv1'}}
@@ -69,7 +71,7 @@ class TestSPOS(TestCase):
         model = ToySearchableModel()
 
         # supernet
-        mutator = OneShotModuleMutator()
+        mutator = MODELS.build(MUTATOR_CFG)
         alg = SPOS(model, mutator)
         loss = alg(inputs, mode='loss')
         self.assertIsInstance(loss, dict)

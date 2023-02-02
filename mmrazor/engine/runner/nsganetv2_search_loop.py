@@ -55,7 +55,8 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
 
         self.candidates.extend(self.top_k_candidates)
         self.sort_candidates()
-        self.top_k_candidates = Candidates(self.candidates[:self.top_k])
+        self.top_k_candidates = \
+            Candidates(self.candidates[:self.top_k])  # type: ignore
 
         scores_after = self.top_k_candidates.scores
         self.runner.logger.info(f'top k scores after update: '
@@ -151,19 +152,24 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
             'NSGA2SearchLoop. Got `self.trade_off` is None.')
         ratio = self.trade_off.get('ratio', 1)
         max_score_key = self.trade_off.get('max_score_key', 100)
+        max_score_key = np.array(max_score_key)
 
         multi_obj_score = []
         for score, flops in zip(self.candidates.scores,
                                 self.candidates.resources('flops')):
             multi_obj_score.append((score, flops))
         multi_obj_score = np.array(multi_obj_score)
+
         if max_score_key != 0:
             multi_obj_score[:, 0] = max_score_key - multi_obj_score[:, 0]
+
         sort_idx = np.argsort(multi_obj_score[:, 0])
         F = multi_obj_score[sort_idx]
+
         dm = HighTradeoffPoints(ratio, n_survive=len(multi_obj_score))
         candidate_index = dm.do(F)
         candidate_index = sort_idx[candidate_index]
+
         self.candidates = [self.candidates[idx] for idx in candidate_index]
 
     def _save_searcher_ckpt(self, archive=[]):

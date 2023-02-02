@@ -79,7 +79,7 @@ class DynamicMixin(ABC):
 
         def check_fixed(mutable: Optional[BaseMutable]) -> None:
             if mutable is not None and not mutable.is_fixed:
-                raise RuntimeError(f'Mutable {type(mutable)} is not fixed.')
+                raise RuntimeError(f'Mutable `{mutable.alias}` is not fixed.')
 
         for mutable in self.mutable_attrs.values():  # type: ignore
             if isinstance(mutable, (MutableChannelContainer, DerivedMutable)):
@@ -270,8 +270,12 @@ class DynamicBatchNormMixin(DynamicChannelMixin):
 
         if running_mean is not None:
             static_bn.running_mean.copy_(running_mean)
+            static_bn.running_mean = static_bn.running_mean.to(
+                running_mean.device)
         if running_var is not None:
             static_bn.running_var.copy_(running_var)
+            static_bn.running_var = static_bn.running_var.to(
+                running_var.device)
         if weight is not None:
             static_bn.weight = nn.Parameter(weight)
         if bias is not None:

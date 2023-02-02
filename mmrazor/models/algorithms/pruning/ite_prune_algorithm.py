@@ -120,8 +120,8 @@ class ItePruneAlgorithm(BaseAlgorithm):
                          type='SequentialMutableChannelUnit')),
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  target_pruning_ratio: Optional[Dict[str, float]] = None,
-                 step_freq=-1,
-                 prune_times=-1,
+                 step_freq=1,
+                 prune_times=1,
                  init_cfg: Optional[Dict] = None,
                  linear_schedule=True) -> None:
 
@@ -133,37 +133,27 @@ class ItePruneAlgorithm(BaseAlgorithm):
         self.prune_times = prune_times
         self.linear_schedule = linear_schedule
 
-        # mutator
         self.mutator: ChannelMutator = MODELS.build(mutator_cfg)
         self.mutator.prepare_from_supernet(self.architecture)
 
-    def group_target_pruning_ratio(
-        self, target: Dict[str, float],
-        search_groups: Dict[int,
-                            List[MutableChannelUnit]]) -> Dict[int, float]:
+    def set_target_pruning_ratio(
+            self, target: Dict[str, float],
+            units: List[MutableChannelUnit]) -> Dict[str, float]:
         """According to the target pruning ratio of each unit, set the target
-        ratio of each search group."""
-        group_target: Dict[int, float] = dict()
-        for group_id, units in search_groups.items():
-            for unit in units:
-                unit_name = unit.name
-                # The config of target pruning ratio does not
-                # contain all units.
-                if unit_name not in target:
-                    continue
-                if group_id in group_target:
-                    unit_target = target[unit_name]
-                    if unit_target != group_target[group_id]:
-                        group_names = [u.name for u in units]
-                        raise ValueError(
-                            f"'{unit_name}' target ratio is different from "
-                            f'other units in the same group {group_names}. '
-                            'Pls check your target pruning ratio config.')
-                else:
-                    unit_target = target[unit_name]
-                    assert isinstance(unit_target, (float, int))
-                    group_target[group_id] = unit_target
-        return group_target
+        ratio of each unit in units."""
+        target_pruning_ratio: Dict[str, float] = dict()
+        for unit in units:
+            assert isinstance(unit, MutableChannelUnit), (
+                f'unit should be `MutableChannelUnit`, but got {type(unit)}.')
+            unit_name = unit.name
+            # The config of target pruning ratio does not
+            # contain all units.
+            if unit_name not in target:
+                continue
+            unit_target = target[unit_name]
+            assert isinstance(unit_target, (float, int))
+            target_pruning_ratio[unit_name] = unit_target
+        return target_pruning_ratio
 
     def check_prune_target(self, config: Dict):
         """Check if the prune-target is supported."""
@@ -176,10 +166,10 @@ class ItePruneAlgorithm(BaseAlgorithm):
         message_hub['max_epoch/iter'] unaccessible when initiation.
         """
         if self.target_pruning_ratio is None:
-            group_target_ratio = self.mutator.current_choices
+            target_pruning_ratio = self.mutator.current_choices
         else:
-            group_target_ratio = self.group_target_pruning_ratio(
-                self.target_pruning_ratio, self.mutator.search_groups)
+            target_pruning_ratio = self.set_target_pruning_ratio(
+                self.target_pruning_ratio, self.mutator.mutable_units)
 
         if self.by_epoch:
             # step_freq based on iterations
@@ -188,7 +178,7 @@ class ItePruneAlgorithm(BaseAlgorithm):
         # config_manager move to forward.
         # message_hub['max_epoch'] unaccessible when init
         prune_config_manager = ItePruneConfigManager(
-            group_target_ratio,
+            target_pruning_ratio,
             self.mutator.current_choices,
             self.step_freq,
             prune_times=self.prune_times,
@@ -201,23 +191,24 @@ class ItePruneAlgorithm(BaseAlgorithm):
                 data_samples: Optional[List[BaseDataElement]] = None,
                 mode: str = 'tensor') -> ForwardResults:
         """Forward."""
-        if not hasattr(self, 'prune_config_manager'):
-            # self._iters_per_epoch() only available after initiation
-            self.prune_config_manager = self._init_prune_config_manager()
 
-        if self.prune_config_manager.is_prune_time(self._iter):
+        if self.training:
+            if not hasattr(self, 'prune_config_manager'):
+                # self._iters_per_epoch() only available after initiation
+                self.prune_config_manager = self._init_prune_config_manager()
+            if self.prune_config_manager.is_prune_time(self._iter):
 
-            config = self.prune_config_manager.prune_at(self._iter)
+                config = self.prune_config_manager.prune_at(self._iter)
 
-            self.mutator.set_choices(config)
+                self.mutator.set_choices(config)
 
-            logger = MMLogger.get_current_instance()
-            if (self.by_epoch):
-                logger.info(
-                    f'The model is pruned at {self._epoch}th epoch once.')
-            else:
-                logger.info(
-                    f'The model is pruned at {self._iter}th iter once.')
+                logger = MMLogger.get_current_instance()
+                if (self.by_epoch):
+                    logger.info(
+                        f'The model is pruned at {self._epoch}th epoch once.')
+                else:
+                    logger.info(
+                        f'The model is pruned at {self._iter}th iter once.')
 
         return super().forward(inputs, data_samples, mode)
 
