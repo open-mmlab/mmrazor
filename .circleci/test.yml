@@ -66,10 +66,10 @@ jobs:
           command: |
             pip install git+https://github.com/open-mmlab/mmengine.git@main
             pip install -U openmim
-            mim install 'mmcv <= 2.0.0rc3'
+            mim install 'mmcv >= 2.0.0rc1'
             pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
-            pip install git+https://github.com/open-mmlab/mmdetection.git@v3.0.0rc5
-            pip install git+https://github.com/open-mmlab/mmsegmentation.git@v1.0.0rc4
+            pip install git+https://github.com/open-mmlab/mmdetection.git@dev-3.x
+            pip install git+https://github.com/open-mmlab/mmsegmentation.git@dev-1.x
             python -m pip install git+ssh://git@github.com/open-mmlab/mmpose.git@dev-1.x
             pip install -r requirements.txt
       - run:
@@ -103,9 +103,9 @@ jobs:
           name: Clone Repos
           command: |
             git clone -b main --depth 1 https://github.com/open-mmlab/mmengine.git /home/circleci/mmengine
-            git clone -b v3.0.0rc5 --depth 1 https://github.com/open-mmlab/mmdetection.git /home/circleci/mmdetection
+            git clone -b dev-3.x --depth 1 https://github.com/open-mmlab/mmdetection.git /home/circleci/mmdetection
             git clone -b dev-1.x --depth 1 https://github.com/open-mmlab/mmclassification.git /home/circleci/mmclassification
-            git clone -b v1.0.0rc4 --depth 1 https://github.com/open-mmlab/mmsegmentation.git /home/circleci/mmsegmentation
+            git clone -b dev-1.x --depth 1 https://github.com/open-mmlab/mmsegmentation.git /home/circleci/mmsegmentation
       - run:
           name: Build Docker image
           command: |
@@ -116,7 +116,7 @@ jobs:
           command: |
             docker exec mmrazor pip install -e /mmengine
             docker exec mmrazor pip install -U openmim
-            docker exec mmrazor mim install 'mmcv <= 2.0.0rc3'
+            docker exec mmrazor mim install 'mmcv >= 2.0.0rc1'
             docker exec mmrazor pip install -e /mmdetection
             docker exec mmrazor pip install -e /mmclassification
             docker exec mmrazor pip install -e /mmsegmentation
