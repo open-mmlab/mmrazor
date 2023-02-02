@@ -14,7 +14,7 @@ train_cfg = dict(
     num_mutation=2,
     num_crossover=2,
     mutate_prob=0.1,
-    flops_range=(0., 330.),
+    constraints_range=dict(flops=(0., 360.)),
     score_key='accuracy/top1',
     predictor_cfg=dict(
         type='mmrazor.MetricPredictor',

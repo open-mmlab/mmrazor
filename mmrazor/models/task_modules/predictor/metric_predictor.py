@@ -96,6 +96,10 @@ class MetricPredictor:
         vector_dict: Dict[str, list] = \
             dict(normal_vector=[], onehot_vector=[])
 
+        assert len(model.keys()) == len(self.search_groups.keys()), (
+            f'Length mismatch for model({len(model.keys())}) and search_groups'
+            f'({len(self.search_groups.keys())}).')
+
         for key, choice in model.items():
             if isinstance(choice, DumpChosen):
                 assert choice.meta is not None, (

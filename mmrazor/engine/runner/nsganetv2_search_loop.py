@@ -111,13 +111,13 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
 
         # initiate a multi-objective solver to optimize the problem
         method = NSGA2Optimizer(
-            pop_size=40,
+            pop_size=4,
             sampling=fronts,  # initialize with current nd archs
             eliminate_duplicates=True,
             logger=self.runner.logger)
 
         # # kick-off the search
-        method.initialize(problem, n_gen=20, verbose=True)
+        method.initialize(problem, n_gen=2, verbose=True)
         result = method.solve()
 
         # check for duplicates
@@ -244,6 +244,7 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
 
         self.model = self.finetune_runner.train_loop.run()
         self.finetune_runner.train_loop._iter = 0
+        self.finetune_runner.train_loop._epoch = 0
 
         self.finetune_runner.call_hook('after_run')
         self.runner.logger.info('End finetuning...')
