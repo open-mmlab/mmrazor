@@ -207,11 +207,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         if self.runner.rank == 0:
             while len(self.candidates) < self.num_candidates:
                 candidate = self.model.mutator.sample_choices()
-                self.model.mutator.set_choices(candidate)
-                _, sliced_model = export_fix_subnet(
-                    self.model, slice_weight=True)
-                self.finetune_step(sliced_model)
-                is_pass, result = self._check_constraints(sliced_model)
+                self.finetune_step(self.model)
+                is_pass, result = self._check_constraints(candidate)
                 if is_pass:
                     self.candidates.append(candidate)
                     candidates_resources.append(result)
@@ -258,10 +255,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                 break
 
             mutation_candidate = self._mutation()
-            self.model.mutator.set_choices(mutation_candidate)
-            _, sliced_model = export_fix_subnet(self.model, slice_weight=True)
-
-            is_pass, result = self._check_constraints(sliced_model)
+            is_pass, result = self._check_constraints(mutation_candidate)
             if is_pass:
                 mutation_candidates.append(mutation_candidate)
                 mutation_resources.append(result)
@@ -283,10 +277,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                 break
 
             crossover_candidate = self._crossover()
-            self.model.mutator.set_choices(crossover_candidate)
-            _, sliced_model = export_fix_subnet(self.model, slice_weight=True)
-
-            is_pass, result = self._check_constraints(sliced_model)
+            is_pass, result = self._check_constraints(crossover_candidate)
             if is_pass:
                 crossover_candidates.append(crossover_candidate)
                 crossover_resources.append(result)
@@ -401,14 +392,16 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                     if osp.isfile(ckpt_path):
                         os.remove(ckpt_path)
 
-    def _check_constraints(self, model) -> Tuple[bool, Dict]:
+    def _check_constraints(
+            self, random_subnet: SupportRandomSubnet) -> Tuple[bool, Dict]:
         """Check whether is beyond constraints.
 
         Returns:
             bool, result: The result of checking.
         """
         is_pass, results = check_subnet_resources(
-            model=model,
+            model=self.model,
+            subnet=random_subnet,
             estimator=self.estimator,
             constraints_range=self.constraints_range)
 
