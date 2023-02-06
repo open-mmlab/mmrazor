@@ -50,6 +50,7 @@ class TestParamSchedulerHook(TestCase):
 
     def test_before_train_epoch(self):
         self.reset()
+        self.hook.before_run(self.runner)
         epochs = 10
         epoch_length = 7
         targets1 = [0.5, 0.625, 0.75, 0.875, 1.0]
@@ -64,6 +65,7 @@ class TestParamSchedulerHook(TestCase):
 
     def test_after_train_iter(self):
         self.reset()
+        self.hook.before_run(self.runner)
         epochs = 10
         epoch_length = 7
         eta_min = 1e-10
@@ -84,6 +86,7 @@ class TestParamSchedulerHook(TestCase):
 
     def test_train(self):
         self.reset()
+        self.hook.before_run(self.runner)
         epochs = 10
         epoch_length = 7
         targets1 = [0.5, 0.625, 0.75, 0.875, 1.0]
