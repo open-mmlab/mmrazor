@@ -20,70 +20,87 @@ class ExpandableMixin:
                 to False.
         """
         return self.get_expand_op(
-            self.mutable_in_channel,
-            self.mutable_out_channel,
+            self.expanded_in_channel,
+            self.expanded_out_channel,
             zero=zero,
         )
 
     def get_expand_op(self, in_c, out_c, zero=False):
+        """Get an expanded op.
+
+        Args:
+            in_c (int): New input channels
+            out_c (int): New output channels
+            zero (bool, optional): Whether to zero new weights. Defaults to
+                False.
+        """
         pass
 
     @property
-    def _mutable_in_channel(self):
-        pass
+    def _original_in_channel(self):
+        """Return original in channel."""
+        raise NotImplementedError()
 
     @property
-    def _mutable_out_channel(self):
-        pass
+    def _original_out_channel(self):
+        """Return original out channel."""
 
     @property
-    def mutable_in_channel(self):
+    def expanded_in_channel(self):
+        """Return expanded in channel number."""
         if self.in_mutable is not None:
             return self.in_mutable.current_mask.numel()
         else:
-            return self._mutable_in_channel
+            return self._original_in_channel
 
     @property
-    def mutable_out_channel(self):
+    def expanded_out_channel(self):
+        """Return expanded out channel number."""
         if self.out_mutable is not None:
             return self.out_mutable.current_mask.numel()
         else:
-            return self._mutable_out_channel
+            return self._original_out_channel
 
     @property
     def mutable_in_mask(self):
+        """Return the mutable in mask."""
         if self.in_mutable is not None:
             return self.in_mutable.current_mask
         else:
             if hasattr(self, 'weight'):
-                return self.weight.new_ones([self.mutable_in_channel])
+                return self.weight.new_ones([self.expanded_in_channel])
             else:
-                return torch.ones([self.mutable_in_channel])
+                return torch.ones([self.expanded_in_channel])
 
     @property
     def mutable_out_mask(self):
+        """Return the mutable out mask."""
         if self.out_mutable is not None:
             return self.out_mutable.current_mask
         else:
             if hasattr(self, 'weight'):
-                return self.weight.new_ones([self.mutable_out_channel])
+                return self.weight.new_ones([self.expanded_out_channel])
             else:
-                return torch.ones([self.mutable_out_channel])
+                return torch.ones([self.expanded_out_channel])
 
     @property
     def in_mutable(self) -> MutableChannelContainer:
+        """In channel mask."""
         return self.get_mutable_attr('in_channels')  # type: ignore
 
     @property
     def out_mutable(self) -> MutableChannelContainer:
+        """Out channel mask."""
         return self.get_mutable_attr('out_channels')  # type: ignore
 
     def zero_weight_(self: nn.Module):
+        """Zero all weights."""
         for p in self.parameters():
             p.data.zero_()
 
     @torch.no_grad()
     def expand_matrix(self, weight: torch.Tensor, old_weight: torch.Tensor):
+        """Expand weight matrix."""
         assert len(weight.shape) == 3  # out in c
         assert len(old_weight.shape) == 3  # out in c
         mask = self.mutable_out_mask.float().unsqueeze(
@@ -94,6 +111,7 @@ class ExpandableMixin:
 
     @torch.no_grad()
     def expand_vector(self, weight: torch.Tensor, old_weight: torch.Tensor):
+        """Expand weight vector."""
         assert len(weight.shape) == 2  # out c
         assert len(old_weight.shape) == 2  # out c
         mask = self.mutable_out_mask
@@ -103,6 +121,7 @@ class ExpandableMixin:
 
     @torch.no_grad()
     def expand_bias(self, bias: torch.Tensor, old_bias: torch.Tensor):
+        """Expand bias."""
         assert len(bias.shape) == 1  # out c
         assert len(old_bias.shape) == 1  # out c
         return self.expand_vector(bias.unsqueeze(-1),
@@ -112,11 +131,11 @@ class ExpandableMixin:
 class ExpandableConv2d(dynamic_ops.DynamicConv2d, ExpandableMixin):
 
     @property
-    def _mutable_in_channel(self):
+    def _original_in_channel(self):
         return self.in_channels
 
     @property
-    def _mutable_out_channel(self):
+    def _original_out_channel(self):
         return self.out_channels
 
     def get_expand_op(self, in_c, out_c, zero=False):
@@ -139,11 +158,11 @@ class ExpandableConv2d(dynamic_ops.DynamicConv2d, ExpandableMixin):
 class ExpandLinear(dynamic_ops.DynamicLinear, ExpandableMixin):
 
     @property
-    def _mutable_in_channel(self):
+    def _original_in_channel(self):
         return self.in_features
 
     @property
-    def _mutable_out_channel(self):
+    def _original_out_channel(self):
         return self.out_features
 
     def get_expand_op(self, in_c, out_c, zero=False):
@@ -164,11 +183,11 @@ class ExpandLinear(dynamic_ops.DynamicLinear, ExpandableMixin):
 class ExpandableBatchNorm2d(dynamic_ops.DynamicBatchNorm2d, ExpandableMixin):
 
     @property
-    def _mutable_in_channel(self):
+    def _original_in_channel(self):
         return self.num_features
 
     @property
-    def _mutable_out_channel(self):
+    def _original_out_channel(self):
         return self.num_features
 
     def get_expand_op(self, in_c, out_c, zero=False):

@@ -6,7 +6,8 @@ import torch
 from mmrazor.models.mutables import SimpleMutableChannel
 from mmrazor.models.mutators import ChannelMutator
 from projects.cores.expandable_ops.ops import ExpandLinear
-from projects.cores.expandable_ops.unit import (ExpandableUnit, expand_model,
+from projects.cores.expandable_ops.unit import (ExpandableUnit,
+                                                expand_dynamic_model,
                                                 expand_static_model)
 from ...data.models import MultiConcatModel, SingleLineModel
 
@@ -27,7 +28,7 @@ class TestExpand(unittest.TestCase):
         for unit in mutator.mutable_units:
             unit.expand(10)
             print(unit.mutable_channel.mask.shape)
-        expand_model(model, zero=True)
+        expand_dynamic_model(model, zero=True)
         print(model)
         y2 = model(x)
         self.assertTrue((y1 - y2).abs().max() < 1e-3)

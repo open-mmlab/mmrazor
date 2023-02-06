@@ -14,6 +14,7 @@ from ..expandable_ops.unit import ExpandableUnit
 
 
 def clean_params_init_info(model: nn.Module):
+    """"""
     if hasattr(model, '_params_init_info'):
         delattr(model, '_params_init_info')
     for module in model.modules():
@@ -57,7 +58,7 @@ def PruneFinetuneWrapper(algorithm, data_preprocessor=None):
         data_preprocessor (_type_, optional): _description_. Defaults to None.
 
     Returns:
-        _type_: _description_
+        nn.Module: a static model.
     """
     algorithm: BaseAlgorithm = MODELS.build(algorithm)
     algorithm.init_weights()

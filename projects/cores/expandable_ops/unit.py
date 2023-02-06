@@ -20,7 +20,8 @@ def expand_static_model(model: nn.Module, divisor):
     Returns:
         nn.Module: an expanded model.
     """
-    from projects.cores.expandable_ops.unit import ExpandableUnit, expand_model
+    from projects.cores.expandable_ops.unit import (ExpandableUnit,
+                                                    expand_dynamic_model)
     state_dict = model.state_dict()
     mutator = ChannelMutator[ExpandableUnit](channel_unit_cfg=ExpandableUnit)
     mutator.prepare_from_supernet(model)
@@ -33,7 +34,7 @@ def expand_static_model(model: nn.Module, divisor):
             num = (num // divisor + 1) * divisor
             num = max(num, unit.num_channels)
             unit.expand_to(num)
-    expand_model(model, zero=True)
+    expand_dynamic_model(model, zero=True)
 
     mutator = ChannelMutator[ExpandableUnit](channel_unit_cfg=ExpandableUnit)
     mutator.prepare_from_supernet(copy.deepcopy(model))
@@ -41,7 +42,8 @@ def expand_static_model(model: nn.Module, divisor):
     return structure
 
 
-def expand_model(model: nn.Module, zero=False) -> None:
+def expand_dynamic_model(model: nn.Module, zero=False) -> None:
+    """Expand a dynamic model."""
 
     def traverse_children(module: nn.Module) -> None:
         for name, mutable in module.items():

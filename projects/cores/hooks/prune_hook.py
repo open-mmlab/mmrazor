@@ -30,6 +30,7 @@ class PruningStructureHook(Hook):
         self.interval = interval
 
     def show_unit_info(self, algorithm):
+        """Show unit information of an algorithm."""
         if is_pruning_algorithm(algorithm):
             chices = algorithm.mutator.choice_template
             import json
@@ -44,7 +45,7 @@ class PruningStructureHook(Hook):
 
     @master_only
     def show(self, runner):
-        # print structure info
+        """Show pruning algorithm information of a runner."""
         algorithm = get_model_from_runner(runner)
         if is_pruning_algorithm(algorithm):
             self.show_unit_info(algorithm)
@@ -105,6 +106,7 @@ class ResourceInfoHook(Hook):
         self.origin_delta = None
 
     def before_run(self, runner) -> None:
+        """Init original_resource."""
         model = get_model_from_runner(runner)
         original_resource = self._evaluate(model)
         print_log(f'get original resource: {original_resource}')
@@ -118,6 +120,7 @@ class ResourceInfoHook(Hook):
                          batch_idx: int,
                          data_batch=None,
                          outputs=None) -> None:
+        """Check resource after train iteration."""
         if RuntimeInfo.iter() % self.interval == 0 and len(
                 self.save_ckpt_thr) > 0:
             model = get_model_from_runner(runner)
@@ -133,6 +136,7 @@ class ResourceInfoHook(Hook):
 
     @master_only
     def after_train_epoch(self, runner) -> None:
+        """Check resource after train epoch."""
         model = get_model_from_runner(runner)
         current_delta = self._evaluate(model)[self.resource_type]
         print_log(
@@ -142,6 +146,7 @@ class ResourceInfoHook(Hook):
     #
 
     def _evaluate(self, model: nn.Module):
+        """Evaluate the resource required by a model."""
         with torch.no_grad():
             training = model.training
             model.eval()
@@ -152,6 +157,7 @@ class ResourceInfoHook(Hook):
 
     @master_only
     def _save_checkpoint(self, model, path, delta_percent):
+        """Save the checkpoint  of a model."""
         ckpt = {'state_dict': model.state_dict()}
         save_path = f'{path}/{self.resource_type}_{delta_percent:.2f}.pth'
         save_checkpoint(ckpt, save_path)
