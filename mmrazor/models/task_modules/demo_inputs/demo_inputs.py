@@ -51,7 +51,9 @@ class DefaultMMDemoInput(BaseDemoInput):
         return data
 
     def _get_mm_data(self, model, input_shape, training=False):
-        return {'inputs': torch.rand(input_shape), 'data_samples': None}
+        data = {'inputs': torch.rand(input_shape), 'data_samples': None}
+        data = model.data_preprocessor(data, training)
+        return data
 
 
 @TASK_UTILS.register_module()
@@ -132,7 +134,7 @@ class DefaultMMPoseDemoInput(DefaultMMDemoInput):
         from mmpose.models import TopdownPoseEstimator
 
         from .mmpose_demo_input import demo_mmpose_inputs
-        assert isinstance(model, TopdownPoseEstimator)
+        assert isinstance(model, TopdownPoseEstimator), f'{type(model)}'
 
         data = demo_mmpose_inputs(model, input_shape)
         return data
