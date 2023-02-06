@@ -8,6 +8,7 @@ from mmengine.structures import BaseDataElement
 from torch import nn
 from torch.nn.modules.batchnorm import _BatchNorm
 
+from mmrazor.models.task_modules import LossWeightSchedulerManager
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import MODELS
 from ...base import BaseAlgorithm, LossResults
@@ -42,6 +43,7 @@ class SingleTeacherDistill(BaseAlgorithm):
                  teacher_norm_eval: bool = True,
                  student_trainable: bool = True,
                  calculate_student_loss: bool = True,
+                 loss_weight_schedulers: Optional[List] = None,
                  **kwargs) -> None:
         super().__init__(**kwargs)
 
@@ -78,6 +80,13 @@ class SingleTeacherDistill(BaseAlgorithm):
         # constructed, but not really initialized yet.
         self.distiller.prepare_from_student(self.student)
         self.distiller.prepare_from_teacher(self.teacher)
+
+        if loss_weight_schedulers is not None:
+            self.loss_weight_scheduler_manager: \
+                Optional[LossWeightSchedulerManager] = \
+                LossWeightSchedulerManager(loss_weight_schedulers)
+        else:
+            self.loss_weight_scheduler_manager = None
 
     @property
     def student(self) -> nn.Module:
@@ -128,6 +137,13 @@ class SingleTeacherDistill(BaseAlgorithm):
         # Automatically compute distill losses based on `loss_forward_mappings`
         # The required data already exists in the recorders.
         distill_losses = self.distiller.compute_distill_losses()
+
+        if self.loss_weight_scheduler_manager is not None:
+            # distillation loss weight schedule
+            for name, value in distill_losses.items():
+                distill_losses[name] = \
+                    value * self.loss_weight_scheduler_manager.cur_value
+
         losses.update(add_prefix(distill_losses, 'distill'))
 
         return losses
