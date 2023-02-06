@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 from mmengine import fileio
-from mmengine.dist import broadcast_object_list
 from mmengine.evaluator import Evaluator
 from mmengine.runner import EpochBasedTrainLoop, Runner
 from mmengine.utils import is_list_of
@@ -107,7 +106,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         self.crossover_prob = crossover_prob
         self.max_keep_ckpts = max_keep_ckpts
         self.resume_from = resume_from
-        self.trade_off = dict(max_score_key=40)
+        self.trade_off = dict(max_score_key=100)
         self.fp16 = False
 
         if init_candidates is None:
@@ -204,17 +203,14 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         """Update candidate pool contains specified number of candicates."""
         candidates_resources = []
         init_candidates = len(self.candidates)
-        if self.runner.rank == 0:
-            while len(self.candidates) < self.num_candidates:
-                candidate = self.model.mutator.sample_choices()
-                self.finetune_step(self.model)
-                is_pass, result = self._check_constraints(candidate)
-                if is_pass:
-                    self.candidates.append(candidate)
-                    candidates_resources.append(result)
-            self.candidates = Candidates(self.candidates.data)
-        else:
-            self.candidates = Candidates([dict(a=0)] * self.num_candidates)
+        while len(self.candidates) < self.num_candidates:
+            candidate = self.model.mutator.sample_choices()
+            self.finetune_step(self.model)
+            is_pass, result = self._check_constraints(candidate)
+            if is_pass:
+                self.candidates.append(candidate)
+                candidates_resources.append(result)
+        self.candidates = Candidates(self.candidates.data)
 
         if len(candidates_resources) > 0:
             self.candidates.update_resources(
@@ -222,9 +218,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                 start=len(self.candidates) - len(candidates_resources))
             assert init_candidates + len(
                 candidates_resources) == self.num_candidates
-
-        # broadcast candidates to val with multi-GPUs.
-        broadcast_object_list([self.candidates])
 
     def update_candidates_scores(self) -> None:
         """Validate candicate one by one from the candicate pool, and update

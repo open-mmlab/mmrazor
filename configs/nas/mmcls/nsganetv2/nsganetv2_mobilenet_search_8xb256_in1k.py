@@ -1,4 +1,4 @@
-_base_ = ['./nsganetv2_mobilenet_supernet_8x128_in1k.py']
+_base_ = ['./nsganetv2_mobilenet_supernet_8xb128_in1k.py']
 
 model = dict(norm_training=True)
 
@@ -6,7 +6,6 @@ train_cfg = dict(
     _delete_=True,
     type='mmrazor.NSGA2SearchLoop',
     dataloader=_base_.val_dataloader,
-    finetune_dataloader=_base_.train_dataloader,
     evaluator=_base_.val_evaluator,
     max_epochs=4,
     num_candidates=4,

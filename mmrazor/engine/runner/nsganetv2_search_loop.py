@@ -1,21 +1,27 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import os
 import os.path as osp
 
 import numpy as np
 from mmengine import fileio
-from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 
-from mmrazor.models.task_modules import (AuxiliarySingleLevelProblem,
-                                         GeneticOptimizer, NSGA2Optimizer,
-                                         SubsetProblem)
+try:
+    from pymoo.algorithms.moo.nsga2 import NSGA2
+    from pymoo.algorithms.soo.nonconvex.ga import GA
+    from pymoo.optimize import minimize
+    from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    NSGA2 = get_placeholder('pymoo')
+    GA = get_placeholder('pymoo')
+    minimize = get_placeholder('pymoo')
+    NonDominatedSorting = get_placeholder('pymoo')
+
 from mmrazor.registry import LOOPS
-from mmrazor.structures import Candidates, export_fix_subnet
+from mmrazor.structures import Candidates
 from .attentive_search_loop import AttentiveSearchLoop
-from .utils.high_tradeoff_points import HighTradeoffPoints
-
-# from pymoo.algorithms.moo.nsga2 import NSGA2 as NSGA2Optimizer
-# from pymoo.algorithms.soo.nonconvex.ga import GA as GeneticOptimizer
-# from pymoo.optimize import minimize
+from .utils.pymoo_utils import (AuxiliarySingleLevelProblem,
+                                HighTradeoffPoints, SubsetProblem)
 
 
 @LOOPS.register_module()
@@ -35,18 +41,18 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
                 will be used in mutation and crossover.
             4. Implement Mutation and crossover, generate better candidates.
         """
-        archive = Candidates()
+        self.archive = Candidates()
         if len(self.candidates) > 0:
             for subnet, score, flops in zip(
                     self.candidates.subnets, self.candidates.scores,
                     self.candidates.resources('flops')):
                 if self.trade_off['max_score_key'] != 0:
                     score = self.trade_off['max_score_key'] - score
-                archive.append(subnet)
-                archive.set_score(-1, score)
-                archive.set_resource(-1, flops, 'flops')
+                self.archive.append(subnet)
+                self.archive.set_score(-1, score)
+                self.archive.set_resource(-1, flops, 'flops')
 
-        self.sample_candidates(random=(self._epoch == 0), archive=archive)
+        self.sample_candidates(random=(self._epoch == 0), archive=self.archive)
         self.update_candidates_scores()
 
         scores_before = self.top_k_candidates.scores
@@ -110,36 +116,34 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
         problem = AuxiliarySingleLevelProblem(self, len(fronts[0]))
 
         # initiate a multi-objective solver to optimize the problem
-        method = NSGA2Optimizer(
+        method = NSGA2(
             pop_size=4,
             sampling=fronts,  # initialize with current nd archs
             eliminate_duplicates=True,
             logger=self.runner.logger)
 
-        # # kick-off the search
-        method.initialize(problem, n_gen=2, verbose=True)
-        result = method.solve()
+        result = minimize(problem, method, ('n_gen', 4), seed=1, verbose=True)
 
-        # check for duplicates
         check_list = []
-        for x in result['pop'].get('X'):
+        for x in result.pop.get('X'):
             check_list.append(self.predictor.vector2model(x))
 
         not_duplicate = np.logical_not(
             [x in archive.subnets for x in check_list])
 
-        # extra process after nsga2 search
-        sub_problem = SubsetProblem(
-            result['pop'][not_duplicate].get('F')[:, 1], F[front_index, 1],
-            num_candidates)
-        sub_method = GeneticOptimizer(
-            pop_size=num_candidates, eliminate_duplicates=True)
-        sub_method.initialize(sub_problem, n_gen=4, verbose=False)
-        indices = sub_method.solve()['X']
+        sub_problem = SubsetProblem(result.pop[not_duplicate].get('F')[:, 1],
+                                    F[front_index, 1], num_candidates)
+
+        sub_method = GA(pop_size=num_candidates, eliminate_duplicates=True)
+
+        sub_result = minimize(
+            sub_problem, sub_method, ('n_gen', 2), seed=1, verbose=False)
+        indices = sub_result.pop.get('X')
+
+        _X = result.pop.get('X')[not_duplicate][indices]
 
         candidates = []
-        pop = result['pop'][not_duplicate][indices]
-        for x in pop.get('X'):
+        for x in _X:
             x = x[0] if isinstance(x[0], list) else x
             candidates.append(self.predictor.vector2model(x))
 
@@ -150,29 +154,31 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
         assert self.trade_off is not None, (
             '`self.trade_off` is required when sorting candidates in '
             'NSGA2SearchLoop. Got `self.trade_off` is None.')
+
         ratio = self.trade_off.get('ratio', 1)
         max_score_key = self.trade_off.get('max_score_key', 100)
         max_score_key = np.array(max_score_key)
 
-        multi_obj_score = []
+        patches = []
         for score, flops in zip(self.candidates.scores,
                                 self.candidates.resources('flops')):
-            multi_obj_score.append((score, flops))
-        multi_obj_score = np.array(multi_obj_score)
+            patches.append((score, flops))
+        patches = np.array(patches)
 
         if max_score_key != 0:
-            multi_obj_score[:, 0] = max_score_key - multi_obj_score[:, 0]
+            patches[:, 0] = max_score_key - patches[:, 0]  # type: ignore
 
-        sort_idx = np.argsort(multi_obj_score[:, 0])
-        F = multi_obj_score[sort_idx]
+        sort_idx = np.argsort(patches[:, 0])  # type: ignore
+        F = patches[sort_idx]
 
-        dm = HighTradeoffPoints(ratio, n_survive=len(multi_obj_score))
+        dm = HighTradeoffPoints(ratio, n_survive=len(patches))
         candidate_index = dm.do(F)
         candidate_index = sort_idx[candidate_index]
 
-        self.candidates = [self.candidates[idx] for idx in candidate_index]
+        self.candidates = \
+            [self.candidates[idx] for idx in candidate_index]  # type: ignore
 
-    def _save_searcher_ckpt(self, archive=[]):
+    def _save_searcher_ckpt(self):
         """Save searcher ckpt, which is different from common ckpt.
 
         It mainly contains the candicate pool, the top-k candicates with scores
@@ -180,10 +186,10 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
         """
         if self.runner.rank == 0:
             rmse, rho, tau = 0, 0, 0
-            if len(archive) > 0:
-                top1_err_pred = self.fit_predictor(archive)
+            if len(self.archive) > 0:
+                top1_err_pred = self.fit_predictor(self.archive)
                 rmse, rho, tau = self.predictor.get_correlation(
-                    top1_err_pred, np.array([x[1] for x in archive]))
+                    top1_err_pred, np.array(self.archive.scores))
 
             save_for_resume = dict()
             save_for_resume['_epoch'] = self._epoch
@@ -207,29 +213,38 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
                         step_str += f'step: {step}: '
                         step_str += f'{candidates[0][self.score_key]}\n'
                 self.runner.logger.info(
-                    f'Epoch:[{self._epoch + 1}/{self._max_epochs}], '
-                    f'top1_score: {step_str} '
+                    f'Epoch:[{self._epoch}/{self._max_epochs}] '
+                    f'Top1_score: {step_str} '
                     f'{correlation_str}')
             else:
                 self.runner.logger.info(
-                    f'Epoch:[{self._epoch + 1}/{self._max_epochs}], '
-                    f'top1_score: {self.top_k_candidates.scores[0]} '
+                    f'Epoch:[{self._epoch}/{self._max_epochs}] '
+                    f'Top1_score: {self.top_k_candidates.scores[0]} '
                     f'{correlation_str}')
 
+            if self.max_keep_ckpts > 0:
+                cur_ckpt = self._epoch + 1
+                redundant_ckpts = range(1, cur_ckpt - self.max_keep_ckpts)
+                for _step in redundant_ckpts:
+                    ckpt_path = osp.join(self.runner.work_dir,
+                                         f'search_epoch_{_step}.pkl')
+                    if osp.isfile(ckpt_path):
+                        os.remove(ckpt_path)
+
     def fit_predictor(self, candidates):
-        """anticipate testfn training(err rate)."""
-        inputs = [export_fix_subnet(x) for x in candidates.subnets]
-        inputs = np.array([self.predictor.model2vector(x) for x in inputs])
+        """Predict performance using predictor."""
+        assert self.predictor.initialize is True
 
-        targets = np.array([x[1] for x in candidates])
+        metrics = []
+        for i, candidate in enumerate(candidates.subnets):
+            self.model.mutator.set_choices(candidate)
+            metric = self._val_candidate(use_predictor=True)
+            metrics.append(metric[self.score_key])
 
-        if not self.predictor.pretrained:
-            self.predictor.fit(inputs, targets)
-
-        metrics = self.predictor.predict(inputs)
-        if self.max_score_key != 0:
-            for i in range(len(metrics)):
-                metrics[i] = self.max_score_key - metrics[i]
+        max_score_key = self.trade_off.get('max_score_key', 0.)
+        if max_score_key != 0:
+            for m in metrics:
+                m = max_score_key - m
         return metrics
 
     def finetune_step(self, model):
