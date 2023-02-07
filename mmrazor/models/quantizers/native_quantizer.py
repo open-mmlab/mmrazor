@@ -248,8 +248,8 @@ class NativeQuantizer(BaseQuantizer):
                     # specific operations such as Adaround. So we do Quantize
                     # to perform these operations and do dequantize to
                     # introduce quantization loss in advance.
-                    weight_fakequant = child.weight_fake_quant
-                    child.weight.data = weight_fakequant(child.weight.data)
+                    # weight_fakequant = child.weight_fake_quant
+                    # child.weight.data = weight_fakequant(child.weight.data)
 
                     # `to_float()` function fuse BN into conv or conv_relu, and
                     # also convert a qat module to a normal module.
