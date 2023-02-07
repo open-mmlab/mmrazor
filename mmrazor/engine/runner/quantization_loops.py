@@ -6,14 +6,16 @@ from mmengine.evaluator import Evaluator
 from mmengine.runner import EpochBasedTrainLoop, TestLoop, ValLoop
 
 try:
-    from torch.ao.quantization import (disable_observer, enable_fake_quant,
-                                       enable_observer)
+    from torch.ao.quantization import (disable_fake_quant, disable_observer,
+                                       enable_fake_quant, enable_observer)
+    from torch.ao.quantization.fake_quantize import FakeQuantizeBase
     from torch.nn.intrinsic.qat import freeze_bn_stats
 except ImportError:
     from mmrazor.utils import get_placeholder
     disable_observer = get_placeholder('torch>=1.13')
     enable_fake_quant = get_placeholder('torch>=1.13')
     enable_observer = get_placeholder('torch>=1.13')
+    disable_fake_quant = get_placeholder('torch>=1.13')
     freeze_bn_stats = get_placeholder('torch>=1.13')
 
 from torch.utils.data import DataLoader
@@ -21,6 +23,12 @@ from torch.utils.data import DataLoader
 from mmrazor.models.fake_quants import (enable_param_learning,
                                         enable_static_estimate, enable_val)
 from mmrazor.registry import LOOPS
+
+
+def disable_weight_fake_quant(model):
+    for name, mod in model.named_modules():
+        if isinstance(mod, FakeQuantizeBase) and 'weight_fake_quant' in name:
+            mod.disable_fake_quant()
 
 
 @LOOPS.register_module()
@@ -287,6 +295,8 @@ class PTQLoop(TestLoop):
             dataset each iteration.
         evaluator (Evaluator or dict or list): Used for computing metrics.
         fp16 (bool, optional): Enable FP16 training mode. Defaults to False.
+        enable_weight_fake_quant (bool): Enable_weight_fake_quant. Defaults to
+            False.
     """
 
     def __init__(self,
@@ -295,6 +305,7 @@ class PTQLoop(TestLoop):
                  evaluator: Union[Evaluator, Dict, List],
                  calibrate_dataloader: Union[DataLoader, Dict],
                  calibrate_steps=32,
+                 enable_weight_fake_quant: bool = False,
                  fp16: bool = False):
         super().__init__(runner, dataloader, evaluator, fp16)
         if isinstance(calibrate_dataloader, dict):
@@ -315,6 +326,8 @@ class PTQLoop(TestLoop):
 
         self.runner.model.eval()
         self.runner.model.apply(enable_fake_quant)
+        if self.enable_weight_fake_quant is False:
+            self.runner.model.apply(disable_weight_fake_quant)
         self.runner.model.apply(enable_observer)
 
         for idx, data_batch in enumerate(self.dataloader):
@@ -334,7 +347,11 @@ class PTQLoop(TestLoop):
 
         self.runner.model.apply(enable_fake_quant)
         self.runner.model.apply(disable_observer)
-
+        observed_model = self.runner.model.module.qmodels['predict']
+        self.runner.model.module.quantizer.post_process_weight_fakequant(
+            observed_model, keep_fake_quant=True)
+        self.runner.model.apply(enable_fake_quant)
+        self.runner.model.apply(disable_observer)
         return self.runner.val_loop.run()
 
     @torch.no_grad()

@@ -65,7 +65,7 @@ class OpenVINOQuantizer(NativeQuantizer):
             observed_model(torch.randn(dummy_input))
         if checkpoint is not None:
             observed_model.load_state_dict(
-                torch.load(checkpoint)['state_dict'])
+                torch.load(checkpoint)['state_dict'], strict=False)
         self.post_process_weight_fakequant(
             observed_model, keep_fake_quant=True)
 
@@ -77,13 +77,13 @@ class OpenVINOQuantizer(NativeQuantizer):
     def module_prev_wo_fakequant(self):
         """Configurate the modules that their previous nodes are redundant
         fakequants."""
-        return (torch.nn.ReLU6, torch.nn.Identity)
+        return (torch.nn.ReLU6, torch.nn.Identity, torch.nn.SiLU)
 
     @property
     def module_next_wo_fakequant(self):
         """Configurate the modules that their next nodes are redundant
         fakequants."""
-        return (torch.nn.MaxPool2d, )
+        return (torch.nn.MaxPool2d, torch.nn.Conv2d)
 
     @property
     def method_next_wo_fakequant(self):
@@ -96,3 +96,9 @@ class OpenVINOQuantizer(NativeQuantizer):
         """Configurate the OPs that their previous nodes are redundant
         fakequants."""
         return ('output', )
+
+    @property
+    def function_next_wo_fakequant(self):
+        """Configurate the functions that their previous nodes are redundant
+        fakequants."""
+        return (torch.cat, )
