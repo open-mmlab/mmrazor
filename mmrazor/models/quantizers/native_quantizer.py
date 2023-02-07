@@ -313,28 +313,28 @@ class NativeQuantizer(BaseQuantizer):
 
         extra_function_prev_wo_fakequant = self.extra_redundant_fakequants.get(
             'extra_function_prev_wo_fakequant', tuple())
-        prepared = del_fakequant_before_method(
+        prepared = del_fakequant_before_function(
             prepared,
             self.function_prev_wo_fakequant + extra_function_prev_wo_fakequant,
             inplace=True)
 
         extra_function_next_wo_fakequant = self.extra_redundant_fakequants.get(
             'extra_function_next_wo_fakequant', tuple())
-        prepared = del_fakequant_after_method(
+        prepared = del_fakequant_after_function(
             prepared,
             self.function_next_wo_fakequant + extra_function_next_wo_fakequant,
             inplace=True)
 
         extra_method_prev_wo_fakequant = self.extra_redundant_fakequants.get(
             'extra_method_prev_wo_fakequant', tuple())
-        prepared = del_fakequant_before_function(
+        prepared = del_fakequant_before_method(
             prepared,
             self.method_prev_wo_fakequant + extra_method_prev_wo_fakequant,
             inplace=True)
 
         extra_method_next_wo_fakequant = self.extra_redundant_fakequants.get(
             'extra_method_next_wo_fakequant', tuple())
-        prepared = del_fakequant_after_function(
+        prepared = del_fakequant_after_method(
             prepared,
             self.method_next_wo_fakequant + extra_method_next_wo_fakequant,
             inplace=True)
