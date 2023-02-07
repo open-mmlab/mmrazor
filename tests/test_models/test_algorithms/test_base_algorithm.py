@@ -6,6 +6,7 @@ import torch.nn as nn
 from mmengine.model import BaseDataPreprocessor, BaseModel
 
 from mmrazor.models import BaseAlgorithm
+from mmrazor.models.task_modules import ModuleOutputsRecorder
 from mmrazor.registry import MODELS
 
 
@@ -25,16 +26,18 @@ class ToyModel(BaseModel):
     def __init__(self, data_preprocessor=None):
         super().__init__(data_preprocessor=data_preprocessor, init_cfg=None)
         self.conv = nn.Conv2d(3, 1, 1)
+        self.bn = nn.BatchNorm2d(1)
+        self.relu = nn.ReLU(inplace=True)
 
-    def forward(self, inputs, data_samples=None, mode='tensor'):
+    def forward(self, batch_inputs, data_samples=None, mode='tensor'):
         if mode == 'loss':
-            out = self.conv(inputs)
+            out = self.relu(self.bn(self.conv(batch_inputs)))
             return dict(loss=out)
         elif mode == 'predict':
-            out = self.conv(inputs) + 1
+            out = self.relu(self.bn(self.conv(batch_inputs) + 1))
             return out
         elif mode == 'tensor':
-            out = self.conv(inputs) + 2
+            out = self.relu(self.bn(self.conv(batch_inputs) + 2))
             return out
 
 
@@ -100,3 +103,22 @@ class TestBaseAlgorithm(TestCase):
 
         with self.assertRaisesRegex(RuntimeError, 'Invalid mode "A"'):
             alg(inputs, mode='A')
+
+    def test_set_module_inplace_false(self):
+        inputs = torch.randn(1, 3, 8, 8)
+
+        model = ToyModel()
+        res_before = model(inputs)
+        _ = BaseAlgorithm(model)
+
+        r1 = ModuleOutputsRecorder('bn')
+        r1.initialize(model)
+        with r1:
+            res_after = model(inputs)
+        self.assertIs(torch.equal(res_before, res_after), True)
+
+        self.assertIs(model.relu.inplace, False)
+
+        self.assertIs(
+            torch.equal(r1.data_buffer[0], model.bn(model.conv(inputs) + 2)),
+            True)
