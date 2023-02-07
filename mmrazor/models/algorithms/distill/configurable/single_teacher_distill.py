@@ -56,9 +56,9 @@ class SingleTeacherDistill(BaseAlgorithm):
                             f'{type(teacher)}')
 
         self.teacher = teacher
+        self.teacher.init_weights()
         if teacher_ckpt:
             # avoid loaded parameters be overwritten
-            self.teacher.init_weights()
             _ = load_checkpoint(self.teacher, teacher_ckpt)
         self.teacher_trainable = teacher_trainable
         if not self.teacher_trainable:
