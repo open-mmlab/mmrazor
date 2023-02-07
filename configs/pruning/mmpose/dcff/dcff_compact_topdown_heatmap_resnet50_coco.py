@@ -1,7 +1,7 @@
 _base_ = ['dcff_topdown_heatmap_resnet50_coco.py']
 
 # model settings
-model_cfg = dict(
+_base_.model = dict(
     _scope_='mmrazor',
     type='sub_model',
     cfg=_base_.architecture,

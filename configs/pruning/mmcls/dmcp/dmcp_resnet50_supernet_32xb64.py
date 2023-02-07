@@ -1,5 +1,4 @@
 _base_ = [
-    'mmcls::_base_/schedules/imagenet_bs256.py',
     'mmcls::_base_/default_runtime.py',
     '../../../_base_/settings/imagenet_bs2048_dmcp.py',
 ]
@@ -32,8 +31,7 @@ supernet = dict(
 model = dict(
     _scope_='mmrazor',
     type='DMCP',
-    architecture=dict(
-        cfg_path='mmcls::resnet/resnet50_8xb32_in1k.py', pretrained=False),
+    architecture=supernet,
     distiller=dict(
         type='ConfigurableDistiller',
         teacher_recorders=dict(

@@ -96,11 +96,6 @@ class TestDsnas(TestCase):
         algo = DSNAS(model, mutator)
         self.assertIsInstance(algo.mutator, NasMutator)
 
-        # initiate Dsnas when `fix_subnet` is not None
-        fix_subnet = {'mutable': {'chosen': 'torch_conv2d_5x5'}}
-        algo = DSNAS(model, mutator, fix_subnet=fix_subnet)
-        self.assertEqual(algo.architecture.mutable.num_choices, 1)
-
         # initiate Dsnas with error type `mutator`
         with self.assertRaisesRegex(TypeError, 'mutator should be'):
             DSNAS(model, model)
@@ -113,12 +108,6 @@ class TestDsnas(TestCase):
         mutator = NasMutator()
         mutator.prepare_from_supernet(model)
         algo = DSNAS(model, mutator)
-        loss = algo(inputs, mode='loss')
-        self.assertIsInstance(loss, dict)
-
-        # subnet
-        fix_subnet = {'mutable': {'chosen': 'torch_conv2d_5x5'}}
-        algo = DSNAS(model, fix_subnet=fix_subnet)
         loss = algo(inputs, mode='loss')
         self.assertIsInstance(loss, dict)
 

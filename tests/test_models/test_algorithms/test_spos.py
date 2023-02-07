@@ -57,11 +57,6 @@ class TestSPOS(TestCase):
         alg = SPOS(model, mutator)
         self.assertIsInstance(alg.mutator, NasMutator)
 
-        # initiate spos when `fix_subnet` is not None.
-        fix_subnet = {'mutable': {'chosen': 'conv1'}}
-        alg = SPOS(model, mutator, fix_subnet=fix_subnet)
-        self.assertEqual(alg.architecture.mutable.num_choices, 1)
-
         # initiate spos with error type `mutator`.
         with self.assertRaisesRegex(TypeError, 'mutator should be'):
             SPOS(model, model)
@@ -73,11 +68,5 @@ class TestSPOS(TestCase):
         # supernet
         mutator = MODELS.build(MUTATOR_CFG)
         alg = SPOS(model, mutator)
-        loss = alg(inputs, mode='loss')
-        self.assertIsInstance(loss, dict)
-
-        # subnet
-        fix_subnet = {'mutable': {'chosen': 'conv1'}}
-        alg = SPOS(model, fix_subnet=fix_subnet)
         loss = alg(inputs, mode='loss')
         self.assertIsInstance(loss, dict)

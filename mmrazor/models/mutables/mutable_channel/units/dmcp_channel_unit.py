@@ -13,6 +13,11 @@ class DMCPChannelUnit(SequentialMutableChannelUnit):
     OneShotMutableChannelUnit. In DMCP supernet, each module only has one
     choice. The channel choice is fixed before training.
 
+    Note:
+        In dmcpunit, a new attribute `activated_tensor_channels` is defined
+    in self.mutable_channel, which is specifically used to store the number
+    of channels in the form of tensor. Defaults to None.
+
     Args:
         num_channels (int): The raw number of channels.
         choice_mode (str, optional): Mode of candidates.

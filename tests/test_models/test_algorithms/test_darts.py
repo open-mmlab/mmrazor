@@ -103,14 +103,8 @@ class TestDarts(TestCase):
         algo = Darts(model, mutator)
         self.assertIsInstance(algo.mutator, NasMutator)
 
-        # initiate darts when `fix_subnet` is not None
-        fix_subnet = {
-            'normal': {
-                'chosen': ['torch_conv2d_3x3', 'torch_conv2d_7x7']
-            }
-        }
-        algo = Darts(model, mutator, fix_subnet=fix_subnet)
-        self.assertEqual(algo.architecture.mutable.num_choices, 2)
+        algo = Darts(model, mutator)
+        self.assertEqual(algo.architecture.mutable.num_choices, 3)
 
         # initiate darts with error type `mutator`
         with self.assertRaisesRegex(TypeError, 'mutator should be'):
@@ -126,16 +120,6 @@ class TestDarts(TestCase):
         mutator.prepare_arch_params()
 
         algo = Darts(model, mutator)
-        loss = algo(inputs, mode='loss')
-        self.assertIsInstance(loss, dict)
-
-        # subnet
-        fix_subnet = {
-            'normal': {
-                'chosen': ['torch_conv2d_3x3', 'torch_conv2d_7x7']
-            }
-        }
-        algo = Darts(model, fix_subnet=fix_subnet)
         loss = algo(inputs, mode='loss')
         self.assertIsInstance(loss, dict)
 

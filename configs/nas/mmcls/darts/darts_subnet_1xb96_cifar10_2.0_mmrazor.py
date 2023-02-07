@@ -29,13 +29,11 @@ supernet = dict(
         topk=(1, 5),
         cal_acc=True))
 
-fix_subnet = 'configs/nas/mmcls/darts/DARTS_SUBNET_CIFAR_MMRAZOR_97.32.yaml'
-
 model = dict(
-    type='mmrazor.SPOS',
-    architecture=supernet,
-    mutator=None,
-    fix_subnet=fix_subnet,
-)
+    _scope_='mmrazor',
+    type='sub_model',
+    cfg=supernet,
+    fix_subnet='configs/nas/mmcls/darts/DARTS_SUBNET_CIFAR_MMRAZOR_97.32.yaml',
+    mode='mutator')
 
 find_unused_parameter = False

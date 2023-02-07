@@ -52,7 +52,6 @@ supernet = dict(
 model = dict(
     type='mmrazor.Autoformer',
     architecture=supernet,
-    fix_subnet=None,
     mutator=dict(type='mmrazor.NasMutator'))
 
 # runtime setting

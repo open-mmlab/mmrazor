@@ -1,12 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import json
 import os
-from typing import Optional, Sequence
 
-import yaml
 from mmengine.hooks import Hook
 from mmengine.registry import HOOKS
 
-DATA_BATCH = Optional[Sequence[dict]]
+from mmrazor.structures import export_fix_subnet
 
 
 @HOOKS.register_module()
@@ -25,14 +24,20 @@ class DMCPSubnetHook(Hook):
     def __init__(self, subnet_sample_num: int = 10, **kwargs) -> None:
         self.subnet_sample_num = subnet_sample_num
 
-    def _save_subnet(self, arch_space_dict, save_path):
-        """Save the sampled sub-network structure in yaml format."""
-        _cfg = dict()
-        for k, v in arch_space_dict.items():
-            _cfg[k] = int(v)
-
+    def _save_subnet(self, model, runner, save_path):
+        """Save the sampled sub-network config."""
+        fix_subnet, _ = export_fix_subnet(
+            model,
+            export_subnet_mode='mutator',
+            slice_weight=True,
+            export_channel=True,
+        )
+        fix_subnet = json.dumps(fix_subnet, indent=4, separators=(',', ':'))
         with open(save_path, 'w') as file:
-            file.write(yaml.dump(_cfg, allow_unicode=True))
+            file.write(fix_subnet)
+
+        runner.logger.info('export finished and '
+                           f'{save_path} saved in {runner.work_dir}.')
 
     def after_run(self, runner):
         """Save the sampled subnet under target FLOPs.
@@ -59,12 +64,12 @@ class DMCPSubnetHook(Hook):
 
             if i == num_sample:
                 model.set_subnet(mode='expected', arch_train=False)
-                save_path = os.path.join(root_dir, 'excepted_ch.yaml')
+                save_path = os.path.join(root_dir, 'excepted_ch.json')
                 runner.logger.info(
                     f'Excepted sample(ES) arch with FlOP(MB):{cur_flops}')
             else:
                 save_path = os.path.join(root_dir,
-                                         'subnet_{}.yaml'.format(i + 1))
+                                         'subnet_{}.json'.format(i + 1))
                 runner.logger.info(
                     f'Driect sample(DS) arch with FlOP(MB): {cur_flops/1e6}')
-            self._save_subnet(model.mutator.current_choices, save_path)
+            self._save_subnet(model, runner, save_path)

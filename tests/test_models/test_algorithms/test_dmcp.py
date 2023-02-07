@@ -73,9 +73,6 @@ class TestDMCP(TestCase):
         # dmcp mutators include channel_mutator and value_mutator
         assert isinstance(dmcp_algo.mutator, DMCPChannelMutator)
 
-        # dmcp_algo support training
-        self.assertTrue(dmcp_algo.is_supernet)
-
         ALGORITHM_CFG_SUPERNET.pop('type')
         fake_distiller = 'distiller'
         # initiate dmcp without `distiller`.
@@ -96,7 +93,6 @@ class TestDMCP(TestCase):
         # subernet
         inputs = torch.randn(1, 3, 224, 224)
         dmcp = MODELS.build(ALGORITHM_CFG)
-        dmcp.is_supernet = False
         loss = dmcp(inputs, mode='tensor')
         assert loss.size(1) == 1000
 
@@ -136,12 +132,6 @@ class TestDMCP(TestCase):
         assert losses['min_subnet1.loss'] > 0
         assert losses['random_subnet1.loss'] > 0
         assert losses['random_subnet2.loss'] > 0
-
-    def test_dmcp_load_fix_subnet(self):
-        ALGORITHM_CFG_SUPERNET = copy.deepcopy(ALGORITHM_CFG)
-        ALGORITHM_CFG_SUPERNET['fix_subnet'] = \
-            'configs/pruning/mmcls/dmcp/DMCP_R50_2G.yaml'
-        _ = MODELS.build(ALGORITHM_CFG_SUPERNET)
 
     def test_dmcp_compute_flops_loss(self):
         dmcp = MODELS.build(ALGORITHM_CFG)

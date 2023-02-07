@@ -113,7 +113,8 @@ def sub_model(cfg,
               prefix: str = '',
               extra_prefix: str = '',
               init_weight_from_supernet: bool = False,
-              init_cfg: Optional[Dict] = None):
+              init_cfg: Optional[Dict] = None,
+              **kwargs):
     model = MODELS.build(cfg)
     # Save path type cfg process, set init_cfg directly.
     if init_cfg:

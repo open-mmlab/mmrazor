@@ -4,7 +4,6 @@ import random
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
-import yaml
 from mmengine import MessageHub
 from mmengine.model import BaseModel, MMDistributedDataParallel
 from mmengine.optim import OptimWrapper
@@ -15,7 +14,6 @@ from mmrazor.models.distillers import ConfigurableDistiller
 from mmrazor.models.mutators import ChannelMutator, DMCPChannelMutator
 from mmrazor.models.utils import add_prefix
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
-from mmrazor.utils import ValidFixMutable
 from ...task_modules.estimators import ResourceEstimator
 from ..base import BaseAlgorithm
 
@@ -35,17 +33,22 @@ class DMCP(BaseAlgorithm):
         architecture (dict|:obj:`BaseModel`): The config of :class:`BaseModel`
             or built model. Corresponding to supernet in NAS algorithm.
         distiller (VALID_DISTILLER_TYPE): Configs to build a distiller.
-        fix_subnet (str | dict | :obj:`FixSubnet`): The path of yaml file or
-            loaded dict or built :obj:`FixSubnet`. Defaults to None.
         data_preprocessor (Optional[Union[dict, nn.Module]]): The pre-process
             config of :class:`BaseDataPreprocessor`. Defaults to None.
         strategy (list): mode of sampled net.
+            Defaults to ['max', 'min', 'arch_random'].
         arch_start_train (int): Number of iter to start arch training.
-        arch_train_freq (int): Frequency of training. Defaults to 500.
+            Defaults to ['max', 'min', 'arch_random'].
+        arch_train_freq (int): Frequency of training.
+            Defaults to 500.
         distillation_times (int): Number of iter to start arch training.
+            Defaults to 20000.
         target_flops (int): Target FLOPs. Default unit: MFLOPs.
+            Defaults to 150.
         flops_loss_type (str): The model used to calculate flops_loss.
+            Defaults to `log_l1`.
         flop_loss_weight (float): Weight of flops_loss.
+             Defaults to 1.0.
         init_cfg (Optional[dict]): Init config for ``BaseModule``.
             Defaults to None.
     """
@@ -56,7 +59,6 @@ class DMCP(BaseAlgorithm):
                  mutator_cfg: Union[Dict, DMCPChannelMutator] = dict(
                      type=' DMCPChannelMutator',
                      channel_unit_cfg=dict(type='DMCPChannelUnit')),
-                 fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  strategy: List = ['max', 'min', 'arch_random'],
                  init_cfg: Optional[Dict] = None,
@@ -86,20 +88,6 @@ class DMCP(BaseAlgorithm):
         self.distiller.prepare_from_teacher(self.architecture)
         self.distiller.prepare_from_student(self.architecture)
 
-        if fix_subnet:
-            self._load_fix_subnet(fix_subnet)
-            self.is_supernet = False
-        else:
-            self.is_supernet = True
-
-    def _load_fix_subnet(self, save_path):
-        """Load sub-network structure and fix."""
-        from mmrazor.structures import load_fix_subnet
-        with open(save_path) as file:
-            self.mutator.set_choices(
-                yaml.load(file.read(), Loader=yaml.FullLoader))
-        load_fix_subnet(self.architecture, save_path)
-
     def _build_distiller(
             self, distiller: VALID_DISTILLER_TYPE) -> ConfigurableDistiller:
         """Build distiller."""
@@ -126,106 +114,99 @@ class DMCP(BaseAlgorithm):
                 self._iter > self.arch_start_train:
             self.arch_train = True
 
-        if self.is_supernet:
-
-            def distill_step(
+        def distill_step(
                 batch_inputs: torch.Tensor, data_samples: List[BaseDataElement]
-            ) -> Dict[str, torch.Tensor]:
-                subnet_losses = dict()
+        ) -> Dict[str, torch.Tensor]:
+            subnet_losses = dict()
+            with optim_wrapper['architecture'].optim_context(
+                    self), self.distiller.student_recorders:  # type: ignore
+                hard_loss = self(batch_inputs, data_samples, mode='loss')
+                subnet_losses.update(hard_loss)
+
+                if self._iter > self.distillation_times:
+                    soft_loss = self.distiller.compute_distill_losses()
+                    subnet_losses.update(soft_loss)
+
+                parsed_subnet_losses, _ = self.parse_losses(subnet_losses)
+                optim_wrapper['architecture'].update_params(
+                    parsed_subnet_losses)
+
+            return subnet_losses
+
+        batch_inputs, data_samples = self.data_preprocessor(data,
+                                                            True).values()
+
+        total_losses = dict()
+        # update model parameters
+        max_net_num = min_net_num = random_net_num = direct_net_num = 1
+        for kind in self.strategy:
+            if kind in ('max'):
+                self.set_subnet(mode='max')
                 with optim_wrapper['architecture'].optim_context(
                         self
-                ), self.distiller.student_recorders:  # type: ignore
-                    hard_loss = self(batch_inputs, data_samples, mode='loss')
-                    subnet_losses.update(hard_loss)
-
-                    if self._iter > self.distillation_times:
-                        soft_loss = self.distiller.compute_distill_losses()
-                        subnet_losses.update(soft_loss)
-
-                    parsed_subnet_losses, _ = self.parse_losses(subnet_losses)
+                ), self.distiller.teacher_recorders:  # type: ignore
+                    max_subnet_losses = self(
+                        batch_inputs, data_samples, mode='loss')
+                    parsed_max_subnet_losses, _ = self.parse_losses(
+                        max_subnet_losses)
                     optim_wrapper['architecture'].update_params(
-                        parsed_subnet_losses)
-
-                return subnet_losses
-
-            batch_inputs, data_samples = self.data_preprocessor(data,
-                                                                True).values()
-
-            total_losses = dict()
-            # update model parameters
-            max_net_num = min_net_num = random_net_num = direct_net_num = 1
-            for kind in self.strategy:
-                if kind in ('max'):
-                    self.set_subnet(mode='max')
-                    with optim_wrapper['architecture'].optim_context(
-                            self
-                    ), self.distiller.teacher_recorders:  # type: ignore
-                        max_subnet_losses = self(
-                            batch_inputs, data_samples, mode='loss')
-                        parsed_max_subnet_losses, _ = self.parse_losses(
-                            max_subnet_losses)
-                        optim_wrapper['architecture'].update_params(
-                            parsed_max_subnet_losses)
+                        parsed_max_subnet_losses)
+                total_losses.update(
+                    add_prefix(max_subnet_losses, f'max_subnet{max_net_num}'))
+                max_net_num += 1
+            elif kind in ('min'):
+                self.set_subnet(mode='min')
+                min_subnet_losses =\
+                    distill_step(batch_inputs, data_samples)
+                total_losses.update(
+                    add_prefix(min_subnet_losses, f'min_subnet{min_net_num}'))
+                min_net_num += 1
+            elif kind in ('arch_random'):
+                if self.arch_train:
+                    self.set_subnet(mode='direct')
+                    direct_subnet_losses = distill_step(
+                        batch_inputs, data_samples)
                     total_losses.update(
-                        add_prefix(max_subnet_losses,
-                                   f'max_subnet{max_net_num}'))
-                    max_net_num += 1
-                elif kind in ('min'):
-                    self.set_subnet(mode='min')
-                    min_subnet_losses =\
-                        distill_step(batch_inputs, data_samples)
+                        add_prefix(direct_subnet_losses,
+                                   f'direct_subnet{direct_net_num}'))
+                    direct_net_num += 1
+                else:
+                    self.set_subnet(mode='random')
+                    random_subnet_losses = distill_step(
+                        batch_inputs, data_samples)
                     total_losses.update(
-                        add_prefix(min_subnet_losses,
-                                   f'min_subnet{min_net_num}'))
-                    min_net_num += 1
-                elif kind in ('arch_random'):
-                    if self.arch_train:
-                        self.set_subnet(mode='direct')
-                        direct_subnet_losses = distill_step(
-                            batch_inputs, data_samples)
-                        total_losses.update(
-                            add_prefix(direct_subnet_losses,
-                                       f'direct_subnet{direct_net_num}'))
-                        direct_net_num += 1
-                    else:
-                        self.set_subnet(mode='random')
-                        random_subnet_losses = distill_step(
-                            batch_inputs, data_samples)
-                        total_losses.update(
-                            add_prefix(random_subnet_losses,
-                                       f'random_subnet{random_net_num}'))
-                        random_net_num += 1
-                elif kind in ('scheduled_random'):
-                    if random.uniform(0, 1) > self.cur_sample_prob\
-                       and self.arch_train:
-                        self.set_subnet(mode='direct')
-                        direct_subnet_losses = distill_step(
-                            batch_inputs, data_samples)
-                        total_losses.update(
-                            add_prefix(direct_subnet_losses,
-                                       f'direct_subnet{direct_net_num}'))
-                        direct_net_num += 1
-                    else:
-                        self.set_subnet(mode='random')
-                        random_subnet_losses = distill_step(
-                            batch_inputs, data_samples)
-                        total_losses.update(
-                            add_prefix(random_subnet_losses,
-                                       f'random_subnet{random_net_num}'))
-                        random_net_num += 1
-                    self.cur_sample_prob *= 0.9999
+                        add_prefix(random_subnet_losses,
+                                   f'random_subnet{random_net_num}'))
+                    random_net_num += 1
+            elif kind in ('scheduled_random'):
+                if random.uniform(0, 1) > self.cur_sample_prob\
+                        and self.arch_train:
+                    self.set_subnet(mode='direct')
+                    direct_subnet_losses = distill_step(
+                        batch_inputs, data_samples)
+                    total_losses.update(
+                        add_prefix(direct_subnet_losses,
+                                   f'direct_subnet{direct_net_num}'))
+                    direct_net_num += 1
+                else:
+                    self.set_subnet(mode='random')
+                    random_subnet_losses = distill_step(
+                        batch_inputs, data_samples)
+                    total_losses.update(
+                        add_prefix(random_subnet_losses,
+                                   f'random_subnet{random_net_num}'))
+                    random_net_num += 1
+                self.cur_sample_prob *= 0.9999
 
-            # update arch parameters
-            if self.arch_train \
-                    and self._iter % self.arch_train_freq == 0:
-                with optim_wrapper['mutator'].optim_context(self):
-                    optim_wrapper['mutator'].zero_grad()
-                    mutator_loss = self._update_arch_params(
-                        batch_inputs, data_samples, optim_wrapper, mode='loss')
-                total_losses.update(mutator_loss)
-            return total_losses
-        else:
-            return super().train_step(data, optim_wrapper)
+        # update arch parameters
+        if self.arch_train \
+                and self._iter % self.arch_train_freq == 0:
+            with optim_wrapper['mutator'].optim_context(self):
+                optim_wrapper['mutator'].zero_grad()
+                mutator_loss = self._update_arch_params(
+                    batch_inputs, data_samples, optim_wrapper, mode='loss')
+            total_losses.update(mutator_loss)
+        return total_losses
 
     def _update_arch_params(self,
                             inputs: torch.Tensor,
@@ -349,103 +330,96 @@ class DMCPDDP(MMDistributedDataParallel):
                 self.module._iter > self.module.arch_start_train:
             self.module.arch_train = True
 
-        if self.module.is_supernet:
-
-            def distill_step(
+        def distill_step(
                 batch_inputs: torch.Tensor, data_samples: List[BaseDataElement]
-            ) -> Dict[str, torch.Tensor]:
-                subnet_losses = dict()
+        ) -> Dict[str, torch.Tensor]:
+            subnet_losses = dict()
+            with optim_wrapper['architecture'].optim_context(
+                    self), self.module.distiller.student_recorders:
+                hard_loss = self(batch_inputs, data_samples, mode='loss')
+                subnet_losses.update(hard_loss)
+                if self.module._iter > self.module.distillation_times:
+                    soft_loss = \
+                        self.module.distiller.compute_distill_losses()
+                    subnet_losses.update(soft_loss)
+
+                parsed_subnet_losses, _ = \
+                    self.module.parse_losses(subnet_losses)
+                optim_wrapper['architecture'].update_params(
+                    parsed_subnet_losses)
+
+            return subnet_losses
+
+        batch_inputs, data_samples = self.module.data_preprocessor(
+            data, True).values()
+
+        total_losses = dict()
+        # update model parameters
+        max_net_num = min_net_num = random_net_num = direct_net_num = 1
+        for kind in self.module.strategy:
+            if kind in ('max'):
+                self.module.set_subnet(mode='max')
                 with optim_wrapper['architecture'].optim_context(
-                        self), self.module.distiller.student_recorders:
-                    hard_loss = self(batch_inputs, data_samples, mode='loss')
-                    subnet_losses.update(hard_loss)
-                    if self.module._iter > self.module.distillation_times:
-                        soft_loss = \
-                            self.module.distiller.compute_distill_losses()
-                        subnet_losses.update(soft_loss)
-
-                    parsed_subnet_losses, _ = \
-                        self.module.parse_losses(subnet_losses)
+                        self
+                ), self.module.distiller.teacher_recorders:  # type: ignore
+                    max_subnet_losses = self(
+                        batch_inputs, data_samples, mode='loss')
+                    parsed_max_subnet_losses, _ = self.module.parse_losses(
+                        max_subnet_losses)
                     optim_wrapper['architecture'].update_params(
-                        parsed_subnet_losses)
-
-                return subnet_losses
-
-            batch_inputs, data_samples = self.module.data_preprocessor(
-                data, True).values()
-
-            total_losses = dict()
-            # update model parameters
-            max_net_num = min_net_num = random_net_num = direct_net_num = 1
-            for kind in self.module.strategy:
-                if kind in ('max'):
-                    self.module.set_subnet(mode='max')
-                    with optim_wrapper['architecture'].optim_context(
-                            self
-                    ), self.module.distiller.teacher_recorders:  # type: ignore
-                        max_subnet_losses = self(
-                            batch_inputs, data_samples, mode='loss')
-                        parsed_max_subnet_losses, _ = self.module.parse_losses(
-                            max_subnet_losses)
-                        optim_wrapper['architecture'].update_params(
-                            parsed_max_subnet_losses)
+                        parsed_max_subnet_losses)
+                total_losses.update(
+                    add_prefix(max_subnet_losses, f'max_subnet{max_net_num}'))
+                max_net_num += 1
+            elif kind in ('min'):
+                self.module.set_subnet(mode='min')
+                min_subnet_losses = distill_step(batch_inputs, data_samples)
+                total_losses.update(
+                    add_prefix(min_subnet_losses, f'min_subnet{min_net_num}'))
+                min_net_num += 1
+            elif kind in ('arch_random'):
+                if self.module.arch_train:
+                    self.module.set_subnet(mode='direct')
+                    direct_subnet_losses = distill_step(
+                        batch_inputs, data_samples)
                     total_losses.update(
-                        add_prefix(max_subnet_losses,
-                                   f'max_subnet{max_net_num}'))
-                    max_net_num += 1
-                elif kind in ('min'):
-                    self.module.set_subnet(mode='min')
-                    min_subnet_losses = distill_step(batch_inputs,
-                                                     data_samples)
+                        add_prefix(direct_subnet_losses,
+                                   f'direct_subnet{direct_net_num}'))
+                    direct_net_num += 1
+                else:
+                    self.module.set_subnet(mode='random')
+                    random_subnet_losses = distill_step(
+                        batch_inputs, data_samples)
                     total_losses.update(
-                        add_prefix(min_subnet_losses,
-                                   f'min_subnet{min_net_num}'))
-                    min_net_num += 1
-                elif kind in ('arch_random'):
-                    if self.module.arch_train:
-                        self.module.set_subnet(mode='direct')
-                        direct_subnet_losses = distill_step(
-                            batch_inputs, data_samples)
-                        total_losses.update(
-                            add_prefix(direct_subnet_losses,
-                                       f'direct_subnet{direct_net_num}'))
-                        direct_net_num += 1
-                    else:
-                        self.module.set_subnet(mode='random')
-                        random_subnet_losses = distill_step(
-                            batch_inputs, data_samples)
-                        total_losses.update(
-                            add_prefix(random_subnet_losses,
-                                       f'random_subnet{random_net_num}'))
-                        random_net_num += 1
-                elif kind in ('scheduled_random'):
-                    if random.uniform(0, 1) > self.module.cur_sample_prob\
-                       and self.module.arch_train:
-                        self.module.set_subnet(mode='direct')
-                        direct_subnet_losses = distill_step(
-                            batch_inputs, data_samples)
-                        total_losses.update(
-                            add_prefix(direct_subnet_losses,
-                                       f'direct_subnet{direct_net_num}'))
-                        direct_net_num += 1
-                    else:
-                        self.module.set_subnet(mode='random')
-                        random_subnet_losses = distill_step(
-                            batch_inputs, data_samples)
-                        total_losses.update(
-                            add_prefix(random_subnet_losses,
-                                       f'random_subnet{random_net_num}'))
-                        random_net_num += 1
-                    self.module.cur_sample_prob *= 0.9999
+                        add_prefix(random_subnet_losses,
+                                   f'random_subnet{random_net_num}'))
+                    random_net_num += 1
+            elif kind in ('scheduled_random'):
+                if random.uniform(0, 1) > self.module.cur_sample_prob\
+                        and self.module.arch_train:
+                    self.module.set_subnet(mode='direct')
+                    direct_subnet_losses = distill_step(
+                        batch_inputs, data_samples)
+                    total_losses.update(
+                        add_prefix(direct_subnet_losses,
+                                   f'direct_subnet{direct_net_num}'))
+                    direct_net_num += 1
+                else:
+                    self.module.set_subnet(mode='random')
+                    random_subnet_losses = distill_step(
+                        batch_inputs, data_samples)
+                    total_losses.update(
+                        add_prefix(random_subnet_losses,
+                                   f'random_subnet{random_net_num}'))
+                    random_net_num += 1
+                self.module.cur_sample_prob *= 0.9999
 
-            # update arch parameters
-            if self.module.arch_train \
-                    and self.module._iter % self.module.arch_train_freq == 0:
-                with optim_wrapper['mutator'].optim_context(self):
-                    optim_wrapper['mutator'].zero_grad()
-                    mutator_loss = self.module._update_arch_params(
-                        batch_inputs, data_samples, optim_wrapper, mode='loss')
-                total_losses.update(mutator_loss)
-            return total_losses
-        else:
-            return super().train_step(data, optim_wrapper)
+        # update arch parameters
+        if self.module.arch_train \
+                and self.module._iter % self.module.arch_train_freq == 0:
+            with optim_wrapper['mutator'].optim_context(self):
+                optim_wrapper['mutator'].zero_grad()
+                mutator_loss = self.module._update_arch_params(
+                    batch_inputs, data_samples, optim_wrapper, mode='loss')
+            total_losses.update(mutator_loss)
+        return total_losses

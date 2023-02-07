@@ -21,26 +21,13 @@ data_preprocessor = dict(
 
 # !autoslim algorithm config
 # ==========================================================================
+supernet.data_preprocessor = data_preprocessor
 
 model = dict(
-    _delete_=True,
     _scope_='mmrazor',
-    type='SlimmableNetwork',
-    architecture=supernet,
-    data_preprocessor=data_preprocessor,
-    mutator=dict(
-        type='SlimmableChannelMutator',
-        channel_unit_cfg=dict(
-            type='SlimmableChannelUnit',
-            units='tests/data/MBV2_slimmable_config.json'),
-        parse_cfg=dict(
-            type='ChannelAnalyzer',
-            demo_input=(1, 3, 224, 224),
-            tracer_type='BackwardTracer')))
-
-model_wrapper_cfg = dict(
-    type='mmrazor.SlimmableNetworkDDP',
-    broadcast_buffers=False,
-    find_unused_parameters=True)
+    type='sub_model',
+    cfg=supernet,
+    fix_subnet='tests/data/MBV2_slimmable_config.json',
+    mode='mutator')
 
 val_cfg = dict(type='mmrazor.SlimmableValLoop')

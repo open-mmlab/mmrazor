@@ -26,12 +26,11 @@ param_scheduler = [
 paramwise_cfg = dict(norm_decay_mult=0.0, bias_decay_mult=0.0)
 
 optim_wrapper = dict(
-    _delete_=True,
     constructor='mmrazor.SeparateOptimWrapperConstructor',
     architecture=dict(
         type='OptimWrapper',
         optimizer=dict(type='SGD', lr=0.5, momentum=0.9, weight_decay=3e-4),
-        clip_grad=dict(max_norm=5, norm_type=2)),
+        paramwise_cfg=paramwise_cfg),
     mutator=dict(
         type='OptimWrapper',
         optimizer=dict(type='Adam', lr=0.5, weight_decay=1e-3)))
@@ -48,12 +47,7 @@ data_preprocessor = dict(
 train_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='RandomResizedCrop', scale=224),
-    dict(
-        type='ColorJitter',
-        brightness=0.2,
-        contrast=0.2,
-        saturation=0.2,
-        hue=0.1),
+    dict(type='ColorJitter', brightness=0.2, contrast=0.2, saturation=0.2),
     dict(type='RandomFlip', prob=0.5, direction='horizontal'),
     dict(type='PackClsInputs'),
 ]
@@ -99,4 +93,6 @@ test_evaluator = val_evaluator
 evaluation = dict(interval=1, metric='accuracy')
 
 train_cfg = dict(by_epoch=True, max_epochs=max_search_epochs, val_interval=1)
+val_cfg = dict()
+test_cfg = dict()
 custom_hooks = [dict(type='DMCPSubnetHook')]
