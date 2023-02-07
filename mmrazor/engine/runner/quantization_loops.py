@@ -17,6 +17,7 @@ except ImportError:
     enable_observer = get_placeholder('torch>=1.13')
     disable_fake_quant = get_placeholder('torch>=1.13')
     freeze_bn_stats = get_placeholder('torch>=1.13')
+    FakeQuantizeBase = get_placeholder('torch>=1.13')
 
 from torch.utils.data import DataLoader
 
