@@ -72,11 +72,11 @@ class SubnetValLoop(ValLoop, CalibrateBNMixin):
         elif hasattr(self.model, 'sample_kinds'):
             for kind in self.model.sample_kinds:
                 if kind == 'max':
-                    self.model.set_max_subnet()
+                    self.model.mutator.set_max_choices()
                     metrics = self._evaluate_once()
                     all_metrics.update(add_prefix(metrics, 'max_subnet'))
                 elif kind == 'min':
-                    self.model.set_min_subnet()
+                    self.model.mutator.set_min_choices()
                     metrics = self._evaluate_once()
                     all_metrics.update(add_prefix(metrics, 'min_subnet'))
                 elif 'random' in kind:

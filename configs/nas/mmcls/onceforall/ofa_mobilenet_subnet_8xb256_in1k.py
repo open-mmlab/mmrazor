@@ -6,8 +6,7 @@ model_cfg = dict(
     _scope_='mmrazor',
     type='sub_model',
     cfg=supernet,
-    fix_subnet='configs/nas/mmcls/onceforall/OFA_SUBNET_NOTE8_LAT22.yaml',
-    mode='mutator')
+    fix_subnet='configs/nas/mmcls/onceforall/OFA_SUBNET_NOTE8_LAT22.yaml')
 
 _base_.model = model_cfg
 

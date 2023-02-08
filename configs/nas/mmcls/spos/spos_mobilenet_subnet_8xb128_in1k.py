@@ -7,8 +7,7 @@ model_cfg = dict(
     _scope_='mmrazor',
     type='sub_model',
     cfg=supernet,
-    fix_subnet='configs/nas/spos/AngleNAS_SHUFFLENETV2_IN1k_2.0.yaml',
-    mode='mutator')
+    fix_subnet='configs/nas/spos/AngleNAS_SHUFFLENETV2_IN1k_2.0.yaml')
 
 _base_.model = model_cfg
 

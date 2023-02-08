@@ -125,7 +125,7 @@ def export_fix_subnet(
         model: nn.Module,
         export_subnet_mode: str = 'mutable',
         slice_weight: bool = False,
-        export_channel: bool = True) -> Tuple[FixMutable, Optional[Dict]]:
+        export_channel: bool = False) -> Tuple[FixMutable, Optional[Dict]]:
     """Export subnet that can be loaded by :func:`load_fix_subnet`. Include
     subnet structure and subnet weight.
 

@@ -30,10 +30,8 @@ supernet = dict(
         cal_acc=True))
 
 model = dict(
-    _scope_='mmrazor',
-    type='sub_model',
+    type='mmrazor.sub_model',
     cfg=supernet,
-    fix_subnet='configs/nas/mmcls/darts/DARTS_SUBNET_CIFAR_MMRAZOR_97.32.yaml',
-    mode='mutator')
+    fix_subnet='configs/nas/mmcls/darts/DARTS_SUBNET_CIFAR_MMRAZOR_97.32.yaml')
 
 find_unused_parameter = False

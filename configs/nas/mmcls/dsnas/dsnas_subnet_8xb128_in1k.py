@@ -8,8 +8,8 @@ model_cfg = dict(
     type='sub_model',
     cfg=supernet,
     fix_subnet=  # noqa: E251
-    'configs/nas/mmcls/dsnas/DSNAS_SUBNET_IMAGENET_PAPER_ALIAS.yaml',  # noqa: E501
-    mode='mutator')
+    'configs/nas/mmcls/dsnas/DSNAS_SUBNET_IMAGENET_PAPER_ALIAS.yaml'
+)  # noqa: E501
 
 _base_.model = model_cfg
 
