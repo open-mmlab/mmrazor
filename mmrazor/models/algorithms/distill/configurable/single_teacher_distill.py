@@ -89,6 +89,9 @@ class SingleTeacherDistill(BaseAlgorithm):
         self.distiller.prepare_from_student(self.student)
         self.distiller.prepare_from_teacher(self.teacher)
 
+        # may be modified by distill loss scheduler hook
+        self.distill_loss_detach = False
+
     @property
     def student(self) -> nn.Module:
         """Alias for ``architecture``."""
@@ -137,8 +140,9 @@ class SingleTeacherDistill(BaseAlgorithm):
 
         # Automatically compute distill losses based on `loss_forward_mappings`
         # The required data already exists in the recorders.
-        distill_losses = self.distiller.compute_distill_losses()
-        losses.update(add_prefix(distill_losses, 'distill'))
+        if not self.distill_loss_detach:
+            distill_losses = self.distiller.compute_distill_losses()
+            losses.update(add_prefix(distill_losses, 'distill'))
 
         return losses
 
