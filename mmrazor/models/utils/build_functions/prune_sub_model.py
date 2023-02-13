@@ -59,7 +59,7 @@ def PruneSubModel(
     mutable_cfg: Optional[Dict] = None,
     data_preprocessor=None,
 ):
-    """A model wrapper for pruning algorithm.
+    """A sub model for pruning algorithm.
 
     Args:
         algorithm (_type_): The pruning algorithm to finetune.

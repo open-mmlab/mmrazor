@@ -15,7 +15,7 @@ def PruneDeploySubModel(architecture,
                         divisor=1,
                         data_preprocessor=None,
                         init_cfg=None):
-    """A deploy wrapper for a pruned model.
+    """A submodel to deploy a pruned model.
 
     Args:
         architecture (_type_): the model to be pruned.
