@@ -86,7 +86,7 @@ def PruneSubModel(
         assert isinstance(mutable_cfg, dict)
         algorithm.mutator.set_choices(mutable_cfg)
 
-    print_log('PruneFinetuneWrapper get pruning structure:')
+    print_log('PruneSubModel get pruning structure:')
     print_log(json.dumps(algorithm.mutator.choice_template, indent=4))
 
     # to static model
@@ -102,7 +102,7 @@ def PruneSubModel(
         divisible_structure = make_channel_divisible(
             model, divisor=divisor, zero_weight=False)
 
-        print_log('PruneFinetuneWrapper get divisible pruning structure:')
+        print_log('PruneSubModel get divisible pruning structure:')
         print_log(json.dumps(divisible_structure, indent=4))
 
     # refine model
