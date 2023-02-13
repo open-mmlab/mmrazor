@@ -138,9 +138,10 @@ class SingleTeacherDistill(BaseAlgorithm):
                         _ = self.student(
                             batch_inputs, data_samples, mode='loss')
 
-        # Automatically compute distill losses based on `loss_forward_mappings`
-        # The required data already exists in the recorders.
         if not self.distill_loss_detach:
+            # Automatically compute distill losses based on
+            # `loss_forward_mappings`.
+            # The required data already exists in the recorders.
             distill_losses = self.distiller.compute_distill_losses()
             losses.update(add_prefix(distill_losses, 'distill'))
 
