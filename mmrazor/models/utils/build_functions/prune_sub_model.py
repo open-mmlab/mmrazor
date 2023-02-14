@@ -4,6 +4,7 @@ import types
 from typing import Dict, Optional
 
 import torch.nn as nn
+from mmengine import fileio
 from mmengine.model import BaseModel, BaseModule
 
 from mmrazor.registry import MODELS
@@ -85,6 +86,8 @@ def PruneSubModel(
     clean_params_init_info(algorithm)
 
     if mutable_cfg is not None:
+        if isinstance(mutable_cfg, str):
+            mutable_cfg = fileio.load(mutable_cfg)
         assert isinstance(mutable_cfg, dict)
         algorithm.mutator.set_choices(mutable_cfg)
 

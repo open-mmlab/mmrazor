@@ -1,6 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
+import os
 from unittest import TestCase
+
+from mmengine import fileio
 
 from mmrazor.models.utils import PruneDeploySubModel
 from ....data.models import MMClsResNet18
@@ -17,6 +20,7 @@ class TestPruneDeploySubModel(TestCase):
         algorithm.random_prune()
         strucutrue = algorithm.mutator.current_choices
 
+        # test divisor
         wrapper = PruneDeploySubModel(
             copy.deepcopy(model), strucutrue, divisor=1)
         self.assertSequenceEqual(
@@ -28,3 +32,9 @@ class TestPruneDeploySubModel(TestCase):
         self.assertSequenceEqual(
             list(strucutrue.values()),
             list(get_model_structure(wrapper).values()))
+
+        mutable_path = os.path.dirname(__file__) + '/mutable.json'
+        fileio.dump(algorithm.mutator.current_choices, mutable_path)
+        PruneDeploySubModel(
+            copy.deepcopy(model), divisor=1, mutable_cfg=mutable_path)
+        os.remove(mutable_path)

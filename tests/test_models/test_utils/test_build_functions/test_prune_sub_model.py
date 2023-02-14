@@ -1,9 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
+import os
 from typing import Dict, Union
 from unittest import TestCase
 
 import torch
+from mmengine import fileio
 
 from mmrazor.models import BaseAlgorithm
 from mmrazor.models.mutators import ChannelMutator
@@ -48,6 +50,7 @@ class TestPruneSubModel(TestCase):
         algorithm = PruneAlgorithm(model)
         algorithm.random_prune()
 
+        # test divisor
         static_model1 = PruneSubModel(algorithm, divisor=1)
         self.assertSequenceEqual(
             list(algorithm.mutator.current_choices.values()),
@@ -60,3 +63,8 @@ class TestPruneSubModel(TestCase):
         y1 = static_model1(x)
         y2 = static_model2(x)
         self.assertTrue((y1 - y2).abs().max() < 1e-3)
+
+        # test mutable_cfg
+        mutable_path = os.path.dirname(__file__) + '/mutable.json'
+        fileio.dump(algorithm.mutator.current_choices, mutable_path)
+        PruneSubModel(algorithm, divisor=1, mutable_cfg=mutable_path)
