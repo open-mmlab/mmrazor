@@ -1,19 +1,35 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 # manage sub models for downstream repos
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from mmrazor.registry import MODELS
 from mmrazor.utils import print_log
 
 
 @MODELS.register_module()
-def BaseSubModel(cfg,
-                 fix_subnet,
+def BaseSubModel(cfg: dict,
+                 fix_subnet: Union[dict, str],
                  mode: str = 'mutable',
                  prefix: str = '',
                  extra_prefix: str = '',
                  init_weight_from_supernet: bool = False,
                  init_cfg: Optional[Dict] = None):
+    """_summary_
+
+    Args:
+        cfg (dict): Model config.
+        fix_subnet (Union[dict, str]): The subnet config.
+        mode (str, optional): Subnet mode. Defaults to 'mutable'.
+        prefix (str, optional): Prefix to load subnet. Defaults to ''.
+        extra_prefix (str, optional): Extra prefix to load subnet.
+            Defaults to ''.
+        init_weight_from_supernet (bool, optional): Whether to load weight
+            from the supernet. Defaults to False.
+        init_cfg (Optional[Dict], optional): initial config. Defaults to None.
+
+    Returns:
+        _type_: _description_
+    """
     model = MODELS.build(cfg)
     # Save path type cfg process, set init_cfg directly.
     if init_cfg:
