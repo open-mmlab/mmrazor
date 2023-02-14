@@ -12,7 +12,7 @@ from .test_prune_sub_model import PruneAlgorithm, get_model_structure
 
 class TestPruneDeploySubModel(TestCase):
 
-    def test_init(self):
+    def test_build_sub_model(self):
         model = MMClsResNet18()
 
         # get structure

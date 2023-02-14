@@ -44,7 +44,7 @@ def get_model_structure(model):
 
 class TestPruneSubModel(TestCase):
 
-    def test_init(self):
+    def test_build_sub_model(self):
         x = torch.rand([1, 3, 224, 224])
         model = MMClsResNet18()
         algorithm = PruneAlgorithm(model)
@@ -68,3 +68,4 @@ class TestPruneSubModel(TestCase):
         mutable_path = os.path.dirname(__file__) + '/mutable.json'
         fileio.dump(algorithm.mutator.current_choices, mutable_path)
         PruneSubModel(algorithm, divisor=1, mutable_cfg=mutable_path)
+        os.remove(mutable_path)
