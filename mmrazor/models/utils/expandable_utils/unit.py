@@ -8,6 +8,7 @@ from .ops import ExpandableBatchNorm2d, ExpandableConv2d, ExpandLinear
 
 
 class ExpandableUnit(L1MutableChannelUnit):
+    """The units to inplace modules with expandable dynamic ops."""
 
     def prepare_for_pruning(self, model: nn.Module):
         self._replace_with_dynamic_ops(
