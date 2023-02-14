@@ -90,12 +90,9 @@ def PruneSubModel(
     print_log(json.dumps(algorithm.mutator.choice_template, indent=4))
 
     # to static model
-    if hasattr(algorithm, 'to_static'):
-        model = algorithm.to_static()
-    else:
-        fix_subnet = export_fix_subnet(algorithm.architecture)[0]
-        load_fix_subnet(algorithm.architecture, fix_subnet)
-        model = algorithm.architecture
+    fix_subnet = export_fix_subnet(algorithm.architecture)[0]
+    load_fix_subnet(algorithm.architecture, fix_subnet)
+    model = algorithm.architecture
 
     # make channel divisible
     if divisor != 1:
