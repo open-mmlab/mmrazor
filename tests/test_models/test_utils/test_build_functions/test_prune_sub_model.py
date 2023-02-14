@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import copy
 from typing import Dict, Union
 from unittest import TestCase
 
@@ -34,6 +35,11 @@ class PruneAlgorithm(BaseAlgorithm):
         self.mutator.set_choices(choices)
 
 
+def get_model_structure(model):
+    algorithm = PruneAlgorithm(copy.deepcopy(model))
+    return algorithm.mutator.current_choices
+
+
 class TestPruneSubModel(TestCase):
 
     def test_init(self):
@@ -43,10 +49,13 @@ class TestPruneSubModel(TestCase):
         algorithm.random_prune()
 
         static_model1 = PruneSubModel(algorithm, divisor=1)
-        print(static_model1)
+        self.assertSequenceEqual(
+            list(algorithm.mutator.current_choices.values()),
+            list(get_model_structure(static_model1).values()))
 
         static_model2 = PruneSubModel(algorithm, divisor=8)
-        print(static_model2)
+        for value in get_model_structure(static_model2).values():
+            self.assertTrue(value % 8 == 0)
 
         y1 = static_model1(x)
         y2 = static_model2(x)

@@ -3,16 +3,17 @@
 from typing import Dict, Optional
 
 from mmrazor.registry import MODELS
+from mmrazor.utils import print_log
 
 
 @MODELS.register_module()
-def sub_model(cfg,
-              fix_subnet,
-              mode: str = 'mutable',
-              prefix: str = '',
-              extra_prefix: str = '',
-              init_weight_from_supernet: bool = False,
-              init_cfg: Optional[Dict] = None):
+def BaseSubModel(cfg,
+                 fix_subnet,
+                 mode: str = 'mutable',
+                 prefix: str = '',
+                 extra_prefix: str = '',
+                 init_weight_from_supernet: bool = False,
+                 init_cfg: Optional[Dict] = None):
     model = MODELS.build(cfg)
     # Save path type cfg process, set init_cfg directly.
     if init_cfg:
@@ -35,3 +36,22 @@ def sub_model(cfg,
         model.init_cfg = None
 
     return model
+
+
+@MODELS.register_module()
+def sub_model(cfg,
+              fix_subnet,
+              mode: str = 'mutable',
+              prefix: str = '',
+              extra_prefix: str = '',
+              init_weight_from_supernet: bool = False,
+              init_cfg: Optional[Dict] = None):
+    print_log('sub_model will be deprecated, please use BaseSubModel instead.')
+    return BaseSubModel(
+        cfg,
+        fix_subnet,
+        mode=mode,
+        prefix=prefix,
+        extra_prefix=extra_prefix,
+        init_weight_from_supernet=init_weight_from_supernet,
+        init_cfg=init_cfg)

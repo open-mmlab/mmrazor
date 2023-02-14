@@ -41,8 +41,8 @@ def to_static_model(algorithm: BaseAlgorithm):
     if hasattr(algorithm, 'to_static'):
         model = algorithm.to_static()
     else:
-        mutables = export_fix_subnet(algorithm.architecture)[0]
-        load_fix_subnet(algorithm.architecture, mutables)
+        fix_subnet = export_fix_subnet(algorithm.architecture)[0]
+        load_fix_subnet(algorithm.architecture, fix_subnet)
         model = algorithm.architecture
 
     model.data_preprocessor = algorithm.data_preprocessor
@@ -93,8 +93,8 @@ def PruneSubModel(
     if hasattr(algorithm, 'to_static'):
         model = algorithm.to_static()
     else:
-        mutables = export_fix_subnet(algorithm.architecture)[0]
-        load_fix_subnet(algorithm.architecture, mutables)
+        fix_subnet = export_fix_subnet(algorithm.architecture)[0]
+        load_fix_subnet(algorithm.architecture, fix_subnet)
         model = algorithm.architecture
 
     # make channel divisible
