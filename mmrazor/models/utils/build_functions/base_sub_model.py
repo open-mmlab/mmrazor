@@ -62,7 +62,9 @@ def sub_model(cfg,
               extra_prefix: str = '',
               init_weight_from_supernet: bool = False,
               init_cfg: Optional[Dict] = None):
-    print_log('sub_model will be deprecated, please use BaseSubModel instead.')
+    print_log(
+        'sub_model will be deprecated, please use BaseSubModel instead.',
+        level='warning')
     return BaseSubModel(
         cfg,
         fix_subnet,

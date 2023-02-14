@@ -25,8 +25,9 @@ def PruneDeploySubModel(architecture,
             unit, or the path of a file including this info. Defaults to {}.
         divisor (int, optional): The divisor to make the channel number
             divisible. Defaults to 1.
-        data_preprocessor (_type_, optional): Defaults to None.
-        init_cfg (_type_, optional):  Defaults to None.
+        data_preprocessor (dict, optional): Placeholder for data_preprocessor.
+            Defaults to None.
+        init_cfg (dict, optional): Placeholder for init_cfg. Defaults to None.
 
     Returns:
         BaseModel: a BaseModel of mmengine.

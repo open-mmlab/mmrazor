@@ -62,12 +62,14 @@ def PruneSubModel(
     """A sub model for pruning algorithm.
 
     Args:
-        algorithm (_type_): The pruning algorithm to finetune.
+        algorithm (Union[BaseAlgorithm, dict]): The pruning algorithm to
+            finetune.
         divisor (int): The divisor to make the channel number
             divisible. Defaults to 1.
         mutable_cfg (dict, str): the mutable choice config to change the
             model structure. Defaults to None.
-        data_preprocessor (_type_, optional): _description_. Defaults to None.
+        data_preprocessor (dict, optional): Placeholder for data_preprocessor.
+            Defaults to None.
 
     Returns:
         nn.Module: a static model.
