@@ -4,6 +4,7 @@ from .activation_layer_counter import (ELUCounter, LeakyReLUCounter,
 from .base_counter import BaseCounter
 from .conv_layer_counter import Conv1dCounter, Conv2dCounter, Conv3dCounter
 from .deconv_layer_counter import ConvTranspose2dCounter
+from .dynamic_op_counters import DynamicConv2dCounter, DynamicLinearCounter
 from .linear_layer_counter import LinearCounter
 from .norm_layer_counter import (BatchNorm1dCounter, BatchNorm2dCounter,
                                  BatchNorm3dCounter, GroupNormCounter,
@@ -18,5 +19,6 @@ __all__ = [
     'BatchNorm3dCounter', 'Conv1dCounter', 'Conv2dCounter', 'Conv3dCounter',
     'ConvTranspose2dCounter', 'UpsampleCounter', 'LinearCounter',
     'GroupNormCounter', 'InstanceNorm1dCounter', 'InstanceNorm2dCounter',
-    'InstanceNorm3dCounter', 'LayerNormCounter', 'BaseCounter'
+    'InstanceNorm3dCounter', 'LayerNormCounter', 'BaseCounter',
+    'DynamicConv2dCounter', 'DynamicLinearCounter'
 ]
