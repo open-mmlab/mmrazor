@@ -83,8 +83,16 @@ class GroupFisherConv2d(DynamicConv2d, GroupFisherMixin):
             _, _, h, w = shape
             in_c = int(self.mutable_attrs['in_channels'].current_mask.float().
                        sum().item())
-            delta_flop = h * w * self.kernel_size[0] * self.kernel_size[
-                1] * in_c
+            # normal conv
+            if self.groups == 1:
+                delta_flop = h * w * self.kernel_size[0] * self.kernel_size[
+                    1] * in_c
+            # dwconv
+            elif self.groups == self.in_channels == self.out_channels:
+                delta_flop = h * w * self.kernel_size[0] * self.kernel_size[1]
+            # groupwise conv
+            else:
+                raise NotImplementedError()
             delta_flop_sum += delta_flop
         return delta_flop_sum
 
@@ -94,8 +102,16 @@ class GroupFisherConv2d(DynamicConv2d, GroupFisherMixin):
         delta_flop_sum = 0
         for shape in self.recorded_out_shape:
             _, out_c, h, w = shape
-            delta_flop = out_c * h * w * self.kernel_size[
-                0] * self.kernel_size[1]
+            # normal conv
+            if self.groups == 1:
+                delta_flop = h * w * self.kernel_size[0] * self.kernel_size[
+                    1] * out_c
+            # dwconv
+            elif self.groups == self.in_channels == self.out_channels:
+                delta_flop = h * w * self.kernel_size[0] * self.kernel_size[1]
+            # groupwise conv
+            else:
+                raise NotImplementedError()
             delta_flop_sum += delta_flop
         return delta_flop_sum
 

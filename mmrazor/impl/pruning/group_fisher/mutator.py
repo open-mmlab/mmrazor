@@ -29,9 +29,7 @@ class GroupFisherChannelMutator(ChannelMutator[GroupFisherChannelUnit]):
     def __init__(self,
                  channel_unit_cfg: Union[dict,
                                          Type[GroupFisherChannelUnit]] = dict(
-                                             type='GroupFisherChannelUnit',
-                                             default_args=dict(
-                                                 choice_mode='ratio')),
+                                             type='GroupFisherChannelUnit'),
                  parse_cfg: Dict = dict(
                      type='ChannelAnalyzer',
                      demo_input=(1, 3, 224, 224),

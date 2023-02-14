@@ -624,7 +624,7 @@ class SelfAttention(nn.Module):
         return self.proj(y)
 
 
-def MMClsResNet18():
+def MMClsResNet18()  -> BaseModel:
     model_cfg = dict(
         _scope_='mmcls',
         type='ImageClassifier',
