@@ -14,7 +14,7 @@ def BaseSubModel(cfg: dict,
                  extra_prefix: str = '',
                  init_weight_from_supernet: bool = False,
                  init_cfg: Optional[Dict] = None):
-    """_summary_
+    """A basic submodel of a dynamic model.
 
     Args:
         cfg (dict): Model config.
@@ -28,7 +28,7 @@ def BaseSubModel(cfg: dict,
         init_cfg (Optional[Dict], optional): initial config. Defaults to None.
 
     Returns:
-        _type_: _description_
+        BaseModel: a BaseModel of mmengine
     """
     model = MODELS.build(cfg)
     # Save path type cfg process, set init_cfg directly.
@@ -62,6 +62,22 @@ def sub_model(cfg,
               extra_prefix: str = '',
               init_weight_from_supernet: bool = False,
               init_cfg: Optional[Dict] = None):
+    """A basic submodel of a dynamic model.
+
+    Args:
+        cfg (dict): Model config.
+        fix_subnet (Union[dict, str]): The subnet config.
+        mode (str, optional): Subnet mode. Defaults to 'mutable'.
+        prefix (str, optional): Prefix to load subnet. Defaults to ''.
+        extra_prefix (str, optional): Extra prefix to load subnet.
+            Defaults to ''.
+        init_weight_from_supernet (bool, optional): Whether to load weight
+            from the supernet. Defaults to False.
+        init_cfg (Optional[Dict], optional): initial config. Defaults to None.
+
+    Returns:
+        BaseModel: a BaseModel of mmengine
+    """
     print_log(
         'sub_model will be deprecated, please use BaseSubModel instead.',
         level='warning')
