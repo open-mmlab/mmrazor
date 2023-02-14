@@ -6,8 +6,9 @@ from mmengine.hooks import Hook
 from mmengine.runner import Runner, save_checkpoint
 from torch import distributed as torch_dist
 
-from mmrazor.models import BaseAlgorithm
-from mmrazor.models.mutators import ChannelMutator
+from mmrazor.models.algorithms import BaseAlgorithm
+from mmrazor.models.mutators.channel_mutator.channel_mutator import \
+    ChannelMutator
 from mmrazor.models.task_modules.demo_inputs import DefaultDemoInput
 from mmrazor.models.task_modules.estimators import ResourceEstimator
 from mmrazor.registry import HOOKS, TASK_UTILS

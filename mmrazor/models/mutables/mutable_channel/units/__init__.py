@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from mmrazor.impl.pruning.group_fisher.unit import GroupFisherChannelUnit
 from .dcff_channel_unit import DCFFChannelUnit
 from .l1_mutable_channel_unit import L1MutableChannelUnit
 from .mutable_channel_unit import ChannelUnitType, MutableChannelUnit
@@ -9,5 +10,6 @@ from .slimmable_channel_unit import SlimmableChannelUnit
 __all__ = [
     'L1MutableChannelUnit', 'MutableChannelUnit',
     'SequentialMutableChannelUnit', 'OneShotMutableChannelUnit',
-    'SlimmableChannelUnit', 'ChannelUnitType', 'DCFFChannelUnit'
+    'SlimmableChannelUnit', 'ChannelUnitType', 'DCFFChannelUnit',
+    'GroupFisherChannelUnit'
 ]

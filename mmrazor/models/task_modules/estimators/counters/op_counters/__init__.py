@@ -1,4 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from mmrazor.impl.pruning.group_fisher.counters import (
+    GroupFisherConv2dCounter, GroupFisherLinearCounter)
 from .activation_layer_counter import (ELUCounter, LeakyReLUCounter,
                                        PReLUCounter, ReLU6Counter, ReLUCounter)
 from .base_counter import BaseCounter
@@ -14,11 +16,28 @@ from .pooling_layer_counter import *  # noqa: F403, F405, F401
 from .upsample_layer_counter import UpsampleCounter
 
 __all__ = [
-    'ReLUCounter', 'PReLUCounter', 'ELUCounter', 'LeakyReLUCounter',
-    'ReLU6Counter', 'BatchNorm1dCounter', 'BatchNorm2dCounter',
-    'BatchNorm3dCounter', 'Conv1dCounter', 'Conv2dCounter', 'Conv3dCounter',
-    'ConvTranspose2dCounter', 'UpsampleCounter', 'LinearCounter',
-    'GroupNormCounter', 'InstanceNorm1dCounter', 'InstanceNorm2dCounter',
-    'InstanceNorm3dCounter', 'LayerNormCounter', 'BaseCounter',
-    'DynamicConv2dCounter', 'DynamicLinearCounter'
+    'ReLUCounter',
+    'PReLUCounter',
+    'ELUCounter',
+    'LeakyReLUCounter',
+    'ReLU6Counter',
+    'BatchNorm1dCounter',
+    'BatchNorm2dCounter',
+    'BatchNorm3dCounter',
+    'Conv1dCounter',
+    'Conv2dCounter',
+    'Conv3dCounter',
+    'ConvTranspose2dCounter',
+    'UpsampleCounter',
+    'LinearCounter',
+    'GroupNormCounter',
+    'InstanceNorm1dCounter',
+    'InstanceNorm2dCounter',
+    'InstanceNorm3dCounter',
+    'LayerNormCounter',
+    'BaseCounter',
+    'DynamicConv2dCounter',
+    'DynamicLinearCounter',
+    'GroupFisherConv2dCounter',
+    'GroupFisherLinearCounter',
 ]
