@@ -44,4 +44,6 @@ model = dict(
 default_hooks = _base_.default_hooks
 default_hooks['checkpoint'] = dict(type='CheckpointHook', interval=5)
 
+_base_.model_wrapper_cfg = None
+
 randomness = dict(seed=4872, diff_rank_seed=True)

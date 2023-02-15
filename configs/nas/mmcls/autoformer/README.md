@@ -44,8 +44,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
 ```bash
 CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
   configs/nas/mmcls/autoformer/autoformer_subnet_8xb128_in1k.py \
-  $STEP2_CKPT 1 --work-dir $WORK_DIR \
-  --cfg-options algorithm.mutable_cfg=$STEP2_SUBNET_YAML
+  $STEP2_CKPT 1 --work-dir $WORK_DIR
 ```
 
 ## Results and models

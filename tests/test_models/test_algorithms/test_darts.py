@@ -17,6 +17,7 @@ from torch.optim import SGD
 from mmrazor.models import Darts, DiffMutableOP, NasMutator
 from mmrazor.models.algorithms.nas.darts import DartsDDP
 from mmrazor.registry import MODELS
+from mmrazor.structures import load_fix_subnet
 
 MODELS.register_module(name='torchConv2d', module=nn.Conv2d, force=True)
 MODELS.register_module(name='torchMaxPool2d', module=nn.MaxPool2d, force=True)
@@ -103,8 +104,15 @@ class TestDarts(TestCase):
         algo = Darts(model, mutator)
         self.assertIsInstance(algo.mutator, NasMutator)
 
+        # test load fix_subnet
+        fix_subnet = {
+            'normal': {
+                'chosen': ['torch_conv2d_3x3', 'torch_conv2d_7x7']
+            }
+        }
+        load_fix_subnet(model, fix_subnet)
         algo = Darts(model, mutator)
-        self.assertEqual(algo.architecture.mutable.num_choices, 3)
+        self.assertEqual(algo.architecture.mutable.num_choices, 2)
 
         # initiate darts with error type `mutator`
         with self.assertRaisesRegex(TypeError, 'mutator should be'):
@@ -119,8 +127,14 @@ class TestDarts(TestCase):
         mutator.prepare_from_supernet(model)
         mutator.prepare_arch_params()
 
-        algo = Darts(model, mutator)
-        loss = algo(inputs, mode='loss')
+        # subnet
+        fix_subnet = fix_subnet = {
+            'normal': {
+                'chosen': ['torch_conv2d_3x3', 'torch_conv2d_7x7']
+            }
+        }
+        load_fix_subnet(model, fix_subnet)
+        loss = model(inputs, mode='loss')
         self.assertIsInstance(loss, dict)
 
     def _prepare_fake_data(self) -> Dict:

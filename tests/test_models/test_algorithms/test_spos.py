@@ -7,6 +7,7 @@ from mmengine.model import BaseModel
 
 from mmrazor.models import SPOS, NasMutator, OneShotMutableOP
 from mmrazor.registry import MODELS
+from mmrazor.structures import load_fix_subnet
 
 MUTATOR_CFG = dict(type='NasMutator')
 
@@ -57,6 +58,12 @@ class TestSPOS(TestCase):
         alg = SPOS(model, mutator)
         self.assertIsInstance(alg.mutator, NasMutator)
 
+        # test load fix_subnet
+        fix_subnet = {'mutable': {'chosen': 'conv1'}}
+        load_fix_subnet(model, fix_subnet)
+        algo = SPOS(model, mutator)
+        self.assertEqual(algo.architecture.mutable.num_choices, 1)
+
         # initiate spos with error type `mutator`.
         with self.assertRaisesRegex(TypeError, 'mutator should be'):
             SPOS(model, model)
@@ -69,4 +76,10 @@ class TestSPOS(TestCase):
         mutator = MODELS.build(MUTATOR_CFG)
         alg = SPOS(model, mutator)
         loss = alg(inputs, mode='loss')
+        self.assertIsInstance(loss, dict)
+
+        # subnet
+        fix_subnet = {'mutable': {'chosen': 'conv1'}}
+        load_fix_subnet(model, fix_subnet)
+        loss = model(inputs, mode='loss')
         self.assertIsInstance(loss, dict)
