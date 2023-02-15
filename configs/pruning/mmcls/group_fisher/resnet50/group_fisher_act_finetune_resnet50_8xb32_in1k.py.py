@@ -14,7 +14,7 @@ algorithm.init_cfg = dict(type='Pretrained', checkpoint=pruned_path)
 model = dict(
     _delete_=True,
     _scope_='mmrazor',
-    type='PruneSubModel',
+    type='GroupFisherSubModel',
     algorithm=algorithm,
 )
 
