@@ -4,7 +4,7 @@
 # You have to fill these args.
 _base_ = './group_fisher_flops_mobilenet-v2_8xb32_in1k.py'  # config to prune your model
 
-pruned_path = './work_dirs/group_fisher_flop_mobilenet-v2_8xb32_in1k.py/flops_0.65.pth'  # path of the checkpoint of the pruned model.
+pruned_path = './work_dirs/group_fisher_flop_mobilenet-v2_8xb32_in1k/flops_0.65.pth'  # path of the checkpoint of the pruned model.
 ##############################################################################
 # yapf: enable
 

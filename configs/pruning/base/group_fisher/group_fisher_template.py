@@ -5,15 +5,15 @@ import os
 #############################################################################
 # You have to fill these args.
 
-_base_ = os.environ['BaseConfig']  # config to pretrain your model
-pretrained_path = os.environ['PratrainedPath']  # path of pretrained model
+_base_ = 'path to the pretrain config'  # config to pretrain your model
+pretrained_path = 'path to the pretrained model.'  # path of pretrained model
 
-interval = int(os.environ.get('Interval', 10)) # interval between pruning two channels.
-prune_mode = os.environ.get('PruneMode', 'act') # prune mode, one of ['act' 'flops']
-lr_ratio = float(os.environ.get('LrRatio', 0.1))  # ratio to decrease lr rate to make training stable
+interval = 10 # interval between pruning two channels.
+prune_mode = 'act' # prune mode, one of ['act' 'flops']
+lr_ratio = 0.1  # ratio to decrease lr rate to make training stable
 
-target_flop_ratio=float(os.environ.get('TargetFlopRatio',0.5)) # the flop rato of target pruned model.
-input_shape = os.environ.get('InputShape', (1, 3, 224, 224))  # input shape
+target_flop_ratio = 0.5 # the flop rato of target pruned model.
+input_shape = (1,3,224,224)  # input shape
 ##############################################################################
 # yapf: enable
 
