@@ -66,6 +66,7 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
                      dict,
                      Type[MutableChannelUnit]] = SequentialMutableChannelUnit,
                  parse_cfg: Dict = dict(
+                     _scope_='mmrazor',
                      type='ChannelAnalyzer',
                      demo_input=(1, 3, 224, 224),
                      tracer_type='BackwardTracer'),

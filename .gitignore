@@ -121,3 +121,5 @@ venv.bak/
 # Srun
 *.out
 batchscript-*
+work_dir
+mmdeploy

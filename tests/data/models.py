@@ -78,6 +78,7 @@ class ModuleWithUntracableMethod(nn.Module):
             x = x * -2
         return x
 
+
 @MODELS.register_module()
 class UntracableBackBone(nn.Module):
 
@@ -106,7 +107,6 @@ class UntracableModel(nn.Module):
         return self.head(self.backbone(x))
 
 
-
 class ConvAttnModel(Module):
 
     def __init__(self) -> None:
@@ -122,6 +122,7 @@ class ConvAttnModel(Module):
         x_attn = x1 * attn
         x_last = self.conv2(x_attn)
         return self.head(x_last)
+
 
 @MODELS.register_module()
 class LinearHeadForTest(Module):
@@ -623,6 +624,27 @@ class SelfAttention(nn.Module):
         return self.proj(y)
 
 
+def MMClsResNet18():
+    model_cfg = dict(
+        _scope_='mmcls',
+        type='ImageClassifier',
+        backbone=dict(
+            type='ResNet',
+            depth=18,
+            num_stages=4,
+            out_indices=(3, ),
+            style='pytorch'),
+        neck=dict(type='GlobalAveragePooling'),
+        head=dict(
+            type='LinearClsHead',
+            num_classes=1000,
+            in_channels=512,
+            loss=dict(type='CrossEntropyLoss', loss_weight=1.0),
+            topk=(1, 5),
+        ))
+    return MODELS.build(model_cfg)
+
+
 # models with dynamicop
 
 
@@ -682,7 +704,7 @@ class SampleExpandDerivedMutable(BaseMutable):
     def current_choice(self, choice):
         super().current_choice(choice)
 
-    
+
 class DynamicLinearModel(nn.Module):
     """
         x
@@ -843,7 +865,7 @@ class DynamicMMBlock(nn.Module):
             [4, 6, 1],
             [4, 6, 1],
             [6, 6, 1],
-            [6, 6, 1]
+            [6, 6, 1],
         ],
         num_out_channels=[  # [min_channel, max_channel, step]
             [16, 24, 8],
@@ -852,11 +874,11 @@ class DynamicMMBlock(nn.Module):
             [64, 72, 8],
             [112, 128, 8],
             [192, 216, 8],
-            [216, 224, 8]
+            [216, 224, 8],
         ])
 
     def __init__(
-        self, 
+        self,
         conv_cfg: Dict = dict(type='mmrazor.BigNasConv2d'),
         norm_cfg: Dict = dict(type='mmrazor.DynamicBatchNorm2d'),
         fine_grained_mode: bool = False,
@@ -936,12 +958,11 @@ class DynamicMMBlock(nn.Module):
                               act_cfg=dict(type='Swish')))]))
         self.add_module('last_conv', last_layers)
         self.layers.append(last_layers)
-        
+
         self.register_mutables()
 
-    def _make_single_layer(self, out_channels, num_blocks,
-                           kernel_sizes, expand_ratios,
-                           act_cfg, stride, use_se):
+    def _make_single_layer(self, out_channels, num_blocks, kernel_sizes,
+                           expand_ratios, act_cfg, stride, use_se):
         _layers = []
         for i in range(max(num_blocks)):
             if i >= 1:
