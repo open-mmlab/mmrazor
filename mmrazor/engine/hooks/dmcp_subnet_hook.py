@@ -30,7 +30,6 @@ class DMCPSubnetHook(Hook):
             model,
             export_subnet_mode='mutator',
             slice_weight=True,
-            export_channel=True,
         )
         fix_subnet = json.dumps(fix_subnet, indent=4, separators=(',', ':'))
         with open(save_path, 'w') as file:

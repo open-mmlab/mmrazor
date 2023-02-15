@@ -281,10 +281,7 @@ class TestDCFFAlgorithm(unittest.TestCase):
         self.assertEqual(algorithm.step_freq, epoch_step * iter_per_epoch)
 
         fix_subnet, static_model = export_fix_subnet(
-            algorithm,
-            export_subnet_mode='mutator',
-            slice_weight=True,
-            export_channel=True)
+            algorithm, export_subnet_mode='mutator', slice_weight=True)
         fix_subnet = json.dumps(fix_subnet, indent=4, separators=(',', ':'))
         subnet_name = 'subnet.json'
         weight_name = 'subnet_weight.pth'

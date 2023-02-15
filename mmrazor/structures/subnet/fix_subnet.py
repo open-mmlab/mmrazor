@@ -137,6 +137,7 @@ def export_fix_subnet(
         slice_weight (bool): Export subnet weight. Default to False.
         export_channel (bool): Whether to export the mutator's channel.
             Often required when finetune is needed for the exported subnet.
+            Default to False.
 
     Return:
         fix_subnet (ValidFixMutable): Exported subnet choice config.

@@ -14,102 +14,6 @@
                     "min_value":1,
                     "min_ratio":0.9
                 },
-                "channels":{
-                    "input_related":[
-                        {
-                            "name":"backbone.bn1",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer1.0.conv1",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer1.0.bn2",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"bind_placeholder",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer1.1.conv1",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer1.1.bn2",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer2.0.conv1",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer2.0.downsample.0",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":false
-                        }
-                    ],
-                    "output_related":[
-                        {
-                            "name":"backbone.conv1",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.bn1",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer1.0.conv2",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer1.0.bn2",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"bind_placeholder",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer1.1.conv2",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer1.1.bn2",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":true
-                        }
-                    ]
-                },
                 "choice":1.0
             },
             "backbone.layer1.0.conv1_(0, 64)_64":{
@@ -119,36 +23,6 @@
                     "divisor":1,
                     "min_value":1,
                     "min_ratio":0.9
-                },
-                "channels":{
-                    "input_related":[
-                        {
-                            "name":"backbone.layer1.0.bn1",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer1.0.conv2",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":false
-                        }
-                    ],
-                    "output_related":[
-                        {
-                            "name":"backbone.layer1.0.conv1",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer1.0.bn1",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":true
-                        }
-                    ]
                 },
                 "choice":0.640625
             },
@@ -160,36 +34,6 @@
                     "min_value":1,
                     "min_ratio":0.9
                 },
-                "channels":{
-                    "input_related":[
-                        {
-                            "name":"backbone.layer1.1.bn1",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer1.1.conv2",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":false
-                        }
-                    ],
-                    "output_related":[
-                        {
-                            "name":"backbone.layer1.1.conv1",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer1.1.bn1",
-                            "start":0,
-                            "end":64,
-                            "is_output_channel":true
-                        }
-                    ]
-                },
                 "choice":0.640625
             },
             "backbone.layer2.0.conv1_(0, 128)_128":{
@@ -199,36 +43,6 @@
                     "divisor":1,
                     "min_value":1,
                     "min_ratio":0.9
-                },
-                "channels":{
-                    "input_related":[
-                        {
-                            "name":"backbone.layer2.0.bn1",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer2.0.conv2",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":false
-                        }
-                    ],
-                    "output_related":[
-                        {
-                            "name":"backbone.layer2.0.conv1",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer2.0.bn1",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":true
-                        }
-                    ]
                 },
                 "choice":0.6484375
             },
@@ -240,96 +54,6 @@
                     "min_value":1,
                     "min_ratio":0.9
                 },
-                "channels":{
-                    "input_related":[
-                        {
-                            "name":"backbone.layer2.0.bn2",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer2.0.downsample.1",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"bind_placeholder",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer2.1.conv1",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer2.1.bn2",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer3.0.conv1",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer3.0.downsample.0",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":false
-                        }
-                    ],
-                    "output_related":[
-                        {
-                            "name":"backbone.layer2.0.conv2",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer2.0.bn2",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer2.0.downsample.0",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer2.0.downsample.1",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"bind_placeholder",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer2.1.conv2",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer2.1.bn2",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":true
-                        }
-                    ]
-                },
                 "choice":0.59375
             },
             "backbone.layer2.1.conv1_(0, 128)_128":{
@@ -339,36 +63,6 @@
                     "divisor":1,
                     "min_value":1,
                     "min_ratio":0.9
-                },
-                "channels":{
-                    "input_related":[
-                        {
-                            "name":"backbone.layer2.1.bn1",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer2.1.conv2",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":false
-                        }
-                    ],
-                    "output_related":[
-                        {
-                            "name":"backbone.layer2.1.conv1",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer2.1.bn1",
-                            "start":0,
-                            "end":128,
-                            "is_output_channel":true
-                        }
-                    ]
                 },
                 "choice":0.6484375
             },
@@ -380,36 +74,6 @@
                     "min_value":1,
                     "min_ratio":0.9
                 },
-                "channels":{
-                    "input_related":[
-                        {
-                            "name":"backbone.layer3.0.bn1",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer3.0.conv2",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":false
-                        }
-                    ],
-                    "output_related":[
-                        {
-                            "name":"backbone.layer3.0.conv1",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer3.0.bn1",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":true
-                        }
-                    ]
-                },
                 "choice":0.6484375
             },
             "backbone.layer3.0.conv2_(0, 256)_256":{
@@ -419,96 +83,6 @@
                     "divisor":1,
                     "min_value":1,
                     "min_ratio":0.9
-                },
-                "channels":{
-                    "input_related":[
-                        {
-                            "name":"backbone.layer3.0.bn2",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer3.0.downsample.1",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"bind_placeholder",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer3.1.conv1",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer3.1.bn2",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer4.0.conv1",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer4.0.downsample.0",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":false
-                        }
-                    ],
-                    "output_related":[
-                        {
-                            "name":"backbone.layer3.0.conv2",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer3.0.bn2",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer3.0.downsample.0",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer3.0.downsample.1",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"bind_placeholder",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer3.1.conv2",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer3.1.bn2",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":true
-                        }
-                    ]
                 },
                 "choice":0.59765625
             },
@@ -520,36 +94,6 @@
                     "min_value":1,
                     "min_ratio":0.9
                 },
-                "channels":{
-                    "input_related":[
-                        {
-                            "name":"backbone.layer3.1.bn1",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer3.1.conv2",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":false
-                        }
-                    ],
-                    "output_related":[
-                        {
-                            "name":"backbone.layer3.1.conv1",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer3.1.bn1",
-                            "start":0,
-                            "end":256,
-                            "is_output_channel":true
-                        }
-                    ]
-                },
                 "choice":0.6484375
             },
             "backbone.layer4.0.conv1_(0, 512)_512":{
@@ -559,36 +103,6 @@
                     "divisor":1,
                     "min_value":1,
                     "min_ratio":0.9
-                },
-                "channels":{
-                    "input_related":[
-                        {
-                            "name":"backbone.layer4.0.bn1",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer4.0.conv2",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":false
-                        }
-                    ],
-                    "output_related":[
-                        {
-                            "name":"backbone.layer4.0.conv1",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer4.0.bn1",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":true
-                        }
-                    ]
                 },
                 "choice":0.69921875
             },
@@ -600,90 +114,6 @@
                     "min_value":1,
                     "min_ratio":0.9
                 },
-                "channels":{
-                    "input_related":[
-                        {
-                            "name":"backbone.layer4.0.bn2",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer4.0.downsample.1",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"bind_placeholder",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer4.1.conv1",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer4.1.bn2",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"head.fc",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":false
-                        }
-                    ],
-                    "output_related":[
-                        {
-                            "name":"backbone.layer4.0.conv2",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer4.0.bn2",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer4.0.downsample.0",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer4.0.downsample.1",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"bind_placeholder",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer4.1.conv2",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer4.1.bn2",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":true
-                        }
-                    ]
-                },
                 "choice":0.69921875
             },
             "backbone.layer4.1.conv1_(0, 512)_512":{
@@ -693,36 +123,6 @@
                     "divisor":1,
                     "min_value":1,
                     "min_ratio":0.9
-                },
-                "channels":{
-                    "input_related":[
-                        {
-                            "name":"backbone.layer4.1.bn1",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":false
-                        },
-                        {
-                            "name":"backbone.layer4.1.conv2",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":false
-                        }
-                    ],
-                    "output_related":[
-                        {
-                            "name":"backbone.layer4.1.conv1",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":true
-                        },
-                        {
-                            "name":"backbone.layer4.1.bn1",
-                            "start":0,
-                            "end":512,
-                            "is_output_channel":true
-                        }
-                    ]
                 },
                 "choice":0.69921875
             }

@@ -334,7 +334,6 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
             if 'init_args' in config[unit_key]:
                 init_args.update(config[unit_key]['init_args'])
             config[unit_key]['init_args'] = init_args
-            # config[unit_key].pop('channels')
             if 'channels' in config[unit_key]:
                 unit = self.unit_class.init_from_cfg(model, config[unit_key])
                 unit.name = unit_key
