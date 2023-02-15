@@ -1,10 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import json
 import types
-from typing import Dict, Optional
 
 import torch.nn as nn
-from mmengine import fileio
 from mmengine.model import BaseModel, BaseModule
 
 from mmrazor.registry import MODELS
@@ -57,7 +55,6 @@ def to_static_model(algorithm: BaseAlgorithm):
 def PruneSubModel(
     algorithm,
     divisor=1,
-    mutable_cfg: Optional[Dict] = None,
     data_preprocessor=None,
 ):
     """A sub model for pruning algorithm.
@@ -67,8 +64,6 @@ def PruneSubModel(
             finetune.
         divisor (int): The divisor to make the channel number
             divisible. Defaults to 1.
-        mutable_cfg (dict, str): the mutable choice config to change the
-            model structure. Defaults to None.
         data_preprocessor (dict, optional): Placeholder for data_preprocessor.
             Defaults to None.
 
@@ -84,12 +79,6 @@ def PruneSubModel(
     assert isinstance(algorithm, BaseAlgorithm)
     algorithm.init_weights()
     clean_params_init_info(algorithm)
-
-    if mutable_cfg is not None:
-        if isinstance(mutable_cfg, str):
-            mutable_cfg = fileio.load(mutable_cfg)
-        assert isinstance(mutable_cfg, dict)
-        algorithm.mutator.set_choices(mutable_cfg)
 
     print_log('PruneSubModel get pruning structure:')
     print_log(json.dumps(algorithm.mutator.choice_template, indent=4))
