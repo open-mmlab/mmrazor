@@ -8,27 +8,28 @@ from mmrazor.models.utils.expandable_utils import (
     expand_expandable_dynamic_model, make_channel_divisible,
     to_expandable_model)
 from mmrazor.models.utils.expandable_utils.ops import ExpandLinear
-from ....data.models import MultiConcatModel, SingleLineModel
+from ....data.models import DwConvModel, MultiConcatModel, SingleLineModel
 
 
 class TestExpand(unittest.TestCase):
 
     def test_expand(self):
-        x = torch.rand([1, 3, 224, 224])
-        model = MultiConcatModel()
-        print(model)
-        mutator = to_expandable_model(model)
-        print(mutator.choice_template)
-        print(model)
-        y1 = model(x)
+        for Model in [MultiConcatModel, DwConvModel]:
+            x = torch.rand([1, 3, 224, 224])
+            model = Model()
+            print(model)
+            mutator = to_expandable_model(model)
+            print(mutator.choice_template)
+            print(model)
+            y1 = model(x)
 
-        for unit in mutator.mutable_units:
-            unit.expand(10)
-            print(unit.mutable_channel.mask.shape)
-        expand_expandable_dynamic_model(model, zero=True)
-        print(model)
-        y2 = model(x)
-        self.assertTrue((y1 - y2).abs().max() < 1e-3)
+            for unit in mutator.mutable_units:
+                unit.expand(10)
+                print(unit.mutable_channel.mask.shape)
+            expand_expandable_dynamic_model(model, zero=True)
+            print(model)
+            y2 = model(x)
+            self.assertTrue((y1 - y2).abs().max() < 1e-3)
 
     def test_expand_static_model(self):
         x = torch.rand([1, 3, 224, 224])

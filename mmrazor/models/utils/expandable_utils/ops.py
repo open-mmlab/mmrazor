@@ -112,7 +112,7 @@ class ExpandableMixin:
 
     @torch.no_grad()
     def expand_vector(self, weight: torch.Tensor, old_weight: torch.Tensor):
-        """Expand weight vector."""
+        """Expand weight vector which has the shape of [out, c]."""
         assert len(weight.shape) == 2  # out c
         assert len(old_weight.shape) == 2  # out c
         mask = self.mutable_out_mask
@@ -140,6 +140,16 @@ class ExpandableConv2d(dynamic_ops.DynamicConv2d, ExpandableMixin):
         return self.out_channels
 
     def get_expand_op(self, in_c, out_c, zero=False):
+
+        if self.groups == 1:
+            return self._get_expand_op_normal_conv(in_c, out_c, zero=zero)
+        elif self.in_channels == self.out_channels == self.groups:
+            return self._get_expand_op_dw_conv(in_c, out_c, zero=zero)
+        else:
+            raise NotImplementedError('Groupwise conv is not supported yet.')
+
+    def _get_expand_op_normal_conv(self, in_c, out_c, zero=False):
+
         module = nn.Conv2d(in_c, out_c, self.kernel_size, self.stride,
                            self.padding, self.dilation, self.groups, self.bias
                            is not None, self.padding_mode)
@@ -148,6 +158,23 @@ class ExpandableConv2d(dynamic_ops.DynamicConv2d, ExpandableMixin):
 
         weight = self.expand_matrix(
             module.weight.flatten(2), self.weight.flatten(2))
+        module.weight.data = weight.reshape(module.weight.shape)
+        if module.bias is not None and self.bias is not None:
+            bias = self.expand_vector(
+                module.bias.unsqueeze(-1), self.bias.unsqueeze(-1))
+            module.bias.data = bias.reshape(module.bias.shape)
+        return module
+
+    def _get_expand_op_dw_conv(self, in_c, out_c, zero=False):
+        assert in_c == out_c
+        module = nn.Conv2d(in_c, out_c, self.kernel_size, self.stride,
+                           self.padding, self.dilation, in_c, self.bias
+                           is not None, self.padding_mode)
+        if zero:
+            ExpandableMixin.zero_weight_(module)
+
+        weight = self.expand_vector(
+            module.weight.flatten(1), self.weight.flatten(1))
         module.weight.data = weight.reshape(module.weight.shape)
         if module.bias is not None and self.bias is not None:
             bias = self.expand_vector(
