@@ -100,12 +100,16 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
         """
         self._name2module = dict(supernet.named_modules())
 
-        if self.parse_cfg['type'] == 'Config' or 'from_cfg' in self.parse_cfg:
+        if isinstance(self.parse_cfg,
+                      ChannelAnalyzer) or 'Analyzer' in self.parse_cfg['type']:
+            if isinstance(self.parse_cfg,
+                          dict) and 'from_cfg' in self.parse_cfg:
+                units = self._prepare_from_cfg(supernet, self.units_cfg)
+            else:
+                units = self._prepare_from_tracer(supernet, self.parse_cfg)
+        elif self.parse_cfg['type'] == 'Config' \
+                or 'from_cfg' in self.parse_cfg:
             units = self._prepare_from_cfg(supernet, self.units_cfg)
-        elif isinstance(
-                self.parse_cfg,
-                ChannelAnalyzer) or 'Analyzer' in self.parse_cfg['type']:
-            units = self._prepare_from_tracer(supernet, self.parse_cfg)
         elif self.parse_cfg['type'] == 'Predefined':
             units = self._prepare_from_predefined_model(supernet)
         else:
