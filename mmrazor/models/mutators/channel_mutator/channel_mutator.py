@@ -340,20 +340,21 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
             else:
                 try:
                     unit = self._prepare_unit_from_init_cfg(
-                        model, unit_configs[unit_key])
+                        model, config[unit_key], unit_configs[unit_key])
                 except ValueError:
                     raise ValueError(
-                        'Initializing channel_mutator from the config needs to'
-                        'include `channels` or `Analyzer` in the config.')
+                        'Initializing channel_mutator from the config needs'
+                        'to include `channels` or `Analyzer` in the config.')
             units.append(unit)
         return units
 
-    def _prepare_unit_from_init_cfg(self, model: Module, init_cfg: dict):
+    def _prepare_unit_from_init_cfg(self, model: Module, channel_cfg: dict,
+                                    init_cfg: dict):
         """Initialize units using the init_cfg, which created by tracer."""
         unit = ChannelUnit.init_from_cfg(model, init_cfg)
         unit = self._convert_channel_unit_to_mutable([unit])[0]
-        if 'choice' in init_cfg:
-            unit.current_choice = init_cfg['choice']
+        if 'choice' in channel_cfg:
+            unit.current_choice = channel_cfg['choice']
         return unit
 
     def _prepare_from_predefined_model(self, model: Module):
