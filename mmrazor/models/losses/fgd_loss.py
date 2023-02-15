@@ -52,7 +52,7 @@ class FGDLoss(nn.Module):
 
         self.reset_parameters()
 
-    def forward(self, preds_S, preds_T):
+    def forward(self, preds_S, preds_T, gt_info, batch_img_metas):
         """Forward function.
 
         Args:
@@ -62,9 +62,10 @@ class FGDLoss(nn.Module):
         assert preds_S.shape[-2:] == preds_T.shape[-2:]
         N, C, H, W = preds_S.shape
         # Bs*[nt*4], (tl_x, tl_y, br_x, br_y)
-        gt_bboxes = self.current_data['gt_bboxes']
+        # gt_bboxes = self.current_data['gt_bboxes']
         # Meta information of each image, e.g., image size, scaling factor.
-        metas = self.current_data['img_metas']  # list[dict]
+        # metas = self.current_data['img_metas']  # list[dict]
+        gt_bboxes = gt_info[:, :, 1:]  # xyxy
 
         spatial_attention_t, channel_attention_t = self.get_attention(
             preds_T, self.temp)
@@ -76,10 +77,14 @@ class FGDLoss(nn.Module):
         wmin, wmax, hmin, hmax = [], [], [], []
         for i in range(N):
             new_boxx = torch.ones_like(gt_bboxes[i])
-            new_boxx[:, 0] = gt_bboxes[i][:, 0] / metas[i]['img_shape'][1] * W
-            new_boxx[:, 2] = gt_bboxes[i][:, 2] / metas[i]['img_shape'][1] * W
-            new_boxx[:, 1] = gt_bboxes[i][:, 1] / metas[i]['img_shape'][0] * H
-            new_boxx[:, 3] = gt_bboxes[i][:, 3] / metas[i]['img_shape'][0] * H
+            new_boxx[:, 0] = gt_bboxes[i][:, 0] / batch_img_metas[i][
+                'batch_input_shape'][1] * W
+            new_boxx[:, 2] = gt_bboxes[i][:, 2] / batch_img_metas[i][
+                'batch_input_shape'][1] * W
+            new_boxx[:, 1] = gt_bboxes[i][:, 1] / batch_img_metas[i][
+                'batch_input_shape'][0] * H
+            new_boxx[:, 3] = gt_bboxes[i][:, 3] / batch_img_metas[i][
+                'batch_input_shape'][0] * H
 
             wmin.append(torch.floor(new_boxx[:, 0]).int())
             wmax.append(torch.ceil(new_boxx[:, 2]).int())

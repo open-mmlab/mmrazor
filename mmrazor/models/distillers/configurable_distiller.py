@@ -3,6 +3,7 @@ import warnings
 from inspect import signature
 from typing import Dict, List, Optional, Union
 
+import torch
 from mmengine.model import BaseModel
 from torch import nn
 
@@ -213,12 +214,20 @@ class ConfigurableDistiller(BaseDistiller):
         losses = dict()
         for loss_name, forward_mappings in self.loss_forward_mappings.items():
             forward_kwargs = dict()
+            is_empty = False
             for forward_key, record in forward_mappings.items():
-                forward_var = self.get_record(**record)
+                try:
+                    forward_var = self.get_record(**record)
+                except AssertionError:
+                    is_empty = True
+                    break
                 forward_kwargs[forward_key] = forward_var
 
             loss_module = self.distill_losses[loss_name]
-            loss = loss_module(**forward_kwargs)  # type: ignore
+            if not is_empty:
+                loss = loss_module(**forward_kwargs)  # type: ignore
+            else:
+                loss = torch.tensor(0.)
             # add computed loss result.
             losses[loss_name] = loss
 
