@@ -19,7 +19,7 @@ model = dict(
         parse_cfg=dict(type='ChannelAnalyzer', tracer_type='FxTracer'),
         channel_unit_cfg=dict(
             type='GroupFisherChannelUnit',
-            default_args=dict(detla_type='flop', ),
+            default_args=dict(normalization_type='flop', ),
         ),
     ),
 )
@@ -101,7 +101,7 @@ model = dict(
         parse_cfg=dict(type='ChannelAnalyzer', tracer_type='FxTracer'),
         channel_unit_cfg=dict(
             type='GroupFisherChannelUnit',
-            default_args=dict(detla_type=prune_mode, ),
+            default_args=dict(normalization_type=prune_mode, ),
         ),
     ),
 )

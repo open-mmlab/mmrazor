@@ -23,14 +23,14 @@ class GroupFisherChannelUnit(L1MutableChannelUnit):
 
     Args:
         num_channels (int): Number of channels.
-        detla_type (str): Type of delta, which is one of 'flop', 'act' or
-            'none'. Defaults to 'flop'.
+        normalization_type (str): Type of normalization. It can be one of
+            ['flops','act','none',]. Defaults to 'flop'.
         mutate_linear (bool): Whether to prune linear layers.
     """
 
     def __init__(self,
                  num_channels: int,
-                 detla_type: str = 'flop',
+                 normalization_type: str = 'flops',
                  mutate_linear=False,
                  *args) -> None:
         super().__init__(num_channels, *args)
@@ -39,8 +39,8 @@ class GroupFisherChannelUnit(L1MutableChannelUnit):
         self.normalized_fisher_info: torch.Tensor
 
         self.hook_handles: List = []
-        assert detla_type in ['flop', 'act', 'none']
-        self.delta_type = detla_type
+        assert normalization_type in ['flops', 'act', 'none']
+        self.delta_type = normalization_type
 
         self.mutate_linear = mutate_linear
 
@@ -197,7 +197,7 @@ class GroupFisherChannelUnit(L1MutableChannelUnit):
             delta_type (str): Type of delta. Defaults to 'flop'.
         """
         fisher = fisher_info.double()
-        if delta_type == 'flop':
+        if delta_type == 'flops':
             delta_flop = self._delta_flop_of_a_channel
             assert delta_flop > 0
             fisher = fisher / (float(delta_flop) / 1e9)
