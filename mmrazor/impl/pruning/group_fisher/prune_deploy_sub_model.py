@@ -40,7 +40,12 @@ def GroupFisherDeploySubModel(architecture,
     # to dynamic model
 
     mutator = ChannelMutator[ExpandableUnit](
-        channel_unit_cfg=SequentialMutableChannelUnit)
+        channel_unit_cfg=SequentialMutableChannelUnit,
+        parse_cfg=dict(
+            _scope_='mmrazor',
+            type='ChannelAnalyzer',
+            demo_input=(1, 3, 224, 224),
+            tracer_type='FxTracer'))
     mutator.prepare_from_supernet(architecture)
     if isinstance(mutable_cfg, str):
         mutable_cfg = fileio.load(mutable_cfg)

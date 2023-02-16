@@ -86,7 +86,7 @@ class DefaultMMDetDemoInput(DefaultMMDemoInput):
         """Helper for get_data, including core logic to generate demo input."""
         from mmdet.models import BaseDetector
         from mmdet.testing._utils import demo_mm_inputs
-        assert isinstance(model, BaseDetector)
+        assert isinstance(model, BaseDetector), f'{type(model)}'
 
         data = demo_mm_inputs(1, [input_shape[1:]], with_mask=True)
         data = model.data_preprocessor(data, training)
