@@ -190,6 +190,7 @@ class BigNASDDP(MMDistributedDataParallel):
             if os.environ.get('LOCAL_RANK') is not None:
                 device_ids = [int(os.environ['LOCAL_RANK'])]
         super().__init__(device_ids=device_ids, **kwargs)
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:

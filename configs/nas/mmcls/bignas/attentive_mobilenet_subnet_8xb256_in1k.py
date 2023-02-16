@@ -9,5 +9,7 @@ model_cfg = dict(
     fix_subnet='configs/nas/mmcls/bignas/ATTENTIVE_SUBNET_A6.yaml')
 
 _base_.model = model_cfg
+_base_.model_wrapper_cfg = None
+find_unused_parameters = True
 
 test_cfg = dict(evaluate_fixed_subnet=True)

@@ -34,4 +34,5 @@ model = dict(
     cfg=supernet,
     fix_subnet='configs/nas/mmcls/darts/DARTS_SUBNET_CIFAR_PAPER_ALIAS.yaml')
 
-find_unused_parameter = False
+_base_.model_wrapper_cfg = None
+find_unused_parameters = True

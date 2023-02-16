@@ -11,4 +11,6 @@ model_cfg = dict(
 
 _base_.model = model_cfg
 
+_base_.model_wrapper_cfg = None
+
 find_unused_parameters = False

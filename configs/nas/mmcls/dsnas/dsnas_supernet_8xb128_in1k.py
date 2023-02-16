@@ -8,6 +8,7 @@ _base_ = [
 model = dict(
     type='mmrazor.DSNAS',
     architecture=dict(
+        _scope_='mmcls',
         type='ImageClassifier',
         data_preprocessor=_base_.data_preprocessor,
         backbone=_base_.nas_backbone,
