@@ -10,11 +10,48 @@ Network compression has been widely studied since it is able to reduce the memor
 
 ## Results and models
 
-### Detection
+### Classification on ImageNet
 
-| Dataset | Detector  | Backbone | Baseline(mAP) | Pruned&Finetuned(mAP) |                                                                                    Model                                                                                     | log                        |
-| :-----: | :-------: | :------: | :-----------: | :-------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | -------------------------- |
-|  COCO   | RetinaNet | R-50-FPN |     36.5      |   36.5 (50% flops)    | [Baseline](https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_r50_fpn_1x_coco/retinanet_r50_fpn_1x_coco_20200130-c2398f9e.pth)/[Pruned](<>)/[Finetuned](<>) | [Prune](<>)/[Finetune](<>) |
+| Model                    | Top-1 | Gap   | Flop(G) | Remained | Parameters(M) | Remained | Config       | Download                 |
+| ------------------------ | ----- | ----- | ------- | -------- | ------------- | -------- | ------------ | ------------------------ |
+| ResNet50                 | 76.55 | -     | 4.11    | -        | 25.6          | -        | [mmcls](<>)  | [model](<>) \| [log](<>) |
+| ResNet50_pruned_act      | 75.22 | -1.33 | 2.06    | 50.1%    | 16.3          | 63.7%    | [config](<>) | [model](<>) \| [log](<>) |
+| ResNet50_pruned_flops    | 75.61 | -0.94 | 2.06    | 50.1%    | 16.3          | 63.7%    | [config](<>) | [model](<>) \| [log](<>) |
+| MobileNetV2              | 71.86 | -     | 0.313   | -        | 3.51          | -        | [config](<>) | [model](<>) \| [log](<>) |
+| MobileNetV2_pruned_act   | 70.82 | -1.04 | 0.207   | 66.1%    | 3.18          | 90.6%    | [config](<>) | [model](<>) \| [log](<>) |
+| MobileNetV2_pruned_flops | 70.87 | -0.99 | 0.207   | 66.1%    | 2.82          | 88.7%    | [config](<>) | [model](<>) \| [log](<>) |
+
+### Detection on COCO
+
+| Model(Detector-Backbone)       | AP   | Gap | Flop(G) | Pruned | Parameters | Pruned | Config      | Download                 |
+| ------------------------------ | ---- | --- | ------- | ------ | ---------- | ------ | ----------- | ------------------------ |
+| RetinaNet-R50-FPN              | 36.5 | -   | 250     | -      | 63.8       | -      | [mmcls](<>) | [model](<>) \| [log](<>) |
+| RetinaNet-R50-FPN_pruned_act   | 36.5 | -   | 126     | -      | 34.6       | -      | [mmcls](<>) | [model](<>) \| [log](<>) |
+| RetinaNet-R50-FPN_pruned_flops | 36.6 | -   | 126     | -      | 34.9       | -      | [mmcls](<>) | [model](<>) \| [log](<>) |
+
+## Get Started
+
+### Pruning
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 PORT=29500 ./tools/dist_train.sh \
+  configs/pruning/path to config/group_fisher_xxx_model_name.py 8 \
+  --work-dir $WORK_DIR
+```
+
+### Finetune
+
+Update the `pruned_path` to your local file path that saves the pruned checkpoint.
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 PORT=29500 ./tools/dist_train.sh \
+  configs/pruning/path to config/group_fisher_xxx_finetune_model_name.py.py 8 \
+  --work-dir $WORK_DIR
+```
+
+### Deploy
+
+TODO
 
 ## Citation
 
@@ -27,23 +64,3 @@ series = {Proceedings of Machine Learning Research},
 month = {18--24 Jul},
 publisher ={PMLR},
 }
-
-## Get Started
-
-### Pruning
-
-```bash
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 PORT=29500 ./tools/dist_train.sh \
-  configs/pruning/mmdet/group_fisher/group-fisher-pruning_retinanet_resnet50_8xb2_coco.py 8 \
-  --work-dir $WORK_DIR
-```
-
-### Finetune
-
-Update the `pruned_path` to your local file path that saves the pruned checkpoint.
-
-```bash
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 PORT=29500 ./tools/dist_train.sh \
-  configs/pruning/mmdet/group_fisher/group-fisher-finetune_retinanet_resnet50_8xb2_coco.py 8 \
-  --work-dir $WORK_DIR
-```
