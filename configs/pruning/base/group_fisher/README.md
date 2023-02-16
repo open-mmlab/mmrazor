@@ -89,7 +89,7 @@ First, we assume you are fimilar to mmdeploy. For a pruned model, you only need 
 
 ```bash
 python {mmdeploy}/tools/deploy.py \
-    {mmdeploy}/configs/mmcls/classification_onnxruntime_dynamic.py \
+    {mmdeploy}/{mmdeploy_config}.py \
     {config_folder}/group_fisher_{normalization_type}_deploy_{model_name}.py \
     {path_to_finetuned_checkpoint}.pth \
     {mmdeploy}/tests/data/tiger.jpeg
