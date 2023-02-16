@@ -1,23 +1,34 @@
-# yapf: disable
-# flake8: noqa
 #############################################################################
-# You have to fill these args.
+"""You have to fill these args.
 
-_base_ = 'mmdet::retinanet/retinanet_r50_fpn_1x_coco.py'  # config to pretrain your model
-pretrained_path = 'https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_r50_fpn_1x_coco/retinanet_r50_fpn_1x_coco_20200130-c2398f9e.pth'  # path of pretrained model
+_base_: (str): The path to your pretrained model checkpoint.
+pretrained_path (str): The path to your pretrained model checkpoint.
 
-interval = 10 # interval between pruning two channels.
-prune_mode = 'act' # prune mode, one of ['act' 'flops']
-lr_ratio = 0.1  # ratio to decrease lr rate to make training stable
+interval (int): Interval between pruning two channels. You should ensure you
+    can reach your target pruning ratio when the training ends.
+normalization_type (str): GroupFisher uses two methods to normlized the channel
+    importance, including ['flops','act']. The former uses flops, while the
+    latter uses the memory occupation of activation feature maps.
+lr_ratio (float): Ratio to decrease lr rate. As pruning progress is unstable,
+    you need to decrease the original lr rate until the pruning training work
+    steadly without getting nan.
 
-target_flop_ratio=0.5 # the flop rato of target pruned model.
-input_shape = (1,3,1333,800)  # input shape
+target_flop_ratio (float): The target flop ratio to prune your model.
+input_shape (Tuple): input shape to measure the flops.
+"""
+
+_base_ = 'mmdet::retinanet/retinanet_r50_fpn_1x_coco.py'
+pretrained_path = 'https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_r50_fpn_1x_coco/retinanet_r50_fpn_1x_coco_20200130-c2398f9e.pth'  # noqa
+
+interval = 10
+normalization_type = 'act'
+lr_ratio = 0.1
+
+target_flop_ratio = 0.5
+input_shape = (1, 3, 1333, 800)
 ##############################################################################
-# yapf: enable
 
 architecture = _base_.model
-
-architecture.backbone.frozen_stages = -1  # special for retinanet
 
 if hasattr(_base_, 'data_preprocessor'):
     architecture.update({'data_preprocessor': _base_.data_preprocessor})
@@ -37,7 +48,7 @@ model = dict(
         parse_cfg=dict(type='ChannelAnalyzer', tracer_type='FxTracer'),
         channel_unit_cfg=dict(
             type='GroupFisherChannelUnit',
-            default_args=dict(normalization_type=prune_mode, ),
+            default_args=dict(normalization_type=normalization_type, ),
         ),
     ),
 )

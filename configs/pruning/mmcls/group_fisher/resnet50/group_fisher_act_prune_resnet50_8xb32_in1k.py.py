@@ -1,85 +1,32 @@
-_base_ = 'mmcls::resnet/resnet50_8xb32_in1k.py'
-custom_imports = dict(imports=['projects'])
-architecture = _base_.model
-pretrained_path = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth'  # noqa
-architecture.init_cfg = dict(type='Pretrained', checkpoint=pretrained_path)
-architecture.update({
-    'data_preprocessor': _base_.data_preprocessor,
-})
-data_preprocessor = None
-
-model = dict(
-    _delete_=True,
-    _scope_='mmrazor',
-    type='GroupFisherAlgorithm',
-    architecture=architecture,
-    interval=25,
-    mutator=dict(
-        type='GroupFisherChannelMutator',
-        parse_cfg=dict(type='ChannelAnalyzer', tracer_type='FxTracer'),
-        channel_unit_cfg=dict(
-            type='GroupFisherChannelUnit',
-            default_args=dict(normalization_type='flop', ),
-        ),
-    ),
-)
-model_wrapper_cfg = dict(
-    type='mmrazor.GroupFisherDDP',
-    broadcast_buffers=False,
-)
-# update optimizer
-
-optim_wrapper = dict(optimizer=dict(lr=0.004, ))
-param_scheduler = None
-
-custom_hooks = [
-    dict(type='mmrazor.PruningStructureHook'),
-    dict(
-        type='mmrazor.ResourceInfoHook',
-        interval=25,
-        demo_input=dict(
-            type='mmrazor.DefaultDemoInput',
-            input_shape=[1, 3, 224, 224],
-        ),
-        save_ckpt_delta_thr=[0.75, 0.50],
-    ),
-]
-
-# original
-"""
-optim_wrapper = dict(
-    optimizer=dict(
-        type='SGD',
-        lr=0.1,
-        momentum=0.9,
-        weight_decay=0.0001,
-        _scope_='mmcls'))
-param_scheduler = dict(
-    type='MultiStepLR',
-    by_epoch=True,
-    milestones=[30, 60, 90],
-    gamma=0.1,
-    _scope_='mmcls')
-"""
-
-import os
-
-# yapf: disable
-# flake8: noqa
 #############################################################################
-# You have to fill these args.
+"""You have to fill these args.
 
-_base_ = 'mmcls::resnet/resnet50_8xb32_in1k.py'  # config to pretrain your model
-pretrained_path = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth' # path of pretrained model
+_base_: (str): The path to your pretrained model checkpoint.
+pretrained_path (str): The path to your pretrained model checkpoint.
 
-interval = 25 # interval between pruning two channels.
-prune_mode = 'act' # prune mode, one of ['act' 'flops']
-lr_ratio = 0.04  # ratio to decrease lr rate to make training stable
+interval (int): Interval between pruning two channels. You should ensure you
+    can reach your target pruning ratio when the training ends.
+normalization_type (str): GroupFisher uses two methods to normlized the channel
+    importance, including ['flops','act']. The former uses flops, while the
+    latter uses the memory occupation of activation feature maps.
+lr_ratio (float): Ratio to decrease lr rate. As pruning progress is unstable,
+    you need to decrease the original lr rate until the pruning training work
+    steadly without getting nan.
 
-target_flop_ratio = 0.5 # the flop rato of target pruned model.
-input_shape = [1,3,224,224]  # input shape
+target_flop_ratio (float): The target flop ratio to prune your model.
+input_shape (Tuple): input shape to measure the flops.
+"""
+
+_base_ = 'mmcls::resnet/resnet50_8xb32_in1k.py'
+pretrained_path = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth'  # noqa
+
+interval = 25
+normalization_type = 'act'
+lr_ratio = 0.04
+
+target_flop_ratio = 0.5
+input_shape = [1, 3, 224, 224]
 ##############################################################################
-# yapf: enable
 
 architecture = _base_.model
 
@@ -101,7 +48,7 @@ model = dict(
         parse_cfg=dict(type='ChannelAnalyzer', tracer_type='FxTracer'),
         channel_unit_cfg=dict(
             type='GroupFisherChannelUnit',
-            default_args=dict(normalization_type=prune_mode, ),
+            default_args=dict(normalization_type=normalization_type, ),
         ),
     ),
 )
