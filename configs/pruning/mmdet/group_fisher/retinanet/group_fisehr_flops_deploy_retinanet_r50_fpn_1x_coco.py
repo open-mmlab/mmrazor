@@ -2,13 +2,13 @@
 """You have to fill these args.
 
 _base_(str): The path to your pretrain config file.
-mutable_cfg (Union[dict,str]): The dict store the pruning structure or the
+fix_subnet (Union[dict,str]): The dict store the pruning structure or the
     json file including it.
 divisor (int): The divisor the make the channel number divisible.
 """
 
 _base_ = 'mmdet::retinanet/retinanet_r50_fpn_1x_coco.py'
-mutable_cfg = {
+fix_subnet = {
     'backbone.conv1_(0, 64)_64': 60,
     'backbone.layer1.0.conv1_(0, 64)_64': 47,
     'backbone.layer1.0.conv2_(0, 64)_64': 44,
@@ -68,6 +68,6 @@ model = dict(
     _scope_='mmrazor',
     type='GroupFisherDeploySubModel',
     architecture=architecture,
-    mutable_cfg=mutable_cfg,
+    fix_subnet=fix_subnet,
     divisor=divisor,
 )

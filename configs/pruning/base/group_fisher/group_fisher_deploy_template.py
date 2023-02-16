@@ -2,13 +2,13 @@
 """You have to fill these args.
 
 _base_(str): The path to your pretrain config file.
-mutable_cfg (Union[dict,str]): The dict store the pruning structure or the
+fix_subnet (Union[dict,str]): The dict store the pruning structure or the
     json file including it.
 divisor (int): The divisor the make the channel number divisible.
 """
 
 _base_ = ''
-mutable_cfg = {}
+fix_subnet = {}
 divisor = 8
 ##############################################################################
 
@@ -19,6 +19,6 @@ model = dict(
     _scope_='mmrazor',
     type='GroupFisherDeploySubModel',
     architecture=architecture,
-    mutable_cfg=mutable_cfg,
+    fix_subnet=fix_subnet,
     divisor=divisor,
 )

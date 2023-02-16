@@ -100,7 +100,7 @@ The deploy config has some args as below:
 ```python
 """
 _base_ (str): The path to your pretrain config file.
-mutable_cfg (Union[dict,str]): The dict store the pruning structure or the
+fix_subnet (Union[dict,str]): The dict store the pruning structure or the
     json file including it.
 divisor (int): The divisor the make the channel number divisible.
 """

@@ -13,14 +13,14 @@ from mmrazor.utils import print_log
 
 @MODELS.register_module()
 def GroupFisherDeploySubModel(architecture,
-                              mutable_cfg: Union[dict, str] = {},
+                              fix_subnet: Union[dict, str] = {},
                               divisor=1,
                               **kwargs):
     """A submodel to deploy a pruned model.
 
     Args:
         architecture (Union[nn.Module, dict]): the model to be pruned.
-        mutable_cfg (Union[dict, str]): the channel remaining ratio for each
+        fix_subnet (Union[dict, str]): the channel remaining ratio for each
             unit, or the path of a file including this info. Defaults to {}.
         divisor (int, optional): The divisor to make the channel number
             divisible. Defaults to 1.
@@ -47,10 +47,10 @@ def GroupFisherDeploySubModel(architecture,
             demo_input=(1, 3, 224, 224),
             tracer_type='FxTracer'))
     mutator.prepare_from_supernet(architecture)
-    if isinstance(mutable_cfg, str):
-        mutable_cfg = fileio.load(mutable_cfg)
-    assert isinstance(mutable_cfg, dict)
-    mutator.set_choices(mutable_cfg)
+    if isinstance(fix_subnet, str):
+        fix_subnet = fileio.load(fix_subnet)
+    assert isinstance(fix_subnet, dict)
+    mutator.set_choices(fix_subnet)
     print_log(json.dumps(mutator.current_choices, indent=4))
 
     fix_subnet = export_fix_subnet(architecture)[0]
