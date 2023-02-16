@@ -1,10 +1,12 @@
-# yapf: disable
-# flake8: noqa
 #############################################################################
-# You have to fill these args.
-_base_ = './group_fisehr_act_prune_retinanet_r50_fpn_1x_coco.py'  # config to prune your model
+"""# You have to fill these args.
 
-pruned_path = './work_dirs/group_fisehr_act_prune_retinanet_r50_fpn_1x_coco/flops_0.50.pth'  # path of the checkpoint of the pruned model.
+_base_ (str): The path to your pruning config file. pruned_path (str): The path
+to the checkpoint of the pruned model.
+"""
+
+_base_ = './group_fisehr_act_prune_retinanet_r50_fpn_1x_coco.py'
+pruned_path = './work_dirs/group_fisehr_act_prune_retinanet_r50_fpn_1x_coco/flops_0.50.pth'  # noqa
 ##############################################################################
 # yapf: enable
 

@@ -1,12 +1,13 @@
-# yapf: disable
-# flake8: noqa
 #############################################################################
-# You have to fill these args.
-_base_ = './group_fisher_act_prune_mobilenet-v2_8xb32_in1k.py'  # config to prune your model
+"""# You have to fill these args.
 
-pruned_path = './work_dirs/group_fisher_act_prune_mobilenet-v2_8xb32_in1k/flops_0.65.pth'  # path of the checkpoint of the pruned model.
+_base_ (str): The path to your pruning config file. pruned_path (str): The path
+to the checkpoint of the pruned model.
+"""
+
+_base_ = './group_fisher_act_prune_mobilenet-v2_8xb32_in1k.py'
+pruned_path = './work_dirs/group_fisher_act_prune_mobilenet-v2_8xb32_in1k/flops_0.65.pth'  # noqa
 ##############################################################################
-# yapf: enable
 
 algorithm = _base_.model
 algorithm.init_cfg = dict(type='Pretrained', checkpoint=pruned_path)
