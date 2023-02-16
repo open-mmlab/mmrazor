@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import copy
 import functools
 from types import FunctionType, ModuleType
 from typing import Callable
@@ -149,7 +150,7 @@ class MethodOutputsDelivery(DistillDelivery):
                 assert len(self.data_queue) < self.data_queue.maxlen,\
                     'push into an full queue'
                 outputs = origin_method(*args, **kwargs)
-                self.data_queue.append(outputs)
+                self.data_queue.append(copy.deepcopy(outputs))
             return outputs
 
         return wrap_method
