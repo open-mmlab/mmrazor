@@ -1,12 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from mmrazor.impl.pruning.group_fisher.counters import (
-    GroupFisherConv2dCounter, GroupFisherLinearCounter)
 from .activation_layer_counter import (ELUCounter, LeakyReLUCounter,
                                        PReLUCounter, ReLU6Counter, ReLUCounter)
 from .base_counter import BaseCounter
 from .conv_layer_counter import Conv1dCounter, Conv2dCounter, Conv3dCounter
 from .deconv_layer_counter import ConvTranspose2dCounter
-from .dynamic_op_counters import DynamicConv2dCounter, DynamicLinearCounter
 from .linear_layer_counter import LinearCounter
 from .norm_layer_counter import (BatchNorm1dCounter, BatchNorm2dCounter,
                                  BatchNorm3dCounter, GroupNormCounter,
@@ -36,8 +33,4 @@ __all__ = [
     'InstanceNorm3dCounter',
     'LayerNormCounter',
     'BaseCounter',
-    'DynamicConv2dCounter',
-    'DynamicLinearCounter',
-    'GroupFisherConv2dCounter',
-    'GroupFisherLinearCounter',
 ]

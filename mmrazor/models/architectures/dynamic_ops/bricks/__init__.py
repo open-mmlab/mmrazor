@@ -1,7 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-
-# isort:block
-
 from .dynamic_container import DynamicSequential
 from .dynamic_conv import (BigNasConv2d, DynamicConv2d,
                            DynamicConv2dAdaptivePadding, FuseConv2d, OFAConv2d)
@@ -15,11 +12,6 @@ from .dynamic_norm import (DynamicBatchNorm1d, DynamicBatchNorm2d,
                            SwitchableBatchNorm2d)
 from .dynamic_relative_position import DynamicRelativePosition2D
 
-# isort: split
-from mmrazor.impl.pruning.group_fisher.ops import (GroupFisherConv2d,
-                                                   GroupFisherLinear)
-
-# isort:block
 __all__ = [
     'BigNasConv2d',
     'DynamicConv2d',
@@ -39,6 +31,4 @@ __all__ = [
     'DynamicBatchNormXd',
     'DynamicInputResizer',
     'DynamicLayerNorm',
-    'GroupFisherConv2d',
-    'GroupFisherLinear',
 ]
