@@ -58,17 +58,20 @@ class GroupFisherAlgorithm(BaseAlgorithm):
 
     def train_step(self, data: Union[dict, tuple, list],
                    optim_wrapper) -> Dict[str, torch.Tensor]:
-        algorithm = self
-        algorithm.mutator.start_record_info()
+        return self._train_step(data, optim_wrapper)
+
+    def _train_step(self, data: Union[dict, tuple, list], optim_wrapper):
+        """Train step function for GroupFisherAlgorithm and GroupFisherDDP."""
+        self.mutator.start_record_info()
         res = super().train_step(data, optim_wrapper)
-        algorithm.mutator.end_record_info()
+        self.mutator.end_record_info()
 
-        algorithm.mutator.update_imp()
-        algorithm.mutator.reset_recorded_info()
+        self.mutator.update_imp()
+        self.mutator.reset_recorded_info()
 
-        if RuntimeInfo.iter() % algorithm.interval == 0:
-            algorithm.mutator.try_prune()
-            algorithm.mutator.reset_imp()
+        if RuntimeInfo.iter() % self.interval == 0:
+            self.mutator.try_prune()
+            self.mutator.reset_imp()
 
         return res
 
@@ -80,15 +83,4 @@ class GroupFisherDDP(MMDistributedDataParallel):
     def train_step(self, data: Union[dict, tuple, list],
                    optim_wrapper) -> Dict[str, torch.Tensor]:
         algorithm = self.module
-        algorithm.mutator.start_record_info()
-        res = super().train_step(data, optim_wrapper)
-        algorithm.mutator.end_record_info()
-
-        algorithm.mutator.update_imp()
-        algorithm.mutator.reset_recorded_info()
-
-        if RuntimeInfo.iter() % algorithm.interval == 0:
-            algorithm.mutator.try_prune()
-            algorithm.mutator.reset_imp()
-
-        return res
+        return GroupFisherAlgorithm._train_step(algorithm, data, optim_wrapper)
