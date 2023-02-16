@@ -1,7 +1,7 @@
 #############################################################################
 """You have to fill these args.
 
-_base_: (str): The path to your pretrained model checkpoint.
+_base_ (str): The path to your pretrained model checkpoint.
 pretrained_path (str): The path to your pretrained model checkpoint.
 
 interval (int): Interval between pruning two channels. You should ensure you
