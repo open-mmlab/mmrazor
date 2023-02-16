@@ -1,17 +1,22 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import math
 
-from mmengine import MessageHub
+from mmengine import Config, MessageHub
 
 
 class RuntimeInfo():
     """A tools to get runtime info in MessageHub."""
 
     @classmethod
-    def get_info(cls, key):
+    def info(cls):
         hub = MessageHub.get_current_instance()
-        if key in hub.runtime_info:
-            return hub.runtime_info[key]
+        return hub.runtime_info
+
+    @classmethod
+    def get_info(cls, key):
+        info = cls.info()
+        if key in info:
+            return info[key]
         else:
             raise KeyError(key)
 
@@ -40,3 +45,14 @@ class RuntimeInfo():
     def iter_pre_epoch(cls):
         iter_per_epoch = math.ceil(cls.max_iters() / cls.max_epochs())
         return iter_per_epoch
+
+    @classmethod
+    def config(cls):
+        cfg: str = cls.get_info('cfg')
+        config = Config.fromstring(cfg, '.py')
+        return config
+
+    @classmethod
+    def work_dir(cls):
+        config = cls.config()
+        return config['work_dir']
