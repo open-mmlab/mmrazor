@@ -1,9 +1,14 @@
-# yapf: disable
-# flake8: noqa
 #############################################################################
-# You have to fill these args.
-_base_ = 'mmdet::retinanet/retinanet_r50_fpn_1x_coco.py'  # config to prune your model
-mutable_cfg=  {
+"""You have to fill these args.
+
+_base_(str): The path to your pretrain config file.
+mutable_cfg (Union[dict,str]): The dict store the pruning structure or the
+    json file including it.
+divisor (int): The divisor the make the channel number divisible.
+"""
+
+_base_ = 'mmdet::retinanet/retinanet_r50_fpn_1x_coco.py'
+mutable_cfg = {
     'backbone.conv1_(0, 64)_64': 60,
     'backbone.layer1.0.conv1_(0, 64)_64': 47,
     'backbone.layer1.0.conv2_(0, 64)_64': 44,
@@ -51,14 +56,12 @@ mutable_cfg=  {
     'bbox_head.reg_convs.1.conv_(0, 256)_256': 89,
     'bbox_head.reg_convs.2.conv_(0, 256)_256': 76,
     'bbox_head.reg_convs.3.conv_(0, 256)_256': 122,
-} # config of the mutable channel unit.
-divisor=8 # the divisor the make the channel number divisible.
+}
+divisor = 8
 
 ##############################################################################
-# yapf: enable
 
 architecture = _base_.model
-# algorithm.init_cfg = dict(type='Pretrained', checkpoint=pruned_path)
 
 model = dict(
     _delete_=True,
@@ -66,4 +69,5 @@ model = dict(
     type='GroupFisherDeploySubModel',
     architecture=architecture,
     mutable_cfg=mutable_cfg,
+    divisor=divisor,
 )

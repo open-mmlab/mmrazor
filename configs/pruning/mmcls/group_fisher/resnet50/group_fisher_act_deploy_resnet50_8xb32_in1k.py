@@ -1,9 +1,14 @@
-# yapf: disable
-# flake8: noqa
 #############################################################################
-# You have to fill these args.
-_base_ = 'mmcls::resnet/resnet50_8xb32_in1k.py'  # config to prune your model
-mutable_cfg={
+"""You have to fill these args.
+
+_base_(str): The path to your pretrain config file.
+mutable_cfg (Union[dict,str]): The dict store the pruning structure or the
+    json file including it.
+divisor (int): The divisor the make the channel number divisible.
+"""
+
+_base_ = 'mmcls::resnet/resnet50_8xb32_in1k.py'
+mutable_cfg = {
     'backbone.conv1_(0, 64)_64': 61,
     'backbone.layer1.0.conv1_(0, 64)_64': 27,
     'backbone.layer1.0.conv2_(0, 64)_64': 35,
@@ -40,14 +45,11 @@ mutable_cfg={
     'backbone.layer4.1.conv2_(0, 512)_512': 348,
     'backbone.layer4.2.conv1_(0, 512)_512': 433,
     'backbone.layer4.2.conv2_(0, 512)_512': 384
-} # config of the mutable channel unit.
-divisor=8 # the divisor the make the channel number divisible.
-
+}
+divisor = 8
 ##############################################################################
-# yapf: enable
 
 architecture = _base_.model
-# algorithm.init_cfg = dict(type='Pretrained', checkpoint=pruned_path)
 
 model = dict(
     _delete_=True,
@@ -55,4 +57,5 @@ model = dict(
     type='GroupFisherDeploySubModel',
     architecture=architecture,
     mutable_cfg=mutable_cfg,
+    divisor=divisor,
 )
