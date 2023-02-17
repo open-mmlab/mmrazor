@@ -81,7 +81,17 @@ Below is an overview of MMRazor's design and implementation, please refer to [tu
 
 ## What's new
 
+### 💎 Stable version
+
 MMRazor v0.3.1 was released in 5/4/2022.
+
+### 🌟 Preview of 1.x version
+
+A brand new version of MMRazor v1.0.0rc1 was released in 27/10/2022.
+
+- Unifies interfaces of all components based on MMEngine.
+- A new pruning framework.
+- More distillation/Nas algorithms.
 
 ## Benchmark and model zoo
 
