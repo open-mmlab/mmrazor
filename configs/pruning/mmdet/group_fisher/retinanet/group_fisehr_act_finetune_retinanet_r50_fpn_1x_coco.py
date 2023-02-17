@@ -1,15 +1,16 @@
 #############################################################################
 """# You have to fill these args.
 
-_base_ (str): The path to your pruning config file. pruned_path (str): The path
-to the checkpoint of the pruned model.
+_base_(str): The path to your pruning config file.
+pruned_path (str): The path to the checkpoint of the pruned model.
+finetune_lr (float): The lr rate to finetune. Usually, we directly use the lr
+    rate of the pretrain.
 """
 
 _base_ = './group_fisehr_act_prune_retinanet_r50_fpn_1x_coco.py'
 pruned_path = './work_dirs/group_fisehr_act_prune_retinanet_r50_fpn_1x_coco/flops_0.50.pth'  # noqa
+finetune_lr = 0.005
 ##############################################################################
-# yapf: enable
-
 algorithm = _base_.model
 algorithm.init_cfg = dict(type='Pretrained', checkpoint=pruned_path)
 
@@ -21,7 +22,7 @@ model = dict(
 )
 
 # restore lr
-optim_wrapper = dict(optimizer=dict(lr=_base_._original_lr_))
+optim_wrapper = dict(optimizer=dict(lr=finetune_lr))
 
 # remove pruning related hooks
 custom_hooks = _base_.custom_hooks[:-2]

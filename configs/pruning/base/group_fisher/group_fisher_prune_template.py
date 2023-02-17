@@ -58,8 +58,8 @@ model_wrapper_cfg = dict(
     broadcast_buffers=False,
 )
 
-_original_lr_ = _base_.optim_wrapper.optimizer.lr
-optim_wrapper = dict(optimizer=dict(lr=_original_lr_ * lr_ratio))
+optim_wrapper = dict(
+    optimizer=dict(lr=_base_.optim_wrapper.optimizer.lr * lr_ratio))
 
 custom_hooks = getattr(_base_, 'custom_hooks', []) + [
     dict(type='mmrazor.PruningStructureHook'),
