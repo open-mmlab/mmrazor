@@ -85,6 +85,13 @@ finetune_lr (float): The lr rate to finetune. Usually, we directly use the lr
 
 After finetuning, except a checkpoint of the best model, there is also a fix_subnet.json, which records the pruned model structure. It will be used when deploying.
 
+### Test
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 PORT=29500 ./tools/dist_test.sh \
+   {config_folder}/group_fisher_{normalization_type}_finetune_{model_name}.py {checkpoint_path} 8
+```
+
 ### Deploy
 
 First, we assume you are fimilar to mmdeploy. For a pruned model, you only need to use the pruning deploy config to instead the pretrain config to deploy the pruned version of your model.
