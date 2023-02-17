@@ -32,7 +32,8 @@ class TestGroupFisherPruneAlgorithm(TestCase):
 
         MUTATOR_CONFIG = dict(
             type='GroupFisherChannelMutator',
-            parse_cfg=dict(type='ChannelAnalyzer', tracer_type='FxTracer'),
+            parse_cfg=dict(
+                type='ChannelAnalyzer', tracer_type='BackwardTracer'),
             channel_unit_cfg=dict(type='GroupFisherChannelUnit'))
 
         epoch = 2
