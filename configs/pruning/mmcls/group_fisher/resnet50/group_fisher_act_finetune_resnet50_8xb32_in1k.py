@@ -8,7 +8,7 @@ finetune_lr (float): The lr rate to finetune. Usually, we directly use the lr
 """
 
 _base_ = './group_fisher_act_prune_resnet50_8xb32_in1k.py'
-pruned_path = './work_dirs/group_fisher_act_prune_resnet50_8xb32_in1k/flops_0.50.pth'  # noqa
+pruned_path = 'SAVE.log/fg-resnet50/act/pruned/flops_0.50.pth'  # noqa
 finetune_lr = 0.1
 ##############################################################################
 algorithm = _base_.model

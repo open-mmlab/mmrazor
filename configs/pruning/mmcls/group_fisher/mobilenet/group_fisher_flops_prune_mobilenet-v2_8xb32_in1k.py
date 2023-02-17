@@ -1,4 +1,4 @@
-_base_ = './group_fisher_act_mobilenet-v2_8xb32_in1k.py'
+_base_ = './group_fisher_act_prune_mobilenet-v2_8xb32_in1k.py'
 model = dict(
     mutator=dict(
         channel_unit_cfg=dict(
