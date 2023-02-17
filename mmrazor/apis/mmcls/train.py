@@ -61,7 +61,7 @@ def train_mmcls_model(model,
     logger = get_root_logger()
     # Difference from mmclassification.
     # Split dataset.
-    if cfg.data.get('split', False):
+    if cfg.data.pop('split', False):
         train_dataset = dataset[0]
         dataset[0] = split_dataset(train_dataset)
 
