@@ -110,7 +110,22 @@ The divisor is important for the actual inference speed, and we suggest you to t
 
 ## Implementation
 
-TODO
+All the modules of GroupFisher is placesded in mmrazor/implementations/pruning/group_fisher/.
+
+| File                 | Module                                                               | Feature                                                                                 |
+| -------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| algorithm.py         | GroupFisherAlgorithm                                                 | Dicide when to prune a channel according to the interval and the current iteration.     |
+| mutator.py           | GroupFisherChannelMutator                                            | Select the unit with the channel of the minimal importance and to prune it.             |
+| unit.py              | GroupFisherChannelUnit                                               | Compute fisher info                                                                     |
+| ops.py <br> counters | GroupFisherConv2d <br> GroupFisherLinear <br> corresbonding counters | Collect model info to compute fisher info, including activation, grad and tensor shape. |
+
+There are also some modules to support GroupFisher. These modules may be refactored and moved to other folders as common modules for all pruning algorithms.
+
+| File                      | Module                                   | Feature                                                             |
+| ------------------------- | ---------------------------------------- | ------------------------------------------------------------------- |
+| hook.py                   | PruningStructureHook<br>ResourceInfoHook | Display pruning Structure iteratively.                              |
+| prune_sub_model.py        | GroupFisherSubModel                      | Convert a pruning algorithm(architecture) to a pruned static model. |
+| prune_deploy_sub_model.py | GroupFisherDeploySubModel                | Init a pruned static model for mmdeploy.                            |
 
 ## Citation
 
