@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import os
 from unittest import TestCase
 
 import torch
@@ -58,11 +57,6 @@ class TestGroupFisherPruneAlgorithm(TestCase):
                 module = channel.module
                 if isinstance(module, GroupFisherConv2d):
                     module.recorded_grad = module.recorded_input
-
-    def gen_fake_cfg(self, fake_cfg_path):
-        with open(fake_cfg_path, 'a', encoding='utf-8') as cfg:
-            cfg.write(f'work_dir = \'{os.path.dirname(__file__)}\'')
-            cfg.write('\n')
 
     def _set_epoch_ite(self, epoch, ite, max_epoch):
         iter_per_epoch = 10
