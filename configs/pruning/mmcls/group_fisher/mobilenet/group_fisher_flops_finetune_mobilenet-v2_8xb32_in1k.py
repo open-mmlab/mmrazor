@@ -8,7 +8,7 @@ finetune_lr (float): The lr rate to finetune. Usually, we directly use the lr
 """
 
 _base_ = './group_fisher_flops_prune_mobilenet-v2_8xb32_in1k.py'
-pruned_path = './work_dirs/group_fisher_flops_prune_mobilenet-v2_8xb32_in1k/flops_0.65.pth'  # noqa
+pruned_path = 'https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/mobilenet/flop/flops_0.65.pth'  # noqa
 finetune_lr = 0.045
 ##############################################################################
 

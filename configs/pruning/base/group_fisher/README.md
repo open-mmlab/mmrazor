@@ -12,22 +12,22 @@ Network compression has been widely studied since it is able to reduce the memor
 
 ### Classification on ImageNet
 
-| Model                    | Top-1 | Gap   | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config       | Download                 |
-| ------------------------ | ----- | ----- | ------- | --------- | ------------- | --------- | ------------ | ------------------------ |
-| ResNet50                 | 76.55 | -     | 4.11    | -         | 25.6          | -         | [mmcls](<>)  | [model](<>) \| [log](<>) |
-| ResNet50_pruned_act      | 75.22 | -1.33 | 2.06    | 50.1%     | 16.3          | 63.7%     | [config](<>) | [model](<>) \| [log](<>) |
-| ResNet50_pruned_flops    | 75.61 | -0.94 | 2.06    | 50.1%     | 16.3          | 63.7%     | [config](<>) | [model](<>) \| [log](<>) |
-| MobileNetV2              | 71.86 | -     | 0.313   | -         | 3.51          | -         | [config](<>) | [model](<>) \| [log](<>) |
-| MobileNetV2_pruned_act   | 70.82 | -1.04 | 0.207   | 66.1%     | 3.18          | 90.6%     | [config](<>) | [model](<>) \| [log](<>) |
-| MobileNetV2_pruned_flops | 70.87 | -0.99 | 0.207   | 66.1%     | 2.82          | 88.7%     | [config](<>) | [model](<>) \| [log](<>) |
+| Model                    | Top-1 | Gap   | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                | Download                                              |
+| ------------------------ | ----- | ----- | ------- | --------- | ------------- | --------- | ------------------------------------- | ----------------------------------------------------- |
+| ResNet50                 | 76.55 | -     | 4.11    | -         | 25.6          | -         | [mmcls][cls_r50_c]                    | [model][cls_r50_m]                                    |
+| ResNet50_pruned_act      | 75.22 | -1.33 | 2.06    | 50.1%     | 16.3          | 63.7%     | [prune][r_a_pc] \| [finetune][r_a_fc] | [pruned][r_a_p] \| [finetuned][r_a_f] \| [log][r_a_l] |
+| ResNet50_pruned_flops    | 75.61 | -0.94 | 2.06    | 50.1%     | 16.3          | 63.7%     | [prune][r_f_pc] \| [finetune][r_f_fc] | [pruned][r_f_p] \| [finetuned][r_f_f] \| [log][r_f_l] |
+| MobileNetV2              | 71.86 | -     | 0.313   | -         | 3.51          | -         | [mmcls][cls_m_c]                      | [model][cls_m_m]                                      |
+| MobileNetV2_pruned_act   | 70.82 | -1.04 | 0.207   | 66.1%     | 3.18          | 90.6%     | [prune][m_a_pc] \| [finetune][m_a_fc] | [pruned][m_a_p] \| [finetuned][m_a_f] \| [log][m_a_l] |
+| MobileNetV2_pruned_flops | 70.87 | -0.99 | 0.207   | 66.1%     | 2.82          | 88.7%     | [prune][m_f_pc] \| [finetune][m_f_fc] | [pruned][m_f_p] \| [finetuned][m_f_f] \| [log][m_f_l] |
 
 ### Detection on COCO
 
-| Model(Detector-Backbone)       | AP   | Gap | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config      | Download                 |
-| ------------------------------ | ---- | --- | ------- | --------- | ------------- | --------- | ----------- | ------------------------ |
-| RetinaNet-R50-FPN              | 36.5 | -   | 250     | -         | 63.8          | -         | [mmcls](<>) | [model](<>) \| [log](<>) |
-| RetinaNet-R50-FPN_pruned_act   | 36.5 | -   | 126     | 50.4%     | 34.6          | 54.2%     | [mmcls](<>) | [model](<>) \| [log](<>) |
-| RetinaNet-R50-FPN_pruned_flops | 36.6 | -   | 126     | 50.4%     | 34.9          | 54.7%     | [mmcls](<>) | [model](<>) \| [log](<>) |
+| Model(Detector-Backbone)       | AP   | Gap | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                  | Download                                                 |
+| ------------------------------ | ---- | --- | ------- | --------- | ------------- | --------- | --------------------------------------- | -------------------------------------------------------- |
+| RetinaNet-R50-FPN              | 36.5 | -   | 250     | -         | 63.8          | -         | [mmdet][det_rt_c]                       | [model][det_rt_m]                                        |
+| RetinaNet-R50-FPN_pruned_act   | 36.5 | -   | 126     | 50.4%     | 34.6          | 54.2%     | [prune][rt_a_pc] \| [finetune][rt_a_fc] | [pruned][rt_a_p] \| [finetuned][rt_a_f] \| [log][rt_a_l] |
+| RetinaNet-R50-FPN_pruned_flops | 36.6 | -   | 126     | 50.4%     | 34.9          | 54.7%     | [prune][rt_f_pc] \| [finetune][rt_f_fc] | [pruned][rt_f_p] \| [finetuned][rt_f_f] \| [log][rt_f_l] |
 
 ## Get Started
 
@@ -140,3 +140,50 @@ series = {Proceedings of Machine Learning Research},
 month = {18--24 Jul},
 publisher ={PMLR},
 }
+
+<!-- model links
+{model}_{prune_mode}_{file type}
+model: r: resnet50, m: mobilenetv2, rt:retinanet
+prune_mode: a: act, f: flops
+file_type: p: pruned model, f:finetuned_model, l: log, pc: prune config, fc: finetune config.
+
+repo link
+{repo}_{model}_{file type}
+ -->
+
+[cls_m_c]: https://github.com/open-mmlab/mmclassification/blob/dev-1.x/configs/mobilenet_v2/mobilenet-v2_8xb32_in1k.py
+[cls_m_m]: https://download.openmmlab.com/mmclassification/v0/mobilenet_v2/mobilenet_v2_batch256_imagenet_20200708-3b2dc3af.pth
+[cls_r50_c]: https://github.com/open-mmlab/mmclassification/blob/dev-1.x/configs/resnet/resnet50_8xb32_in1k.py
+[cls_r50_m]: https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth
+[det_rt_c]: https://github.com/open-mmlab/mmdetection/blob/dev-3.x/configs/retinanet/retinanet_r50_fpn_1x_coco.py
+[det_rt_m]: https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_r50_fpn_1x_coco/retinanet_r50_fpn_1x_coco_20200130-c2398f9e.pth
+[m_a_f]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/mobilenet/act/epoch_251.pth
+[m_a_fc]: ../../mmcls/group_fisher/mobilenet/group_fisher_act_finetune_mobilenet-v2_8xb32_in1k.py
+[m_a_l]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/mobilenet/act/20230130_203443.json
+[m_a_p]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/mobilenet/act/flops_0.65.pth
+[m_a_pc]: ../../mmcls/group_fisher/mobilenet/group_fisher_act_prune_mobilenet-v2_8xb32_in1k.py
+[m_f_f]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/mobilenet/flop/epoch_299.pth
+[m_f_fc]: ../../mmcls/group_fisher/mobilenet/group_fisher_flops_finetune_mobilenet-v2_8xb32_in1k.py
+[m_f_l]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/mobilenet/flop/20230201_211550.json
+[m_f_p]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/mobilenet/flop/flops_0.65.pth
+[m_f_pc]: ../../mmcls/group_fisher/mobilenet/group_fisher_flops_prune_mobilenet-v2_8xb32_in1k.py
+[rt_a_f]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/retinanet/act/epoch_12.pth
+[rt_a_fc]: ../../mmdet/group_fisher/retinanet/group_fisehr_act_finetune_retinanet_r50_fpn_1x_coco.py
+[rt_a_l]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/retinanet/act/20230113_231904.json
+[rt_a_p]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/retinanet/act/flops_0.50.pth
+[rt_a_pc]: ../../mmdet/group_fisher/retinanet/group_fisehr_act_prune_retinanet_r50_fpn_1x_coco.py
+[rt_f_f]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/retinanet/flops/epoch_12.pth
+[rt_f_fc]: ../../mmdet/group_fisher/retinanet/group_fisehr_flops_finetune_retinanet_r50_fpn_1x_coco.py
+[rt_f_l]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/retinanet/flops/20230129_101502.json
+[rt_f_p]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/retinanet/flops/flops_0.50.pth
+[rt_f_pc]: ../../mmdet/group_fisher/retinanet/group_fisehr_flops_prune_retinanet_r50_fpn_1x_coco.py
+[r_a_f]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/resnet50/act/epoch_100.pth
+[r_a_fc]: ../../mmcls/group_fisher/resnet50/group_fisher_act_finetune_resnet50_8xb32_in1k.py
+[r_a_l]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/resnet50/act/20230130_175426.json
+[r_a_p]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/resnet50/act/flops_0.50.pth
+[r_a_pc]: ../../mmcls/group_fisher/resnet50/group_fisher_act_prune_resnet50_8xb32_in1k.py
+[r_f_f]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/resnet50/flops/epoch_100.pth
+[r_f_fc]: ../../mmcls/group_fisher/resnet50/group_fisher_flops_finetune_resnet50_8xb32_in1k.py
+[r_f_l]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/resnet50/flops/20230129_190931.json
+[r_f_p]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/resnet50/flops/flops_0.50.pth
+[r_f_pc]: ../../mmcls/group_fisher/resnet50/group_fisher_flops_prune_resnet50_8xb32_in1k.py
