@@ -89,7 +89,7 @@ class FGDLoss(nn.Module):
 
             height = hmax[i].view(1, -1) + 1 - hmin[i].view(1, -1)
             width = wmax[i].view(1, -1) + 1 - wmin[i].view(1, -1)
-            area = 1.0 / height / width
+            area = 1.0 / height.float() / width.float()
 
             for j in range(len(gt_bboxes[i])):
                 mask_fg[i][hmin[i][j]:hmax[i][j]+1,
