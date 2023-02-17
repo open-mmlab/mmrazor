@@ -3,7 +3,8 @@ import unittest
 
 import torch
 
-from mmrazor.models.mutators.channel_mutator import GroupFisherChannelMutator
+from mmrazor.implementations.pruning.group_fisher import \
+    GroupFisherChannelMutator
 from ....data.models import MMClsResNet18
 
 

@@ -5,8 +5,8 @@ from unittest import TestCase
 
 from mmengine import fileio
 
-from mmrazor.impl.pruning.group_fisher.prune_deploy_sub_model import \
-    GroupFisherDeploySubModel
+from mmrazor.implementations.pruning.group_fisher.prune_deploy_sub_model import \
+    GroupFisherDeploySubModel  # noqa
 from ....data.models import MMClsResNet18
 from .test_prune_sub_model import PruneAlgorithm, get_model_structure
 

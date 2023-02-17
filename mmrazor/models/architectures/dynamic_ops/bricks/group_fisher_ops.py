@@ -3,6 +3,9 @@
 
 As it only records impl modules, it is not initialized automatically.
 """
-from mmrazor.impl.pruning.group_fisher import GroupFisherConv2d  # noqa
-from mmrazor.impl.pruning.group_fisher import GroupFisherLinear  # noqa
-from mmrazor.impl.pruning.group_fisher import GroupFisherMixin  # noqa
+from mmrazor.implementations.pruning.group_fisher import \
+    GroupFisherConv2d  # noqa
+from mmrazor.implementations.pruning.group_fisher import \
+    GroupFisherLinear  # noqa
+from mmrazor.implementations.pruning.group_fisher import \
+    GroupFisherMixin  # noqa

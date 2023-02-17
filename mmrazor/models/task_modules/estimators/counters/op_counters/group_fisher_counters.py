@@ -3,5 +3,5 @@
 
 As it only records impl modules, it is not initialized automatically.
 """
-from mmrazor.impl.pruning.group_fisher import (  # noqa
+from mmrazor.implementations.pruning.group_fisher import (  # noqa
     GroupFisherConv2dCounter, GroupFisherLinearCounter)

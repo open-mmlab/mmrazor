@@ -63,7 +63,7 @@ def register_all_modules(init_default_scope: bool = True) -> None:
 
     import mmrazor.datasets  # noqa: F401,F403
     import mmrazor.engine  # noqa: F401,F403
-    import mmrazor.impl  # noqa: F401,F403
+    import mmrazor.implementations  # noqa: F401,F403
     import mmrazor.models  # noqa: F401,F403
     import mmrazor.structures  # noqa: F401,F403
     if init_default_scope:

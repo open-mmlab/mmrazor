@@ -5,7 +5,7 @@ from unittest import TestCase
 
 import torch
 
-from mmrazor.impl.pruning.group_fisher.prune_sub_model import \
+from mmrazor.implementations.pruning.group_fisher.prune_sub_model import \
     GroupFisherSubModel
 from mmrazor.models import BaseAlgorithm
 from mmrazor.models.mutators import ChannelMutator
