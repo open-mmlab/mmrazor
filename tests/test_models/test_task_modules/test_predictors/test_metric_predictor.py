@@ -40,7 +40,7 @@ class TestMetricPredictorWithGP(TestCase):
 
     def setUp(self) -> None:
         self.temp_dir = tempfile.mkdtemp()
-        self.search_groups = {0: [MutableOP], 1: [MutableOP]}
+        self.search_groups = {0: [MutableOP]}
         self.candidates = [{0: 'conv1'}, {0: 'conv2'}, {0: 'conv3'}]
         predictor_cfg = dict(
             type='MetricPredictor',
@@ -80,7 +80,7 @@ class TestMetricPredictorWithCart(TestCase):
 
     def setUp(self) -> None:
         self.temp_dir = tempfile.mkdtemp()
-        self.search_groups = {0: [MutableOP], 1: [MutableOP]}
+        self.search_groups = {0: [MutableOP]}
         self.candidates = [{0: 'conv1'}, {0: 'conv2'}, {0: 'conv3'}]
         predictor_cfg = dict(
             type='MetricPredictor',
@@ -120,7 +120,7 @@ class TestMetricPredictorWithRBF(TestCase):
 
     def setUp(self) -> None:
         self.temp_dir = tempfile.mkdtemp()
-        self.search_groups = {0: [MutableOP], 1: [MutableOP]}
+        self.search_groups = {0: [MutableOP]}
         self.candidates = [{0: 'conv1'}, {0: 'conv2'}, {0: 'conv3'}]
         predictor_cfg = dict(
             type='MetricPredictor',
@@ -160,7 +160,7 @@ class TestMetricPredictorWithMLP(TestCase):
 
     def setUp(self) -> None:
         self.temp_dir = tempfile.mkdtemp()
-        self.search_groups = {0: [MutableOP], 1: [MutableOP]}
+        self.search_groups = {0: [MutableOP]}
         self.candidates = [{0: 'conv1'}, {0: 'conv2'}, {0: 'conv3'}]
         predictor_cfg = dict(
             type='MetricPredictor',
