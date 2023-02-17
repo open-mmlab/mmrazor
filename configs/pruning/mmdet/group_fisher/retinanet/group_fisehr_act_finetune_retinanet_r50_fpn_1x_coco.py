@@ -8,7 +8,7 @@ finetune_lr (float): The lr rate to finetune. Usually, we directly use the lr
 """
 
 _base_ = './group_fisehr_act_prune_retinanet_r50_fpn_1x_coco.py'
-pruned_path = 'https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/retinanet/act/flops_0.50.pth'  # noqa
+pruned_path = 'https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/retinanet/act/group_fisehr_act_prune_retinanet_r50_fpn_1x_coco.pth'  # noqa
 finetune_lr = 0.005
 ##############################################################################
 algorithm = _base_.model
