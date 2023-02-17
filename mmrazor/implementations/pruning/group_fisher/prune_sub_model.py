@@ -59,7 +59,8 @@ def GroupFisherSubModel(
     divisor=1,
     **kargs,
 ):
-    """A sub model for pruning algorithm.
+    """Convert a algorithm(with an architecture) to a static pruned
+    architecture.
 
     Args:
         algorithm (Union[BaseAlgorithm, dict]): The pruning algorithm to

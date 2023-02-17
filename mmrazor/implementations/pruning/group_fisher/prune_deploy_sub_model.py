@@ -16,7 +16,7 @@ def GroupFisherDeploySubModel(architecture,
                               fix_subnet: Union[dict, str] = {},
                               divisor=1,
                               **kwargs):
-    """A submodel to deploy a pruned model.
+    """Convert a architecture to a pruned static architecture for mmdeploy.
 
     Args:
         architecture (Union[nn.Module, dict]): the model to be pruned.
