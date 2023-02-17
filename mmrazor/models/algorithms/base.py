@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, OrderedDict, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -39,6 +39,8 @@ class BaseAlgorithm(BaseModel):
             config of :class:`BaseDataPreprocessor`. Defaults to None.
         init_cfg (dict): The weight initialized config for
             :class:`BaseModule`.
+        module_inplace(bool): Whether to allow module inplace attribute True.
+            Defaults to False.
 
     Note:
         If `data_preprocessor` is None, :obj:`BaseAlgorithm` will set
@@ -56,7 +58,8 @@ class BaseAlgorithm(BaseModel):
     def __init__(self,
                  architecture: Union[BaseModel, Dict],
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
-                 init_cfg: Optional[Dict] = None) -> None:
+                 init_cfg: Optional[Dict] = None,
+                 module_inplace: bool = False) -> None:
 
         # super().__init__() needs built data_preprocessor, so
         # build model first.
@@ -78,6 +81,13 @@ class BaseAlgorithm(BaseModel):
 
         # Cannot assign module before Module.__init__()
         self.architecture = architecture
+
+        # Find all nn.Modules in the model that contain the 'inplace' attribute
+        # and set them to False
+        self.module_inplace = module_inplace
+        if not self.module_inplace:
+            self.set_module_inplace_false(architecture, 'self.architecture')
+        pass
 
     def forward(self,
                 inputs: torch.Tensor,
@@ -162,3 +172,38 @@ class BaseAlgorithm(BaseModel):
         """Predict results from a batch of inputs and data samples with post-
         processing."""
         return self.architecture(inputs, data_samples, mode='predict')
+
+    def set_module_inplace_false(self, architecture: Union[OrderedDict,
+                                                           nn.Module],
+                                 varstr: str) -> None:
+        """Find all nn.Modules in the model that contain the 'inplace'
+        attribute and set them to False in order to prevent occur error in
+        Recorders using recursion algorithm.
+
+        This function will disassemble the Args architecture .If type
+        'nn.Module' is detected, determine if it contains an 'inplace'
+        attribute and set False if it does. If none, get the OrderedDict
+        and then iterate through the dictionary to continue the recursive
+        search.
+
+        Args:
+            architecture (OrderedDict | nn.Module): The config OrderedDict
+            for model or built model.
+            varstr (str): Records the call-level string containing the
+            'inplace' attribute.
+
+        Returns:
+            None
+        """
+
+        if isinstance(architecture, nn.Module):
+            if hasattr(eval(varstr), 'inplace'):
+                eval(varstr).inplace = False
+            else:
+                self.set_module_inplace_false(architecture._modules,
+                                              varstr + '._modules')
+        elif isinstance(architecture, OrderedDict):
+            for key, value in architecture.items():
+                self.set_module_inplace_false(value, varstr + f"['{key}']")
+        else:
+            return
