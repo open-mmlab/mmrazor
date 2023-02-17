@@ -140,7 +140,7 @@ class TestEvolutionSearchLoop(TestCase):
         self.runner.distributed = False
         self.runner.work_dir = self.temp_dir
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
-        loop.model.sample_subnet = MagicMock(return_value=fake_subnet)
+        loop.model.mutator.sample_choices = MagicMock(return_value=fake_subnet)
         mock_export_fix_subnet.return_value = (fake_subnet, self.runner.model)
         load_status.return_value = True
         flops_params.return_value = 0, 0
@@ -155,7 +155,8 @@ class TestEvolutionSearchLoop(TestCase):
         self.runner.distributed = True
         self.runner.work_dir = self.temp_dir
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
-        self.runner.model.sample_subnet = MagicMock(return_value=fake_subnet)
+        self.runner.model.mutator.sample_choices = MagicMock(
+            return_value=fake_subnet)
         loop.run_epoch()
         self.assertEqual(len(loop.candidates), 4)
         self.assertEqual(len(loop.top_k_candidates), 2)
@@ -168,7 +169,7 @@ class TestEvolutionSearchLoop(TestCase):
         self.runner.distributed = True
         self.runner.work_dir = self.temp_dir
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
-        loop.model.sample_subnet = MagicMock(return_value=fake_subnet)
+        loop.model.mutator.sample_choices = MagicMock(return_value=fake_subnet)
         flops_params.return_value = (50., 1)
         loop.run_epoch()
         self.assertEqual(len(loop.candidates), 4)
@@ -297,7 +298,7 @@ class TestEvolutionSearchLoopWithPredictor(TestCase):
         self.runner.distributed = False
         self.runner.work_dir = self.temp_dir
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
-        loop.model.sample_subnet = MagicMock(return_value=fake_subnet)
+        loop.model.mutator.sample_choices = MagicMock(return_value=fake_subnet)
         mock_export_fix_subnet.return_value = (fake_subnet, self.runner.model)
         load_status.return_value = True
         flops_params.return_value = 0, 0
@@ -312,7 +313,8 @@ class TestEvolutionSearchLoopWithPredictor(TestCase):
         self.runner.distributed = True
         self.runner.work_dir = self.temp_dir
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
-        self.runner.model.sample_subnet = MagicMock(return_value=fake_subnet)
+        self.runner.model.mutator.sample_choices = MagicMock(
+            return_value=fake_subnet)
         loop.run_epoch()
         self.assertEqual(len(loop.candidates), 4)
         self.assertEqual(len(loop.top_k_candidates), 2)
@@ -325,7 +327,7 @@ class TestEvolutionSearchLoopWithPredictor(TestCase):
         self.runner.distributed = True
         self.runner.work_dir = self.temp_dir
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
-        loop.model.sample_subnet = MagicMock(return_value=fake_subnet)
+        loop.model.mutator.sample_choices = MagicMock(return_value=fake_subnet)
         flops_params.return_value = (50., 1)
         loop.run_epoch()
         self.assertEqual(len(loop.candidates), 4)
@@ -349,7 +351,7 @@ class TestEvolutionSearchLoopWithPredictor(TestCase):
         loop._epoch = 1
 
         fake_subnet = {'1': 'choice1', '2': 'choice2'}
-        loop.model.sample_subnet = MagicMock(return_value=fake_subnet)
+        loop.model.mutator.sample_choices = MagicMock(return_value=fake_subnet)
         mock_export_fix_subnet.return_value = (fake_subnet, self.runner.model)
 
         self.runner.work_dir = self.temp_dir
