@@ -2,7 +2,6 @@
 from typing import Dict, List, Optional, Union
 
 from mmengine.evaluator import Evaluator
-from mmengine.hooks import CheckpointHook
 from mmengine.runner import ValLoop
 from torch.utils.data import DataLoader
 
@@ -52,12 +51,6 @@ class SubnetValLoop(ValLoop, CalibrateBNMixin):
         self.evaluate_fixed_subnet = evaluate_fixed_subnet
         self.calibrate_sample_num = calibrate_sample_num
         self.estimator = TASK_UTILS.build(estimator_cfg)
-
-        # remove CheckpointHook to avoid extra problems.
-        for hook in self.runner._hooks:
-            if isinstance(hook, CheckpointHook):
-                self.runner._hooks.remove(hook)
-                break
 
     def run(self):
         """Launch validation."""
