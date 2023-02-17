@@ -197,7 +197,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         init_candidates = len(self.candidates)
         if self.runner.rank == 0:
             while len(self.candidates) < self.num_candidates:
-                candidate = self.model.mutator.sample_choice()
+                candidate = self.model.mutator.sample_choices()
                 is_pass, result = self._check_constraints(
                     random_subnet=candidate)
                 if is_pass:
@@ -285,7 +285,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
     def _mutation(self) -> SupportRandomSubnet:
         """Mutate with the specified mutate_prob."""
         candidate1 = random.choice(self.top_k_candidates.subnets)
-        candidate2 = self.model.mutator.sample_choice()
+        candidate2 = self.model.mutator.sample_choices()
         candidate = crossover(candidate1, candidate2, prob=self.mutate_prob)
         return candidate
 
