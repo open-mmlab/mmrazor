@@ -15,6 +15,11 @@ from mmrazor.utils import print_log
 def GroupFisherDeploySubModel(architecture,
                               fix_subnet: Union[dict, str] = {},
                               divisor=1,
+                              parse_cfg=dict(
+                                  _scope_='mmrazor',
+                                  type='ChannelAnalyzer',
+                                  demo_input=(1, 3, 224, 224),
+                                  tracer_type='FxTracer'),
                               **kwargs):
     """Convert a architecture to a pruned static architecture for mmdeploy.
 
@@ -24,6 +29,7 @@ def GroupFisherDeploySubModel(architecture,
             unit, or the path of a file including this info. Defaults to {}.
         divisor (int, optional): The divisor to make the channel number
             divisible. Defaults to 1.
+        parse_cfg (dict, optional): The args for channel mutator.
     Returns:
         BaseModel: a BaseModel of mmengine.
     """
@@ -38,14 +44,9 @@ def GroupFisherDeploySubModel(architecture,
     assert isinstance(architecture, nn.Module)
 
     # to dynamic model
-
     mutator = ChannelMutator[ExpandableUnit](
-        channel_unit_cfg=SequentialMutableChannelUnit,
-        parse_cfg=dict(
-            _scope_='mmrazor',
-            type='ChannelAnalyzer',
-            demo_input=(1, 3, 224, 224),
-            tracer_type='FxTracer'))
+        channel_unit_cfg=SequentialMutableChannelUnit, parse_cfg=parse_cfg)
+
     mutator.prepare_from_supernet(architecture)
     if isinstance(fix_subnet, str):
         fix_subnet = fileio.load(fix_subnet)

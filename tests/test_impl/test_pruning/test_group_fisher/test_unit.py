@@ -12,7 +12,11 @@ class TestGroupFisherChannelUnit(unittest.TestCase):
 
     def test_init(self):
         model = MMClsResNet18()
-        mutator = GroupFisherChannelMutator()
+        mutator = GroupFisherChannelMutator(
+            parse_cfg=dict(
+                type='ChannelAnalyzer',
+                demo_input=(1, 3, 224, 224),
+                tracer_type='BackwardTracer'))
         mutator.prepare_from_supernet(model)
 
         x = torch.rand([1, 3, 224, 224])

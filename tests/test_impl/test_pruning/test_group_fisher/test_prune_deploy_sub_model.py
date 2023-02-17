@@ -16,6 +16,11 @@ class TestPruneDeploySubModel(TestCase):
     def test_build_sub_model(self):
         model = MMClsResNet18()
 
+        parse_cfg = dict(
+            _scope_='mmrazor',
+            type='ChannelAnalyzer',
+            demo_input=(1, 3, 224, 224),
+            tracer_type='BackwardTracer')
         # get structure
         algorithm = PruneAlgorithm(copy.deepcopy(model))
         algorithm.random_prune()
@@ -23,13 +28,13 @@ class TestPruneDeploySubModel(TestCase):
 
         # test divisor
         wrapper = GroupFisherDeploySubModel(
-            copy.deepcopy(model), strucutrue, divisor=1)
+            copy.deepcopy(model), strucutrue, divisor=1, parse_cfg=parse_cfg)
         self.assertSequenceEqual(
             list(strucutrue.values()),
             list(get_model_structure(wrapper).values()))
 
         wrapper = GroupFisherDeploySubModel(
-            copy.deepcopy(model), strucutrue, divisor=8)
+            copy.deepcopy(model), strucutrue, divisor=8, parse_cfg=parse_cfg)
         self.assertSequenceEqual(
             list(strucutrue.values()),
             list(get_model_structure(wrapper).values()))
@@ -37,5 +42,8 @@ class TestPruneDeploySubModel(TestCase):
         mutable_path = os.path.dirname(__file__) + '/mutable.json'
         fileio.dump(algorithm.mutator.current_choices, mutable_path)
         GroupFisherDeploySubModel(
-            copy.deepcopy(model), divisor=1, mutable_cfg=mutable_path)
+            copy.deepcopy(model),
+            divisor=1,
+            mutable_cfg=mutable_path,
+            parse_cfg=parse_cfg)
         os.remove(mutable_path)
