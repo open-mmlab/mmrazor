@@ -23,11 +23,11 @@ Network compression has been widely studied since it is able to reduce the memor
 
 ### Detection on COCO
 
-| Model(Detector-Backbone)       | AP   | Gap | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                  | Download                                                 |
-| ------------------------------ | ---- | --- | ------- | --------- | ------------- | --------- | --------------------------------------- | -------------------------------------------------------- |
-| RetinaNet-R50-FPN              | 36.5 | -   | 250     | -         | 63.8          | -         | [mmdet][det_rt_c]                       | [model][det_rt_m]                                        |
-| RetinaNet-R50-FPN_pruned_act   | 36.5 | -   | 126     | 50.4%     | 34.6          | 54.2%     | [prune][rt_a_pc] \| [finetune][rt_a_fc] | [pruned][rt_a_p] \| [finetuned][rt_a_f] \| [log][rt_a_l] |
-| RetinaNet-R50-FPN_pruned_flops | 36.6 | -   | 126     | 50.4%     | 34.9          | 54.7%     | [prune][rt_f_pc] \| [finetune][rt_f_fc] | [pruned][rt_f_p] \| [finetuned][rt_f_f] \| [log][rt_f_l] |
+| Model(Detector-Backbone)       | AP   | Gap  | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                  | Download                                                 |
+| ------------------------------ | ---- | ---- | ------- | --------- | ------------- | --------- | --------------------------------------- | -------------------------------------------------------- |
+| RetinaNet-R50-FPN              | 36.5 | -    | 250     | -         | 63.8          | -         | [mmdet][det_rt_c]                       | [model][det_rt_m]                                        |
+| RetinaNet-R50-FPN_pruned_act   | 36.5 | 0.0  | 126     | 50.4%     | 34.6          | 54.2%     | [prune][rt_a_pc] \| [finetune][rt_a_fc] | [pruned][rt_a_p] \| [finetuned][rt_a_f] \| [log][rt_a_l] |
+| RetinaNet-R50-FPN_pruned_flops | 36.6 | +0.1 | 126     | 50.4%     | 34.9          | 54.7%     | [prune][rt_f_pc] \| [finetune][rt_f_fc] | [pruned][rt_f_p] \| [finetuned][rt_f_f] \| [log][rt_f_l] |
 
 ## Get Started
 

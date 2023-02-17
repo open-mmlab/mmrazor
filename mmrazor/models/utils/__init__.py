@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from .build_functions import *  # noqa
 from .make_divisible import make_divisible
 from .misc import add_prefix
 from .optim_wrapper import reinitialize_optim_wrapper_count_status
