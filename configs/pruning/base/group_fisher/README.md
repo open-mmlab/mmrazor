@@ -29,7 +29,10 @@ Network compression has been widely studied since it is able to reduce the memor
 | RetinaNet-R50-FPN_pruned_act   | 36.5 | 0.0  | 126     | 50.4%     | 34.6          | 54.2%     | [prune][rt_a_pc] \| [finetune][rt_a_fc] | [pruned][rt_a_p] \| [finetuned][rt_a_f] \| [log][rt_a_l] |
 | RetinaNet-R50-FPN_pruned_flops | 36.6 | +0.1 | 126     | 50.4%     | 34.9          | 54.7%     | [prune][rt_f_pc] \| [finetune][rt_f_fc] | [pruned][rt_f_p] \| [finetuned][rt_f_f] \| [log][rt_f_l] |
 
-Note: We get different performance, as we use different training settings from the original paper.
+**Note**
+
+- Because the pruning papers use different pretraining and finetuning settings, It is hard to compare them fairly. As a result, we prefer to apply algorithms on the openmmlab settings.
+- This may make the experiment results are different from that in the original papers.
 
 ## Get Started
 
