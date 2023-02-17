@@ -6,14 +6,16 @@ import numpy as np
 from mmengine import fileio
 
 try:
-    from pymoo.algorithms.moo.nsga2 import NSGA2
-    from pymoo.algorithms.soo.nonconvex.ga import GA
+    from pymoo.algorithms.so_genetic_algorithm import GA
+    from pymoo.factory import get_algorithm, get_crossover, get_mutation
     from pymoo.optimize import minimize
     from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 except ImportError:
     from mmrazor.utils import get_placeholder
-    NSGA2 = get_placeholder('pymoo')
     GA = get_placeholder('pymoo')
+    get_algorithm = get_placeholder('pymoo')
+    get_crossover = get_placeholder('pymoo')
+    get_mutation = get_placeholder('pymoo')
     minimize = get_placeholder('pymoo')
     NonDominatedSorting = get_placeholder('pymoo')
 
@@ -22,6 +24,8 @@ from mmrazor.structures import Candidates
 from .attentive_search_loop import AttentiveSearchLoop
 from .utils.pymoo_utils import (AuxiliarySingleLevelProblem,
                                 HighTradeoffPoints, SubsetProblem)
+from .utils.pymoo_utils.problems import (BinaryCrossover, RandomMutation,
+                                         RandomSampling)
 
 
 @LOOPS.register_module()
@@ -46,6 +50,7 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
             for subnet, score, flops in zip(
                     self.candidates.subnets, self.candidates.scores,
                     self.candidates.resources('flops')):
+                self.update_candidates_scores()
                 if self.trade_off['max_score_key'] != 0:
                     score = self.trade_off['max_score_key'] - score
                 self.archive.append(subnet)
@@ -116,11 +121,13 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
         problem = AuxiliarySingleLevelProblem(self, len(fronts[0]))
 
         # initiate a multi-objective solver to optimize the problem
-        method = NSGA2(
-            pop_size=4,
-            sampling=fronts,  # initialize with current nd archs
-            eliminate_duplicates=True,
-            logger=self.runner.logger)
+        method = get_algorithm(
+            'nsga2',
+            pop_size=40,
+            sampling=fronts,
+            crossover=get_crossover('int_two_point', prob=0.9),
+            mutation=get_mutation('int_pm', eta=1.0),
+            eliminate_duplicates=True)
 
         result = minimize(problem, method, ('n_gen', 4), seed=1, verbose=True)
 
@@ -134,11 +141,16 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
         sub_problem = SubsetProblem(result.pop[not_duplicate].get('F')[:, 1],
                                     F[front_index, 1], num_candidates)
 
-        sub_method = GA(pop_size=num_candidates, eliminate_duplicates=True)
+        sub_method = GA(
+            pop_size=100,
+            sampling=RandomSampling(),
+            crossover=BinaryCrossover(),
+            mutation=RandomMutation(),
+            eliminate_duplicates=True)
 
         sub_result = minimize(
             sub_problem, sub_method, ('n_gen', 2), seed=1, verbose=False)
-        indices = sub_result.pop.get('X')
+        indices = sub_result.X
 
         _X = result.pop.get('X')[not_duplicate][indices]
 
@@ -155,7 +167,6 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
             '`self.trade_off` is required when sorting candidates in '
             'NSGA2SearchLoop. Got `self.trade_off` is None.')
 
-        ratio = self.trade_off.get('ratio', 1)
         max_score_key = self.trade_off.get('max_score_key', 100)
         max_score_key = np.array(max_score_key)
 
@@ -171,7 +182,7 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
         sort_idx = np.argsort(patches[:, 0])  # type: ignore
         F = patches[sort_idx]
 
-        dm = HighTradeoffPoints(ratio, n_survive=len(patches))
+        dm = HighTradeoffPoints(n_survive=len(patches))
         candidate_index = dm.do(F)
         candidate_index = sort_idx[candidate_index]
 
@@ -188,8 +199,13 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
             rmse, rho, tau = 0, 0, 0
             if len(self.archive) > 0:
                 top1_err_pred = self.fit_predictor(self.archive)
+
+                self.candidates = self.archive
+                self.use_predictor = False
+                self.update_candidates_scores()
+
                 rmse, rho, tau = self.predictor.get_correlation(
-                    top1_err_pred, np.array(self.archive.scores))
+                    top1_err_pred, np.array(self.candidates.scores))
 
             save_for_resume = dict()
             save_for_resume['_epoch'] = self._epoch
@@ -238,28 +254,11 @@ class NSGA2SearchLoop(AttentiveSearchLoop):
         metrics = []
         for i, candidate in enumerate(candidates.subnets):
             self.model.mutator.set_choices(candidate)
+            self.finetune_step(self.model)
             metric = self._val_candidate(use_predictor=True)
             metrics.append(metric[self.score_key])
 
         max_score_key = self.trade_off.get('max_score_key', 0.)
-        if max_score_key != 0:
-            for m in metrics:
-                m = max_score_key - m
+        assert max_score_key > 0.
+        metrics = max_score_key - np.array(metrics)
         return metrics
-
-    def finetune_step(self, model):
-        """Fintune before candidates evaluation."""
-        self.runner.logger.info('Start finetuning...')
-        self.finetune_runner.model = model
-        self.finetune_runner.call_hook('before_run')
-
-        self.finetune_runner.optim_wrapper.initialize_count_status(
-            self.finetune_runner.model, self.finetune_runner._train_loop.iter,
-            self.finetune_runner._train_loop.max_iters)
-
-        self.model = self.finetune_runner.train_loop.run()
-        self.finetune_runner.train_loop._iter = 0
-        self.finetune_runner.train_loop._epoch = 0
-
-        self.finetune_runner.call_hook('after_run')
-        self.runner.logger.info('End finetuning...')

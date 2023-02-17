@@ -1,14 +1,79 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
-from pymoo.core.problem import Problem
+
+try:
+    from pymoo.model.crossover import Crossover
+    from pymoo.model.mutation import Mutation
+    from pymoo.model.problem import Problem
+    from pymoo.model.sampling import Sampling
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    Crossover = get_placeholder('pymoo')
+    Mutation = get_placeholder('pymoo')
+    Problem = get_placeholder('pymoo')
+    Sampling = get_placeholder('pymoo')
+
+
+class RandomSampling(Sampling):
+
+    def _do(self, problem, n_samples, **kwargs):
+        X = np.full((n_samples, problem.n_var), False, dtype=np.bool)
+
+        for k in range(n_samples):
+            index = np.random.permutation(problem.n_var)[:problem.n_max]
+            X[k, index] = True
+
+        return X
+
+
+class BinaryCrossover(Crossover):
+
+    def __init__(self):
+        super().__init__(2, 1)
+
+    def _do(self, problem, X, **kwargs):
+        n_parents, n_matings, n_var = X.shape
+
+        _X = np.full((self.n_offsprings, n_matings, problem.n_var), False)
+
+        for k in range(n_matings):
+            p1, p2 = X[0, k], X[1, k]
+
+            both_are_true = np.logical_and(p1, p2)
+            _X[0, k, both_are_true] = True
+
+            n_remaining = problem.n_max - np.sum(both_are_true)
+
+            index = np.where(np.logical_xor(p1, p2))[0]
+
+            S = index[np.random.permutation(len(index))][:n_remaining]
+            _X[0, k, S] = True
+
+        return _X
+
+
+class RandomMutation(Mutation):
+
+    def _do(self, problem, X, **kwargs):
+        for i in range(X.shape[0]):
+            X[i, :] = X[i, :]
+            is_false = np.where(np.logical_not(X[i, :]))[0]
+            is_true = np.where(X[i, :])[0]
+            try:
+                X[i, np.random.choice(is_false)] = True
+                X[i, np.random.choice(is_true)] = False
+            except ValueError:
+                pass
+
+        return X
 
 
 class AuxiliarySingleLevelProblem(Problem):
     """The optimization problem for finding the next N candidate
     architectures."""
 
-    def __init__(self, search_loop, dim=15, sec_obj='flops'):
-        super().__init__(n_var=dim, n_obj=2, vtype=np.int32)
+    def __init__(self, search_loop, n_var=15, sec_obj='flops'):
+        super().__init__(n_var=n_var, n_obj=2, n_constr=0, type_var=np.int)
 
         self.search_loop = search_loop
         self.predictor = self.search_loop.predictor

@@ -138,6 +138,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                 self.model.mutator.search_groups
             self.predictor = TASK_UTILS.build(self.predictor_cfg)
 
+        self.finetune_cfg = finetune_cfg
         if finetune_cfg is not None:
             self.finetune_runner = self.build_finetune_runner(finetune_cfg)
 
@@ -205,7 +206,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         init_candidates = len(self.candidates)
         while len(self.candidates) < self.num_candidates:
             candidate = self.model.mutator.sample_choices()
-            self.finetune_step(self.model)
             is_pass, result = self._check_constraints(candidate)
             if is_pass:
                 self.candidates.append(candidate)
@@ -224,6 +224,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         top-k candicates."""
         for i, candidate in enumerate(self.candidates.subnets):
             self.model.mutator.set_choices(candidate)
+            if self.finetune_cfg:
+                self.finetune_step(self.model)
             metrics = self._val_candidate(use_predictor=self.use_predictor)
             score = round(metrics[self.score_key], 2) \
                 if len(metrics) != 0 else 0.
@@ -448,15 +450,6 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
 
         runner = Runner.from_cfg(finetune_cfg)
 
-        runner._train_loop = runner.build_train_loop(
-            runner._train_loop)  # type: ignore
-
-        runner.optim_wrapper = runner.build_optim_wrapper(runner.optim_wrapper)
-        runner.scale_lr(runner.optim_wrapper, runner.auto_scale_lr)
-
-        runner.param_schedulers = runner.build_param_scheduler(  # type: ignore
-            runner.param_schedulers)  # type: ignore
-
         from mmengine.hooks import CheckpointHook
 
         # remove CheckpointHook to avoid extra problems.
@@ -468,4 +461,35 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         return runner
 
     def finetune_step(self, model):
-        pass
+        """Fintune before candidates evaluation."""
+        self.finetune_runner._train_loop = \
+            self.finetune_runner.build_train_loop(
+                self.finetune_cfg.train_cfg)  # type: ignore
+
+        self.finetune_runner.optim_wrapper = \
+            self.finetune_runner.build_optim_wrapper(
+                self.finetune_cfg.optim_wrapper)
+
+        self.finetune_runner.scale_lr(self.finetune_runner.optim_wrapper,
+                                      self.finetune_runner.auto_scale_lr)
+
+        self.finetune_runner.param_schedulers = \
+            self.finetune_runner.build_param_scheduler(
+                self.finetune_cfg.param_scheduler)  # type: ignore
+
+        model.train()
+        self.runner.logger.info('Start finetuning...')
+        self.finetune_runner.model = model
+        self.finetune_runner.call_hook('before_run')
+
+        self.finetune_runner.optim_wrapper.initialize_count_status(
+            self.finetune_runner.model, self.finetune_runner._train_loop.iter,
+            self.finetune_runner._train_loop.max_iters)
+
+        self.model = self.finetune_runner.train_loop.run()
+        self.finetune_runner.train_loop._iter = 0
+        self.finetune_runner.train_loop._epoch = 0
+
+        self.finetune_runner.call_hook('after_run')
+        self.runner.logger.info('End finetuning...')
+        model.eval()

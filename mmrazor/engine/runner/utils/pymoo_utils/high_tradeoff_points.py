@@ -1,12 +1,19 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
-from pymoo.config import Config
-from pymoo.core.decision_making import (DecisionMaking, NeighborFinder,
-                                        find_outliers_upper_tail)
-from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
-from pymoo.util.normalization import normalize
 
-Config.warnings['not_compiled'] = False
+try:
+    from pymoo.configuration import Configuration
+    from pymoo.model.decision_making import (DecisionMaking, NeighborFinder,
+                                             find_outliers_upper_tail,
+                                             normalize)
+    Configuration.show_compile_hint = False
+except ImportError:
+    from mmrazor.utils import get_placeholder
+    DecisionMaking = get_placeholder('pymoo')
+    NeighborFinder = get_placeholder('pymoo')
+    normalize = get_placeholder('pymoo')
+    find_outliers_upper_tail = get_placeholder('pymoo')
+    Configuration = get_placeholder('pymoo')
 
 
 class HighTradeoffPoints(DecisionMaking):
@@ -19,23 +26,20 @@ class HighTradeoffPoints(DecisionMaking):
         n_survive(int): how many high-tradeoff points will return finally.
     """
 
-    def __init__(self,
-                 ratio=1,
-                 epsilon=0.125,
-                 n_survive=None,
-                 **kwargs) -> None:
+    def __init__(self, epsilon=0.125, n_survive=None, **kwargs) -> None:
         super().__init__(**kwargs)
         self.epsilon = epsilon
-        self.n_survive = n_survive
-        self.ratio = ratio
+        self.n_survive = n_survive  # number of points to be selected
 
-    def _do(self, data, **kwargs):
-        front = NonDominatedSorting().do(data, only_non_dominated_front=True)
-        F = data[front, :]
-
+    def _do(self, F, **kwargs):
         n, m = F.shape
-        F = normalize(F, self.ideal, self.nadir)
-        F[:, 1] = F[:, 1] * self.ratio
+
+        if self.normalize:
+            F = normalize(
+                F,
+                self.ideal_point,
+                self.nadir_point,
+                estimate_bounds_if_none=True)
 
         neighbors_finder = NeighborFinder(
             F, epsilon=0.125, n_min_neigbors='auto', consider_2d=False)
@@ -60,22 +64,8 @@ class HighTradeoffPoints(DecisionMaking):
             # otherwise find the one with the smalled one
             mu[i] = np.nanmin(tradeoff)
 
-        # if given topk
         if self.n_survive is not None:
-            n_survive = min(self.n_survive, len(mu))
-            index = np.argsort(mu)[-n_survive:][::-1]
-            front_survive = front[index]
-
-            self.n_survive -= n_survive
-            if self.n_survive == 0:
-                return front_survive
-            # in case the survived in front is not enough for topk
-            index = np.array(list(set(np.arange(len(data))) - set(front)))
-            unused_data = data[index]
-            no_front_survive = index[self._do(unused_data)]
-
-            return np.concatenate([front_survive, no_front_survive])
+            return np.argsort(mu)[-self.n_survive:]
         else:
             # return points with trade-off > 2*sigma
-            mu = find_outliers_upper_tail(mu)
-            return mu if len(mu) else []
+            return find_outliers_upper_tail(mu)

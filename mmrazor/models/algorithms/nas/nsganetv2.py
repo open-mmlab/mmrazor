@@ -72,6 +72,7 @@ class NSGANetV2(BaseAlgorithm):
             self.mutator = self._build_mutator(mutator)
             self.mutator.prepare_from_supernet(self.architecture)
 
+            self.sample_kinds = ['max', 'min']
             self.is_supernet = True
 
         self.drop_path_rate = drop_path_rate
