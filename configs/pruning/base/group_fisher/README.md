@@ -33,6 +33,8 @@ Network compression has been widely studied since it is able to reduce the memor
 
 We have three steps to apply GroupFisher to your model, including Prune, Finetune, Deploy.
 
+Note: please use torch>=1.12, as we need fxtracer to parse the models automatically.
+
 ### Prune
 
 ```bash
