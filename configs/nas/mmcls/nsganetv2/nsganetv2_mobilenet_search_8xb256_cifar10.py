@@ -6,6 +6,8 @@ train_dataloader = dict(batch_size=256)
 val_dataloader = dict(batch_size=256)
 test_dataloader = val_dataloader
 
+param_scheduler = [dict(type='ConstantLR', factor=1.0)]
+
 train_cfg = dict(
     _delete_=True,
     type='mmrazor.NSGA2SearchLoop',
@@ -36,7 +38,7 @@ train_cfg = dict(
                 momentum=0.9,
                 weight_decay=1e-4,
                 nesterov=True)),
-        param_scheduler=_base_.param_scheduler,
+        param_scheduler=param_scheduler,
         default_hooks=_base_.default_hooks,
     ),
 )
