@@ -142,15 +142,26 @@ There are also some modules to support GroupFisher. These modules may be refacto
 
 ## Citation
 
-@InProceedings{liu2021group,
-title = {Group Fisher Pruning for Practical Network Compression},
-author =       {Liu, Liyang and Zhang, Shilong and Kuang, Zhanghui and Zhou, Aojun and Xue, Jing-Hao and Wang, Xinjiang and Chen, Yimin and Yang, Wenming and Liao, Qingmin and Zhang, Wayne},
-booktitle = {Proceedings of the 38th International Conference on Machine Learning},
-year = {2021},
-series = {Proceedings of Machine Learning Research},
-month = {18--24 Jul},
-publisher ={PMLR},
+```latex
+@InProceedings{Liu:2021,
+   TITLE      = {Group Fisher Pruning for Practical Network Compression},
+   AUTHOR     = {Liu, Liyang
+               AND Zhang, Shilong
+               AND Kuang, Zhanghui
+               AND Zhou, Aojun
+               AND Xue, Jing-hao
+               AND Wang, Xinjiang
+               AND Chen, Yimin
+               AND Yang, Wenming
+               AND Liao, Qingmin
+               AND Zhang, Wayne},
+   BOOKTITLE  = {Proceedings of the 38th International Conference on Machine Learning},
+   YEAR       = {2021},
+   SERIES     = {Proceedings of Machine Learning Research},
+   MONTH      = {18--24 Jul},
+   PUBLISHER  = {PMLR},
 }
+```
 
 <!-- model links
 {model}_{prune_mode}_{file type}
