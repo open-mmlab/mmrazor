@@ -50,11 +50,9 @@ class FunctionContext():
     def __enter__(self):
         """Rewrite the function."""
         self.method_impl = eval(self.method_exec_str)
-
         if self.method_impl:
             self._set_method(
-                function_wrapper(self.ctx, self.method_impl, self.method_str,
-                                 self.align_mode))
+                function_wrapper(self.ctx, self.method_impl, self.method_str))
 
     def __exit__(self, exc_type, exc_value, traceback):
         """Restore the function."""
