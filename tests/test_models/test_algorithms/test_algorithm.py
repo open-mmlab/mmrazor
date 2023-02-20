@@ -46,6 +46,84 @@ def _demo_mm_inputs(input_shape=(1, 3, 8, 16), num_classes=10):
     return mm_inputs
 
 
+def _demo_mmdet_inputs(input_shape=(1, 3, 300, 300),
+                       num_items=None, num_classes=10,
+                       with_semantic=False):  # yapf: disable
+    """Create a superset of inputs needed to run test or train batches.
+
+    Args:
+        input_shape (tuple):
+            input batch dimensions
+
+        num_items (None | List[int]):
+            specifies the number of boxes in each batch item
+
+        num_classes (int):
+            number of different labels a box might have
+    """
+    from mmdet.core import BitmapMasks
+
+    (N, C, H, W) = input_shape
+
+    rng = np.random.RandomState(0)
+
+    imgs = rng.rand(*input_shape)
+
+    img_metas = [{
+        'img_shape': (H, W, C),
+        'ori_shape': (H, W, C),
+        'pad_shape': (H, W, C),
+        'filename': '<demo>.png',
+        'scale_factor': np.array([1.1, 1.2, 1.1, 1.2]),
+        'flip': False,
+        'flip_direction': None,
+    } for _ in range(N)]
+
+    gt_bboxes = []
+    gt_labels = []
+    gt_masks = []
+
+    for batch_idx in range(N):
+        if num_items is None:
+            num_boxes = rng.randint(1, 10)
+        else:
+            num_boxes = num_items[batch_idx]
+
+        cx, cy, bw, bh = rng.rand(num_boxes, 4).T
+
+        tl_x = ((cx * W) - (W * bw / 2)).clip(0, W)
+        tl_y = ((cy * H) - (H * bh / 2)).clip(0, H)
+        br_x = ((cx * W) + (W * bw / 2)).clip(0, W)
+        br_y = ((cy * H) + (H * bh / 2)).clip(0, H)
+
+        boxes = np.vstack([tl_x, tl_y, br_x, br_y]).T
+        class_idxs = rng.randint(1, num_classes, size=num_boxes)
+
+        gt_bboxes.append(torch.FloatTensor(boxes))
+        gt_labels.append(torch.LongTensor(class_idxs))
+
+    mask = np.random.randint(0, 2, (len(boxes), H, W), dtype=np.uint8)
+    gt_masks.append(BitmapMasks(mask, H, W))
+
+    mm_inputs = {
+        'img': torch.FloatTensor(imgs).requires_grad_(True),
+        'img_metas': img_metas,
+        'gt_bboxes': gt_bboxes,
+        'gt_labels': gt_labels,
+        'gt_bboxes_ignore': None,
+        'gt_masks': gt_masks,
+    }
+
+    if with_semantic:
+        # assume gt_semantic_seg using scale 1/8 of the img
+        gt_semantic_seg = np.random.randint(
+            0, num_classes, (1, 1, H // 8, W // 8), dtype=np.uint8)
+        mm_inputs.update(
+            {'gt_semantic_seg': torch.ByteTensor(gt_semantic_seg)})
+
+    return mm_inputs
+
+
 def test_autoslim_pretrain():
     model_cfg = dict(
         type='mmcls.ImageClassifier',
@@ -545,4 +623,18 @@ def test_rkd():
     assert outputs['num_samples'] == 16
 
     losses = algorithm(imgs, return_loss=True, gt_label=label)
+    assert losses['loss'].item() > 0
+
+
+def test_fgd():
+    config_path = './tests/data/fgd_retina.py'
+
+    config = Config.fromfile(config_path)
+
+    mm_inputs = _demo_mmdet_inputs(num_classes=80)
+    mm_inputs.pop('gt_masks')
+    algorithm = ALGORITHMS.build(config.algorithm)
+
+    # test algorithm train_step
+    losses = algorithm.train_step(mm_inputs, None)
     assert losses['loss'].item() > 0
