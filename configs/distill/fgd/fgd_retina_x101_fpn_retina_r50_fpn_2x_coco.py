@@ -226,8 +226,3 @@ find_unused_parameters = True
 optimizer = dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001)
 optimizer_config = dict(
     _delete_=True, grad_clip=dict(max_norm=35, norm_type=2))
-
-checkpoint_config = dict(
-    interval=1,
-    out_dir='/mnt/petrelfs/caoweihan.p/training_ckpt/fgd',
-    max_keep_ckpts=3)
