@@ -9,9 +9,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 from mmengine import fileio
-from mmengine.dist import broadcast_object_list
 from mmengine.evaluator import Evaluator
-from mmengine.runner import EpochBasedTrainLoop
+from mmengine.runner import EpochBasedTrainLoop, Runner
 from mmengine.utils import is_list_of
 from torch.utils.data import DataLoader
 
@@ -53,6 +52,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
             Defaults to None.
         predictor_cfg (dict, Optional): Used for building a metric predictor.
             Defaults to None.
+        finetune_cfg (dict, Optional): Used for building an extra runner to
+            finetune the searched model. Defaults to None.
         score_key (str): Specify one metric in evaluation results to score
             candidates. Defaults to 'accuracy_top-1'.
         init_candidates (str, optional): The candidates file path, which is
@@ -62,8 +63,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
 
     def __init__(self,
                  runner,
-                 dataloader: Union[DataLoader, Dict],
                  evaluator: Union[Evaluator, Dict, List],
+                 dataloader: Union[DataLoader, Dict],
                  max_epochs: int = 20,
                  max_keep_ckpts: int = 3,
                  resume_from: Optional[str] = None,
@@ -77,6 +78,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                  constraints_range: Dict[str, Any] = dict(flops=(0., 330.)),
                  estimator_cfg: Optional[Dict] = None,
                  predictor_cfg: Optional[Dict] = None,
+                 finetune_cfg: Optional[Dict] = None,
                  score_key: str = 'accuracy/top1',
                  init_candidates: Optional[str] = None) -> None:
         super().__init__(runner, dataloader, max_epochs)
@@ -84,6 +86,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
             self.evaluator = runner.build_evaluator(evaluator)  # type: ignore
         else:
             self.evaluator = evaluator  # type: ignore
+
         if hasattr(self.dataloader.dataset, 'metainfo'):
             self.evaluator.dataset_meta = self.dataloader.dataset.metainfo
         else:
@@ -103,6 +106,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         self.crossover_prob = crossover_prob
         self.max_keep_ckpts = max_keep_ckpts
         self.resume_from = resume_from
+        self.trade_off = dict(max_score_key=100)
         self.fp16 = False
 
         if init_candidates is None:
@@ -133,6 +137,10 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
             self.predictor_cfg['search_groups'] = \
                 self.model.mutator.search_groups
             self.predictor = TASK_UTILS.build(self.predictor_cfg)
+
+        self.finetune_cfg = finetune_cfg
+        if finetune_cfg is not None:
+            self.finetune_runner = self.build_finetune_runner(finetune_cfg)
 
     def run(self) -> None:
         """Launch searching."""
@@ -173,7 +181,8 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
 
         self.candidates.extend(self.top_k_candidates)
         self.candidates.sort_by(key_indicator='score', reverse=True)
-        self.top_k_candidates = Candidates(self.candidates.data[:self.top_k])
+        self.top_k_candidates = \
+            Candidates(self.candidates[:self.top_k])  # type: ignore
 
         scores_after = self.top_k_candidates.scores
         self.runner.logger.info(f'top k scores after update: '
@@ -195,33 +204,28 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         """Update candidate pool contains specified number of candicates."""
         candidates_resources = []
         init_candidates = len(self.candidates)
-        if self.runner.rank == 0:
-            while len(self.candidates) < self.num_candidates:
-                candidate = self.model.sample_subnet()
-                is_pass, result = self._check_constraints(
-                    random_subnet=candidate)
-                if is_pass:
-                    self.candidates.append(candidate)
-                    candidates_resources.append(result)
-            self.candidates = Candidates(self.candidates.data)
-        else:
-            self.candidates = Candidates([dict(a=0)] * self.num_candidates)
+        while len(self.candidates) < self.num_candidates:
+            candidate = self.model.mutator.sample_choices()
+            is_pass, result = self._check_constraints(candidate)
+            if is_pass:
+                self.candidates.append(candidate)
+                candidates_resources.append(result)
+        self.candidates = Candidates(self.candidates.data)
 
         if len(candidates_resources) > 0:
             self.candidates.update_resources(
                 candidates_resources,
-                start=len(self.candidates.data) - len(candidates_resources))
+                start=len(self.candidates) - len(candidates_resources))
             assert init_candidates + len(
                 candidates_resources) == self.num_candidates
-
-        # broadcast candidates to val with multi-GPUs.
-        broadcast_object_list(self.candidates.data)
 
     def update_candidates_scores(self) -> None:
         """Validate candicate one by one from the candicate pool, and update
         top-k candicates."""
         for i, candidate in enumerate(self.candidates.subnets):
             self.model.mutator.set_choices(candidate)
+            if self.finetune_cfg:
+                self.finetune_step(self.model)
             metrics = self._val_candidate(use_predictor=self.use_predictor)
             score = round(metrics[self.score_key], 2) \
                 if len(metrics) != 0 else 0.
@@ -246,9 +250,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                 break
 
             mutation_candidate = self._mutation()
-
-            is_pass, result = self._check_constraints(
-                random_subnet=mutation_candidate)
+            is_pass, result = self._check_constraints(mutation_candidate)
             if is_pass:
                 mutation_candidates.append(mutation_candidate)
                 mutation_resources.append(result)
@@ -259,7 +261,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
         return mutation_candidates
 
     def gen_crossover_candidates(self):
-        """Generate specofied number of crossover candicates."""
+        """Generate specified number of crossover candicates."""
         crossover_resources = []
         crossover_candidates: List = []
         crossover_iter = 0
@@ -270,9 +272,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                 break
 
             crossover_candidate = self._crossover()
-
-            is_pass, result = self._check_constraints(
-                random_subnet=crossover_candidate)
+            is_pass, result = self._check_constraints(crossover_candidate)
             if is_pass:
                 crossover_candidates.append(crossover_candidate)
                 crossover_resources.append(result)
@@ -285,7 +285,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
     def _mutation(self) -> SupportRandomSubnet:
         """Mutate with the specified mutate_prob."""
         candidate1 = random.choice(self.top_k_candidates.subnets)
-        candidate2 = self.model.sample_subnet()
+        candidate2 = self.model.mutator.sample_choices()
         candidate = crossover(candidate1, candidate2, prob=self.mutate_prob)
         return candidate
 
@@ -441,3 +441,55 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
                     f'Predictor pre-trained, saved in {predictor_dir}.')
             self.use_predictor = True
             self.candidates = Candidates()
+
+    def build_finetune_runner(self, finetune_cfg: Dict) -> Runner:
+        """Build a runner for finetuning the sliced_model."""
+        finetune_cfg.update(work_dir=self.runner.work_dir)
+        finetune_cfg.update(launcher=self.runner.launcher)
+        finetune_cfg.update(env_cfg=dict(dist_cfg=dict(backend='nccl')))
+
+        runner = Runner.from_cfg(finetune_cfg)
+
+        from mmengine.hooks import CheckpointHook
+
+        # remove CheckpointHook to avoid extra problems.
+        for hook in runner._hooks:
+            if isinstance(hook, CheckpointHook):
+                runner._hooks.remove(hook)
+                break
+
+        return runner
+
+    def finetune_step(self, model):
+        """Fintune before candidates evaluation."""
+        self.finetune_runner._train_loop = \
+            self.finetune_runner.build_train_loop(
+                self.finetune_cfg.train_cfg)  # type: ignore
+
+        self.finetune_runner.optim_wrapper = \
+            self.finetune_runner.build_optim_wrapper(
+                self.finetune_cfg.optim_wrapper)
+
+        self.finetune_runner.scale_lr(self.finetune_runner.optim_wrapper,
+                                      self.finetune_runner.auto_scale_lr)
+
+        self.finetune_runner.param_schedulers = \
+            self.finetune_runner.build_param_scheduler(
+                self.finetune_cfg.param_scheduler)  # type: ignore
+
+        model.train()
+        self.runner.logger.info('Start finetuning...')
+        self.finetune_runner.model = model
+        self.finetune_runner.call_hook('before_run')
+
+        self.finetune_runner.optim_wrapper.initialize_count_status(
+            self.finetune_runner.model, self.finetune_runner._train_loop.iter,
+            self.finetune_runner._train_loop.max_iters)
+
+        self.model = self.finetune_runner.train_loop.run()
+        self.finetune_runner.train_loop._iter = 0
+        self.finetune_runner.train_loop._epoch = 0
+
+        self.finetune_runner.call_hook('after_run')
+        self.runner.logger.info('End finetuning...')
+        model.eval()

@@ -221,7 +221,15 @@ class GroupMixin():
             f'The duplicate keys are {duplicate_keys}. ' \
             'Please check if there are duplicate keys in the `custom_group`.'
 
-        return search_groups
+        # TODO: update search groups
+        new_search_groups = dict()
+        for group_id, module in search_groups.items():
+            if module[0].alias:
+                new_search_groups[module[0].alias] = module
+            else:
+                new_search_groups[group_id] = module
+
+        return new_search_groups
 
     def _check_valid_groups(self, alias2mutable_names: Dict[str, List[str]],
                             name2mutable: Dict[str, MUTABLE_TYPE],

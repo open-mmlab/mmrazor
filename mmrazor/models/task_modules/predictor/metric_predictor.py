@@ -96,6 +96,10 @@ class MetricPredictor:
         vector_dict: Dict[str, list] = \
             dict(normal_vector=[], onehot_vector=[])
 
+        assert len(model.keys()) == len(self.search_groups.keys()), (
+            f'Length mismatch for model({len(model.keys())}) and search_groups'
+            f'({len(self.search_groups.keys())}).')
+
         for key, choice in model.items():
             if isinstance(choice, DumpChosen):
                 assert choice.meta is not None, (
@@ -105,8 +109,16 @@ class MetricPredictor:
                     len(choice.meta['all_choices']), dtype=np.int)
                 _chosen_index = choice.meta['all_choices'].index(choice.chosen)
             else:
-                assert len(self.search_groups[index]) == 1
-                choices = self.search_groups[index][0].choices
+                if key is not None:
+                    from mmrazor.models.mutables import MutableChannelUnit
+                    if isinstance(self.search_groups[key][0],
+                                  MutableChannelUnit):
+                        choices = self.search_groups[key][0].candidate_choices
+                    else:
+                        choices = self.search_groups[key][0].choices
+                else:
+                    assert len(self.search_groups[index]) == 1
+                    choices = self.search_groups[index][0].choices
                 onehot = np.zeros(len(choices), dtype=np.int)
                 _chosen_index = choices.index(choice)
             onehot[_chosen_index] = 1
@@ -126,18 +138,26 @@ class MetricPredictor:
         Returns:
             Dict[str, str]: converted model.
         """
+        from mmrazor.models.mutables import OneShotMutableChannelUnit
+
         start = 0
         model = {}
-        for key, value in self.search_groups.items():
+        vector = np.squeeze(vector)
+        for name, mutables in self.search_groups.items():
+            if isinstance(mutables[0], OneShotMutableChannelUnit):
+                choices = mutables[0].candidate_choices
+            else:
+                choices = mutables[0].choices
+
             if self.encoding_type == 'onehot':
-                index = np.where(vector[start:start +
-                                        len(value[0].choices)] == 1)[0][0]
-                start += len(value)
+                index = np.where(vector[start:start + len(choices)] == 1)[0][0]
+                start += len(choices)
             else:
                 index = vector[start]
                 start += 1
-            chosen = value[0].choices[int(index)]
-            model[key] = chosen
+
+            chosen = choices[int(index)] if len(choices) > 1 else choices[0]
+            model[name] = chosen
 
         return model
 

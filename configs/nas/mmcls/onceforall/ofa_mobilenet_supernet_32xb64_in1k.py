@@ -43,7 +43,7 @@ model = dict(
             loss_kl=dict(
                 preds_S=dict(recorder='fc', from_student=True),
                 preds_T=dict(recorder='fc', from_student=False)))),
-    mutators=dict(type='mmrazor.NasMutator'))
+    mutator=dict(type='mmrazor.NasMutator'))
 
 model_wrapper_cfg = dict(
     type='mmrazor.BigNASDDP',

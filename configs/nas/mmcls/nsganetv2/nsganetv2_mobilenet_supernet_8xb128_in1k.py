@@ -1,7 +1,7 @@
 _base_ = [
     'mmcls::_base_/default_runtime.py',
     'mmrazor::_base_/settings/imagenet_bs2048_bignas.py',
-    'mmrazor::_base_/nas_backbones/attentive_mobilenetv3_supernet.py',
+    'mmrazor::_base_/nas_backbones/nsga_mobilenetv3_supernet.py',
 ]
 
 supernet = dict(
@@ -12,7 +12,7 @@ supernet = dict(
     head=dict(
         type='DynamicLinearClsHead',
         num_classes=1000,
-        in_channels=1984,
+        in_channels=1280,
         loss=dict(
             type='mmcls.LabelSmoothLoss',
             num_classes=1000,
@@ -26,33 +26,12 @@ supernet = dict(
 
 model = dict(
     _scope_='mmrazor',
-    type='BigNAS',
-    drop_path_rate=0.2,
-    num_random_samples=2,
-    backbone_dropout_stages=[6, 7],
+    type='NSGANetV2',
     architecture=supernet,
     data_preprocessor=_base_.data_preprocessor,
-    distiller=dict(
-        type='ConfigurableDistiller',
-        teacher_recorders=dict(
-            fc=dict(type='ModuleOutputs', source='head.fc')),
-        student_recorders=dict(
-            fc=dict(type='ModuleOutputs', source='head.fc')),
-        distill_losses=dict(
-            loss_kl=dict(type='KLDivergence', tau=1, loss_weight=1)),
-        loss_forward_mappings=dict(
-            loss_kl=dict(
-                preds_S=dict(recorder='fc', from_student=True),
-                preds_T=dict(recorder='fc', from_student=False)))),
     mutator=dict(type='mmrazor.NasMutator'))
 
-model_wrapper_cfg = dict(
-    type='mmrazor.BigNASDDP',
-    broadcast_buffers=False,
-    find_unused_parameters=True)
-
-optim_wrapper_cfg = dict(
-    type='OptimWrapper', clip_grad=dict(type='value', clip_value=0.2))
+find_unused_parameters = True
 
 default_hooks = dict(
     checkpoint=dict(

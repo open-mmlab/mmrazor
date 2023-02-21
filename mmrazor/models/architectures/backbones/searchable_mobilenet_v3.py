@@ -92,14 +92,9 @@ class AttentiveMobileNetV3(BaseBackbone):
         self.arch_setting = arch_setting
         self.widen_factor = widen_factor
         self.out_indices = out_indices
-        for index in out_indices:
-            if index not in range(0, 8):
-                raise ValueError('the item in out_indices must in '
-                                 f'range(0, 8). But received {index}')
         if frozen_stages not in range(-1, 8):
             raise ValueError('frozen_stages must in range(-1, 8). '
                              f'But received {frozen_stages}')
-        self.out_indices = out_indices
         self.frozen_stages = frozen_stages
 
         self.conv_cfg = conv_cfg
