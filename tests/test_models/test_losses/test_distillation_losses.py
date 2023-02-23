@@ -2,11 +2,14 @@
 from unittest import TestCase
 
 import torch
+from mmdet.models.utils import unpack_gt_instances
+from mmdet.testing import demo_mm_inputs
 from mmengine.structures import BaseDataElement
+from mmyolo.models.utils import gt_instances_preprocess
 
 from mmrazor import digit_version
 from mmrazor.models import (ABLoss, ActivationLoss, ATLoss, CRDLoss, DKDLoss,
-                            FBKDLoss, FTLoss, InformationEntropyLoss,
+                            FBKDLoss, FGDLoss, FTLoss, InformationEntropyLoss,
                             KDSoftCELoss, MGDLoss, OFDLoss, OnehotLikeLoss,
                             PKDLoss)
 
@@ -210,4 +213,19 @@ class TestLosses(TestCase):
         mgd_loss = MGDLoss(alpha_mgd=0.00002)
         feats_S, feats_T = torch.rand(2, 256, 4, 4), torch.rand(2, 256, 4, 4)
         loss = mgd_loss(feats_S, feats_T)
+        self.assertTrue(loss.numel() == 1)
+
+    def test_fgd_loss(self):
+        fgd_loss = FGDLoss(in_channels=3)
+        packed_inputs = demo_mm_inputs(2, [[3, 320, 128], [3, 125, 320]])
+        batch_gt_instances, batch_gt_instances_ignore, batch_img_metas =\
+            unpack_gt_instances(packed_inputs['data_samples'])
+        gt_info = gt_instances_preprocess(batch_gt_instances, 2)
+        for meta in batch_img_metas:
+            meta.update({'batch_input_shape': meta['img_shape']})
+
+        preds_S = torch.rand(2, 3, 80, 32)
+        preds_T = torch.rand(2, 3, 80, 32)
+
+        loss = fgd_loss(preds_S, preds_T, gt_info, batch_img_metas)
         self.assertTrue(loss.numel() == 1)

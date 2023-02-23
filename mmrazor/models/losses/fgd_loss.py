@@ -56,15 +56,14 @@ class FGDLoss(nn.Module):
         """Forward function.
 
         Args:
-            preds_S(Tensor): Bs*C*H*W, student's feature map
-            preds_T(Tensor): Bs*C*H*W, teacher's feature map
+            preds_S (Tensor): Bs*C*H*W, student's feature map.
+            preds_T (Tensor): Bs*C*H*W, teacher's feature map.
+            gt_info (Tensor): Bs*nt*4, ground truth bounding boxes.
+            batch_img_metas (list[dict]): Meta information of each image, e.g.,
+                image size, scaling factor, etc.
         """
         assert preds_S.shape[-2:] == preds_T.shape[-2:]
         N, C, H, W = preds_S.shape
-        # Bs*[nt*4], (tl_x, tl_y, br_x, br_y)
-        # gt_bboxes = self.current_data['gt_bboxes']
-        # Meta information of each image, e.g., image size, scaling factor.
-        # metas = self.current_data['img_metas']  # list[dict]
         gt_bboxes = gt_info[:, :, 1:]  # xyxy
 
         spatial_attention_t, channel_attention_t = self.get_attention(
