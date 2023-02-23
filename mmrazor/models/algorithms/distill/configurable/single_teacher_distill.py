@@ -67,9 +67,9 @@ class SingleTeacherDistill(BaseAlgorithm):
             self.set_module_inplace_false(teacher, 'self.teacher')
 
         if teacher_ckpt:
-            # avoid loaded parameters be overwritten
-            self.teacher.init_weights()
             _ = load_checkpoint(self.teacher, teacher_ckpt)
+            # avoid loaded parameters be overwritten
+            self.teacher._is_init = True
         self.teacher_trainable = teacher_trainable
         if not self.teacher_trainable:
             for param in self.teacher.parameters():
