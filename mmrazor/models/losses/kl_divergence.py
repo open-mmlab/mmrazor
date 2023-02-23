@@ -7,7 +7,7 @@ from mmrazor.registry import MODELS
 
 
 @weighted_loss
-def kl_div(preds_S, preds_T, tau):
+def kl_div(preds_S, preds_T, tau: float = 1.0):
     """Calculate the KL divergence between `preds_S` and `preds_T`.
 
     Args:
@@ -94,8 +94,8 @@ class KLDivergence(nn.Module):
         loss = kl_div(
             preds_S,
             preds_T,
-            self.tau,
-            weight,
+            tau=self.tau,
+            weight=weight,
             reduction=reduction,
             avg_factor=avg_factor)
         return self.loss_weight * loss
