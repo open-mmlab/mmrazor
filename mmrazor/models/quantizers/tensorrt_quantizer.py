@@ -57,15 +57,44 @@ class TensorRTQuantizer(NativeQuantizer):
         3. post process weight fakequant for exporting .onnx that meet
         the backend's requirement.
         """
+
         observed_model = self.prepare(model)
+        # import pdb;pdb.set_trace()
+
         if dummy_input is not None:
-            observed_model(torch.randn(dummy_input))
+            observed_model(torch.randn(dummy_input).cuda())
         if checkpoint is not None:
             observed_model.load_state_dict(
                 torch.load(checkpoint)['state_dict'])
         self.post_process_weight_fakequant(
-            observed_model, keep_fake_quant=True)
+            observed_model, 
+            device='cuda',
+            keep_fake_quant=True)
 
         observed_model.apply(disable_observer)
-
+        
         return observed_model
+    
+    @property
+    def module_prev_wo_fakequant(self):
+        """Configurate the modules that their previous nodes are redundant
+        fakequants."""
+        return (torch.nn.ReLU6, torch.nn.Identity)
+
+    @property
+    def module_next_wo_fakequant(self):
+        """Configurate the modules that their next nodes are redundant
+        fakequants."""
+        return (torch.nn.MaxPool2d, )
+
+    @property
+    def method_next_wo_fakequant(self):
+        """Configurate the methods that their next nodes are redundant
+        fakequants."""
+        return ('flatten', )
+
+    @property
+    def op_prev_wo_fakequant(self):
+        """Configurate the OPs that their previous nodes are redundant
+        fakequants."""
+        return ('output', )

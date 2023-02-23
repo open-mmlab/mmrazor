@@ -248,9 +248,16 @@ class NativeQuantizer(BaseQuantizer):
 
         return prepared
 
+<<<<<<< HEAD
     def post_process_for_deploy(self,
                                 observed_module: ObservedGraphModule,
                                 keep_w_fake_quant: bool = False):
+=======
+    def post_process_weight_fakequant(self,
+                                      observed_module: ObservedGraphModule,
+                                      device: str = 'cpu',
+                                      keep_fake_quant: bool = False):
+>>>>>>> 33ab289f (add trtquantizer)
         """weight fake-quant for supported QAT modules.
 
         Args:
@@ -291,13 +298,13 @@ class NativeQuantizer(BaseQuantizer):
 
                         if type(child) in MERGE_BN_MAPPINGS:
                             cls = MERGE_BN_MAPPINGS[type(child)]
-                            new_child = cls.from_float(float_child)
+                            new_child = cls.from_float(float_child).to(device)
                         else:
-                            new_child = type(child).from_float(float_child)
+                            new_child = type(child).from_float(float_child).to(device)
 
                         new_child.weight_fake_quant(new_child.weight)
                     else:
-                        new_child = float_child
+                        new_child = float_child.to(device)
                     setattr(module, name, new_child)
                 else:
                     traverse(child)
