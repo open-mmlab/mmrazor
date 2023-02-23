@@ -100,8 +100,9 @@ class FGDLoss(nn.Module):
                         torch.max(mask_fg[i][hmin[i][j]:hmax[i][j]+1,
                                   wmin[i][j]:wmax[i][j]+1], area[0][j])
 
-            mask_bg[i] = torch.where(mask_fg[i] > 0, torch.zeros_like(mask_bg),
-                                     torch.ones_like(mask_bg))
+            mask_bg[i] = torch.where(mask_fg[i] > 0,
+                                     torch.zeros_like(mask_bg[i]),
+                                     torch.ones_like(mask_bg[i]))
             if torch.sum(mask_bg[i]):
                 mask_bg[i] /= torch.sum(mask_bg[i])
 
