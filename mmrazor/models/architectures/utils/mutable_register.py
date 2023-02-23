@@ -33,7 +33,7 @@ def mutate_conv_module(
 
 def mutate_mobilenet_layer(mb_layer: MBBlock, mutable_in_channels,
                            mutable_out_channels, mutable_expand_ratio,
-                           mutable_kernel_size):
+                           mutable_kernel_size, fine_grained_mode):
     """Mutate MobileNet layers."""
     mb_layer.derived_expand_channels = \
         mutable_expand_ratio * mutable_in_channels
@@ -51,12 +51,15 @@ def mutate_mobilenet_layer(mb_layer: MBBlock, mutable_in_channels,
         mutable_kernel_size=mutable_kernel_size)
 
     if mb_layer.with_se:
-        mutable_expand_ratio2 = copy.deepcopy(mutable_expand_ratio)
-        mutable_expand_ratio2.alias += '_se'
-
-        derived_se_channels = mutable_expand_ratio2 * mutable_in_channels
-        mb_layer.derived_se_channels = \
-            derived_se_channels.derive_divide_mutable(4, 8)
+        if fine_grained_mode:
+            mutable_expand_ratio2 = copy.deepcopy(mutable_expand_ratio)
+            mutable_expand_ratio2.alias += '_se'
+            derived_se_channels = mutable_expand_ratio2 * mutable_in_channels
+            mb_layer.derived_se_channels = \
+                derived_se_channels.derive_divide_mutable(4, 8)
+        else:
+            mb_layer.derived_se_channels = \
+                mb_layer.derived_expand_channels.derive_divide_mutable(4, 8)
 
         mutate_conv_module(
             mb_layer.se.conv1,
