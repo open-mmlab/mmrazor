@@ -67,9 +67,9 @@ class SingleTeacherDistill(BaseAlgorithm):
             self.set_module_inplace_false(teacher, 'self.teacher')
 
         if teacher_ckpt:
-            # avoid loaded parameters be overwritten
-            self.teacher.init_weights()
             _ = load_checkpoint(self.teacher, teacher_ckpt)
+            # avoid loaded parameters be overwritten
+            self.teacher._is_init = True
         self.teacher_trainable = teacher_trainable
         if not self.teacher_trainable:
             for param in self.teacher.parameters():
@@ -88,6 +88,9 @@ class SingleTeacherDistill(BaseAlgorithm):
         # constructed, but not really initialized yet.
         self.distiller.prepare_from_student(self.student)
         self.distiller.prepare_from_teacher(self.teacher)
+
+        # may be modified by distill loss scheduler hook
+        self.distill_loss_detach = False
 
     @property
     def student(self) -> nn.Module:
@@ -135,10 +138,12 @@ class SingleTeacherDistill(BaseAlgorithm):
                         _ = self.student(
                             batch_inputs, data_samples, mode='loss')
 
-        # Automatically compute distill losses based on `loss_forward_mappings`
-        # The required data already exists in the recorders.
-        distill_losses = self.distiller.compute_distill_losses()
-        losses.update(add_prefix(distill_losses, 'distill'))
+        if not self.distill_loss_detach:
+            # Automatically compute distill losses based on
+            # `loss_forward_mappings`.
+            # The required data already exists in the recorders.
+            distill_losses = self.distiller.compute_distill_losses()
+            losses.update(add_prefix(distill_losses, 'distill'))
 
         return losses
 
