@@ -16,8 +16,6 @@ from .l2_loss import L2Loss
 from .mgd_loss import MGDLoss
 from .ofd_loss import OFDLoss
 from .pkd_loss import PKDLoss
-from .ppyoloe_distill_loss import (DistributionFocalLoss, MainKDLoss,
-                                   QualityFocalLoss)
 from .relational_kd import AngleWiseRKD, DistanceWiseRKD
 from .weighted_soft_label_distillation import WSLD
 
@@ -26,5 +24,5 @@ __all__ = [
     'WSLD', 'L2Loss', 'ABLoss', 'DKDLoss', 'KDSoftCELoss', 'ActivationLoss',
     'OnehotLikeLoss', 'InformationEntropyLoss', 'FTLoss', 'ATLoss', 'OFDLoss',
     'L1Loss', 'FBKDLoss', 'CRDLoss', 'CrossEntropyLoss', 'PKDLoss', 'MGDLoss',
-    'FGDLoss', 'QualityFocalLoss', 'DistributionFocalLoss', 'MainKDLoss'
+    'FGDLoss'
 ]

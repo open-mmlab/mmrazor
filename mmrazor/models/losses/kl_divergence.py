@@ -2,7 +2,24 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
+from mmrazor.models.losses.utils import weighted_loss
 from mmrazor.registry import MODELS
+
+
+@weighted_loss
+def kl_div(preds_S, preds_T, tau):
+    """Calculate the KL divergence between `preds_S` and `preds_T`.
+
+    Args:
+        preds_S (torch.Tensor): The student model prediction with shape (N, C).
+        preds_T (torch.Tensor): The teacher model prediction with shape (N, C).
+        tau (float): Temperature coefficient.
+    """
+    softmax_pred_T = F.softmax(preds_T / tau, dim=1)
+    logsoftmax_preds_S = F.log_softmax(preds_S / tau, dim=1)
+    loss = (tau**2) * F.kl_div(
+        logsoftmax_preds_S, softmax_pred_T, reduction='none')
+    return loss
 
 
 @MODELS.register_module()
@@ -45,7 +62,12 @@ class KLDivergence(nn.Module):
             f'but gets {reduction}.'
         self.reduction = reduction
 
-    def forward(self, preds_S, preds_T):
+    def forward(self,
+                preds_S,
+                preds_T,
+                weight=None,
+                avg_factor=None,
+                reduction_override=None):
         """Forward computation.
 
         Args:
@@ -53,14 +75,27 @@ class KLDivergence(nn.Module):
                 shape (N, C, H, W) or shape (N, C).
             preds_T (torch.Tensor): The teacher model prediction with
                 shape (N, C, H, W) or shape (N, C).
+            weight (torch.Tensor, optional): The weight of loss for each
+                prediction. Defaults to None.
+            avg_factor (int, optional): Average factor that is used to average
+                the loss. Defaults to None.
+            reduction_override (str, optional): The reduction method used to
+                override the original reduction method of the loss.
+                Options are "none", "mean", "sum" and "batchmean".
 
         Return:
             torch.Tensor: The calculated loss value.
         """
+        assert reduction_override in (None, 'none', 'mean', 'sum', 'batchmean')
+        reduction = (
+            reduction_override if reduction_override else self.reduction)
         if self.teacher_detach:
             preds_T = preds_T.detach()
-        softmax_pred_T = F.softmax(preds_T / self.tau, dim=1)
-        logsoftmax_preds_S = F.log_softmax(preds_S / self.tau, dim=1)
-        loss = (self.tau**2) * F.kl_div(
-            logsoftmax_preds_S, softmax_pred_T, reduction=self.reduction)
+        loss = kl_div(
+            preds_S,
+            preds_T,
+            self.tau,
+            weight,
+            reduction=reduction,
+            avg_factor=avg_factor)
         return self.loss_weight * loss
