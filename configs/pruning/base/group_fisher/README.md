@@ -29,6 +29,16 @@ Network compression has been widely studied since it is able to reduce the memor
 | RetinaNet-R50-FPN_pruned_act   | 36.5 | 0.0  | 126     | 50.4%     | 34.6          | 54.2%     | [prune][rt_a_pc] \| [finetune][rt_a_fc] | [pruned][rt_a_p] \| [finetuned][rt_a_f] \| [log][rt_a_l] | 1.608         |
 | RetinaNet-R50-FPN_pruned_flops | 36.6 | +0.1 | 126     | 50.4%     | 34.9          | 54.7%     | [prune][rt_f_pc] \| [finetune][rt_f_fc] | [pruned][rt_f_p] \| [finetuned][rt_f_f] \| [log][rt_f_l] | 1.609         |
 
+### Pose on COCO
+
+| Model(Detector-Backbone) | AP   | Gap  | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                  | Download                                                 | Onnx_cpu(FPS) |
+| ------------------------ | ---- | ---- | ------- | --------- | ------------- | --------- | --------------------------------------- | -------------------------------------------------------- | ------------- |
+| RTMPose-S                | 72.1 | -    | 0.68    | -         | 5.47          | -         | [mmpose][pose_s_c]                      | [model][pose_s_m]                                        | 279           |
+| RTMPose-S_pruned_act     | 69.0 | -3.1 | 0.34    | 50.0%     | 3.42          | 62.5%     | [prune][rp_a_pc] \| [finetune][rp_a_fc] | [pruned][rp_a_p] \| [finetuned][rp_a_f] \| [log][rp_a_l] | 268           |
+| RTMPose-T                | 67.9 | -    | 0.35    | -         | 3.34          | -         | [mmpose][pose_t_c]                      | [model][pose_t_m]                                        | 196           |
+
+### Pose on COCO
+
 **Note**
 
 - Because the pruning papers use different pretraining and finetuning settings, It is hard to compare them fairly. As a result, we prefer to apply algorithms on the openmmlab settings.
@@ -192,6 +202,15 @@ repo link
 [m_f_l]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/mobilenet/flop/20230201_211550.json
 [m_f_p]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/mobilenet/flop/group_fisher_flops_prune_mobilenet-v2_8xb32_in1k.pth
 [m_f_pc]: ../../mmcls/group_fisher/mobilenet/group_fisher_flops_prune_mobilenet-v2_8xb32_in1k.py
+[pose_s_c]: https://download.openmmlab.com/mmpose/v1/projects/rtmpose/rtmpose-s_simcc-coco_pt-aic-coco_420e-256x192-8edcf0d7_20230127.pth
+[pose_s_m]: https://download.openmmlab.com/mmpose/v1/projects/rtmpose/rtmpose-s_simcc-coco_pt-aic-coco_420e-256x192-8edcf0d7_20230127.pth
+[pose_t_c]: https://download.openmmlab.com/mmpose/v1/projects/rtmpose/rtmpose-tiny_simcc-coco_pt-aic-coco_420e-256x192-e613ba3f_20230127.pth
+[pose_t_m]: https://download.openmmlab.com/mmclassification/v0/mobilenet_v2/mobilenet_v2_batch256_imagenet_20200708-3b2dc3af.pth
+[rp_a_f]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/rtmpose-s/group_fisher_finetune_rtmpose-s_8xb256-420e_coco-256x192.pth
+[rp_a_fc]: ../../mmpose/group_fisher/group_fisher_finetune_rtmpose-s_8xb256-420e_coco-256x192.py
+[rp_a_l]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/rtmpose-s/group_fisher_prune_rtmpose-s_8xb256-420e_coco-256x192_finetune.json
+[rp_a_p]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/rtmpose-s/group_fisher_prune_rtmpose-s_8xb256-420e_coco-256x192.pth
+[rp_a_pc]: ../../mmpose/group_fisher/group_fisher_prune_rtmpose-s_8xb256-420e_coco-256x192.py
 [rt_a_f]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/retinanet/act/group_fisher_act_finetune_retinanet_r50_fpn_1x_coco.pth
 [rt_a_fc]: ../../mmdet/group_fisher/retinanet/group_fisher_act_finetune_retinanet_r50_fpn_1x_coco.py
 [rt_a_l]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/retinanet/act/20230113_231904.json
