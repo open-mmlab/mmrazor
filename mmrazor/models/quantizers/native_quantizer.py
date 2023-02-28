@@ -5,7 +5,8 @@ import torch
 from mmengine.config import Config
 
 try:
-    from torch.ao.quantization import disable_observer, enable_fake_quant
+    from torch.ao.quantization import (enable_fake_quant, disable_observer, 
+        enable_observer)
     from torch.ao.quantization.fx import prepare
     from torch.ao.quantization.fx.graph_module import ObservedGraphModule
     from torch.ao.quantization.qconfig_mapping import (
@@ -22,6 +23,7 @@ except ImportError:
     ObservedGraphModule = get_placeholder('torch>=1.13')
     enable_fake_quant = get_placeholder('torch>=1.13')
     disable_observer = get_placeholder('torch>=1.13')
+    enable_observer = get_placeholder('torch>=1.13')
     prepare = get_placeholder('torch>=1.13')
     QConfigMapping = get_placeholder('torch>=1.13')
     _fuse_fx = get_placeholder('torch>=1.13')
@@ -248,16 +250,10 @@ class NativeQuantizer(BaseQuantizer):
 
         return prepared
 
-<<<<<<< HEAD
     def post_process_for_deploy(self,
                                 observed_module: ObservedGraphModule,
+                                device: str = 'cpu',
                                 keep_w_fake_quant: bool = False):
-=======
-    def post_process_weight_fakequant(self,
-                                      observed_module: ObservedGraphModule,
-                                      device: str = 'cpu',
-                                      keep_fake_quant: bool = False):
->>>>>>> 33ab289f (add trtquantizer)
         """weight fake-quant for supported QAT modules.
 
         Args:
@@ -272,7 +268,6 @@ class NativeQuantizer(BaseQuantizer):
                 `SUPPORT_QAT_MODULES` will be convert to normal modules, and
                 BN will be really integrated into conv layers.
         """
-
         def traverse(module):
             for name, child in module.named_children():
                 # Trace `SUPPORT_QAT_MODULES` recursively.
@@ -282,29 +277,35 @@ class NativeQuantizer(BaseQuantizer):
                     # to perform these operations and do dequantize to
                     # introduce quantization loss in advance.
                     weight_fakequant = child.weight_fake_quant
-                    child.weight.data = weight_fakequant(child.weight.data)
 
                     # `to_float()` function fuse BN into conv or conv_relu, and
                     # also convert a qat module to a normal module.
                     # source url: https://github.com/pytorch/pytorch/blob/master/torch/nn/intrinsic/qat/modules/conv_fused.py # noqa: E501
                     float_child = child.to_float()
-
+                    # import pdb;pdb.set_trace()
+                    from torch.ao.nn.intrinsic import _FusedModule
+                    if issubclass(type(float_child), _FusedModule):
+                        float_child[0].weight.data = weight_fakequant(float_child[0].weight.data)
+                    else:
+                        float_child.weight.data = weight_fakequant(float_child.weight.data)
                     # This is decided by backend type, some backend need
                     # explicitly keep the fake quant structure, others don't.
                     # TODO add deploy doc link
                     if keep_w_fake_quant:
                         for m in float_child.modules():
                             setattr(m, 'qconfig', self.qconfig.convert())
-
                         if type(child) in MERGE_BN_MAPPINGS:
                             cls = MERGE_BN_MAPPINGS[type(child)]
                             new_child = cls.from_float(float_child).to(device)
                         else:
                             new_child = type(child).from_float(float_child).to(device)
 
+                        enable_observer(new_child)
                         new_child.weight_fake_quant(new_child.weight)
+                        disable_observer(new_child)
                     else:
                         new_child = float_child.to(device)
+                    # import pdb;pdb.set_trace()
                     setattr(module, name, new_child)
                 else:
                     traverse(child)

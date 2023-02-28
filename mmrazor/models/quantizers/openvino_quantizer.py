@@ -10,6 +10,7 @@ except ImportError:
     disable_observer = get_placeholder('torch>=1.13')
 
 from mmrazor.registry import MODELS
+from mmrazor.structures.quantization import QConfigHandler
 from .native_quantizer import NativeQuantizer
 
 

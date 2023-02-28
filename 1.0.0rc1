@@ -1,0 +1,39 @@
+Looking in indexes: https://pypi.tuna.tsinghua.edu.cn/simple
+Looking in links: https://download.openmmlab.com/mmcv/dist/cu116/torch1.13.0/index.html
+Requirement already satisfied: mmcls in /nvme/humu/openmmlab/mmclassification (1.0.0rc5)
+Requirement already satisfied: matplotlib in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from mmcls) (3.5.3)
+Requirement already satisfied: modelindex in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from mmcls) (0.0.2)
+Requirement already satisfied: numpy in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from mmcls) (1.19.5)
+Requirement already satisfied: packaging in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from mmcls) (21.3)
+Requirement already satisfied: rich in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from mmcls) (12.6.0)
+Requirement already satisfied: mmcv<=2.0.0,>=2.0.0rc1 in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from mmcls) (2.0.0rc3)
+Collecting mmengine<1.0.0,>=0.4.0
+  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/4a/e4/ae2c4e856f6695e617424f0be6ced7ac84a87aaad0e80dc8fd7ffa46f1b9/mmengine-0.5.0-py3-none-any.whl (331 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 331.7/331.7 kB 510.9 kB/s eta 0:00:00
+Requirement already satisfied: yapf in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from mmcv<=2.0.0,>=2.0.0rc1->mmcls) (0.32.0)
+Requirement already satisfied: pyyaml in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from mmcv<=2.0.0,>=2.0.0rc1->mmcls) (6.0)
+Requirement already satisfied: Pillow in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from mmcv<=2.0.0,>=2.0.0rc1->mmcls) (9.3.0)
+Requirement already satisfied: opencv-python>=3 in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from mmcv<=2.0.0,>=2.0.0rc1->mmcls) (4.5.5.64)
+Requirement already satisfied: addict in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from mmcv<=2.0.0,>=2.0.0rc1->mmcls) (2.4.0)
+Requirement already satisfied: termcolor in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from mmengine<1.0.0,>=0.4.0->mmcls) (2.1.1)
+Requirement already satisfied: cycler>=0.10 in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from matplotlib->mmcls) (0.11.0)
+Requirement already satisfied: pyparsing>=2.2.1 in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from matplotlib->mmcls) (3.0.9)
+Requirement already satisfied: python-dateutil>=2.7 in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from matplotlib->mmcls) (2.8.2)
+Requirement already satisfied: fonttools>=4.22.0 in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from matplotlib->mmcls) (4.38.0)
+Requirement already satisfied: kiwisolver>=1.0.1 in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from matplotlib->mmcls) (1.4.4)
+Requirement already satisfied: model-index in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from modelindex->mmcls) (0.1.11)
+Requirement already satisfied: typing-extensions<5.0,>=4.0.0 in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from rich->mmcls) (4.4.0)
+Requirement already satisfied: commonmark<0.10.0,>=0.9.0 in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from rich->mmcls) (0.9.1)
+Requirement already satisfied: pygments<3.0.0,>=2.6.0 in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from rich->mmcls) (2.13.0)
+Requirement already satisfied: six>=1.5 in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from python-dateutil>=2.7->matplotlib->mmcls) (1.16.0)
+Requirement already satisfied: markdown in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from model-index->modelindex->mmcls) (3.4.1)
+Requirement already satisfied: click in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from model-index->modelindex->mmcls) (8.1.3)
+Requirement already satisfied: ordered-set in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from model-index->modelindex->mmcls) (4.1.0)
+Requirement already satisfied: importlib-metadata in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from click->model-index->modelindex->mmcls) (5.1.0)
+Requirement already satisfied: zipp>=0.5 in /mm_razor/humu/miniconda3/envs/torch113/lib/python3.7/site-packages (from importlib-metadata->click->model-index->modelindex->mmcls) (3.11.0)
+Installing collected packages: mmengine
+  Attempting uninstall: mmengine
+    Found existing installation: mmengine 0.3.2
+    Uninstalling mmengine-0.3.2:
+      Successfully uninstalled mmengine-0.3.2
+Successfully installed mmengine-0.5.0
