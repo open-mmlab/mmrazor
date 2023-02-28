@@ -12,7 +12,14 @@ from .unit import ExpandableUnit
 def to_expandable_model(model: nn.Module) -> ChannelMutator[ExpandableUnit]:
     """Convert a static model to an expandable model."""
     state_dict = model.state_dict()
-    mutator = ChannelMutator[ExpandableUnit](channel_unit_cfg=ExpandableUnit)
+    mutator = ChannelMutator[ExpandableUnit](
+        channel_unit_cfg=ExpandableUnit,
+        parse_cfg=dict(
+            _scope_='mmrazor',
+            type='ChannelAnalyzer',
+            demo_input=(1, 3, 224, 224),
+            tracer_type='FxTracer'),
+    )
     mutator.prepare_from_supernet(model)
     model.load_state_dict(state_dict)
     return mutator

@@ -12,22 +12,22 @@ Network compression has been widely studied since it is able to reduce the memor
 
 ### Classification on ImageNet
 
-| Model                    | Top-1 | Gap   | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                | Download                                              |
-| ------------------------ | ----- | ----- | ------- | --------- | ------------- | --------- | ------------------------------------- | ----------------------------------------------------- |
-| ResNet50                 | 76.55 | -     | 4.11    | -         | 25.6          | -         | [mmcls][cls_r50_c]                    | [model][cls_r50_m]                                    |
-| ResNet50_pruned_act      | 75.22 | -1.33 | 2.06    | 50.1%     | 16.3          | 63.7%     | [prune][r_a_pc] \| [finetune][r_a_fc] | [pruned][r_a_p] \| [finetuned][r_a_f] \| [log][r_a_l] |
-| ResNet50_pruned_flops    | 75.61 | -0.94 | 2.06    | 50.1%     | 16.3          | 63.7%     | [prune][r_f_pc] \| [finetune][r_f_fc] | [pruned][r_f_p] \| [finetuned][r_f_f] \| [log][r_f_l] |
-| MobileNetV2              | 71.86 | -     | 0.313   | -         | 3.51          | -         | [mmcls][cls_m_c]                      | [model][cls_m_m]                                      |
-| MobileNetV2_pruned_act   | 70.82 | -1.04 | 0.207   | 66.1%     | 3.18          | 90.6%     | [prune][m_a_pc] \| [finetune][m_a_fc] | [pruned][m_a_p] \| [finetuned][m_a_f] \| [log][m_a_l] |
-| MobileNetV2_pruned_flops | 70.87 | -0.99 | 0.207   | 66.1%     | 2.82          | 88.7%     | [prune][m_f_pc] \| [finetune][m_f_fc] | [pruned][m_f_p] \| [finetuned][m_f_f] \| [log][m_f_l] |
+| Model                    | Top-1 | Gap   | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                | Download                                              | Onnx_cpu(FPS) |
+| ------------------------ | ----- | ----- | ------- | --------- | ------------- | --------- | ------------------------------------- | ----------------------------------------------------- | ------------- |
+| ResNet50                 | 76.55 | -     | 4.11    | -         | 25.6          | -         | [mmcls][cls_r50_c]                    | [model][cls_r50_m]                                    | 55.360        |
+| ResNet50_pruned_act      | 75.22 | -1.33 | 2.06    | 50.1%     | 16.3          | 63.7%     | [prune][r_a_pc] \| [finetune][r_a_fc] | [pruned][r_a_p] \| [finetuned][r_a_f] \| [log][r_a_l] | 80.671        |
+| ResNet50_pruned_flops    | 75.61 | -0.94 | 2.06    | 50.1%     | 16.3          | 63.7%     | [prune][r_f_pc] \| [finetune][r_f_fc] | [pruned][r_f_p] \| [finetuned][r_f_f] \| [log][r_f_l] | 78.674        |
+| MobileNetV2              | 71.86 | -     | 0.313   | -         | 3.51          | -         | [mmcls][cls_m_c]                      | [model][cls_m_m]                                      | 419.673       |
+| MobileNetV2_pruned_act   | 70.82 | -1.04 | 0.207   | 66.1%     | 3.18          | 90.6%     | [prune][m_a_pc] \| [finetune][m_a_fc] | [pruned][m_a_p] \| [finetuned][m_a_f] \| [log][m_a_l] | 576.118       |
+| MobileNetV2_pruned_flops | 70.87 | -0.99 | 0.207   | 66.1%     | 2.82          | 88.7%     | [prune][m_f_pc] \| [finetune][m_f_fc] | [pruned][m_f_p] \| [finetuned][m_f_f] \| [log][m_f_l] | 540.105       |
 
 ### Detection on COCO
 
-| Model(Detector-Backbone)       | AP   | Gap  | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                  | Download                                                 |
-| ------------------------------ | ---- | ---- | ------- | --------- | ------------- | --------- | --------------------------------------- | -------------------------------------------------------- |
-| RetinaNet-R50-FPN              | 36.5 | -    | 250     | -         | 63.8          | -         | [mmdet][det_rt_c]                       | [model][det_rt_m]                                        |
-| RetinaNet-R50-FPN_pruned_act   | 36.5 | 0.0  | 126     | 50.4%     | 34.6          | 54.2%     | [prune][rt_a_pc] \| [finetune][rt_a_fc] | [pruned][rt_a_p] \| [finetuned][rt_a_f] \| [log][rt_a_l] |
-| RetinaNet-R50-FPN_pruned_flops | 36.6 | +0.1 | 126     | 50.4%     | 34.9          | 54.7%     | [prune][rt_f_pc] \| [finetune][rt_f_fc] | [pruned][rt_f_p] \| [finetuned][rt_f_f] \| [log][rt_f_l] |
+| Model(Detector-Backbone)       | AP   | Gap  | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                  | Download                                                 |       |
+| ------------------------------ | ---- | ---- | ------- | --------- | ------------- | --------- | --------------------------------------- | -------------------------------------------------------- | ----- |
+| RetinaNet-R50-FPN              | 36.5 | -    | 250     | -         | 63.8          | -         | [mmdet][det_rt_c]                       | [model][det_rt_m]                                        | 1.095 |
+| RetinaNet-R50-FPN_pruned_act   | 36.5 | 0.0  | 126     | 50.4%     | 34.6          | 54.2%     | [prune][rt_a_pc] \| [finetune][rt_a_fc] | [pruned][rt_a_p] \| [finetuned][rt_a_f] \| [log][rt_a_l] | 1.608 |
+| RetinaNet-R50-FPN_pruned_flops | 36.6 | +0.1 | 126     | 50.4%     | 34.9          | 54.7%     | [prune][rt_f_pc] \| [finetune][rt_f_fc] | [pruned][rt_f_p] \| [finetuned][rt_f_f] \| [log][rt_f_l] | 1.609 |
 
 **Note**
 

@@ -46,7 +46,7 @@ fix_subnet = {
     'backbone.layer4.2.conv1_(0, 512)_512': 443,
     'backbone.layer4.2.conv2_(0, 512)_512': 376
 }
-divisor = 8
+divisor = 16
 ##############################################################################
 
 architecture = _base_.model

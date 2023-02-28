@@ -89,15 +89,18 @@ class DefaultDemoInput(BaseDemoInput):
         scope (str, optional): mm scope name. Defaults to None.
     """
 
-    def __init__(self,
-                 input_shape=None,
-                 training=False,
-                 scope: str = None) -> None:
+    def __init__(
+        self,
+        input_shape=None,
+        training=False,
+        scope: str = None,
+        kwargs={},
+    ) -> None:
 
         default_demo_input_class = get_default_demo_input_class(None, scope)
         if input_shape is None:
             input_shape = default_demo_input_class.default_shape
-        super().__init__(input_shape, training)
+        super().__init__(input_shape, training, kwargs=kwargs)
         self.scope = scope
 
     def _get_data(self, model, input_shape, training):

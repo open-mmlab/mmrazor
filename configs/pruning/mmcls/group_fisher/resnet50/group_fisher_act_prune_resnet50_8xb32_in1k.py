@@ -32,7 +32,7 @@ architecture = _base_.model
 
 if hasattr(_base_, 'data_preprocessor'):
     architecture.update({'data_preprocessor': _base_.data_preprocessor})
-    data_preprocessor = None
+    data_preprocessor = {}
 
 architecture.init_cfg = dict(type='Pretrained', checkpoint=pretrained_path)
 architecture['_scope_'] = _base_.default_scope

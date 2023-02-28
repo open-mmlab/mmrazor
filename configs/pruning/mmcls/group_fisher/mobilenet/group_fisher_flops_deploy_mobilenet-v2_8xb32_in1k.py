@@ -34,7 +34,7 @@ fix_subnet = {
     'backbone.layer7.0.conv.0.conv_(0, 960)_960': 771,
     'backbone.layer7.0.conv.2.conv_(0, 320)_320': 320
 }
-divisor = 8
+divisor = 16
 
 ##############################################################################
 architecture = _base_.model
