@@ -1,5 +1,7 @@
 _base_ = 'attentive_mobilenet_supernet_32xb64_in1k.py'
 
+_base_.supernet.data_preprocessor = _base_.data_preprocessor
+
 supernet = _base_.supernet
 
 model_cfg = dict(
@@ -13,3 +15,5 @@ _base_.model_wrapper_cfg = None
 find_unused_parameters = True
 
 test_cfg = dict(evaluate_fixed_subnet=True)
+
+default_hooks = dict(checkpoint=None)

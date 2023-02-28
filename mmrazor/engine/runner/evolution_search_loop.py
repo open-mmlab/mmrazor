@@ -321,7 +321,7 @@ class EvolutionSearchLoop(EpochBasedTrainLoop, CalibrateBNMixin):
             model_name = f'subnet_{timestamp_subnet}.pth'
             save_path = osp.join(self.runner.work_dir, model_name)
             torch.save({
-                'state_dict': sliced_model.state_dict(),
+                'state_dict': sliced_model,
                 'meta': {}
             }, save_path)
             self.runner.logger.info(f'Subnet checkpoint {model_name} saved in '

@@ -8,7 +8,7 @@ from torch import nn
 from mmrazor.registry import MODELS
 from mmrazor.utils import FixMutable, ValidFixMutable
 from mmrazor.utils.typing import DumpChosen
-
+from collections import OrderedDict
 
 def _dynamic_to_static(model: nn.Module) -> None:
     # Avoid circular import
@@ -125,6 +125,7 @@ def export_fix_subnet(
         model: nn.Module,
         export_subnet_mode: str = 'mutable',
         slice_weight: bool = False,
+        remove_architecture: bool = True,
         export_channel: bool = False) -> Tuple[FixMutable, Optional[Dict]]:
     """Export subnet that can be loaded by :func:`load_fix_subnet`. Include
     subnet structure and subnet weight.
@@ -135,6 +136,8 @@ def export_fix_subnet(
             Export by `mutable.dump_chosen()` when set to 'mutable' (NAS)
             Export by `mutator.config_template()` when set to 'mutator' (Prune)
         slice_weight (bool): Export subnet weight. Default to False.
+        remove_architecture (bool): Subnet weight key without 'architecture'. 
+            Default to True.
         export_channel (bool): Whether to export the mutator's channel.
             Often required when finetune is needed for the exported subnet.
             Default to False.
@@ -166,7 +169,15 @@ def export_fix_subnet(
 
         if next(copied_model.parameters()).is_cuda:
             copied_model.cuda()
-        return fix_subnet, copied_model
+
+        if remove_architecture:
+            new_state_dict = OrderedDict()
+            for k, v in copied_model.state_dict().items():
+                if k.startswith('architecture.'):
+                    new_state_dict[k[13:]] = v
+            return fix_subnet, new_state_dict
+
+        return fix_subnet, copied_model.state_dict()
     else:
         return fix_subnet, None
 
