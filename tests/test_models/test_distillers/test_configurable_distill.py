@@ -10,7 +10,6 @@ from mmrazor.models import ConfigurableDistiller
 from mmrazor.registry import MODELS
 
 
-@MODELS.register_module()
 class ToyDistillLoss(torch.nn.Module):
 
     def __init__(self):
@@ -21,6 +20,12 @@ class ToyDistillLoss(torch.nn.Module):
 
 
 class TestConfigurableDistiller(TestCase):
+
+    def setUp(self):
+        MODELS.register_module(module=ToyDistillLoss, force=True)
+
+    def tearDown(self):
+        MODELS.module_dict.pop('ToyDistillLoss')
 
     def test_init(self):
 
