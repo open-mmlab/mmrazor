@@ -87,7 +87,7 @@ backbone.layers.5.0.kernel_size:
 backbone.layers.5.1.expand_ratio:
   chosen: 4
 backbone.layers.5.1.expand_ratio_se:
-  chosen: 3
+  chosen: 4
 backbone.layers.5.1.kernel_size:
   chosen: 3
 backbone.layers.5.2.expand_ratio:
