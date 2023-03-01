@@ -31,78 +31,68 @@ def demo_mmpose_inputs(model, for_training=False, batch_size=1):
     batch_data_samples = []
     from mmpose.models.heads import RTMHead
     if isinstance(model.head, HeatmapHead):
-        batch_data_samples = [
-            inputs['data_sample'] for inputs in get_packed_inputs(
-                batch_size,
-                num_keypoints=model.head.out_channels,
-                heatmap_size=model.head.decoder.heatmap_size[::-1])
-        ]
+        batch_data_samples = get_packed_inputs(
+            batch_size,
+            num_keypoints=model.head.out_channels,
+            heatmap_size=model.head.decoder.heatmap_size[::-1])['data_samples']
     elif isinstance(model.head, MSPNHead):
-        batch_data_samples = [
-            inputs['data_sample'] for inputs in get_packed_inputs(
-                batch_size=batch_size,
-                num_instances=1,
-                num_keypoints=model.head.out_channels,
-                heatmap_size=model.head.decoder.heatmap_size,
-                with_heatmap=True,
-                with_reg_label=False,
-                num_levels=model.head.num_stages * model.head.num_units)
-        ]
+        batch_data_samples = get_packed_inputs(
+            batch_size=batch_size,
+            num_instances=1,
+            num_keypoints=model.head.out_channels,
+            heatmap_size=model.head.decoder.heatmap_size,
+            with_heatmap=True,
+            with_reg_label=False,
+            num_levels=model.head.num_stages *
+            model.head.num_units)['data_samples']
     elif isinstance(model.head, CPMHead):
-        batch_data_samples = [
-            inputs['data_sample'] for inputs in get_packed_inputs(
-                batch_size=batch_size,
-                num_instances=1,
-                num_keypoints=model.head.out_channels,
-                heatmap_size=model.head.decoder.heatmap_size[::-1],
-                with_heatmap=True,
-                with_reg_label=False)
-        ]
+        batch_data_samples = get_packed_inputs(
+            batch_size=batch_size,
+            num_instances=1,
+            num_keypoints=model.head.out_channels,
+            heatmap_size=model.head.decoder.heatmap_size[::-1],
+            with_heatmap=True,
+            with_reg_label=False)['data_samples']
+
     elif isinstance(model.head, SimCCHead):
         # bug
-        batch_data_samples = [
-            inputs['data_sample'] for inputs in get_packed_inputs(
-                batch_size,
-                num_keypoints=model.head.out_channels,
-                simcc_split_ratio=model.head.decoder.simcc_split_ratio,
-                input_size=model.head.decoder.input_size,
-                with_simcc_label=True)
-        ]
+        batch_data_samples = get_packed_inputs(
+            batch_size,
+            num_keypoints=model.head.out_channels,
+            simcc_split_ratio=model.head.decoder.simcc_split_ratio,
+            input_size=model.head.decoder.input_size,
+            with_simcc_label=True)['data_samples']
+
     elif isinstance(model.head, ViPNASHead):
-        batch_data_samples = [
-            inputs['data_sample'] for inputs in get_packed_inputs(
-                batch_size,
-                num_keypoints=model.head.out_channels,
-            )
-        ]
+        batch_data_samples = get_packed_inputs(
+            batch_size,
+            num_keypoints=model.head.out_channels,
+        )['data_samples']
+
     elif isinstance(model.head, DSNTHead):
-        batch_data_samples = [
-            inputs['data_sample'] for inputs in get_packed_inputs(
-                batch_size,
-                num_keypoints=model.head.num_joints,
-                with_reg_label=True)
-        ]
+        batch_data_samples = get_packed_inputs(
+            batch_size,
+            num_keypoints=model.head.num_joints,
+            with_reg_label=True)['data_samples']
+
     elif isinstance(model.head, IntegralRegressionHead):
-        batch_data_samples = [
-            inputs['data_sample'] for inputs in get_packed_inputs(
-                batch_size,
-                num_keypoints=model.head.num_joints,
-                with_reg_label=True)
-        ]
+        batch_data_samples = get_packed_inputs(
+            batch_size,
+            num_keypoints=model.head.num_joints,
+            with_reg_label=True)['data_samples']
+
     elif isinstance(model.head, RegressionHead):
-        batch_data_samples = [
-            inputs['data_sample'] for inputs in get_packed_inputs(
-                batch_size,
-                num_keypoints=model.head.num_joints,
-                with_reg_label=True)
-        ]
+        batch_data_samples = get_packed_inputs(
+            batch_size,
+            num_keypoints=model.head.num_joints,
+            with_reg_label=True)['data_samples']
+
     elif isinstance(model.head, RLEHead):
-        batch_data_samples = [
-            inputs['data_sample'] for inputs in get_packed_inputs(
-                batch_size,
-                num_keypoints=model.head.num_joints,
-                with_reg_label=True)
-        ]
+        batch_data_samples = get_packed_inputs(
+            batch_size,
+            num_keypoints=model.head.num_joints,
+            with_reg_label=True)['data_samples']
+
     elif isinstance(model.head, RTMHead):
         batch_size = 2
         input_shape = (
