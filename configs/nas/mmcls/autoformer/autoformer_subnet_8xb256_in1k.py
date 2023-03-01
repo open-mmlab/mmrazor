@@ -1,9 +1,17 @@
 _base_ = 'autoformer_supernet_32xb256_in1k.py'
 
-_base_.model = dict(
+model = dict(
     _scope_='mmrazor',
     type='sub_model',
-    cfg=supernet,
-    fix_subnet='configs/nas/mmcls/autoformer/AUTOFORMER_SUBNET_B.yaml')
-
-_base_.model = model_cfg
+    cfg=_base_.supernet,
+    # NOTE: You can replace the yaml with the mutable_cfg searched by yourself
+    fix_subnet='configs/nas/mmcls/autoformer/AUTOFORMER_SUBNET_B.yaml',
+    # You can also load the checkpoint of supernet instead of the specific
+    # subnet by modifying the `checkpoint`(path) in the following `init_cfg`
+    # with `init_weight_from_supernet = True`.
+    init_weight_from_supernet=False,
+    init_cfg=dict(
+        type='Pretrained',
+        checkpoint=  # noqa: E251
+        'https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/x.pth',  # noqa: E501
+        prefix='architecture.'))

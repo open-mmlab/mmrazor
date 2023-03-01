@@ -5,7 +5,7 @@ from .base_counter import BaseCounter
 from .conv_layer_counter import (Conv1dCounter, Conv2dCounter, Conv3dCounter,
                                  DynamicConv2dCounter)
 from .deconv_layer_counter import ConvTranspose2dCounter
-from .linear_layer_counter import LinearCounter
+from .linear_layer_counter import DynamicLinearCounter, LinearCounter
 from .norm_layer_counter import (BatchNorm1dCounter, BatchNorm2dCounter,
                                  BatchNorm3dCounter, DMCPBatchNorm2dCounter,
                                  GroupNormCounter, InstanceNorm1dCounter,
@@ -21,5 +21,5 @@ __all__ = [
     'ConvTranspose2dCounter', 'UpsampleCounter', 'LinearCounter',
     'GroupNormCounter', 'InstanceNorm1dCounter', 'InstanceNorm2dCounter',
     'InstanceNorm3dCounter', 'LayerNormCounter', 'BaseCounter',
-    'DMCPBatchNorm2dCounter', 'DynamicConv2dCounter'
+    'DMCPBatchNorm2dCounter', 'DynamicConv2dCounter', 'DynamicLinearCounter'
 ]
