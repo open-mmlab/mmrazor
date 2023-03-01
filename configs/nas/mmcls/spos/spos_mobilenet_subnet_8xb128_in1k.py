@@ -1,16 +1,12 @@
 _base_ = ['./spos_mobilenet_supernet_8xb128_in1k.py']
 
-# FIXME: you may replace this with the mutable_cfg searched by yourself
-supernet = _base_.supernet
-
-model_cfg = dict(
+model = dict(
     _scope_='mmrazor',
     type='sub_model',
-    cfg=supernet,
+    cfg=_base_.supernet,
+    # NOTE: You can replace the yaml with the mutable_cfg searched by yourself
     fix_subnet='configs/nas/spos/AngleNAS_SHUFFLENETV2_IN1k_2.0.yaml')
 
-_base_.model = model_cfg
-
-_base_.model_wrapper_cfg = None
+model_wrapper_cfg = None
 
 find_unused_parameters = False

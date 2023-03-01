@@ -32,6 +32,7 @@ supernet = dict(
 model = dict(
     type='mmrazor.sub_model',
     cfg=supernet,
+    # NOTE: You can replace the yaml with the mutable_cfg searched by yourself
     fix_subnet='configs/nas/mmcls/darts/DARTS_SUBNET_CIFAR_MMRAZOR_97.32.yaml')
 
 _base_.model_wrapper_cfg = None
