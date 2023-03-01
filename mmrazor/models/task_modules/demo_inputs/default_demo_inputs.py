@@ -6,6 +6,7 @@ from mmengine.model import BaseModel
 
 from mmrazor.registry import TASK_UTILS
 from mmrazor.utils import get_placeholder
+from ...algorithms.base import BaseAlgorithm
 from .demo_inputs import (BaseDemoInput, DefaultMMClsDemoInput,
                           DefaultMMDemoInput, DefaultMMDetDemoInput,
                           DefaultMMPoseDemoInput, DefaultMMRotateDemoInput,
@@ -70,8 +71,12 @@ def get_default_demo_input_class(model, scope):
 
 def defaul_demo_inputs(model, input_shape, training=False, scope=None):
     """Get demo input according to a model and scope."""
-    demo_input = get_default_demo_input_class(model, scope)
-    return demo_input().get_data(model, input_shape, training)
+    if isinstance(model, BaseAlgorithm):
+        return defaul_demo_inputs(model.architecture, input_shape, training,
+                                  scope)
+    else:
+        demo_input = get_default_demo_input_class(model, scope)
+        return demo_input().get_data(model, input_shape, training)
 
 
 @TASK_UTILS.register_module()
