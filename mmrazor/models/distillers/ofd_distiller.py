@@ -32,20 +32,18 @@ class OFDDistiller(ConfigurableDistiller):
             if isinstance(self.distill_losses[loss_key], OFDLoss):
                 for _input_keys, _input_mapping in loss_forward_mapping.items(
                 ):
-                    recorder_mgn = self.student_recorders if _input_mapping[
-                        'from_student'] else self.teacher_recorders
-                    recorder = recorder_mgn.get_recorder(
-                        _input_mapping['recorder'])
-                    module_key = recorder.source
-                    bn_module = attrgetter(module_key)(teacher)
-
-                    assert isinstance(
-                        bn_module, (nn.BatchNorm2d, nn.SyncBatchNorm)), (
-                            'Overhaul distillation only support connection on '
-                            'layers: [`BatchNorm2d`, `SyncBatchNorm`]')
-
                     if 'connector' in _input_mapping and not _input_mapping[
                             'from_student']:
+
+                        recorder = self.teacher_recorders.get_recorder(
+                            _input_mapping['recorder'])
+                        module_key = recorder.source
+                        bn_module = attrgetter(module_key)(teacher)
+
+                        assert isinstance(
+                            bn_module, (nn.BatchNorm2d, nn.SyncBatchNorm)
+                        ), ('Overhaul distillation only support connection on '
+                            'layers: [`BatchNorm2d`, `SyncBatchNorm`]')
                         connector = self.connectors[
                             _input_mapping['connector']]
                         assert isinstance(connector, OFDTeacherConnector), (
