@@ -32,7 +32,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
 CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
   configs/nas/mmcls/bignas/attentive_mobilenet_subnet_8xb256_in1k.py \
   $STEP2_CKPT 1 --work-dir $WORK_DIR \
-  --cfg-options algorithm.mutable_cfg=$STEP2_SUBNET_YAML
+  --cfg-options model.init_cfg.checkpoint=$STEP2_CKPT model.init_weight_from_supernet=False
 ```
 
 ## Results and models

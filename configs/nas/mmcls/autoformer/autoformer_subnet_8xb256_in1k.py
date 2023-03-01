@@ -13,5 +13,5 @@ model = dict(
     init_cfg=dict(
         type='Pretrained',
         checkpoint=  # noqa: E251
-        'https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/x.pth',  # noqa: E501
+        'https://download.openmmlab.com/mmrazor/v1/.pth',  # noqa: E501
         prefix='architecture.'))

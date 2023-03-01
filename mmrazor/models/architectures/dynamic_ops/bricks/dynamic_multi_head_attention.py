@@ -201,7 +201,6 @@ class DynamicMultiheadAttention(MultiheadAttention, DynamicChannelMixin):
             embed_dims=embed_dims,
             num_heads=num_heads,
             input_dims=None,
-            attn_drop_rate=self.attn_drop_rate,
             relative_position=self.relative_position,
             max_relative_position=self.max_relative_position)
 

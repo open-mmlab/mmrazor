@@ -17,7 +17,8 @@ We product inference models which are published by official Once-For-All repo an
 ```bash
 CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
   configs/nas/mmcls/onceforall/ofa_mobilenet_subnet_8xb256_in1k.py \
-  $OFA_CKPT 1 --work-dir $WORK_DIR
+  $OFA_CKPT 1 --work-dir $WORK_DIR \
+  --cfg-options model.init_cfg.checkpoint=$OFA_CKPT model.init_weight_from_supernet=False
 ```
 
 ## Results and models
