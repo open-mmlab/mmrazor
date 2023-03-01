@@ -7,14 +7,20 @@ from mmrazor.registry import HOOKS
 
 @HOOKS.register_module()
 class StopDistillHook(Hook):
+    """Stop distilling at a certain time.
+
+    Args:
+        stop_epoch (int): Stop distillation at this epoch.
+    """
 
     priority = 'LOW'
 
-    def __init__(self, detach_epoch) -> None:
-        self.detach_epoch = detach_epoch
+    def __init__(self, stop_epoch: int) -> None:
+        self.stop_epoch = stop_epoch
 
     def before_train_epoch(self, runner) -> None:
-        if runner.epoch == self.detach_epoch:
+        """Stop distillation."""
+        if runner.epoch == self.stop_epoch:
             model = runner.model
             # TODO: refactor after mmengine using model wrapper
             if is_model_wrapper(model):

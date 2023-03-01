@@ -8,7 +8,7 @@ from mmrazor.engine import StopDistillHook
 class TestStopDistillHookHook(TestCase):
 
     def setUp(self):
-        self.hook = StopDistillHook(detach_epoch=5)
+        self.hook = StopDistillHook(stop_epoch=5)
         runner = Mock()
         runner.model = Mock()
         runner.model.distillation_stopped = False
