@@ -10,7 +10,6 @@ from mmengine.utils.dl_utils.parrots_wrapper import \
     SyncBatchNorm as EngineSyncBatchNorm
 
 from mmrazor.models.architectures import dynamic_ops
-from mmrazor.models.utils import make_divisible
 from mmrazor.registry import MODELS
 from ..mutable_channel_container import MutableChannelContainer
 from ..sequential_mutable_channel import SquentialMutableChannel
@@ -134,6 +133,7 @@ class SequentialMutableChannelUnit(MutableChannelUnit):
 
     def _make_divisible(self, choice_int: int):
         """Make the choice divisible."""
+        from mmrazor.models.utils import make_divisible
         return make_divisible(choice_int, self.divisor, self.min_value,
                               self.min_ratio)
 

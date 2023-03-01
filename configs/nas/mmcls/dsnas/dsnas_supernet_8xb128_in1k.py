@@ -4,26 +4,32 @@ _base_ = [
     'mmcls::_base_/default_runtime.py',
 ]
 
+custom_hooks = [
+    dict(type='mmrazor.DumpSubnetHook', interval=10, by_epoch=True)
+]
+
+supernet = dict(
+    _scope_='mmcls',
+    type='ImageClassifier',
+    data_preprocessor=_base_.data_preprocessor,
+    backbone=_base_.nas_backbone,
+    neck=dict(type='GlobalAveragePooling'),
+    head=dict(
+        type='LinearClsHead',
+        num_classes=1000,
+        in_channels=1024,
+        loss=dict(
+            type='LabelSmoothLoss',
+            num_classes=1000,
+            label_smooth_val=0.1,
+            mode='original',
+            loss_weight=1.0),
+        topk=(1, 5)))
+
 # model
 model = dict(
     type='mmrazor.DSNAS',
-    architecture=dict(
-        _scope_='mmcls',
-        type='ImageClassifier',
-        data_preprocessor=_base_.data_preprocessor,
-        backbone=_base_.nas_backbone,
-        neck=dict(type='GlobalAveragePooling'),
-        head=dict(
-            type='LinearClsHead',
-            num_classes=1000,
-            in_channels=1024,
-            loss=dict(
-                type='LabelSmoothLoss',
-                num_classes=1000,
-                label_smooth_val=0.1,
-                mode='original',
-                loss_weight=1.0),
-            topk=(1, 5))),
+    architecture=supernet,
     mutator=dict(type='mmrazor.NasMutator'),
     pretrain_epochs=15,
     finetune_epochs=_base_.search_epochs,

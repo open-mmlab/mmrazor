@@ -1,8 +1,6 @@
 _base_ = 'autoformer_supernet_32xb256_in1k.py'
 
-supernet = _base_.supernet
-
-model_cfg = dict(
+_base_.model = dict(
     _scope_='mmrazor',
     type='sub_model',
     cfg=supernet,
