@@ -6,8 +6,6 @@ model_cfg = dict(
     _scope_='mmrazor',
     type='sub_model',
     cfg=supernet,
-    fix_subnet='STEP2_SUBNET_YAML.yaml')
+    fix_subnet='configs/nas/mmcls/autoformer/AUTOFORMER_SUBNET_B.yaml')
 
 _base_.model = model_cfg
-
-test_cfg = dict(evaluate_fixed_subnet=True)
