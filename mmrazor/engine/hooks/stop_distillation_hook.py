@@ -6,7 +6,7 @@ from mmrazor.registry import HOOKS
 
 
 @HOOKS.register_module()
-class DistillationLossDetachHook(Hook):
+class StopDistillHook(Hook):
 
     priority = 'LOW'
 
@@ -19,7 +19,7 @@ class DistillationLossDetachHook(Hook):
             # TODO: refactor after mmengine using model wrapper
             if is_model_wrapper(model):
                 model = model.module
-            assert hasattr(model, 'distill_loss_detach')
+            assert hasattr(model, 'distillation_stopped')
 
-            runner.logger.info('Distillation stop now!')
-            model.distill_loss_detach = True
+            runner.logger.info('Distillation has been stopped!')
+            model.distillation_stopped = True

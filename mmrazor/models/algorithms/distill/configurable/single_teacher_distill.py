@@ -89,8 +89,8 @@ class SingleTeacherDistill(BaseAlgorithm):
         self.distiller.prepare_from_student(self.student)
         self.distiller.prepare_from_teacher(self.teacher)
 
-        # may be modified by distill loss scheduler hook
-        self.distill_loss_detach = False
+        # may be modified by stop distillation hook
+        self.distillation_stopped = False
 
     @property
     def student(self) -> nn.Module:
@@ -138,7 +138,7 @@ class SingleTeacherDistill(BaseAlgorithm):
                         _ = self.student(
                             batch_inputs, data_samples, mode='loss')
 
-        if not self.distill_loss_detach:
+        if not self.distillation_stopped:
             # Automatically compute distill losses based on
             # `loss_forward_mappings`.
             # The required data already exists in the recorders.
