@@ -5,7 +5,7 @@ from unittest.mock import Mock
 from mmrazor.engine import StopDistillHook
 
 
-class TestStopDistillHookHook(TestCase):
+class TestStopDistillHook(TestCase):
 
     def setUp(self):
         self.hook = StopDistillHook(stop_epoch=5)
