@@ -167,4 +167,3 @@ class TestConnector(TestCase):
         output = norm_connector.forward_train(s_feat)
 
         assert output.shape == torch.Size([2, 3, 2, 2])
-
