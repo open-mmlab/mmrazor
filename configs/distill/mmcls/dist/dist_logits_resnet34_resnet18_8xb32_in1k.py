@@ -40,6 +40,4 @@ model = dict(
                 preds_S=dict(from_student=True, recorder='fc'),
                 preds_T=dict(from_student=False, recorder='fc')))))
 
-find_unused_parameters = True
-
 val_cfg = dict(_delete_=True, type='mmrazor.SingleTeacherDistillValLoop')
