@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import warnings
 from inspect import signature
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from mmengine.model import BaseModel
 from torch import nn
@@ -139,15 +139,24 @@ class ConfigurableDistiller(BaseDistiller):
 
     def build_connectors(
         self,
-        connectors: Optional[Dict[str, Dict]] = None,
+        connectors: Optional[Union[Dict[str, List], Dict[str, Dict]]] = None,
     ) -> nn.ModuleDict:
         """Initialize connectors."""
 
         distill_connecotrs = nn.ModuleDict()
         if connectors:
             for connector_name, connector_cfg in connectors.items():
-                connector = MODELS.build(connector_cfg)
-                distill_connecotrs[connector_name] = connector
+                if isinstance(connector_cfg, dict):
+                    connector = MODELS.build(connector_cfg)
+                    distill_connecotrs[connector_name] = connector
+                else:
+                    assert isinstance(connector_cfg, list)
+                    module_list = []
+                    for cfg in connector_cfg:
+                        connector = MODELS.build(cfg)
+                        module_list.append(connector)
+                    distill_connecotrs[connector_name] = nn.Sequential(
+                        *module_list)
 
         return distill_connecotrs
 

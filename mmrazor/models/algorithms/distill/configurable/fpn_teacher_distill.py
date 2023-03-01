@@ -49,9 +49,11 @@ class FpnTeacherDistill(SingleTeacherDistill):
                 batch_inputs, data_samples, mode='loss')
         losses.update(add_prefix(student_losses, 'student'))
 
-        # Automatically compute distill losses based on `loss_forward_mappings`
-        # The required data already exists in the recorders.
-        distill_losses = self.distiller.compute_distill_losses()
-        losses.update(add_prefix(distill_losses, 'distill'))
+        if not self.distillation_stopped:
+            # Automatically compute distill losses based on
+            # `loss_forward_mappings`.
+            # The required data already exists in the recorders.
+            distill_losses = self.distiller.compute_distill_losses()
+            losses.update(add_prefix(distill_losses, 'distill'))
 
         return losses
