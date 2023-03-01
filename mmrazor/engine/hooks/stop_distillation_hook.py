@@ -20,7 +20,7 @@ class StopDistillHook(Hook):
 
     def before_train_epoch(self, runner) -> None:
         """Stop distillation."""
-        if runner.epoch == self.stop_epoch:
+        if runner.epoch >= self.stop_epoch:
             model = runner.model
             # TODO: refactor after mmengine using model wrapper
             if is_model_wrapper(model):
