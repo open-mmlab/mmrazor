@@ -31,11 +31,17 @@ Network compression has been widely studied since it is able to reduce the memor
 
 ### Pose on COCO
 
-| Model(Detector-Backbone) | AP   | Gap  | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                  | Download                                                 | Onnx_cpu(FPS) |
-| ------------------------ | ---- | ---- | ------- | --------- | ------------- | --------- | --------------------------------------- | -------------------------------------------------------- | ------------- |
-| RTMPose-S                | 72.1 | -    | 0.68    | -         | 5.47          | -         | [mmpose][pose_s_c]                      | [model][pose_s_m]                                        | 279           |
-| RTMPose-S_pruned_act     | 69.0 | -3.1 | 0.34    | 50.0%     | 3.42          | 62.5%     | [prune][rp_a_pc] \| [finetune][rp_a_fc] | [pruned][rp_a_p] \| [finetuned][rp_a_f] \| [log][rp_a_l] | 268           |
-| RTMPose-T                | 67.9 | -    | 0.35    | -         | 3.34          | -         | [mmpose][pose_t_c]                      | [model][pose_t_m]                                        | 196           |
+| Model                | AP    | Gap    | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                  | Download                                                    | Onnx_cpu(FPS) |
+| -------------------- | ----- | ------ | ------- | --------- | ------------- | --------- | --------------------------------------- | ----------------------------------------------------------- | ------------- |
+| rtmpose-s            | 0.716 | -      | 0.68    | -         | 5.47          | -         | [mmpose][pose_s_c]                      | [model][pose_s_m]                                           | 279           |
+| rtmpose-s_pruned_act | 0.691 | -0.025 | 0.34    | 50.0%     | 3.42          | 62.5%     | [prune][rp_a_pc] \| [finetune][rp_a_fc] | [pruned][rp_sc_p] \| [finetuned][rp_sc_f] \| [log][rp_sc_l] | 268           |
+| rtmpose-t            | 0.682 | -      | 0.35    | -         | 3.34          | -         | [mmpose][pose_t_c]                      | [model][pose_t_m]                                           | 196           |
+
+| Model(Detector-Backbone)      | AP    | Gap    | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                  | Download                                                    | Onnx_cpu(FPS) |
+| ----------------------------- | ----- | ------ | ------- | --------- | ------------- | --------- | --------------------------------------- | ----------------------------------------------------------- | ------------- |
+| rtmpose-s-aic-coco            | 0.722 | -      | 0.68    | -         | 5.47          | -         | [mmpose][pose_s_c]                      | [model][pose_s_m]                                           | 279           |
+| rtmpose-s-aic-coco_pruned_act | 0.694 | -0.028 | 0.35    | 51.5%     | 3.43          | 62.7%     | [prune][rp_a_pc] \| [finetune][rp_a_fc] | [pruned][rp_sa_p] \| [finetuned][rp_sa_f] \| [log][rp_sa_l] | 272           |
+| rtmpose-t-aic-coco            | 0.685 | -      | 0.35    | -         | 3.34          | -         | [mmpose][pose_t_c]                      | [model][pose_t_m]                                           | 196           |
 
 ### Pose on COCO
 
@@ -206,11 +212,14 @@ repo link
 [pose_s_m]: https://download.openmmlab.com/mmpose/v1/projects/rtmpose/rtmpose-s_simcc-coco_pt-aic-coco_420e-256x192-8edcf0d7_20230127.pth
 [pose_t_c]: https://download.openmmlab.com/mmpose/v1/projects/rtmpose/rtmpose-tiny_simcc-coco_pt-aic-coco_420e-256x192-e613ba3f_20230127.pth
 [pose_t_m]: https://download.openmmlab.com/mmclassification/v0/mobilenet_v2/mobilenet_v2_batch256_imagenet_20200708-3b2dc3af.pth
-[rp_a_f]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/rtmpose-s/group_fisher_finetune_rtmpose-s_8xb256-420e_coco-256x192.pth
 [rp_a_fc]: ../../mmpose/group_fisher/group_fisher_finetune_rtmpose-s_8xb256-420e_coco-256x192.py
-[rp_a_l]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/rtmpose-s/group_fisher_prune_rtmpose-s_8xb256-420e_coco-256x192_finetune.json
-[rp_a_p]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/rtmpose-s/group_fisher_prune_rtmpose-s_8xb256-420e_coco-256x192.pth
 [rp_a_pc]: ../../mmpose/group_fisher/group_fisher_prune_rtmpose-s_8xb256-420e_coco-256x192.py
+[rp_sa_f]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/rtmpose-s/group_fisher_finetune_rtmpose-s_8xb256-420e_aic-coco-256x192.pth
+[rp_sa_l]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/rtmpose-s/group_fisher_finetune_rtmpose-s_8xb256-420e_aic-coco-256x192.json
+[rp_sa_p]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/rtmpose-s/group_fisher_prune_rtmpose-s_8xb256-420e_aic-coco-256x192.pth
+[rp_sc_f]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/rtmpose-s/group_fisher_finetune_rtmpose-s_8xb256-420e_coco-256x192.pth
+[rp_sc_l]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/rtmpose-s/group_fisher_finetune_rtmpose-s_8xb256-420e_coco-256x192.json
+[rp_sc_p]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/rtmpose-s/group_fisher_prune_rtmpose-s_8xb256-420e_coco-256x192.pth
 [rt_a_f]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/retinanet/act/group_fisher_act_finetune_retinanet_r50_fpn_1x_coco.pth
 [rt_a_fc]: ../../mmdet/group_fisher/retinanet/group_fisher_act_finetune_retinanet_r50_fpn_1x_coco.py
 [rt_a_l]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/retinanet/act/20230113_231904.json
