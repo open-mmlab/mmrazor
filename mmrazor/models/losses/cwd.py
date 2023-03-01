@@ -17,11 +17,7 @@ class ChannelWiseDivergence(nn.Module):
         loss_weight (float): Weight of loss. Defaults to 1.0.
     """
 
-    def __init__(
-        self,
-        tau=1.0,
-        loss_weight=1.0,
-    ):
+    def __init__(self, tau=1.0, loss_weight=1.0):
         super(ChannelWiseDivergence, self).__init__()
         self.tau = tau
         self.loss_weight = loss_weight
