@@ -12,14 +12,15 @@ Network compression has been widely studied since it is able to reduce the memor
 
 ### Classification on ImageNet
 
-| Model                    | Top-1 | Gap   | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                | Download                                              | Onnx_cpu(FPS) |
-| ------------------------ | ----- | ----- | ------- | --------- | ------------- | --------- | ------------------------------------- | ----------------------------------------------------- | ------------- |
-| ResNet50                 | 76.55 | -     | 4.11    | -         | 25.6          | -         | [mmcls][cls_r50_c]                    | [model][cls_r50_m]                                    | 55.360        |
-| ResNet50_pruned_act      | 75.22 | -1.33 | 2.06    | 50.1%     | 16.3          | 63.7%     | [prune][r_a_pc] \| [finetune][r_a_fc] | [pruned][r_a_p] \| [finetuned][r_a_f] \| [log][r_a_l] | 80.671        |
-| ResNet50_pruned_flops    | 75.61 | -0.94 | 2.06    | 50.1%     | 16.3          | 63.7%     | [prune][r_f_pc] \| [finetune][r_f_fc] | [pruned][r_f_p] \| [finetuned][r_f_f] \| [log][r_f_l] | 78.674        |
-| MobileNetV2              | 71.86 | -     | 0.313   | -         | 3.51          | -         | [mmcls][cls_m_c]                      | [model][cls_m_m]                                      | 419.673       |
-| MobileNetV2_pruned_act   | 70.82 | -1.04 | 0.207   | 66.1%     | 3.18          | 90.6%     | [prune][m_a_pc] \| [finetune][m_a_fc] | [pruned][m_a_p] \| [finetuned][m_a_f] \| [log][m_a_l] | 576.118       |
-| MobileNetV2_pruned_flops | 70.87 | -0.99 | 0.207   | 66.1%     | 2.82          | 88.7%     | [prune][m_f_pc] \| [finetune][m_f_fc] | [pruned][m_f_p] \| [finetuned][m_f_f] \| [log][m_f_l] | 540.105       |
+| Model                         | Top-1 | Gap   | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                   | Download                                                    | Onnx_cpu(FPS) |
+| ----------------------------- | ----- | ----- | ------- | --------- | ------------- | --------- | ---------------------------------------- | ----------------------------------------------------------- | ------------- |
+| ResNet50                      | 76.55 | -     | 4.11    | -         | 25.6          | -         | [mmcls][cls_r50_c]                       | [model][cls_r50_m]                                          | 55.360        |
+| ResNet50_pruned_act           | 75.22 | -1.33 | 2.06    | 50.1%     | 16.3          | 63.7%     | [prune][r_a_pc] \| [finetune][r_a_fc]    | [pruned][r_a_p] \| [finetuned][r_a_f] \| [log][r_a_l]       | 80.671        |
+| ResNet50_pruned_act + dist kd | 76.50 | -0.05 | 2.06    | 50.1%     | 16.3          | 63.7%     | [prune][r_a_pc] \| [finetune][r_a_fc_kd] | [pruned][r_a_p] \| [finetuned][r_a_f_kd] \| [log][r_a_l_kd] | 80.671        |
+| ResNet50_pruned_flops         | 75.61 | -0.94 | 2.06    | 50.1%     | 16.3          | 63.7%     | [prune][r_f_pc] \| [finetune][r_f_fc]    | [pruned][r_f_p] \| [finetuned][r_f_f] \| [log][r_f_l]       | 78.674        |
+| MobileNetV2                   | 71.86 | -     | 0.313   | -         | 3.51          | -         | [mmcls][cls_m_c]                         | [model][cls_m_m]                                            | 419.673       |
+| MobileNetV2_pruned_act        | 70.82 | -1.04 | 0.207   | 66.1%     | 3.18          | 90.6%     | [prune][m_a_pc] \| [finetune][m_a_fc]    | [pruned][m_a_p] \| [finetuned][m_a_f] \| [log][m_a_l]       | 576.118       |
+| MobileNetV2_pruned_flops      | 70.87 | -0.99 | 0.207   | 66.1%     | 2.82          | 88.7%     | [prune][m_f_pc] \| [finetune][m_f_fc]    | [pruned][m_f_p] \| [finetuned][m_f_f] \| [log][m_f_l]       | 540.105       |
 
 ### Detection on COCO
 
@@ -232,7 +233,10 @@ repo link
 [rt_f_pc]: ../../mmdet/group_fisher/retinanet/group_fisher_flops_prune_retinanet_r50_fpn_1x_coco.py
 [r_a_f]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/resnet50/act/group_fisher_act_finetune_resnet50_8xb32_in1k.pth
 [r_a_fc]: ../../mmcls/group_fisher/resnet50/group_fisher_act_finetune_resnet50_8xb32_in1k.py
+[r_a_fc_kd]: ../../mmcls/group_fisher/resnet50/group_fisher_act_finetune_resnet50_8xb32_in1k_dist.py
+[r_a_f_kd]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/resnet50/group_fisher_act_finetune_resnet50_8xb32_in1k_dist.pth
 [r_a_l]: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/group_fisher/resnet50/act/20230130_175426.json
+[r_a_l_kd]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/resnet50/group_fisher_act_finetune_resnet50_8xb32_in1k_dist.json
 [r_a_p]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/resnet50/act/group_fisher_act_prune_resnet50_8xb32_in1k.pth
 [r_a_pc]: ../../mmcls/group_fisher/resnet50/group_fisher_act_prune_resnet50_8xb32_in1k.py
 [r_f_f]: https://download.openmmlab.com/mmrazor/v1/pruning/group_fisher/resnet50/flops/group_fisher_flops_finetune_resnet50_8xb32_in1k.pth
