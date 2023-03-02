@@ -59,7 +59,13 @@ def main():
         cfg.work_dir = osp.join('./work_dirs',
                                 osp.splitext(osp.basename(args.config))[0])
 
-    cfg.load_from = args.checkpoint
+    if args.checkpoint == 'none':
+        # NOTE: In this case, `args.checkpoint` isn't specified. If you haven't
+        # specified a checkpoint in the `init_cfg` of the model yet, it may
+        # cause the invalid results.
+        cfg.load_from = None
+    else:
+        cfg.load_from = args.checkpoint
 
     # build the runner from config
     runner = Runner.from_cfg(cfg)

@@ -44,7 +44,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
 ```bash
 CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
   configs/nas/mmcls/autoformer/autoformer_subnet_8xb128_in1k.py \
-  $STEP1_CKPT 1 --work-dir $WORK_DIR \
+  none 1 --work-dir $WORK_DIR \
   --cfg-options model.init_cfg.checkpoint=$STEP1_CKPT model.init_weight_from_supernet=True
 
 ```
