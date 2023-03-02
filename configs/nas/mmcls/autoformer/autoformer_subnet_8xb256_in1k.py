@@ -13,5 +13,5 @@ model = dict(
     init_cfg=dict(
         type='Pretrained',
         checkpoint=  # noqa: E251
-        'https://download.openmmlab.com/mmrazor/v1/.pth',  # noqa: E501
+        'https://download.openmmlab.com/mmrazor/v1/autoformer/autoformer_supernet_32xb256_in1k_20220919_110144-c658ce8f.pth',  # noqa: E501
         prefix='architecture.'))
