@@ -291,7 +291,12 @@ class NativeQuantizer(BaseQuantizer):
                     # This is decided by backend type, some backend need
                     # explicitly keep the fake quant structure, others don't.
                     # TODO add deploy doc link
+<<<<<<< HEAD
                     if keep_w_fake_quant:
+=======
+                    if keep_fake_quant:
+                        self.qconfig.fixed_w_qparams()
+>>>>>>> 8c7a2f39 (move to aide)
                         for m in float_child.modules():
                             setattr(m, 'qconfig', self.qconfig.convert())
                         if type(child) in MERGE_BN_MAPPINGS:

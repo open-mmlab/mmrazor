@@ -82,6 +82,7 @@ class OpenVINOQuantizer(NativeQuantizer):
                     **kwargs):
         """Export the onnx model that can be deployed to OpenVino backend."""
 
+
         symbolic_output_path = output_path.replace('.onnx', '_symbolic.onnx')
         torch.onnx.export(
             model,
