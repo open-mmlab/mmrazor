@@ -33,7 +33,12 @@ model = dict(
     type='mmrazor.sub_model',
     cfg=supernet,
     # NOTE: You can replace the yaml with the mutable_cfg searched by yourself
-    fix_subnet='configs/nas/mmcls/darts/DARTS_SUBNET_CIFAR_PAPER_ALIAS.yaml')
+    fix_subnet='configs/nas/mmcls/darts/DARTS_SUBNET_CIFAR_PAPER_ALIAS.yaml',
+    init_cfg=dict(
+        type='Pretrained',
+        checkpoint=  # noqa: E251
+        'https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/darts/darts_subnetnet_1xb96_cifar10_acc-97.27_20211222-17e42600_latest.pth',  # noqa: E501
+        prefix='architecture.'))
 
 model_wrapper_cfg = None
 find_unused_parameters = True

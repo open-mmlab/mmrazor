@@ -15,6 +15,7 @@ model = dict(
         checkpoint=  # noqa: E251
         'https://download.openmmlab.com/mmrazor/v1/bignas/attentive_mobilenet_supernet_32xb64_in1k_flops-2G_acc-81.72_20221229_200440-954772a3.pth',  # noqa: E501
         prefix='architecture.'))
+
 model_wrapper_cfg = None
 find_unused_parameters = True
 
