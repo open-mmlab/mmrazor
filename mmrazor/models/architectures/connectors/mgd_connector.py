@@ -27,10 +27,12 @@ class MGDConnector(BaseConnector):
         student_channels: int,
         teacher_channels: int,
         lambda_mgd: float = 0.65,
+        mask_on_channel: bool = False,
         init_cfg: Optional[Dict] = None,
     ) -> None:
         super().__init__(init_cfg)
         self.lambda_mgd = lambda_mgd
+        self.mask_on_channel = mask_on_channel
         if student_channels != teacher_channels:
             self.align = nn.Conv2d(
                 student_channels,
@@ -55,7 +57,11 @@ class MGDConnector(BaseConnector):
         N, C, H, W = feature.shape
 
         device = feature.device
-        mat = torch.rand((N, 1, H, W)).to(device)
+        if not self.mask_on_channel:
+            mat = torch.rand((N, 1, H, W)).to(device)
+        else:
+            mat = torch.rand((N, C, 1, 1)).to(device)
+
         mat = torch.where(mat > 1 - self.lambda_mgd,
                           torch.zeros(1).to(device),
                           torch.ones(1).to(device)).to(device)

@@ -5,7 +5,7 @@ import torch
 
 from mmrazor.models import (BYOTConnector, ConvModuleConnector, CRDConnector,
                             FBKDStudentConnector, FBKDTeacherConnector,
-                            MGDConnector, Paraphraser,
+                            MGDConnector, NormConnector, Paraphraser,
                             TorchFunctionalConnector, TorchNNConnector,
                             Translator)
 
@@ -143,3 +143,27 @@ class TestConnector(TestCase):
 
         assert s_output1.shape == torch.Size([1, 16, 8, 8])
         assert s_output2.shape == torch.Size([1, 32, 8, 8])
+
+        mgd_connector1 = MGDConnector(
+            student_channels=16,
+            teacher_channels=16,
+            lambda_mgd=0.65,
+            mask_on_channel=True)
+        mgd_connector2 = MGDConnector(
+            student_channels=16,
+            teacher_channels=32,
+            lambda_mgd=0.65,
+            mask_on_channel=True)
+        s_output1 = mgd_connector1.forward_train(s_feat)
+        s_output2 = mgd_connector2.forward_train(s_feat)
+
+        assert s_output1.shape == torch.Size([1, 16, 8, 8])
+        assert s_output2.shape == torch.Size([1, 32, 8, 8])
+
+    def test_norm_connector(self):
+        s_feat = torch.randn(2, 3, 2, 2)
+        norm_cfg = dict(type='BN', affine=False, track_running_stats=False)
+        norm_connector = NormConnector(3, norm_cfg)
+        output = norm_connector.forward_train(s_feat)
+
+        assert output.shape == torch.Size([2, 3, 2, 2])
