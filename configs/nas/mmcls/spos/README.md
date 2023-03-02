@@ -34,7 +34,9 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
   configs/nas/spos/spos_subnet_shufflenetv2_8xb128_in1k.py 4 \
-  --work-dir $WORK_DIR --cfg-options algorithm.mutable_cfg=$STEP2_SUBNET_YAML  # or modify the config directly
+  --work-dir $WORK_DIR \
+  --cfg-options model.init_cfg.checkpoint=$STEP2_CKPT
+
 ```
 
 ## Step 4: Subnet inference on ImageNet
