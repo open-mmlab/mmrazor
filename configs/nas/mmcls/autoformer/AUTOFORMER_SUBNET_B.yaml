@@ -1,0 +1,134 @@
+backbone.base_embed_dims:
+  chosen: 64
+backbone.blocks.0.attn.mutable_attrs.num_heads:
+  chosen: 10
+backbone.blocks.0.middle_channels:
+  chosen: 3.5
+backbone.blocks.0.mutable_mlp_ratios:
+  chosen: 3.5
+backbone.blocks.0.mutable_q_embed_dims:
+  chosen: 10
+backbone.blocks.1.attn.mutable_attrs.num_heads:
+  chosen: 10
+backbone.blocks.1.middle_channels:
+  chosen: 3.5
+backbone.blocks.1.mutable_mlp_ratios:
+  chosen: 3.5
+backbone.blocks.1.mutable_q_embed_dims:
+  chosen: 64
+backbone.blocks.10.attn.mutable_attrs.num_heads:
+  chosen: 10
+backbone.blocks.10.middle_channels:
+  chosen: 4.0
+backbone.blocks.10.mutable_mlp_ratios:
+  chosen: 4.0
+backbone.blocks.10.mutable_q_embed_dims:
+  chosen: 64
+backbone.blocks.11.attn.mutable_attrs.num_heads:
+  chosen: 10
+backbone.blocks.11.middle_channels:
+  chosen: 576
+backbone.blocks.11.mutable_mlp_ratios:
+  chosen: 4.0
+backbone.blocks.11.mutable_q_embed_dims:
+  chosen: 10
+backbone.blocks.12.attn.mutable_attrs.num_heads:
+  chosen: 9
+backbone.blocks.12.middle_channels:
+  chosen: 4.0
+backbone.blocks.12.mutable_mlp_ratios:
+  chosen: 4.0
+backbone.blocks.12.mutable_q_embed_dims:
+  chosen: 9
+backbone.blocks.13.attn.mutable_attrs.num_heads:
+  chosen: 10
+backbone.blocks.13.middle_channels:
+  chosen: 4.0
+backbone.blocks.13.mutable_mlp_ratios:
+  chosen: 4.0
+backbone.blocks.13.mutable_q_embed_dims:
+  chosen: 10
+backbone.blocks.14.attn.mutable_attrs.num_heads:
+  chosen: 8
+backbone.blocks.14.middle_channels:
+  chosen: 576
+backbone.blocks.14.mutable_mlp_ratios:
+  chosen: 3.5
+backbone.blocks.14.mutable_q_embed_dims:
+  chosen: 8
+backbone.blocks.15.attn.mutable_attrs.num_heads:
+  chosen: 10
+backbone.blocks.15.middle_channels:
+  chosen: 3.0
+backbone.blocks.15.mutable_mlp_ratios:
+  chosen: 3.0
+backbone.blocks.15.mutable_q_embed_dims:
+  chosen: 10
+backbone.blocks.2.attn.mutable_attrs.num_heads:
+  chosen: 10
+backbone.blocks.2.middle_channels:
+  chosen: 576
+backbone.blocks.2.mutable_mlp_ratios:
+  chosen: 3.5
+backbone.blocks.2.mutable_q_embed_dims:
+  chosen: 10
+backbone.blocks.3.attn.mutable_attrs.num_heads:
+  chosen: 8
+backbone.blocks.3.middle_channels:
+  chosen: 4.0
+backbone.blocks.3.mutable_mlp_ratios:
+  chosen: 4.0
+backbone.blocks.3.mutable_q_embed_dims:
+  chosen: 8
+backbone.blocks.4.attn.mutable_attrs.num_heads:
+  chosen: 10
+backbone.blocks.4.middle_channels:
+  chosen: 576
+backbone.blocks.4.mutable_mlp_ratios:
+  chosen: 3.0
+backbone.blocks.4.mutable_q_embed_dims:
+  chosen: 10
+backbone.blocks.5.attn.mutable_attrs.num_heads:
+  chosen: 9
+backbone.blocks.5.middle_channels:
+  chosen: 3.0
+backbone.blocks.5.mutable_mlp_ratios:
+  chosen: 3.0
+backbone.blocks.5.mutable_q_embed_dims:
+  chosen: 9
+backbone.blocks.6.attn.mutable_attrs.num_heads:
+  chosen: 8
+backbone.blocks.6.middle_channels:
+  chosen: 576
+backbone.blocks.6.mutable_mlp_ratios:
+  chosen: 3.5
+backbone.blocks.6.mutable_q_embed_dims:
+  chosen: 8
+backbone.blocks.7.attn.mutable_attrs.num_heads:
+  chosen: 8
+backbone.blocks.7.middle_channels:
+  chosen: 3.5
+backbone.blocks.7.mutable_mlp_ratios:
+  chosen: 3.5
+backbone.blocks.7.mutable_q_embed_dims:
+  chosen: 8
+backbone.blocks.8.attn.mutable_attrs.num_heads:
+  chosen: 9
+backbone.blocks.8.middle_channels:
+  chosen: 576
+backbone.blocks.8.mutable_mlp_ratios:
+  chosen: 4.0
+backbone.blocks.8.mutable_q_embed_dims:
+  chosen: 9
+backbone.blocks.9.attn.mutable_attrs.num_heads:
+  chosen: 8
+backbone.blocks.9.middle_channels:
+  chosen: 576
+backbone.blocks.9.mutable_mlp_ratios:
+  chosen: 4.0
+backbone.blocks.9.mutable_q_embed_dims:
+  chosen: 8
+backbone.mutable_depth:
+  chosen: 14
+backbone.mutable_embed_dims:
+  chosen: 576

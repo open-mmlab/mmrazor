@@ -54,7 +54,7 @@
                     "min_value":1,
                     "min_ratio":0.9
                 },
-                "choice":0.59374
+                "choice":0.59375
             },
             "backbone.layer2.1.conv1_(0, 128)_128":{
                 "init_args":{

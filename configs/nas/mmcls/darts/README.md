@@ -12,7 +12,7 @@ This paper addresses the scalability challenge of architecture search by formula
 
 ## Get Started
 
-### Supernet training on Cifar-10
+### Step 1: Supernet training on Cifar-10
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
@@ -20,12 +20,22 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
   --work-dir $WORK_DIR
 ```
 
-## Subnet inference on Cifar-10
+## Step 2: Subnet retraining on Cifar-10
+
+```bash
+CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
+  configs/nas/mmcls/darts/darts_subnet_1xb96_cifar10_2.0.py 4 \
+  --work-dir $WORK_DIR \
+  --cfg-options model.init_cfg.checkpoint=$STEP2_CKPT
+```
+
+## Step 3: Subnet inference on Cifar-10
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
   configs/nas/mmcls/darts/darts_subnet_1xb96_cifar10_2.0.py \
-  $STEP1_CKPT 1 --work-dir $WORK_DIR
+  none 1 --work-dir $WORK_DIR \
+  --cfg-options model.init_cfg.checkpoint=$STEP2_CKPT
 ```
 
 ## Results and models

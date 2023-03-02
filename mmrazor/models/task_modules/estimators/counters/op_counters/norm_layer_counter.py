@@ -66,3 +66,26 @@ class LayerNormCounter(BNCounter):
 class GroupNormCounter(BNCounter):
     """FLOPs/params counter for GroupNorm module."""
     pass
+
+
+@TASK_UTILS.register_module()
+class DMCPBatchNorm2dCounter(BNCounter):
+    """FLOPs/params counter for DynamicBatchNorm2d module."""
+
+    @staticmethod
+    def add_count_hook(module, input, output):
+        """Calculate FLOPs and params based on the size of input & output."""
+        input = input[0]
+        B, C, H, W = input.shape
+
+        mutable_channel = list(
+            module.mutable_attrs['num_features'].mutable_channels.values())
+        if hasattr(mutable_channel[0], 'activated_tensor_channels'):
+            C = mutable_channel[0].activated_tensor_channels
+
+        batch_flops = B * C * H * W
+        if getattr(module, 'affine', False):
+            batch_flops *= 2
+        num_features = module.mutable_attrs['num_features'].activated_channels
+        module.__flops__ += batch_flops
+        module.__params__ += num_features * 2

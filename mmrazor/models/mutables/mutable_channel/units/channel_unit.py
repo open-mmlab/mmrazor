@@ -201,7 +201,11 @@ class ChannelUnit(BaseModule):
         else:
             first_module_name = 'unitx'
         name = f'{first_module_name}_{self.num_channels}'
-        return name
+        return getattr(self, '_name', name)
+
+    @name.setter
+    def name(self, unit_name) -> None:
+        self._name = unit_name
 
     @property
     def alias(self) -> str:

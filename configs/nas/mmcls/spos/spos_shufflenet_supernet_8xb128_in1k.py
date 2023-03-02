@@ -6,6 +6,7 @@ _base_ = [
 
 # model
 supernet = dict(
+    _scope_='mmcls',
     type='ImageClassifier',
     data_preprocessor=_base_.preprocess_cfg,
     backbone=_base_.nas_backbone,

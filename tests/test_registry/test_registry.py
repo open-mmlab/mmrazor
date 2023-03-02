@@ -100,6 +100,8 @@ class TestRegistry(TestCase):
             init_cfg=init_cfg)
         model = MODELS.build(model_cfg)
         self.assertTrue(isinstance(model, BaseModel))
+        # make sure the model is pruned
+        assert model.backbone.layer1[0].conv1.weight.size()[0] == 41
 
     def test_build_subnet_prune_from_cfg_by_mutable(self):
         mutator_cfg = fileio.load('tests/data/test_registry/subnet.json')

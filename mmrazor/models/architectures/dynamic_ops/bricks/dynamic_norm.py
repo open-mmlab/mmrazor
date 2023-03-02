@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Any, Dict, List, Optional
+from functools import partial
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -13,6 +14,8 @@ from torch.nn.modules.batchnorm import _BatchNorm
 from mmrazor.models.mutables.base_mutable import BaseMutable
 from mmrazor.registry import MODELS
 from ..mixins import DynamicBatchNormMixin, DynamicLayerNormMixin
+
+PartialType = Callable[[Any, Optional[nn.Parameter]], Tuple]
 
 
 class _DynamicBatchNorm(_BatchNorm, DynamicBatchNormMixin):
@@ -388,3 +391,92 @@ class DynamicBatchNormXd(_DynamicBatchNorm):
 
     def _check_input_dim(self, input: torch.Tensor):
         return
+
+
+@MODELS.register_module()
+class DMCPBatchNorm2d(DynamicBatchNorm2d):
+    accepted_mutable_attrs = {'num_features'}
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.mutable_attrs: Dict[str, Optional[BaseMutable]] = nn.ModuleDict()
+
+    def forward(self,
+                input: Tensor,
+                arch_param=None,
+                arch_attr=None) -> Tensor:
+        """Forward of dynamic DMCPBatchNorm2d."""
+        out = self.forward_batchnorm(input)
+        if arch_param is not None:
+            out = self.forward_arch_param(out, arch_param, arch_attr)
+        return out
+
+    def forward_batchnorm(self, input: Tensor) -> Tensor:
+        """Forward of BatchNorm2d."""
+        self._check_input_dim(input)
+
+        if self.momentum is None:
+            exponential_average_factor = 0.0
+        else:
+            exponential_average_factor = self.momentum
+
+        if self.training and self.track_running_stats:
+            if self.num_batches_tracked is not None:  # type: ignore
+                self.num_batches_tracked = \
+                    self.num_batches_tracked + 1  # type: ignore
+                if self.momentum is None:  # use cumulative moving average
+                    exponential_average_factor = 1.0 / float(
+                        self.num_batches_tracked)
+                else:  # use exponential moving average
+                    exponential_average_factor = self.momentum
+
+        if self.training:
+            bn_training = True
+        else:
+            bn_training = (self.running_mean is None) and (self.running_var is
+                                                           None)
+
+        running_mean, running_var, weight, bias = self.get_dynamic_params()
+
+        out = F.batch_norm(input, running_mean, running_var, weight, bias,
+                           bn_training, exponential_average_factor, self.eps)
+
+        # copy changed running statistics
+        if self.training and self.track_running_stats:
+            out_mask = self._get_num_features_mask()
+            self.running_mean.masked_scatter_(out_mask, running_mean)
+            self.running_var.masked_scatter_(out_mask, running_var)
+
+        return out
+
+    def forward_arch_param(self, input: Tensor, arch_param,
+                           arch_attr) -> Tensor:
+        """Forward of arch parameters."""
+        size_x = input.size()
+        (group_size, num_groups, min_ch) = arch_attr
+
+        if num_groups == 0 or size_x[1] == min_ch:
+            return input
+
+        arch = torch.clamp(arch_param, min=0)
+        prob_distribute = torch.exp(-arch)
+
+        prob = torch.cumprod(prob_distribute, dim=0).view(num_groups, 1)
+        tp_x = input.transpose(0, 1).contiguous()
+        tp_group_x = tp_x[min_ch:]
+
+        size_tp_group = tp_group_x.size()
+        num_groups = size_tp_group[0] // group_size
+        tp_group_x = tp_group_x.view(num_groups, -1) * prob[:num_groups]
+        tp_group_x = tp_group_x.view(size_tp_group)
+
+        out = torch.cat([tp_x[:min_ch], tp_group_x]).transpose(0,
+                                                               1).contiguous()
+        return out
+
+    def set_forward_args(self, arch_param: nn.Parameter,
+                         arch_attr: Optional[Tuple]) -> None:
+        """Interface for modifying the arch_param using partial."""
+        forward_with_default_args: PartialType = \
+            partial(self.forward, arch_param=arch_param, arch_attr=arch_attr)
+        setattr(self, 'forward', forward_with_default_args)

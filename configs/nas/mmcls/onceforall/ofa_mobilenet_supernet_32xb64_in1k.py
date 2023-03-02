@@ -7,6 +7,7 @@ _base_ = [
 supernet = dict(
     _scope_='mmrazor',
     type='SearchableImageClassifier',
+    data_preprocessor=_base_.data_preprocessor,
     backbone=_base_.nas_backbone,
     neck=dict(type='mmcls.GlobalAveragePooling'),
     head=dict(
@@ -30,7 +31,6 @@ model = dict(
     drop_path_rate=0.2,
     backbone_dropout_stages=[6, 7],
     architecture=supernet,
-    data_preprocessor=_base_.data_preprocessor,
     distiller=dict(
         type='ConfigurableDistiller',
         teacher_recorders=dict(

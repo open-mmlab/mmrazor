@@ -44,15 +44,16 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
 ```bash
 CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
   configs/nas/mmcls/autoformer/autoformer_subnet_8xb128_in1k.py \
-  $STEP2_CKPT 1 --work-dir $WORK_DIR \
-  --cfg-options algorithm.mutable_cfg=$STEP2_SUBNET_YAML
+  none 1 --work-dir $WORK_DIR \
+  --cfg-options model.init_cfg.checkpoint=$STEP1_CKPT model.init_weight_from_supernet=True
+
 ```
 
 ## Results and models
 
-| Dataset  | Supernet |                                                                                                                                               Subnet                                                                                                                                                | Params(M) | Flops(G) | Top-1 (%) | Top-5 (%) |                     Config                      | Download                                                                                                                                                                    |     Remarks      |
-| :------: | :------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------: | :------: | :-------: | :-------: | :---------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------: |
-| ImageNet |   vit    | [mutable](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v0.1/nas/spos/spos_shufflenetv2_subnet_8xb128_in1k/spos_shufflenetv2_subnet_8xb128_in1k_flops_0.33M_acc_73.87_20211222-454627be_mutable_cfg.yaml?versionId=CAEQHxiBgICw5b6I7xciIGY5MjVmNWFhY2U5MjQzN2M4NDViYzI2YWRmYWE1YzQx) |  52.472   |   10.2   |   82.48   |   95.99   | [config](./autoformer_supernet_32xb256_in1k.py) | [model](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/x.pth) \| [log](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v0.1/nas/spos/x.log.json) | MMRazor searched |
+| Dataset  | Supernet |                               Subnet                               | Params(M) | Flops(G) | Top-1 (%) | Top-5 (%) |                     Config                      | Download                                                                                                                                                                                                                                                  |     Remarks      |
+| :------: | :------: | :----------------------------------------------------------------: | :-------: | :------: | :-------: | :-------: | :---------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------: |
+| ImageNet |   vit    | [mutable](./configs/nas/mmcls/autoformer/AUTOFORMER_SUBNET_B.yaml) |  54.319   |  10.57   |   82.47   |   95.99   | [config](./autoformer_supernet_32xb256_in1k.py) | [model](https://download.openmmlab.com/mmrazor/v1/autoformer/autoformer_supernet_32xb256_in1k_20220919_110144-c658ce8f.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/autoformer/autoformer_supernet_32xb256_in1k_20220919_110144-c658ce8f.json) | MMRazor searched |
 
 **Note**:
 

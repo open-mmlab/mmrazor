@@ -54,7 +54,8 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
         1. Using tracer. It needs parse_cfg to be the config of the
         ChannelAnalyzer.
         2. Using config. When parse_cfg['type']='Config'. It needs that
-        channel_unit_cfg['unit']['xxx_unit_name] has a key 'channels'.
+        channel_unit_cfg['unit']['xxx_unit_name] has a key 'channels',
+        otherwise tracer is required.
         3. Using the model with pre-defined dynamic-ops and mutablechannels:
         When parse_cfg['type']='Predefined'.
     """
@@ -102,8 +103,13 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
 
         if isinstance(self.parse_cfg,
                       ChannelAnalyzer) or 'Analyzer' in self.parse_cfg['type']:
-            units = self._prepare_from_tracer(supernet, self.parse_cfg)
-        elif self.parse_cfg['type'] == 'Config':
+            if isinstance(self.parse_cfg,
+                          dict) and 'from_cfg' in self.parse_cfg:
+                units = self._prepare_from_cfg(supernet, self.units_cfg)
+            else:
+                units = self._prepare_from_tracer(supernet, self.parse_cfg)
+        elif self.parse_cfg['type'] == 'Config' \
+                or 'from_cfg' in self.parse_cfg:
             units = self._prepare_from_cfg(supernet, self.units_cfg)
         elif self.parse_cfg['type'] == 'Predefined':
             units = self._prepare_from_predefined_model(supernet)
@@ -317,15 +323,40 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
         if isinstance(config, str):
             config = fileio.load(config)
         assert isinstance(config, dict)
+
+        if 'Analyzer' in self.parse_cfg['type']:
+            self.parse_cfg.pop('from_cfg')
+            tracer = TASK_UTILS.build(self.parse_cfg)
+            unit_configs = tracer.analyze(model)
+
         units = []
         for unit_key in config:
             init_args = copy.deepcopy(self.unit_default_args)
             if 'init_args' in config[unit_key]:
                 init_args.update(config[unit_key]['init_args'])
             config[unit_key]['init_args'] = init_args
-            unit = self.unit_class.init_from_cfg(model, config[unit_key])
+            if 'channels' in config[unit_key]:
+                unit = self.unit_class.init_from_cfg(model, config[unit_key])
+                unit.name = unit_key
+            else:
+                try:
+                    unit = self._prepare_unit_from_init_cfg(
+                        model, config[unit_key], unit_configs[unit_key])
+                except ValueError:
+                    raise ValueError(
+                        'Initializing channel_mutator from the config needs'
+                        'to include `channels` or `Analyzer` in the config.')
             units.append(unit)
         return units
+
+    def _prepare_unit_from_init_cfg(self, model: Module, channel_cfg: dict,
+                                    init_cfg: dict):
+        """Initialize units using the init_cfg, which created by tracer."""
+        unit = ChannelUnit.init_from_cfg(model, init_cfg)
+        unit = self._convert_channel_unit_to_mutable([unit])[0]
+        if 'choice' in channel_cfg:
+            unit.current_choice = channel_cfg['choice']
+        return unit
 
     def _prepare_from_predefined_model(self, model: Module):
         """Initialize units using the model with pre-defined dynamicops and

@@ -299,7 +299,8 @@ class AttentiveMobileNetV3(BaseBackbone):
                 mutate_mobilenet_layer(layer[k], mid_mutable,
                                        mutable_out_channels,
                                        mutable_expand_ratio,
-                                       mutable_kernel_size)
+                                       mutable_kernel_size,
+                                       self.fine_grained_mode)
                 mid_mutable = mutable_out_channels
 
         self.last_mutable_channels = OneShotMutableChannel(

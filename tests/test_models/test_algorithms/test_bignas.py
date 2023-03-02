@@ -94,9 +94,6 @@ class TestBigNAS(TestCase):
         random_subnet = bignas_algo.mutator.sample_choices()
         self.assertIsInstance(random_subnet, dict)
 
-        # bignas_algo support training
-        self.assertTrue(bignas_algo.is_supernet)
-
         # initiate bignas without any `mutator`.
         ALGORITHM_CFG_SUPERNET.pop('type')
         ALGORITHM_CFG_SUPERNET['mutator'] = None

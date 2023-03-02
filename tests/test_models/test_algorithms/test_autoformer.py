@@ -40,8 +40,7 @@ ARCHITECTURE_CFG = dict(
 ALGORITHM_CFG = dict(
     type='mmrazor.Autoformer',
     architecture=ARCHITECTURE_CFG,
-    mutator=MUTATOR_CFG,
-    fix_subnet=None)
+    mutator=MUTATOR_CFG)
 
 
 class TestAutoFormer(TestCase):
@@ -56,9 +55,6 @@ class TestAutoFormer(TestCase):
         # autoformer search_groups
         random_subnet = autoformer_algo.mutator.sample_choices()
         self.assertIsInstance(random_subnet, dict)
-
-        # autoformer_algo support training
-        self.assertTrue(autoformer_algo.is_supernet)
 
         # initiate autoformer without any `mutator`.
         ALGORITHM_CFG_SUPERNET.pop('type')

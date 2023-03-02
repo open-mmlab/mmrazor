@@ -113,15 +113,18 @@ def sub_model(cfg,
               prefix: str = '',
               extra_prefix: str = '',
               init_weight_from_supernet: bool = False,
-              init_cfg: Optional[Dict] = None):
+              init_cfg: Optional[Dict] = None,
+              **kwargs):
     model = MODELS.build(cfg)
     # Save path type cfg process, set init_cfg directly.
     if init_cfg:
         # update init_cfg when init_cfg is valid.
         model.init_cfg = init_cfg
+
     if init_weight_from_supernet:
-        # Supernet is modified after load_fix_subnet(), init weight here.
+        # init weights from supernet first before it turns into a sub model.
         model.init_weights()
+
     from mmrazor.structures import load_fix_subnet
 
     load_fix_subnet(
@@ -131,8 +134,8 @@ def sub_model(cfg,
         prefix=prefix,
         extra_prefix=extra_prefix)
 
-    if init_weight_from_supernet:
-        # Supernet is modified after load_fix_subnet().
-        model.init_cfg = None
+    if not init_weight_from_supernet:
+        # init weights from the specific sub model.
+        model.init_weights()
 
     return model

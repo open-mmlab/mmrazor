@@ -17,7 +17,7 @@ Notably, by setting optimized channel numbers, our AutoSlim-MobileNet-v2 at 305M
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
-  configs/pruning/autoslim/autoslim_mbv2_supernet_8xb256_in1k.py 4 \
+  configs/nas/autoslim/autoslim_mbv2_1.5x_supernet_8xb256_in1k.py 4 \
   --work-dir $WORK_DIR
 ```
 
@@ -25,7 +25,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
-  configs/pruning/autoslim/autoslim_mbv2_search_8xb1024_in1k.py 4 \
+  configs/nas/autoslim/autoslim_mbv2_1.5x_search_8xb256_in1k.py 4 \
   --work-dir $WORK_DIR --cfg-options load_from=$STEP1_CKPT
 ```
 
@@ -33,27 +33,27 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
-  configs/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k.py 4 \
+  configs/nas/autoslim/autoslim_mbv2_subnet_8xb256_in1k.py 4 \
   --work-dir $WORK_DIR \
-  --cfg-options algorithm.channel_cfg=configs/pruning/autoslim/AUTOSLIM_MBV2_530M_OFFICIAL.yaml,configs/pruning/autoslim/AUTOSLIM_MBV2_320M_OFFICIAL.yaml,configs/pruning/autoslim/AUTOSLIM_MBV2_220M_OFFICIAL.yaml
+  --cfg-options algorithm.channel_cfg=configs/nas/autoslim/AUTOSLIM_MBV2_530M_OFFICIAL.yaml,configs/nas/autoslim/AUTOSLIM_MBV2_320M_OFFICIAL.yaml,configs/nas/autoslim/AUTOSLIM_MBV2_220M_OFFICIAL.yaml
 ```
 
 ### Split checkpoint
 
 ```bash
 python ./tools/model_converters/split_checkpoint.py \
-  configs/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k.py \
+  configs/nas/autoslim/autoslim_mbv2_subnet_8xb256_in1k.py \
   $RETRAINED_CKPT \
-  --channel-cfgs configs/pruning/autoslim/AUTOSLIM_MBV2_530M_OFFICIAL.yaml configs/pruning/autoslim/AUTOSLIM_MBV2_320M_OFFICIAL.yaml configs/pruning/autoslim/AUTOSLIM_MBV2_220M_OFFICIAL.yaml
+  --channel-cfgs configs/nas/autoslim/AUTOSLIM_MBV2_530M_OFFICIAL.yaml configs/nas/autoslim/AUTOSLIM_MBV2_320M_OFFICIAL.yaml configs/nas/autoslim/AUTOSLIM_MBV2_220M_OFFICIAL.yaml
 ```
 
 ### Subnet inference
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
-  configs/pruning/autoslim/autoslim_mbv2_subnet_8xb256_in1k.py \
+  configs/nas/autoslim/autoslim_mbv2_subnet_8xb256_in1k.py \
   $SEARCHED_CKPT 1 --work-dir $WORK_DIR \
-  --cfg-options algorithm.channel_cfg=configs/pruning/autoslim/AUTOSLIM_MBV2_530M_OFFICIAL.yaml  # or modify the config directly
+  --cfg-options algorithm.channel_cfg=configs/nas/autoslim/AUTOSLIM_MBV2_530M_OFFICIAL.yaml  # or modify the config directly
 ```
 
 ## Results and models

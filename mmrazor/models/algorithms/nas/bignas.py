@@ -15,7 +15,6 @@ from mmrazor.models.mutators import NasMutator
 from mmrazor.models.utils import (add_prefix,
                                   reinitialize_optim_wrapper_count_status)
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
-from mmrazor.utils import ValidFixMutable
 from ..base import BaseAlgorithm
 
 VALID_MUTATOR_TYPE = Union[NasMutator, Dict]
@@ -45,8 +44,6 @@ class BigNAS(BaseAlgorithm):
             built mutator.
         distiller (VALID_DISTILLER_TYPE): Cfg of :class:`ConfigurableDistiller`
             or built distiller.
-        fix_subnet (str | dict | :obj:`FixSubnet`): The path of yaml file or
-            loaded dict or built :obj:`FixSubnet`. Defaults to None.
         data_preprocessor (Optional[Union[dict, nn.Module]]): The pre-process
             config of :class:`BaseDataPreprocessor`. Defaults to None.
         num_random_samples (int): number of random sample subnets.
@@ -62,7 +59,6 @@ class BigNAS(BaseAlgorithm):
                  architecture: Union[BaseModel, Dict],
                  mutator: VALID_MUTATOR_TYPE = None,
                  distiller: VALID_DISTILLER_TYPE = None,
-                 fix_subnet: Optional[ValidFixMutable] = None,
                  data_preprocessor: Optional[Union[Dict, nn.Module]] = None,
                  num_random_samples: int = 2,
                  drop_path_rate: float = 0.2,
@@ -70,28 +66,18 @@ class BigNAS(BaseAlgorithm):
                  init_cfg: Optional[Dict] = None) -> None:
         super().__init__(architecture, data_preprocessor, init_cfg)
 
-        if fix_subnet:
-            # Avoid circular import
-            from mmrazor.structures import load_fix_subnet
+        self.mutator = self._build_mutator(mutator)
+        # NOTE: `mutator.prepare_from_supernet` must be called
+        # before distiller initialized.
+        self.mutator.prepare_from_supernet(self.architecture)
 
-            # According to fix_subnet, delete the unchosen part of supernet
-            load_fix_subnet(self, fix_subnet)
-            self.is_supernet = False
-        else:
-            self.mutator = self._build_mutator(mutator)
-            # NOTE: `mutator.prepare_from_supernet` must be called
-            # before distiller initialized.
-            self.mutator.prepare_from_supernet(self.architecture)
+        self.distiller = self._build_distiller(distiller)
+        self.distiller.prepare_from_teacher(self.architecture)
+        self.distiller.prepare_from_student(self.architecture)
 
-            self.distiller = self._build_distiller(distiller)
-            self.distiller.prepare_from_teacher(self.architecture)
-            self.distiller.prepare_from_student(self.architecture)
-
-            self.sample_kinds = ['max', 'min']
-            for i in range(num_random_samples):
-                self.sample_kinds.append('random' + str(i))
-
-            self.is_supernet = True
+        self.sample_kinds = ['max', 'min']
+        for i in range(num_random_samples):
+            self.sample_kinds.append('random' + str(i))
 
         self.drop_path_rate = drop_path_rate
         self.backbone_dropout_stages = backbone_dropout_stages
@@ -120,83 +106,77 @@ class BigNAS(BaseAlgorithm):
 
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
-        if self.is_supernet:
 
-            def distill_step(
+        def distill_step(
                 batch_inputs: torch.Tensor, data_samples: List[BaseDataElement]
-            ) -> Dict[str, torch.Tensor]:
-                subnet_losses = dict()
+        ) -> Dict[str, torch.Tensor]:
+            subnet_losses = dict()
+            with optim_wrapper.optim_context(
+                    self), self.distiller.student_recorders:  # type: ignore
+                _ = self(batch_inputs, data_samples, mode='loss')
+                soft_loss = self.distiller.compute_distill_losses()
+
+                subnet_losses.update(soft_loss)
+
+                parsed_subnet_losses, _ = self.parse_losses(subnet_losses)
+                optim_wrapper.update_params(parsed_subnet_losses)
+
+            return subnet_losses
+
+        if not self._optim_wrapper_count_status_reinitialized:
+            reinitialize_optim_wrapper_count_status(
+                model=self,
+                optim_wrapper=optim_wrapper,
+                accumulative_counts=len(self.sample_kinds))
+            self._optim_wrapper_count_status_reinitialized = True
+
+        batch_inputs, data_samples = self.data_preprocessor(data,
+                                                            True).values()
+
+        total_losses = dict()
+        for kind in self.sample_kinds:
+            # update the max subnet loss.
+            if kind == 'max':
+                self.mutator.set_max_choices()
+                set_dropout(
+                    layers=self.architecture.backbone.layers[:-1],
+                    module=MBBlock,
+                    dropout_stages=self.backbone_dropout_stages,
+                    drop_path_rate=self.drop_path_rate)
                 with optim_wrapper.optim_context(
                         self
-                ), self.distiller.student_recorders:  # type: ignore
-                    _ = self(batch_inputs, data_samples, mode='loss')
-                    soft_loss = self.distiller.compute_distill_losses()
+                ), self.distiller.teacher_recorders:  # type: ignore
+                    max_subnet_losses = self(
+                        batch_inputs, data_samples, mode='loss')
+                    parsed_max_subnet_losses, _ = self.parse_losses(
+                        max_subnet_losses)
+                    optim_wrapper.update_params(parsed_max_subnet_losses)
+                total_losses.update(
+                    add_prefix(max_subnet_losses, 'max_subnet'))
+            # update the min subnet loss.
+            elif kind == 'min':
+                self.mutator.set_min_choices()
+                set_dropout(
+                    layers=self.architecture.backbone.layers[:-1],
+                    module=MBBlock,
+                    dropout_stages=self.backbone_dropout_stages,
+                    drop_path_rate=0.)
+                min_subnet_losses = distill_step(batch_inputs, data_samples)
+                total_losses.update(
+                    add_prefix(min_subnet_losses, 'min_subnet'))
+            # update the random subnets loss.
+            elif 'random' in kind:
+                self.mutator.set_choices(self.mutator.sample_choices())
+                set_dropout(
+                    layers=self.architecture.backbone.layers[:-1],
+                    module=MBBlock,
+                    dropout_stages=self.backbone_dropout_stages,
+                    drop_path_rate=0.)
+                random_subnet_losses = distill_step(batch_inputs, data_samples)
+                total_losses.update(
+                    add_prefix(random_subnet_losses, f'{kind}_subnet'))
 
-                    subnet_losses.update(soft_loss)
-
-                    parsed_subnet_losses, _ = self.parse_losses(subnet_losses)
-                    optim_wrapper.update_params(parsed_subnet_losses)
-
-                return subnet_losses
-
-            if not self._optim_wrapper_count_status_reinitialized:
-                reinitialize_optim_wrapper_count_status(
-                    model=self,
-                    optim_wrapper=optim_wrapper,
-                    accumulative_counts=len(self.sample_kinds))
-                self._optim_wrapper_count_status_reinitialized = True
-
-            batch_inputs, data_samples = self.data_preprocessor(data,
-                                                                True).values()
-
-            total_losses = dict()
-            for kind in self.sample_kinds:
-                # update the max subnet loss.
-                if kind == 'max':
-                    self.mutator.set_max_choices()
-                    set_dropout(
-                        layers=self.architecture.backbone.layers[:-1],
-                        module=MBBlock,
-                        dropout_stages=self.backbone_dropout_stages,
-                        drop_path_rate=self.drop_path_rate)
-                    with optim_wrapper.optim_context(
-                            self
-                    ), self.distiller.teacher_recorders:  # type: ignore
-                        max_subnet_losses = self(
-                            batch_inputs, data_samples, mode='loss')
-                        parsed_max_subnet_losses, _ = self.parse_losses(
-                            max_subnet_losses)
-                        optim_wrapper.update_params(parsed_max_subnet_losses)
-                    total_losses.update(
-                        add_prefix(max_subnet_losses, 'max_subnet'))
-                # update the min subnet loss.
-                elif kind == 'min':
-                    self.mutator.set_min_choices()
-                    set_dropout(
-                        layers=self.architecture.backbone.layers[:-1],
-                        module=MBBlock,
-                        dropout_stages=self.backbone_dropout_stages,
-                        drop_path_rate=0.)
-                    min_subnet_losses = distill_step(batch_inputs,
-                                                     data_samples)
-                    total_losses.update(
-                        add_prefix(min_subnet_losses, 'min_subnet'))
-                # update the random subnets loss.
-                elif 'random' in kind:
-                    self.mutator.set_choices(self.mutator.sample_choices())
-                    set_dropout(
-                        layers=self.architecture.backbone.layers[:-1],
-                        module=MBBlock,
-                        dropout_stages=self.backbone_dropout_stages,
-                        drop_path_rate=0.)
-                    random_subnet_losses = distill_step(
-                        batch_inputs, data_samples)
-                    total_losses.update(
-                        add_prefix(random_subnet_losses, f'{kind}_subnet'))
-
-            return total_losses
-        else:
-            return super(BigNAS, self).train_step(data, optim_wrapper)
+        return total_losses
 
 
 @MODEL_WRAPPERS.register_module()
@@ -210,88 +190,84 @@ class BigNASDDP(MMDistributedDataParallel):
             if os.environ.get('LOCAL_RANK') is not None:
                 device_ids = [int(os.environ['LOCAL_RANK'])]
         super().__init__(device_ids=device_ids, **kwargs)
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     def train_step(self, data: List[dict],
                    optim_wrapper: OptimWrapper) -> Dict[str, torch.Tensor]:
-        if self.module.is_supernet:
 
-            def distill_step(
+        def distill_step(
                 batch_inputs: torch.Tensor, data_samples: List[BaseDataElement]
-            ) -> Dict[str, torch.Tensor]:
-                subnet_losses = dict()
+        ) -> Dict[str, torch.Tensor]:
+            subnet_losses = dict()
+            with optim_wrapper.optim_context(
+                    self
+            ), self.module.distiller.student_recorders:  # type: ignore
+                _ = self(batch_inputs, data_samples, mode='loss')
+                soft_loss = self.module.distiller.compute_distill_losses()
+
+                subnet_losses.update(soft_loss)
+
+                parsed_subnet_losses, _ = self.module.parse_losses(
+                    subnet_losses)
+                optim_wrapper.update_params(parsed_subnet_losses)
+
+            return subnet_losses
+
+        if not self._optim_wrapper_count_status_reinitialized:
+            reinitialize_optim_wrapper_count_status(
+                model=self,
+                optim_wrapper=optim_wrapper,
+                accumulative_counts=len(self.module.sample_kinds))
+            self._optim_wrapper_count_status_reinitialized = True
+
+        batch_inputs, data_samples = self.module.data_preprocessor(
+            data, True).values()
+
+        total_losses = dict()
+        for kind in self.module.sample_kinds:
+            # update the max subnet loss.
+            if kind == 'max':
+                self.module.mutator.set_max_choices()
+                set_dropout(
+                    layers=self.module.architecture.backbone.layers[:-1],
+                    module=MBBlock,
+                    dropout_stages=self.module.backbone_dropout_stages,
+                    drop_path_rate=self.module.drop_path_rate)
                 with optim_wrapper.optim_context(
                         self
-                ), self.module.distiller.student_recorders:  # type: ignore
-                    _ = self(batch_inputs, data_samples, mode='loss')
-                    soft_loss = self.module.distiller.compute_distill_losses()
+                ), self.module.distiller.teacher_recorders:  # type: ignore
+                    max_subnet_losses = self(
+                        batch_inputs, data_samples, mode='loss')
+                    parsed_max_subnet_losses, _ = self.module.parse_losses(
+                        max_subnet_losses)
+                    optim_wrapper.update_params(parsed_max_subnet_losses)
+                total_losses.update(
+                    add_prefix(max_subnet_losses, 'max_subnet'))
+            # update the min subnet loss.
+            elif kind == 'min':
+                self.module.mutator.set_min_choices()
+                set_dropout(
+                    layers=self.module.architecture.backbone.layers[:-1],
+                    module=MBBlock,
+                    dropout_stages=self.module.backbone_dropout_stages,
+                    drop_path_rate=0.)
+                min_subnet_losses = distill_step(batch_inputs, data_samples)
+                total_losses.update(
+                    add_prefix(min_subnet_losses, 'min_subnet'))
+            # update the random subnets loss.
+            elif 'random' in kind:
+                self.module.mutator.set_choices(
+                    self.module.mutator.sample_choices())
+                set_dropout(
+                    layers=self.module.architecture.backbone.layers[:-1],
+                    module=MBBlock,
+                    dropout_stages=self.module.backbone_dropout_stages,
+                    drop_path_rate=0.)
+                random_subnet_losses = distill_step(batch_inputs, data_samples)
+                total_losses.update(
+                    add_prefix(random_subnet_losses, f'{kind}_subnet'))
 
-                    subnet_losses.update(soft_loss)
-
-                    parsed_subnet_losses, _ = self.module.parse_losses(
-                        subnet_losses)
-                    optim_wrapper.update_params(parsed_subnet_losses)
-
-                return subnet_losses
-
-            if not self._optim_wrapper_count_status_reinitialized:
-                reinitialize_optim_wrapper_count_status(
-                    model=self,
-                    optim_wrapper=optim_wrapper,
-                    accumulative_counts=len(self.module.sample_kinds))
-                self._optim_wrapper_count_status_reinitialized = True
-
-            batch_inputs, data_samples = self.module.data_preprocessor(
-                data, True).values()
-
-            total_losses = dict()
-            for kind in self.module.sample_kinds:
-                # update the max subnet loss.
-                if kind == 'max':
-                    self.module.mutator.set_max_choices()
-                    set_dropout(
-                        layers=self.module.architecture.backbone.layers[:-1],
-                        module=MBBlock,
-                        dropout_stages=self.module.backbone_dropout_stages,
-                        drop_path_rate=self.module.drop_path_rate)
-                    with optim_wrapper.optim_context(
-                            self
-                    ), self.module.distiller.teacher_recorders:  # type: ignore
-                        max_subnet_losses = self(
-                            batch_inputs, data_samples, mode='loss')
-                        parsed_max_subnet_losses, _ = self.module.parse_losses(
-                            max_subnet_losses)
-                        optim_wrapper.update_params(parsed_max_subnet_losses)
-                    total_losses.update(
-                        add_prefix(max_subnet_losses, 'max_subnet'))
-                # update the min subnet loss.
-                elif kind == 'min':
-                    self.module.mutator.set_min_choices()
-                    set_dropout(
-                        layers=self.module.architecture.backbone.layers[:-1],
-                        module=MBBlock,
-                        dropout_stages=self.module.backbone_dropout_stages,
-                        drop_path_rate=0.)
-                    min_subnet_losses = distill_step(batch_inputs,
-                                                     data_samples)
-                    total_losses.update(
-                        add_prefix(min_subnet_losses, 'min_subnet'))
-                # update the random subnets loss.
-                elif 'random' in kind:
-                    self.module.mutator.set_choices(
-                        self.module.mutator.sample_choices())
-                    set_dropout(
-                        layers=self.module.architecture.backbone.layers[:-1],
-                        module=MBBlock,
-                        dropout_stages=self.module.backbone_dropout_stages,
-                        drop_path_rate=0.)
-                    random_subnet_losses = distill_step(
-                        batch_inputs, data_samples)
-                    total_losses.update(
-                        add_prefix(random_subnet_losses, f'{kind}_subnet'))
-
-            return total_losses
-        else:
-            return super(BigNASDDP, self).train_step(data, optim_wrapper)
+        return total_losses
 
     @property
     def _optim_wrapper_count_status_reinitialized(self) -> bool:

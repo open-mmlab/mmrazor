@@ -116,15 +116,16 @@ def _load_fix_subnet_by_mutator(model: nn.Module, mutator_cfg: Dict) -> None:
         raise ValueError('mutator_cfg must contain key channel_unit_cfg, '
                          f'but got mutator_cfg:'
                          f'{mutator_cfg}')
-    mutator_cfg['parse_cfg'] = {'type': 'Config'}
     mutator = MODELS.build(mutator_cfg)
+    mutator.parse_cfg['from_cfg'] = True
     mutator.prepare_from_supernet(model)
 
 
 def export_fix_subnet(
         model: nn.Module,
         export_subnet_mode: str = 'mutable',
-        slice_weight: bool = False) -> Tuple[FixMutable, Optional[Dict]]:
+        slice_weight: bool = False,
+        export_channel: bool = False) -> Tuple[FixMutable, Optional[Dict]]:
     """Export subnet that can be loaded by :func:`load_fix_subnet`. Include
     subnet structure and subnet weight.
 
@@ -134,6 +135,9 @@ def export_fix_subnet(
             Export by `mutable.dump_chosen()` when set to 'mutable' (NAS)
             Export by `mutator.config_template()` when set to 'mutator' (Prune)
         slice_weight (bool): Export subnet weight. Default to False.
+        export_channel (bool): Whether to export the mutator's channel.
+            Often required when finetune is needed for the exported subnet.
+            Default to False.
 
     Return:
         fix_subnet (ValidFixMutable): Exported subnet choice config.
@@ -144,7 +148,7 @@ def export_fix_subnet(
     if export_subnet_mode == 'mutable':
         fix_subnet = _export_subnet_by_mutable(model)
     elif export_subnet_mode == 'mutator':
-        fix_subnet = _export_subnet_by_mutator(model)
+        fix_subnet = _export_subnet_by_mutator(model, export_channel)
     else:
         raise ValueError(f'Invalid export_subnet_mode {export_subnet_mode}, '
                          'only mutable or mutator is supported.')
@@ -192,12 +196,12 @@ def _export_subnet_by_mutable(model: nn.Module) -> Dict:
     return fix_subnet
 
 
-def _export_subnet_by_mutator(model: nn.Module) -> Dict:
+def _export_subnet_by_mutator(model: nn.Module, export_channel: bool) -> Dict:
     if not hasattr(model, 'mutator'):
         raise ValueError('model should contain `mutator` attribute, but got '
                          f'{type(model)} model')
     fix_subnet = model.mutator.config_template(
-        with_channels=False, with_unit_init_args=True)
+        with_channels=export_channel, with_unit_init_args=True)
 
     return fix_subnet
 

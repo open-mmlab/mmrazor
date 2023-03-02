@@ -50,7 +50,16 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
 CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
   configs/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco.py 4 \
   --work-dir $WORK_DIR \
-  --cfg-options algorithm.mutable_cfg=$STEP3_SUBNET_YAML load_from=$STEP4_CKPT  # or modify the config directly
+  --cfg-options --cfg-options model.init_cfg.checkpoint=$STEP4_CKPT
+```
+
+### Step 6: Subnet inference on COCO
+
+```bash
+CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
+  configs/nas/detnas/detnas_subnet_frcnn_shufflenetv2_fpn_1x_coco.py \
+  none 1 --work-dir $WORK_DIR \
+  --cfg-options model.init_cfg.checkpoint=$STEP5_CKPT
 ```
 
 ## Results and models

@@ -6,10 +6,10 @@ from .dynamic_embed import DynamicPatchEmbed
 from .dynamic_function import DynamicInputResizer
 from .dynamic_linear import DynamicLinear
 from .dynamic_multi_head_attention import DynamicMultiheadAttention
-from .dynamic_norm import (DynamicBatchNorm1d, DynamicBatchNorm2d,
-                           DynamicBatchNorm3d, DynamicBatchNormXd,
-                           DynamicLayerNorm, DynamicSyncBatchNorm,
-                           SwitchableBatchNorm2d)
+from .dynamic_norm import (DMCPBatchNorm2d, DynamicBatchNorm1d,
+                           DynamicBatchNorm2d, DynamicBatchNorm3d,
+                           DynamicBatchNormXd, DynamicLayerNorm,
+                           DynamicSyncBatchNorm, SwitchableBatchNorm2d)
 from .dynamic_relative_position import DynamicRelativePosition2D
 
 __all__ = [
@@ -31,4 +31,5 @@ __all__ = [
     'DynamicBatchNormXd',
     'DynamicInputResizer',
     'DynamicLayerNorm',
+    'DMCPBatchNorm2d',
 ]

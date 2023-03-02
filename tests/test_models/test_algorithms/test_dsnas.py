@@ -17,6 +17,7 @@ from torch.optim import SGD
 from mmrazor.models import DSNAS, NasMutator, OneHotMutableOP
 from mmrazor.models.algorithms.nas.dsnas import DSNASDDP
 from mmrazor.registry import MODELS
+from mmrazor.structures import load_fix_subnet
 
 MODELS.register_module(name='torchConv2d', module=nn.Conv2d, force=True)
 MODELS.register_module(name='torchMaxPool2d', module=nn.MaxPool2d, force=True)
@@ -96,9 +97,10 @@ class TestDsnas(TestCase):
         algo = DSNAS(model, mutator)
         self.assertIsInstance(algo.mutator, NasMutator)
 
-        # initiate Dsnas when `fix_subnet` is not None
+        # test load fix_subnet
         fix_subnet = {'mutable': {'chosen': 'torch_conv2d_5x5'}}
-        algo = DSNAS(model, mutator, fix_subnet=fix_subnet)
+        load_fix_subnet(model, fix_subnet)
+        algo = DSNAS(model, mutator)
         self.assertEqual(algo.architecture.mutable.num_choices, 1)
 
         # initiate Dsnas with error type `mutator`
@@ -118,8 +120,8 @@ class TestDsnas(TestCase):
 
         # subnet
         fix_subnet = {'mutable': {'chosen': 'torch_conv2d_5x5'}}
-        algo = DSNAS(model, fix_subnet=fix_subnet)
-        loss = algo(inputs, mode='loss')
+        load_fix_subnet(model, fix_subnet)
+        loss = model(inputs, mode='loss')
         self.assertIsInstance(loss, dict)
 
     def _prepare_fake_data(self):

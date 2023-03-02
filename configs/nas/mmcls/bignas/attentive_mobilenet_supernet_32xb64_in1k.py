@@ -7,6 +7,7 @@ _base_ = [
 supernet = dict(
     _scope_='mmrazor',
     type='SearchableImageClassifier',
+    data_preprocessor=_base_.data_preprocessor,
     backbone=_base_.nas_backbone,
     neck=dict(type='SqueezeMeanPoolingWithDropout', drop_ratio=0.2),
     head=dict(
@@ -31,7 +32,6 @@ model = dict(
     num_random_samples=2,
     backbone_dropout_stages=[6, 7],
     architecture=supernet,
-    data_preprocessor=_base_.data_preprocessor,
     distiller=dict(
         type='ConfigurableDistiller',
         teacher_recorders=dict(
@@ -44,7 +44,7 @@ model = dict(
             loss_kl=dict(
                 preds_S=dict(recorder='fc', from_student=True),
                 preds_T=dict(recorder='fc', from_student=False)))),
-    mutators=dict(type='mmrazor.NasMutator'))
+    mutator=dict(type='mmrazor.NasMutator'))
 
 model_wrapper_cfg = dict(
     type='mmrazor.BigNASDDP',
