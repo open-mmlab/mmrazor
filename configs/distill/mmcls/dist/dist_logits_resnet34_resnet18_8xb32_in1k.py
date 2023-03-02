@@ -30,14 +30,14 @@ model = dict(
         distill_losses=dict(
             loss_kl=dict(
                 type='DISTLoss',
-                beta=1.0,
-                gamma=1.0,
+                inter_loss_weight=1.0,
+                intra_loss_weight=1.0,
                 tau=1,
                 loss_weight=2,
             )),
         loss_forward_mappings=dict(
             loss_kl=dict(
-                preds_S=dict(from_student=True, recorder='fc'),
-                preds_T=dict(from_student=False, recorder='fc')))))
+                logits_S=dict(from_student=True, recorder='fc'),
+                logits_T=dict(from_student=False, recorder='fc')))))
 
 val_cfg = dict(_delete_=True, type='mmrazor.SingleTeacherDistillValLoop')
