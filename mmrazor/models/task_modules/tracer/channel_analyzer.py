@@ -149,12 +149,23 @@ class ChannelAnalyzer:
         inputs = self.demo_input.get_data(model)
         model.eval()
 
+        template_output = None
         if isinstance(inputs, dict):
-            inputs['mode'] = 'loss'
-            template_output = model(**inputs)
+            for mode in ['loss', 'tensor', 'predict']:
+                try:
+                    inputs['mode'] = mode
+                    template_output = model(**inputs)
+                    break
+                except Exception:
+                    pass
         else:
-            template_output = model(inputs)
-
+            try:
+                template_output = model(inputs)
+            except Exception:
+                pass
+        if template_output is None:
+            raise Exception(
+                'Forward failed, there may be an error in demo input.')
         mutable_units = find_mutable(model, mutable_units, units, inputs,
                                      template_output)
         mutable_unit_config = {}
