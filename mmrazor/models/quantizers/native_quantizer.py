@@ -1,12 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict, List, Optional, Tuple, Union
-
+from abc import abstractmethod
 import torch
 import torch.nn as nn
 from mmengine.config import Config
 
 try:
-    from torch.ao.quantization import enable_fake_quant
+    from torch.ao.quantization import enable_fake_quant, disable_observer
     from torch.ao.quantization.fx import prepare
     from torch.ao.quantization.fx.graph_module import ObservedGraphModule
     from torch.ao.quantization.qconfig_mapping import (
@@ -16,11 +16,13 @@ try:
     from torch.fx.graph_module import GraphModule
     from torch.nn.intrinsic.qat import modules as qat_fused_modules
     from torch.nn.qat import modules as qat_modules
+    from torch.onnx import register_custom_op_symbolic
 except ImportError:
     from mmrazor.utils import get_package_placeholder, get_placeholder
     GraphModule = get_placeholder('torch>=1.13')
     ObservedGraphModule = get_placeholder('torch>=1.13')
     enable_fake_quant = get_placeholder('torch>=1.13')
+    disable_observer = get_placeholder('torch>=1.13')
     prepare = get_placeholder('torch>=1.13')
     QConfigMapping = get_placeholder('torch>=1.13')
     _fuse_fx = get_placeholder('torch>=1.13')
@@ -62,6 +64,21 @@ if digit_version(torch.__version__) >= digit_version('1.13.0'):
         qat_fused_modules.ConvBnReLU3d: qat_fused_modules.ConvReLU3d,
         qat_fused_modules.LinearBn1d: qat_modules.Linear
     }
+    
+    
+    def fake_quantize_per_channel_affine(g, x, scale, zero_point, ch_axis, quant_min, quant_max):
+        return g.op("mmrazor::FixedPerChannelAffine", x, scale, zero_point, ch_axis, quant_min, quant_max)
+
+
+    register_custom_op_symbolic('::fake_quantize_per_channel_affine', fake_quantize_per_channel_affine, 11)
+
+
+    def fake_quantize_per_tensor_affine(g, x, scale, zero_point, quant_min, quant_max):
+        return g.op("mmrazor::FixedPerTensorAffine", x, scale, zero_point, quant_min, quant_max)
+
+    register_custom_op_symbolic('::fake_quantize_per_tensor_affine', fake_quantize_per_tensor_affine, 11)
+
+
 else:
     SUPPORT_QAT_MODULES = ()
     MERGE_BN_MAPPINGS = {}
@@ -180,7 +197,11 @@ class NativeQuantizer(BaseQuantizer):
         """Supported quantization modes for activation about per_tensor or
         per_channel."""
         return ('per_tensor')
-
+    
+    @abstractmethod
+    def export_onnx(self, model, args, output_path, input_names, output_names, opset_version, dynamic_axes, keep_initializers_as_inputs, verbose):
+        pass
+    
     def prepare(self, model, concrete_args=None):
         """prepare graph to ObservedGraphModule.
 
@@ -223,9 +244,9 @@ class NativeQuantizer(BaseQuantizer):
 
         return prepared
 
-    def post_process_weight_fakequant(self,
-                                      observed_module: ObservedGraphModule,
-                                      keep_fake_quant: bool = False):
+    def post_process_for_deploy(self,
+                                observed_module: ObservedGraphModule,
+                                keep_fake_quant: bool = False):
         """weight fake-quant for supported QAT modules.
 
         Args:
@@ -276,13 +297,12 @@ class NativeQuantizer(BaseQuantizer):
                 else:
                     traverse(child)
 
-        observed_module.apply(enable_fake_quant)
+        
         traverse(observed_module)
+        observed_module.apply(enable_fake_quant)
+        observed_module.apply(disable_observer)
 
-    def prepare_for_mmdeploy(self, model: nn.Module, dummy_input: Tuple,
-                             checkpoint: Optional[str]):
-        """Prepare model to Observed_model."""
-        raise NotImplementedError
+    
 
     def del_redundant_fakequant(self, prepared: GraphModule):
         """delete redundant fakequant op in prepared model.
