@@ -3,6 +3,8 @@ import random
 from unittest import TestCase
 from unittest.mock import Mock
 
+import torch
+import torch.nn as nn
 from mmengine.logging import MessageHub
 
 from mmrazor.engine import StopDistillHook
@@ -14,8 +16,9 @@ class TestStopDistillHook(TestCase):
         self.stop_epoch = 5
         self.hook = StopDistillHook(stop_epoch=self.stop_epoch)
         runner = Mock()
-        runner.model = Mock()
-        runner.model.distillation_stopped = False
+        runner.model = nn.Module()
+        runner.model.register_buffer('distillation_stopped',
+                                     torch.tensor([False]))
 
         runner.epoch = 0
         self.runner = runner
