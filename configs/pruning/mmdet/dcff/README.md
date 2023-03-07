@@ -12,25 +12,25 @@ The mainstream approach for filter pruning is usually either to force a hard-cod
 
 | Dataset  |   Backbone   | Params(M) | FLOPs(M) | lr_type | Top-1 (%) | Top-5 (%) |                     CPrate                      |                        Config                        |           Download           |
 | :------: | :----------: | :-------: | :------: | :-----: | :-------: | :-------: | :---------------------------------------------: | :--------------------------------------------------: | :--------------------------: |
-| ImageNet | DCFFResNet50 |   15.16   |   2260   |  step   |   73.96   |   91.66   | \[0.0\]+\[0.35,0.4,0.1\]\*10+\[0.3,0.3,0.1\]\*6 | [config](../../mmcls/dcff/dcff_resnet_8xb32_in1k.py) | [model](<>) \| \[log\] (\<>) |
+| ImageNet | DCFFResNet50 |   15.16   |   2260   |  step   |   73.96   |   91.66   | \[0.0\]+\[0.35,0.4,0.1\]\*10+\[0.3,0.3,0.1\]\*6 | [config](../../mmcls/dcff/dcff_resnet_8xb32_in1k.py) | [model](<https://download.openmmlab.com/mmrazor/v1/pruning/dcff/mmcls/dcff_mmcls.pth>) \ [log](<https://download.openmmlab.com/mmrazor/v1/pruning/dcff/mmcls/dcff_mmcls_sup_20220906_131949.log>) |
 
 ### 2. Detection
 
 | Dataset |   Method    |   Backbone   |  Style  | Lr schd | Params(M) | FLOPs(M) | bbox AP |                     CPrate                      |                              Config                               |           Download           |
 | :-----: | :---------: | :----------: | :-----: | :-----: | :-------: | :------: | :-----: | :---------------------------------------------: | :---------------------------------------------------------------: | :--------------------------: |
-|  COCO   | Faster_RCNN | DCFFResNet50 | pytorch |  step   |   33.31   |  168320  |  35.8   | \[0.0\]+\[0.35,0.4,0.1\]\*10+\[0.3,0.3,0.1\]\*6 | [config](../../mmdet/dcff/dcff_faster_rcnn_resnet50_8xb4_coco.py) | [model](<>) \| \[log\] (\<>) |
+|  COCO   | Faster_RCNN | DCFFResNet50 | pytorch |  step   |   33.31   |  168320  |  35.8   | \[0.0\]+\[0.35,0.4,0.1\]\*10+\[0.3,0.3,0.1\]\*6 | [config](../../mmdet/dcff/dcff_faster_rcnn_resnet50_8xb4_coco.py) | [model](<https://download.openmmlab.com/mmrazor/v1/pruning/dcff/mmdet/dcff_mmdet.pth>) \ [log](<https://download.openmmlab.com/mmrazor/v1/pruning/dcff/mmdet/dcff_mmdet_sup_20220909_103653.log>) |
 
 ### 3. Segmentation
 
 |  Dataset   |  Method   |    Backbone     | crop size | Lr schd | Params(M) | FLOPs(M) | mIoU  |                               CPrate                                |                                Config                                 |           Download           |
 | :--------: | :-------: | :-------------: | :-------: | :-----: | :-------: | :------: | :---: | :-----------------------------------------------------------------: | :-------------------------------------------------------------------: | :--------------------------: |
-| Cityscapes | PointRend | DCFFResNetV1c50 | 512x1024  |  160k   |   18.43   |  74410   | 76.75 | \[0.0, 0.0, 0.0\] + \[0.35, 0.4, 0.1\] * 10 + \[0.3, 0.3, 0.1\] * 6 | [config](../../mmseg/dcff/dcff_pointrend_resnet50_8xb2_cityscapes.py) | [model](<>) \| \[log\] (\<>) |
+| Cityscapes | PointRend | DCFFResNetV1c50 | 512x1024  |  160k   |   18.43   |  74410   | 76.75 | \[0.0, 0.0, 0.0\] + \[0.35, 0.4, 0.1\] * 10 + \[0.3, 0.3, 0.1\] * 6 | [config](../../mmseg/dcff/dcff_pointrend_resnet50_8xb2_cityscapes.py) | [model](<https://download.openmmlab.com/mmrazor/v1/pruning/dcff/mmseg/dcff_mmseg.pth>) \ [log](<https://download.openmmlab.com/mmrazor/v1/pruning/dcff/mmseg/dcff_mmpose_sup_20220908_172111.log>) |
 
 ### 4. Pose
 
 | Dataset |     Method      |   Backbone   | crop size | total epochs | Params(M) | FLOPs(M) |  AP  |                           CPrate                           |                              Config                               |           Download           |
 | :-----: | :-------------: | :----------: | :-------: | :----------: | :-------: | :------: | :--: | :--------------------------------------------------------: | :---------------------------------------------------------------: | :--------------------------: |
-|  COCO   | TopDown HeatMap | DCFFResNet50 |  256x192  |     300      |   26.95   |   4290   | 68.3 | \[0.0\] + \[0.2, 0.2, 0.1\] * 10 + \[0.15, 0.15, 0.1\] * 6 | [config](../../mmpose/dcff/dcff_topdown_heatmap_resnet50_coco.py) | [model](<>) \| \[log\] (\<>) |
+|  COCO   | TopDown HeatMap | DCFFResNet50 |  256x192  |     300      |   26.95   |   4290   | 68.3 | \[0.0\] + \[0.2, 0.2, 0.1\] * 10 + \[0.15, 0.15, 0.1\] * 6 | [config](../../mmpose/dcff/dcff_topdown_heatmap_resnet50_coco.py) | [model](<https://download.openmmlab.com/mmrazor/v1/pruning/dcff/mmpose/dcff_pose.pth>) \ [log](<https://download.openmmlab.com/mmrazor/v1/pruning/dcff/mmpose/dcff_mmpose_20220908_140331.log>) |
 
 ## Citation
 
