@@ -65,7 +65,7 @@ Then set layers' pruning rates `target_pruning_ratio` by `resnet_cls.json`.
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
-  configs/pruning/mmcls/dcff/dcff_resnet50_8xb32_in1k.py 4 \
+  configs/pruning/mmcls/dcff/dcff_resnet_8xb32_in1k.py 4 \
   --work-dir $WORK_DIR
 ```
 

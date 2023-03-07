@@ -45,8 +45,8 @@ architecture = dict(
     ),
     head=dict(
         type='mmpose.HeatmapHead',
-        in_channels=1843,
-        out_channels=17,
+        in_channels=2048,
+        out_channels=24,
         loss=dict(type='mmpose.KeypointMSELoss', use_target_weight=True),
         decoder=codec),
     test_cfg=dict(
