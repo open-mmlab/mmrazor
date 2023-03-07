@@ -14,7 +14,17 @@ Unlike existing knowledge distillation methods focus on the baseline settings, w
 
 | Location | Dataset  |      Teacher      |      Student      |  Acc  | Acc(T) | Acc(S) |       Config        | Download                                                         |
 | :------: | :------: | :---------------: | :---------------: | :---: | :----: | :----: | :-----------------: | :--------------------------------------------------------------- |
-|  logits  | ImageNet | [resnet34][r34_c] | [resnet18][r18_c] | 71.17 | 73.62  | 69.90  | [config][distill_c] | [teacher][r34_pth] \| [model][distill_pth] \| [log][distill_log] |
+|  logits  | ImageNet | [resnet34][r34_c] | [resnet18][r18_c] | 71.61 | 73.62  | 69.90  | [config][distill_c] | [teacher][r34_pth] \| [model][distill_pth] \| [log][distill_log] |
+
+**Note**
+
+There are fluctuations in the results of the experiments of DIST loss. For example, we run three times of the official code of DIST and get three different results.
+
+| Time | Top-1 |
+| ---- | ----- |
+| 1th  | 71.69 |
+| 2nd  | 71.82 |
+| 3rd  | 71.90 |
 
 ## Citation
 
