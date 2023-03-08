@@ -13,13 +13,13 @@ from mmrazor.structures.subnet.fix_subnet import (export_fix_subnet,
 from mmrazor.utils import print_log
 
 
-def after_load_checkpoint_hook_wrapper(divisor):
+def post_process_for_mmdeploy_wrapper(divisor):
 
-    def after_load_checkpoint_hook(model: nn.Module):
+    def post_process_for_mmdeploy(model: nn.Module):
         s = make_channel_divisible(model, divisor=divisor)
         print_log(f'structure after make divisible: {json.dumps(s,indent=4)}')
 
-    return after_load_checkpoint_hook
+    return post_process_for_mmdeploy
 
 
 @MODELS.register_module()
@@ -72,7 +72,7 @@ def GroupFisherDeploySubModel(architecture,
     # the checkpoint.
     if divisor != 1:
         setattr(
-            architecture, 'after_load_checkpoint_hook',
+            architecture, 'post_process_for_mmdeploy',
             types.MethodType(
-                after_load_checkpoint_hook_wrapper(divisor), architecture))
+                post_process_for_mmdeploy_wrapper(divisor), architecture))
     return architecture
