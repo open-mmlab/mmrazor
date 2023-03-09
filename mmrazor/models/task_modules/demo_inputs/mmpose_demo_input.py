@@ -94,12 +94,6 @@ def demo_mmpose_inputs(model, for_training=False, batch_size=1):
             with_reg_label=True)['data_samples']
 
     elif isinstance(model.head, RTMHead):
-        batch_size = 2
-        input_shape = (
-            2,
-            3,
-        ) + model.head.decoder.input_size
-        imgs = torch.randn(*input_shape)
         batch_data_samples = get_packed_inputs(
             batch_size,
             num_keypoints=model.head.out_channels,
