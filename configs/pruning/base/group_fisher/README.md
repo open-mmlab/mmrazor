@@ -43,7 +43,7 @@ Network compression has been widely studied since it is able to reduce the memor
 | rtmpose-s_pruned_act | 0.691 | -0.025 | 0.34    | 50.0%     | 3.42          | 62.5%     | [prune][rp_a_pc] \| [finetune][rp_a_fc] | [pruned][rp_sc_p] \| [finetuned][rp_sc_f] \| [log][rp_sc_l] | 268           |
 | rtmpose-t            | 0.682 | -      | 0.35    | -         | 3.34          | -         | [mmpose][pose_t_c]                      | [model][pose_t_m]                                           | 279           |
 
-| Model(Detector-Backbone)      | AP    | Gap    | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                  | Download                                                    | Onnx_cpu(FPS) |
+| Model                         | AP    | Gap    | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                  | Download                                                    | Onnx_cpu(FPS) |
 | ----------------------------- | ----- | ------ | ------- | --------- | ------------- | --------- | --------------------------------------- | ----------------------------------------------------------- | ------------- |
 | rtmpose-s-aic-coco            | 0.722 | -      | 0.68    | -         | 5.47          | -         | [mmpose][pose_s_c]                      | [model][pose_s_m]                                           | 196           |
 | rtmpose-s-aic-coco_pruned_act | 0.694 | -0.028 | 0.35    | 51.5%     | 3.43          | 62.7%     | [prune][rp_a_pc] \| [finetune][rp_a_fc] | [pruned][rp_sa_p] \| [finetuned][rp_sa_f] \| [log][rp_sa_l] | 272           |
