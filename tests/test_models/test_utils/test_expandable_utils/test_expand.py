@@ -3,6 +3,7 @@ import unittest
 
 import torch
 
+from mmrazor import digit_version
 from mmrazor.models.mutables import SimpleMutableChannel
 from mmrazor.models.utils.expandable_utils import (
     expand_expandable_dynamic_model, make_channel_divisible,
@@ -13,7 +14,12 @@ from ....data.models import DwConvModel, MultiConcatModel, SingleLineModel
 
 class TestExpand(unittest.TestCase):
 
+    def check_torch_version(self):
+        if digit_version(torch.__version__) < digit_version('1.12.0'):
+            self.skipTest('version of torch < 1.12.0')
+
     def test_expand(self):
+        self.check_torch_version()
         for Model in [MultiConcatModel, DwConvModel]:
             x = torch.rand([1, 3, 224, 224])
             model = Model()
@@ -32,6 +38,7 @@ class TestExpand(unittest.TestCase):
             self.assertTrue((y1 - y2).abs().max() < 1e-3)
 
     def test_expand_static_model(self):
+        self.check_torch_version()
         x = torch.rand([1, 3, 224, 224])
         model = SingleLineModel()
         y1 = model(x)
@@ -42,6 +49,7 @@ class TestExpand(unittest.TestCase):
         self.assertTrue((y1 - y2).abs().max() < 1e-3)
 
     def test_ExpandConv2d(self):
+        self.check_torch_version()
         linear = ExpandLinear(3, 3)
         mutable_in = SimpleMutableChannel(3)
         mutable_out = SimpleMutableChannel(3)

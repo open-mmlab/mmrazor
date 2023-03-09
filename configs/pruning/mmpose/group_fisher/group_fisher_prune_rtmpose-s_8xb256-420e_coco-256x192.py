@@ -17,26 +17,25 @@ target_flop_ratio (float): The target flop ratio to prune your model.
 input_shape (Tuple): input shape to measure the flops.
 """
 
-_base_ = 'mmdet::retinanet/retinanet_r50_fpn_1x_coco.py'
-pretrained_path = 'https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_r50_fpn_1x_coco/retinanet_r50_fpn_1x_coco_20200130-c2398f9e.pth'  # noqa
+_base_ = 'mmpose::body_2d_keypoint/rtmpose/coco/rtmpose-s_8xb256-420e_coco-256x192.py'  # noqa
+pretrained_path = 'https://download.openmmlab.com/mmpose/v1/projects/rtmpose/rtmpose-s_simcc-coco_pt-aic-coco_420e-256x192-8edcf0d7_20230127.pth'  # noqa
 
 interval = 10
 normalization_type = 'act'
 lr_ratio = 0.1
 
-target_flop_ratio = 0.5
-input_shape = (1, 3, 1333, 800)
+target_flop_ratio = 0.51
+input_shape = (1, 3, 256, 192)
 ##############################################################################
 
 architecture = _base_.model
 
 if hasattr(_base_, 'data_preprocessor'):
     architecture.update({'data_preprocessor': _base_.data_preprocessor})
-    data_preprocessor = {}
+    data_preprocessor = None
 
 architecture.init_cfg = dict(type='Pretrained', checkpoint=pretrained_path)
 architecture['_scope_'] = _base_.default_scope
-architecture.backbone.frozen_stages = -1
 
 model = dict(
     _delete_=True,

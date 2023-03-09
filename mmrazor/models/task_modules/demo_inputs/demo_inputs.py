@@ -11,13 +11,18 @@ class BaseDemoInput():
     Args:
         input_shape: Default input shape. Defaults to default_shape.
         training (bool, optional): Default training mode. Defaults to None.
+        kwargs (dict): Other keyword args to update the generated inputs.
     """
     default_shape = (1, 3, 224, 224)
 
-    def __init__(self, input_shape=default_shape, training=None) -> None:
+    def __init__(self,
+                 input_shape=default_shape,
+                 training=None,
+                 kwargs={}) -> None:
 
         self.input_shape = input_shape
         self.training = training
+        self.kwargs = kwargs
 
     def get_data(self, model, input_shape=None, training=None):
         """Api to generate demo input."""
@@ -26,7 +31,10 @@ class BaseDemoInput():
         if training is None:
             training = self.training
 
-        return self._get_data(model, input_shape, training)
+        data = self._get_data(model, input_shape, training)
+        if isinstance(data, dict):
+            data.update(self.kwargs)
+        return data
 
     def _get_data(self, model, input_shape, training):
         """Helper for get_data, including core logic to generate demo input."""
