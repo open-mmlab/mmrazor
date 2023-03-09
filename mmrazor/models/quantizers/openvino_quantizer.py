@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Optional, Tuple
+from typing import Tuple
 
 import torch
 
@@ -10,10 +10,8 @@ except ImportError:
     disable_observer = get_placeholder('torch>=1.13')
 
 from mmrazor.registry import MODELS
-from .native_quantizer import NativeQuantizer
 from ..algorithms.quantization import MMArchitectureQuant
-
-
+from .native_quantizer import NativeQuantizer
 
 
 @MODELS.register_module()
@@ -48,33 +46,32 @@ class OpenVINOQuantizer(NativeQuantizer):
         """Supported quantization modes for activation about per_tensor or
         per_channel."""
         return ('per_tensor')
-    
-    def export_onnx(self, model, args, output_path, export_params,input_names, output_names, opset_version, dynamic_axes, keep_initializers_as_inputs, verbose):
-        
+
+    def export_onnx(self, model, args, output_path, export_params, input_names,
+                    output_names, opset_version, dynamic_axes,
+                    keep_initializers_as_inputs, verbose):
+        """Export the onnx model that can be deployed to OpenVino backend."""
+
         symbolic_output_path = f'{output_path}.symbolic'
         torch.onnx.export(
-                model,
-                args,
-                symbolic_output_path,
-                export_params=export_params,
-                input_names=input_names,
-                output_names=output_names,
-                opset_version=opset_version,
-                dynamic_axes=dynamic_axes,
-                keep_initializers_as_inputs=keep_initializers_as_inputs,
-                verbose=verbose)
-        
-        from .exporters import OpenVinoQuantizeExportor 
+            model,
+            args,
+            symbolic_output_path,
+            export_params=export_params,
+            input_names=input_names,
+            output_names=output_names,
+            opset_version=opset_version,
+            dynamic_axes=dynamic_axes,
+            keep_initializers_as_inputs=keep_initializers_as_inputs,
+            verbose=verbose)
+
+        from .exporters import OpenVinoQuantizeExportor
         exporter = OpenVinoQuantizeExportor(symbolic_output_path, output_path)
         exporter.export()
-        
-        
-    
-    
-    
+
     def post_process_for_mmdeploy(self,
-                             model: MMArchitectureQuant,
-                             dummy_input: Tuple = (1, 3, 224, 224)):
+                                  model: MMArchitectureQuant,
+                                  dummy_input: Tuple = (1, 3, 224, 224)):
         """Prepare for deploy to the backend with mmdeploy, which will be used
         in mmdeploy, and usually includes as follows:
 
@@ -84,19 +81,18 @@ class OpenVINOQuantizer(NativeQuantizer):
         3. post process weight fakequant for exporting .onnx that meet
         the backend's requirement.
         """
-        
-        quantized_state_dict = model.qmodels['predict'].state_dict()
+
+        quantized_state_dict = model.qmodels['tensor'].state_dict()
         fp32_model = model.architecture
         self.convert_batchnorm2d(fp32_model)
-        observed_model = self.prepare(fp32_model)
-        
+        observed_model = self.prepare(fp32_model, {'mode': 'tensor'})
+
         if dummy_input is not None:
             observed_model(torch.randn(dummy_input))
-        
+
         observed_model.load_state_dict(quantized_state_dict)
-        
-        self.post_process_weight_fakequant(
-            observed_model, keep_fake_quant=True)
+
+        self.post_process_for_deploy(observed_model, keep_fake_quant=True)
 
         observed_model.apply(disable_observer)
 

@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import List
 
 import onnx
 from mmengine import print_log
@@ -9,13 +10,9 @@ from .optim_utils import ONNXOptimUtils
 SUPPORT_QWEIGHT_NODE = ['Gemm', 'Conv', 'ConvTranspose']
 
 PERCHANNEL_FAKEQUANTIZER = [
-    'FakeQuantizeLearnablePerchannelAffine', 'FixedPerChannelAffine',
-    'FakeQuantizeDSQPerchannel'
+    'FakeQuantizeLearnablePerchannelAffine', 'FixedPerChannelAffine'
 ]
-PERTENSOR_FAKEQUANTIZER = [
-    'LearnablePerTensorAffine', 'FixedPerTensorAffine',
-    'FakeQuantizeDSQPertensor', 'FakeQuantizeTqtAffine'
-]
+PERTENSOR_FAKEQUANTIZER = ['LearnablePerTensorAffine', 'FixedPerTensorAffine']
 
 ALL_FAKEQUANTIZER = PERCHANNEL_FAKEQUANTIZER + PERTENSOR_FAKEQUANTIZER
 
@@ -50,14 +47,13 @@ class BaseQuantizeExportor():
 
         if isinstance(onnx_model, str):
             self.onnx_model = onnx.load(onnx_model)
-        elif isinstance(onnx_model, onnx.GraphProto):
+        elif isinstance(onnx_model, onnx.ModelProto):
             self.onnx_model = onnx_model
         else:
             raise TypeError
 
         self.export_path = export_path
         self._init_mappings_from_onnx(self.onnx_model)
-        # import pdb;pdb.set_trace()
 
         self.optimizer.remove_fake_pad_op(self.onnx_model, self.name2data,
                                           self.input2node, self.output2node)
@@ -67,22 +63,30 @@ class BaseQuantizeExportor():
 
     @property
     def graph(self):
+        """The onnx model's graph."""
         return self.onnx_model.graph
 
     def _init_mappings_from_onnx(self, onnx_model):
+        """Build necessary mappings in a onnx model."""
 
         self.input2node = self.optimizer.map_input_and_node(onnx_model)
         self.output2node = self.optimizer.map_output_and_node(onnx_model)
         self.name2data = self.optimizer.map_name_and_data(onnx_model)
-        self.name2init = self.optimizer.map_name_and_initializer(onnx_model)
+
+        # todo: maybe useless
+        # self.name2init = self.optimizer.map_name_and_initializer(onnx_model)
 
     def _remap_input_and_node(self):
+        """Rebuild the mapping from input name to a (node, input index)
+        tuple."""
         self.input2node = self.optimizer.map_input_and_node(self.onnx_model)
 
     def _remap_output_and_node(self):
+        """Rebuild the mapping from a node's output name to this node."""
         self.output2node = self.optimizer.map_output_and_node(self.onnx_model)
 
-    def parse_qparams(self, node):
+    def parse_qparams(self, node: onnx.NodeProto):
+        """Parse the quantize-related parameters based on a node."""
         tensor_name, scale, zero_point = node.input[:3]
 
         scale, zero_point = self.name2data[scale], self.name2data[zero_point]
@@ -98,14 +102,16 @@ class BaseQuantizeExportor():
             qmax = qmin = None
         return tensor_name, scale, zero_point, qmin, qmax
 
-    def collect_symbolic_nodes(self, onnx_model):
+    def collect_symbolic_nodes(self, onnx_model: onnx.ModelProto):
+        """Collect all the fakequant nodes from a onnx model."""
         symbolic_nodes = list()
         for node in onnx_model.graph.node:
             if node.op_type in ALL_FAKEQUANTIZER:
                 symbolic_nodes.append(node)
         return symbolic_nodes
 
-    def _get_constant_inputs(self, node):
+    def _get_constant_inputs(self, node: onnx.NodeProto):
+        """Get the constant input node for the current node."""
         constant_nodes = list()
         output2node = self.output2node
         for inp in node.input:
@@ -115,7 +121,9 @@ class BaseQuantizeExportor():
                 constant_nodes.append(cnode)
         return constant_nodes
 
-    def _collect_symbolic_constant_inputs(self, symbolic_nodes):
+    def _collect_symbolic_constant_inputs(self, symbolic_nodes: List):
+        """Collect these constant nodes which is the input of all the symbolic
+        node."""
 
         collected_constant_names = set()
         constant_inputs = list()
@@ -128,24 +136,32 @@ class BaseQuantizeExportor():
                 collected_constant_names.add(constant.name)
         return constant_inputs
 
-    def _remove_symbolic_related_from_onnx(self, symbolic_nodes,
-                                           symbolic_constant_inputs):
+    def _remove_symbolic_related_from_onnx(self, symbolic_nodes: List,
+                                           symbolic_constant_inputs: List):
+        """Remove these out of date fakequant nodes and theirs constant input
+        nodes."""
         for node in symbolic_nodes:
             self.onnx_model.graph.node.remove(node)
-        removed = set()
-        for constant in symbolic_constant_inputs:
-            remove = True
+
+        # Remove symbolic related constant nodes. The constant node which is
+        # only used by those symbolic nodes can be removed.
+
+        def _is_standalone_constant_node(constant):
             for node in self.onnx_model.graph.node:
                 for input_name in node.input:
+                    # A constant node always has one output.
                     if input_name == constant.output[0]:
-                        remove = False
-                        break
-            if remove and constant.name not in removed:
+                        return False
+            return True
+
+        for constant in symbolic_constant_inputs:
+            if _is_standalone_constant_node(constant):
                 self.onnx_model.graph.node.remove(constant)
-                removed.add(constant.name)
-    
-    def export(self, onnx_path):
-        pass
+
+    def export(self):
+        """Export end to end onnx model."""
+        # todo: is it a abstract method?
+        raise NotImplementedError
 
 
 class QTableQuantizeExportor(BaseQuantizeExportor):
@@ -153,7 +169,7 @@ class QTableQuantizeExportor(BaseQuantizeExportor):
     def __init__(self, onnx_model, export_path) -> None:
         super().__init__(onnx_model, export_path)
 
-        self._qtables = dict()
+        self._qtables = dict()  # type: ignore
 
     @property
     def qtables(self):
