@@ -22,6 +22,11 @@ Network compression has been widely studied since it is able to reduce the memor
 | MobileNetV2_pruned_act        | 70.82 | -1.04 | 0.207   | 66.1%     | 3.18          | 90.6%     | [prune][m_a_pc] \| [finetune][m_a_fc]    | [pruned][m_a_p] \| [finetuned][m_a_f] \| [log][m_a_l]       | 576.118       |
 | MobileNetV2_pruned_flops      | 70.87 | -0.99 | 0.207   | 66.1%     | 2.82          | 88.7%     | [prune][m_f_pc] \| [finetune][m_f_fc]    | [pruned][m_f_p] \| [finetuned][m_f_f] \| [log][m_f_l]       | 540.105       |
 
+**Note**
+
+- Because the pruning papers use different pretraining and finetuning settings, It is hard to compare them fairly. As a result, we prefer to apply algorithms on the openmmlab settings.
+- This may make the experiment results are different from that in the original papers.
+
 ### Detection on COCO
 
 | Model(Detector-Backbone)       | AP   | Gap  | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                  | Download                                                 | Onnx_cpu(FPS) |
@@ -34,22 +39,17 @@ Network compression has been widely studied since it is able to reduce the memor
 
 | Model                | AP    | Gap    | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                  | Download                                                    | Onnx_cpu(FPS) |
 | -------------------- | ----- | ------ | ------- | --------- | ------------- | --------- | --------------------------------------- | ----------------------------------------------------------- | ------------- |
-| rtmpose-s            | 0.716 | -      | 0.68    | -         | 5.47          | -         | [mmpose][pose_s_c]                      | [model][pose_s_m]                                           | 279           |
+| rtmpose-s            | 0.716 | -      | 0.68    | -         | 5.47          | -         | [mmpose][pose_s_c]                      | [model][pose_s_m]                                           | 196           |
 | rtmpose-s_pruned_act | 0.691 | -0.025 | 0.34    | 50.0%     | 3.42          | 62.5%     | [prune][rp_a_pc] \| [finetune][rp_a_fc] | [pruned][rp_sc_p] \| [finetuned][rp_sc_f] \| [log][rp_sc_l] | 268           |
-| rtmpose-t            | 0.682 | -      | 0.35    | -         | 3.34          | -         | [mmpose][pose_t_c]                      | [model][pose_t_m]                                           | 196           |
+| rtmpose-t            | 0.682 | -      | 0.35    | -         | 3.34          | -         | [mmpose][pose_t_c]                      | [model][pose_t_m]                                           | 279           |
 
 | Model(Detector-Backbone)      | AP    | Gap    | Flop(G) | Remain(%) | Parameters(M) | Remain(%) | Config                                  | Download                                                    | Onnx_cpu(FPS) |
 | ----------------------------- | ----- | ------ | ------- | --------- | ------------- | --------- | --------------------------------------- | ----------------------------------------------------------- | ------------- |
-| rtmpose-s-aic-coco            | 0.722 | -      | 0.68    | -         | 5.47          | -         | [mmpose][pose_s_c]                      | [model][pose_s_m]                                           | 279           |
+| rtmpose-s-aic-coco            | 0.722 | -      | 0.68    | -         | 5.47          | -         | [mmpose][pose_s_c]                      | [model][pose_s_m]                                           | 196           |
 | rtmpose-s-aic-coco_pruned_act | 0.694 | -0.028 | 0.35    | 51.5%     | 3.43          | 62.7%     | [prune][rp_a_pc] \| [finetune][rp_a_fc] | [pruned][rp_sa_p] \| [finetuned][rp_sa_f] \| [log][rp_sa_l] | 272           |
-| rtmpose-t-aic-coco            | 0.685 | -      | 0.35    | -         | 3.34          | -         | [mmpose][pose_t_c]                      | [model][pose_t_m]                                           | 196           |
+| rtmpose-t-aic-coco            | 0.685 | -      | 0.35    | -         | 3.34          | -         | [mmpose][pose_t_c]                      | [model][pose_t_m]                                           | 279           |
 
-### Pose on COCO
-
-**Note**
-
-- Because the pruning papers use different pretraining and finetuning settings, It is hard to compare them fairly. As a result, we prefer to apply algorithms on the openmmlab settings.
-- This may make the experiment results are different from that in the original papers.
+- All FPS is test on the same machine with 11th Gen Intel(R) Core(TM) i7-11700 @ 2.50GHz.
 
 ## Get Started
 
