@@ -41,3 +41,5 @@ model = dict(
                 logits_T=dict(from_student=False, recorder='fc')))))
 
 val_cfg = dict(_delete_=True, type='mmrazor.SingleTeacherDistillValLoop')
+
+optim_wrapper = dict(optimizer=dict(nesterov=True))
