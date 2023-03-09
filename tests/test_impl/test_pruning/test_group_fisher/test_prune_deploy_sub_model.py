@@ -3,8 +3,10 @@ import copy
 import os
 from unittest import TestCase
 
+import torch
 from mmengine import fileio
 
+from mmrazor import digit_version
 from mmrazor.implementations.pruning.group_fisher.prune_deploy_sub_model import \
     GroupFisherDeploySubModel  # noqa
 from ....data.models import MMClsResNet18
@@ -13,7 +15,12 @@ from .test_prune_sub_model import PruneAlgorithm, get_model_structure
 
 class TestPruneDeploySubModel(TestCase):
 
+    def check_torch_version(self):
+        if digit_version(torch.__version__) < digit_version('1.12.0'):
+            self.skipTest('version of torch < 1.12.0')
+
     def test_build_sub_model(self):
+        self.check_torch_version()
         model = MMClsResNet18()
 
         parse_cfg = dict(

@@ -5,6 +5,7 @@ from unittest import TestCase
 
 import torch
 
+from mmrazor import digit_version
 from mmrazor.implementations.pruning.group_fisher.prune_sub_model import \
     GroupFisherSubModel
 from mmrazor.models import BaseAlgorithm
@@ -43,7 +44,12 @@ def get_model_structure(model):
 
 class TestPruneSubModel(TestCase):
 
+    def check_torch_version(self):
+        if digit_version(torch.__version__) < digit_version('1.12.0'):
+            self.skipTest('version of torch < 1.12.0')
+
     def test_build_sub_model(self):
+        self.check_torch_version()
         x = torch.rand([1, 3, 224, 224])
         model = MMClsResNet18()
         algorithm = PruneAlgorithm(model)
