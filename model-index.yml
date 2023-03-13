@@ -21,3 +21,7 @@ Import:
   - configs/distill/mmdet/pkd/metafile.yml
   - configs/distill/mmdet3d/pkd/metafile.yml
   - configs/distill/mmcls/deit/metafile.yml
+  - configs/pruning/mmcls/group_fisher/mobilenet/metafile.yml
+  - configs/pruning/mmcls/group_fisher/resnet50/metafile.yml
+  - configs/pruning/mmdet/group_fisher/retinanet/metafile.yml
+  - configs/pruning/mmcls/l1-norm/metafile.yml

@@ -1,0 +1,28 @@
+Models:
+  - Name: l1-norm_resnet34_8xb32_in1k_a
+    In Collection: L1-norm
+    Config: configs/pruning/mmcls/l1-norm/l1-norm_resnet34_8xb32_in1k_a.py
+    Weights: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/l1-norm/l1-norm_resnet34_8xb32_in1k_a.pth
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 73.61
+  - Name: l1-norm_resnet34_8xb32_in1k_b
+    In Collection: L1-norm
+    Config: configs/pruning/mmcls/l1-norm/l1-norm_resnet34_8xb32_in1k_b.py
+    Weights: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/l1-norm/l1-norm_resnet34_8xb32_in1k_b.pth
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 73.20
+  - Name: l1-norm_resnet34_8xb32_in1k_c
+    In Collection: L1-norm
+    Config: configs/pruning/mmcls/l1-norm/l1-norm_resnet34_8xb32_in1k_c.py
+    Weights: https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/pruning/l1-norm/l1-norm_resnet34_8xb32_in1k_c.pth
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 73.89
