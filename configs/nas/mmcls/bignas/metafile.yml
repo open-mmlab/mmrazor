@@ -1,0 +1,43 @@
+Collections:
+  - Name: BigNAS
+    Metadata:
+      Training Data:
+        - ImageNet-1k
+    Paper:
+      URL: https://arxiv.org/abs/2003.11142
+      Title: BigNAS Scaling Up Neural Architecture Search with Big Single-Stage Models
+    README: configs/nas/mmcls/bignas/README.md
+    Code:
+      URL: https://github.com/open-mmlab/mmrazor/blob/dev-1.x/mmrazor/models/algorithms/nas/bignas.py
+      Version: V1.0.0rc2
+
+Models:
+  - Name: attentive_mobilenet_subnet_8xb256_in1k_flops-927M
+    In Collection: BigNAS
+    Metadata:
+      Flops(G): 0.927
+      Params(M): 15.594
+      Supernet: AttentiveMobileNetV3
+      Subnet: https://download.openmmlab.com/mmrazor/v1/bignas/ATTENTIVE_SUBNET_A6.yaml
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 80.81
+    Config: configs/nas/mmcls/bignas/attentive_mobilenet_subnet_8xb256_in1k.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/bignas/attentive_mobilenet_subnet_8xb256_in1k_flops-0.93G_acc-80.81_20221229_200440-73d92cc6.pth
+
+  - Name: attentive_mobilenet_subnet_8xb256_in1k_flops-212M
+    In Collection: BigNAS
+    Metadata:
+      Flops(G): 0.212
+      Params(M): 8.854
+      Supernet: AttentiveMobileNetV3
+      Channel: https://download.openmmlab.com/mmrazor/v1/bignas/ATTENTIVE_SUBNET_A0.yaml
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 77.19
+    Config: configs/nas/mmcls/bignas/attentive_mobilenet_subnet_8xb256_in1k.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/bignas/attentive_mobilenet_subnet_8xb256_in1k_flops-0.21G_acc-77.19_20221229_200440-282a1f70.pth

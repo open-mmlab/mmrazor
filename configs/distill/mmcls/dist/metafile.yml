@@ -1,0 +1,34 @@
+Collections:
+  - Name: DIST
+    Metadata:
+      Training Data:
+        - ImageNet-1k
+    Paper:
+      URL: https://arxiv.org/abs/2205.10536
+      Title: Knowledge Distillation from A Stronger Teacher
+    README: configs/distill/mmcls/dist/README.md
+
+Models:
+  - Name: dist_logits_resnet34_resnet18_8xb32_in1k
+    In Collection: DIST
+    Metadata:
+      Location: logits
+      Student:
+        Config: mmcls::resnet/resnet18_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_8xb32_in1k_20210831-fbbb1da6.pth
+        Metrics:
+          Top 1 Accuracy: 69.90
+          Top 5 Accuracy: 89.43
+      Teacher:
+        Config: mmcls::resnet/resnet34_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet34_8xb32_in1k_20210831-f257d4e6.pth
+        Metrics:
+          Top 1 Accuracy: 73.62
+          Top 5 Accuracy: 91.59
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 71.61
+    Config: configs/distill/mmcls/dist/dist_logits_resnet34_resnet18_8xb32_in1k.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/distillation/dist_logits_resnet34_resnet18_8xb32_in1k.pth

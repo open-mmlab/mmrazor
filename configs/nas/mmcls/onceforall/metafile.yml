@@ -1,0 +1,41 @@
+Collections:
+  - Name: OFA
+    Metadata:
+      Training Data:
+        - ImageNet-1k
+    Paper:
+      URL: https://arxiv.org/abs/1908.09791
+      Title: ONCE-FOR-ALL TRAIN ONE NETWORK AND SPE- CIALIZE IT FOR EFFICIENT DEPLOYMENT
+    README: configs/nas/mmcls/onceforall/README.md
+    Code:
+      URL: https://github.com/open-mmlab/mmrazor/blob/dev-1.x/mmrazor/models/algorithms/nas/bignas.py
+      Version: V1.0.0rc2
+
+Models:
+  - Name: ofa_mobilenet_subnet_8xb256_in1k_lat-22ms
+    In Collection: OFA
+    Metadata:
+      Flops(G): 0.070
+      Params(M): 4.3
+      Subnet: https://github.com/open-mmlab/mmrazor/blob/dev-1.x/configs/nas/mmcls/onceforall/OFA_SUBNET_NOTE8_LAT22.yaml
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 70.3
+    Config: configs/nas/mmcls/onceforall/ofa_mobilenet_subnet_8xb256_in1k.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/ofa/ofa_mobilenet_subnet_8xb256_in1k_note8_lat%4022ms_top1%4070.4_finetune%4025.py_20221214_0938-fb7fb84f.pth
+
+  - Name: ofa_mobilenet_subnet_8xb256_in1k_lat-31ms
+    In Collection: OFA
+    Metadata:
+      Flops(G): 0.105
+      Params(M): 4.6
+      Subnet: https://github.com/open-mmlab/mmrazor/blob/dev-1.x/configs/nas/mmcls/onceforall/OFA_SUBNET_NOTE8_LAT31.yaml
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 72.6
+    Config: configs/nas/mmcls/onceforall/ofa_mobilenet_subnet_8xb256_in1k.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/ofa/ofa_mobilenet_subnet_8xb256_in1k_note8_lat%4031ms_top1%4072.8_finetune%4025.py_20221214_0939-981a8b2a.pth

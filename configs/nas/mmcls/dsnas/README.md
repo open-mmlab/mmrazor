@@ -34,9 +34,9 @@ CUDA_VISIBLE_DEVICES=0 PORT=29500 ./tools/dist_test.sh \
 
 ### Supernet
 
-| Dataset  | Params(M) | FLOPs (G) | Top-1 Acc (%) | Top-5 Acc (%) |                  Config                   |                                                                                                                         Download                                                                                                                         |     Remarks      |
-| :------: | :-------: | :-------: | :-----------: | :-----------: | :---------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------: |
-| ImageNet |   3.33    |   0.299   |     73.56     |     91.24     | [config](./dsnas_supernet_8xb128_in1k.py) | [model](https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/dsnas/dsnas_supernet_8xb128_in1k_20220926_171954-29b87e3a.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/dsnas/dsnas_supernet_8xb128_in1k_20220926_171954-29b87e3a.log) | MMRazor searched |
+| Dataset  | Params(M) | FLOPs (G) | Top-1 Acc (%) | Top-5 Acc (%) |                  Config                   |                                                                                                              Download                                                                                                              |     Remarks      |
+| :------: | :-------: | :-------: | :-----------: | :-----------: | :---------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------: |
+| ImageNet |   3.33    |   0.299   |     73.56     |     91.24     | [config](./dsnas_supernet_8xb128_in1k.py) | [model](https://download.openmmlab.com/mmrazor/v1/dsnas/dsnas_supernet_8xb128_in1k_20220926_171954-29b87e3a.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/dsnas/dsnas_supernet_8xb128_in1k_20220926_171954-29b87e3a.log) | MMRazor searched |
 
 **Note**:
 
