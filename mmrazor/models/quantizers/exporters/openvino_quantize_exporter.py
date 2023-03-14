@@ -23,7 +23,6 @@ class OpenVinoQuantizeExportor(BaseQuantizeExportor):
         These nodes will be used to replace those symbolic nodes in the
         original onnx model.
         """
-        print(qmin, type(qmin))
         qmax = int(qmax)
         qmin = int(qmin)
         levels = qmax - qmin + 1

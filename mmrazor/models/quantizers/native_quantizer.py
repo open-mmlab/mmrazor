@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from abc import abstractmethod
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 from mmengine.config import Config
@@ -201,9 +201,10 @@ class NativeQuantizer(BaseQuantizer):
         return ('per_tensor')
 
     @abstractmethod
-    def export_onnx(self, model, args, output_path, export_params, input_names,
-                    output_names, opset_version, dynamic_axes,
-                    keep_initializers_as_inputs, verbose):
+    def export_onnx(self, model: Union[torch.nn.Module, torch.jit.ScriptModule,
+                                       torch.jit.ScriptFunction],
+                    args: Union[Tuple[Any, ...],
+                                torch.Tensor], output_path: str, **kwargs):
         pass
 
     def prepare(self, model, concrete_args=None):
@@ -250,14 +251,15 @@ class NativeQuantizer(BaseQuantizer):
 
     def post_process_for_deploy(self,
                                 observed_module: ObservedGraphModule,
-                                keep_fake_quant: bool = False):
+                                keep_w_fake_quant: bool = False):
         """weight fake-quant for supported QAT modules.
 
         Args:
             observed_module (ObservedGraphModule): Modules after fused and
                 observed.
-            keep_fake_quant (bool, optional): Bool to determine whether to keep
-            fake-quant op, depending on the backend. Defaults to False.
+            keep_w_fake_quant (bool, optional): Bool to determine whether to
+                keep weight fake-quant op, depending on the backend. Defaults
+                to False.
 
         Note:
             `post_process_weight_fakequant()` function is necessary that the
@@ -284,7 +286,7 @@ class NativeQuantizer(BaseQuantizer):
                     # This is decided by backend type, some backend need
                     # explicitly keep the fake quant structure, others don't.
                     # TODO add deploy doc link
-                    if keep_fake_quant:
+                    if keep_w_fake_quant:
                         for m in float_child.modules():
                             setattr(m, 'qconfig', self.qconfig.convert())
 

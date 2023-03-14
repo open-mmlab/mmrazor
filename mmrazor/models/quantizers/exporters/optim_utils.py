@@ -258,55 +258,6 @@ class ONNXOptimUtils():
 
         return _onnx_model
 
-    # @classmethod
-    # def topo_sort(cls, onnx_model, initializers=None, inplace=True):
-    #
-    #     def _is_zero_in_degree(node, exist_inputs, initializers):
-    #         for input_name in node.input:
-    #             if (input_name not in exist_inputs
-    #                     and input_name not in initializers):
-    #                 return False
-    #
-    #         return True
-    #
-    #     if inplace:
-    #         _onnx_model = onnx_model
-    #     else:
-    #         _onnx_model = copy.deepcopy(onnx_model)
-    #
-    #     if initializers is None:
-    #         initializers = cls.map_name_and_initializer(
-    #             _onnx_model, allow_redundant=True)
-    #
-    #     visited_inputs = [node.name for node in _onnx_model.graph.input]
-    #     num_nodes = len(_onnx_model.graph.node)
-    #
-    #     sorted_nodes = list()
-    #
-    #     while len(sorted_nodes) < num_nodes:
-    #         find_new_node = False
-    #         for i in range(num_nodes):
-    #             node = _onnx_model.graph.node[i]
-    #
-    #             if node.name in sorted_nodes:
-    #                 continue
-    #
-    #             if _is_zero_in_degree(node, visited_inputs, initializers):
-    #
-    #                 find_new_node = True
-    #                 sorted_nodes.append(node.name)
-    #                 _onnx_model.graph.node.append(node)
-    #                 for output_name in node.output:
-    #                     visited_inputs.append(output_name)
-    #
-    #         assert find_new_node, 'Graph is illegel, error occurred!'
-    #
-    #     for i in range(num_nodes):
-    #         remove_node = _onnx_model.graph.node[0]
-    #         _onnx_model.graph.node.remove(remove_node)
-    #
-    #     return _onnx_model
-
     @classmethod
     def optimize(cls, onnx_model):
 

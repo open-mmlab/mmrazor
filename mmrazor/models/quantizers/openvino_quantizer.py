@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Tuple
+from typing import Any, Tuple, Union
 
 import torch
 
@@ -47,23 +47,14 @@ class OpenVINOQuantizer(NativeQuantizer):
         per_channel."""
         return ('per_tensor')
 
-    def export_onnx(self, model, args, output_path, export_params, input_names,
-                    output_names, opset_version, dynamic_axes,
-                    keep_initializers_as_inputs, verbose):
+    def export_onnx(self, model: Union[torch.nn.Module, torch.jit.ScriptModule,
+                                       torch.jit.ScriptFunction],
+                    args: Union[Tuple[Any, ...],
+                                torch.Tensor], output_path: str, **kwargs):
         """Export the onnx model that can be deployed to OpenVino backend."""
 
-        symbolic_output_path = f'{output_path}.symbolic'
-        torch.onnx.export(
-            model,
-            args,
-            symbolic_output_path,
-            export_params=export_params,
-            input_names=input_names,
-            output_names=output_names,
-            opset_version=opset_version,
-            dynamic_axes=dynamic_axes,
-            keep_initializers_as_inputs=keep_initializers_as_inputs,
-            verbose=verbose)
+        symbolic_output_path = f'symbolic_{output_path}'
+        torch.onnx.export(model, args, symbolic_output_path, **kwargs)
 
         from .exporters import OpenVinoQuantizeExportor
         exporter = OpenVinoQuantizeExportor(symbolic_output_path, output_path)
@@ -92,7 +83,7 @@ class OpenVINOQuantizer(NativeQuantizer):
 
         observed_model.load_state_dict(quantized_state_dict)
 
-        self.post_process_for_deploy(observed_model, keep_fake_quant=True)
+        self.post_process_for_deploy(observed_model, keep_w_fake_quant=True)
 
         observed_model.apply(disable_observer)
 
