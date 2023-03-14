@@ -13,12 +13,14 @@ from ..base import BaseAlgorithm, BaseModel
 
 try:
     from torch.ao.quantization import (FakeQuantizeBase, MinMaxObserver,
-                                       PerChannelMinMaxObserver)
+                                       PerChannelMinMaxObserver,
+                                       disable_observer)
 except ImportError:
     from mmrazor.utils import get_placeholder
     FakeQuantizeBase = get_placeholder('torch>=1.13')
     MinMaxObserver = get_placeholder('torch>=1.13')
     PerChannelMinMaxObserver = get_placeholder('torch>=1.13')
+    disable_observer = get_placeholder('torch>=1.13')
 
 LossResults = Dict[str, torch.Tensor]
 TensorResults = Union[Tuple[torch.Tensor], torch.Tensor]
@@ -212,10 +214,8 @@ class MMArchitectureQuant(BaseAlgorithm):
 
         data = self.data_preprocessor(data, False)
         return self._run_forward(data, mode='predict')
-    
-    
-    def post_process_for_mmdeploy(self,
-                             dummy_input: Tuple = (1, 3, 224, 224)):
+
+    def post_process_for_mmdeploy(self, dummy_input: Tuple = (1, 3, 224, 224)):
         """Prepare for deploy to the backend with mmdeploy, which will be used
         in mmdeploy, and usually includes as follows:
 
@@ -225,23 +225,21 @@ class MMArchitectureQuant(BaseAlgorithm):
         3. post process weight fakequant for exporting .onnx that meet
         the backend's requirement.
         """
-        
-        quantized_state_dict = self.qmodels['predict'].state_dict()
+
+        quantized_state_dict = self.qmodels['tensor'].state_dict()
         fp32_model = self.architecture
         self.quantizer.convert_batchnorm2d(fp32_model)
-        
-        # concrete_args = {'mode': 'predict'}
-        observed_model = self.quantizer.prepare(fp32_model)
-        
+        observed_model = self.quantizer.prepare(fp32_model, {'mode': 'tensor'})
+
         if dummy_input is not None:
             observed_model(torch.randn(dummy_input))
-        
+
         observed_model.load_state_dict(quantized_state_dict)
-        
+
         self.quantizer.post_process_for_deploy(
-            observed_model, keep_fake_quant=True)
-        
-        # self.qmodels['predict'] = observed_model
+            observed_model, keep_w_fake_quant=True)
+
+        observed_model.apply(disable_observer)
 
         return observed_model
 
