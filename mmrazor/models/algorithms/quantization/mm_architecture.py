@@ -88,6 +88,8 @@ class MMArchitectureQuant(BaseAlgorithm):
         self.sync_qparams('tensor')
         self.reset_observer_and_fakequant_statistics(self)
 
+        import pdb;pdb.set_trace()
+
     def reset_observer_and_fakequant_statistics(self, model):
         """Reset the statistics in observers and fake quantizers.
 

@@ -60,6 +60,7 @@ class TensorRTQuantizer(NativeQuantizer):
         the backend's requirement.
         """
         observed_model = self.prepare(model)
+        import pdb;pdb.set_trace()
         if dummy_input is not None:
             observed_model(torch.randn(dummy_input).cuda())
         if checkpoint is not None:
