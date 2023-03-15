@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from abc import abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
@@ -200,12 +199,12 @@ class NativeQuantizer(BaseQuantizer):
         per_channel."""
         return ('per_tensor')
 
-    @abstractmethod
     def export_onnx(self, model: Union[torch.nn.Module, torch.jit.ScriptModule,
                                        torch.jit.ScriptFunction],
                     args: Union[Tuple[Any, ...],
                                 torch.Tensor], output_path: str, **kwargs):
-        pass
+        """Export the onnx model that can be deployed to a native backend."""
+        torch.onnx.export(model, args, output_path, **kwargs)
 
     def prepare(self, model, concrete_args=None):
         """prepare graph to ObservedGraphModule.
