@@ -10,9 +10,9 @@ The mainstream approach for filter pruning is usually either to force a hard-cod
 
 ### 1. Classification
 
-| Dataset  |   Backbone   | Params(M) | FLOPs(M) | lr_type | Top-1 (%) | Top-5 (%) |                     CPrate                      |                        Config                        |                                                                                            Download                                                                                            |
-| :------: | :----------: | :-------: | :------: | :-----: | :-------: | :-------: | :---------------------------------------------: | :--------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| ImageNet | DCFFResNet50 |   15.16   |   2260   |  step   |   73.96   |   91.66   | \[0.0\]+\[0.35,0.4,0.1\]\*10+\[0.3,0.3,0.1\]\*6 | [config](../../mmcls/dcff/dcff_resnet_8xb32_in1k.py) | [model](https://download.openmmlab.com/mmrazor/v1/pruning/dcff/mmcls/dcff_mmcls.pth) \\ [log](https://download.openmmlab.com/mmrazor/v1/pruning/dcff/mmcls/dcff_mmcls_sup_20220906_131949.log) |
+| Dataset  |   Backbone   | Params(M) | FLOPs(M) | lr_type | Top-1 (%) | Top-5 (%) |                     CPrate                      |                        Config                        |                                                                                                    Download                                                                                                    |
+| :------: | :----------: | :-------: | :------: | :-----: | :-------: | :-------: | :---------------------------------------------: | :--------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| ImageNet | DCFFResNet50 |   13.32   |   2255   |  step   |   74.46   |   91.99   | \[0.0\]+\[0.35,0.4,0.1\]\*10+\[0.3,0.3,0.1\]\*6 | [config](../../mmcls/dcff/dcff_resnet_8xb32_in1k.py) | [model](https://download.openmmlab.com/mmrazor/v1/pruning/dcff/mmcls/dcff_cls_fix_subnet_weight.pth) \\ [log](https://download.openmmlab.com/mmrazor/v1/pruning/dcff/mmcls/dcff_mmcls_sup_20220906_131949.log) |
 
 ### 2. Detection
 
@@ -59,8 +59,6 @@ Then set layers' pruning rates `target_pruning_ratio` by `resnet_cls.json`.
 
 ### Train DCFF
 
-#### Classification
-
 ##### ImageNet
 
 ```bash
@@ -71,12 +69,10 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_train.sh \
 
 ### Test DCFF
 
-#### Classification
-
 ##### ImageNet
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,1,2,3 PORT=29500 ./tools/dist_test.sh \
   configs/pruning/mmcls/dcff/dcff_compact_resnet50_8xb32_in1k.py \
-  $CKPT 1 --work-dir $WORK_DIR
+  $WORK_DIR/fix_subnet_weight.pth 1 --work-dir $WORK_DIR
 ```
