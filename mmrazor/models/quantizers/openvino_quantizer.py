@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple, Union
 
 import torch
 
@@ -46,32 +46,26 @@ class OpenVINOQuantizer(NativeQuantizer):
         per_channel."""
         return ('per_tensor')
 
-    def prepare_for_mmdeploy(self,
-                             model: torch.nn.Module,
-                             dummy_input: Tuple = (1, 3, 224, 224),
-                             checkpoint: Optional[str] = None):
-        """Prepare for deploy to the backend with mmdeploy, which will be used
-        in mmdeploy, and usually includes as follows:
+    def export_onnx(self,
+                    model: Union[torch.nn.Module, torch.jit.ScriptModule,
+                                 torch.jit.ScriptFunction],
+                    args: Union[Tuple[Any, ...], torch.Tensor],
+                    output_path: str,
+                    opset_version: Optional[int] = 11,
+                    **kwargs):
+        """Export the onnx model that can be deployed to OpenVino backend."""
 
-        1. prepare for the float model rewritten by mmdeploy.
-        2. load checkpoint consists of float weight and quantized params in
-        mmrazor.
-        3. post process weight fakequant for exporting .onnx that meet
-        the backend's requirement.
-        """
-        self.convert_batchnorm2d(model)
-        observed_model = self.prepare(model)
-        if dummy_input is not None:
-            observed_model(torch.randn(dummy_input))
-        if checkpoint is not None:
-            observed_model.load_state_dict(
-                torch.load(checkpoint)['state_dict'])
-        self.post_process_weight_fakequant(
-            observed_model, keep_fake_quant=True)
+        symbolic_output_path = f'symbolic_{output_path}'
+        torch.onnx.export(
+            model,
+            args,
+            symbolic_output_path,
+            opset_version=opset_version,
+            **kwargs)
 
-        observed_model.apply(disable_observer)
-
-        return observed_model
+        from .exporters import OpenVinoQuantizeExportor
+        exporter = OpenVinoQuantizeExportor(symbolic_output_path, output_path)
+        exporter.export()
 
     @property
     def module_prev_wo_fakequant(self):
