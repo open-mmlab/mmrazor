@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import copy
 import os
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 from mmengine.model import MMDistributedDataParallel
@@ -37,6 +38,7 @@ class MMArchitectureQuant(BaseAlgorithm):
             quantized.
         quantizer (Union[Dict, BaseModel]): The quantizer to support different
             backend type.
+        deploy_cfg (Union[str, Dict]): Deployment config file or Config object.
         qmodel_modes (List): The available mode of runner.
         data_preprocessor (Optional[Dict]): The pre-process
             config of :class:`BaseDataPreprocessor`. Defaults to None.
@@ -57,6 +59,7 @@ class MMArchitectureQuant(BaseAlgorithm):
     def __init__(self,
                  architecture: Union[Dict, BaseModel],
                  quantizer: Union[Dict, BaseModel],
+                 deploy_cfg: Union[str, Dict],
                  data_preprocessor: Optional[Dict] = None,
                  forward_modes: Tuple = ('tensor', 'predict', 'loss'),
                  float_checkpoint: Optional[str] = None,
@@ -68,6 +71,7 @@ class MMArchitectureQuant(BaseAlgorithm):
         self.quantizer = MODELS.build(quantizer)
         self.input_shapes = input_shapes
         self.forward_modes = forward_modes
+        self.deploy_cfg = deploy_cfg
 
         # Replace syncbn and _BatchNormXd (in mmengine) with batchnorm2d
         self.quantizer.convert_batchnorm2d(self.architecture)
@@ -145,6 +149,75 @@ class MMArchitectureQuant(BaseAlgorithm):
                 continue
             traverse(self.qmodels[mode], '')
 
+    def _get_rewriter_context_in_mmdeploy(self, deploy_cfg):
+        """Get rewriter context in mmdeploy according to the deploy related
+        config."""
+        from mmdeploy.apis.onnx.passes import optimize_onnx
+        from mmdeploy.core import RewriterContext
+        from mmdeploy.utils import (IR, Backend, get_backend, get_dynamic_axes,
+                                    get_ir_config, get_onnx_config)
+
+        def _add_or_update(cfg: dict, key: str, val: Any):
+            if key in cfg and isinstance(cfg[key], dict) and isinstance(
+                    val, dict):
+                cfg[key].update(val)
+            else:
+                cfg[key] = val
+
+        context_info = dict()
+        deploy_cfg = copy.deepcopy(deploy_cfg)
+        context_info['deploy_cfg'] = deploy_cfg
+
+        backend = get_backend(deploy_cfg).value
+
+        onnx_cfg = get_onnx_config(deploy_cfg)
+        opset_version = onnx_cfg.get('opset_version', 11)
+
+        input_names = onnx_cfg['input_names']
+        output_names = onnx_cfg['output_names']
+        axis_names = input_names + output_names
+        dynamic_axes = get_dynamic_axes(deploy_cfg, axis_names)
+
+        verbose = not onnx_cfg.get('strip_doc_string', True) or onnx_cfg.get(
+            'verbose', False)
+        keep_initializers_as_inputs = onnx_cfg.get(
+            'keep_initializers_as_inputs', True)
+        optimize = onnx_cfg.get('optimize', False)
+        if backend == Backend.NCNN.value:
+            """NCNN backend needs a precise blob counts, while using onnx
+            optimizer will merge duplicate initilizers without reference
+            count."""
+            optimize = False
+
+        ir_config = dict(
+            type='onnx',
+            input_names=input_names,
+            output_names=output_names,
+            opset_version=opset_version,
+            dynamic_axes=dynamic_axes,
+            verbose=verbose,
+            keep_initializers_as_inputs=keep_initializers_as_inputs)
+
+        _add_or_update(deploy_cfg, 'ir_config', ir_config)
+        ir = IR.get(get_ir_config(deploy_cfg)['type'])
+        if isinstance(backend, Backend):
+            backend = backend.value
+        backend_config = dict(type=backend)
+        _add_or_update(deploy_cfg, 'backend_config', backend_config)
+
+        context_info['cfg'] = deploy_cfg
+        context_info['ir'] = ir
+        if 'backend' not in context_info:
+            context_info['backend'] = backend
+        if 'opset' not in context_info:
+            context_info['opset'] = opset_version
+
+        if 'onnx_custom_passes' not in context_info:
+            onnx_custom_passes = optimize_onnx if optimize else None
+            context_info['onnx_custom_passes'] = onnx_custom_passes
+
+        return RewriterContext(**context_info)
+
     def _build_qmodels(self, model: BaseModel):
         """Build quantized models from the given model.
 
@@ -171,10 +244,14 @@ class MMArchitectureQuant(BaseAlgorithm):
             output       output            (_get_predictions,)
         """
 
+        rewriter_context = self._get_rewriter_context_in_mmdeploy(
+            self.deploy_cfg)
+
         qmodels = nn.ModuleDict()
         for mode in self.forward_modes:
             concrete_args = {'mode': mode}
-            observed_module = self.quantizer.prepare(model, concrete_args)
+            with rewriter_context:
+                observed_module = self.quantizer.prepare(model, concrete_args)
             qmodels[mode] = observed_module
 
         # data_samples can not be None in detectors during prediction.
