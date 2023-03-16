@@ -9,6 +9,8 @@ import torch.nn as nn
 
 from mmrazor.registry import TASK_UTILS
 
+no_positional_input_warned = False
+
 
 def get_model_flops_params(model,
                            input_shape=(1, 3, 224, 224),
@@ -474,9 +476,13 @@ def batch_counter_hook(module, input, output):
         input = input[0]
         batch_size = len(input)
     else:
-        pass
-        print('Warning! No positional inputs found for a module, '
-              'assuming batch size is 1.')
+        global no_positional_input_warned
+        if no_positional_input_warned:
+            pass
+        else:
+            print('Warning! No positional inputs found for a module, '
+                  'assuming batch size is 1.')
+            no_positional_input_warned = True
     module.__batch_counter__ += batch_size
 
 

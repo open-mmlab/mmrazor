@@ -79,6 +79,15 @@ class PruningStructureHook(Hook):
             self.show(runner)
 
 
+def input_generator_wrapper(model, demp_input: DefaultDemoInput):
+
+    def input_generator(input_shape):
+        res = demp_input.get_data(model)
+        return res
+
+    return input_generator
+
+
 @HOOKS.register_module()
 class ResourceInfoHook(Hook):
     """This hook is used to display the resource related information and save
@@ -167,7 +176,13 @@ class ResourceInfoHook(Hook):
         with torch.no_grad():
             training = model.training
             model.eval()
-            res = self.estimator.estimate(model)
+            res = self.estimator.estimate(
+                model,
+                flops_params_cfg=dict(
+                    input_constructor=input_generator_wrapper(
+                        model,
+                        self.demo_input,
+                    )))
             if training:
                 model.train()
             return res

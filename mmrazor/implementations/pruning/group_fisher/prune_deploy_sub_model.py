@@ -1,14 +1,25 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import json
+import types
 from typing import Union
 
 import torch.nn as nn
 from mmengine import fileio
 
+from mmrazor.models.utils.expandable_utils import make_channel_divisible
 from mmrazor.registry import MODELS
 from mmrazor.structures.subnet.fix_subnet import (export_fix_subnet,
                                                   load_fix_subnet)
 from mmrazor.utils import print_log
+
+
+def post_process_for_mmdeploy_wrapper(divisor):
+
+    def post_process_for_mmdeploy(model: nn.Module):
+        s = make_channel_divisible(model, divisor=divisor)
+        print_log(f'structure after make divisible: {json.dumps(s,indent=4)}')
+
+    return post_process_for_mmdeploy
 
 
 @MODELS.register_module()
@@ -60,6 +71,8 @@ def GroupFisherDeploySubModel(architecture,
     # cooperate with mmdeploy to make the channel divisible after load
     # the checkpoint.
     if divisor != 1:
-        setattr(architecture, '_razor_divisor', divisor)
-
+        setattr(
+            architecture, 'post_process_for_mmdeploy',
+            types.MethodType(
+                post_process_for_mmdeploy_wrapper(divisor), architecture))
     return architecture

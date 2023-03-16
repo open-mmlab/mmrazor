@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
+from mmengine.model.utils import _BatchNormXd
 
 from mmrazor.models.mutables import (L1MutableChannelUnit,
                                      MutableChannelContainer)
@@ -15,6 +16,7 @@ class ExpandableUnit(L1MutableChannelUnit):
             model, {
                 nn.Conv2d: ExpandableConv2d,
                 nn.BatchNorm2d: ExpandableBatchNorm2d,
+                _BatchNormXd: ExpandableBatchNorm2d,
                 nn.Linear: ExpandLinear,
             })
         self._register_channel_container(model, MutableChannelContainer)
