@@ -10,6 +10,7 @@ test_cfg = dict(
 
 retina = _base_.model
 float_checkpoint = 'https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_r50_fpn_1x_coco/retinanet_r50_fpn_1x_coco_20200130-c2398f9e.pth'  # noqa: E501
+deploy_cfg = r'G:\projects\openmmlab\mmdeploy\configs\mmdet\detection\detection_openvino_dynamic-800x1344-quantize.py',  # noqa: E501
 
 global_qconfig = dict(
     w_observer=dict(type='mmrazor.PerChannelMinMaxObserver'),
@@ -32,6 +33,7 @@ model = dict(
         bgr_to_rgb=True,
         pad_size_divisor=32),
     architecture=retina,
+    deploy_cfg=deploy_cfg,
     float_checkpoint=float_checkpoint,
     quantizer=dict(
         type='mmrazor.OpenVINOQuantizer',

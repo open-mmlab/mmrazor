@@ -155,7 +155,8 @@ class MMArchitectureQuant(BaseAlgorithm):
         from mmdeploy.apis.onnx.passes import optimize_onnx
         from mmdeploy.core import RewriterContext
         from mmdeploy.utils import (IR, Backend, get_backend, get_dynamic_axes,
-                                    get_ir_config, get_onnx_config)
+                                    get_ir_config, get_onnx_config,
+                                    load_config)
 
         def _add_or_update(cfg: dict, key: str, val: Any):
             if key in cfg and isinstance(cfg[key], dict) and isinstance(
@@ -164,6 +165,8 @@ class MMArchitectureQuant(BaseAlgorithm):
             else:
                 cfg[key] = val
 
+        if isinstance(deploy_cfg, str):
+            deploy_cfg, = load_config(deploy_cfg)
         context_info = dict()
         deploy_cfg = copy.deepcopy(deploy_cfg)
         context_info['deploy_cfg'] = deploy_cfg
