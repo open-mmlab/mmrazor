@@ -10,17 +10,20 @@ except ImportError:
     from mmrazor.utils import get_placeholder
     QConfig = get_placeholder('torch>=1.13')
 
-from mmrazor.registry import MODELS
-
 from torch.ao.quantization.utils import is_per_tensor
+
+from mmrazor.registry import MODELS
 
 RequiredArgs = [
     'w_qscheme', 'a_qscheme', 'w_fake_quant', 'a_fake_quant', 'w_observer',
     'a_observer'
 ]
 
-RetainArgsPerTensor = ['dtype', 'qscheme', 'quant_min', 'quant_max', 'reduce_range']
+RetainArgsPerTensor = [
+    'dtype', 'qscheme', 'quant_min', 'quant_max', 'reduce_range'
+]
 RetainArgsPerChannel = RetainArgsPerTensor + ['ch_axis']
+
 
 class QConfigHandler():
     """Convert custom user-friendly qconfig format to torch's QConfig.
@@ -81,7 +84,7 @@ class QConfigHandler():
         torch_qconfig = QConfig(
             weight=self.w_fake_quant, activation=self.a_fake_quant)
         return torch_qconfig
-    
+
     @staticmethod
     def replace_fakequant(fake_quant_org, qscheme_org, update_qparams=True):
         assert isinstance(qscheme_org, QSchemeHandler)
@@ -99,7 +102,8 @@ class QConfigHandler():
         for k in pop_keys:
             observer_kwargs.pop(k)
         fake_quant = MODELS.get('FakeQuantize')
-        fake_quant_wrapper = fake_quant.with_args(observer=observer, **observer_kwargs)
+        fake_quant_wrapper = fake_quant.with_args(
+            observer=observer, **observer_kwargs)
         if update_qparams:
             device = fake_quant_org.scale.device
             fake_quant_ins = fake_quant_wrapper().to(device)
@@ -107,14 +111,16 @@ class QConfigHandler():
             fake_quant_ins.zero_point.copy_(fake_quant_org.zero_point)
             obs = fake_quant_ins.activation_post_process
             obs_org = fake_quant_org.activation_post_process
-            obs.min_val.copy_(obs_org.min_val)
-            obs.max_val.copy_(obs_org.max_val)
+            obs.min_val.resize_(obs_org.min_val.shape).copy_(obs_org.min_val)
+            obs.max_val.resize_(obs_org.max_val.shape).copy_(obs_org.max_val)
             return fake_quant_ins
         else:
             return fake_quant_wrapper
 
-    def fixed_w_qparams(self):
-        self.w_fake_quant = self.replace_fakequant(self.w_fake_quant, self.w_qscheme, update_qparams=False)
+    def fixed_w_fakequant(self):
+        self.w_fake_quant = self.replace_fakequant(
+            self.w_fake_quant(), self.w_qscheme, update_qparams=False)
+
 
 class QSchemeHandler(object):
     """Convert the qscheme of custom user-friendly qconfig to args needed in

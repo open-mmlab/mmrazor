@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Optional, Tuple
+from typing import Optional
 
 import torch
 
@@ -45,11 +45,10 @@ class TensorRTQuantizer(NativeQuantizer):
         per_channel."""
         return ('per_tensor')
 
-    def prepare_for_mmdeploy(self,
-                             model: torch.nn.Module,
-                            #  dummy_input: Tuple = (1, 3, 224, 224),
-                             dummy_input=None,
-                             checkpoint: Optional[str] = None):
+    def post_process_for_mmdeploy(self,
+                                  model: torch.nn.Module,
+                                  dummy_input=None,
+                                  checkpoint: Optional[str] = None):
         """Prepare for deploy to the backend with mmdeploy, which will be used
         in mmdeploy, and usually includes as follows:
 
@@ -59,30 +58,31 @@ class TensorRTQuantizer(NativeQuantizer):
         3. post process weight fakequant for exporting .onnx that meet
         the backend's requirement.
         """
-        observed_model = self.prepare(model)
-        import pdb;pdb.set_trace()
+        quantized_state_dict = self.qmodels['tensor'].state_dict()
+        fp32_model = self.architecture
+        self.convert_batchnorm2d(fp32_model)
+        observed_model = self.prepare(fp32_model, {'mode': 'tensor'})
+
         if dummy_input is not None:
             observed_model(torch.randn(dummy_input).cuda())
-        if checkpoint is not None:
-            observed_model.load_state_dict(
-                torch.load(checkpoint)['state_dict'])
-        
-        self.post_process_weight_fakequant(
-            observed_model, 
-            device='cuda',
-            keep_fake_quant=True)
-        
+
+        observed_model.load_state_dict(quantized_state_dict)
+
+        self.post_process_for_deploy(
+            observed_model, device='cuda', keep_w_fake_quant=True)
+
         for node in observed_model.graph.nodes:
             if 'activation_post_process_' in node.name:
                 module_name = node.target
                 module = getattr(observed_model, module_name)
-                fakequant_new = QConfigHandler.replace_fakequant(module, self.qconfig.a_qscheme, update_qparams=True)
+                fakequant_new = QConfigHandler.replace_fakequant(
+                    module, self.qconfig.a_qscheme, update_qparams=True)
                 setattr(observed_model, module_name, fakequant_new)
-        
+
         observed_model.apply(disable_observer)
-        
+
         return observed_model
-    
+
     @property
     def module_prev_wo_fakequant(self):
         """Configurate the modules that their previous nodes are redundant
