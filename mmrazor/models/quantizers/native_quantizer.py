@@ -253,6 +253,7 @@ class NativeQuantizer(BaseQuantizer):
     def post_process_for_deploy(self,
                                 observed_module: ObservedGraphModule,
                                 device: str = 'cpu',
+                                update_weight_with_fakequant: bool = False,
                                 keep_w_fake_quant: bool = False):
         """weight fake-quant for supported QAT modules.
 
@@ -283,14 +284,15 @@ class NativeQuantizer(BaseQuantizer):
                     # also convert a qat module to a normal module.
                     # source url: https://github.com/pytorch/pytorch/blob/master/torch/nn/intrinsic/qat/modules/conv_fused.py # noqa: E501
                     float_child = child.to_float()
-                    # import pdb;pdb.set_trace()
-                    from torch.ao.nn.intrinsic import _FusedModule
-                    if issubclass(type(float_child), _FusedModule):
-                        float_child[0].weight.data = weight_fakequant(
-                            float_child[0].weight.data)
-                    else:
-                        float_child.weight.data = weight_fakequant(
-                            float_child.weight.data)
+
+                    if update_weight_with_fakequant:
+                        from torch.ao.nn.intrinsic import _FusedModule
+                        if issubclass(type(float_child), _FusedModule):
+                            float_child[0].weight.data = weight_fakequant(
+                                float_child[0].weight.data)
+                        else:
+                            float_child.weight.data = weight_fakequant(
+                                float_child.weight.data)
                     # This is decided by backend type, some backend need
                     # explicitly keep the fake quant structure, others don't.
                     # TODO add deploy doc link
@@ -310,7 +312,6 @@ class NativeQuantizer(BaseQuantizer):
                         disable_observer(new_child)
                     else:
                         new_child = float_child.to(device)
-                    # import pdb;pdb.set_trace()
                     setattr(module, name, new_child)
                 else:
                     traverse(child)
