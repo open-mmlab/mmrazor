@@ -98,6 +98,41 @@ class MMArchitectureQuant(BaseAlgorithm):
                 module.scale.data = torch.ones_like(module.scale)
                 module.zero_point.data = torch.zeros_like(module.zero_point)
 
+    def _load(self, module, prefix, src_state_dict):
+        """Copies parameters and buffers from :attr:`src_state_dict` into this
+        module and its descendants.
+
+        If the shape of the parameters and buffers between
+        :attr:`src_state_dict` and this module are different, we will reshape
+        the tensor shape of the parameters and buffers.
+        """
+        for name, child in module._modules.items():
+            if module is None:
+                continue
+            child_name = f'{prefix}{name}'
+            if isinstance(child, FakeQuantizeBase):
+                for name, param in child.named_parameters():
+                    param_name = f'{child_name}.{name}'
+                    src_param = src_state_dict[param_name]
+                    if src_param.shape == param.shape:
+                        param.data.copy_(src_param)
+                    else:
+                        requirs_grad = param.requires_grad
+                        param.requires_grad = False
+                        param.resize_(src_param.shape)
+                        param.requires_grad = requirs_grad
+                        param.data.copy_(src_param)
+                for name, buffer in child.named_buffers():
+                    buffer_name = f'{child_name}.{name}'
+                    src_buffer = src_state_dict[buffer_name]
+                    if src_buffer.shape == buffer.shape:
+                        buffer.data.copy_(src_buffer)
+                    else:
+                        buffer.resize_(src_buffer.shape)
+                        buffer.data.copy_(src_buffer)
+            else:
+                self._load(child, f'{child_name}.', src_state_dict)
+
     def sync_qparams(self, src_mode: str):
         """Sync all quantize parameters in different `forward_modes`. We could
         have more than one forward mode to generate graphs, each mode will
@@ -108,46 +143,18 @@ class MMArchitectureQuant(BaseAlgorithm):
             src_mode (str): The modes of forward method.
 
         Note:
-            `traverse()` function recursively traverses all module to sync
+            `_load()` method recursively traverses all module to sync
                 quantized graph generated from different `forward_modes`.
                 This is because We have different mode ('tensor', 'predict',
                 'loss') in OpenMMLab architecture which have different graph
                 in some subtle ways, so we need to sync them here.
         """
 
-        def traverse(module, prefix):
-            for name, child in module._modules.items():
-                if module is None:
-                    continue
-                child_name = f'{prefix}{name}'
-                if isinstance(child, FakeQuantizeBase):
-                    for name, param in child.named_parameters():
-                        param_name = f'{child_name}.{name}'
-                        src_param = src_state_dict[param_name]
-                        if src_param.shape == param.shape:
-                            param.data.copy_(src_param)
-                        else:
-                            requirs_grad = param.requires_grad
-                            param.requires_grad = False
-                            param.resize_(src_param.shape)
-                            param.requires_grad = requirs_grad
-                            param.data.copy_(src_param)
-                    for name, buffer in child.named_buffers():
-                        buffer_name = f'{child_name}.{name}'
-                        src_buffer = src_state_dict[buffer_name]
-                        if src_buffer.shape == buffer.shape:
-                            buffer.data.copy_(src_buffer)
-                        else:
-                            buffer.resize_(src_buffer.shape)
-                            buffer.data.copy_(src_buffer)
-                else:
-                    traverse(child, f'{child_name}.')
-
         src_state_dict = self.qmodels[src_mode].state_dict()
         for mode in self.forward_modes:
             if mode == src_mode:
                 continue
-            traverse(self.qmodels[mode], '')
+            self._load(self.qmodels[mode], '', src_state_dict)
 
     def _get_rewriter_context_in_mmdeploy(self, deploy_cfg):
         """Get rewriter context in mmdeploy according to the deploy related
@@ -306,13 +313,23 @@ class MMArchitectureQuant(BaseAlgorithm):
         the backend's requirement.
         """
 
-        quantized_state_dict = self.qmodels['tensor'].state_dict()
+        quantized_state_dict = self.qmodels['predict'].state_dict()
         fp32_model = self.architecture
         self.quantizer.convert_batchnorm2d(fp32_model)
-        observed_model = self.quantizer.prepare(fp32_model, {'mode': 'tensor'})
+
+        observed_model = self.quantizer.prepare(fp32_model,
+                                                {'mode': 'predict'})
 
         if dummy_input is not None:
-            observed_model(torch.randn(dummy_input))
+            # modify the tensor shape of parameters and buffers in
+            # observed_model
+            tensor_model = self.quantizer.prepare(fp32_model,
+                                                  {'mode': 'tensor'})
+            device = next(tensor_model.parameters()).device
+            dummy_input = torch.randn(dummy_input).to(device)
+            tensor_model(dummy_input, None, 'tensor')
+            src_state_dict = tensor_model.state_dict()
+            self._load(observed_model, '', src_state_dict)
 
         observed_model.load_state_dict(quantized_state_dict)
 
