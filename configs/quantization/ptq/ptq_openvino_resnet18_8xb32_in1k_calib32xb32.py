@@ -1,4 +1,7 @@
-_base_ = ['mmcls::resnet/resnet18_8xb32_in1k.py']
+_base_ = [
+    'mmcls::resnet/resnet18_8xb32_in1k.py',
+    '../deploy_cfgs/mmcls/classification_openvino_dynamic-224x224.py'
+]
 
 train_dataloader = dict(batch_size=32)
 
@@ -20,7 +23,6 @@ global_qconfig = dict(
 )
 
 float_checkpoint = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_8xb32_in1k_20210831-fbbb1da6.pth'  # noqa: E501
-deploy_cfg = r'G:\projects\openmmlab\mmdeploy\configs\mmcls\classification_openvino_dynamic-224x224.py'  # noqa: E501
 
 model = dict(
     _delete_=True,
@@ -34,7 +36,7 @@ model = dict(
         # convert image from BGR to RGB
         to_rgb=True),
     architecture=_base_.model,
-    deploy_cfg=deploy_cfg,
+    deploy_cfg=_base_.deploy_cfg,
     float_checkpoint=float_checkpoint,
     quantizer=dict(
         type='mmrazor.OpenVINOQuantizer',

@@ -4,6 +4,7 @@ import os
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
+from mmengine.config import Config
 from mmengine.model import MMDistributedDataParallel
 from mmengine.runner import load_checkpoint
 from mmengine.structures import BaseDataElement
@@ -98,41 +99,6 @@ class MMArchitectureQuant(BaseAlgorithm):
                 module.scale.data = torch.ones_like(module.scale)
                 module.zero_point.data = torch.zeros_like(module.zero_point)
 
-    def _load(self, module, prefix, src_state_dict):
-        """Copies parameters and buffers from :attr:`src_state_dict` into this
-        module and its descendants.
-
-        If the shape of the parameters and buffers between
-        :attr:`src_state_dict` and this module are different, we will reshape
-        the tensor shape of the parameters and buffers.
-        """
-        for name, child in module._modules.items():
-            if module is None:
-                continue
-            child_name = f'{prefix}{name}'
-            if isinstance(child, FakeQuantizeBase):
-                for name, param in child.named_parameters():
-                    param_name = f'{child_name}.{name}'
-                    src_param = src_state_dict[param_name]
-                    if src_param.shape == param.shape:
-                        param.data.copy_(src_param)
-                    else:
-                        requirs_grad = param.requires_grad
-                        param.requires_grad = False
-                        param.resize_(src_param.shape)
-                        param.requires_grad = requirs_grad
-                        param.data.copy_(src_param)
-                for name, buffer in child.named_buffers():
-                    buffer_name = f'{child_name}.{name}'
-                    src_buffer = src_state_dict[buffer_name]
-                    if src_buffer.shape == buffer.shape:
-                        buffer.data.copy_(src_buffer)
-                    else:
-                        buffer.resize_(src_buffer.shape)
-                        buffer.data.copy_(src_buffer)
-            else:
-                self._load(child, f'{child_name}.', src_state_dict)
-
     def sync_qparams(self, src_mode: str):
         """Sync all quantize parameters in different `forward_modes`. We could
         have more than one forward mode to generate graphs, each mode will
@@ -143,27 +109,64 @@ class MMArchitectureQuant(BaseAlgorithm):
             src_mode (str): The modes of forward method.
 
         Note:
-            `_load()` method recursively traverses all module to sync
+            `traverse()` method recursively traverses all modules to sync
                 quantized graph generated from different `forward_modes`.
                 This is because We have different mode ('tensor', 'predict',
                 'loss') in OpenMMLab architecture which have different graph
                 in some subtle ways, so we need to sync them here.
         """
 
+        def traverse(module, prefix):
+            for name, child in module._modules.items():
+                if module is None:
+                    continue
+                child_name = f'{prefix}{name}'
+                if isinstance(child, FakeQuantizeBase):
+                    for name, param in child.named_parameters():
+                        param_name = f'{child_name}.{name}'
+                        src_param = src_state_dict[param_name]
+                        if src_param.shape == param.shape:
+                            param.data.copy_(src_param)
+                        else:
+                            requirs_grad = param.requires_grad
+                            param.requires_grad = False
+                            param.resize_(src_param.shape)
+                            param.requires_grad = requirs_grad
+                            param.data.copy_(src_param)
+                    for name, buffer in child.named_buffers():
+                        buffer_name = f'{child_name}.{name}'
+                        src_buffer = src_state_dict[buffer_name]
+                        if src_buffer.shape == buffer.shape:
+                            buffer.data.copy_(src_buffer)
+                        else:
+                            buffer.resize_(src_buffer.shape)
+                            buffer.data.copy_(src_buffer)
+                else:
+                    traverse(child, f'{child_name}.')
+
         src_state_dict = self.qmodels[src_mode].state_dict()
         for mode in self.forward_modes:
             if mode == src_mode:
                 continue
-            self._load(self.qmodels[mode], '', src_state_dict)
+            traverse(self.qmodels[mode], '')
 
     def _get_rewriter_context_in_mmdeploy(self, deploy_cfg):
         """Get rewriter context in mmdeploy according to the deploy related
         config."""
         from mmdeploy.apis.onnx.passes import optimize_onnx
+        from mmdeploy.codebase import import_codebase
         from mmdeploy.core import RewriterContext
-        from mmdeploy.utils import (IR, Backend, get_backend, get_dynamic_axes,
-                                    get_ir_config, get_onnx_config,
-                                    load_config)
+        from mmdeploy.utils import (IR, Backend, get_backend, get_codebase,
+                                    get_dynamic_axes, get_ir_config,
+                                    get_onnx_config)
+        from mmdeploy.utils.config_utils import get_codebase_external_module
+
+        if isinstance(deploy_cfg, str):
+            deploy_cfg = Config.fromfile(deploy_cfg)
+
+        codebase = get_codebase(deploy_cfg)
+        custom_module_list = get_codebase_external_module(deploy_cfg)
+        import_codebase(codebase, custom_module_list)
 
         def _add_or_update(cfg: dict, key: str, val: Any):
             if key in cfg and isinstance(cfg[key], dict) and isinstance(
@@ -172,11 +175,8 @@ class MMArchitectureQuant(BaseAlgorithm):
             else:
                 cfg[key] = val
 
-        if isinstance(deploy_cfg, str):
-            deploy_cfg, = load_config(deploy_cfg)
         context_info = dict()
         deploy_cfg = copy.deepcopy(deploy_cfg)
-        context_info['deploy_cfg'] = deploy_cfg
 
         backend = get_backend(deploy_cfg).value
 
@@ -226,7 +226,42 @@ class MMArchitectureQuant(BaseAlgorithm):
             onnx_custom_passes = optimize_onnx if optimize else None
             context_info['onnx_custom_passes'] = onnx_custom_passes
 
-        return RewriterContext(**context_info)
+        rewriter_context = RewriterContext(**context_info)
+
+        # Hard codes to delete user-specific rewriters from
+        # `RewriterContext._rewriter_manager`.
+        # We use the model which is rewritten by mmdeploy to build quantized
+        # models. However not all the modules, functions and symbolic rewritten
+        # by mmdeploy need to be rewritten in mmrazor. For example, mmdeploy
+        # rewrite `mmcls.models.classifiers.ImageClassifier.forward` and
+        # `mmcls.models.classifiers.BaseClassifier.forward` for deployment.
+        # But they can't be rewritten by mmrazor as ptq and qat are done in
+        # mmrazor. So to ensure ptq and qat proceed normally, we have to remove
+        # these record from `RewriterContext._rewriter_manager`.
+
+        # We have to deepcopy rewriter_context here to delete records safely.
+        rewriter_context = copy.deepcopy(rewriter_context)
+        module_record_to_pop = deploy_cfg.get('module_record_to_pop', [])
+        function_record_to_pop = deploy_cfg.get('function_record_to_pop', [])
+        symbolic_record_to_pop = deploy_cfg.get('symbolic_record_to_pop', [])
+        for record in module_record_to_pop:
+            records = rewriter_context._rewriter_manager.module_rewriter.\
+                _registry._rewrite_records
+            if record in records:
+                records.pop(record)
+        for record in function_record_to_pop:
+            records = rewriter_context._rewriter_manager.function_rewriter.\
+                _registry._rewrite_records
+            if record in records:
+                records.pop(record)
+
+        for record in symbolic_record_to_pop:
+            records = rewriter_context._rewriter_manager.symbolic_rewriter.\
+                _registry._rewrite_records
+            if record in records:
+                records.pop(record)
+
+        return rewriter_context
 
     def _build_qmodels(self, model: BaseModel):
         """Build quantized models from the given model.
@@ -260,6 +295,7 @@ class MMArchitectureQuant(BaseAlgorithm):
         qmodels = nn.ModuleDict()
         for mode in self.forward_modes:
             concrete_args = {'mode': mode}
+            # todo: support qat.
             with rewriter_context:
                 observed_module = self.quantizer.prepare(model, concrete_args)
             qmodels[mode] = observed_module
@@ -302,7 +338,7 @@ class MMArchitectureQuant(BaseAlgorithm):
         data = self.data_preprocessor(data, False)
         return self._run_forward(data, mode='predict')
 
-    def post_process_for_mmdeploy(self, dummy_input: Tuple = (1, 3, 224, 224)):
+    def get_deploy_model(self):
         """Prepare for deploy to the backend with mmdeploy, which will be used
         in mmdeploy, and usually includes as follows:
 
@@ -317,19 +353,7 @@ class MMArchitectureQuant(BaseAlgorithm):
         fp32_model = self.architecture
         self.quantizer.convert_batchnorm2d(fp32_model)
 
-        observed_model = self.quantizer.prepare(fp32_model,
-                                                {'mode': 'predict'})
-
-        if dummy_input is not None:
-            # modify the tensor shape of parameters and buffers in
-            # observed_model
-            tensor_model = self.quantizer.prepare(fp32_model,
-                                                  {'mode': 'tensor'})
-            device = next(tensor_model.parameters()).device
-            dummy_input = torch.randn(dummy_input).to(device)
-            tensor_model(dummy_input, None, 'tensor')
-            src_state_dict = tensor_model.state_dict()
-            self._load(observed_model, '', src_state_dict)
+        observed_model = self.quantizer.prepare(fp32_model)
 
         observed_model.load_state_dict(quantized_state_dict)
 
