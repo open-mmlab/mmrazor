@@ -72,6 +72,8 @@ class MMArchitectureQuant(BaseAlgorithm):
         self.quantizer = MODELS.build(quantizer)
         self.input_shapes = input_shapes
         self.forward_modes = forward_modes
+        if isinstance(deploy_cfg, str):
+            deploy_cfg = Config.fromfile(deploy_cfg)
         self.deploy_cfg = deploy_cfg
 
         # Replace syncbn and _BatchNormXd (in mmengine) with batchnorm2d
@@ -160,9 +162,6 @@ class MMArchitectureQuant(BaseAlgorithm):
                                     get_dynamic_axes, get_ir_config,
                                     get_onnx_config)
         from mmdeploy.utils.config_utils import get_codebase_external_module
-
-        if isinstance(deploy_cfg, str):
-            deploy_cfg = Config.fromfile(deploy_cfg)
 
         codebase = get_codebase(deploy_cfg)
         custom_module_list = get_codebase_external_module(deploy_cfg)
@@ -292,6 +291,32 @@ class MMArchitectureQuant(BaseAlgorithm):
         rewriter_context = self._get_rewriter_context_in_mmdeploy(
             self.deploy_cfg)
 
+        # module_record_to_pop = self.deploy_cfg.get('module_record_to_pop',
+        # [])
+        # function_record_to_pop = self.deploy_cfg.get(
+        # 'function_record_to_pop', [])
+        # symbolic_record_to_pop = self.deploy_cfg.get(
+        # 'symbolic_record_to_pop', [])
+        # module_record_backup = {}
+        # function_record_backup = {}
+        # symbolic_record_backup = {}
+        # for record in module_record_to_pop:
+        #     records = rewriter_context._rewriter_manager.module_rewriter. \
+        #         _registry._rewrite_records
+        #     if record in records:
+        #         module_record_backup[record] = records.pop(record)
+        # for record in function_record_to_pop:
+        #     records = rewriter_context._rewriter_manager.function_rewriter. \
+        #         _registry._rewrite_records
+        #     if record in records:
+        #         function_record_backup[record] = records.pop(record)
+        #
+        # for record in symbolic_record_to_pop:
+        #     records = rewriter_context._rewriter_manager.symbolic_rewriter. \
+        #         _registry._rewrite_records
+        #     if record in records:
+        #         symbolic_record_backup[record] = records.pop(record)
+
         qmodels = nn.ModuleDict()
         for mode in self.forward_modes:
             concrete_args = {'mode': mode}
@@ -299,6 +324,13 @@ class MMArchitectureQuant(BaseAlgorithm):
             with rewriter_context:
                 observed_module = self.quantizer.prepare(model, concrete_args)
             qmodels[mode] = observed_module
+
+        # rewriter_context._rewriter_manager.module_rewriter. \
+        #     _registry._rewrite_records.update(module_record_backup)
+        # rewriter_context._rewriter_manager.function_rewriter. \
+        #     _registry._rewrite_records.update(function_record_backup)
+        # rewriter_context._rewriter_manager.symbolic_rewriter. \
+        #     _registry._rewrite_records.update(symbolic_record_backup)
 
         # data_samples can not be None in detectors during prediction.
         # But we need to make the dummy prediction in _build_qmodels.
