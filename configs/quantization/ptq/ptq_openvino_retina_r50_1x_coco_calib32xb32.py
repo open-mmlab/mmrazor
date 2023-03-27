@@ -1,4 +1,7 @@
-_base_ = ['mmdet::retinanet/retinanet_r50_fpn_1x_coco.py']
+_base_ = [
+    'mmdet::retinanet/retinanet_r50_fpn_1x_coco.py',
+    '../deploy_cfgs/mmdet/detection_openvino_dynamic-800x1344.py'
+]
 
 train_dataloader = dict(batch_size=32)
 
@@ -32,6 +35,7 @@ model = dict(
         bgr_to_rgb=True,
         pad_size_divisor=32),
     architecture=retina,
+    deploy_cfg=_base_.deploy_cfg,
     float_checkpoint=float_checkpoint,
     quantizer=dict(
         type='mmrazor.OpenVINOQuantizer',
