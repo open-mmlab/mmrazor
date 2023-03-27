@@ -1,8 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import copy
 import os
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
+from mmengine.config import Config
 from mmengine.model import MMDistributedDataParallel
 from mmengine.runner import load_checkpoint
 from mmengine.structures import BaseDataElement
@@ -37,6 +39,7 @@ class MMArchitectureQuant(BaseAlgorithm):
             quantized.
         quantizer (Union[Dict, BaseModel]): The quantizer to support different
             backend type.
+        deploy_cfg (Union[str, Dict]): Deployment config file or Config object.
         qmodel_modes (List): The available mode of runner.
         data_preprocessor (Optional[Dict]): The pre-process
             config of :class:`BaseDataPreprocessor`. Defaults to None.
@@ -57,6 +60,7 @@ class MMArchitectureQuant(BaseAlgorithm):
     def __init__(self,
                  architecture: Union[Dict, BaseModel],
                  quantizer: Union[Dict, BaseModel],
+                 deploy_cfg: Union[str, Dict],
                  data_preprocessor: Optional[Dict] = None,
                  forward_modes: Tuple = ('tensor', 'predict', 'loss'),
                  float_checkpoint: Optional[str] = None,
@@ -68,6 +72,9 @@ class MMArchitectureQuant(BaseAlgorithm):
         self.quantizer = MODELS.build(quantizer)
         self.input_shapes = input_shapes
         self.forward_modes = forward_modes
+        if isinstance(deploy_cfg, str):
+            deploy_cfg = Config.fromfile(deploy_cfg)
+        self.deploy_cfg = deploy_cfg
 
         # Replace syncbn and _BatchNormXd (in mmengine) with batchnorm2d
         self.quantizer.convert_batchnorm2d(self.architecture)
@@ -104,7 +111,7 @@ class MMArchitectureQuant(BaseAlgorithm):
             src_mode (str): The modes of forward method.
 
         Note:
-            `traverse()` function recursively traverses all module to sync
+            `traverse()` method recursively traverses all modules to sync
                 quantized graph generated from different `forward_modes`.
                 This is because We have different mode ('tensor', 'predict',
                 'loss') in OpenMMLab architecture which have different graph
@@ -145,6 +152,116 @@ class MMArchitectureQuant(BaseAlgorithm):
                 continue
             traverse(self.qmodels[mode], '')
 
+    def _get_rewriter_context_in_mmdeploy(self, deploy_cfg):
+        """Get rewriter context in mmdeploy according to the deploy related
+        config."""
+        from mmdeploy.apis.onnx.passes import optimize_onnx
+        from mmdeploy.codebase import import_codebase
+        from mmdeploy.core import RewriterContext
+        from mmdeploy.utils import (IR, Backend, get_backend, get_codebase,
+                                    get_dynamic_axes, get_ir_config,
+                                    get_onnx_config)
+        from mmdeploy.utils.config_utils import get_codebase_external_module
+
+        codebase = get_codebase(deploy_cfg)
+        custom_module_list = get_codebase_external_module(deploy_cfg)
+        import_codebase(codebase, custom_module_list)
+
+        def _add_or_update(cfg: dict, key: str, val: Any):
+            if key in cfg and isinstance(cfg[key], dict) and isinstance(
+                    val, dict):
+                cfg[key].update(val)
+            else:
+                cfg[key] = val
+
+        context_info = dict()
+        deploy_cfg = copy.deepcopy(deploy_cfg)
+
+        backend = get_backend(deploy_cfg).value
+
+        onnx_cfg = get_onnx_config(deploy_cfg)
+        opset_version = onnx_cfg.get('opset_version', 11)
+
+        input_names = onnx_cfg['input_names']
+        output_names = onnx_cfg['output_names']
+        axis_names = input_names + output_names
+        dynamic_axes = get_dynamic_axes(deploy_cfg, axis_names)
+
+        verbose = not onnx_cfg.get('strip_doc_string', True) or onnx_cfg.get(
+            'verbose', False)
+        keep_initializers_as_inputs = onnx_cfg.get(
+            'keep_initializers_as_inputs', True)
+        optimize = onnx_cfg.get('optimize', False)
+        if backend == Backend.NCNN.value:
+            """NCNN backend needs a precise blob counts, while using onnx
+            optimizer will merge duplicate initilizers without reference
+            count."""
+            optimize = False
+
+        ir_config = dict(
+            type='onnx',
+            input_names=input_names,
+            output_names=output_names,
+            opset_version=opset_version,
+            dynamic_axes=dynamic_axes,
+            verbose=verbose,
+            keep_initializers_as_inputs=keep_initializers_as_inputs)
+
+        _add_or_update(deploy_cfg, 'ir_config', ir_config)
+        ir = IR.get(get_ir_config(deploy_cfg)['type'])
+        if isinstance(backend, Backend):
+            backend = backend.value
+        backend_config = dict(type=backend)
+        _add_or_update(deploy_cfg, 'backend_config', backend_config)
+
+        context_info['cfg'] = deploy_cfg
+        context_info['ir'] = ir
+        if 'backend' not in context_info:
+            context_info['backend'] = backend
+        if 'opset' not in context_info:
+            context_info['opset'] = opset_version
+
+        if 'onnx_custom_passes' not in context_info:
+            onnx_custom_passes = optimize_onnx if optimize else None
+            context_info['onnx_custom_passes'] = onnx_custom_passes
+
+        rewriter_context = RewriterContext(**context_info)
+
+        # Hard codes to delete user-specific rewriters from
+        # `RewriterContext._rewriter_manager`.
+        # We use the model which is rewritten by mmdeploy to build quantized
+        # models. However not all the modules, functions and symbolic rewritten
+        # by mmdeploy need to be rewritten in mmrazor. For example, mmdeploy
+        # rewrite `mmcls.models.classifiers.ImageClassifier.forward` and
+        # `mmcls.models.classifiers.BaseClassifier.forward` for deployment.
+        # But they can't be rewritten by mmrazor as ptq and qat are done in
+        # mmrazor. So to ensure ptq and qat proceed normally, we have to remove
+        # these record from `RewriterContext._rewriter_manager`.
+
+        # We have to deepcopy rewriter_context here to delete records safely.
+        rewriter_context = copy.deepcopy(rewriter_context)
+        module_record_to_pop = deploy_cfg.get('module_record_to_pop', [])
+        function_record_to_pop = deploy_cfg.get('function_record_to_pop', [])
+        symbolic_record_to_pop = deploy_cfg.get('symbolic_record_to_pop', [])
+        for record in module_record_to_pop:
+            records = rewriter_context._rewriter_manager.module_rewriter.\
+                _registry._rewrite_records
+            if record in records:
+                records.pop(record)
+        for record in function_record_to_pop:
+            records = rewriter_context._rewriter_manager.function_rewriter.\
+                _registry._rewrite_records
+            if record in records:
+                records.pop(record)
+
+        for record in symbolic_record_to_pop:
+            records = rewriter_context._rewriter_manager.symbolic_rewriter.\
+                _registry._rewrite_records
+            if record in records:
+                records.pop(record)
+
+        return rewriter_context
+
     def _build_qmodels(self, model: BaseModel):
         """Build quantized models from the given model.
 
@@ -171,11 +288,49 @@ class MMArchitectureQuant(BaseAlgorithm):
             output       output            (_get_predictions,)
         """
 
+        rewriter_context = self._get_rewriter_context_in_mmdeploy(
+            self.deploy_cfg)
+
+        # module_record_to_pop = self.deploy_cfg.get('module_record_to_pop',
+        # [])
+        # function_record_to_pop = self.deploy_cfg.get(
+        # 'function_record_to_pop', [])
+        # symbolic_record_to_pop = self.deploy_cfg.get(
+        # 'symbolic_record_to_pop', [])
+        # module_record_backup = {}
+        # function_record_backup = {}
+        # symbolic_record_backup = {}
+        # for record in module_record_to_pop:
+        #     records = rewriter_context._rewriter_manager.module_rewriter. \
+        #         _registry._rewrite_records
+        #     if record in records:
+        #         module_record_backup[record] = records.pop(record)
+        # for record in function_record_to_pop:
+        #     records = rewriter_context._rewriter_manager.function_rewriter. \
+        #         _registry._rewrite_records
+        #     if record in records:
+        #         function_record_backup[record] = records.pop(record)
+        #
+        # for record in symbolic_record_to_pop:
+        #     records = rewriter_context._rewriter_manager.symbolic_rewriter. \
+        #         _registry._rewrite_records
+        #     if record in records:
+        #         symbolic_record_backup[record] = records.pop(record)
+
         qmodels = nn.ModuleDict()
         for mode in self.forward_modes:
             concrete_args = {'mode': mode}
-            observed_module = self.quantizer.prepare(model, concrete_args)
+            # todo: support qat.
+            with rewriter_context:
+                observed_module = self.quantizer.prepare(model, concrete_args)
             qmodels[mode] = observed_module
+
+        # rewriter_context._rewriter_manager.module_rewriter. \
+        #     _registry._rewrite_records.update(module_record_backup)
+        # rewriter_context._rewriter_manager.function_rewriter. \
+        #     _registry._rewrite_records.update(function_record_backup)
+        # rewriter_context._rewriter_manager.symbolic_rewriter. \
+        #     _registry._rewrite_records.update(symbolic_record_backup)
 
         # data_samples can not be None in detectors during prediction.
         # But we need to make the dummy prediction in _build_qmodels.
@@ -215,7 +370,7 @@ class MMArchitectureQuant(BaseAlgorithm):
         data = self.data_preprocessor(data, False)
         return self._run_forward(data, mode='predict')
 
-    def post_process_for_mmdeploy(self, dummy_input: Tuple = (1, 3, 224, 224)):
+    def get_deploy_model(self):
         """Prepare for deploy to the backend with mmdeploy, which will be used
         in mmdeploy, and usually includes as follows:
 
@@ -226,13 +381,11 @@ class MMArchitectureQuant(BaseAlgorithm):
         the backend's requirement.
         """
 
-        quantized_state_dict = self.qmodels['tensor'].state_dict()
+        quantized_state_dict = self.qmodels['predict'].state_dict()
         fp32_model = self.architecture
         self.quantizer.convert_batchnorm2d(fp32_model)
-        observed_model = self.quantizer.prepare(fp32_model, {'mode': 'tensor'})
 
-        if dummy_input is not None:
-            observed_model(torch.randn(dummy_input))
+        observed_model = self.quantizer.prepare(fp32_model)
 
         observed_model.load_state_dict(quantized_state_dict)
 
