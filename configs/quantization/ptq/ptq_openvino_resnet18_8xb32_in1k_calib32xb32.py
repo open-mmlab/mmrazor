@@ -1,4 +1,7 @@
-_base_ = ['mmcls::resnet/resnet18_8xb32_in1k.py']
+_base_ = [
+    'mmcls::resnet/resnet18_8xb32_in1k.py',
+    '../deploy_cfgs/mmcls/classification_openvino_dynamic-224x224.py'
+]
 
 train_dataloader = dict(batch_size=32)
 
@@ -33,6 +36,7 @@ model = dict(
         # convert image from BGR to RGB
         to_rgb=True),
     architecture=_base_.model,
+    deploy_cfg=_base_.deploy_cfg,
     float_checkpoint=float_checkpoint,
     quantizer=dict(
         type='mmrazor.OpenVINOQuantizer',

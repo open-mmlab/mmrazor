@@ -46,6 +46,32 @@ class OpenVINOQuantizer(NativeQuantizer):
         per_channel."""
         return ('per_tensor')
 
+    def prepare_for_mmdeploy(self,
+                             model: torch.nn.Module,
+                             dummy_input: Tuple = (1, 3, 224, 224),
+                             checkpoint: Optional[str] = None):
+        """Prepare for deploy to the backend with mmdeploy, which will be used
+        in mmdeploy, and usually includes as follows:
+
+        1. prepare for the float model rewritten by mmdeploy.
+        2. load checkpoint consists of float weight and quantized params in
+        mmrazor.
+        3. post process weight fakequant for exporting .onnx that meet
+        the backend's requirement.
+        """
+        self.convert_batchnorm2d(model)
+        observed_model = self.prepare(model)
+        if dummy_input is not None:
+            observed_model(torch.randn(dummy_input))
+        if checkpoint is not None:
+            observed_model.load_state_dict(
+                torch.load(checkpoint)['state_dict'])
+        self.post_process_for_deploy(observed_model, keep_w_fake_quant=True)
+
+        observed_model.apply(disable_observer)
+
+        return observed_model
+
     def export_onnx(self,
                     model: Union[torch.nn.Module, torch.jit.ScriptModule,
                                  torch.jit.ScriptFunction],
@@ -55,7 +81,7 @@ class OpenVINOQuantizer(NativeQuantizer):
                     **kwargs):
         """Export the onnx model that can be deployed to OpenVino backend."""
 
-        symbolic_output_path = f'symbolic_{output_path}'
+        symbolic_output_path = output_path.replace('.onnx', '_symbolic.onnx')
         torch.onnx.export(
             model,
             args,
