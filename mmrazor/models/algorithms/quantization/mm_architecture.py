@@ -244,8 +244,11 @@ class MMArchitectureQuant(BaseAlgorithm):
                 mmdeploy.
         """
         skipped_methods = getattr(self.quantizer.tracer, 'skipped_methods', [])
+        function_record_to_pop = self.deploy_cfg.get('function_record_to_pop',
+                                                     [])
+        function_record_to_pop.extend(skipped_methods)
         function_record_backup = {}
-        for record in skipped_methods:
+        for record in function_record_to_pop:
             records = rewriter_context._rewriter_manager.function_rewriter. \
                 _registry._rewrite_records
             if record in records:
