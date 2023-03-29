@@ -1,10 +1,12 @@
-_base_ = ['mmdet::yolox/yolox_s_8xb8-300e_coco.py']
+_base_ = [
+    'mmdet::yolox/yolox_s_8xb8-300e_coco.py',
+    '../deploy_cfgs/mmdet/detection_openvino_dynamic-800x1344.py']
 
-train_dataloader = dict(batch_size=32)
+val_dataloader = dict(batch_size=32)
 
 test_cfg = dict(
     type='mmrazor.PTQLoop',
-    calibrate_dataloader=train_dataloader,
+    calibrate_dataloader=val_dataloader,
     calibrate_steps=32,
 )
 
@@ -34,6 +36,7 @@ model = dict(
                 interval=10)
         ]),
     architecture=_base_.model,
+    deploy_cfg=_base_.deploy_cfg,
     float_checkpoint=float_checkpoint,
     quantizer=dict(
         type='mmrazor.OpenVINOQuantizer',

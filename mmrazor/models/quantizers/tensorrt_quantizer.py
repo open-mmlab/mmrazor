@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Optional
+from typing import Optional, Union, Tuple, Any
 
 import torch
 
@@ -45,10 +45,28 @@ class TensorRTQuantizer(NativeQuantizer):
         per_channel."""
         return ('per_tensor')
 
-    def post_process_for_mmdeploy(self,
-                                  model: torch.nn.Module,
-                                  dummy_input=None,
-                                  checkpoint: Optional[str] = None):
+    def export_onnx(self,
+                    model: Union[torch.nn.Module, torch.jit.ScriptModule,
+                                 torch.jit.ScriptFunction],
+                    args: Union[Tuple[Any, ...], torch.Tensor],
+                    output_path: str,
+                    opset_version: Optional[int] = 13,
+                    **kwargs):
+        """Export the onnx model that can be deployed to OpenVino backend."""
+
+        symbolic_output_path = output_path.replace('.onnx', '_symbolic.onnx')
+        torch.onnx.export(
+            model,
+            args,
+            symbolic_output_path,
+            opset_version=opset_version,
+            **kwargs)
+
+        from .exporters import TensorRTExplicitExporter
+        exporter = TensorRTExplicitExporter(symbolic_output_path, output_path)
+        exporter.export()
+
+    def post_process_for_mmdeploy(self, dummy_input=None):
         """Prepare for deploy to the backend with mmdeploy, which will be used
         in mmdeploy, and usually includes as follows:
 

@@ -3,11 +3,11 @@ _base_ = [
     '../deploy_cfgs/mmcls/classification_openvino_dynamic-224x224.py'
 ]
 
-train_dataloader = dict(batch_size=32)
+val_dataloader = dict(batch_size=32)
 
 test_cfg = dict(
     type='mmrazor.PTQLoop',
-    calibrate_dataloader=train_dataloader,
+    calibrate_dataloader=val_dataloader,
     calibrate_steps=32,
 )
 

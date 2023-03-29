@@ -3,15 +3,14 @@ _base_ = [
     '../deploy_cfgs/mmdet/detection_openvino_dynamic-800x1344.py'
 ]
 
-train_dataloader = dict(batch_size=32)
+val_dataloader = dict(batch_size=32)
 
 test_cfg = dict(
     type='mmrazor.PTQLoop',
-    calibrate_dataloader=train_dataloader,
+    calibrate_dataloader=val_dataloader,
     calibrate_steps=32,
 )
 
-retina = _base_.model
 float_checkpoint = 'https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_r50_fpn_1x_coco/retinanet_r50_fpn_1x_coco_20200130-c2398f9e.pth'  # noqa: E501
 
 global_qconfig = dict(
@@ -34,7 +33,7 @@ model = dict(
         std=[58.395, 57.12, 57.375],
         bgr_to_rgb=True,
         pad_size_divisor=32),
-    architecture=retina,
+    architecture=_base_.model,
     deploy_cfg=_base_.deploy_cfg,
     float_checkpoint=float_checkpoint,
     quantizer=dict(
