@@ -54,6 +54,4 @@ deploy_cfg = dict(
         'mmdet.models.detectors.single_stage.SingleStageDetector.forward',
         'mmdet.models.detectors.two_stage.TwoStageDetector.forward',
         'mmdet.models.detectors.single_stage_instance_seg.SingleStageInstanceSegmentor.forward',
-        'mmdet.models.dense_heads.base_dense_head.BaseDenseHead.predict_by_feat',
-        'mmdet.models.dense_heads.yolox_head.YOLOXHead.predict_by_feat'
     ])

@@ -3,12 +3,6 @@ from typing import Optional, Union, Tuple, Any
 
 import torch
 
-try:
-    from torch.ao.quantization import disable_observer
-except ImportError:
-    from mmrazor.utils import get_placeholder
-    disable_observer = get_placeholder('torch>=1.13')
-
 from mmrazor.registry import MODELS
 from .native_quantizer import TorchNativeQuantizer
 
