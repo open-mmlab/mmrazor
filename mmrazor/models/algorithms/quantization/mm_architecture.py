@@ -353,8 +353,7 @@ class MMArchitectureQuant(BaseAlgorithm):
         quantized_state_dict = self.qmodels['predict'].state_dict()
         fp32_model = self.architecture
         self.quantizer.convert_batchnorm2d(fp32_model)
-        observed_model = self.quantizer.prepare(fp32_model, 
-                                                {'mode': 'predict'})
+        observed_model = self.quantizer.prepare(fp32_model)
         observed_model.load_state_dict(quantized_state_dict)
 
         self.quantizer.post_process_for_deploy(
