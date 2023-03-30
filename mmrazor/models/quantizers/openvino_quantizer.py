@@ -3,19 +3,12 @@ from typing import Any, Optional, Tuple, Union
 
 import torch
 
-try:
-    from torch.ao.quantization import disable_observer
-except ImportError:
-    from mmrazor.utils import get_placeholder
-    disable_observer = get_placeholder('torch>=1.13')
-
 from mmrazor.registry import MODELS
-from mmrazor.structures.quantization import QConfigHandler
-from .native_quantizer import NativeQuantizer
+from .native_quantizer import TorchNativeQuantizer
 
 
 @MODELS.register_module()
-class OpenVINOQuantizer(NativeQuantizer):
+class OpenVINOQuantizer(TorchNativeQuantizer):
     """Quantizer for quantizing and deploying to Openvino backend.
 
     Each backend has its own features, for reducing the gap of quantized
@@ -46,6 +39,27 @@ class OpenVINOQuantizer(NativeQuantizer):
         """Supported quantization modes for activation about per_tensor or
         per_channel."""
         return ('per_tensor')
+
+    def export_onnx(self,
+                    model: Union[torch.nn.Module, torch.jit.ScriptModule,
+                                 torch.jit.ScriptFunction],
+                    args: Union[Tuple[Any, ...], torch.Tensor],
+                    output_path: str,
+                    opset_version: Optional[int] = 11,
+                    **kwargs):
+        """Export the onnx model that can be deployed to OpenVino backend."""
+
+        symbolic_output_path = output_path.replace('.onnx', '_symbolic.onnx')
+        torch.onnx.export(
+            model,
+            args,
+            symbolic_output_path,
+            opset_version=opset_version,
+            **kwargs)
+
+        from .exporters import OpenVinoQuantizeExportor
+        exporter = OpenVinoQuantizeExportor(symbolic_output_path, output_path)
+        exporter.export()
 
     @property
     def module_prev_wo_fakequant(self):

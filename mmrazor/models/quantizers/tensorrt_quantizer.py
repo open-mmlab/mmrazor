@@ -10,12 +10,11 @@ except ImportError:
     disable_observer = get_placeholder('torch>=1.13')
 
 from mmrazor.registry import MODELS
-from mmrazor.structures.quantization import QConfigHandler
-from .native_quantizer import NativeQuantizer
+from .native_quantizer import TorchNativeQuantizer
 
 
 @MODELS.register_module()
-class TensorRTQuantizer(NativeQuantizer):
+class TensorRTQuantizer(TorchNativeQuantizer):
     """Quantizer for quantizing and deploying to TensorRT backend.
 
     Each backend has its own features, for reducing the gap of quantized
@@ -65,41 +64,6 @@ class TensorRTQuantizer(NativeQuantizer):
         from .exporters import TensorRTExplicitExporter
         exporter = TensorRTExplicitExporter(symbolic_output_path, output_path)
         exporter.export()
-
-    def post_process_for_mmdeploy(self, dummy_input=None):
-        """Prepare for deploy to the backend with mmdeploy, which will be used
-        in mmdeploy, and usually includes as follows:
-
-        1. prepare for the float model rewritten by mmdeploy.
-        2. load checkpoint consists of float weight and quantized params in
-        mmrazor.
-        3. post process weight fakequant for exporting .onnx that meet
-        the backend's requirement.
-        """
-        quantized_state_dict = self.qmodels['tensor'].state_dict()
-        fp32_model = self.architecture
-        self.convert_batchnorm2d(fp32_model)
-        observed_model = self.prepare(fp32_model, {'mode': 'tensor'})
-
-        if dummy_input is not None:
-            observed_model(torch.randn(dummy_input).cuda())
-
-        observed_model.load_state_dict(quantized_state_dict)
-
-        self.post_process_for_deploy(
-            observed_model, device='cuda', keep_w_fake_quant=True)
-
-        for node in observed_model.graph.nodes:
-            if 'activation_post_process_' in node.name:
-                module_name = node.target
-                module = getattr(observed_model, module_name)
-                fakequant_new = QConfigHandler.replace_fakequant(
-                    module, self.qconfig.a_qscheme, update_qparams=True)
-                setattr(observed_model, module_name, fakequant_new)
-
-        observed_model.apply(disable_observer)
-
-        return observed_model
 
     @property
     def module_prev_wo_fakequant(self):

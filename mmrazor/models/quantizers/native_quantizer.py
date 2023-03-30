@@ -88,7 +88,7 @@ else:
 
 
 @MODELS.register_module()
-class NativeQuantizer(BaseQuantizer):
+class TorchNativeQuantizer(BaseQuantizer):
     """Native class for quantizer.
 
     Args:
