@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import os
 import shutil
 import tempfile
 from copy import copy
@@ -54,4 +53,3 @@ class TestOpenVINOQuantizer(TestCase):
         assert quantizer.module_next_wo_fakequant
         assert quantizer.method_next_wo_fakequant
         assert quantizer.op_prev_wo_fakequant
-

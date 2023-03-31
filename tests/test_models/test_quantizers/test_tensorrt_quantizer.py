@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import os
 import shutil
 import tempfile
 from copy import copy
@@ -50,4 +49,3 @@ class TestTensorRTQuantizer(TestCase):
         assert quantizer.backend == 'tensorrt'
         assert quantizer.support_w_modes == ('per_tensor', 'per_channel')
         assert quantizer.support_a_modes == ('per_tensor')
-
