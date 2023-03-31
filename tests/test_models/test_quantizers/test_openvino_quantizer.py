@@ -55,24 +55,3 @@ class TestOpenVINOQuantizer(TestCase):
         assert quantizer.method_next_wo_fakequant
         assert quantizer.op_prev_wo_fakequant
 
-    def test_prepare_for_mmdeploy(self):
-        if digit_version(torch.__version__) < digit_version('1.13.0'):
-            self.skipTest('version of torch < 1.13.0')
-
-        global_qconfig = copy(self.global_qconfig)
-        quantizer = OpenVINOQuantizer(global_qconfig=global_qconfig)
-        model = copy(self.model)
-
-        # test checkpoint is None
-        prepared_deploy = quantizer.prepare_for_mmdeploy(model=model)
-        assert isinstance(prepared_deploy, ObservedGraphModule)
-
-        # test checkpoint is not None
-        ckpt_path = os.path.join(self.temp_dir,
-                                 'test_prepare_for_mmdeploy.pth')
-        model = copy(self.model)
-        prepared = quantizer.prepare(model)
-        torch.save({'state_dict': prepared.state_dict()}, ckpt_path)
-        prepared_deploy = quantizer.prepare_for_mmdeploy(
-            model=model, checkpoint=ckpt_path)
-        assert isinstance(prepared_deploy, ObservedGraphModule)

@@ -61,7 +61,7 @@ class MMArchitectureQuant(BaseAlgorithm):
     def __init__(self,
                  architecture: Union[Dict, BaseModel],
                  quantizer: Union[Dict, BaseModel],
-                 deploy_cfg: Union[str, Dict],
+                 deploy_cfg: Optional[Union[str, Dict]] = None,
                  data_preprocessor: Optional[Dict] = None,
                  forward_modes: Tuple = ('tensor', 'predict', 'loss'),
                  float_checkpoint: Optional[str] = None,
