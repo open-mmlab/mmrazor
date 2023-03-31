@@ -20,6 +20,7 @@ try:
                                        disable_observer)
 except ImportError:
     from mmrazor.utils import get_placeholder
+
     FakeQuantizeBase = get_placeholder('torch>=1.13')
     MinMaxObserver = get_placeholder('torch>=1.13')
     PerChannelMinMaxObserver = get_placeholder('torch>=1.13')
@@ -283,23 +284,31 @@ class MMArchitectureQuant(BaseAlgorithm):
         """
 
         rewriter_context = self._get_rewriter_context_in_mmdeploy(
-            self.deploy_cfg)
+            self.deploy_cfg) if self.deploy_cfg is not None else None
 
-        # Pop function records in `quantizer.tracer.skipped_method` temporarily
-        function_record_backup = self._pop_function_record_in_rewriter_context(
-            rewriter_context)
+        if rewriter_context is not None:
+            # Pop function records in `quantizer.tracer.skipped_method`
+            # temporarily
+            function_record_backup = \
+                self._pop_function_record_in_rewriter_context(rewriter_context)
 
         qmodels = nn.ModuleDict()
         for mode in self.forward_modes:
             concrete_args = {'mode': mode}
-            # todo: support qat.
-            with rewriter_context:
+
+            if rewriter_context is not None:
+                with rewriter_context:
+                    observed_module = self.quantizer.prepare(
+                        model, concrete_args)
+            else:
                 observed_module = self.quantizer.prepare(model, concrete_args)
+
             qmodels[mode] = observed_module
 
-        # Add these popped function records back.
-        rewriter_context._rewriter_manager.function_rewriter. \
-            _registry._rewrite_records.update(function_record_backup)
+        if rewriter_context is not None:
+            # Add these popped function records back.
+            rewriter_context._rewriter_manager.function_rewriter. \
+                _registry._rewrite_records.update(function_record_backup)
 
         # data_samples can not be None in detectors during prediction.
         # But we need to make the dummy prediction in _build_qmodels.
