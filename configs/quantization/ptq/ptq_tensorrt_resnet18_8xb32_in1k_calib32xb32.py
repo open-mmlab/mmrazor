@@ -1,6 +1,7 @@
 _base_ = [
     'mmcls::resnet/resnet18_8xb32_in1k.py',
-    '../deploy_cfgs/mmcls/classification_tensorrt-int8-explicit_dynamic-224x224.py']
+    '../deploy_cfgs/mmcls/classification_tensorrt-int8-explicit_dynamic-224x224.py'  # noqa: E501
+]
 
 val_dataloader = dict(batch_size=32)
 

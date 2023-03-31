@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Optional, Union, Tuple, Any
+from typing import Any, Optional, Tuple, Union
 
 import torch
 

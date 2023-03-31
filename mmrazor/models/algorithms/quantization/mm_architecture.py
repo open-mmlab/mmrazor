@@ -357,17 +357,15 @@ class MMArchitectureQuant(BaseAlgorithm):
         observed_model.load_state_dict(quantized_state_dict)
 
         self.quantizer.post_process_for_deploy(
-            observed_model, 
-            device=device,
-            keep_w_fake_quant=True)
+            observed_model, device=device, keep_w_fake_quant=True)
 
         for node in observed_model.graph.nodes:
             if 'activation_post_process_' in node.name:
                 module_name = node.target
                 module = getattr(observed_model, module_name)
                 fakequant_new = QConfigHandler.replace_fakequant(
-                    module, 
-                    self.quantizer.qconfig.a_qscheme, 
+                    module,
+                    self.quantizer.qconfig.a_qscheme,
                     update_qparams=True)
                 setattr(observed_model, module_name, fakequant_new)
 

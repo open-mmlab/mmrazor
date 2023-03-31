@@ -55,6 +55,7 @@ def get_tensorrt_backend_config() -> BackendConfig:
         .set_backend_pattern_configs(
             _get_linear_configs(linear_dtype_configs))
 
+
 def get_tensorrt_backend_config_dict():
     """Return the `BackendConfig` for the TensorRT backend in dictionary
     form."""
