@@ -2,7 +2,7 @@
 import os
 import shutil
 import tempfile
-from unittest import TestCase
+from unittest import TestCase, skipIf
 
 import torch
 import torch.nn as nn
@@ -101,11 +101,12 @@ class ToyQuantModel(BaseModel):
         return outputs
 
 
+@skipIf(
+    digit_version(torch.__version__) < digit_version('1.13.0'),
+    'PyTorch version lower than 1.13.0 is not supported.')
 class TestMMArchitectureQuant(TestCase):
 
     def setUp(self):
-        if digit_version(torch.__version__) < digit_version('1.13.0'):
-            self.skipTest('version of torch < 1.13.0')
 
         MODELS.register_module(module=ToyQuantModel, force=True)
 
@@ -143,20 +144,14 @@ class TestMMArchitectureQuant(TestCase):
         self.toy_model = MODELS.build(self.alg_kwargs)
 
     def tearDown(self):
-        if digit_version(torch.__version__) < digit_version('1.13.0'):
-            self.skipTest('version of torch < 1.13.0')
         MODELS.module_dict.pop('ToyQuantModel')
         shutil.rmtree(self.temp_dir)
 
     def test_init(self):
-        if digit_version(torch.__version__) < digit_version('1.13.0'):
-            self.skipTest('version of torch < 1.13.0')
         assert isinstance(self.toy_model, MMArchitectureQuant)
         assert hasattr(self.toy_model, 'quantizer')
 
     def test_sync_qparams(self):
-        if digit_version(torch.__version__) < digit_version('1.13.0'):
-            self.skipTest('version of torch < 1.13.0')
         mode = self.toy_model.forward_modes[0]
         self.toy_model.sync_qparams(mode)
         w_loss = self.toy_model.qmodels[
@@ -169,11 +164,13 @@ class TestMMArchitectureQuant(TestCase):
         assert w_loss.equal(w_tensor)
 
     def test_build_qmodels(self):
-        if digit_version(torch.__version__) < digit_version('1.13.0'):
-            self.skipTest('version of torch < 1.13.0')
         for forward_modes in self.toy_model.forward_modes:
             qmodels = self.toy_model.qmodels[forward_modes]
             assert isinstance(qmodels, GraphModule)
+
+    def test_get_deploy_model(self):
+        deploy_model = self.toy_model.get_deploy_model()
+        self.assertIsInstance(deploy_model, torch.fx.graph_module.GraphModule)
 
     def test_calibrate_step(self):
         # TODO
