@@ -363,10 +363,6 @@ class MMArchitectureQuant(BaseAlgorithm):
         fp32_model = self.architecture
         self.quantizer.convert_batchnorm2d(fp32_model)
         observed_model = self.quantizer.prepare(fp32_model)
-        observed_model.load_state_dict(quantized_state_dict)
-
-        self.quantizer.post_process_for_deploy(
-            observed_model, device=device, keep_w_fake_quant=True)
 
         # replace various activation fakequant with base fakequant, which
         # contributes to deploy our model to various backends.
@@ -379,6 +375,14 @@ class MMArchitectureQuant(BaseAlgorithm):
                     self.quantizer.qconfig.a_qscheme,
                     update_qparams=True)
                 setattr(observed_model, module_name, fakequant_new)
+
+        observed_model.load_state_dict(quantized_state_dict, strict=False)
+
+        self.quantizer.post_process_for_deploy(
+            observed_model,
+            device=device,
+            keep_w_fake_quant=True,
+            update_weight_with_fakequant=True)
 
         observed_model.apply(disable_observer)
 
@@ -415,21 +419,14 @@ class MMArchitectureQuantDDP(MMDistributedDataParallel):
 
         return self.module.calibrate_step(data)
 
-    def sync_qparams(self, src: str):
+    def sync_qparams(self, src_mode: str):
         """Same as in 'MMArchitectureQuant'. Sync all quantize parameters in
         different `forward_modes`. We could have several modes to generate
         graphs, but in training, only one graph will be update, so we need to
         sync qparams on the other graphs.
 
         Args:
-            src (str): The src modes of forward method.
-
-        Note:
-            `traverse()` function recursively traverses all module to sync
-                quantized graph generated from different `forward_modes`.
-                This is because We have different mode ('tensor', 'predict',
-                'loss') in OpenMMLab architecture which have different graph
-                in some subtle ways, so we need to sync them here.
+            src_mode (str): The src modes of forward method.
         """
 
-        self.module.sync_qparams(src)
+        self.module.sync_qparams(src_mode)
