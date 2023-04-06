@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import copy
 import os
 import shutil
 import tempfile
@@ -13,7 +14,14 @@ except ImportError:
     from mmrazor.utils import get_placeholder
     GraphModule = get_placeholder('torch>=1.13')
 
+from mmengine import ConfigDict
 from mmengine.model import BaseModel
+
+try:
+    import mmdeploy
+except ImportError:
+    from mmrazor.utils import get_package_placeholder
+    mmdeploy = get_package_placeholder('mmdeploy')
 
 from mmrazor import digit_version
 from mmrazor.models.algorithms import MMArchitectureQuant
@@ -101,6 +109,38 @@ class ToyQuantModel(BaseModel):
         return outputs
 
 
+DEPLOY_CFG = ConfigDict(
+    onnx_config=dict(
+        type='onnx',
+        export_params=True,
+        keep_initializers_as_inputs=False,
+        opset_version=11,
+        save_file='end2end.onnx',
+        input_names=['input'],
+        output_names=['output'],
+        input_shape=None,
+        optimize=True,
+        dynamic_axes={
+            'input': {
+                0: 'batch',
+                2: 'height',
+                3: 'width'
+            },
+            'output': {
+                0: 'batch'
+            }
+        }),
+    backend_config=dict(
+        type='openvino',
+        model_inputs=[dict(opt_shapes=dict(input=[1, 3, 224, 224]))]),
+    codebase_config=dict(type='mmcls', task='Classification'),
+    function_record_to_pop=[
+        'mmcls.models.classifiers.ImageClassifier.forward',
+        'mmcls.models.classifiers.BaseClassifier.forward'
+    ],
+)
+
+
 @skipIf(
     digit_version(torch.__version__) < digit_version('1.13.0'),
     'PyTorch version lower than 1.13.0 is not supported.')
@@ -116,7 +156,7 @@ class TestMMArchitectureQuant(TestCase):
         toymodel = ToyQuantModel()
         torch.save(toymodel.state_dict(), filename)
 
-        global_qconfig = dict(
+        global_qconfig = ConfigDict(
             w_observer=dict(type='mmrazor.PerChannelMinMaxObserver'),
             a_observer=dict(type='mmrazor.MovingAverageMinMaxObserver'),
             w_fake_quant=dict(type='mmrazor.FakeQuantize'),
@@ -132,7 +172,7 @@ class TestMMArchitectureQuant(TestCase):
                 is_symmetry=True,
                 averaging_constant=0.1),
         )
-        alg_kwargs = dict(
+        alg_kwargs = ConfigDict(
             type='mmrazor.MMArchitectureQuant',
             architecture=dict(type='ToyQuantModel'),
             float_checkpoint=filename,
@@ -141,17 +181,23 @@ class TestMMArchitectureQuant(TestCase):
                 global_qconfig=global_qconfig,
                 tracer=dict(type='mmrazor.CustomTracer')))
         self.alg_kwargs = alg_kwargs
-        self.toy_model = MODELS.build(self.alg_kwargs)
 
     def tearDown(self):
         MODELS.module_dict.pop('ToyQuantModel')
         shutil.rmtree(self.temp_dir)
 
     def test_init(self):
+        self.toy_model = MODELS.build(self.alg_kwargs)
+        assert isinstance(self.toy_model, MMArchitectureQuant)
+        assert hasattr(self.toy_model, 'quantizer')
+
+        alg_kwargs = copy.deepcopy(self.alg_kwargs)
+        alg_kwargs.deploy_cfg = DEPLOY_CFG
         assert isinstance(self.toy_model, MMArchitectureQuant)
         assert hasattr(self.toy_model, 'quantizer')
 
     def test_sync_qparams(self):
+        self.toy_model = MODELS.build(self.alg_kwargs)
         mode = self.toy_model.forward_modes[0]
         self.toy_model.sync_qparams(mode)
         w_loss = self.toy_model.qmodels[
@@ -164,11 +210,13 @@ class TestMMArchitectureQuant(TestCase):
         assert w_loss.equal(w_tensor)
 
     def test_build_qmodels(self):
+        self.toy_model = MODELS.build(self.alg_kwargs)
         for forward_modes in self.toy_model.forward_modes:
             qmodels = self.toy_model.qmodels[forward_modes]
             assert isinstance(qmodels, GraphModule)
 
     def test_get_deploy_model(self):
+        self.toy_model = MODELS.build(self.alg_kwargs)
         deploy_model = self.toy_model.get_deploy_model()
         self.assertIsInstance(deploy_model, torch.fx.graph_module.GraphModule)
 
