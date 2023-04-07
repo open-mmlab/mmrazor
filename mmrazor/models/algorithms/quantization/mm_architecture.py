@@ -11,6 +11,7 @@ from mmengine.structures import BaseDataElement
 from torch import nn
 
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
+from mmrazor.structures.quantization import QConfigHandler
 from ..base import BaseAlgorithm, BaseModel
 
 try:
@@ -32,7 +33,7 @@ ForwardResults = Union[LossResults, TensorResults, PredictResults]
 
 @MODELS.register_module()
 class MMArchitectureQuant(BaseAlgorithm):
-    """General quantization.
+    """General quantization for OpenMMLab's models.
 
     Args:
         architecture (Union[Dict, BaseModel]): The config of model to be
@@ -60,7 +61,7 @@ class MMArchitectureQuant(BaseAlgorithm):
     def __init__(self,
                  architecture: Union[Dict, BaseModel],
                  quantizer: Union[Dict, BaseModel],
-                 deploy_cfg: Union[str, Dict],
+                 deploy_cfg: Optional[Union[str, Dict]] = None,
                  data_preprocessor: Optional[Dict] = None,
                  forward_modes: Tuple = ('tensor', 'predict', 'loss'),
                  float_checkpoint: Optional[str] = None,
@@ -348,17 +349,27 @@ class MMArchitectureQuant(BaseAlgorithm):
         3. post process weight fakequant for exporting .onnx that meet
         the backend's requirement.
         """
-
+        device = next(self.parameters()).device
         quantized_state_dict = self.qmodels['predict'].state_dict()
         fp32_model = self.architecture
         self.quantizer.convert_batchnorm2d(fp32_model)
-
         observed_model = self.quantizer.prepare(fp32_model)
-
         observed_model.load_state_dict(quantized_state_dict)
 
         self.quantizer.post_process_for_deploy(
-            observed_model, keep_w_fake_quant=True)
+            observed_model, device=device, keep_w_fake_quant=True)
+
+        # replace various activation fakequant with base fakequant, which
+        # contributes to deploy our model to various backends.
+        for node in observed_model.graph.nodes:
+            if 'activation_post_process_' in node.name:
+                module_name = node.target
+                module = getattr(observed_model, module_name)
+                fakequant_new = QConfigHandler.replace_fakequant(
+                    module,
+                    self.quantizer.qconfig.a_qscheme,
+                    update_qparams=True)
+                setattr(observed_model, module_name, fakequant_new)
 
         observed_model.apply(disable_observer)
 

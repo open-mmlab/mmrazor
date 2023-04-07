@@ -1,20 +1,14 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple, Union
 
 import torch
 
-try:
-    from torch.ao.quantization import disable_observer
-except ImportError:
-    from mmrazor.utils import get_placeholder
-    disable_observer = get_placeholder('torch>=1.13')
-
 from mmrazor.registry import MODELS
-from .native_quantizer import NativeQuantizer
+from .native_quantizer import TorchNativeQuantizer
 
 
 @MODELS.register_module()
-class TensorRTQuantizer(NativeQuantizer):
+class TensorRTQuantizer(TorchNativeQuantizer):
     """Quantizer for quantizing and deploying to TensorRT backend.
 
     Each backend has its own features, for reducing the gap of quantized
@@ -44,28 +38,47 @@ class TensorRTQuantizer(NativeQuantizer):
         per_channel."""
         return ('per_tensor')
 
-    def prepare_for_mmdeploy(self,
-                             model: torch.nn.Module,
-                             dummy_input: Tuple = (1, 3, 224, 224),
-                             checkpoint: Optional[str] = None):
-        """Prepare for deploy to the backend with mmdeploy, which will be used
-        in mmdeploy, and usually includes as follows:
+    def export_onnx(self,
+                    model: Union[torch.nn.Module, torch.jit.ScriptModule,
+                                 torch.jit.ScriptFunction],
+                    args: Union[Tuple[Any, ...], torch.Tensor],
+                    output_path: str,
+                    opset_version: Optional[int] = 13,
+                    **kwargs):
+        """Export the onnx model that can be deployed to OpenVino backend."""
 
-        1. prepare for the float model rewritten by mmdeploy.
-        2. load checkpoint consists of float weight and quantized params in
-        mmrazor.
-        3. post process weight fakequant for exporting .onnx that meet
-        the backend's requirement.
-        """
-        observed_model = self.prepare(model)
-        if dummy_input is not None:
-            observed_model(torch.randn(dummy_input))
-        if checkpoint is not None:
-            observed_model.load_state_dict(
-                torch.load(checkpoint)['state_dict'])
-        self.post_process_weight_fakequant(
-            observed_model, keep_fake_quant=True)
+        symbolic_output_path = output_path.replace('.onnx', '_symbolic.onnx')
+        torch.onnx.export(
+            model,
+            args,
+            symbolic_output_path,
+            opset_version=opset_version,
+            **kwargs)
 
-        observed_model.apply(disable_observer)
+        from .exporters import TensorRTExplicitExporter
+        exporter = TensorRTExplicitExporter(symbolic_output_path, output_path)
+        exporter.export()
 
-        return observed_model
+    @property
+    def module_prev_wo_fakequant(self):
+        """Configurate the modules that their previous nodes are redundant
+        fakequants."""
+        return (torch.nn.ReLU6, torch.nn.Identity)
+
+    @property
+    def module_next_wo_fakequant(self):
+        """Configurate the modules that their next nodes are redundant
+        fakequants."""
+        return (torch.nn.MaxPool2d, )
+
+    @property
+    def method_next_wo_fakequant(self):
+        """Configurate the methods that their next nodes are redundant
+        fakequants."""
+        return ('flatten', )
+
+    @property
+    def op_prev_wo_fakequant(self):
+        """Configurate the OPs that their previous nodes are redundant
+        fakequants."""
+        return ('output', )

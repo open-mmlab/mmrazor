@@ -1,6 +1,6 @@
 _base_ = [
     'mmcls::resnet/resnet50_8xb32_in1k.py',
-    '../deploy_cfgs/mmcls/classification_openvino_dynamic-224x224.py'
+    '../deploy_cfgs/mmcls/classification_tensorrt-int8-explicit_dynamic-224x224.py'  # noqa: E501
 ]
 
 val_dataloader = dict(batch_size=32)
@@ -19,7 +19,7 @@ global_qconfig = dict(
     w_qscheme=dict(
         qdtype='qint8', bit=8, is_symmetry=True, is_symmetric_range=True),
     a_qscheme=dict(
-        qdtype='quint8', bit=8, is_symmetry=True, averaging_constant=0.1),
+        qdtype='qint8', bit=8, is_symmetry=True, averaging_constant=0.1),
 )
 
 float_checkpoint = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth'  # noqa: E501
@@ -39,7 +39,7 @@ model = dict(
     deploy_cfg=_base_.deploy_cfg,
     float_checkpoint=float_checkpoint,
     quantizer=dict(
-        type='mmrazor.OpenVINOQuantizer',
+        type='mmrazor.TensorRTQuantizer',
         global_qconfig=global_qconfig,
         tracer=dict(
             type='mmrazor.CustomTracer',
@@ -47,4 +47,5 @@ model = dict(
                 'mmcls.models.heads.ClsHead._get_loss',
                 'mmcls.models.heads.ClsHead._get_predictions'
             ])))
+
 model_wrapper_cfg = dict(type='mmrazor.MMArchitectureQuantDDP', )

@@ -1,5 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import os
 import shutil
 import tempfile
 from copy import copy
@@ -50,25 +49,3 @@ class TestTensorRTQuantizer(TestCase):
         assert quantizer.backend == 'tensorrt'
         assert quantizer.support_w_modes == ('per_tensor', 'per_channel')
         assert quantizer.support_a_modes == ('per_tensor')
-
-    def test_prepare_for_mmdeploy(self):
-        if digit_version(torch.__version__) < digit_version('1.13.0'):
-            self.skipTest('version of torch < 1.13.0')
-
-        global_qconfig = copy(self.global_qconfig)
-        quantizer = TensorRTQuantizer(global_qconfig=global_qconfig)
-        model = copy(self.model)
-
-        # test checkpoint is None
-        prepared_deploy = quantizer.prepare_for_mmdeploy(model=model)
-        assert isinstance(prepared_deploy, ObservedGraphModule)
-
-        # test checkpoint is not None
-        ckpt_path = os.path.join(self.temp_dir,
-                                 'test_prepare_for_mmdeploy.pth')
-        model = copy(self.model)
-        prepared = quantizer.prepare(model)
-        torch.save({'state_dict': prepared.state_dict()}, ckpt_path)
-        prepared_deploy = quantizer.prepare_for_mmdeploy(
-            model=model, checkpoint=ckpt_path)
-        assert isinstance(prepared_deploy, ObservedGraphModule)
