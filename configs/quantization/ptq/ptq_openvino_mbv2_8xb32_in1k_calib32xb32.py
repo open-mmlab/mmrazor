@@ -1,8 +1,13 @@
-_base_ = ['mmcls::mobilenet_v2/mobilenet-v2_8xb32_in1k.py']
+_base_ = [
+    'mmcls::mobilenet_v2/mobilenet-v2_8xb32_in1k.py',
+    '../deploy_cfgs/mmcls/classification_openvino_dynamic-224x224.py'
+]
+
+val_dataloader = dict(batch_size=32)
 
 test_cfg = dict(
     type='mmrazor.PTQLoop',
-    calibrate_dataloader=_base_.train_dataloader,
+    calibrate_dataloader=val_dataloader,
     calibrate_steps=32,
 )
 
@@ -31,6 +36,7 @@ model = dict(
         # convert image from BGR to RGB
         to_rgb=True),
     architecture=_base_.model,
+    deploy_cfg=_base_.deploy_cfg,
     float_checkpoint=float_checkpoint,
     quantizer=dict(
         type='mmrazor.OpenVINOQuantizer',

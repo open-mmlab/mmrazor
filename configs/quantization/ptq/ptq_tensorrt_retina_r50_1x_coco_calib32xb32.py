@@ -1,6 +1,6 @@
 _base_ = [
-    'mmcls::resnet/resnet50_8xb32_in1k.py',
-    '../deploy_cfgs/mmcls/classification_openvino_dynamic-224x224.py'
+    'mmdet::retinanet/retinanet_r50_fpn_1x_coco.py',
+    '../deploy_cfgs/mmdet/detection_tensorrt-int8-explicit_dynamic-320x320-1344x1344.py'  # noqa: E501
 ]
 
 val_dataloader = dict(batch_size=32)
@@ -11,6 +11,8 @@ test_cfg = dict(
     calibrate_steps=32,
 )
 
+float_checkpoint = 'https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_r50_fpn_1x_coco/retinanet_r50_fpn_1x_coco_20200130-c2398f9e.pth'  # noqa: E501
+
 global_qconfig = dict(
     w_observer=dict(type='mmrazor.PerChannelMinMaxObserver'),
     a_observer=dict(type='mmrazor.MovingAverageMinMaxObserver'),
@@ -19,32 +21,33 @@ global_qconfig = dict(
     w_qscheme=dict(
         qdtype='qint8', bit=8, is_symmetry=True, is_symmetric_range=True),
     a_qscheme=dict(
-        qdtype='quint8', bit=8, is_symmetry=True, averaging_constant=0.1),
+        qdtype='qint8', bit=8, is_symmetry=True, averaging_constant=0.1),
 )
-
-float_checkpoint = 'https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth'  # noqa: E501
 
 model = dict(
     _delete_=True,
-    type='mmrazor.MMArchitectureQuant',
+    _scope_='mmrazor',
+    type='MMArchitectureQuant',
     data_preprocessor=dict(
-        type='mmcls.ClsDataPreprocessor',
-        num_classes=1000,
-        # RGB format normalization parameters
+        type='mmdet.DetDataPreprocessor',
         mean=[123.675, 116.28, 103.53],
         std=[58.395, 57.12, 57.375],
-        # convert image from BGR to RGB
-        to_rgb=True),
+        bgr_to_rgb=True,
+        pad_size_divisor=32),
     architecture=_base_.model,
     deploy_cfg=_base_.deploy_cfg,
     float_checkpoint=float_checkpoint,
     quantizer=dict(
-        type='mmrazor.OpenVINOQuantizer',
+        type='mmrazor.TensorRTQuantizer',
         global_qconfig=global_qconfig,
         tracer=dict(
             type='mmrazor.CustomTracer',
             skipped_methods=[
-                'mmcls.models.heads.ClsHead._get_loss',
-                'mmcls.models.heads.ClsHead._get_predictions'
+                'mmdet.models.dense_heads.base_dense_head.BaseDenseHead.predict_by_feat',  # noqa: E501
+                'mmdet.models.dense_heads.anchor_head.AnchorHead.loss_by_feat',
             ])))
-model_wrapper_cfg = dict(type='mmrazor.MMArchitectureQuantDDP', )
+
+model_wrapper_cfg = dict(
+    type='mmrazor.MMArchitectureQuantDDP',
+    broadcast_buffers=False,
+    find_unused_parameters=True)

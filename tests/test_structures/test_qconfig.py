@@ -6,14 +6,16 @@ import torch
 from mmengine.config import Config
 
 try:
-    from torch.ao.quantization import QConfig
+    from torch.ao.quantization import FakeQuantize, QConfig
 except ImportError:
     from mmrazor.utils import get_placeholder
     QConfig = get_placeholder('torch>=1.13')
+    FakeQuantize = get_placeholder('torch>=1.13')
 
 from mmrazor import digit_version
 from mmrazor.models.fake_quants import register_torch_fake_quants
 from mmrazor.models.observers import register_torch_observers
+from mmrazor.registry import MODELS
 from mmrazor.structures import QConfigHandler, QSchemeHandler
 
 register_torch_observers()
@@ -129,3 +131,42 @@ class TestQConfigHandler(TestCase):
         qconfig = QConfigHandler(self.qconfig)
         torch_qconfig = qconfig.convert()
         assert isinstance(torch_qconfig, QConfig)
+
+    def test_replace_fakequant(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
+        # update_qparams is False
+        qconfig = QConfigHandler(self.qconfig)
+        org_fakequant_ins = qconfig.w_fake_quant()
+        new_fakequant = qconfig.replace_fakequant(
+            org_fakequant_ins, qconfig.w_qscheme, update_qparams=False)
+        new_fakequant_ins = new_fakequant()
+        assert isinstance(new_fakequant_ins, FakeQuantize)
+        assert isinstance(new_fakequant_ins.activation_post_process,
+                          MODELS.get('PerChannelMinMaxObserver'))
+
+        # update_qparams is True
+        qconfig = QConfigHandler(self.qconfig)
+        org_fakequant_ins = qconfig.w_fake_quant()
+        org_fakequant_ins.scale = torch.Tensor([2])
+        org_fakequant_ins.activation_post_process.min_val = torch.Tensor([1])
+        new_fakequant_ins = qconfig.replace_fakequant(
+            org_fakequant_ins, qconfig.w_qscheme, update_qparams=True)
+        assert isinstance(new_fakequant_ins, FakeQuantize)
+        assert isinstance(new_fakequant_ins.activation_post_process,
+                          MODELS.get('PerChannelMinMaxObserver'))
+        assert new_fakequant_ins.scale == org_fakequant_ins.scale
+        assert new_fakequant_ins.activation_post_process.min_val == \
+            org_fakequant_ins.activation_post_process.min_val
+
+    def test_fixed_w_fakequant(self):
+        if digit_version(torch.__version__) < digit_version('1.13.0'):
+            self.skipTest('version of torch < 1.13.0')
+
+        qconfig = QConfigHandler(self.qconfig)
+        qconfig.fixed_w_fakequant()
+        new_fakequant_ins = qconfig.w_fake_quant()
+        assert isinstance(new_fakequant_ins, FakeQuantize)
+        assert isinstance(new_fakequant_ins.activation_post_process,
+                          MODELS.get('PerChannelMinMaxObserver'))
