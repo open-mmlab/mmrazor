@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 
 from mmrazor import digit_version
-from mmrazor.models.quantizers import NativeQuantizer
+from mmrazor.models.quantizers import TorchNativeQuantizer
 from mmrazor.models.quantizers.native_quantizer import SUPPORT_QAT_MODULES
 from mmrazor.models.task_modules.tracer import CustomTracer
 from mmrazor.models.task_modules.tracer.fx.custom_tracer import \
@@ -107,14 +107,14 @@ no_observer_modules = [
 ]
 
 q_kwargs = dict(
-    type='mmrazor.NativeQuantizer',
+    type='mmrazor.TorchNativeQuantizer',
     global_qconfig=global_qconfig,
     no_observer_modules=no_observer_modules,
     tracer=dict(type='CustomTracer'),
 )
 
 
-class TestNativeQuantizer(TestCase):
+class TestTorchNativeQuantizer(TestCase):
     """TODO.
 
     Args:
@@ -155,7 +155,7 @@ class TestNativeQuantizer(TestCase):
         if digit_version(torch.__version__) < digit_version('1.13.0'):
             self.skipTest('version of torch < 1.13.0')
         native_quantizer = MODELS.build(self.q_kwargs)
-        self.assertIsInstance(native_quantizer, NativeQuantizer)
+        self.assertIsInstance(native_quantizer, TorchNativeQuantizer)
 
     def test_prepare(self):
         if digit_version(torch.__version__) < digit_version('1.13.0'):
@@ -184,7 +184,7 @@ class TestNativeQuantizer(TestCase):
         prepared = self.native_quantizer.del_redundant_fakequant(prepared)
         assert isinstance(prepared, GraphModule)
 
-    def test_post_process_weight_fakequant(self):
+    def post_process_for_deploy(self):
         if digit_version(torch.__version__) < digit_version('1.13.0'):
             self.skipTest('version of torch < 1.13.0')
         toy_model = ToyQuantModel()
