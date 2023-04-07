@@ -86,12 +86,12 @@ Major features:
 
   With better modular design, developers can implement new model compression algorithms with only a few codes, or even by simply modifying config files.
 
-Below is an overview of MMRazor's design and implementation, please refer to [tutorials](https://mmrazor.readthedocs.io/en/quantize/get_started/overview.html) for more details.
+About MMRazor's design and implementation, please refer to [tutorials](https://mmrazor.readthedocs.io/en/dev-1.x/get_started/overview.html) for more details.
 
-<div align="center">
-  <img src="resources/design_and_implement.png" style="zoom:100%"/>
-</div>
-<br />
+## Latest Updates
+
+**The default branch has been switched to `dev-1.x` from `master`, which is renamed as `main`, and the old default branch `master` is rename as `0.x`. We encourage users to migrate to the latest version, though it comes with some cost. Please refer to [Changelog](https://mmrazor.readthedocs.io/en/dev-1.x/notes/changelog.html) for more
+details.**
 
 ## What's new
 

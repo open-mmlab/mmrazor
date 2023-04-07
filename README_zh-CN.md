@@ -54,7 +54,7 @@ MMRazor是一个可用于模型瘦身和AutoML的模型压缩工具箱，包含�
 - 网络结构搜索 (NAS)
 - 模型剪枝
 - 知识蒸馏 (KD)
-- 量化 (下个版本发布)
+- 量化 (即将到来)
 
 MMRazor是[OpenMMLab](https://openmmlab.com/)项目的一部分。
 
@@ -72,12 +72,11 @@ MMRazor是[OpenMMLab](https://openmmlab.com/)项目的一部分。
 
   得益于更好的模块化设计，开发者仅用修改少量代码，甚至只用修改配置文件即可实现新的轻量化算法。
 
-下面是MMRazor设计和实现的概括图, 如果想了解更多的细节，请参考 [tutorials](/docs/en/tutorials/Tutorial_1_overview.md)。
+关于MMRazor设计和实现的概括图, 如果想了解更多的细节，请参考 [tutorials](/docs/en/tutorials/Tutorial_1_overview.md)。
 
-<div align="center">
-  <img src="resources/design_and_implement.png" style="zoom:100%"/>
-</div>
-<br />
+## 近期更新
+
+**默认分支已经从 `master` 切换到 `dev-1.x`, 并将其重命名为`main`, 原来的默认分支`master`重命名为`0.x`.我们鼓励用户迁移到最新版本，请参考 [更新日志](https://mmrazor.readthedocs.io/en/dev-1.x/notes/changelog.html) 以了解更多细节。**
 
 ## 更新日志
 
