@@ -297,6 +297,9 @@ class TorchNativeQuantizer(BaseQuantizer):
                     # explicitly keep the fake quant structure, others don't.
                     # TODO add deploy doc link
                     if keep_w_fake_quant:
+                        # make weight fakequant fixed as the consistent
+                        # fakequant, it will help to deploy our model to
+                        # various backends.
                         self.qconfig.fixed_w_fakequant()
                         for m in float_child.modules():
                             setattr(m, 'qconfig', self.qconfig.convert())
@@ -307,6 +310,10 @@ class TorchNativeQuantizer(BaseQuantizer):
                             new_child = type(child).from_float(float_child).to(
                                 device)
 
+                        # because weight fakequants and observers are replaced
+                        # with base fakequants and base observers, some
+                        # initialized args need to be update by running
+                        # weight_fake_quant.
                         enable_observer(new_child)
                         new_child.weight_fake_quant(new_child.weight)
                         disable_observer(new_child)

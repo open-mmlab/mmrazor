@@ -33,7 +33,7 @@ ForwardResults = Union[LossResults, TensorResults, PredictResults]
 
 @MODELS.register_module()
 class MMArchitectureQuant(BaseAlgorithm):
-    """General quantization.
+    """General quantization for OpenMMLab's models.
 
     Args:
         architecture (Union[Dict, BaseModel]): The config of model to be
@@ -359,6 +359,8 @@ class MMArchitectureQuant(BaseAlgorithm):
         self.quantizer.post_process_for_deploy(
             observed_model, device=device, keep_w_fake_quant=True)
 
+        # replace various activation fakequant with base fakequant, which
+        # contributes to deploy our model to various backends.
         for node in observed_model.graph.nodes:
             if 'activation_post_process_' in node.name:
                 module_name = node.target

@@ -6,12 +6,12 @@ from mmengine.config import Config
 
 try:
     from torch.ao.quantization import FakeQuantize, QConfig
+    from torch.ao.quantization.utils import is_per_tensor
 except ImportError:
     from mmrazor.utils import get_placeholder
     QConfig = get_placeholder('torch>=1.13')
     FakeQuantize = get_placeholder('torch>=1.13')
-
-from torch.ao.quantization.utils import is_per_tensor
+    is_per_tensor = get_placeholder('torch>=1.13')
 
 from mmrazor.registry import MODELS
 
