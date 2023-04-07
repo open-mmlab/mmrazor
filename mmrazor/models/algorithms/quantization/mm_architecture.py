@@ -363,6 +363,13 @@ class MMArchitectureQuant(BaseAlgorithm):
         fp32_model = self.architecture
         self.quantizer.convert_batchnorm2d(fp32_model)
         observed_model = self.quantizer.prepare(fp32_model)
+        observed_model.load_state_dict(quantized_state_dict, strict=False)
+
+        self.quantizer.post_process_for_deploy(
+            observed_model,
+            device=device,
+            keep_w_fake_quant=True,
+            update_weight_with_fakequant=True)
 
         # replace various activation fakequant with base fakequant, which
         # contributes to deploy our model to various backends.
@@ -375,14 +382,6 @@ class MMArchitectureQuant(BaseAlgorithm):
                     self.quantizer.qconfig.a_qscheme,
                     update_qparams=True)
                 setattr(observed_model, module_name, fakequant_new)
-
-        observed_model.load_state_dict(quantized_state_dict, strict=False)
-
-        self.quantizer.post_process_for_deploy(
-            observed_model,
-            device=device,
-            keep_w_fake_quant=True,
-            update_weight_with_fakequant=True)
 
         observed_model.apply(disable_observer)
 
