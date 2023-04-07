@@ -32,6 +32,7 @@ from mmrazor.structures.graph.channel_graph import (
 from mmrazor.structures.graph.module_graph import (FxTracerToGraphConverter,
                                                    PathToGraphConverter)
 from mmrazor.structures.graph.pseudo_fx_graph import parse_torch_graph
+from mmrazor.utils import print_log
 from ..demo_inputs import BaseDemoInput, DefaultDemoInput
 from .backward_tracer import BackwardTracer
 from .fx_tracer import MMFxTracer
@@ -136,9 +137,9 @@ class ChannelAnalyzer:
         else:
             return self.tracer.trace(model)
 
-    def _find_mutable_units(self, model, units_config: Dict):
+    def _find_mutable_units(self, model: nn.Module, units_config: Dict):
         """Test the tracer result and filter unforwardable units."""
-        model = copy.deepcopy(model)
+        model = copy.deepcopy(model).cpu()
         units: List[SequentialMutableChannelUnit] = [
             SequentialMutableChannelUnit.init_from_cfg(model, cfg)
             for cfg in units_config.values()
@@ -156,16 +157,17 @@ class ChannelAnalyzer:
                     inputs['mode'] = mode
                     template_output = model(**inputs)
                     break
-                except Exception:
-                    pass
+                except Exception as e:
+                    print_log(f'Forward failed in {mode} mode as {e}')
         else:
             try:
                 template_output = model(inputs)
-            except Exception:
-                pass
+            except Exception as e:
+                print_log(f'Forward failed in as {e}')
         if template_output is None:
             raise Exception(
-                'Forward failed, there may be an error in demo input.')
+                'Forward failed, there may be an error in demo input.',
+                f'{inputs}')
         mutable_units = find_mutable(model, mutable_units, units, inputs,
                                      template_output)
         mutable_unit_config = {}

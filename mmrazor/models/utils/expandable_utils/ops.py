@@ -4,6 +4,7 @@ import torch.nn as nn
 
 from mmrazor.models.architectures import dynamic_ops
 from mmrazor.models.mutables import MutableChannelContainer
+from mmrazor.models.utils import get_module_device
 
 
 class ExpandableMixin:
@@ -65,24 +66,20 @@ class ExpandableMixin:
     @property
     def mutable_in_mask(self):
         """Return the mutable in mask."""
+        device = get_module_device(self)
         if self.in_mutable is not None:
-            return self.in_mutable.current_mask
+            return self.in_mutable.current_mask.to(device)
         else:
-            if hasattr(self, 'weight'):
-                return self.weight.new_ones([self.expanded_in_channel])
-            else:
-                return torch.ones([self.expanded_in_channel])
+            return torch.ones([self.expanded_in_channel]).to(device)
 
     @property
     def mutable_out_mask(self):
         """Return the mutable out mask."""
+        device = get_module_device(self)
         if self.out_mutable is not None:
-            return self.out_mutable.current_mask
+            return self.out_mutable.current_mask.to(device)
         else:
-            if hasattr(self, 'weight'):
-                return self.weight.new_ones([self.expanded_out_channel])
-            else:
-                return torch.ones([self.expanded_out_channel])
+            return torch.ones([self.expanded_out_channel]).to(device)
 
     @property
     def in_mutable(self) -> MutableChannelContainer:
@@ -152,7 +149,8 @@ class ExpandableConv2d(dynamic_ops.DynamicConv2d, ExpandableMixin):
 
         module = nn.Conv2d(in_c, out_c, self.kernel_size, self.stride,
                            self.padding, self.dilation, self.groups, self.bias
-                           is not None, self.padding_mode)
+                           is not None,
+                           self.padding_mode).to(get_module_device(self))
         if zero:
             ExpandableMixin.zero_weight_(module)
 
@@ -169,7 +167,8 @@ class ExpandableConv2d(dynamic_ops.DynamicConv2d, ExpandableMixin):
         assert in_c == out_c
         module = nn.Conv2d(in_c, out_c, self.kernel_size, self.stride,
                            self.padding, self.dilation, in_c, self.bias
-                           is not None, self.padding_mode)
+                           is not None,
+                           self.padding_mode).to(get_module_device(self))
         if zero:
             ExpandableMixin.zero_weight_(module)
 
@@ -194,7 +193,8 @@ class ExpandLinear(dynamic_ops.DynamicLinear, ExpandableMixin):
         return self.out_features
 
     def get_expand_op(self, in_c, out_c, zero=False):
-        module = nn.Linear(in_c, out_c, self.bias is not None)
+        module = nn.Linear(in_c, out_c, self.bias
+                           is not None).to(get_module_device(self))
         if zero:
             ExpandableMixin.zero_weight_(module)
 
@@ -221,7 +221,8 @@ class ExpandableBatchNorm2d(dynamic_ops.DynamicBatchNorm2d, ExpandableMixin):
     def get_expand_op(self, in_c, out_c, zero=False):
         assert in_c == out_c
         module = nn.BatchNorm2d(in_c, self.eps, self.momentum, self.affine,
-                                self.track_running_stats)
+                                self.track_running_stats).to(
+                                    get_module_device(self))
         if zero:
             ExpandableMixin.zero_weight_(module)
 

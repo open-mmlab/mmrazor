@@ -99,6 +99,9 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
         1. parse the model and get MutableChannelUnits.
         2. call unit.prepare_for_pruning for each unit.
         """
+        from mmrazor.models.utils import get_module_device
+        device = get_module_device(supernet)
+
         self._name2module = dict(supernet.named_modules())
 
         if isinstance(self.parse_cfg,
@@ -115,10 +118,11 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
             units = self._prepare_from_predefined_model(supernet)
         else:
             raise NotImplementedError()
+        for i in range(len(units)):
+            units[i] = units[i].to(device)
+            units[i].prepare_for_pruning(supernet)
+            self._name2unit[units[i].name] = units[i]
 
-        for unit in units:
-            unit.prepare_for_pruning(supernet)
-            self._name2unit[unit.name] = unit
         self.units = ModuleList(units)
 
     @property
