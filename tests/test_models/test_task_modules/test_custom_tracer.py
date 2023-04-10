@@ -27,7 +27,7 @@ from mmrazor.models.task_modules.tracer.fx.custom_tracer import \
 class ToyModel(torch.nn.Module):
 
     def __init__(self):
-        super.__init__()
+        super().__init__()
 
     def get_loss(self, x):
         return x * 0.1
