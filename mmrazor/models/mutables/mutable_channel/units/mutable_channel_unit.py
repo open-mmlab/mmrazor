@@ -11,6 +11,7 @@ from mmrazor.models.architectures.dynamic_ops.mixins import DynamicChannelMixin
 from mmrazor.models.mutables import DerivedMutable
 from mmrazor.models.mutables.mutable_channel import (BaseMutableChannel,
                                                      MutableChannelContainer)
+from mmrazor.models.utils import get_module_device
 from .channel_unit import Channel, ChannelUnit
 
 
@@ -227,7 +228,7 @@ class MutableChannelUnit(ChannelUnit):
                 module = get_module(model, channel.name)
                 if type(module) in dynamicop_map:
                     new_module = dynamicop_map[type(module)].convert_from(
-                        module)
+                        module).to(get_module_device(module))
                     replace_op(model, channel.name, new_module)
                     channel.module = new_module
                 else:
@@ -237,19 +238,22 @@ class MutableChannelUnit(ChannelUnit):
     def _register_channel_container(
             model: nn.Module, container_class: Type[MutableChannelContainer]):
         """register channel container for dynamic ops."""
+        device = get_module_device(model)
         for module in model.modules():
             if isinstance(module, DynamicChannelMixin):
                 in_channels = getattr(module,
                                       module.attr_mappings['in_channels'], 0)
                 if module.get_mutable_attr('in_channels') is None:
-                    module.register_mutable_attr('in_channels',
-                                                 container_class(in_channels))
+                    module.register_mutable_attr(
+                        'in_channels',
+                        container_class(in_channels).to(device))
                 out_channels = getattr(module,
                                        module.attr_mappings['out_channels'], 0)
                 if module.get_mutable_attr('out_channels') is None:
 
-                    module.register_mutable_attr('out_channels',
-                                                 container_class(out_channels))
+                    module.register_mutable_attr(
+                        'out_channels',
+                        container_class(out_channels).to(device))
 
     def _register_mutable_channel(self, mutable_channel: BaseMutableChannel):
         # register mutable_channel
