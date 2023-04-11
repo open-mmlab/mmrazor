@@ -321,7 +321,8 @@ class PTQLoop(TestLoop):
                  evaluator: Union[Evaluator, Dict, List],
                  calibrate_dataloader: Union[DataLoader, Dict],
                  calibrate_steps=32,
-                 fp16: bool = False):
+                 fp16: bool = False,
+                 only_val=False):
         super().__init__(runner, dataloader, evaluator, fp16)
         if isinstance(calibrate_dataloader, dict):
             # Determine whether or not different ranks use different seed.
@@ -333,6 +334,7 @@ class PTQLoop(TestLoop):
             self.dataloader = dataloader
 
         self.calibrate_steps = calibrate_steps
+        self.only_val = only_val
 
     def run(self) -> dict:
         """Launch test."""
@@ -342,6 +344,10 @@ class PTQLoop(TestLoop):
         self.runner.model.eval()
         self.runner.model.apply(enable_fake_quant)
         self.runner.model.apply(enable_observer)
+
+        if self.only_val:
+            self.runner.model.apply(disable_observer)
+            return self.runner.val_loop.run()
 
         for idx, data_batch in enumerate(self.dataloader):
             if idx == self.calibrate_steps:
