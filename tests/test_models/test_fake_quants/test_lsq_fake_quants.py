@@ -8,10 +8,12 @@ from mmrazor import digit_version
 from mmrazor.models import LearnableFakeQuantize
 
 try:
-    from torch.ao.quantization import MovingAverageMinMaxObserver
+    from torch.ao.quantization import (MovingAverageMinMaxObserver,
+                                       MovingAveragePerChannelMinMaxObserver)
 except ImportError:
     from mmrazor.utils import get_placeholder
     MovingAverageMinMaxObserver = get_placeholder('torch>=1.13')
+    MovingAveragePerChannelMinMaxObserver = get_placeholder('torch>=1.13')
 
 
 class TestLearnableFakeQuantize(TestCase):
@@ -35,6 +37,16 @@ class TestLearnableFakeQuantize(TestCase):
                 quant_max=255,
                 dtype=torch.quint8,
                 qscheme=torch.per_tensor_affine,
+                reduce_range=True,
+                zero_point_trainable=False)
+
+        self.zero_point_untrainable_per_channel_fakequant = \
+            LearnableFakeQuantize.with_args(
+                observer=MovingAveragePerChannelMinMaxObserver,
+                quant_min=0,
+                quant_max=255,
+                dtype=torch.quint8,
+                qscheme=torch.per_channel_affine,
                 reduce_range=True,
                 zero_point_trainable=False)
 
@@ -184,3 +196,13 @@ class TestLearnableFakeQuantize(TestCase):
         self.assertEqual(fq_module.zero_point.requires_grad, 1)
         self.assertEqual(fq_module.fake_quant_enabled[0], 1)
         self.assertEqual(fq_module.static_enabled[0], 0)
+
+    def test_load_state_dict(self):
+        fq_module = self.zero_point_untrainable_per_channel_fakequant()
+        state_dict = fq_module.state_dict()
+        X = torch.rand(32, 16, 3, 3, dtype=torch.float32)
+        # After forwarding, the shape of `scale` and `zero_point` in
+        # `fq_module` will be in shape (32, ), while the shape of those in
+        # `state_dict` are in shape (1, ).
+        _ = fq_module(X)
+        fq_module.load_state_dict(state_dict)
