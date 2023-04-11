@@ -91,7 +91,6 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
                     and self._epoch % self.val_interval == 0):
                 # observer disabled during evaluation
                 self.prepare_for_val()
-                self.runner.model.sync_qparams(src_mode='loss')
                 self.runner.val_loop.run()
 
         self.runner.call_hook('after_train')
@@ -112,6 +111,7 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
         for idx, data_batch in enumerate(self.dataloader):
             self.run_iter(idx, data_batch)
 
+        self.runner.model.sync_qparams(src_mode='loss')
         self.runner.call_hook('after_train_epoch')
         self._epoch += 1
 
@@ -185,6 +185,7 @@ class LSQEpochBasedLoop(QATEpochBasedLoop):
                 self.runner.model.apply(enable_param_learning)
             self.run_iter(idx, data_batch)
 
+        self.runner.model.sync_qparams(src_mode='loss')
         self.runner.call_hook('after_train_epoch')
         self._epoch += 1
 

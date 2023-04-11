@@ -20,6 +20,7 @@ try:
                                        disable_observer)
 except ImportError:
     from mmrazor.utils import get_placeholder
+
     FakeQuantizeBase = get_placeholder('torch>=1.13')
     MinMaxObserver = get_placeholder('torch>=1.13')
     PerChannelMinMaxObserver = get_placeholder('torch>=1.13')
@@ -283,23 +284,31 @@ class MMArchitectureQuant(BaseAlgorithm):
         """
 
         rewriter_context = self._get_rewriter_context_in_mmdeploy(
-            self.deploy_cfg)
+            self.deploy_cfg) if self.deploy_cfg is not None else None
 
-        # Pop function records in `quantizer.tracer.skipped_method` temporarily
-        function_record_backup = self._pop_function_record_in_rewriter_context(
-            rewriter_context)
+        if rewriter_context is not None:
+            # Pop function records in `quantizer.tracer.skipped_method`
+            # temporarily
+            function_record_backup = \
+                self._pop_function_record_in_rewriter_context(rewriter_context)
 
         qmodels = nn.ModuleDict()
         for mode in self.forward_modes:
             concrete_args = {'mode': mode}
-            # todo: support qat.
-            with rewriter_context:
+
+            if rewriter_context is not None:
+                with rewriter_context:
+                    observed_module = self.quantizer.prepare(
+                        model, concrete_args)
+            else:
                 observed_module = self.quantizer.prepare(model, concrete_args)
+
             qmodels[mode] = observed_module
 
-        # Add these popped function records back.
-        rewriter_context._rewriter_manager.function_rewriter. \
-            _registry._rewrite_records.update(function_record_backup)
+        if rewriter_context is not None:
+            # Add these popped function records back.
+            rewriter_context._rewriter_manager.function_rewriter. \
+                _registry._rewrite_records.update(function_record_backup)
 
         # data_samples can not be None in detectors during prediction.
         # But we need to make the dummy prediction in _build_qmodels.
@@ -357,7 +366,10 @@ class MMArchitectureQuant(BaseAlgorithm):
         observed_model.load_state_dict(quantized_state_dict)
 
         self.quantizer.post_process_for_deploy(
-            observed_model, device=device, keep_w_fake_quant=True)
+            observed_model,
+            device=device,
+            keep_w_fake_quant=True,
+            update_weight_with_fakequant=True)
 
         # replace various activation fakequant with base fakequant, which
         # contributes to deploy our model to various backends.
@@ -406,21 +418,14 @@ class MMArchitectureQuantDDP(MMDistributedDataParallel):
 
         return self.module.calibrate_step(data)
 
-    def sync_qparams(self, src: str):
+    def sync_qparams(self, src_mode: str):
         """Same as in 'MMArchitectureQuant'. Sync all quantize parameters in
         different `forward_modes`. We could have several modes to generate
         graphs, but in training, only one graph will be update, so we need to
         sync qparams on the other graphs.
 
         Args:
-            src (str): The src modes of forward method.
-
-        Note:
-            `traverse()` function recursively traverses all module to sync
-                quantized graph generated from different `forward_modes`.
-                This is because We have different mode ('tensor', 'predict',
-                'loss') in OpenMMLab architecture which have different graph
-                in some subtle ways, so we need to sync them here.
+            src_mode (str): The src modes of forward method.
         """
 
-        self.module.sync_qparams(src)
+        self.module.sync_qparams(src_mode)
