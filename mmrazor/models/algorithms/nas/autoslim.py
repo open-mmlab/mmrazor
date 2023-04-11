@@ -75,8 +75,6 @@ class AutoSlim(BaseAlgorithm):
         self._optim_wrapper_count_status_reinitialized = False
         self.norm_training = norm_training
 
-        self.bn_training_mode = bn_training_mode
-
     def _build_mutator(self,
                        mutator: VALID_MUTATOR_TYPE = None) -> ChannelMutator:
         """Build mutator."""

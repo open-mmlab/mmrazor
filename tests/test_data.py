@@ -6,13 +6,8 @@ import torch
 
 from .data.model_library import (DefaultModelLibrary, MMClsModelLibrary,
                                  MMDetModelLibrary, MMModelLibrary,
-<<<<<<< HEAD
                                  MMPoseModelLibrary, MMSegModelLibrary,
                                  ModelGenerator, TorchModelLibrary)
-=======
-                                 MMSegModelLibrary, ModelGenerator,
-                                 TorchModelLibrary)
->>>>>>> 985a611e (Merge dev-1.x into quantize (#430))
 from .data.models import SingleLineModel
 from .data.tracer_passed_models import (BackwardPassedModelManager,
                                         FxPassedModelManager)
@@ -50,7 +45,6 @@ class TestModelLibrary(unittest.TestCase):
         if not TEST_DATA:
             self.skipTest('not test data to save time.')
         library = MMSegModelLibrary()
-<<<<<<< HEAD
         print(library.short_names())
 
         self.assertTrue(library.is_default_includes_cover_all_models())
@@ -61,8 +55,6 @@ class TestModelLibrary(unittest.TestCase):
             self.skipTest('not test data to save time.')
         library = MMPoseModelLibrary()
         print(library.short_names())
-=======
->>>>>>> 985a611e (Merge dev-1.x into quantize (#430))
         self.assertTrue(library.is_default_includes_cover_all_models())
 
     def test_get_model_by_config(self):

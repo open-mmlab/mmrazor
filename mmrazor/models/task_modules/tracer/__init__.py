@@ -12,6 +12,6 @@ from .path import (Path, PathConcatNode, PathConvNode, PathDepthWiseConvNode,
 __all__ = [
     'BackwardTracer', 'PathConvNode', 'PathLinearNode', 'PathNormNode',
     'PathConcatNode', 'Path', 'PathList', 'PathNode', 'PathDepthWiseConvNode',
-    'ChannelAnalyzer', 'CustomTracer', 'UntracedMethodRegistry', 
+    'ChannelAnalyzer', 'CustomTracer', 'UntracedMethodRegistry',
     'custom_symbolic_trace', 'build_graphmodule'
 ]
