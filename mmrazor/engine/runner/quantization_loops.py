@@ -21,7 +21,10 @@ from torch.utils.data import DataLoader
 from mmrazor.models.fake_quants import (enable_param_learning,
                                         enable_static_estimate, enable_val)
 from mmrazor.registry import LOOPS
+from mmrazor.models import register_torch_fake_quants, register_torch_observers
 
+TORCH_observers = register_torch_observers()
+TORCH_fake_quants = register_torch_fake_quants()
 
 @LOOPS.register_module()
 class QATEpochBasedLoop(EpochBasedTrainLoop):

@@ -30,7 +30,20 @@ def reset_min_max_vals(self):
 
 PerChannelMinMaxObserver.reset_min_max_vals = reset_min_max_vals
 
-
+# TORCH_observers = register_torch_observers()
+# TORCH_observers including:
+# FixedQParamsObserver
+# HistogramObserver
+# MinMaxObserver
+# MovingAverageMinMaxObserver
+# MovingAveragePerChannelMinMaxObserver
+# NoopObserver
+# ObserverBase
+# PerChannelMinMaxObserver
+# PlaceholderObserver
+# RecordingObserver
+# ReuseInputObserver
+# UniformQuantizationObserverBase
 def register_torch_observers() -> List[str]:
     """Register observers in ``torch.ao.quantization.observer`` to the
     ``MODELS`` registry.
@@ -50,19 +63,3 @@ def register_torch_observers() -> List[str]:
                 MODELS.register_module(module=_observer)
                 torch_observers.append(module_name)
     return torch_observers
-
-
-TORCH_observers = register_torch_observers()
-# TORCH_observers including:
-# FixedQParamsObserver
-# HistogramObserver
-# MinMaxObserver
-# MovingAverageMinMaxObserver
-# MovingAveragePerChannelMinMaxObserver
-# NoopObserver
-# ObserverBase
-# PerChannelMinMaxObserver
-# PlaceholderObserver
-# RecordingObserver
-# ReuseInputObserver
-# UniformQuantizationObserverBase
