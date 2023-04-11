@@ -12,11 +12,10 @@ from mmrazor.models.mutables.mutable_channel.units.channel_unit import \
 from mmrazor.models.task_modules.tracer.channel_analyzer import ChannelAnalyzer
 from mmrazor.registry import MODELS, TASK_UTILS
 from ..base_mutator import BaseMutator
-from ..group_mixin import GroupMixin
 
 
 @MODELS.register_module()
-class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
+class ChannelMutator(BaseMutator, Generic[ChannelUnitType]):
     """ChannelMutator manages the pruning structure of a model.
 
     Args:
@@ -45,10 +44,6 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
                      type='ChannelAnalyzer',
                      demo_input=(1, 3, 224, 224),
                      tracer_type='BackwardTracer')
-
-        custom_groups (list[list[str]], optional): User-defined search groups.
-            All searchable modules that are not in ``custom_group`` will be
-            grouped separately.
 
         init_cfg (dict, optional): initialization configuration dict for
             BaseModule.
@@ -96,10 +91,6 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
         self.unit_class, self.unit_default_args, self.units_cfg = \
             self._parse_channel_unit_cfg(
                 channel_unit_cfg)
-
-        if custom_groups is None:
-            custom_groups = []
-        self._custom_groups = custom_groups
 
     def prepare_from_supernet(self, supernet: Module) -> None:
         """Prepare from a model for pruning.
@@ -238,9 +229,10 @@ class ChannelMutator(BaseMutator, Generic[ChannelUnitType], GroupMixin):
     @property
     def current_choices(self) -> Dict:
         """Get current choices."""
-        current_choices = dict()
-        for group_id, modules in self.search_groups.items():
-            current_choices[group_id] = modules[0].current_choice
+        config = self.choice_template
+        for unit in self.mutable_units:
+            config[unit.name] = unit.current_choice
+        return config
 
     @property
     def choice_template(self) -> Dict:

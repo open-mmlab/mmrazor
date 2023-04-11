@@ -29,7 +29,7 @@ class SlimmableChannelMutator(ChannelMutator[SlimmableChannelUnit]):
                      tracer_type='BackwardTracer'),
                  init_cfg: Optional[Dict] = None) -> None:
 
-        super().__init__(channel_unit_cfg, parse_cfg, None, init_cfg)
+        super().__init__(channel_unit_cfg, parse_cfg, init_cfg)
 
         self.subnets = self._prepare_subnets(self.units_cfg)
 

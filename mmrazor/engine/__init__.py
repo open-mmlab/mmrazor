@@ -10,10 +10,10 @@ from .runner import (AutoSlimGreedySearchLoop, DartsEpochBasedTrainLoop,
                      SubnetValLoop)
 
 __all__ = [
-    'SeparateOptimWrapperConstructor', 'DumpSubnetHook',
-    'SingleTeacherDistillValLoop', 'DartsEpochBasedTrainLoop',
-    'DartsIterBasedTrainLoop', 'SlimmableValLoop', 'EvolutionSearchLoop',
-    'GreedySamplerTrainLoop', 'EstimateResourcesHook', 'SelfDistillValLoop',
-    'AutoSlimGreedySearchLoop', 'SubnetValLoop', 'PTQLoop',
-    'QATEpochBasedLoop', 'LSQEpochBasedLoop', 'QATValLoop'
+    'DMCPSubnetHook', 'StopDistillHook', 'SeparateOptimWrapperConstructor',
+    'DumpSubnetHook', 'SingleTeacherDistillValLoop',
+    'DartsEpochBasedTrainLoop', 'DartsIterBasedTrainLoop', 'SlimmableValLoop',
+    'EvolutionSearchLoop', 'GreedySamplerTrainLoop', 'EstimateResourcesHook',
+    'SelfDistillValLoop', 'AutoSlimGreedySearchLoop', 'SubnetValLoop',
+    'PTQLoop', 'QATEpochBasedLoop', 'LSQEpochBasedLoop', 'QATValLoop'
 ]

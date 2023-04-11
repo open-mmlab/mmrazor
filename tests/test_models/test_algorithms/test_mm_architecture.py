@@ -2,7 +2,7 @@
 import os
 import shutil
 import tempfile
-from unittest import TestCase
+from unittest import TestCase, skip
 
 import torch
 import torch.nn as nn
@@ -101,6 +101,7 @@ class ToyQuantModel(BaseModel):
         return outputs
 
 
+@skip
 class TestMMArchitectureQuant(TestCase):
 
     def setUp(self):

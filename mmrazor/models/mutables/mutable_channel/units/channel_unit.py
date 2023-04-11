@@ -212,11 +212,6 @@ class ChannelUnit(BaseModule):
         """str: alias of the unit"""
         return self.name
 
-    @property
-    def alias(self) -> str:
-        """str: alias of the unit"""
-        return self.name
-
     def config_template(self,
                         with_init_args=False,
                         with_channels=False) -> Dict:
