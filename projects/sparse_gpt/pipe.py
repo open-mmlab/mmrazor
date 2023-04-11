@@ -1,32 +1,36 @@
 import torch
 import torch.nn as nn
 
-from mmrazor.implementations.pruning import sparse_gpt
+
+def register_efficient_forward_hook(module: nn.Module,
+                                    device=torch.device('cuda:0')):
+
+    def forward_pre_hook(module: nn.Module, input):
+        module.to(device)
+
+    def forward_hook(module: nn.Module, input, output):
+        module.to('cpu')
+        torch.cuda.empty_cache()
+
+    h1 = module.register_forward_pre_hook(forward_pre_hook)
+    h2 = module.register_forward_hook(forward_hook)
+    return [h1, h2]
 
 
-def infer(model: nn.Module,
-          dataloader: torch.utils.data.DataLoader,
-          num_batchs=256):
-    model.eval()
-    device = next(model.parameters()).device
-    with torch.no_grad():
-        accumulate_batch = 0
-        for x, _ in dataloader:
-            x = x.to(device)
-            model(x)
-            B = x.shape[0]
-            accumulate_batch += B
-            if accumulate_batch > num_batchs:
-                break
+class efficient_forward:
 
+    def __init__(self, model: nn.Module,
+                 device=torch.device('cuda:0')) -> None:
+        self.model = model
+        self.device = device
 
-def sparse_model(model: nn.Module,
-                 dataloader: torch.utils.data.DataLoader,
-                 num_batchs=256):
+    def __enter__(self, ):
+        handles = []
+        for module in self.model.modules():
+            if len(module._parameters) != 0 or len(module._buffers) != 0:
+                handles += register_efficient_forward_hook(module, self.device)
+        self.handlers = handles
 
-    mutator = sparse_gpt.SparseGptMutator.init_from_a_model(model)
-    mutator.start_init_hessian()
-    infer(model, dataloader, num_batchs)
-    mutator.end_init_hessian()
-    mutator.prune_24()
-    return model
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        for h in self.handlers:
+            h.remove()
