@@ -30,6 +30,7 @@ def reset_min_max_vals(self):
 
 PerChannelMinMaxObserver.reset_min_max_vals = reset_min_max_vals
 
+
 # TORCH_observers = register_torch_observers()
 # TORCH_observers including:
 # FixedQParamsObserver

@@ -10,6 +10,7 @@ except ImportError:
     from mmrazor.utils import get_package_placeholder
     torch_fake_quant_src = get_package_placeholder('torch>=1.13')
 
+
 # TORCH_fake_quants = register_torch_fake_quants()
 # TORCH_fake_quants including:
 # FakeQuantize
@@ -35,4 +36,3 @@ def register_torch_fake_quants() -> List[str]:
                 MODELS.register_module(module=_fake_quant)
                 torch_fake_quants.append(module_name)
     return torch_fake_quants
-
