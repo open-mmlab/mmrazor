@@ -115,7 +115,8 @@ if __name__ == '__main__':
         'c4', seed=args.seed, model=args.model, seqlen=model.seqlen)
 
     from mmrazor.implementations.pruning import sparse_gpt
-    mutator = sparse_gpt.SparseGptMutator.init_from_a_model(model)
+    mutator = sparse_gpt.SparseGptMutator.init_from_a_model(
+        model.model.decoder)
 
     mutator.start_init_hessian()
     opt_infer(model, testloader, DEV, num_samples=128)
