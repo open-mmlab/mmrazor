@@ -2,9 +2,15 @@
 import copy
 from typing import Dict, List, Optional
 
-import onnx
 from mmengine import print_log
-from onnx import numpy_helper
+
+try:
+    import onnx
+    from onnx import numpy_helper
+except ImportError:
+    from mmrazor.utils import get_package_placeholder
+    onnx = get_package_placeholder('No module named onnx')
+    numpy_helper = get_package_placeholder('No module named onnx.numpy_helper')
 
 
 class ONNXOptimUtils():
@@ -61,30 +67,6 @@ class ONNXOptimUtils():
                     input2node[input_name] = []
                 input2node[input_name].append([node, idx])
         return input2node
-
-    @classmethod
-    def get_constant(cls, name, onnx_model):
-        for node in onnx_model.graph.node:
-            if node.op_type == 'Constant':
-                if node.output[0] == name:
-                    return numpy_helper.to_array(node.attribute[0].t).tolist()
-
-    @classmethod
-    def get_initializer(cls, initializer_name, onnx_model):
-        return numpy_helper.to_array(
-            onnx_model.initializer[initializer_name][0])
-
-    @classmethod
-    def get_tensor_producer(cls, output_name, output2node):
-        if output_name not in output2node:
-            return 'INPUT_TOKEN'
-        return output2node[output_name]
-
-    @classmethod
-    def get_tensor_consumer(self, input_name, input2node):
-        if input_name not in input2node:
-            return ['OUTPUT_TOKEN']
-        return input2node[input_name]
 
     @classmethod
     def remove_node_from_onnx(cls, node: onnx.NodeProto,
@@ -260,6 +242,8 @@ class ONNXOptimUtils():
 
     @classmethod
     def optimize(cls, onnx_model):
+        """Remove standalone nodes and redundant initializers, and
+        topologically sort the nodes in a directed acyclic graph."""
 
         input2node = cls.map_input_and_node(onnx_model)
         output2node = cls.map_output_and_node(onnx_model)

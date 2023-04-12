@@ -3,9 +3,16 @@
 from typing import List
 
 import numpy as np
-import onnx
 from google.protobuf.internal.containers import RepeatedScalarFieldContainer
-from onnx import helper, numpy_helper
+
+try:
+    import onnx
+    from onnx import helper, numpy_helper
+except ImportError:
+    from mmrazor.utils import get_package_placeholder
+    onnx = get_package_placeholder('No module named onnx')
+    numpy_helper = get_package_placeholder('No module named onnx.numpy_helper')
+    helper = get_package_placeholder('No module named onnx.helper')
 
 from .base_quantize_exporter import BaseQuantizeExportor
 
