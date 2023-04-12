@@ -1,11 +1,17 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import List
 
-import onnx
 from mmengine import print_log
-from onnx import numpy_helper
 
 from .optim_utils import ONNXOptimUtils
+
+try:
+    import onnx
+    from onnx import numpy_helper
+except ImportError:
+    from mmrazor.utils import get_package_placeholder
+    onnx = get_package_placeholder('No module named onnx')
+    numpy_helper = get_package_placeholder('No module named onnx.numpy_helper')
 
 SUPPORT_QWEIGHT_NODE = ['Gemm', 'Conv', 'ConvTranspose']
 

@@ -2,9 +2,15 @@
 import copy
 from typing import Dict, List, Optional
 
-import onnx
 from mmengine import print_log
-from onnx import numpy_helper
+
+try:
+    import onnx
+    from onnx import numpy_helper
+except ImportError:
+    from mmrazor.utils import get_package_placeholder
+    onnx = get_package_placeholder('No module named onnx')
+    numpy_helper = get_package_placeholder('No module named onnx.numpy_helper')
 
 
 class ONNXOptimUtils():

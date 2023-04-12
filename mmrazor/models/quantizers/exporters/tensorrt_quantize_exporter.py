@@ -1,6 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import numpy as np
-import onnx
+
+try:
+    import onnx
+except ImportError:
+    from mmrazor.utils import get_package_placeholder
+    onnx = get_package_placeholder('No module named onnx')
 
 from .base_quantize_exporter import BaseQuantizeExportor
 
