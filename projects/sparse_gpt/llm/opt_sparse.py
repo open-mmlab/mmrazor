@@ -24,35 +24,47 @@ def get_opt(model):
     return model
 
 
+def fold_tokens(tokens: torch.Tensor, batch_seq_len=2048):
+    # tokens: 1 N
+    N = tokens.shape[1]
+    num_drop = N % batch_seq_len
+    if num_drop != 0:
+        tokens = tokens[:, :-num_drop]
+    tokens = tokens.reshape([-1, batch_seq_len])  # B N
+    return tokens
+
+
 @torch.no_grad()
 def opt_eval(model: OPTForCausalLM,
              testenc,
-             dev,
-             dataset: str,
+             dev=torch.device('cuda:0'),
+             batch_size=64,
              log_wandb: bool = False):
     print('Evaluating ...')
 
-    testenc: torch.Tensor = testenc.input_ids  # type: ignore
-    nsamples = testenc.numel() // model.seqlen
+    seqlen = model.seqlen
+
+    testenc: torch.Tensor = testenc.input_ids  # type: ignore # 1, N
+    testenc = fold_tokens(testenc, seqlen)  # B N
 
     use_cache = model.config.use_cache
     model.config.use_cache = False
     nlls = []
 
-    for i in range(nsamples):
-        batch = testenc[:, (i * model.seqlen):(i + 1) * model.seqlen].to(dev)
-        out = model(batch)[0]  # 1
+    for batch in torch.split(testenc, batch_size):
+        B = batch.shape[0]
 
-        shift_logits = out[:, :-1, :].contiguous()  # 1 N C
-        shift_labels = batch[:, 1:]  # 1 N
+        batch = batch.to(dev)
+        out: torch.Tensor = model(batch)[0]  # 1
+
+        shift_logits = out[:, :-1, :].contiguous().flatten(0, 1)  # (B N) C
+        shift_labels = batch[:, 1:].flatten()  # (B N)
 
         loss_fct = nn.CrossEntropyLoss()
-        loss = loss_fct(
-            shift_logits.view(-1, shift_logits.size(-1)),
-            shift_labels.view(-1))
-        neg_log_likelihood = loss.float() * model.seqlen
+        loss = loss_fct(shift_logits, shift_labels)
+        neg_log_likelihood = loss.float() * seqlen * B
         nlls.append(neg_log_likelihood)
-    ppl = torch.exp(torch.stack(nlls).sum() / (nsamples * model.seqlen))
+    ppl = torch.exp(torch.stack(nlls).sum() / (testenc.numel()))
     print(f'Perplexity: {ppl.item():3f}')
     model.config.use_cache = use_cache
 
@@ -62,21 +74,20 @@ def opt_infer(
     model: OPTForCausalLM,
     testenc,
     dev,
-    num_samples=128,
+    batch_size=64,
 ):
     print('Infer ...')
 
-    testenc: torch.Tensor = testenc.input_ids  # type: ignore
-    nsamples = testenc.numel() // model.seqlen
+    seqlen = model.seqlen
+
+    testenc: torch.Tensor = testenc.input_ids  # type: ignore # 1, N
+    testenc = fold_tokens(testenc, seqlen)  # B N
 
     model.config.use_cache = False
 
-    for i in range(nsamples):
-        batch = testenc[:, (i * model.seqlen):(i + 1) * model.seqlen].to(dev)
+    for batch in torch.split(testenc, batch_size):
+        batch = batch.to(dev)
         _ = model(batch)[0]  # 1
-
-        if i > num_samples:
-            break
 
 
 if __name__ == '__main__':
@@ -119,7 +130,7 @@ if __name__ == '__main__':
         model.model.decoder)
 
     mutator.start_init_hessian()
-    opt_infer(model, testloader, DEV, num_samples=128)
+    opt_infer(model, testloader, DEV)
     mutator.end_init_hessian()
     mutator.prune_24()
 
@@ -127,4 +138,4 @@ if __name__ == '__main__':
         dataloader, testloader = get_loaders(
             dataset, seed=args.seed, model=args.model, seqlen=model.seqlen)
         print(dataset)
-        opt_eval(model, testloader, DEV, dataset)
+        opt_eval(model, testloader, DEV)
