@@ -1,11 +1,17 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import List
 
-import onnx
 from mmengine import print_log
-from onnx import numpy_helper
 
 from .optim_utils import ONNXOptimUtils
+
+try:
+    import onnx
+    from onnx import numpy_helper
+except ImportError:
+    from mmrazor.utils import get_package_placeholder
+    onnx = get_package_placeholder('No module named onnx')
+    numpy_helper = get_package_placeholder('No module named onnx.numpy_helper')
 
 SUPPORT_QWEIGHT_NODE = ['Gemm', 'Conv', 'ConvTranspose']
 
@@ -72,9 +78,6 @@ class BaseQuantizeExportor():
         self.input2node = self.optimizer.map_input_and_node(onnx_model)
         self.output2node = self.optimizer.map_output_and_node(onnx_model)
         self.name2data = self.optimizer.map_name_and_data(onnx_model)
-
-        # todo: maybe useless
-        # self.name2init = self.optimizer.map_name_and_initializer(onnx_model)
 
     def _remap_input_and_node(self):
         """Rebuild the mapping from input name to a (node, input index)
