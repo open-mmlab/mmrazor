@@ -73,9 +73,6 @@ class BaseQuantizeExportor():
         self.output2node = self.optimizer.map_output_and_node(onnx_model)
         self.name2data = self.optimizer.map_name_and_data(onnx_model)
 
-        # todo: maybe useless
-        # self.name2init = self.optimizer.map_name_and_initializer(onnx_model)
-
     def _remap_input_and_node(self):
         """Rebuild the mapping from input name to a (node, input index)
         tuple."""

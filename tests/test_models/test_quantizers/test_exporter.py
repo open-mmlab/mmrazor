@@ -5,16 +5,18 @@ import shutil
 import tempfile
 from unittest import TestCase, skipIf
 
-import onnx
 import torch
 import torch.nn as nn
-from onnx import helper
 
 try:
+    import onnx
+    from onnx import helper
     from torch.fx import GraphModule
 except ImportError:
-    from mmrazor.utils import get_placeholder
+    from mmrazor.utils import get_package_placeholder, get_placeholder
     GraphModule = get_placeholder('torch>=1.13')
+    onnx = get_package_placeholder('No module named onnx')
+    helper = get_package_placeholder('No module named onnx.helper')
 
 from mmengine import ConfigDict
 from mmengine.model import BaseModel
