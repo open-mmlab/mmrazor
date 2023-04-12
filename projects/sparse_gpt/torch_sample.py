@@ -51,6 +51,7 @@ def get_dataloaders(batch_size, n_workers, path=''):
     return dataloader_train, dataloader_test
 
 
+@torch.no_grad()
 def eval(model: nn.Module,
          dataloader_test: DataLoader,
          device=torch.device('cuda:0')):
@@ -73,6 +74,7 @@ def eval(model: nn.Module,
     return acc
 
 
+@torch.no_grad()
 def infer(model: nn.Module,
           dataloader: torch.utils.data.DataLoader,
           num_batchs=256,
@@ -89,28 +91,16 @@ def infer(model: nn.Module,
                 break
 
 
-def sparse_model(model: nn.Module,
-                 dataloader: torch.utils.data.DataLoader,
-                 num_batchs=256):
-
-    mutator = sparse_gpt.SparseGptMutator.init_from_a_model(model)
-
-    from pipe import efficient_forward
-    with efficient_forward(model):
-        mutator.start_init_hessian()
-        infer(model, dataloader, num_batchs)
-        mutator.end_init_hessian()
-        mutator.prune_24()
-    return model
-
-
 if __name__ == '__main__':
 
-    model = torchvision.models.resnet18(pretrained=True)
-    train_loader, test_loader = get_dataloaders(128, 4, 'data/imagenet_torch')
+    model = torchvision.models.resnet18(pretrained=True).cuda()
+    train_loader, test_loader = get_dataloaders(256, 4, 'data/imagenet_torch')
 
-    # model = model.cuda()
-    model = sparse_model(model, test_loader, num_batchs=512)
+    mutator = sparse_gpt.SparseGptMutator.init_from_a_model(model)
+    mutator.start_init_hessian()
+    infer(model, test_loader, num_batchs=512)
+    mutator.end_init_hessian()
+    mutator.prune_24()
 
     print('start evaluation')
     model = model.cuda()

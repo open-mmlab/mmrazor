@@ -2,6 +2,10 @@
 import torch
 import torch.nn as nn
 from transformers import OPTForCausalLM
+from transformers.models.opt.modeling_opt import OPTDecoderLayer
+
+from mmrazor.implementations.pruning.sparse_gpt.utils import \
+    memory_efficient_forward
 
 has_wandb = False
 
@@ -118,7 +122,6 @@ if __name__ == '__main__':
 
     model = get_opt(args.model)
     model.eval()
-    model = model.cuda()
     print('load model over')
     DEV = torch.device('cuda:0')
 
@@ -129,13 +132,15 @@ if __name__ == '__main__':
     mutator = sparse_gpt.SparseGptMutator.init_from_a_model(
         model.model.decoder)
 
-    mutator.start_init_hessian()
-    opt_infer(model, testloader, DEV)
-    mutator.end_init_hessian()
-    mutator.prune_24()
+    with memory_efficient_forward(model, wrap_modules=[OPTDecoderLayer]):
 
-    for dataset in ['wikitext2', 'ptb', 'c4']:
-        dataloader, testloader = get_loaders(
-            dataset, seed=args.seed, model=args.model, seqlen=model.seqlen)
-        print(dataset)
-        opt_eval(model, testloader, DEV)
+        mutator.start_init_hessian()
+        opt_infer(model, testloader, DEV)
+        mutator.end_init_hessian()
+        mutator.prune_24()
+
+        for dataset in ['wikitext2', 'ptb', 'c4']:
+            dataloader, testloader = get_loaders(
+                dataset, seed=args.seed, model=args.model, seqlen=model.seqlen)
+            print(dataset)
+            opt_eval(model, testloader, DEV)
