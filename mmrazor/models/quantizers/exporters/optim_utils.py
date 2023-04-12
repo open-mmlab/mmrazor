@@ -71,8 +71,8 @@ class ONNXOptimUtils():
 
     @classmethod
     def get_initializer(cls, initializer_name, onnx_model):
-        return numpy_helper.to_array(
-            onnx_model.initializer[initializer_name][0])
+        initializers = cls.map_name_and_initializer(onnx_model)
+        return numpy_helper.to_array(initializers[initializer_name][0])
 
     @classmethod
     def get_tensor_producer(cls, output_name, output2node):
