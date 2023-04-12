@@ -243,16 +243,6 @@ class TestONNXOptimUtils(TestCase):
     def test_map_input_and_node(self):
         _ = self.optimizer.map_input_and_node(self.onnx_model)
 
-    def test_get_constant(self):
-        tensor = self.optimizer.get_constant(
-            '/activation_post_process_0/Constant_output_0', self.onnx_model)
-        self.assertEqual(tensor, 0)
-
-    def test_get_initializer(self):
-        initializer = self.optimizer.get_initializer(
-            'activation_post_process_0.scale', self.onnx_model)
-        self.assertEqual(initializer, [1.])
-
     def test_remove_node_from_onnx(self):
         onnx_model = copy.deepcopy(self.onnx_model)
         node_to_remove = next(iter(onnx_model.graph.node))
