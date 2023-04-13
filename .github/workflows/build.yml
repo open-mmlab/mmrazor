@@ -119,7 +119,7 @@ jobs:
           coverage report -m
       # Upload coverage report for python3.8 && pytorch1.12.0 cpu
       - name: Upload coverage to Codecov
-        if: ${{matrix.torch == '1.12.0' && matrix.python-version == '3.8'}}
+        if: ${{matrix.torch == '1.13.0' && matrix.python-version == '3.8'}}
         uses: codecov/codecov-action@v2
         with:
           file: ./coverage.xml
