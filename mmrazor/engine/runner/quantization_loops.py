@@ -1,8 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import os
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 from mmengine.evaluator import Evaluator
+from mmengine.logging import print_log
 from mmengine.runner import EpochBasedTrainLoop, TestLoop, ValLoop
 
 try:
@@ -342,32 +344,37 @@ class PTQLoop(TestLoop):
         self.runner.call_hook('before_test_epoch')
 
         self.runner.model.eval()
-        self.runner.model.apply(enable_fake_quant)
-        self.runner.model.apply(enable_observer)
 
-        if self.only_val:
+        if not self.only_val:
+            self.runner.model.apply(enable_fake_quant)
+            self.runner.model.apply(enable_observer)
+
+            print_log('Star calibratiion...')
+            for idx, data_batch in enumerate(self.dataloader):
+                if idx == self.calibrate_steps:
+                    break
+                self.run_iter(idx, data_batch)
+            print_log('Finish calibratiion!')
+
+            self.runner.model.apply(enable_fake_quant)
             self.runner.model.apply(disable_observer)
-            return self.runner.val_loop.run()
 
-        for idx, data_batch in enumerate(self.dataloader):
-            if idx == self.calibrate_steps:
-                break
-            self.run_iter(idx, data_batch)
+            save_dir = os.path.join(self.runner.work_dir,
+                                    self.runner.timestamp)
+            self.runner.save_checkpoint(
+                save_dir,
+                'model_ptq.pth',
+                file_client_args=None,
+                save_optimizer=False,
+                save_param_scheduler=False)
+            print_log(f'Quantized model is saved in {save_dir}')
 
-        self.runner.save_checkpoint(
-            self.runner.work_dir,
-            'model_ptq.pth',
-            file_client_args=None,
-            save_optimizer=False,
-            save_param_scheduler=False)
-
-        self.runner.call_hook('after_test_epoch', metrics=None)
+        print_log('Start Evaluating quantized model...')
+        metricts = self.runner.val_loop.run()
+        self.runner.call_hook('after_test_epoch', metrics=metricts)
         self.runner.call_hook('after_test')
 
-        self.runner.model.apply(enable_fake_quant)
-        self.runner.model.apply(disable_observer)
-
-        return self.runner.val_loop.run()
+        return metricts
 
     @torch.no_grad()
     def run_iter(self, idx, data_batch: Sequence[dict]) -> None:
