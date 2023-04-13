@@ -26,5 +26,6 @@ Import:
   - configs/pruning/mmdet/group_fisher/retinanet/metafile.yml
   - configs/pruning/mmcls/l1-norm/metafile.yml
   - configs/pruning/mmcls/dmcp/metafile.yml
-  - configs/quantization/ptq/metafile.yml
-  - configs/quantization/qat/metafile.yml
+  - configs/quantization/ptq/base/metafile.yml
+  - configs/quantization/qat/base/metafile.yml
+  - configs/quantization/qat/lsq/metafile.yml

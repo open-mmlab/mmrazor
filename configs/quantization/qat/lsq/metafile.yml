@@ -1,8 +1,9 @@
 Collections:
-  - Name: QAT
+  - Name: LSQ
+    README: configs/quantization/qat/lsq/README.md
 Models:
   - Name: lsq_openvino_resnet18_8xb32_in1k
-    In Collection: QAT
+    In Collection: LSQ
     Metadata:
       Backend: openvino
       Float Model:
@@ -15,5 +16,5 @@ Models:
         Dataset: ImageNet-1k
         Metrics:
           Top 1 Accuracy: 70.06
-    Config: configs/quantization/qat/lsq_openvino_resnet18_8xb32_in1k.py
+    Config: configs/quantization/qat/lsq/lsq_openvino_resnet18_8xb32_in1k.py
     Weights: https://download.openmmlab.com/mmrazor/v1/quantization/qat/openvino/lsq_openvino_resnet18_8xb32_in1k_20230402_173316-0d441f23.pth

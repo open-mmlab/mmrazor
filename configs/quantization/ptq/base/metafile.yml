@@ -1,6 +1,6 @@
 Collections:
   - Name: PTQ
-
+    README: configs/quantization/ptq/base/README.md
 Models:
   - Name: ptq_openvino_mbv2_8xb32_in1k_calib32xb32
     In Collection: PTQ
@@ -16,9 +16,8 @@ Models:
         Dataset: ImageNet-1k
         Metrics:
           Top 1 Accuracy: 70.272
-    Config: configs/quantization/ptq/ptq_openvino_mbv2_8xb32_in1k_calib32xb32.py
+    Config: configs/quantization/ptq/base/ptq_openvino_mbv2_8xb32_in1k_calib32xb32.py
     Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_mbv2_8xb32_in1k_calib32xb32_20230330_170909-364822ad.pth
-
   - Name: ptq_openvino_resnet18_8xb32_in1k_calib32xb32
     In Collection: PTQ
     Metadata:
@@ -33,9 +32,8 @@ Models:
         Dataset: ImageNet-1k
         Metrics:
           Top 1 Accuracy: 69.766
-    Config: configs/quantization/ptq/ptq_openvino_resnet18_8xb32_in1k_calib32xb32.py
+    Config: configs/quantization/ptq/base/ptq_openvino_resnet18_8xb32_in1k_calib32xb32.py
     Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_resnet18_8xb32_in1k_calib32xb32_20230330_163655-2386d965.pth
-
   - Name: ptq_openvino_resnet50_8xb32_in1k_calib32xb32
     In Collection: PTQ
     Metadata:
@@ -50,9 +48,8 @@ Models:
         Dataset: ImageNet-1k
         Metrics:
           Top 1 Accuracy: 76.338
-    Config: configs/quantization/ptq/ptq_openvino_resnet50_8xb32_in1k_calib32xb32.py
+    Config: configs/quantization/ptq/base/ptq_openvino_resnet50_8xb32_in1k_calib32xb32.py
     Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_resnet50_8xb32_in1k_calib32xb32_20230330_170115-2acd6014.pth
-
   - Name: ptq_openvino_retina_r50_1x_coco_calib32xb32
     In Collection: PTQ
     Metadata:
@@ -67,9 +64,8 @@ Models:
         Dataset: COCO
         Metrics:
           box AP: 36.3
-    Config: configs/quantization/ptq/ptq_openvino_retina_r50_1x_coco_calib32xb32.py
+    Config: configs/quantization/ptq/base/ptq_openvino_retina_r50_1x_coco_calib32xb32.py
     Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_retina_r50_1x_coco_calib32xb32_20230330_172645-80eea5b6.pth
-
   - Name: ptq_openvino_yolox_s_8xb8-300e_coco_calib32xb32
     In Collection: PTQ
     Metadata:
@@ -84,9 +80,8 @@ Models:
         Dataset: COCO
         Metrics:
           box AP: 38.5
-    Config: configs/quantization/ptq/ptq_openvino_yolox_s_8xb8-300e_coco_calib32xb32.py
+    Config: configs/quantization/ptq/base/ptq_openvino_yolox_s_8xb8-300e_coco_calib32xb32.py
     Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_yolox_s_8xb8-300e_coco_calib32xb32_20230330_175747-f1a0a2f4.pth
-
   - Name: ptq_tensorrt_mbv2_8xb32_in1k_calib32xb32
     In Collection: PTQ
     Metadata:
@@ -101,9 +96,8 @@ Models:
         Dataset: ImageNet-1k
         Metrics:
           Top 1 Accuracy: 70.324
-    Config: configs/quantization/ptq/ptq_tensorrt_mbv2_8xb32_in1k_calib32xb32.py
+    Config: configs/quantization/ptq/base/ptq_tensorrt_mbv2_8xb32_in1k_calib32xb32.py
     Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/tensorrt/ptq_tensorrt_mbv2_8xb32_in1k_calib32xb32_20230331_153131-335988e4.pth
-
   - Name: ptq_tensorrt_resnet18_8xb32_in1k_calib32xb32
     In Collection: PTQ
     Metadata:
@@ -118,9 +112,8 @@ Models:
         Dataset: ImageNet-1k
         Metrics:
           Top 1 Accuracy: 69.762
-    Config: configs/quantization/ptq/ptq_tensorrt_resnet18_8xb32_in1k_calib32xb32.py
+    Config: configs/quantization/ptq/base/ptq_tensorrt_resnet18_8xb32_in1k_calib32xb32.py
     Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/tensorrt/ptq_tensorrt_resnet18_8xb32_in1k_calib32xb32_20230331_144323-640b272e.pth
-
   - Name: ptq_tensorrt_resnet50_8xb32_in1k_calib32xb32
     In Collection: PTQ
     Metadata:
@@ -135,9 +128,8 @@ Models:
         Dataset: ImageNet-1k
         Metrics:
           Top 1 Accuracy: 76.372
-    Config: configs/quantization/ptq/ptq_tensorrt_resnet50_8xb32_in1k_calib32xb32.py
+    Config: configs/quantization/ptq/base/ptq_tensorrt_resnet50_8xb32_in1k_calib32xb32.py
     Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/tensorrt/ptq_tensorrt_resnet50_8xb32_in1k_calib32xb32_20230331_145011-d2da300f.pth
-
   - Name: ptq_tensorrt_retina_r50_1x_coco_calib32xb32
     In Collection: PTQ
     Metadata:
@@ -152,9 +144,8 @@ Models:
         Dataset: COCO
         Metrics:
           box AP: 36.2
-    Config: configs/quantization/ptq/ptq_tensorrt_retina_r50_1x_coco_calib32xb32.py
+    Config: configs/quantization/ptq/base/ptq_tensorrt_retina_r50_1x_coco_calib32xb32.py
     Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/tensorrt/ptq_tensorrt_retina_r50_1x_coco_calib32xb32_20230330_205741-4c5c10c4.pth
-
   - Name: ptq_tensorrt_yolox_s_8xb8-300e_coco_calib32xb32
     In Collection: PTQ
     Metadata:
@@ -169,5 +160,5 @@ Models:
         Dataset: COCO
         Metrics:
           box AP: 38.8
-    Config: configs/quantization/ptq/ptq_tensorrt_yolox_s_8xb8-300e_coco_calib32xb32.py
+    Config: configs/quantization/ptq/base/ptq_tensorrt_yolox_s_8xb8-300e_coco_calib32xb32.py
     Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/tensorrt/ptq_tensorrt_yolox_s_8xb8-300e_coco_calib32xb32_20230331_155139-f2021e57.pth
