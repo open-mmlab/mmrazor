@@ -90,7 +90,7 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
                     and self._epoch >= self.val_begin
                     and self._epoch % self.val_interval == 0):
                 # observer disabled during evaluation
-                self.prepare_for_val()
+
                 self.runner.val_loop.run()
 
         self.runner.call_hook('after_train')
@@ -102,16 +102,21 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
 
         # The initialized _epoch equals to 0 so _epoch + 1
         # equal to the current epoch
-        if self._epoch + 1 >= self.disable_observer_begin:
+        if (self.disable_observer_begin > 0
+                and self._epoch + 1 >= self.disable_observer_begin):
             self.runner.model.apply(disable_observer)
 
-        if self._epoch + 1 >= self.freeze_bn_begin:
+        if (self.freeze_bn_begin > 0
+                and self._epoch + 1 >= self.freeze_bn_begin):
             self.runner.model.apply(freeze_bn_stats)
 
         for idx, data_batch in enumerate(self.dataloader):
             self.run_iter(idx, data_batch)
 
         self.runner.model.sync_qparams(src_mode='loss')
+        # Make sure the registered buffer such as `observer_enabled` is
+        # correct in the saved checkpoint.
+        self.prepare_for_val()
         self.runner.call_hook('after_train_epoch')
         self._epoch += 1
 
