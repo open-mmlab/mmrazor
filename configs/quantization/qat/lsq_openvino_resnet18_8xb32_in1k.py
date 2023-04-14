@@ -42,12 +42,7 @@ optim_wrapper = dict(
 
 # learning policy
 param_scheduler = dict(
-    _delete_=True,
-    type='CosineAnnealingLR',
-    T_max=100,
-    by_epoch=True,
-    begin=0,
-    end=100)
+    _delete_=True, type='ConstantLR', factor=1.0, by_epoch=True)
 
 model_wrapper_cfg = dict(
     type='mmrazor.MMArchitectureQuantDDP',
@@ -58,7 +53,9 @@ model_wrapper_cfg = dict(
 train_cfg = dict(
     _delete_=True,
     type='mmrazor.LSQEpochBasedLoop',
-    max_epochs=100,
+    max_epochs=10,
     val_interval=1)
 val_cfg = dict(_delete_=True, type='mmrazor.QATValLoop')
-test_cfg = val_cfg
+# test_cfg = val_cfg
+
+default_hooks = dict(sync=dict(type='SyncBuffersHook'))
