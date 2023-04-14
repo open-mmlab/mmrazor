@@ -17,7 +17,7 @@ except ImportError:
     enable_observer = get_placeholder('torch>=1.13')
     freeze_bn_stats = get_placeholder('torch>=1.13')
 
-from mmengine.dist import all_reduce_params
+from mmengine.dist import all_reduce_params, is_distributed
 from torch.utils.data import DataLoader
 
 from mmrazor.models import register_torch_fake_quants, register_torch_observers
@@ -162,6 +162,7 @@ class LSQEpochBasedLoop(QATEpochBasedLoop):
             dynamic_intervals=dynamic_intervals)
 
         self.is_first_batch = True
+        self.distributed = is_distributed()
 
     def prepare_for_run_epoch(self):
         """Toggle the state of the observers and fake quantizers before qat
@@ -194,7 +195,10 @@ class LSQEpochBasedLoop(QATEpochBasedLoop):
                 # calculated through lsq observer. As the values of `scale` of
                 # different observers in different rank are usually different,
                 # we have to sync the `scale` here.
-                all_reduce_params(self.runner.model.parameters(), op='mean')
+                if self.distributed:
+                    all_reduce_params(
+                        self.runner.model.parameters(), op='mean')
+
                 # Change back to param learning mode
                 self.is_first_batch = False
                 self.runner.model.apply(enable_param_learning)
