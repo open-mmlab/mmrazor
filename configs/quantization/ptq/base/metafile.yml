@@ -15,7 +15,7 @@ Models:
       - Task: Image Classification
         Dataset: ImageNet-1k
         Metrics:
-          Top 1 Accuracy: 70.272
+          Top 1 Accuracy: 70.224
     Config: configs/quantization/ptq/base/ptq_openvino_mbv2_8xb32_in1k_calib32xb32.py
     Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_mbv2_8xb32_in1k_calib32xb32_20230330_170909-364822ad.pth
   - Name: ptq_openvino_resnet18_8xb32_in1k_calib32xb32
@@ -31,7 +31,7 @@ Models:
       - Task: Image Classification
         Dataset: ImageNet-1k
         Metrics:
-          Top 1 Accuracy: 69.766
+          Top 1 Accuracy: 69.742
     Config: configs/quantization/ptq/base/ptq_openvino_resnet18_8xb32_in1k_calib32xb32.py
     Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_resnet18_8xb32_in1k_calib32xb32_20230330_163655-2386d965.pth
   - Name: ptq_openvino_resnet50_8xb32_in1k_calib32xb32
@@ -47,7 +47,7 @@ Models:
       - Task: Image Classification
         Dataset: ImageNet-1k
         Metrics:
-          Top 1 Accuracy: 76.338
+          Top 1 Accuracy: 76.374
     Config: configs/quantization/ptq/base/ptq_openvino_resnet50_8xb32_in1k_calib32xb32.py
     Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_resnet50_8xb32_in1k_calib32xb32_20230330_170115-2acd6014.pth
   - Name: ptq_openvino_retina_r50_1x_coco_calib32xb32
