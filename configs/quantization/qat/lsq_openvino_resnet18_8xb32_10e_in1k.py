@@ -54,7 +54,8 @@ train_cfg = dict(
     _delete_=True,
     type='mmrazor.LSQEpochBasedLoop',
     max_epochs=10,
-    val_interval=1)
+    val_interval=1,
+    freeze_bn_begin=1)
 val_cfg = dict(_delete_=True, type='mmrazor.QATValLoop')
 
 # Make sure the buffer such as min_val/max_val in saved checkpoint is the same
