@@ -7,7 +7,7 @@ import torch.nn.functional as F
 
 from mmrazor.models.architectures.dynamic_ops import (DynamicConv2d,
                                                       DynamicLinear)
-from .utils import ModuleProtocol
+from .utils import ModuleProtocol, torch_setting
 
 
 class SparseGptMixIn(ModuleProtocol):
@@ -89,95 +89,97 @@ class SparseGptMixIn(ModuleProtocol):
 
     @torch.no_grad()
     def prune_24(self):
-        # Converted from https://github.com/ist-daslab/sparsegpt
-        percdamp = 0.01
-        blocksize = 128
-        prunem = 4
-        prunen = 2
-        sparsity = 0.5
+        with torch_setting(dtype=torch.float):
+            # Converted from https://github.com/ist-daslab/sparsegpt
+            percdamp = 0.01
+            blocksize = 128
+            prunem = 4
+            prunen = 2
+            sparsity = 0.5
 
-        assert self.hessian is not None
-        W: torch.Tensor = self.weight_matrix.float()  # out in
+            assert self.hessian is not None
+            W: torch.Tensor = self.weight_matrix.float()  # out in
 
-        H = self.hessian
+            H = self.hessian
 
-        dead = torch.diag(H) == 0
-        H[dead, dead] = 1
-        W[:, dead] = 0
+            dead = torch.diag(H) == 0
+            H[dead, dead] = 1
+            W[:, dead] = 0
 
-        Losses = torch.zeros(self.rows, device=W.device)
+            Losses = torch.zeros(self.rows, device=W.device)
 
-        damp = percdamp * torch.mean(torch.diag(H))
-        diag = torch.arange(self.columns, device=W.device)
-        H[diag, diag] += damp
-        H = torch.linalg.cholesky(H)
-        H = torch.cholesky_inverse(H)
-        H = torch.linalg.cholesky(H, upper=True)
-        Hinv = H
+            damp = percdamp * torch.mean(torch.diag(H))
+            diag = torch.arange(self.columns, device=W.device)
+            H[diag, diag] += damp
+            H = torch.linalg.cholesky(H)
+            H = torch.cholesky_inverse(H)
+            H = torch.linalg.cholesky(H, upper=True)
+            Hinv = H
 
-        mask = None
+            mask = None
 
-        for i1 in range(0, self.columns, blocksize):
-            i2 = min(i1 + blocksize, self.columns)
-            count = i2 - i1
+            for i1 in range(0, self.columns, blocksize):
+                i2 = min(i1 + blocksize, self.columns)
+                count = i2 - i1
 
-            W1 = W[:, i1:i2].clone()
-            Q1 = torch.zeros_like(W1)
-            Err1 = torch.zeros_like(W1)
-            Losses1 = torch.zeros_like(W1)
-            Hinv1 = Hinv[i1:i2, i1:i2]
+                W1 = W[:, i1:i2].clone()
+                Q1 = torch.zeros_like(W1)
+                Err1 = torch.zeros_like(W1)
+                Losses1 = torch.zeros_like(W1)
+                Hinv1 = Hinv[i1:i2, i1:i2]
 
-            if prunen == 0:
-                if mask is not None:
-                    mask1 = mask[:, i1:i2]
+                if prunen == 0:
+                    if mask is not None:
+                        mask1 = mask[:, i1:i2]
+                    else:
+                        tmp = W1**2 / (torch.diag(Hinv1).reshape((1, -1)))**2
+                        thresh = torch.sort(tmp.flatten())[0][int(tmp.numel() *
+                                                                  sparsity)]
+                        mask1 = tmp <= thresh
                 else:
-                    tmp = W1**2 / (torch.diag(Hinv1).reshape((1, -1)))**2
-                    thresh = torch.sort(tmp.flatten())[0][int(tmp.numel() *
-                                                              sparsity)]
-                    mask1 = tmp <= thresh
+                    mask1 = torch.zeros_like(W1) == 1
+
+                for i in range(count):
+                    w = W1[:, i]
+                    d = Hinv1[i, i]
+
+                    if prunen != 0 and i % prunem == 0:
+                        tmp = W1[:, i:(i + prunem)]**2 / (torch.diag(Hinv1)[i:(
+                            i + prunem)].reshape((1, -1)))**2
+                        mask1.scatter_(
+                            1, i +
+                            torch.topk(tmp, prunen, dim=1, largest=False)[1],
+                            True)
+
+                    q = w.clone()
+                    q[mask1[:, i]] = 0
+
+                    Q1[:, i] = q
+                    Losses1[:, i] = (w - q)**2 / d**2
+
+                    err1 = (w - q) / d
+                    W1[:,
+                       i:] -= err1.unsqueeze(1).matmul(Hinv1[i,
+                                                             i:].unsqueeze(0))
+                    Err1[:, i] = err1
+
+                W[:, i1:i2] = Q1
+                Losses += torch.sum(Losses1, 1) / 2
+
+                W[:, i2:] -= Err1.matmul(Hinv[i1:i2, i2:])
+
+            torch.cuda.synchronize()
+            from .sparse24_utils import is_weight_sparse_24
+            assert is_weight_sparse_24(
+                W, -1), f'Weight dose not satisfy 24 with shape {W.shape}'
+            error = torch.sum(Losses)
+
+            if torch.isnan(error).any():
+                raise Exception('get nan error')
             else:
-                mask1 = torch.zeros_like(W1) == 1
+                self.weight_matrix = W.data
 
-            for i in range(count):
-                w = W1[:, i]
-                d = Hinv1[i, i]
-
-                if prunen != 0 and i % prunem == 0:
-                    tmp = W1[:, i:(i + prunem)]**2 / (torch.diag(Hinv1)[i:(
-                        i + prunem)].reshape((1, -1)))**2
-                    mask1.scatter_(
-                        1,
-                        i + torch.topk(tmp, prunen, dim=1, largest=False)[1],
-                        True)
-
-                q = w.clone()
-                q[mask1[:, i]] = 0
-
-                Q1[:, i] = q
-                Losses1[:, i] = (w - q)**2 / d**2
-
-                err1 = (w - q) / d
-                W1[:, i:] -= err1.unsqueeze(1).matmul(Hinv1[i,
-                                                            i:].unsqueeze(0))
-                Err1[:, i] = err1
-
-            W[:, i1:i2] = Q1
-            Losses += torch.sum(Losses1, 1) / 2
-
-            W[:, i2:] -= Err1.matmul(Hinv[i1:i2, i2:])
-
-        torch.cuda.synchronize()
-        from .sparse24_utils import is_weight_sparse_24
-        assert is_weight_sparse_24(
-            W, -1), f'Weight dose not satisfy 24 with shape {W.shape}'
-        error = torch.sum(Losses)
-
-        if torch.isnan(error).any():
-            raise Exception('get nan error')
-        else:
-            self.weight_matrix = W.data
-
-        return error
+            return error
 
 
 # SparseGpt Ops for Linear and Conv2d

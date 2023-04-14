@@ -84,18 +84,39 @@ class memory_efficient_forward:
 
     def __init__(self,
                  model: nn.Module,
+                 enabled=True,
                  device=torch.device('cuda:0'),
                  wrap_modules=[]) -> None:
         self.model = model
         self.device = device
         self.wrap_modules = wrap_modules
+        self.enabled = enabled
+        self.handlers: list = []
+
+        if not enabled:
+            model.to(device)
 
     def __enter__(self, ):
-        handles, blocks = enable_efficient_forward(self.model, self.device,
-                                                   self.wrap_modules)
-        print_log(f'enable memory efficient forward for {blocks}')
-        self.handlers = handles
+        if self.enabled:
+            handles, blocks = enable_efficient_forward(self.model, self.device,
+                                                       self.wrap_modules)
+            print_log(f'enable memory efficient forward for {blocks}')
+            self.handlers = handles
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         for h in self.handlers:
             h.remove()
+
+
+class torch_setting():
+
+    def __init__(self, dtype=None) -> None:
+        self.origianl_dtype = torch.get_default_dtype()
+        self.dtype = dtype
+
+    def __enter__(self):
+        if self.dtype is not None:
+            torch.set_default_dtype(self.dtype)
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        torch.set_default_dtype(self.origianl_dtype)
