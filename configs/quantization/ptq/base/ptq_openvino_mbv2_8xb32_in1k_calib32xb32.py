@@ -1,6 +1,6 @@
 _base_ = [
     'mmcls::mobilenet_v2/mobilenet-v2_8xb32_in1k.py',
-    '../deploy_cfgs/mmcls/classification_openvino_dynamic-224x224.py'
+    '../../deploy_cfgs/mmcls/classification_openvino_dynamic-224x224.py'
 ]
 
 val_dataloader = dict(batch_size=32)

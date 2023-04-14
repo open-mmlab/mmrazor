@@ -1,6 +1,6 @@
 _base_ = [
     'mmdet::retinanet/retinanet_r50_fpn_1x_coco.py',
-    '../deploy_cfgs/mmdet/detection_openvino_dynamic-800x1344.py'
+    '../../deploy_cfgs/mmdet/detection_openvino_dynamic-800x1344.py'
 ]
 
 val_dataloader = dict(batch_size=32)

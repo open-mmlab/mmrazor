@@ -1,31 +1,31 @@
 Import:
-  - configs/distill/mmseg/cwd/metafile.yml
-  - configs/distill/mmdet/cwd/metafile.yml
-  - configs/distill/mmcls/wsld/metafile.yml
-  - configs/distill/mmcls/rkd/metafile.yml
-  - configs/nas/mmcls/spos/metafile.yml
-  - configs/distill/mmcls/abloss/metafile.yml
-  - configs/distill/mmcls/byot/metafile.yml
-  - configs/distill/mmcls/dafl/metafile.yml
-  - configs/distill/mmcls/dfad/metafile.yml
-  - configs/distill/mmcls/dkd/metafile.yml
-  - configs/distill/mmcls/fitnets/metafile.yml
-  - configs/distill/mmcls/kd/metafile.yml
-  - configs/distill/mmcls/zskt/metafile.yml
-  - configs/distill/mmdet/fbkd/metafile.yml
-  - configs/distill/mmcls/factor_transfer/metafile.yml
-  - configs/distill/mmcls/ofd/metafile.yml
-  - configs/nas/mmcls/autoslim/metafile.yml
-  - configs/nas/mmcls/darts/metafile.yml
-  - configs/nas/mmdet/detnas/metafile.yml
-  - configs/distill/mmdet/pkd/metafile.yml
-  - configs/distill/mmdet3d/pkd/metafile.yml
-  - configs/distill/mmcls/deit/metafile.yml
-  - configs/pruning/mmcls/group_fisher/mobilenet/metafile.yml
-  - configs/pruning/mmcls/group_fisher/resnet50/metafile.yml
-  - configs/pruning/mmdet/group_fisher/retinanet/metafile.yml
-  - configs/pruning/mmcls/l1-norm/metafile.yml
-  - configs/pruning/mmcls/dmcp/metafile.yml
+  # - configs/distill/mmseg/cwd/metafile.yml
+  # - configs/distill/mmdet/cwd/metafile.yml
+  # - configs/distill/mmcls/wsld/metafile.yml
+  # - configs/distill/mmcls/rkd/metafile.yml
+  # - configs/nas/mmcls/spos/metafile.yml
+  # - configs/distill/mmcls/abloss/metafile.yml
+  # - configs/distill/mmcls/byot/metafile.yml
+  # - configs/distill/mmcls/dafl/metafile.yml
+  # - configs/distill/mmcls/dfad/metafile.yml
+  # - configs/distill/mmcls/dkd/metafile.yml
+  # - configs/distill/mmcls/fitnets/metafile.yml
+  # - configs/distill/mmcls/kd/metafile.yml
+  # - configs/distill/mmcls/zskt/metafile.yml
+  # - configs/distill/mmdet/fbkd/metafile.yml
+  # - configs/distill/mmcls/factor_transfer/metafile.yml
+  # - configs/distill/mmcls/ofd/metafile.yml
+  # - configs/nas/mmcls/autoslim/metafile.yml
+  # - configs/nas/mmcls/darts/metafile.yml
+  # - configs/nas/mmdet/detnas/metafile.yml
+  # - configs/distill/mmdet/pkd/metafile.yml
+  # - configs/distill/mmdet3d/pkd/metafile.yml
+  # - configs/distill/mmcls/deit/metafile.yml
+  # - configs/pruning/mmcls/group_fisher/mobilenet/metafile.yml
+  # - configs/pruning/mmcls/group_fisher/resnet50/metafile.yml
+  # - configs/pruning/mmdet/group_fisher/retinanet/metafile.yml
+  # - configs/pruning/mmcls/l1-norm/metafile.yml
+  # - configs/pruning/mmcls/dmcp/metafile.yml
   - configs/quantization/ptq/base/metafile.yml
-  - configs/quantization/qat/base/metafile.yml
+  # - configs/quantization/qat/base/metafile.yml
   - configs/quantization/qat/lsq/metafile.yml

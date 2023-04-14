@@ -1,6 +1,6 @@
 _base_ = [
     'mmdet::retinanet/retinanet_r50_fpn_1x_coco.py',
-    '../deploy_cfgs/mmdet/detection_tensorrt-int8-explicit_dynamic-320x320-1344x1344.py'  # noqa: E501
+    '../../deploy_cfgs/mmdet/detection_tensorrt-int8-explicit_dynamic-320x320-1344x1344.py'  # noqa: E501
 ]
 
 val_dataloader = dict(batch_size=32)

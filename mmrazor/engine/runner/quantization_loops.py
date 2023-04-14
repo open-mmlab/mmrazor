@@ -370,6 +370,8 @@ class PTQLoop(TestLoop):
             print_log(f'Quantized model is saved in {save_dir}')
 
         print_log('Start Evaluating quantized model...')
+        self.runner.model.apply(enable_fake_quant)
+        self.runner.model.apply(disable_observer)
         metricts = self.runner.val_loop.run()
         self.runner.call_hook('after_test_epoch', metrics=metricts)
         self.runner.call_hook('after_test')

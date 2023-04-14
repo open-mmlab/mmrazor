@@ -1,6 +1,6 @@
 _base_ = [
     'mmdet::yolox/yolox_s_8xb8-300e_coco.py',
-    '../deploy_cfgs/mmdet/detection_openvino_dynamic-800x1344.py'
+    '../../deploy_cfgs/mmdet/detection_openvino_dynamic-800x1344.py'
 ]
 
 val_dataloader = dict(batch_size=32)

@@ -1,6 +1,6 @@
 _base_ = [
     'mmdet::yolox/yolox_s_8xb8-300e_coco.py',
-    '../deploy_cfgs/mmdet/detection_tensorrt-int8-explicit_dynamic-320x320-1344x1344.py'  # noqa: E501
+    '../../deploy_cfgs/mmdet/detection_tensorrt-int8-explicit_dynamic-320x320-1344x1344.py'  # noqa: E501
 ]
 
 val_dataloader = dict(batch_size=32)
