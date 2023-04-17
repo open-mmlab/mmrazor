@@ -1,3 +1,4 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 # model settings
 import os.path as osp
 
@@ -77,7 +78,7 @@ def eval(model: nn.Module,
 @torch.no_grad()
 def infer(model: nn.Module,
           dataloader: torch.utils.data.DataLoader,
-          num_batchs=256,
+          num_samples=256,
           device=torch.device('cuda:0')):
     model.eval()
     with torch.no_grad():
@@ -87,20 +88,44 @@ def infer(model: nn.Module,
             model(x)
             B = x.shape[0]
             accumulate_batch += B
-            if accumulate_batch > num_batchs:
+            if accumulate_batch > num_samples:
                 break
 
 
 if __name__ == '__main__':
+    import argparse
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument(
+        '--data',
+        type=str,
+        default='data/imagenet_torch',
+        help='path to imagenet in torch  folder format')
+    arg_parser.add_argument(
+        '--num_samples',
+        type=int,
+        default=512,
+        help='number of samples to estimate hessian matrix')
+    arg_parser.add_argument(
+        '--batch_size',
+        type=int,
+        default=128,
+        help='batch size for evaluation and inference')
+    args = arg_parser.parse_args()
+
+    data_path = args.data
+    num_samples = args.num_samples
+    batch_size = args.batch_size
 
     model = torchvision.models.resnet18(pretrained=True).cuda()
-    train_loader, test_loader = get_dataloaders(256, 4, 'data/imagenet_torch')
+    train_loader, test_loader = get_dataloaders(batch_size, 4, data_path)
 
-    mutator = sparse_gpt.SparseGptMutator.init_from_a_model(model)
+    mutator = sparse_gpt.SparseGptMutator()
+    mutator.prepare_from_supernet(model)
     mutator.start_init_hessian()
-    infer(model, test_loader, num_batchs=512)
+    infer(model, test_loader, num_samples=num_samples)
     mutator.end_init_hessian()
     mutator.prune_24()
+    model = mutator.to_static_model(model)
 
     print('start evaluation')
     model = model.cuda()
