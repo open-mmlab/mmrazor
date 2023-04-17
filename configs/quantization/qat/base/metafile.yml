@@ -2,7 +2,7 @@ Collections:
   - Name: QAT
     README: configs/quantization/qat/base/README.md
 Models:
-  - Name: qat_openvino_resnet18_8xb32_in1k
+  - Name: qat_openvino_resnet18_10e_8xb32_in1k.py
     In Collection: QAT
     Metadata:
       Backend: openvino
@@ -15,6 +15,6 @@ Models:
       - Task: Image Classification
         Dataset: ImageNet-1k
         Metrics:
-          Top 1 Accuracy: 70.06
-    Config: configs/quantization/qat/base/qat_openvino_resnet18_8xb32_in1k.py
-    Weights: https://download.openmmlab.com/mmrazor/v1/quantization/qat/openvino/lsq_openvino_resnet18_8xb32_in1k_20230402_173316-0d441f23.pth
+          Top 1 Accuracy: 69.98
+    Config: configs/quantization/qat/base/qat_openvino_resnet18_10e_8xb32_in1k.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/quantization/qat/openvino/qat_openvino_resnet18_8xb32_10e_in1k_20230413_172732-5b9ff01d.pth

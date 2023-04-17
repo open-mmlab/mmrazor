@@ -19,7 +19,7 @@ Import:
   - configs/nas/mmcls/darts/metafile.yml
   - configs/nas/mmdet/detnas/metafile.yml
   - configs/distill/mmdet/pkd/metafile.yml
-  # - configs/distill/mmdet3d/pkd/metafile.yml
+  - configs/distill/mmdet3d/pkd/metafile.yml
   - configs/distill/mmcls/deit/metafile.yml
   - configs/pruning/mmcls/group_fisher/mobilenet/metafile.yml
   - configs/pruning/mmcls/group_fisher/resnet50/metafile.yml
@@ -27,5 +27,5 @@ Import:
   - configs/pruning/mmcls/l1-norm/metafile.yml
   - configs/pruning/mmcls/dmcp/metafile.yml
   - configs/quantization/ptq/base/metafile.yml
-  # - configs/quantization/qat/base/metafile.yml
+  - configs/quantization/qat/base/metafile.yml
   - configs/quantization/qat/lsq/metafile.yml
