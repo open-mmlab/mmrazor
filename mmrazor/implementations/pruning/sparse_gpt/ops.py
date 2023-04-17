@@ -88,14 +88,9 @@ class SparseGptMixIn(ModuleProtocol):
     # prune
 
     @torch.no_grad()
-    def prune_24(self):
+    def prune(self, sparsity, prunen=0, prunem=0, blocksize=128, percdamp=.01):
         with torch_setting(dtype=torch.float):
             # Converted from https://github.com/ist-daslab/sparsegpt
-            percdamp = 0.01
-            blocksize = 128
-            prunem = 4
-            prunen = 2
-            sparsity = 0.5
 
             assert self.hessian is not None
             W: torch.Tensor = self.weight_matrix.float()  # out in
@@ -170,8 +165,9 @@ class SparseGptMixIn(ModuleProtocol):
 
             torch.cuda.synchronize()
             from .sparse24_utils import is_weight_sparse_24
-            assert is_weight_sparse_24(
-                W, -1), f'Weight dose not satisfy 24 with shape {W.shape}'
+            if prunen == 2 and prunem == 4:
+                assert is_weight_sparse_24(
+                    W, -1), f'Weight dose not satisfy 24 with shape {W.shape}'
             error = torch.sum(Losses)
 
             if torch.isnan(error).any():

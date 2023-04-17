@@ -43,7 +43,7 @@ class TestSparseGptOps(unittest.TestCase):
             infer(sparse_linear, random_data)
             sparse_linear.end_init_hessian()
 
-            sparse_linear.prune_24()
+            sparse_linear.prune()
 
             # compare
 

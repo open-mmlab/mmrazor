@@ -49,18 +49,32 @@ class SparseGptMutator():
             module.end_init_hessian()
 
     # prune
-
-    def prune_24(self, device=torch.device('cuda:0')):
+    def prune(self,
+              sparsity,
+              prunen=0,
+              prunem=0,
+              blocksize=128,
+              percdamp=.01,
+              device=torch.device('cuda:0')):
         for name, module in self.named_sparse_ops:
             try:
                 original_device = next(module.parameters()).device
-                module = module.to(device)
-                error = module.prune_24()
+                module: SparseGptMixIn = module.to(device)
+                error = module.prune(
+                    sparsity=sparsity,
+                    prunen=prunen,
+                    prunem=prunem,
+                    blocksize=blocksize,
+                    percdamp=percdamp,
+                )
                 print_log(f'prune {name} success \t error = {error}')
                 module.to(original_device)
                 torch.cuda.empty_cache()
             except Exception as e:
                 print_log(f'prune {name} failed as {e}')
+
+    def prune_24(self, device=torch.device('cuda:0')):
+        self.prune(0.5, prunen=2, prunem=4, device=device)
 
     # ops
 
