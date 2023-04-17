@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="resources/mmrazor-logo.png" width="600"/>
+  <img src="../../resources/mmrazor-logo.png" width="600"/>
 </div>
 
 # MMRazor Examples for Large Models
