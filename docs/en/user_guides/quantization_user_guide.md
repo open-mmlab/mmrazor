@@ -17,31 +17,30 @@ MMRazor's quantization is OpenMMLab's quantization toolkit, which has got throug
 MMRazor's quantization is based on `torch==1.13`. Other requirements are the same as MMRazor's
 ```
 
-Model quantization is in mmrazor, but quantized model deployment is in mmdeploy. So we need to use two branches as follows:
+Model quantization is in mmrazor, but quantized model deployment is in mmdeploy. So we need to the another branches as follows if we need to delopy our quantized model:
 
-mmrazor: https://github.com/open-mmlab/mmrazor/tree/quantize
-
-mmdeploy: https://github.com/humu789/mmdeploy/tree/adapt_razor_quantize
+mmdeploy:  https://github.com/open-mmlab/mmdeploy/tree/for_mmrazor
 
 1. Quantize the float model in mmrazor.
 
 ```Shell
 # For QAT (Quantization Aware Training)
-python tools/train.py ${CONFIG_FILE} [optional arguments]
+python tools/train.py ${CONFIG_PATH} [optional arguments]
 
 # For PTQ (Post-training quantization)
-python tools/ptq.py ${CONFIG_FILE} [optional arguments]
+python tools/ptq.py ${CONFIG_PATH} [optional arguments]
 ```
 
-2. Convert quantized model checkpoint in mmrazor. (required by model deployment)
+2. Evaluate the quantized model. (optional)
 
 ```Shell
-python tools/model_converters/convert_quant_ckpt.py ${CKPT_PATH}
+python tools/test.py ${CONFIG_PATH} ${CHECKPOINT_PATH}
 ```
 
 3. Export quantized model to a specific backend in mmdeploy. (required by model deployment)
 
 ```Shell
+# MODEL_CFG_PATH is the used config in mmrazor.
 python ./tools/deploy.py \
     ${DEPLOY_CFG_PATH} \
     ${MODEL_CFG_PATH} \
@@ -52,7 +51,7 @@ python ./tools/deploy.py \
 
 This step is the same as how to export an OpenMMLab model to a specific backend. For more details, please refer to [How to convert model](https://github.com/open-mmlab/mmdeploy/blob/master/docs/en/02-how-to-run/convert_model.md)
 
-4. Evaluate the exported model. (optional)
+4. Evaluate the quantized backend model. (optional)
 
 ```Shell
 python tools/test.py \
@@ -77,13 +76,16 @@ You can refer to the previous chapter Quick Run.
 Let us take `resnet50` as an example to show how to handle case 2.
 
 ```Python
-_base_ = ['mmcls::resnet/resnet18_8xb32_in1k.py']
+_base_ = [
+    'mmcls::resnet/resnet18_8xb32_in1k.py',
+    '../../deploy_cfgs/mmcls/classification_openvino_dynamic-224x224.py'
+]
 
-train_dataloader = dict(batch_size=32)
+val_dataloader = dict(batch_size=32)
 
 test_cfg = dict(
     type='mmrazor.PTQLoop',
-    calibrate_dataloader=train_dataloader,
+    calibrate_dataloader=val_dataloader,
     calibrate_steps=32,
 )
 
@@ -112,6 +114,7 @@ model = dict(
         # convert image from BGR to RGB
         to_rgb=True),
     architecture=_base_.model,
+    deploy_cfg=_base_.deploy_cfg,
     float_checkpoint=float_checkpoint,
     quantizer=dict(
         type='mmrazor.OpenVINOQuantizer',
@@ -209,6 +212,13 @@ FusedMovingAvgObsFakeQuantize
 Include some basic quantization configurations.
 
 `qdtype`: to specify whether quantized data type is sign or unsign. It can be chosen from \[ 'qint8',  'quint8' \]
+
+```{note}
+If your model need to be deployed, `qdtype` must be consistent with the dtype in the corresponding backendconfig. Otherwise fakequant will not be inserted in front of the specified OPs.
+
+backendconfigs dir:
+mmrazor/mmrazor/structures/quantization/backend_config
+```
 
 `bit`: to specify the quantized data bit. It can be chosen from \[1 ~ 16\].
 
