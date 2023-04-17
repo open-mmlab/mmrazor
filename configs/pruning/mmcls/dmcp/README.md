@@ -26,7 +26,7 @@ GPUS=32 sh tools/slurm_train.sh $PARTITION $JOB_NAME \
   --work-dir $WORK_DIR
 ```
 
-## Results and models
+<!-- ## Results and models
 
 ### 1.Classification
 
@@ -34,7 +34,7 @@ GPUS=32 sh tools/slurm_train.sh $PARTITION $JOB_NAME \
 | :------: | :---------: | :------------: | :-------: | :-------: | :------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------: |
 | ImageNet | MobilenetV2 | 319M(Supernet) |   72.30   |   90.42   |                   -                    |                                                                                                                              -                                                                                                                               |                                                  -                                                  |
 | ImageNet | MobilenetV2 |  209M(Subnet)  |   71.94   |   90.05   | [config](./dmcp_mbv2_subnet_32xb64.py) | [model](https://download.openmmlab.com/mmrazor/v1/pruning/dmcp/mobilenetv2/200M/DMCP_MBV2_200M.pth)  / [log](https://download.openmmlab.com/mmrazor/v1/pruning/dmcp/mobilenetv2/200M/dmcp_mobilenetv2_supernet_32xb64_target_flops_200m_20230129_184919.log) | [arch](https://download.openmmlab.com/mmrazor/v1/pruning/dmcp/mobilenetv2/200M/DMCP_MBV2_200M.json) |
-| ImageNet | MobilenetV2 |  102M(Subnet)  |   67.22   |   88.61   | [config](./dmcp_mbv2_subnet_32xb64.py) | [model](https://download.openmmlab.com/mmrazor/v1/pruning/dmcp/mobilenetv2/100M/DMCP_MBV2_100M.pth) / [log](https://download.openmmlab.com/mmrazor/v1/pruning/dmcp/mobilenetv2/100M/dmcp_mobilenetv2_supernet_32xb64_target_flops_100m_20230129_184919.log)  |                                   [arch\*](./DMCP_MBV2_100M.json)                                   |
+| ImageNet | MobilenetV2 |  102M(Subnet)  |   67.22   |   88.61   | [config](./dmcp_mbv2_subnet_32xb64.py) | [model](https://download.openmmlab.com/mmrazor/v1/pruning/dmcp/mobilenetv2/100M/DMCP_MBV2_100M.pth) / [log](https://download.openmmlab.com/mmrazor/v1/pruning/dmcp/mobilenetv2/100M/dmcp_mobilenetv2_supernet_32xb64_target_flops_100m_20230129_184919.log)  |                                   [arch\*](./DMCP_MBV2_100M.json)                                   | -->
 
 <!-- The result of Resnet50 has bugs. -->
 
@@ -42,12 +42,12 @@ GPUS=32 sh tools/slurm_train.sh $PARTITION $JOB_NAME \
 | ImageNet |  ResNet50   |  2.07G(Subnet)  |   76.11   |   93.01   | [config](./dmcp_resnet50_subnet_32xb64.py) |          [model](https://download.openmmlab.com/mmrazor/v1/pruning/dmcp/resnet50/2G/DMCP_R50_2G.pth)  / [log](https://download.openmmlab.com/mmrazor/v1/pruning/dmcp/resnet50/2G/dmcp_resnet50_supernet_32xb64_target_flops_2g_20230129_112944.log)          |                                    [arch\*](./DMCP_R50_2G.json)                                     |
 | ImageNet |  ResNet50   |  1.05G(Subnet)  |   74.12   |   92.33   | [config](./dmcp_resnet50_subnet_32xb64.py) |          [model](https://download.openmmlab.com/mmrazor/v1/pruning/dmcp/resnet50/1G/DMCP_R50_1G.pth) / [log](https://download.openmmlab.com/mmrazor/v1/pruning/dmcp/resnet50/1G/dmcp_resnet50_supernet_32xb64_target_flops_1g_20230107_223552.log)           |     [arch](https://download.openmmlab.com/mmrazor/v1/pruning/dmcp/resnet50/1G/DMCP_R50_1G.json)     | -->
 
-**Note**
+<!-- **Note**
 
 1. Arch with * are converted from the [official repo](https://github.com/Zx55/dmcp).
 2. To get the sub-network structure with different pruning rates, we support modifying `target_flops` in `model` in the supernet config, note that here it is in MFLOPs. For example, `target_flops=1000` means get subnet with 1GFLOPs.
 3. When outputting the sampled sub-network, the FLOPs will fluctuate around 5% around the target value for efficiency.
-4. More models with different pruning rates will be released later.
+4. More models with different pruning rates will be released later. -->
 
 ## Citation
 
