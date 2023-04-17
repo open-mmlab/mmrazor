@@ -103,7 +103,7 @@ jobs:
           pip install -U openmim
           mim install 'mmcv >= 2.0.0rc1'
       - name: Install MMCls
-        run: pip install git+https://github.com/open-mmlab/mmclassification.git@main
+        run: pip install 'mmcls>=1.0.0rc0'
       - name: Install MMDet
         run: pip install git+https://github.com/open-mmlab/mmdetection.git@main
       - name: Install MMSeg
