@@ -15,7 +15,8 @@ def parse_args():
 metric_mapping = {
     'Top 1 Accuracy': 'accuracy/top1',
     'Top 5 Accuracy': 'accuracy/top5',
-    'box AP': 'coco/bbox_mAP'
+    'box AP': 'coco/bbox_mAP',
+    'mIoU': 'mIoU'
 }
 
 
