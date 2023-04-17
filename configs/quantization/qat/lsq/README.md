@@ -12,9 +12,10 @@ Deep networks run with low precision operations at inference time offer power an
 
 ### Classification
 
-| Model    | Dataset  | Backend  | Acc-fp32 | Acc-int8 | Acc-deployed | Download     |
-| -------- | -------- | -------- | -------- | -------- | ------------ | ------------ |
-| resnet18 | ImageNet | openvino |          |          |              | model \| log |
+| Model    | Dataset  | Backend  | Top 1 Acc（fp32） | Top 1 Acc（int8） | Max Epochs | Config       | Download                                                                                                                                                                                                                                                                                         |
+| -------- | -------- | -------- | --------------- | --------------- | ---------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| resnet18 | ImageNet | openvino | 69.90           | 69.742          | 10         | [config](<>) | [model](https://download.openmmlab.com/mmrazor/v1/quantization/qat/openvino/lsq_openvino_resnet18_8xb32_10e_in1k_20230413_224237-36eac1f1.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/quantization/qat/openvino/lsq_openvino_resnet18_8xb32_10e_in1k_20230413_224237-36eac1f1.log)   |
+| resnet18 | ImageNet | openvino | 69.90           | 69.742          | 100        | [config](<>) | [model](https://download.openmmlab.com/mmrazor/v1/quantization/qat/openvino/lsq_openvino_resnet18_8xb32_100e_in1k_20230402_173316-ca5993bf.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/quantization/qat/openvino/lsq_openvino_resnet18_8xb32_100e_in1k_20230402_173316-ca5993bf.log) |
 
 ## Citation
 
@@ -30,14 +31,16 @@ Deep networks run with low precision operations at inference time offer power an
 
 ## Getting Started
 
-### Train
+**QAT for pretrain model**
 
-```python
-python tools/train.py ${CONFIG_FILE}
+```
+python tools/train.py ${CONFIG}
 ```
 
-### Test
+**Test for quantized model**
 
-```python
-python tools/test.py ${CONFIG_FILE} ${CHECKPOINT_PATH}
 ```
+python tools/test.py ${CONFIG} ${CKPT}
+```
+
+For more details, please refer to [Quantization Get Start](<>)

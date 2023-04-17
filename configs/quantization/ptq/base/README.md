@@ -12,9 +12,23 @@ While neural networks have advanced the frontiers in many applications, they oft
 
 ### Classification
 
-| Model    | Dataset  | Backend  | Acc-fp32 | Acc-int8 | Acc-deployed | Download     |
-| -------- | -------- | -------- | -------- | -------- | ------------ | ------------ |
-| resnet18 | ImageNet | openvino |          |          |              | model \| log |
+| Model        | Dataset  | Backend  | Top 1 Acc（fp32） | Top 1 Acc（int8） | Top 1 Acc（deployed） | Config                                                      | Download                                                                                                                                                                                                                                                                                                       |
+| ------------ | -------- | -------- | --------------- | --------------- | ------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| resnet18     | ImageNet | openvino | 69.90           | 69.742          | 69.74               | [config](./ptq_openvino_resnet18_8xb32_in1k_calib32xb32.py) | [model](https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_resnet18_8xb32_in1k_calib32xb32_20230330_163655-2386d965.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_resnet18_8xb32_in1k_calib32xb32_20230330_163655-2386d965.log) |
+| resnet50     | ImageNet | openvino | 76.55           | 76.374          | 76.378              | [config](./ptq_openvino_resnet50_8xb32_in1k_calib32xb32.py) | [model](https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_resnet50_8xb32_in1k_calib32xb32_20230330_170115-2acd6014.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_resnet50_8xb32_in1k_calib32xb32_20230330_170115-2acd6014.log) |
+| mobilenet_v2 | ImageNet | openvino | 71.86           | 70.224          | 70.292              | [config](./ptq_openvino_mbv2_8xb32_in1k_calib32xb32.py)     | [model](https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_mbv2_8xb32_in1k_calib32xb32_20230330_170909-364822ad.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_mbv2_8xb32_in1k_calib32xb32_20230330_170909-364822ad.log)         |
+| resnet18     | ImageNet | tensorrt | 69.90           | 69.762          | 69.85               | [config](./ptq_tensorrt_resnet18_8xb32_in1k_calib32xb32.py) | [model](https://download.openmmlab.com/mmrazor/v1/quantization/ptq/tensorrt/ptq_tensorrt_resnet18_8xb32_in1k_calib32xb32_20230331_144323-640b272e.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/quantization/ptq/tensorrt/ptq_tensorrt_resnet18_8xb32_in1k_calib32xb32_20230331_144323-640b272e.log) |
+| resnet50     | ImageNet | tensorrt | 76.55           | 76.372          | 76.374              | [config](./ptq_tensorrt_resnet50_8xb32_in1k_calib32xb32.py) | [model](https://download.openmmlab.com/mmrazor/v1/quantization/ptq/tensorrt/ptq_tensorrt_resnet50_8xb32_in1k_calib32xb32_20230331_145011-d2da300f.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/quantization/ptq/tensorrt/ptq_tensorrt_resnet50_8xb32_in1k_calib32xb32_20230331_145011-d2da300f.log) |
+| mobilenet_v2 | ImageNet | tensorrt | 71.86           | 70.324          | 70.548              | [config](./ptq_tensorrt_mbv2_8xb32_in1k_calib32xb32.py)     | [model](https://download.openmmlab.com/mmrazor/v1/quantization/ptq/tensorrt/ptq_tensorrt_mbv2_8xb32_in1k_calib32xb32_20230331_153131-335988e4.pth) \| [log](https://download.openmmlab.com/mmrazor/v1/quantization/ptq/tensorrt/ptq_tensorrt_mbv2_8xb32_in1k_calib32xb32_20230331_153131-335988e4.log)         |
+
+### Detection
+
+| Model          | Dataset | Backend  | box AP（fp32） | box AP（int8） | box AP（deployed） | Config                                                         | Download                 |
+| -------------- | ------- | -------- | ------------ | ------------ | ---------------- | -------------------------------------------------------------- | ------------------------ |
+| retina_r50_fpn | COCO    | openvino | 36.5         | 36.3         | 36.3             | [config](./ptq_openvino_retina_r50_1x_coco_calib32xb32.py)     | [model](<>) \| [log](<>) |
+| yolox_s        | COCO    | openvino | 40.5         | 38.5         | 38.5             | [config](./ptq_openvino_yolox_s_8xb8-300e_coco_calib32xb32.py) | [model](<>) \| [log](<>) |
+| retina_r50_fpn | COCO    | tensorrt | 36.5         | 36.2         | 36.3             | [config](./ptq_tensorrt_retina_r50_1x_coco_calib32xb32.py)     | [model](<>) \| [log](<>) |
+| yolox_s        | COCO    | tensorrt | 40.5         | 38.8         | 39.3             | [config](./ptq_tensorrt_yolox_s_8xb8-300e_coco_calib32xb32.py) | [model](<>) \| [log](<>) |
 
 ## Citation
 
@@ -30,14 +44,16 @@ While neural networks have advanced the frontiers in many applications, they oft
 
 ## Getting Started
 
-### Train
+**PTQ for pretrain model**
 
-```python
-python tools/train.py ${CONFIG_FILE}
+```
+python tools/ptq.py ${CONFIG}
 ```
 
-### Test
+**Test for quantized model**
 
-```python
-python tools/test.py ${CONFIG_FILE} ${CHECKPOINT_PATH}
 ```
+python tools/test.py ${CONFIG} ${CKPT}
+```
+
+For more details, please refer to [Quantization Get Start](<>)
