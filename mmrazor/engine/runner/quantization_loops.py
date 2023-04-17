@@ -11,11 +11,13 @@ try:
     from torch.nn.intrinsic.qat import freeze_bn_stats
 except ImportError:
     from mmrazor.utils import get_placeholder
+
     disable_observer = get_placeholder('torch>=1.13')
     enable_fake_quant = get_placeholder('torch>=1.13')
     enable_observer = get_placeholder('torch>=1.13')
     freeze_bn_stats = get_placeholder('torch>=1.13')
 
+from mmengine.dist import all_reduce_params, is_distributed
 from torch.utils.data import DataLoader
 
 from mmrazor.models import register_torch_fake_quants, register_torch_observers
@@ -69,7 +71,18 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
         """Toggle the state of the observers and fake quantizers before qat
         training."""
         self.runner.model.apply(enable_fake_quant)
-        self.runner.model.apply(enable_observer)
+
+        # The initialized _epoch equals to 0 so _epoch + 1
+        # equal to the current epoch
+        if (self.disable_observer_begin > 0
+                and self._epoch + 1 >= self.disable_observer_begin):
+            self.runner.model.apply(disable_observer)
+        else:
+            self.runner.model.apply(enable_observer)
+
+        if (self.freeze_bn_begin > 0
+                and self._epoch + 1 >= self.freeze_bn_begin):
+            self.runner.model.apply(freeze_bn_stats)
 
     def prepare_for_val(self):
         """Toggle the state of the observers and fake quantizers before
@@ -89,8 +102,6 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
             if (self.runner.val_loop is not None
                     and self._epoch >= self.val_begin
                     and self._epoch % self.val_interval == 0):
-                # observer disabled during evaluation
-                self.prepare_for_val()
                 self.runner.val_loop.run()
 
         self.runner.call_hook('after_train')
@@ -100,18 +111,13 @@ class QATEpochBasedLoop(EpochBasedTrainLoop):
         self.runner.call_hook('before_train_epoch')
         self.runner.model.train()
 
-        # The initialized _epoch equals to 0 so _epoch + 1
-        # equal to the current epoch
-        if self._epoch + 1 >= self.disable_observer_begin:
-            self.runner.model.apply(disable_observer)
-
-        if self._epoch + 1 >= self.freeze_bn_begin:
-            self.runner.model.apply(freeze_bn_stats)
-
         for idx, data_batch in enumerate(self.dataloader):
             self.run_iter(idx, data_batch)
 
         self.runner.model.sync_qparams(src_mode='loss')
+        # Make sure the registered buffer such as `observer_enabled` is
+        # correct in the saved checkpoint.
+        self.prepare_for_val()
         self.runner.call_hook('after_train_epoch')
         self._epoch += 1
 
@@ -156,11 +162,16 @@ class LSQEpochBasedLoop(QATEpochBasedLoop):
             dynamic_intervals=dynamic_intervals)
 
         self.is_first_batch = True
+        self.distributed = is_distributed()
 
     def prepare_for_run_epoch(self):
         """Toggle the state of the observers and fake quantizers before qat
         training."""
-        pass
+        if (self.freeze_bn_begin > 0
+                and self._epoch + 1 >= self.freeze_bn_begin):
+            self.runner.model.apply(freeze_bn_stats)
+
+        self.runner.model.apply(enable_param_learning)
 
     def prepare_for_val(self):
         """Toggle the state of the observers and fake quantizers before
@@ -172,20 +183,30 @@ class LSQEpochBasedLoop(QATEpochBasedLoop):
         self.runner.call_hook('before_train_epoch')
         self.runner.model.train()
 
-        # TODO freeze bn
-        if self._epoch + 1 >= self.freeze_bn_begin:
-            self.runner.model.apply(freeze_bn_stats)
-
         for idx, data_batch in enumerate(self.dataloader):
             if self.is_first_batch:
-                # lsq init
-                self.is_first_batch = False
+                # lsq observer init
                 self.runner.model.apply(enable_static_estimate)
-            else:
-                self.runner.model.apply(enable_param_learning)
+
             self.run_iter(idx, data_batch)
 
+            if self.is_first_batch:
+                # In the first batch, scale in LearnableFakeQuantize is
+                # calculated through lsq observer. As the values of `scale` of
+                # different observers in different rank are usually different,
+                # we have to sync the `scale` here.
+                if self.distributed:
+                    all_reduce_params(
+                        self.runner.model.parameters(), op='mean')
+
+                # Change back to param learning mode
+                self.is_first_batch = False
+                self.runner.model.apply(enable_param_learning)
+
         self.runner.model.sync_qparams(src_mode='loss')
+        # Make sure the registered buffer such as `observer_enabled` is
+        # correct in the saved checkpoint.
+        self.prepare_for_val()
         self.runner.call_hook('after_train_epoch')
         self._epoch += 1
 
