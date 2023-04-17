@@ -1,13 +1,13 @@
 Models:
-  - Name: dmcp_resnet50_subnet_32xb64
-    In Collection: DMCP
-    Config: configs/pruning/mmcls/dmcp/dmcp_resnet50_subnet_32xb64.py
-    Weights: https://download.openmmlab.com/mmrazor/v1/pruning/dmcp/resnet50/2G/DMCP_R50_2G.pth
-    Results:
-      - Task: Image Classification
-        Dataset: ImageNet-1k
-        Metrics:
-          Top 1 Accuracy: 76.11
+  # - Name: dmcp_resnet50_subnet_32xb64
+  #   In Collection: DMCP
+  #   Config: configs/pruning/mmcls/dmcp/dmcp_resnet50_subnet_32xb64.py
+  #   Weights: https://download.openmmlab.com/mmrazor/v1/pruning/dmcp/resnet50/2G/DMCP_R50_2G.pth
+  #   Results:
+  #     - Task: Image Classification
+  #       Dataset: ImageNet-1k
+  #       Metrics:
+  #         Top 1 Accuracy: 76.11
   - Name: dmcp_mbv2_subnet_32xb64
     In Collection: DMCP
     Config: configs/pruning/mmcls/dmcp/dmcp_mbv2_subnet_32xb64.py
