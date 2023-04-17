@@ -203,9 +203,6 @@ class LSQEpochBasedLoop(QATEpochBasedLoop):
                 self.is_first_batch = False
                 self.runner.model.apply(enable_param_learning)
 
-            if idx > 100:
-                break
-
         self.runner.model.sync_qparams(src_mode='loss')
         # Make sure the registered buffer such as `observer_enabled` is
         # correct in the saved checkpoint.
