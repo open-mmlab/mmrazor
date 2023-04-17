@@ -43,9 +43,26 @@ class TestSparseGptOps(unittest.TestCase):
             infer(sparse_linear, random_data)
             sparse_linear.end_init_hessian()
 
-            sparse_linear.prune_24()
+            sparse_linear.prune()
 
             # compare
 
             print('norm:', linear(data_0).norm(2))
             print('distance:', get_loss(linear, sparse_linear, data_0))
+
+    @torch.no_grad()
+    def test_model(self):
+        import torchvision
+        model = torchvision.models.resnet18()
+
+        mutator = sparse_gpt.SparseGptMutator()
+        mutator.prepare_from_supernet(model)
+
+        x = torch.rand(10, 3, 224, 224)
+        mutator.start_init_hessian()
+        model(x)
+        mutator.end_init_hessian()
+        mutator.prune_24()
+
+        model = mutator.to_static_model(model)
+        assert type(model.conv1) is nn.Conv2d
