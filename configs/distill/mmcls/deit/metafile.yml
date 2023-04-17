@@ -30,5 +30,5 @@ Models:
         Metrics:
           Top 1 Accuracy: 83.24
           Top 5 Accuracy: 96.33
-    Weights: https://download.openmmlab.com/mmrazor/v1/deit/deit-base/deit-base_regnety160_pt-16xb64_in1k_20221011_113403-a67bf475.pth?versionId=CAEQThiBgMCFteW0oBgiIDdmMWY2NGRiOGY1YzRmZWZiOTExMzQ2NjNlMjk2Nzcz
+    Weights: https://download.openmmlab.com/mmrazor/v1/deit/deit-base/deit-base_regnety160_pt-16xb64_in1k_20221011_113403-a67bf475.pth
     Config: configs/distill/mmcls/deit/deit-base_regnety160_pt-16xb64_in1k.py
