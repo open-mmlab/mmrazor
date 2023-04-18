@@ -67,10 +67,10 @@ jobs:
             pip install git+https://github.com/open-mmlab/mmengine.git@main
             pip install -U openmim
             mim install 'mmcv >= 2.0.0rc1'
-            pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
-            pip install git+https://github.com/open-mmlab/mmdetection.git@dev-3.x
-            pip install git+https://github.com/open-mmlab/mmsegmentation.git@dev-1.x
-            python -m pip install git+ssh://git@github.com/open-mmlab/mmpose.git@dev-1.x
+            pip install git+https://github.com/open-mmlab/mmpretrain.git@mmcls-1.x
+            pip install git+https://github.com/open-mmlab/mmdetection.git@main
+            pip install git+https://github.com/open-mmlab/mmsegmentation.git@main
+            python -m pip install git+ssh://git@github.com/open-mmlab/mmpose.git@main
             pip install -r requirements.txt
       - run:
           name: Build and install
@@ -139,7 +139,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - dev-1.x
+                - main
                 - 1.x
   pr_stage_test:
     when:
@@ -150,7 +150,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - dev-1.x
+                - main
       - build_cpu:
           name: minimum_version_cpu
           torch: 1.8.1
@@ -190,4 +190,4 @@ workflows:
           filters:
             branches:
               only:
-                - dev-1.x
+                - main
