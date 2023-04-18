@@ -13,7 +13,7 @@ To understand it better, we take the mutable module as an example to explain as 
 As shown in the figure above,  `Mutable` is a container that holds some candidate operations, thus it can sample candidates to constitute the subnet. `Supernet` usually consists of multiple `Mutable`, therefore, `Supernet` will be searchable with the help of `Mutable`. And all candidate operations in `Mutable` constitute the search space of `SuperNet`.
 
 ```{note}
-If you want to know more about the relationship between Mutable and Mutator, please refer to [Mutator](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/mutator.html)
+If you want to know more about the relationship between Mutable and Mutator, please refer to [Mutator](https://mmrazor.readthedocs.io/en/main/advanced_guides/mutator.html)
 ```
 
 ### Features
