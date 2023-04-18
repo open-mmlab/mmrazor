@@ -52,7 +52,6 @@ class ItePruneValLoop(ValLoop):
             file.write(fix_subnet)
         torch.save({'state_dict': static_model.state_dict()},
                    osp.join(self.runner.work_dir, weight_name))
-
         self.runner.logger.info(
             'export finished and '
             f'{subnet_name}, '

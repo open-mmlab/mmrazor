@@ -33,6 +33,6 @@ Models:
       - Task: Image Classification
         Dataset: CIFAR-10
         Metrics:
-          Top 1 Accuracy: 95.4400
+          Top 1 Accuracy: 94.21
     Config: configs/distill/mmcls/ofd/ofd_backbone_resnet50_resnet18_8xb16_cifar10.py
-    Weights: https://download.openmmlab.com/mmrazor/v1/overhaul/ofd_backbone_resnet50_resnet18_8xb16_cifar10_20220831_220553-f5d12e61.pth
+    Weights: https://download.openmmlab.com/mmrazor/v1/overhaul/ofd_backbone_resnet50_resnet18_8xb16_cifar10_20230417_192216-ace2908f.pth

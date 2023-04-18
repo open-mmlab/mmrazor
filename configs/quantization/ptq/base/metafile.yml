@@ -1,0 +1,164 @@
+Collections:
+  - Name: PTQ
+    README: configs/quantization/ptq/base/README.md
+Models:
+  - Name: ptq_openvino_mbv2_8xb32_in1k_calib32xb32
+    In Collection: PTQ
+    Metadata:
+      Backend: openvino
+      Float Model:
+        Config: mmcls::mobilenet_v2/mobilenet-v2_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/mobilenet_v2/mobilenet_v2_batch256_imagenet_20200708-3b2dc3af.pth
+        Metrics:
+          Top 1 Accuracy: 71.86
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 70.224
+    Config: configs/quantization/ptq/base/ptq_openvino_mbv2_8xb32_in1k_calib32xb32.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_mbv2_8xb32_in1k_calib32xb32_20230330_170909-364822ad.pth
+  - Name: ptq_openvino_resnet18_8xb32_in1k_calib32xb32
+    In Collection: PTQ
+    Metadata:
+      Backend: openvino
+      Float Model:
+        Config: mmcls::resnet/resnet18_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_8xb32_in1k_20210831-fbbb1da6.pth
+        Metrics:
+          Top 1 Accuracy: 69.90
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 69.742
+    Config: configs/quantization/ptq/base/ptq_openvino_resnet18_8xb32_in1k_calib32xb32.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_resnet18_8xb32_in1k_calib32xb32_20230330_163655-2386d965.pth
+  - Name: ptq_openvino_resnet50_8xb32_in1k_calib32xb32
+    In Collection: PTQ
+    Metadata:
+      Backend: openvino
+      Float Model:
+        Config: mmcls::resnet/resnet50_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth
+        Metrics:
+          Top 1 Accuracy: 76.55
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 76.374
+    Config: configs/quantization/ptq/base/ptq_openvino_resnet50_8xb32_in1k_calib32xb32.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_resnet50_8xb32_in1k_calib32xb32_20230330_170115-2acd6014.pth
+  - Name: ptq_openvino_retina_r50_1x_coco_calib32xb32
+    In Collection: PTQ
+    Metadata:
+      Backend: openvino
+      Float Model:
+        Config: mmdet::retinanet/retinanet_r50_fpn_1x_coco.py
+        Weights: https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_r50_fpn_1x_coco/retinanet_r50_fpn_1x_coco_20200130-c2398f9e.pth
+        Metrics:
+          box AP: 36.5
+    Results:
+      - Task: Object Detection
+        Dataset: COCO
+        Metrics:
+          box AP: 36.3
+    Config: configs/quantization/ptq/base/ptq_openvino_retina_r50_1x_coco_calib32xb32.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_retina_r50_1x_coco_calib32xb32_20230330_172645-80eea5b6.pth
+  - Name: ptq_openvino_yolox_s_8xb8-300e_coco_calib32xb32
+    In Collection: PTQ
+    Metadata:
+      Backend: openvino
+      Float Model:
+        Config: mmdet::yolox/yolox_s_8xb8-300e_coco.py
+        Weights: https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_s_8x8_300e_coco/yolox_s_8x8_300e_coco_20211121_095711-4592a793.pth
+        Metrics:
+          box AP: 40.5
+    Results:
+      - Task: Object Detection
+        Dataset: COCO
+        Metrics:
+          box AP: 38.5
+    Config: configs/quantization/ptq/base/ptq_openvino_yolox_s_8xb8-300e_coco_calib32xb32.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/openvino/ptq_openvino_yolox_s_8xb8-300e_coco_calib32xb32_20230330_175747-f1a0a2f4.pth
+  - Name: ptq_tensorrt_mbv2_8xb32_in1k_calib32xb32
+    In Collection: PTQ
+    Metadata:
+      Backend: tensorrt
+      Float Model:
+        Config: mmcls::mobilenet_v2/mobilenet-v2_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/mobilenet_v2/mobilenet_v2_batch256_imagenet_20200708-3b2dc3af.pth
+        Metrics:
+          Top 1 Accuracy: 71.86
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 70.324
+    Config: configs/quantization/ptq/base/ptq_tensorrt_mbv2_8xb32_in1k_calib32xb32.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/tensorrt/ptq_tensorrt_mbv2_8xb32_in1k_calib32xb32_20230331_153131-335988e4.pth
+  - Name: ptq_tensorrt_resnet18_8xb32_in1k_calib32xb32
+    In Collection: PTQ
+    Metadata:
+      Backend: tensorrt
+      Float Model:
+        Config: mmcls::resnet/resnet18_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_8xb32_in1k_20210831-fbbb1da6.pth
+        Metrics:
+          Top 1 Accuracy: 69.90
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 69.762
+    Config: configs/quantization/ptq/base/ptq_tensorrt_resnet18_8xb32_in1k_calib32xb32.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/tensorrt/ptq_tensorrt_resnet18_8xb32_in1k_calib32xb32_20230331_144323-640b272e.pth
+  - Name: ptq_tensorrt_resnet50_8xb32_in1k_calib32xb32
+    In Collection: PTQ
+    Metadata:
+      Backend: tensorrt
+      Float Model:
+        Config: mmcls::resnet/resnet50_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet50_8xb32_in1k_20210831-ea4938fc.pth
+        Metrics:
+          Top 1 Accuracy: 76.55
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 76.372
+    Config: configs/quantization/ptq/base/ptq_tensorrt_resnet50_8xb32_in1k_calib32xb32.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/tensorrt/ptq_tensorrt_resnet50_8xb32_in1k_calib32xb32_20230331_145011-d2da300f.pth
+  - Name: ptq_tensorrt_retina_r50_1x_coco_calib32xb32
+    In Collection: PTQ
+    Metadata:
+      Backend: tensorrt
+      Float Model:
+        Config: mmdet::retinanet/retinanet_r50_fpn_1x_coco.py
+        Weights: https://download.openmmlab.com/mmdetection/v2.0/retinanet/retinanet_r50_fpn_1x_coco/retinanet_r50_fpn_1x_coco_20200130-c2398f9e.pth
+        Metrics:
+          box AP: 36.5
+    Results:
+      - Task: Object Detection
+        Dataset: COCO
+        Metrics:
+          box AP: 36.2
+    Config: configs/quantization/ptq/base/ptq_tensorrt_retina_r50_1x_coco_calib32xb32.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/tensorrt/ptq_tensorrt_retina_r50_1x_coco_calib32xb32_20230330_205741-4c5c10c4.pth
+  - Name: ptq_tensorrt_yolox_s_8xb8-300e_coco_calib32xb32
+    In Collection: PTQ
+    Metadata:
+      Backend: tensorrt
+      Float Model:
+        Config: mmdet::yolox/yolox_s_8xb8-300e_coco.py
+        Weights: https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_s_8x8_300e_coco/yolox_s_8x8_300e_coco_20211121_095711-4592a793.pth
+        Metrics:
+          box AP: 40.5
+    Results:
+      - Task: Object Detection
+        Dataset: COCO
+        Metrics:
+          box AP: 38.8
+    Config: configs/quantization/ptq/base/ptq_tensorrt_yolox_s_8xb8-300e_coco_calib32xb32.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/quantization/ptq/tensorrt/ptq_tensorrt_yolox_s_8xb8-300e_coco_calib32xb32_20230331_155139-f2021e57.pth

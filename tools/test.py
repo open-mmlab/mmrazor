@@ -66,6 +66,8 @@ def main():
         cfg.load_from = None
     else:
         cfg.load_from = args.checkpoint
+        if 'type' in cfg.test_cfg and cfg.test_cfg.type.endswith('PTQLoop'):
+            cfg.test_cfg.only_val = True
 
     # build the runner from config
     runner = Runner.from_cfg(cfg)
