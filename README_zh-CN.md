@@ -21,7 +21,7 @@
 <!--算法库 Badges-->
 
 [![PyPI](https://img.shields.io/pypi/v/mmrazor)](https://pypi.org/project/mmrazor)
-[![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmrazor.readthedocs.io/en/latest/)
+[![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmrazor.readthedocs.io/en/main/)
 [![badge](https://github.com/open-mmlab/mmrazor/workflows/build/badge.svg)](https://github.com/open-mmlab/mmrazor/actions)
 [![codecov](https://codecov.io/gh/open-mmlab/mmrazor/branch/master/graph/badge.svg)](https://codecov.io/gh/open-mmlab/mmrazor)
 [![license](https://img.shields.io/github/license/open-mmlab/mmrazor.svg)](https://github.com/open-mmlab/mmrazor/blob/master/LICENSE)
@@ -33,8 +33,8 @@
 <!--Note:请根据各算法库自身情况设置项目和链接-->
 
 [📘使用文档](https://mmrazor.readthedocs.io/) |
-[🛠️安装教程](https://mmrazor.readthedocs.io/en/latest/get_started.html) |
-[👀模型库](https://mmrazor.readthedocs.io/en/latest/model_zoo.html) |
+[🛠️安装教程](https://mmrazor.readthedocs.io/en/main/get_started.html) |
+[👀模型库](https://mmrazor.readthedocs.io/en/main/model_zoo.html) |
 [🤔报告问题](https://github.com/open-mmlab/mmrazor/issues/new/choose)
 
 </div>

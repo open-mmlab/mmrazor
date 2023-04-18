@@ -7,7 +7,7 @@ MMRazor is a model compression toolkit for model slimming, which includes 4 main
 - Neural Architecture Search (NAS)
 - Pruning
 - Knowledge Distillation (KD)
-- Quantization (come soon)
+- Quantization
 
 It is a part of the [OpenMMLab](https://openmmlab.com/) project. If you want to use it now, please refer to [Installation](https://mmrazor.readthedocs.io/en/dev-1.x/get_started/installation.html).
 
