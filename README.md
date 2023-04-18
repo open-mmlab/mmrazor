@@ -178,7 +178,7 @@ Supported algorithms:
 
 MMRazor depends on [PyTorch](https://pytorch.org/), [MMCV](https://github.com/open-mmlab/mmcv) and [MMEngine](https://github.com/open-mmlab/mmengine).
 
-Please refer to [installation.md](/docs/en/get_started/installation.md) for more detailed instruction.
+Please refer to [installation.md](https://mmrazor.readthedocs.io/en/main/get_started/installation.html) for more detailed instruction.
 
 ## Getting Started
 
@@ -187,7 +187,7 @@ Please refer to [user guides](https://mmrazor.readthedocs.io/en/main/user_guides
 ## Contributing
 
 We appreciate all contributions to improve MMRazor.
-Please refer to [CONTRUBUTING.md](/docs/en/notes/contribution_guide.md) for the contributing guideline.
+Please refer to [CONTRUBUTING.md](https://mmrazor.readthedocs.io/en/main/notes/contribution_guide.html) for the contributing guideline.
 
 ## Acknowledgement
 

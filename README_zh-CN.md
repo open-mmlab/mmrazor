@@ -32,9 +32,9 @@
 
 <!--Note:请根据各算法库自身情况设置项目和链接-->
 
-[📘使用文档](https://mmrazor.readthedocs.io/) |
-[🛠️安装教程](https://mmrazor.readthedocs.io/en/main/get_started.html) |
-[👀模型库](https://mmrazor.readthedocs.io/en/main/model_zoo.html) |
+[📘使用文档](https://mmrazor.readthedocs.io/en/main/) |
+[🛠️安装教程](https://mmrazor.readthedocs.io/en/main/get_started/installation.html) |
+[👀👀模型库](https://mmrazor.readthedocs.io/en/main/get_started/model_zoo.html) |
 [🤔报告问题](https://github.com/open-mmlab/mmrazor/issues/new/choose)
 
 </div>
@@ -54,7 +54,7 @@ MMRazor是一个可用于模型瘦身和AutoML的模型压缩工具箱，包含�
 - 网络结构搜索 (NAS)
 - 模型剪枝
 - 知识蒸馏 (KD)
-- 量化 (即将到来)
+- 量化
 
 MMRazor是[OpenMMLab](https://openmmlab.com/)项目的一部分。
 
@@ -76,7 +76,7 @@ MMRazor是[OpenMMLab](https://openmmlab.com/)项目的一部分。
 
 ## 近期更新
 
-**默认分支已经从 `master` 切换到 `dev-1.x`, 并将其重命名为`main`, 原来的默认分支`master`重命名为`0.x`.我们鼓励用户迁移到最新版本，请参考 [更新日志](https://mmrazor.readthedocs.io/en/dev-1.x/notes/changelog.html) 以了解更多细节。**
+**默认分支目前为 main，且分支上的代码已经切换到 v1.0.0 版本。旧版 master 分支的代码现存在 0.x 分支上**
 
 ## 更新日志
 
@@ -84,7 +84,7 @@ MMRazor v0.3.1 版本已经在 2022.5.4 发布。
 
 ## 基准测试和模型库
 
-测试结果可以在 [模型库](docs/en/model_zoo.md) 中找到.
+测试结果可以在 [模型库](https://mmrazor.readthedocs.io/en/main/get_started/model_zoo.html) 中找到.
 
 已经支持的算法：
 
@@ -98,37 +98,69 @@ Neural Architecture Search
 
 Pruning
 
-- [x] [AutoSlim(NeurIPS'2019)](/configs/pruning/autoslim)
+- [x] [AutoSlim(NeurIPS'2019)](/configs/pruning/mmcls/autoslim)
+
+- [x] [L1-norm](/configs/pruning/mmcls/l1-norm)
+
+- [x] [Group Fisher](/configs/pruning/base/group_fisher)
+
+- [x] [DMCP](/configs/pruning/mmcls/dmcp)
 
 Knowledge Distillation
 
-- [x] [CWD(ICCV'2021)](/configs/distill/cwd)
+- [x] [CWD(ICCV'2021)](/configs/distill/mmdet/cwd)
 
-- [x] [WSLD(ICLR'2021)](/configs/distill/wsld)
+- [x] [WSLD(ICLR'2021)](/configs/distill/mmcls/wsld)
+
+- [x] [ABLoss](/configs/distill/mmcls/abloss)
+
+- [x] [BYOT](/configs/distill/mmcls/byot)
+
+- [x] [DAFL](/configs/distill/mmcls/dafl)
+
+- [x] [DFAD](/configs/distill/mmcls/dfad)
+
+- [x] [DKD](/configs/distill/mmcls/dkd)
+
+- [x] [Factor Transfer](/configs/distill/mmcls/factor_transfer)
+
+- [x] [FitNets](/configs/distill/mmcls/fitnets)
+
+- [x] [KD](/configs/distill/mmcls/kd)
+
+- [x] [OFD](/configs/distill/mmcls/ofd)
+
+- [x] [RKD](/configs/distill/mmcls/rkd)
+
+- [x] [ZSKT](/configs/distill/mmcls/zskt)
+
+- [x] [FBKD](/configs/distill/mmdet/fbkd)
+
+<details open>
+<summary>Quantization</summary>
+
+- [x] [PTQ](/configs/quantization/ptq/base)
+
+- [x] [QAT](/configs/quantization/qat/base)
+
+- [x] [LSQ](/configs/quantization/qat/lsq)
+
+</details>
 
 ## 安装
 
 MMRazor 依赖 [PyTorch](https://pytorch.org/) 和 [MMCV](https://github.com/open-mmlab/mmcv)。
 
-请参考[get_started.md](/docs/en/get_started.md)获取更详细的安装指南。
+请参考[安装教程](https://mmrazor.readthedocs.io/en/main/get_started/installation.html)获取更详细的安装指南。
 
 ## 快速入门
 
-请参考 [get_started.md](/docs/en/get_started.md) 学习 MMRazor 的基本使用。 我们也提供了一些进阶教程:
-
-- [overview](/docs/en/tutorials/Tutorial_1_overview.md)
-- [learn about configs](/docs/en/tutorials/Tutorial_2_learn_about_configs.md)
-- [customize architectures](/docs/en/tutorials/Tutorial_3_customize_architectures.md)
-- [customize nas algorithms](/docs/en/tutorials/Tutorial_4_customize_nas_algorithms.md)
-- [customize pruning algorithms](/docs/en/tutorials/Tutorial_5_customize_pruning_algorithms.md)
-- [customize kd algorithms](/docs/en/tutorials/Tutorial_6_customize_kd_algorithms.md)
-- [customize mixed algorithms with our algorithm_components](/docs/en/tutorials/Tutorial_7_customize_mixed_algorithms_with_out_algorithms_components.md)
-- [apply existing algorithms to other existing tasks](/docs/en/tutorials/Tutorial_8_apply_existing_algorithms_to_new_tasks.md)
+请参考 [用户指引](https://mmrazor.readthedocs.io/en/main/user_guides/index.html) 学习 MMRazor 的基本使用。 我们也提供了一些[进阶教程](https://mmrazor.readthedocs.io/en/main/advanced_guides/index.html):
 
 ## 贡献指南
 
 我们感谢所有的贡献者为改进和提升 MMRazor 所作出的努力。
-请参考[贡献指南](/.github/CONTRIBUTING.md)来了解参与项目贡献的相关指引。
+请参考[贡献指南](https://mmrazor.readthedocs.io/en/main/notes/contribution_guide.html)来了解参与项目贡献的相关指引。
 
 ## 致谢
 
