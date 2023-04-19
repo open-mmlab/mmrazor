@@ -2,6 +2,7 @@
 from typing import Protocol
 
 import torch
+import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -36,7 +37,7 @@ class SparseGptMixIn(ModuleProtocol):
         with torch.no_grad():
             value = value.reshape(self.weight.shape).to(self.weight.device).to(
                 self.weight.dtype)
-            self.weight.data = value
+            self.weight.data.copy_(value)
 
     def format_input(self, input: torch.Tensor):
         """Return input with shape (B N C)"""
@@ -67,6 +68,10 @@ class SparseGptMixIn(ModuleProtocol):
         input = input.transpose(0, -1).flatten(1)  # C D
 
         H = input @ input.T * 2  # C C
+
+        if dist.is_initialized():
+            dist.all_reduce(H)
+            B *= dist.get_world_size()
         self.hessian = (self.hessian * self.hessian_batch + H) / (
             self.hessian_batch + B)
         self.hessian_batch = self.hessian_batch + B

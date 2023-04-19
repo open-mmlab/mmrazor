@@ -20,8 +20,8 @@ def get_level(level='info'):
 
 def print_log(msg, logger='current', level='info', only_rank0=True):
 
-    if dist.is_initialized():
-        if only_rank0 and dist.get_rank() == 0:
+    if only_rank0 and dist.is_initialized():
+        if dist.get_rank() == 0:
             engine_print_log(msg, logger, get_level(level))
         else:
             pass

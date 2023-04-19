@@ -93,6 +93,25 @@ def opt_eval(
     model.config.use_cache = use_cache
 
 
+@torch.no_grad()
+def opt_infer(
+        model: nn.Module,
+        dataloader: DataLoader,
+        dev=torch.device('cuda:0'),
+):
+    print_log('Infering ...')
+
+    model.config.use_cache = False
+
+    for i, batch in enumerate(dataloader):
+        B, seq_len = batch.shape[:2]
+
+        batch = batch.to(dev)
+        model(batch)[0]  # 1
+
+        print_log(f'{(i+1)*B} / {len(dataloader.dataset)}')
+
+
 def build_language_loader(testloader, world_size, rank, model):
     val_dataset = LanguageDataset(testloader.input_ids, seq_len=model.seqlen)
     distributed_sampler = DistributedSampler(
@@ -131,6 +150,30 @@ def main(rank, world_size=8):
         device_id=rank)
 
     print_log(model)
+
+    # init hessian
+
+    mutator.start_init_hessian()
+
+    _, testloader = get_loaders(
+        'c4', seed=1000, model=model_name, seqlen=model.seqlen)
+    testloader = build_language_loader(testloader, world_size, rank, model)
+    opt_infer(model, testloader)
+
+    mutator.end_init_hessian()
+
+    # prune
+
+    with torch.no_grad():
+        with FSDP.summon_full_params(model, writeback=True):
+            for i, (name, op) in enumerate(list(mutator.named_sparse_ops)):
+                try:
+                    error = op.prune(0.5, prunen=2, prunem=4)
+                    print_log(
+                        f'prune {name} success \t error = {error}',
+                        only_rank0=False)
+                except Exception as e:
+                    print_log(f'prune {name} failed: {e}', only_rank0=False)
 
     # val
 

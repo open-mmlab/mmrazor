@@ -55,7 +55,7 @@ class SparseGptMutator():
               prunem=0,
               blocksize=128,
               percdamp=.01,
-              device=torch.device('cuda:0')):
+              device=torch.device('cuda')):
         for name, module in self.named_sparse_ops:
             try:
                 original_device = next(module.parameters()).device
