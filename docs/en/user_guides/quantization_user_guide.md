@@ -21,6 +21,11 @@ Model quantization is in mmrazor, but quantized model deployment is in mmdeploy.
 
 mmdeploy:  https://github.com/open-mmlab/mmdeploy/tree/for_mmrazor
 
+```{note}
+If you try to compress mmdet's models and have used `dense_heads`, you can use this branch:
+https://github.com/HIT-cwh/mmdetection/tree/for_mmrazor to avoid the problem that some code can not be traced by `torch.fx.tracer`.
+```
+
 1. Quantize the float model in mmrazor.
 
 ```Shell
