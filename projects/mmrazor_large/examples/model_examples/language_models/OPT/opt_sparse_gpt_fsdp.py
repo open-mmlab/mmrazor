@@ -63,8 +63,8 @@ def opt_eval(
 
     use_cache = model.config.use_cache
     model.config.use_cache = False
-    loss_sum = 0
-    total_seq_len = 0
+    loss_sum = torch.zeros([1], device=dev)
+    total_seq_len = torch.zeros([1], device=dev, dtype=torch.long)
 
     for i, batch in enumerate(dataloader):
         B, seq_len = batch.shape[:2]
@@ -82,12 +82,12 @@ def opt_eval(
         total_seq_len += seq_len * B
         loss_sum += neg_log_likelihood
 
-        print_log(f'{(i+1)*B} / {len(dataloader.dataset)}')
+        print_log(f'{(i+1)*B} / {len(dataloader.dataset)}', only_rank0=False)
 
-    assert isinstance(loss_sum, torch.Tensor), f'{type(loss_sum)}'
     if dist.is_initialized():
         dist.all_reduce(loss_sum)
-        total_seq_len *= dist.get_world_size()
+        dist.all_reduce(total_seq_len)
+
     ppl = torch.exp(loss_sum / total_seq_len)
     print_log(f'Perplexity: {ppl.item():3f}')
     model.config.use_cache = use_cache
@@ -112,13 +112,14 @@ def opt_infer(
         print_log(f'{(i+1)*B} / {len(dataloader.dataset)}')
 
 
-def build_language_loader(testloader, world_size, rank, model):
+def build_language_loader(testloader, world_size, rank, model, batch_size=128):
     val_dataset = LanguageDataset(testloader.input_ids, seq_len=model.seqlen)
     distributed_sampler = DistributedSampler(
         val_dataset, num_replicas=world_size, rank=rank, shuffle=False)
+    batch_size = min(len(val_dataset) // world_size, batch_size)
     val_dataloader = DataLoader(
         val_dataset,
-        batch_size=8,
+        batch_size=batch_size,
         shuffle=False,
         num_workers=0,
         pin_memory=True,
@@ -127,11 +128,13 @@ def build_language_loader(testloader, world_size, rank, model):
     return val_dataloader
 
 
-def main(rank, world_size=8):
+def main(rank, world_size=8, args=None):
     print(f'init {rank}/{world_size}')
     setup(rank, world_size)
 
-    model_name = 'facebook/opt-125m'
+    model_name = args.model
+    batch_size = args.batch_size
+
     model = get_model(model_name)
 
     # init mutator
@@ -156,8 +159,9 @@ def main(rank, world_size=8):
     mutator.start_init_hessian()
 
     _, testloader = get_loaders(
-        'c4', seed=1000, model=model_name, seqlen=model.seqlen)
-    testloader = build_language_loader(testloader, world_size, rank, model)
+        'c4', seed=args.seed, model=model_name, seqlen=model.seqlen)
+    testloader = build_language_loader(
+        testloader, world_size, rank, model, batch_size=batch_size)
     opt_infer(model, testloader)
 
     mutator.end_init_hessian()
@@ -181,12 +185,43 @@ def main(rank, world_size=8):
     for dataset in ['wikitext2', 'ptb', 'c4']:
         _, testloader = get_loaders(
             dataset, seed=1000, model=model_name, seqlen=model.seqlen)
-        testloader = build_language_loader(testloader, world_size, rank, model)
+        testloader = build_language_loader(
+            testloader, world_size, rank, model, batch_size=batch_size)
         print_log(dataset)
         opt_eval(model, testloader, torch.device('cuda'))
 
 
 if __name__ == '__main__':
-    pass
-    WORLD_SIZE = 4
-    mp.spawn(main, args=(WORLD_SIZE, ), nprocs=WORLD_SIZE, join=True)
+    import argparse
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        'model', type=str, help='OPT model to load; pass `facebook/opt-X`.')
+    parser.add_argument(
+        'dataset',
+        type=str,
+        choices=['wikitext2', 'ptb', 'c4'],
+        help='Where to extract calibration data from.')
+    parser.add_argument(
+        '--seed',
+        type=int,
+        default=0,
+        help='Seed for sampling the calibration data.')
+    parser.add_argument(
+        '--nsamples',
+        type=int,
+        default=128,
+        help='Number of calibration data samples.')
+    parser.add_argument(
+        '--batch_size',
+        type=int,
+        default=64,
+        help='Batchsize for calibration and evaluation.')
+    parser.add_argument(
+        '--save', type=str, default='', help='Path to saved model.')
+    parser.add_argument(
+        '--world_size', type=int, default=1, help='Number of GPUs to use.')
+    args = parser.parse_args()
+
+    WORLD_SIZE = args.world_size
+    mp.spawn(main, args=(WORLD_SIZE, args), nprocs=WORLD_SIZE, join=True)
