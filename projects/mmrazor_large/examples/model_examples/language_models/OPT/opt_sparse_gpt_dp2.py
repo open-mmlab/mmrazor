@@ -167,13 +167,14 @@ def main(rank, world_size=8):
     with torch.no_grad():
         with FSDP.summon_full_params(model, writeback=True):
             for i, (name, op) in enumerate(list(mutator.named_sparse_ops)):
+                # if i % world_size == rank:
                 try:
                     error = op.prune(0.5, prunen=2, prunem=4)
                     print_log(
                         f'prune {name} success \t error = {error}',
-                        only_rank0=False)
+                        only_rank0=True)
                 except Exception as e:
-                    print_log(f'prune {name} failed: {e}', only_rank0=False)
+                    print_log(f'prune {name} failed: {e}', only_rank0=True)
 
     # val
 
