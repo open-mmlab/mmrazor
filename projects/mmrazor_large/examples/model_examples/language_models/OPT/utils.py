@@ -78,3 +78,18 @@ def opt_infer(
 
         if (i + 1) * batch_size >= num_samples:
             break
+
+
+class init_on_meta:
+
+    def __init__(self, enable=True) -> None:
+        self.enable = enable
+        self.default_device = torch.ones([]).device
+
+    def __enter__(self):
+        if self.enable:
+            torch.set_default_device('meta')
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.enable:
+            torch.set_default_device(self.default_device)
