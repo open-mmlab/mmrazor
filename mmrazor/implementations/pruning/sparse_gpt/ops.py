@@ -193,13 +193,14 @@ class SparseGptLinear(DynamicLinear, SparseGptMixIn):
         self._sparse_gpt_mix_in_init()
 
     @classmethod
-    def convert_from(cls, module: nn.Conv2d) -> 'DynamicConv2d':
+    def convert_from(cls, module: nn.Linear) -> 'DynamicConv2d':
+        if module.out_features < module.in_features:
+            return module
         new_module = super().convert_from(module)
         new_module.load_state_dict(module.state_dict(), strict=False)
 
-        device = next(module.parameters()).device
         dtype = next(module.parameters()).dtype
-        new_module = new_module.to(device).to(dtype)
+        new_module = new_module.to(dtype)
 
         return new_module
 
@@ -215,9 +216,8 @@ class SparseGptConv2d(DynamicConv2d, SparseGptMixIn):
         new_module = super().convert_from(module)
         new_module.load_state_dict(module.state_dict(), strict=False)
 
-        device = next(module.parameters()).device
         dtype = next(module.parameters()).dtype
-        new_module = new_module.to(device).to(dtype)
+        new_module = new_module.to(dtype)
 
         return new_module
 

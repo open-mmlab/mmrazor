@@ -128,6 +128,27 @@ def build_language_loader(testloader, world_size, rank, model, batch_size=128):
     return val_dataloader
 
 
+class init_on_meta:
+
+    def __init__(self, enable=True) -> None:
+        self.enable = enable
+        self.default_device = torch.ones([]).device
+
+    def __enter__(self):
+        if self.enable:
+            torch.set_default_device('meta')
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.enable:
+            torch.set_default_device(self.default_device)
+
+
+def _materialize_meta_module(module: nn.Module, ):
+    # Run default meta device initialization
+
+    module.to_empty(device=torch.device('cpu'))
+
+
 def main(rank, world_size=8, args=None):
     print(f'init {rank}/{world_size}')
     setup(rank, world_size)
@@ -135,22 +156,24 @@ def main(rank, world_size=8, args=None):
     model_name = args.model
     batch_size = args.batch_size
 
-    model = get_model(model_name)
+    with init_on_meta(enable=True):
+        model = get_model(model_name)
 
-    # init mutator
-    mutator = sparse_gpt.SparseGptMutator()
-    mutator.prepare_from_supernet(model.model.decoder)
+        # init mutator
+        mutator = sparse_gpt.SparseGptMutator()
+        mutator.prepare_from_supernet(model.model.decoder)
 
     # init fsdp
     size_based_auto_wrap_policy_x = functools.partial(
-        size_based_auto_wrap_policy, min_num_params=100)
+        size_based_auto_wrap_policy)
 
     model = FSDP(
         model,
         auto_wrap_policy=size_based_auto_wrap_policy_x,
-        cpu_offload=CPUOffload,
+        cpu_offload=CPUOffload(True),
         sharding_strategy=ShardingStrategy.FULL_SHARD,
-        device_id=rank)
+        device_id=rank,
+        param_init_fn=_materialize_meta_module)
 
     print_log(model)
 
@@ -169,19 +192,31 @@ def main(rank, world_size=8, args=None):
     # prune
 
     with torch.no_grad():
-        with FSDP.summon_full_params(model, writeback=True):
-            for i, (name, op) in enumerate(list(mutator.named_sparse_ops)):
-                # if i % world_size == rank:
-                try:
-                    error = op.prune(0.5, prunen=2, prunem=4)
-                    print_log(
-                        f'prune {name} success \t error = {error}',
-                        only_rank0=True)
-                except Exception as e:
-                    print_log(f'prune {name} failed: {e}', only_rank0=True)
 
+        total_num_op = 0
+        for fsdp in FSDP.fsdp_modules(model):
+            if len(FSDP.fsdp_modules(fsdp)) == 1:
+                fsdp._reset_lazy_init()
+                with FSDP.summon_full_params(fsdp):
+                    num_op = 0
+                    for name, op in fsdp.named_modules():
+                        if isinstance(op, sparse_gpt.SparseGptMixIn):
+                            if num_op % world_size == rank:
+                                try:
+                                    op.prune(0.5, prunen=2, prunem=4)
+                                    torch.cuda.empty_cache()
+                                    print_log(f'prune {name}')
+                                except Exception as e:
+                                    print_log(f'{e}')
+                            num_op += 1
+                    num_op = 0
+                    for name, op in fsdp.named_modules():
+                        if isinstance(op, sparse_gpt.SparseGptMixIn):
+                            dist.broadcast(op.weight, num_op % world_size)
+                            num_op += 1
+                    total_num_op += num_op
     # val
-
+    torch.cuda.empty_cache()
     for dataset in ['wikitext2', 'ptb', 'c4']:
         _, testloader = get_loaders(
             dataset, seed=1000, model=model_name, seqlen=model.seqlen)
