@@ -102,7 +102,7 @@ def main(rank, world_size=8, args=None):
     model_name = args.model
     batch_size = args.batch_size
 
-    with init_on_meta(enable=True):
+    with init_on_meta(enable=args.m):
         model = get_model(model_name)
 
         # init mutator
@@ -202,6 +202,11 @@ if __name__ == '__main__':
         type=int,
         default=64,
         help='Batchsize for calibration and evaluation.')
+    parser.add_argument(
+        '-m',
+        type=bool,
+        default=False,
+        help='Init on meta device to save memory.')
     parser.add_argument(
         '--save', type=str, default='', help='Path to saved model.')
     parser.add_argument(
