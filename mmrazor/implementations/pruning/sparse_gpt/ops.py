@@ -180,7 +180,7 @@ class SparseGptMixIn(ModuleProtocol):
             else:
                 self.weight_matrix = W.data
 
-            return error
+            return error.item()
 
 
 # SparseGpt Ops for Linear and Conv2d

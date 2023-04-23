@@ -90,6 +90,10 @@ def _materialize_meta_module(module: nn.Module, ):
     # Run default meta device initialization
 
     module.to_empty(device=torch.device('cpu'))
+    for p in module.parameters():
+        p.data.fill_(0)
+    for p in module.buffers():
+        p.data.fill_(0)
 
 
 def main(rank, world_size=8, args=None):
