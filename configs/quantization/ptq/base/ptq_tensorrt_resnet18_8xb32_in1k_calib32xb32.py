@@ -3,11 +3,11 @@ _base_ = [
     '../../deploy_cfgs/mmcls/classification_tensorrt-int8-explicit_dynamic-224x224.py'  # noqa: E501
 ]
 
-val_dataloader = dict(batch_size=32)
+_base_.val_dataloader.batch_size = 32
 
 test_cfg = dict(
     type='mmrazor.PTQLoop',
-    calibrate_dataloader=val_dataloader,
+    calibrate_dataloader=_base_.val_dataloader,
     calibrate_steps=32,
 )
 

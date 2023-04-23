@@ -330,10 +330,12 @@ class PTQLoop(TestLoop):
             # Determine whether or not different ranks use different seed.
             diff_rank_seed = runner._randomness_cfg.get(
                 'diff_rank_seed', False)
-            self.dataloader = runner.build_dataloader(
-                dataloader, seed=runner.seed, diff_rank_seed=diff_rank_seed)
+            self.calibrate_dataloader = runner.build_dataloader(
+                calibrate_dataloader,
+                seed=runner.seed,
+                diff_rank_seed=diff_rank_seed)
         else:
-            self.dataloader = dataloader
+            self.calibrate_dataloader = calibrate_dataloader
 
         self.calibrate_steps = calibrate_steps
         self.only_val = only_val
@@ -350,7 +352,7 @@ class PTQLoop(TestLoop):
             self.runner.model.apply(enable_observer)
 
             print_log('Star calibratiion...')
-            for idx, data_batch in enumerate(self.dataloader):
+            for idx, data_batch in enumerate(self.calibrate_dataloader):
                 if idx == self.calibrate_steps:
                     break
                 self.run_iter(idx, data_batch)
