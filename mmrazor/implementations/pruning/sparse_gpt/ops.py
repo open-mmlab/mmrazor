@@ -2,6 +2,7 @@
 from typing import Protocol
 
 import torch
+import torch.distributed as dist
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -36,7 +37,7 @@ class SparseGptMixIn(ModuleProtocol):
         with torch.no_grad():
             value = value.reshape(self.weight.shape).to(self.weight.device).to(
                 self.weight.dtype)
-            self.weight.data = value
+            self.weight.data.copy_(value)
 
     def format_input(self, input: torch.Tensor):
         """Return input with shape (B N C)"""
@@ -49,13 +50,12 @@ class SparseGptMixIn(ModuleProtocol):
     @property
     def hessian(self):
         """hessian always return float."""
-        self._hessian = self._hessian.float()
         return self._hessian
 
     @hessian.setter
     def hessian(self, value: torch.Tensor):
         with torch.no_grad():
-            self._hessian = value.float()
+            self._hessian.data.copy_(value.data)
 
     @torch.no_grad()
     def update_hessian(self, input: torch.Tensor):
@@ -67,6 +67,10 @@ class SparseGptMixIn(ModuleProtocol):
         input = input.transpose(0, -1).flatten(1)  # C D
 
         H = input @ input.T * 2  # C C
+
+        if dist.is_initialized():
+            dist.all_reduce(H)
+            B *= dist.get_world_size()
         self.hessian = (self.hessian * self.hessian_batch + H) / (
             self.hessian_batch + B)
         self.hessian_batch = self.hessian_batch + B
@@ -85,6 +89,9 @@ class SparseGptMixIn(ModuleProtocol):
         for h in self.sparse_gpt_handles:
             h.remove()
 
+    def keep_hessian_in_float(self):
+        self._hessian = self._hessian.float()
+
     # prune
 
     @torch.no_grad()
@@ -95,7 +102,7 @@ class SparseGptMixIn(ModuleProtocol):
             assert self.hessian is not None
             W: torch.Tensor = self.weight_matrix.float()  # out in
 
-            H = self.hessian
+            H = self.hessian.float()
 
             dead = torch.diag(H) == 0
             H[dead, dead] = 1
@@ -175,7 +182,7 @@ class SparseGptMixIn(ModuleProtocol):
             else:
                 self.weight_matrix = W.data
 
-            return error
+            return error.item()
 
 
 # SparseGpt Ops for Linear and Conv2d
@@ -188,13 +195,14 @@ class SparseGptLinear(DynamicLinear, SparseGptMixIn):
         self._sparse_gpt_mix_in_init()
 
     @classmethod
-    def convert_from(cls, module: nn.Conv2d) -> 'DynamicConv2d':
+    def convert_from(cls, module: nn.Linear) -> 'DynamicConv2d':
+        if module.out_features < module.in_features:
+            return module
         new_module = super().convert_from(module)
         new_module.load_state_dict(module.state_dict(), strict=False)
 
-        device = next(module.parameters()).device
         dtype = next(module.parameters()).dtype
-        new_module = new_module.to(device).to(dtype)
+        new_module = new_module.to(dtype)
 
         return new_module
 
@@ -210,9 +218,8 @@ class SparseGptConv2d(DynamicConv2d, SparseGptMixIn):
         new_module = super().convert_from(module)
         new_module.load_state_dict(module.state_dict(), strict=False)
 
-        device = next(module.parameters()).device
         dtype = next(module.parameters()).dtype
-        new_module = new_module.to(device).to(dtype)
+        new_module = new_module.to(dtype)
 
         return new_module
 

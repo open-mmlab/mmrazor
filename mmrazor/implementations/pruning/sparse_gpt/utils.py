@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 
 from mmrazor.models.architectures.dynamic_ops import DynamicMixin
-from mmrazor.models.utils import get_module_device
 from mmrazor.utils import print_log
 
 
@@ -42,8 +41,7 @@ def replace_with_dynamic_ops(model: nn.Module,
 
     for name, module in model.named_modules():
         if type(module) in dynamicop_map:
-            new_module = dynamicop_map[type(module)].convert_from(module).to(
-                get_module_device(module))
+            new_module = dynamicop_map[type(module)].convert_from(module)
             replace_op(model, name, new_module)
 
 

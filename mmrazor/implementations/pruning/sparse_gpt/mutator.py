@@ -48,6 +48,10 @@ class SparseGptMutator():
         for module in self.sparse_ops:
             module.end_init_hessian()
 
+    def keep_hessian_in_float(self):
+        for op in self.sparse_ops:
+            op.keep_hessian_in_float()
+
     # prune
     def prune(self,
               sparsity,
@@ -55,7 +59,7 @@ class SparseGptMutator():
               prunem=0,
               blocksize=128,
               percdamp=.01,
-              device=torch.device('cuda:0')):
+              device=torch.device('cuda')):
         for name, module in self.named_sparse_ops:
             try:
                 original_device = next(module.parameters()).device
