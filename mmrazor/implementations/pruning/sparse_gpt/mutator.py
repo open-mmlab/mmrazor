@@ -48,6 +48,10 @@ class SparseGptMutator():
         for module in self.sparse_ops:
             module.end_init_hessian()
 
+    def keep_hessian_in_float(self):
+        for op in self.sparse_ops:
+            op.keep_hessian_in_float()
+
     # prune
     def prune(self,
               sparsity,

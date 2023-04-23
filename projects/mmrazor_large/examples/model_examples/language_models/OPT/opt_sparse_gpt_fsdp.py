@@ -103,11 +103,15 @@ def main(rank, world_size=8, args=None):
     batch_size = args.batch_size
 
     with init_on_meta(enable=args.m):
+        if args.m:
+            print_log('init on meta')
         model = get_model(model_name)
 
         # init mutator
         mutator = sparse_gpt.SparseGptMutator()
         mutator.prepare_from_supernet(model.model.decoder)
+
+    mutator.keep_hessian_in_float()
 
     # init fsdp
     size_based_auto_wrap_policy_x = functools.partial(
@@ -150,7 +154,6 @@ def main(rank, world_size=8, args=None):
                             if num_op % world_size == rank:
                                 try:
                                     op.prune(0.5, prunen=2, prunem=4)
-                                    torch.cuda.empty_cache()
                                     print_log(
                                         f'prune {name} on rank:{rank} successfully.',  # noqa
                                         only_rank0=False)
@@ -165,8 +168,12 @@ def main(rank, world_size=8, args=None):
                             dist.broadcast(op.weight, num_op % world_size)
                             num_op += 1
                     total_num_op += num_op
+
+                fsdp._reset_lazy_init()
+                torch.cuda.empty_cache()
     # val
     torch.cuda.empty_cache()
+    model._reset_lazy_init()
     for dataset in ['wikitext2', 'ptb', 'c4']:
         _, testloader = get_loaders(
             dataset, seed=1000, model=model_name, seqlen=model.seqlen)

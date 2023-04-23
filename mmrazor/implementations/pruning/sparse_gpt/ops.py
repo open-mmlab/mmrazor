@@ -50,13 +50,12 @@ class SparseGptMixIn(ModuleProtocol):
     @property
     def hessian(self):
         """hessian always return float."""
-        self._hessian = self._hessian.float()
         return self._hessian
 
     @hessian.setter
     def hessian(self, value: torch.Tensor):
         with torch.no_grad():
-            self._hessian = value.float()
+            self._hessian.data.copy_(value.data)
 
     @torch.no_grad()
     def update_hessian(self, input: torch.Tensor):
@@ -90,6 +89,9 @@ class SparseGptMixIn(ModuleProtocol):
         for h in self.sparse_gpt_handles:
             h.remove()
 
+    def keep_hessian_in_float(self):
+        self._hessian = self._hessian.float()
+
     # prune
 
     @torch.no_grad()
@@ -100,7 +102,7 @@ class SparseGptMixIn(ModuleProtocol):
             assert self.hessian is not None
             W: torch.Tensor = self.weight_matrix.float()  # out in
 
-            H = self.hessian
+            H = self.hessian.float()
 
             dead = torch.diag(H) == 0
             H[dead, dead] = 1
