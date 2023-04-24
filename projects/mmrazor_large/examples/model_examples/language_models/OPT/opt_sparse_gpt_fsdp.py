@@ -86,14 +86,46 @@ def opt_infer(
         print_log(f'{(i+1)*B} / {len(dataloader.dataset)}')
 
 
-def _materialize_meta_module(module: nn.Module, ):
-    # Run default meta device initialization
+def init_fn_wrapper(model: nn.Module, model_copy: nn.Module):
 
-    module.to_empty(device=torch.device('cpu'))
-    for p in module.parameters():
-        p.data.fill_(0)
-    for p in module.buffers():
-        p.data.fill_(0)
+    def find_module_in_model_copy(module: nn.Module):
+        name2module = dict(model.named_modules())
+        module2name = dict([(v, k) for k, v in name2module.items()])
+
+        name = module2name[module]
+        return dict(model_copy.named_modules())[name]
+
+    def _materialize_meta_module(module: nn.Module, ):
+
+        def meta_to_empty(p: torch.Tensor):
+            if p.device == torch.device('meta'):
+                return p.new_empty(p.shape, device='cpu')
+            else:
+                return p
+
+        module._apply(meta_to_empty)
+
+        if dist.get_rank() == 0:
+            assert model_copy is not None
+            module_copy = find_module_in_model_copy(module)
+
+            name2p = dict(module_copy.named_parameters())
+            for n, p in module.named_parameters():
+                if '_flat_param' not in n:
+                    n = n.replace('_fsdp_wrapped_module.', '')
+                    try:
+                        p.data.copy_(name2p[n])
+                    except Exception:
+                        pass
+            for n, p in module.named_buffers():
+                if '_flat_param' not in n:
+                    n = n.replace('_fsdp_wrapped_module.', '')
+                    try:
+                        p.data.copy_(name2p[n])
+                    except Exception:
+                        pass
+
+    return _materialize_meta_module
 
 
 def main(rank, world_size=8, args=None):
@@ -102,16 +134,24 @@ def main(rank, world_size=8, args=None):
     model_name = args.model
     batch_size = args.batch_size
 
-    with init_on_meta(enable=args.m):
-        if args.m:
-            print_log('init on meta')
+    def build():
         model = get_model(model_name)
 
         # init mutator
         mutator = sparse_gpt.SparseGptMutator()
         mutator.prepare_from_supernet(model.model.decoder)
+        mutator.keep_hessian_in_float()
+        return model, mutator
 
-    mutator.keep_hessian_in_float()
+    with init_on_meta(enable=True):
+        model, mutator = build()
+
+    if rank == 0:
+        model_copy, _ = build()  # init on cpu
+        model_copy.lm_head.weight = nn.Parameter(
+            model_copy.lm_head.weight.float().clone().detach())
+    else:
+        model_copy = None
 
     # init fsdp
     size_based_auto_wrap_policy_x = functools.partial(
@@ -123,7 +163,8 @@ def main(rank, world_size=8, args=None):
         cpu_offload=CPUOffload(True),
         sharding_strategy=ShardingStrategy.FULL_SHARD,
         device_id=rank,
-        param_init_fn=_materialize_meta_module)
+        param_init_fn=init_fn_wrapper(model, model_copy),
+        sync_module_states=True)
 
     print_log(model)
 
