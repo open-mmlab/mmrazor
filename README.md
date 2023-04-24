@@ -63,7 +63,7 @@ English | [简体中文](README_zh-CN.md)
 
 ## Introduction
 
-MMRazor is a model compression toolkit for model slimming and AutoML, which includes 3 mainstream technologies:
+MMRazor is a model compression toolkit for model slimming and AutoML, which includes 4 mainstream technologies:
 
 - Neural Architecture Search (NAS)
 - Pruning
