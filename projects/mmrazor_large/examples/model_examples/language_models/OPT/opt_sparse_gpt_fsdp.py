@@ -11,8 +11,7 @@ from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.distributed.fsdp.api import ShardingStrategy
 from torch.distributed.fsdp.fully_sharded_data_parallel import CPUOffload
 from torch.distributed.fsdp.wrap import size_based_auto_wrap_policy
-from torch.utils.data import DataLoader
-from utils import init_on_meta
+from utils import init_on_meta, opt_eval_fsdp, opt_infer_fsdp
 
 from mmrazor.implementations.pruning import sparse_gpt
 from mmrazor.utils import print_log
@@ -25,65 +24,6 @@ def setup(rank, world_size):
     dist.init_process_group('nccl', rank=rank, world_size=world_size)
     torch.cuda.set_device(rank)
     print_log(f'init {rank}/{world_size}', only_rank0=False)
-
-
-@torch.no_grad()
-def opt_eval(
-        model: nn.Module,
-        dataloader: DataLoader,
-        dev=torch.device('cuda:0'),
-):
-    print_log('Evaluating ...')
-
-    use_cache = model.config.use_cache
-    model.config.use_cache = False
-    loss_sum = torch.zeros([1], device=dev)
-    total_seq_len = torch.zeros([1], device=dev, dtype=torch.long)
-
-    for i, batch in enumerate(dataloader):
-        B, seq_len = batch.shape[:2]
-
-        batch = batch.to(dev)
-        out: torch.Tensor = model(batch)[0]  # 1
-
-        shift_logits = out[:, :-1, :].contiguous().flatten(0, 1)  # (B N) C
-        shift_labels = batch[:, 1:].flatten()  # (B N)
-
-        loss_fct = nn.CrossEntropyLoss()
-        loss = loss_fct(shift_logits, shift_labels)
-
-        neg_log_likelihood = loss.float() * seq_len * B
-        total_seq_len += seq_len * B
-        loss_sum += neg_log_likelihood
-
-        print_log(f'{(i+1)*B} / {len(dataloader.dataset)}', only_rank0=False)
-
-    if dist.is_initialized():
-        dist.all_reduce(loss_sum)
-        dist.all_reduce(total_seq_len)
-
-    ppl = torch.exp(loss_sum / total_seq_len)
-    print_log(f'Perplexity: {ppl.item():3f}')
-    model.config.use_cache = use_cache
-
-
-@torch.no_grad()
-def opt_infer(
-        model: nn.Module,
-        dataloader: DataLoader,
-        dev=torch.device('cuda:0'),
-):
-    print_log('Infering ...')
-
-    model.config.use_cache = False
-
-    for i, batch in enumerate(dataloader):
-        B, seq_len = batch.shape[:2]
-
-        batch = batch.to(dev)
-        model(batch)[0]  # 1
-
-        print_log(f'{(i+1)*B} / {len(dataloader.dataset)}')
 
 
 def init_fn_wrapper(model: nn.Module, model_copy: nn.Module):
@@ -176,7 +116,7 @@ def main(rank, world_size=8, args=None):
         'c4', seed=args.seed, model=model_name, seqlen=model.seqlen)
     testloader = build_language_loader(
         testloader, world_size, rank, model, batch_size=batch_size)
-    opt_infer(model, testloader)
+    opt_infer_fsdp(model, testloader)
 
     mutator.end_init_hessian()
 
@@ -221,7 +161,7 @@ def main(rank, world_size=8, args=None):
         testloader = build_language_loader(
             testloader, world_size, rank, model, batch_size=batch_size)
         print_log(dataset)
-        opt_eval(model, testloader, torch.device('cuda'))
+        opt_eval_fsdp(model, testloader, torch.device('cuda'))
 
 
 if __name__ == '__main__':
