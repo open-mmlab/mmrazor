@@ -1,6 +1,6 @@
 # Changelog of v1.x
 
-## v1.0.0 (18/04/2023)
+## v1.0.0 (24/04/2023)
 
 We are excited to announce the first official release of MMRazor 1.0.
 

@@ -92,7 +92,7 @@ About MMRazor's design and implementation, please refer to [tutorials](https://m
 
 **The default branch is now `main` and the code on the branch has been upgraded to v1.0.0. The old `master` branch code now exists on the 0.x branch**
 
-MMRazor v1.0.0 was released in 2023-4-18, Major updates from 1.0.0rc2 include:
+MMRazor v1.0.0 was released in 2023-4-24, Major updates from 1.0.0rc2 include:
 
 1. MMRazor quantization is released.
 2. Add a new pruning algorithm named GroupFisher.
