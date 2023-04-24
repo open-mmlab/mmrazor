@@ -1,6 +1,6 @@
 # Apply existing algorithms to new tasks
 
-Here we show how to apply existing algorithms to other tasks with an example of [SPOS ](https://github.com/open-mmlab/mmrazor/tree/dev-1.x/configs/nas/mmcls/spos)& [DetNAS](https://github.com/open-mmlab/mmrazor/tree/dev-1.x/configs/nas/mmdet/detnas).
+Here we show how to apply existing algorithms to other tasks with an example of [SPOS ](https://github.com/open-mmlab/mmrazor/tree/main/configs/nas/mmcls/spos)& [DetNAS](https://github.com/open-mmlab/mmrazor/tree/main/configs/nas/mmdet/detnas).
 
 > SPOS: Single Path One-Shot NAS for classification
 >

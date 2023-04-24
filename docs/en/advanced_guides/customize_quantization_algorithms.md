@@ -41,7 +41,7 @@ If the existing `loop` does not meet your needs, you may need to make some chang
 
 We recommend that you directly use the`MMArchitectureQuant` in `mmrazor/models/algorithms/quantization/mm_architecture.py`.The class `MMArchitectureQuant` inherits from class `BaseAlgorithm`.
 
-This structure is built for the model in openmmlab. If you have other requirements, you can also refer to this [document](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_architectures.html#develop-common-model-components) to design the overall framework.
+This structure is built for the model in openmmlab. If you have other requirements, you can also refer to this [document](https://mmrazor.readthedocs.io/en/main/advanced_guides/customize_architectures.html#develop-common-model-components) to design the overall framework.
 
 2. Select quantizer
 

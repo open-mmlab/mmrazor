@@ -2,6 +2,27 @@
 from mmengine.utils import import_modules_from_strings
 
 
+def pop_rewriter_function_record(rewriter_context, function_record_to_pop):
+    """Delete user-specific rewriters from `RewriterContext._rewriter_manager`.
+
+    We use the model which is rewritten by mmdeploy to build quantized models.
+    However not all the functions rewritten by mmdeploy need to be rewritten in
+    mmrazor. For example, mmdeploy rewrite
+    `mmcls.models.classifiers.ImageClassifier.forward` and
+    `mmcls.models.classifiers.BaseClassifier.forward` for deployment. But they
+    can't be rewritten by mmrazor as ptq and qat are done in mmrazor. So to
+    ensure ptq and qat proceed normally, we have to remove these record from
+    `RewriterContext._rewriter_manager`.
+    """
+    function_record_backup = {}
+    for record in function_record_to_pop:
+        records = rewriter_context._rewriter_manager.function_rewriter. \
+            _registry._rewrite_records
+        if record in records:
+            function_record_backup[record] = records.pop(record)
+    return function_record_backup
+
+
 def _check_valid_source(source):
     """Check if the source's format is valid."""
     if not isinstance(source, str):

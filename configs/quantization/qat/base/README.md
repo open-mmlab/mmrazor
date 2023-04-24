@@ -42,4 +42,4 @@ python tools/train.py ${CONFIG}
 python tools/test.py ${CONFIG} ${CKPT}
 ```
 
-For more details, please refer to [Quantization User Guide](mmrazor/docs/en/user_guides/quantization_user_guide.md)
+For more details, please refer to [Quantization User Guide](https://mmrazor.readthedocs.io/en/main/user_guides/quantization_user_guide.html)

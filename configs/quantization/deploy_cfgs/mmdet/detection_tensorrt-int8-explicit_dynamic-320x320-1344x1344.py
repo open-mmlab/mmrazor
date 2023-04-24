@@ -53,5 +53,6 @@ deploy_cfg = dict(
     function_record_to_pop=[
         'mmdet.models.detectors.single_stage.SingleStageDetector.forward',
         'mmdet.models.detectors.two_stage.TwoStageDetector.forward',
-        'mmdet.models.detectors.single_stage_instance_seg.SingleStageInstanceSegmentor.forward'  # noqa: E501
+        'mmdet.models.detectors.single_stage_instance_seg.SingleStageInstanceSegmentor.forward',  # noqa: E501
+        'torch.cat'
     ])

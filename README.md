@@ -21,7 +21,7 @@
 <!--算法库 Badges-->
 
 [![PyPI](https://img.shields.io/pypi/v/mmrazor)](https://pypi.org/project/mmrazor)
-[![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmrazor.readthedocs.io/en/quantize/)
+[![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmrazor.readthedocs.io/en/main/)
 [![badge](https://github.com/open-mmlab/mmrazor/workflows/build/badge.svg)](https://github.com/open-mmlab/mmrazor/actions)
 [![codecov](https://codecov.io/gh/open-mmlab/mmrazor/branch/master/graph/badge.svg)](https://codecov.io/gh/open-mmlab/mmrazor)
 [![license](https://img.shields.io/github/license/open-mmlab/mmrazor.svg)](https://github.com/open-mmlab/mmrazor/blob/master/LICENSE)
@@ -32,9 +32,9 @@
 
 <!--Note:请根据各算法库自身情况设置项目和链接-->
 
-[📘Documentation](https://mmrazor.readthedocs.io/en/quantize/) |
-[🛠️Installation](https://mmrazor.readthedocs.io/en/quantize/get_started/installation.html) |
-[👀Model Zoo](https://mmrazor.readthedocs.io/en/quantize/get_started/model_zoo.html) |
+[📘Documentation](https://mmrazor.readthedocs.io/en/main/) |
+[🛠️Installation](https://mmrazor.readthedocs.io/en/main/get_started/installation.html) |
+[👀Model Zoo](https://mmrazor.readthedocs.io/en/main/get_started/model_zoo.html) |
 [🤔Reporting Issues](https://github.com/open-mmlab/mmrazor/issues/new/choose)
 
 </div>
@@ -86,22 +86,23 @@ Major features:
 
   With better modular design, developers can implement new model compression algorithms with only a few codes, or even by simply modifying config files.
 
-Below is an overview of MMRazor's design and implementation, please refer to [tutorials](https://mmrazor.readthedocs.io/en/quantize/get_started/overview.html) for more details.
+About MMRazor's design and implementation, please refer to [tutorials](https://mmrazor.readthedocs.io/en/main/get_started/overview.html) for more details.
 
-<div align="center">
-  <img src="resources/design_and_implement.png" style="zoom:100%"/>
-</div>
-<br />
+## Latest Updates
 
-## What's new
+**The default branch is now `main` and the code on the branch has been upgraded to v1.0.0. The old `master` branch code now exists on the 0.x branch**
 
-MMRazor v1.0.0rc0 was released in 1/9/2022.
+MMRazor v1.0.0 was released in 2023-4-18, Major updates from 1.0.0rc2 include:
 
-Please refer to [changelog.md](/docs/en/notes/changelog.md) for more details and other release history.
+1. MMRazor quantization is released.
+2. Add a new pruning algorithm named GroupFisher.
+3. Support distilling rtmdet with MMRazor.
+
+To know more about the updates in MMRazor 1.0, please refer to [Changelog](https://mmrazor.readthedocs.io/en/main/notes/changelog.html) for more details!
 
 ## Benchmark and model zoo
 
-Results and models are available in the [model zoo](/docs/en/get_started/model_zoo.md).
+Results and models are available in the [model zoo](https://mmrazor.readthedocs.io/en/main/get_started/model_zoo.html).
 
 Supported algorithms:
 
@@ -120,6 +121,12 @@ Supported algorithms:
 <summary>Pruning</summary>
 
 - [x] [AutoSlim(NeurIPS'2019)](/configs/pruning/mmcls/autoslim)
+
+- [x] [L1-norm](/configs/pruning/mmcls/l1-norm)
+
+- [x] [Group Fisher](/configs/pruning/base/group_fisher)
+
+- [x] [DMCP](/configs/pruning/mmcls/dmcp)
 
 </details>
 
@@ -156,20 +163,31 @@ Supported algorithms:
 
 </details>
 
+<details open>
+<summary>Quantization</summary>
+
+- [x] [PTQ](/configs/quantization/ptq/base)
+
+- [x] [QAT](/configs/quantization/qat/base)
+
+- [x] [LSQ](/configs/quantization/qat/lsq)
+
+</details>
+
 ## Installation
 
 MMRazor depends on [PyTorch](https://pytorch.org/), [MMCV](https://github.com/open-mmlab/mmcv) and [MMEngine](https://github.com/open-mmlab/mmengine).
 
-Please refer to [installation.md](/docs/en/get_started/installation.md) for more detailed instruction.
+Please refer to [installation.md](https://mmrazor.readthedocs.io/en/main/get_started/installation.html) for more detailed instruction.
 
 ## Getting Started
 
-Please refer to [user guides](https://mmrazor.readthedocs.io/en/quantize/user_guides/index.html) for the basic usage of MMRazor. There are also [advanced guides](https://mmrazor.readthedocs.io/en/quantize/advanced_guides/index.html):
+Please refer to [user guides](https://mmrazor.readthedocs.io/en/main/user_guides/index.html) for the basic usage of MMRazor. There are also [advanced guides](https://mmrazor.readthedocs.io/en/main/advanced_guides/index.html):
 
 ## Contributing
 
 We appreciate all contributions to improve MMRazor.
-Please refer to [CONTRUBUTING.md](/docs/en/notes/contribution_guide.md) for the contributing guideline.
+Please refer to [CONTRUBUTING.md](https://mmrazor.readthedocs.io/en/main/notes/contribution_guide.html) for the contributing guideline.
 
 ## Acknowledgement
 
