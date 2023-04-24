@@ -34,6 +34,6 @@ deploy_cfg = dict(
         ]),
     function_record_to_pop=[
         'mmcls.models.classifiers.ImageClassifier.forward',
-        'mmcls.models.classifiers.BaseClassifier.forward'
+        'mmcls.models.classifiers.BaseClassifier.forward', 'torch.cat'
     ],
 )

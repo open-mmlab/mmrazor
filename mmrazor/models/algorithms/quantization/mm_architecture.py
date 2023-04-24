@@ -10,6 +10,7 @@ from mmengine.runner import load_checkpoint
 from mmengine.structures import BaseDataElement
 from torch import nn
 
+from mmrazor.models.utils import pop_rewriter_function_record
 from mmrazor.registry import MODEL_WRAPPERS, MODELS
 from mmrazor.structures.quantization import QConfigHandler
 from ..base import BaseAlgorithm, BaseModel
@@ -249,13 +250,8 @@ class MMArchitectureQuant(BaseAlgorithm):
         function_record_to_pop = self.deploy_cfg.get('function_record_to_pop',
                                                      [])
         function_record_to_pop.extend(skipped_methods)
-        function_record_backup = {}
-        for record in function_record_to_pop:
-            records = rewriter_context._rewriter_manager.function_rewriter. \
-                _registry._rewrite_records
-            if record in records:
-                function_record_backup[record] = records.pop(record)
-        return function_record_backup
+        return pop_rewriter_function_record(rewriter_context,
+                                            function_record_to_pop)
 
     def _build_qmodels(self, model: BaseModel):
         """Build quantized models from the given model.
