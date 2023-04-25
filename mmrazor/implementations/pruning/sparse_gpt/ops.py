@@ -20,9 +20,7 @@ class SparseGptMixIn(ModuleProtocol):
         self.rows = self.weight_matrix.shape[0]
         self.columns = self.weight_matrix.shape[1]
 
-        _hessian = torch.zeros([self.columns, self.columns])
-        self.register_buffer('_hessian', _hessian)
-        self._hessian: torch.Tensor
+        self._hessian: torch.Tensor = None
         self.hessian_batch = 0
 
     # weight and input adaptive
@@ -50,17 +48,20 @@ class SparseGptMixIn(ModuleProtocol):
     @property
     def hessian(self):
         """hessian always return float."""
+        assert self._hessian is not None, 'hessian is not initialized.'
         return self._hessian
 
     @hessian.setter
     def hessian(self, value: torch.Tensor):
         with torch.no_grad():
-            self._hessian.data.copy_(value.data)
+            assert self._hessian is not None, 'hessian is not initialized.'
+            self._hessian.data.copy_(value.data.to(self._hessian.device))
 
     @torch.no_grad()
     def update_hessian(self, input: torch.Tensor):
 
         input = self.format_input(input).float()
+        H_save = self.hessian.to(input.device)
 
         assert len(input.shape) == 3
         B = input.shape[0]  # B N C
@@ -71,8 +72,8 @@ class SparseGptMixIn(ModuleProtocol):
         if dist.is_initialized():
             dist.all_reduce(H)
             B *= dist.get_world_size()
-        self.hessian = (self.hessian * self.hessian_batch + H) / (
-            self.hessian_batch + B)
+        H_save = (H_save * self.hessian_batch + H) / (self.hessian_batch + B)
+        self.hessian = H_save
         self.hessian_batch = self.hessian_batch + B
 
     def start_init_hessian(self):
@@ -89,8 +90,12 @@ class SparseGptMixIn(ModuleProtocol):
         for h in self.sparse_gpt_handles:
             h.remove()
 
-    def keep_hessian_in_float(self):
-        self._hessian = self._hessian.float()
+    def init_hessian(self, device=None):
+        if device is None:
+            device = self.weight_matrix.device
+        self._hessian = torch.zeros([self.columns, self.columns],
+                                    device=device,
+                                    dtype=torch.float32)
 
     # prune
 
@@ -102,7 +107,7 @@ class SparseGptMixIn(ModuleProtocol):
             assert self.hessian is not None
             W: torch.Tensor = self.weight_matrix.float()  # out in
 
-            H = self.hessian.float()
+            H = self.hessian.float().to(W.device)
 
             dead = torch.diag(H) == 0
             H[dead, dead] = 1
