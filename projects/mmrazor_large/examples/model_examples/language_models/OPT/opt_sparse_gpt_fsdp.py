@@ -48,7 +48,7 @@ def init_fn_wrapper(model: nn.Module, model_copy: nn.Module):
             assert model_copy is not None
             module_copy = find_module_in_model_copy(module)
 
-            name2p = dict(module_copy.named_parameters())
+            name2p = dict(module_copy.named_parameters(remove_duplicate=False))
             for n, p in module.named_parameters():
                 if '_flat_param' not in n:
                     n = n.replace('_fsdp_wrapped_module.', '')
@@ -56,7 +56,7 @@ def init_fn_wrapper(model: nn.Module, model_copy: nn.Module):
                         p.data.copy_(name2p[n])
                     except Exception:
                         pass
-            name2p = dict(module_copy.named_buffers())
+            name2p = dict(module_copy.named_buffers(remove_duplicate=False))
             for n, p in module.named_buffers():
                 if '_flat_param' not in n:
                     n = n.replace('_fsdp_wrapped_module.', '')
@@ -106,7 +106,7 @@ def main(rank, world_size=8, args=None):
 
     # init hessian
 
-    mutator.init_hessian(device='cpu')
+    mutator.init_hessian(device='cuda')
     mutator.start_init_hessian()
 
     _, testloader = get_loaders(
