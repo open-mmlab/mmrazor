@@ -34,9 +34,9 @@ model = mutator.to_static_model(model)
 
 ## Full Examples
 
-- [ResNet](../model_examples/ResNet/sparse_gpt/README.md)
-- [OPT](../model_examples/language_models/OPT/README.md)
-- [Llama](../model_examples/language_models/Llama/README.md)
+- [ResNet](../examples/ResNet/sparse_gpt/README.md)
+- [OPT](../examples/language_models/OPT/README.md)
+- [Llama](../examples/language_models/Llama/README.md)
 
 ## Cite
 
