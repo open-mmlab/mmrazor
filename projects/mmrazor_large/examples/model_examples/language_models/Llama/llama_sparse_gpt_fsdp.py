@@ -121,7 +121,6 @@ def main(rank, world_size=8, args=None):
 
     with torch.no_grad():
 
-        total_num_op = 0
         for fsdp in FSDP.fsdp_modules(model):
             if len(FSDP.fsdp_modules(fsdp)) == 1:
                 fsdp._reset_lazy_init()
@@ -129,24 +128,16 @@ def main(rank, world_size=8, args=None):
                     num_op = 0
                     for name, op in fsdp.named_modules():
                         if isinstance(op, sparse_gpt.SparseGptMixIn):
-                            if num_op % world_size == rank:
-                                try:
-                                    op.prune(0.5, prunen=2, prunem=4)
-                                    print_log(
-                                        f'prune {name} on rank:{rank} successfully.',  # noqa
-                                        only_rank0=False)
-                                except Exception as e:
-                                    print_log(
-                                        f'prune {name} on rank:{rank} failed, as {e}',  # noqa
-                                        only_rank0=False)
+                            try:
+                                op.prune(0.5, prunen=2, prunem=4)
+                                print_log(
+                                    f'prune {name} on rank:{rank} successfully.',  # noqa
+                                    only_rank0=False)
+                            except Exception as e:
+                                print_log(
+                                    f'prune {name} on rank:{rank} failed, as {e}',  # noqa
+                                    only_rank0=False)
                             num_op += 1
-                    num_op = 0
-                    for name, op in fsdp.named_modules():
-                        if isinstance(op, sparse_gpt.SparseGptMixIn):
-                            dist.broadcast(op.weight, num_op % world_size)
-                            num_op += 1
-                    total_num_op += num_op
-
                 fsdp._reset_lazy_init()
                 torch.cuda.empty_cache()
     # val

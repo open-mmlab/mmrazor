@@ -116,11 +116,15 @@ if __name__ == '__main__':
     num_samples = args.num_samples
     batch_size = args.batch_size
 
-    model = torchvision.models.resnet18(pretrained=True).cuda()
+    model = torchvision.models.resnet18(pretrained=True)
     train_loader, test_loader = get_dataloaders(batch_size, 4, data_path)
 
     mutator = sparse_gpt.SparseGptMutator()
     mutator.prepare_from_supernet(model)
+
+    model.cuda()
+
+    mutator.init_hessian()
     mutator.start_init_hessian()
     infer(model, test_loader, num_samples=num_samples)
     mutator.end_init_hessian()
