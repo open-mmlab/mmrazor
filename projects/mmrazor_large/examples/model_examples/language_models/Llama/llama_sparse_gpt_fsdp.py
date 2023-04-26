@@ -140,6 +140,15 @@ def main(rank, world_size=8, args=None):
                                     f'prune {fsdp_name}.{name} failed, as {e}',  # noqa
                                     only_rank0=True)
             fsdp._reset_lazy_init()
+
+    # save
+    if args.save:
+        print_log(f'save model in {args.save}')
+        model._reset_lazy_init()
+        with FSDP.summon_full_params(model, rank0_only=True, writeback=False):
+            if dist.get_rank() == 0:
+                model.save_pretrained(args.save)
+
     # val
     torch.cuda.empty_cache()
     model._reset_lazy_init()
