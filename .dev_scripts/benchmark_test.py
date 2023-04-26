@@ -24,9 +24,9 @@ METRIC_MAPPINGS = {
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Test all models' accuracy in model-index.yml")
-    parser.add_argument(
-        'partition', type=str, help='Cluster partition to use.')
     parser.add_argument('checkpoint_root', help='Checkpoint file root path.')
+    parser.add_argument(
+        '--partition', type=str, help='Cluster partition to use.')
     parser.add_argument(
         '--job-name',
         type=str,
@@ -148,6 +148,7 @@ def create_test_job_batch(commands, model_info, args, port):
     if exists:
         print(f'{checkpoint} already exists.')
     else:
+        print(f'start downloading {fname}')
         wget.download(model_info.weights, str(checkpoint))
         print(f'\nSaved in {checkpoint}.')
 

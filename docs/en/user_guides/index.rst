@@ -10,6 +10,15 @@ Train & Test
    3_train_with_different_devices.md
    4_test_a_model.md
 
+Quantization
+************
+
+.. toctree::
+   :maxdepth: 1
+
+   quantization_user_guide.md
+
 Useful Tools
 ************
-   please refer to upstream applied repositories' docs
+
+please refer to upstream applied repositories' docs

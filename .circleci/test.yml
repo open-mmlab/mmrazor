@@ -67,10 +67,10 @@ jobs:
             pip install git+https://github.com/open-mmlab/mmengine.git@main
             pip install -U openmim
             mim install 'mmcv >= 2.0.0rc1'
-            pip install git+https://github.com/open-mmlab/mmclassification.git@dev-1.x
-            pip install git+https://github.com/open-mmlab/mmdetection.git@dev-3.x
-            pip install git+https://github.com/open-mmlab/mmsegmentation.git@dev-1.x
-            python -m pip install git+ssh://git@github.com/open-mmlab/mmpose.git@dev-1.x
+            pip install git+https://github.com/open-mmlab/mmpretrain.git@mmcls-1.x
+            pip install git+https://github.com/open-mmlab/mmdetection.git@main
+            pip install git+https://github.com/open-mmlab/mmsegmentation.git@main
+            python -m pip install git+ssh://git@github.com/open-mmlab/mmpose.git@main
             pip install -r requirements.txt
       - run:
           name: Build and install
@@ -103,9 +103,9 @@ jobs:
           name: Clone Repos
           command: |
             git clone -b main --depth 1 https://github.com/open-mmlab/mmengine.git /home/circleci/mmengine
-            git clone -b dev-3.x --depth 1 https://github.com/open-mmlab/mmdetection.git /home/circleci/mmdetection
-            git clone -b dev-1.x --depth 1 https://github.com/open-mmlab/mmclassification.git /home/circleci/mmclassification
-            git clone -b dev-1.x --depth 1 https://github.com/open-mmlab/mmsegmentation.git /home/circleci/mmsegmentation
+            git clone -b main --depth 1 https://github.com/open-mmlab/mmdetection.git /home/circleci/mmdetection
+            git clone -b 1.x --depth 1 https://github.com/open-mmlab/mmclassification.git /home/circleci/mmclassification
+            git clone -b main --depth 1 https://github.com/open-mmlab/mmsegmentation.git /home/circleci/mmsegmentation
       - run:
           name: Build Docker image
           command: |
@@ -139,7 +139,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - dev-1.x
+                - main
                 - 1.x
   pr_stage_test:
     when:
@@ -150,18 +150,18 @@ workflows:
           filters:
             branches:
               ignore:
-                - dev-1.x
+                - main
       - build_cpu:
           name: minimum_version_cpu
-          torch: 1.6.0
-          torchvision: 0.7.0
-          python: 3.7.9
+          torch: 1.8.1
+          torchvision: 0.9.1
+          python: 3.7.4
           requires:
             - lint
       - build_cpu:
           name: maximum_version_cpu
-          torch: 1.12.1
-          torchvision: 0.13.1
+          torch: 1.13.1
+          torchvision: 0.14.1
           python: 3.9.0
           requires:
             - lint
@@ -183,11 +183,11 @@ workflows:
     jobs:
       - build_cuda:
           name: minimum_version_gpu
-          torch: 1.6.0
+          torch: 1.8.1
           # Use double quotation mark to explicitly specify its type
           # as string instead of number
-          cuda: "10.1"
+          cuda: "10.2"
           filters:
             branches:
               only:
-                - dev-1.x
+                - main

@@ -4,15 +4,16 @@ from .hooks import (DMCPSubnetHook, DumpSubnetHook, EstimateResourcesHook,
 from .optimizers import SeparateOptimWrapperConstructor
 from .runner import (AutoSlimGreedySearchLoop, DartsEpochBasedTrainLoop,
                      DartsIterBasedTrainLoop, EvolutionSearchLoop,
-                     GreedySamplerTrainLoop, SelfDistillValLoop,
+                     GreedySamplerTrainLoop, LSQEpochBasedLoop, PTQLoop,
+                     QATEpochBasedLoop, QATValLoop, SelfDistillValLoop,
                      SingleTeacherDistillValLoop, SlimmableValLoop,
                      SubnetValLoop)
 
 __all__ = [
-    'SeparateOptimWrapperConstructor', 'DumpSubnetHook',
-    'SingleTeacherDistillValLoop', 'DartsEpochBasedTrainLoop',
-    'DartsIterBasedTrainLoop', 'SlimmableValLoop', 'EvolutionSearchLoop',
-    'GreedySamplerTrainLoop', 'EstimateResourcesHook', 'SelfDistillValLoop',
-    'AutoSlimGreedySearchLoop', 'SubnetValLoop', 'StopDistillHook',
-    'DMCPSubnetHook'
+    'DMCPSubnetHook', 'StopDistillHook', 'SeparateOptimWrapperConstructor',
+    'DumpSubnetHook', 'SingleTeacherDistillValLoop',
+    'DartsEpochBasedTrainLoop', 'DartsIterBasedTrainLoop', 'SlimmableValLoop',
+    'EvolutionSearchLoop', 'GreedySamplerTrainLoop', 'EstimateResourcesHook',
+    'SelfDistillValLoop', 'AutoSlimGreedySearchLoop', 'SubnetValLoop',
+    'PTQLoop', 'QATEpochBasedLoop', 'LSQEpochBasedLoop', 'QATValLoop'
 ]

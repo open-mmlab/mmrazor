@@ -108,7 +108,7 @@ architecture = _base_.model
 - Use your customized model as below, which is an example of defining a VGG model as our architecture.
 
 ```{note}
-How to customize architectures can refer to our tutorial: [Customize Architectures](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_architectures.html).
+How to customize architectures can refer to our tutorial: [Customize Architectures](https://mmrazor.readthedocs.io/en/main/advanced_guides/customize_architectures.html).
 ```
 
 ```Python
@@ -262,12 +262,12 @@ Please refer to our tutorials about how to customize different algorithms for mo
 
 1. NAS
 
-[Customize NAS algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_nas_algorithms.html)
+[Customize NAS algorithms](https://mmrazor.readthedocs.io/en/main/advanced_guides/customize_nas_algorithms.html)
 
 2. Pruning
 
-[Customize Pruning algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_pruning_algorithms.html)
+[Customize Pruning algorithms](https://mmrazor.readthedocs.io/en/main/advanced_guides/customize_pruning_algorithms.html)
 
 3. Distill
 
-[Customize KD algorithms](https://mmrazor.readthedocs.io/en/dev-1.x/advanced_guides/customize_kd_algorithms.html)
+[Customize KD algorithms](https://mmrazor.readthedocs.io/en/main/advanced_guides/customize_kd_algorithms.html)
