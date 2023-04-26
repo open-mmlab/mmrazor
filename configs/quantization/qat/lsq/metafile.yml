@@ -1,0 +1,36 @@
+Collections:
+  - Name: LSQ
+    README: configs/quantization/qat/lsq/README.md
+Models:
+  - Name: lsq_openvino_resnet18_8xb32_10e_in1k.py
+    In Collection: LSQ
+    Metadata:
+      Backend: openvino
+      Float Model:
+        Config: mmcls::resnet/resnet18_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_8xb32_in1k_20210831-fbbb1da6.pth
+        Metrics:
+          Top 1 Accuracy: 69.90
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 69.418
+    Config: configs/quantization/qat/lsq/lsq_openvino_resnet18_8xb32_10e_in1k.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/quantization/qat/openvino/lsq_openvino_resnet18_8xb32_10e_in1k_20230413_224237-36eac1f1.pth
+  - Name: lsq_openvino_resnet18_8xb32_100e_in1k.py
+    In Collection: LSQ
+    Metadata:
+      Backend: openvino
+      Float Model:
+        Config: mmcls::resnet/resnet18_8xb32_in1k.py
+        Weights: https://download.openmmlab.com/mmclassification/v0/resnet/resnet18_8xb32_in1k_20210831-fbbb1da6.pth
+        Metrics:
+          Top 1 Accuracy: 69.90
+    Results:
+      - Task: Image Classification
+        Dataset: ImageNet-1k
+        Metrics:
+          Top 1 Accuracy: 69.992
+    Config: configs/quantization/qat/lsq/lsq_openvino_resnet18_8xb32_100e_in1k.py
+    Weights: https://download.openmmlab.com/mmrazor/v1/quantization/qat/openvino/lsq_openvino_resnet18_8xb32_100e_in1k_20230402_173316-ca5993bf.pth

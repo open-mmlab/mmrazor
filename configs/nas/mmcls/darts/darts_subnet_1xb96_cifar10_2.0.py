@@ -37,7 +37,7 @@ model = dict(
     init_cfg=dict(
         type='Pretrained',
         checkpoint=  # noqa: E251
-        'https://openmmlab-share.oss-cn-hangzhou.aliyuncs.com/mmrazor/v1/darts/darts_subnetnet_1xb96_cifar10_acc-97.27_20211222-17e42600_latest.pth',  # noqa: E501
+        'https://download.openmmlab.com/mmrazor/v1/darts/darts_subnetnet_1xb96_cifar10_acc-97.27_20211222-17e42600_latest.pth',  # noqa: E501
         prefix='architecture.'))
 
 model_wrapper_cfg = None

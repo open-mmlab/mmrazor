@@ -1,7 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 """This module defines MutableChannelUnit."""
 import abc
-from collections import Set
+# from collections import set
 from typing import Dict, List, Type, TypeVar
 
 import torch
@@ -72,7 +72,7 @@ class MutableChannelUnit(ChannelUnit):
                 if isinstance(derived_choices, torch.Tensor):
                     derived_choices = derived_choices.sum().item()
                 if isinstance(mutable, DerivedMutable):
-                    source_mutables: Set = \
+                    source_mutables: set = \
                         mutable._trace_source_mutables()
                     source_channel_mutables = [
                         mutable for mutable in source_mutables

@@ -3,7 +3,6 @@ Import:
   - configs/distill/mmdet/cwd/metafile.yml
   - configs/distill/mmcls/wsld/metafile.yml
   - configs/distill/mmcls/rkd/metafile.yml
-  - configs/nas/mmcls/spos/metafile.yml
   - configs/distill/mmcls/abloss/metafile.yml
   - configs/distill/mmcls/byot/metafile.yml
   - configs/distill/mmcls/dafl/metafile.yml
@@ -15,6 +14,7 @@ Import:
   - configs/distill/mmdet/fbkd/metafile.yml
   - configs/distill/mmcls/factor_transfer/metafile.yml
   - configs/distill/mmcls/ofd/metafile.yml
+  - configs/nas/mmcls/spos/metafile.yml
   - configs/nas/mmcls/autoslim/metafile.yml
   - configs/nas/mmcls/darts/metafile.yml
   - configs/nas/mmdet/detnas/metafile.yml
@@ -25,4 +25,7 @@ Import:
   - configs/pruning/mmcls/group_fisher/resnet50/metafile.yml
   - configs/pruning/mmdet/group_fisher/retinanet/metafile.yml
   - configs/pruning/mmcls/l1-norm/metafile.yml
-  - configs/pruning/mmcls/dmcp/metafile.yml
+  # - configs/pruning/mmcls/dmcp/metafile.yml
+  - configs/quantization/ptq/base/metafile.yml
+  - configs/quantization/qat/base/metafile.yml
+  - configs/quantization/qat/lsq/metafile.yml

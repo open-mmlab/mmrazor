@@ -25,4 +25,4 @@ Models:
           Top 1 Accuracy: 97.32
           Top 5 Accuracy: 99.94
     Config: configs/nas/mmcls/darts/darts_subnet_1xb96_cifar10_2.0.py
-    Weights: https://download.openmmlab.com/mmrazor/v1/darts/darts_subnetnet_1xb96_cifar10_acc-97.32_20211222-23ca1e10.pth
+    Weights: https://download.openmmlab.com/mmrazor/v1/darts/darts_subnetnet_1xb96_cifar10_acc-97.32_20211222-e5727921_latest.pth
