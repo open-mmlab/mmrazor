@@ -6,7 +6,7 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.nn as nn
 from datautils import build_language_loader, get_loaders
-from opt_sparse_gpt import get_model
+from llama_sparse_gpt import get_model
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.distributed.fsdp.api import ShardingStrategy
 from torch.distributed.fsdp.fully_sharded_data_parallel import CPUOffload
@@ -79,7 +79,7 @@ def main(rank, world_size=8, args=None):
 
         # init mutator
         mutator = sparse_gpt.SparseGptMutator()
-        mutator.prepare_from_supernet(model.model.decoder)
+        mutator.prepare_from_supernet(model.model.layers)
         return model, mutator
 
     with init_on_meta(enable=True):

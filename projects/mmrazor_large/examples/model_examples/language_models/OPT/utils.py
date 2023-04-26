@@ -2,6 +2,8 @@
 # Example for opt is converted from https://github.com/ist-daslab/sparsegpt
 import torch
 import torch.nn as nn
+from torch import distributed as dist
+from torch.utils.data import DataLoader
 from transformers import OPTForCausalLM
 
 from mmrazor.utils import print_log
@@ -93,3 +95,77 @@ class init_on_meta:
     def __exit__(self, exc_type, exc_value, traceback):
         if self.enable:
             torch.set_default_device(self.default_device)
+
+
+@torch.no_grad()
+def opt_eval_fsdp(
+        model: nn.Module,
+        dataloader: DataLoader,
+        dev=torch.device('cuda:0'),
+):
+    print_log('Evaluating ...')
+
+    use_cache = model.config.use_cache
+    model.config.use_cache = False
+    loss_sum = torch.zeros([1], device=dev)
+    total_seq_len = torch.zeros([1], device=dev, dtype=torch.long)
+
+    for i, batch in enumerate(dataloader):
+        B, seq_len = batch.shape[:2]
+
+        batch = batch.to(dev)
+        out: torch.Tensor = model(batch)[0]  # 1
+
+        shift_logits = out[:, :-1, :].contiguous().flatten(0, 1)  # (B N) C
+        shift_labels = batch[:, 1:].flatten()  # (B N)
+
+        loss_fct = nn.CrossEntropyLoss()
+        loss = loss_fct(shift_logits, shift_labels)
+
+        neg_log_likelihood = loss.float() * seq_len * B
+        total_seq_len += seq_len * B
+        loss_sum += neg_log_likelihood
+
+        if dist.is_initialized():
+            world_size = dist.get_world_size()
+        else:
+            world_size = 1
+        infered_batch = (i + 1) * B * world_size
+
+        print_log(f'{infered_batch} / {len(dataloader.dataset)}')
+
+    if dist.is_initialized():
+        dist.all_reduce(loss_sum)
+        dist.all_reduce(total_seq_len)
+
+    ppl = torch.exp(loss_sum / total_seq_len)
+    print_log(f'Perplexity: {ppl.item():3f}')
+    model.config.use_cache = use_cache
+
+
+@torch.no_grad()
+def opt_infer_fsdp(
+        model: nn.Module,
+        dataloader: DataLoader,
+        dev=torch.device('cuda:0'),
+        num_samples=128,
+):
+    print_log('Infering ...')
+
+    model.config.use_cache = False
+
+    for i, batch in enumerate(dataloader):
+        B = batch.shape[0]
+
+        batch = batch.to(dev)
+        model(batch)[0]  # 1
+
+        if dist.is_initialized():
+            world_size = dist.get_world_size()
+        else:
+            world_size = 1
+        infered_batch = (i + 1) * B * world_size
+
+        print_log(f'{infered_batch} / {len(dataloader.dataset)}')
+        if infered_batch >= num_samples:
+            break
