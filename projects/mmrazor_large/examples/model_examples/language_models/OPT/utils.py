@@ -126,7 +126,13 @@ def opt_eval_fsdp(
         total_seq_len += seq_len * B
         loss_sum += neg_log_likelihood
 
-        print_log(f'{(i+1)*B} / {len(dataloader.dataset)}', only_rank0=False)
+        if dist.is_initialized():
+            world_size = dist.get_world_size()
+        else:
+            world_size = 1
+        infered_batch = (i + 1) * B * world_size
+
+        print_log(f'{infered_batch} / {len(dataloader.dataset)}')
 
     if dist.is_initialized():
         dist.all_reduce(loss_sum)
@@ -142,15 +148,24 @@ def opt_infer_fsdp(
         model: nn.Module,
         dataloader: DataLoader,
         dev=torch.device('cuda:0'),
+        num_samples=128,
 ):
     print_log('Infering ...')
 
     model.config.use_cache = False
 
     for i, batch in enumerate(dataloader):
-        B = batch.shape[:2]
+        B = batch.shape[0]
 
         batch = batch.to(dev)
         model(batch)[0]  # 1
 
-        print_log(f'{(i+1)*B} / {len(dataloader.dataset)}')
+        if dist.is_initialized():
+            world_size = dist.get_world_size()
+        else:
+            world_size = 1
+        infered_batch = (i + 1) * B * world_size
+
+        print_log(f'{infered_batch} / {len(dataloader.dataset)}')
+        if infered_batch >= num_samples:
+            break

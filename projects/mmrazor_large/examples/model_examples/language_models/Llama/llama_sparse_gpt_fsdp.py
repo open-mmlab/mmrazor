@@ -110,7 +110,7 @@ def main(rank, world_size=8, args=None):
     mutator.start_init_hessian()
 
     _, testloader = get_loaders(
-        'c4', seed=args.seed, model=model_name, seqlen=model.seqlen)
+        args.dataset, seed=args.seed, model=model_name, seqlen=model.seqlen)
     testloader = build_language_loader(
         testloader, world_size, rank, model, batch_size=batch_size)
     opt_infer_fsdp(model, testloader)
@@ -118,26 +118,27 @@ def main(rank, world_size=8, args=None):
     mutator.end_init_hessian()
 
     # prune
+    name2module = dict(model.named_modules())
+    module2name = {}
+    module2name = dict([(v, k) for k, v in name2module.items()])
 
     with torch.no_grad():
-
         for fsdp in FSDP.fsdp_modules(model):
             if len(FSDP.fsdp_modules(fsdp)) == 1:
                 fsdp._reset_lazy_init()
                 with FSDP.summon_full_params(fsdp):
-                    num_op = 0
+                    fsdp_name = module2name[fsdp]
                     for name, op in fsdp.named_modules():
                         if isinstance(op, sparse_gpt.SparseGptMixIn):
                             try:
                                 op.prune(0.5, prunen=2, prunem=4)
                                 print_log(
-                                    f'prune {name} on rank:{rank} successfully.',  # noqa
-                                    only_rank0=False)
+                                    f'prune {fsdp_name}.{name} successfully.',  # noqa
+                                    only_rank0=True)
                             except Exception as e:
                                 print_log(
-                                    f'prune {name} on rank:{rank} failed, as {e}',  # noqa
-                                    only_rank0=False)
-                            num_op += 1
+                                    f'prune {fsdp_name}.{name} failed, as {e}',  # noqa
+                                    only_rank0=True)
                 fsdp._reset_lazy_init()
                 torch.cuda.empty_cache()
     # val
@@ -178,11 +179,7 @@ if __name__ == '__main__':
         type=int,
         default=64,
         help='Batchsize for calibration and evaluation.')
-    parser.add_argument(
-        '-m',
-        type=bool,
-        default=False,
-        help='Init on meta device to save memory.')
+
     parser.add_argument(
         '--save', type=str, default='', help='Path to saved model.')
     parser.add_argument(
