@@ -124,11 +124,11 @@ def main(rank, world_size=8, args=None):
 
     with torch.no_grad():
         for fsdp in FSDP.fsdp_modules(model):
-            if len(FSDP.fsdp_modules(fsdp)) == 1:
-                fsdp._reset_lazy_init()
-                with FSDP.summon_full_params(fsdp):
-                    fsdp_name = module2name[fsdp]
-                    for name, op in fsdp.named_modules():
+            fsdp._reset_lazy_init()
+            with FSDP.summon_full_params(fsdp, recurse=False):
+                fsdp_name = module2name[fsdp]
+                for name, op in fsdp.named_modules():
+                    if name.count('_fsdp_wrapped_module') <= 1:
                         if isinstance(op, sparse_gpt.SparseGptMixIn):
                             try:
                                 op.prune(0.5, prunen=2, prunem=4)
@@ -139,14 +139,13 @@ def main(rank, world_size=8, args=None):
                                 print_log(
                                     f'prune {fsdp_name}.{name} failed, as {e}',  # noqa
                                     only_rank0=True)
-                fsdp._reset_lazy_init()
-                torch.cuda.empty_cache()
+            fsdp._reset_lazy_init()
     # val
     torch.cuda.empty_cache()
     model._reset_lazy_init()
     for dataset in ['wikitext2', 'ptb', 'c4']:
         _, testloader = get_loaders(
-            dataset, seed=1000, model=model_name, seqlen=model.seqlen)
+            dataset, seed=args.seed, model=model_name, seqlen=model.seqlen)
         testloader = build_language_loader(
             testloader, world_size, rank, model, batch_size=batch_size)
         print_log(dataset)
