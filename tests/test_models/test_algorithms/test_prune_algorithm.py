@@ -11,6 +11,9 @@ from mmengine.model import BaseModel
 from mmrazor.models.algorithms.pruning.ite_prune_algorithm import (
     ItePruneAlgorithm, ItePruneConfigManager)
 from mmrazor.registry import MODELS
+from projects.group_fisher.modules.group_fisher_algorthm import \
+    GroupFisherAlgorithm
+from projects.group_fisher.modules.group_fisher_ops import GroupFisherConv2d
 from ...utils.set_dist_env import SetDistEnv
 
 
@@ -262,3 +265,63 @@ class TestItePruneAlgorithm(unittest.TestCase):
         print(algorithm2.mutator.current_choices)
         self.assertDictEqual(algorithm.mutator.current_choices,
                              algorithm2.mutator.current_choices)
+
+
+class TestGroupFisherPruneAlgorithm(TestItePruneAlgorithm):
+
+    def test_group_fisher_prune(self):
+        data = self.fake_cifar_data()
+
+        MUTATOR_CONFIG = dict(
+            type='GroupFisherChannelMutator',
+            parse_cfg=dict(type='ChannelAnalyzer', tracer_type='FxTracer'),
+            channel_unit_cfg=dict(type='GroupFisherChannelUnit'))
+
+        epoch = 2
+        interval = 1
+        delta = 'flops'
+
+        algorithm = GroupFisherAlgorithm(
+            MODEL_CFG,
+            pruning=True,
+            mutator=MUTATOR_CONFIG,
+            delta=delta,
+            interval=interval,
+            save_ckpt_delta_thr=[1.1]).to(DEVICE)
+        mutator = algorithm.mutator
+
+        ckpt_path = os.path.dirname(__file__) + f'/{delta}_0.99.pth'
+
+        fake_cfg_path = os.path.dirname(__file__) + '/cfg.py'
+        self.gen_fake_cfg(fake_cfg_path)
+        self.assertTrue(os.path.exists(fake_cfg_path))
+
+        message_hub = MessageHub.get_current_instance()
+        cfg_str = open(fake_cfg_path).read()
+        message_hub.update_info('cfg', cfg_str)
+
+        for e in range(epoch):
+            for ite in range(10):
+                self._set_epoch_ite(e, ite, epoch)
+                algorithm.forward(
+                    data['inputs'], data['data_samples'], mode='loss')
+                self.gen_fake_grad(mutator)
+        self.assertEqual(delta, algorithm.delta)
+        self.assertEqual(interval, algorithm.interval)
+        self.assertTrue(os.path.exists(ckpt_path))
+        os.remove(ckpt_path)
+        os.remove(fake_cfg_path)
+        self.assertTrue(not os.path.exists(ckpt_path))
+        self.assertTrue(not os.path.exists(fake_cfg_path))
+
+    def gen_fake_grad(self, mutator):
+        for unit in mutator.mutable_units:
+            for channel in unit.input_related:
+                module = channel.module
+                if isinstance(module, GroupFisherConv2d):
+                    module.recorded_grad = module.recorded_input
+
+    def gen_fake_cfg(self, fake_cfg_path):
+        with open(fake_cfg_path, 'a', encoding='utf-8') as cfg:
+            cfg.write(f'work_dir = \'{os.path.dirname(__file__)}\'')
+            cfg.write('\n')
