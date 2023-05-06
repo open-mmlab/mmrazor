@@ -1,13 +1,11 @@
 import math
-import numpy as np
 import torch
 import torch.nn as nn
 from torch.cuda.amp import custom_bwd, custom_fwd
 from torch import Tensor
 import torch.nn.functional as F
 
-from mmrazor.models.architectures.dynamic_ops import (DynamicConv2d,
-                                                      DynamicLinear)
+from mmrazor.models.architectures.dynamic_ops import DynamicConv2d
 from .gptq import GPTQMixIn
 
 try:
@@ -306,7 +304,7 @@ class QuantLinearFunction(torch.autograd.Function):
             grad_input = transpose_matmul248(grad_output, qweight, scales, qzeros, g_idx, bits, maxq)
         return grad_input, None, None, None, None, None, None
 
-class QuantLinear(nn.Module):
+class GPTQLinear(nn.Module, GPTQMixIn):
 
     def __init__(self, bits, groupsize, infeatures, outfeatures, bias):
         super().__init__()
@@ -327,54 +325,17 @@ class QuantLinear(nn.Module):
             self.register_buffer('bias', torch.zeros((outfeatures), dtype=torch.float16))
         else:
             self.bias = None
+        self._sparse_gpt_mix_in_init()
 
-    def pack(self, linear, scales, zeros, g_idx=None):
-        self.g_idx = g_idx.clone() if g_idx is not None else self.g_idx
-
-        scales = scales.t().contiguous()
-        zeros = zeros.t().contiguous()
-        scale_zeros = zeros * scales
-        self.scales = scales.clone().half()
-        if linear.bias is not None:
-            self.bias = linear.bias.clone().half()
-
-        intweight = []
-        for idx in range(self.infeatures):
-            intweight.append(torch.round((linear.weight.data[:, idx] + scale_zeros[self.g_idx[idx]]) / self.scales[self.g_idx[idx]]).to(torch.int)[:, None])
-        intweight = torch.cat(intweight, dim=1)
-        intweight = intweight.t().contiguous()
-        intweight = intweight.numpy().astype(np.uint32)
-        qweight = np.zeros((intweight.shape[0] // 32 * self.bits, intweight.shape[1]), dtype=np.uint32)
-        i = 0
-        row = 0
-        while row < qweight.shape[0]:
-            if self.bits in [2, 4, 8]:
-                for j in range(i, i + (32 // self.bits)):
-                    qweight[row] |= intweight[j] << (self.bits * (j - i))
-                i += 32 // self.bits
-                row += 1
-            else:
-                raise NotImplementedError("Only 2,4,8 bits are supported.")
-
-        qweight = qweight.astype(np.int32)
-        self.qweight = torch.from_numpy(qweight)
-
-        zeros -= 1
-        zeros = zeros.numpy().astype(np.uint32)
-        qzeros = np.zeros((zeros.shape[0], zeros.shape[1] // 32 * self.bits), dtype=np.uint32)
-        i = 0
-        col = 0
-        while col < qzeros.shape[1]:
-            if self.bits in [2, 4, 8]:
-                for j in range(i, i + (32 // self.bits)):
-                    qzeros[:, col] |= zeros[:, j] << (self.bits * (j - i))
-                i += 32 // self.bits
-                col += 1
-            else:
-                raise NotImplementedError("Only 2,4,8 bits are supported.")
-
-        qzeros = qzeros.astype(np.int32)
-        self.qzeros = torch.from_numpy(qzeros)
+    @classmethod
+    def convert_from(cls, module: nn.Linear, bits, groupsize):
+        gptq_linear = cls(
+            bits,
+            groupsize,
+            infeatures=module.in_features,
+            outfeatures=module.out_features,
+            bias=True if module.bias is not None else False)
+        return gptq_linear
 
     def forward(self, x):
         out_shape = x.shape[:-1] + (self.outfeatures, )
@@ -382,55 +343,14 @@ class QuantLinear(nn.Module):
         out = out + self.bias if self.bias is not None else out
         return out.reshape(out_shape)
 
-class GPTQLinear(GPTQMixIn):
-
-    def __init__(self,
-                 custom_kernel=False,
-                 bits=8,
-                 groupsize=128) -> None:
-        self.custom_kernel = custom_kernel
-        self.bits = bits
-        self.groupsize = groupsize
-        self._sparse_gpt_mix_in_init()
+class GPTQConv2d(DynamicConv2d, GPTQMixIn):
     
-    def pack(self, scales, zeros, g_idx=None):
-        if self.custom_kernel:
-            self.layer_converted.pack(self.layer, scales, zeros, g_idx)
-
-    def convert_from(self, module: nn.Linear):
-        self.layer = module
-        
-        if not self.custom_kernel:
-            new_module = module
-        else:
-            new_module = QuantLinear(
-                self.bits, 
-                self.groupsize,
-                module.in_features,
-                module.out_features,
-                module.bias is not None)
-        
-        new_module.load_state_dict(module.state_dict(), strict=False)
-        dtype = next(module.parameters()).dtype
-        new_module = new_module.to(dtype)
-        self.layer_converted = new_module
-
-        return new_module
-
-    def forward(self, input: Tensor) -> Tensor:
-        self.input = input
-        return self.layer_converted(input)
-
-class GPTQConv2d(GPTQMixIn):
-
-    def __init__(self,
-                 bits=8,
-                 groupsize=128) -> None:
-        self.bits = bits
-        self.groupsize = groupsize
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self._sparse_gpt_mix_in_init()
-    
-    def convert_from(self, module: nn.Conv2d):
+
+    @classmethod
+    def convert_from(cls, module: nn.Conv2d) -> 'DynamicConv2d':
         new_module = super().convert_from(module)
         new_module.load_state_dict(module.state_dict(), strict=False)
 

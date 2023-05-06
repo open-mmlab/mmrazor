@@ -120,7 +120,9 @@ if __name__ == '__main__':
     train_loader, test_loader = get_dataloaders(batch_size, 4, data_path)
 
     compressor = GPTQCompressor()
-    compressor.prepare(model)
+    compressor.prepare(model, 
+                       quant_conv=True,
+                       quant_linear=False)
 
     model.cuda()
 
@@ -128,7 +130,7 @@ if __name__ == '__main__':
     compressor.start_init_hessian()
     infer(model, test_loader, num_samples=num_samples)
     compressor.end_init_hessian()
-    compressor.quant_default_setting()
+    compressor.quant_with_default_qconfig()
     model = compressor.to_static_model(model)
 
     print('start evaluation')

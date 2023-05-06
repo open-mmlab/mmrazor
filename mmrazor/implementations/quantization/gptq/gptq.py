@@ -1,14 +1,8 @@
-import time
 import torch
-import torch.nn as nn
-import transformers
-import math
+import numpy as np
 from texttable import Texttable
 from mmrazor.implementations.pruning.sparse_gpt import SparseGptMixIn
 from mmrazor.implementations.pruning.sparse_gpt.utils import torch_setting
-
-from .quantizer import Quantizer
-from .utils import torch_snr_error
 
 class Observer:
 
@@ -52,56 +46,69 @@ class Observer:
 
 class GPTQMixIn(SparseGptMixIn):
 
-    def get_input_output_for_obs(m, input, output):
-        if self.observe:
-            self.input_obs = input
-            self.output_obs = output
-        else:
-            self.input_obs = None
-            self.output_obs = None
+    def pack(self, linear, scales, zeros, g_idx=None):
+        self.g_idx = g_idx.clone() if g_idx is not None else self.g_idx
 
-    def print_loss(self, 
-                   name, 
-                   q_weight, 
-                   weight_error, 
-                   timecost):
-        table = Texttable()
-        name += ' ' * (16 - len(name))
+        scales = scales.t().contiguous()
+        zeros = zeros.t().contiguous()
+        scale_zeros = zeros * scales
+        self.scales = scales.clone().half()
+        if linear.bias is not None:
+            self.bias = linear.bias.clone().half()
 
-        table.header(['name', 'weight_error', 'fp_inp_SNR', 'q_inp_SNR', 'time'])
+        intweight = []
+        for idx in range(self.infeatures):
+            intweight.append(torch.round((linear.weight.data[:, idx] + scale_zeros[self.g_idx[idx]]) / self.scales[self.g_idx[idx]]).to(torch.int)[:, None])
+        intweight = torch.cat(intweight, dim=1)
+        intweight = intweight.t().contiguous()
+        intweight = intweight.numpy().astype(np.uint32)
+        qweight = np.zeros((intweight.shape[0] // 32 * self.bits, intweight.shape[1]), dtype=np.uint32)
+        i = 0
+        row = 0
+        while row < qweight.shape[0]:
+            if self.bits in [2, 4, 8]:
+                for j in range(i, i + (32 // self.bits)):
+                    qweight[row] |= intweight[j] << (self.bits * (j - i))
+                i += 32 // self.bits
+                row += 1
+            else:
+                raise NotImplementedError("Only 2,4,8 bits are supported.")
 
-        # assign weight
-        self.layer.weight.data = q_weight.reshape(self.layer.weight.shape).to(self.layer.weight.data.dtype)
+        qweight = qweight.astype(np.int32)
+        self.qweight = torch.from_numpy(qweight)
 
-        if self.input_obs is not None:
-            # quantize input to int8
-            quantizer = Quantizer()
-            quantizer.configure(8, perchannel=False, sym=True, mse=False)
-            quantizer.find_params(self.input_obs)
-            q_in = quantizer.quantize(self.input_obs).type(torch.float16)
-            q_out = self.layer(q_in)
+        zeros -= 1
+        zeros = zeros.numpy().astype(np.uint32)
+        qzeros = np.zeros((zeros.shape[0], zeros.shape[1] // 32 * self.bits), dtype=np.uint32)
+        i = 0
+        col = 0
+        while col < qzeros.shape[1]:
+            if self.bits in [2, 4, 8]:
+                for j in range(i, i + (32 // self.bits)):
+                    qzeros[:, col] |= zeros[:, j] << (self.bits * (j - i))
+                i += 32 // self.bits
+                col += 1
+            else:
+                raise NotImplementedError("Only 2,4,8 bits are supported.")
 
-            # get kinds of SNR
-            q_SNR = torch_snr_error(q_out, self.output_obs).item()
-            fp_SNR = torch_snr_error(self.layer(self.input_obs), self.output_obs).item()
-        else:
-            q_SNR = '-'
-            fp_SNR = '-'
-
-        table.add_row([name, weight_error, fp_SNR, q_SNR, timecost])
-        print(table.draw().split('\n')[-2])
+        qzeros = qzeros.astype(np.int32)
+        self.qzeros = torch.from_numpy(qzeros)
 
     @torch.no_grad()
     def quant(self,
               quantizer,
+              module_org=None,
               blocksize=128,
               percdamp=0.01,
               groupsize=-1,
               actorder=False):
         with torch_setting(dtype=torch.float):
-            tick = time.time()
             assert self.hessian is not None
             W: torch.Tensor = self.weight_matrix.float()  # out in
+            
+            if not quantizer.ready():
+                quantizer.find_params(W, weight=True)
+            
             H = self.hessian.float().to(W.device)
             dead = torch.diag(H) == 0
             H[dead, dead] = 1
@@ -116,7 +123,7 @@ class GPTQMixIn(SparseGptMixIn):
             Q = torch.zeros_like(W)
 
             damp = percdamp * torch.mean(torch.diag(H))
-            diag = torch.arange(self.columns, device=self.dev)
+            diag = torch.arange(self.columns, device=W.device)
             H[diag, diag] += damp
             H = torch.linalg.cholesky(H)
             H = torch.cholesky_inverse(H)
@@ -150,7 +157,6 @@ class GPTQMixIn(SparseGptMixIn):
                             scale.append(quantizer.scale)
                             zero.append(quantizer.zero)
                             now_idx += 1
-
                     q = quantizer.quantize(w.unsqueeze(1)).flatten()
                     Q1[:, i] = q
                     Losses1[:, i] = (w - q)**2 / d**2
@@ -175,20 +181,18 @@ class GPTQMixIn(SparseGptMixIn):
                 Q = Q[:, invperm]
                 g_idx = g_idx[invperm]
 
-            if isinstance(self.layer, transformers.Conv1D):
-                Q = Q.t()
-
-            if scale == []:
-                scale.append(quantizer.scale)
-                zero.append(quantizer.zero)
-            scale = torch.cat(scale, dim=1)
-            zero = torch.cat(zero, dim=1)
-            return scale, zero, g_idx, error, Q
+            if module_org is not None:
+                if scale == []:
+                    scale.append(quantizer.scale)
+                    zero.append(quantizer.zero)
+                scale = torch.cat(scale, dim=1)
+                zero = torch.cat(zero, dim=1)
+                self.pack(module_org, scale, zero, g_idx)
+            else:
+                self.weight_matrix = Q.data
+            return error
     
     def free(self):
-        self.input_obs = None
-        self.output_obs = None
         self.H = None
         self.Losses = None
-        self.Trace = None
         torch.cuda.empty_cache()
