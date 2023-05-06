@@ -41,6 +41,7 @@ def replace_with_dynamic_ops(model: nn.Module,
 
     for name, module in model.named_modules():
         if type(module) in dynamicop_map:
+            # import pdb;pdb.set_trace()
             new_module = dynamicop_map[type(module)].convert_from(module)
             replace_op(model, name, new_module)
 

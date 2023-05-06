@@ -1,10 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import time
+
 import torch
 import torch.nn as nn
 
 from mmrazor.utils import print_log
+from mmrazor.implementations.pruning.sparse_gpt import replace_with_dynamic_ops
 from .ops import GPTQLinear, GPTQConv2d, GPTQMixIn
-from .utils import replace_with_dynamic_ops
 from .quantizer import Quantizer
 
 
@@ -30,9 +32,9 @@ class GPTQCompressor():
         self.model = model
         quant_modules: dict = {}
         if quant_conv:
-            quant_modules[nn.Conv2d] = GPTQConv2d
+            quant_modules[nn.Conv2d] = GPTQConv2d()
         if quant_linear:
-            quant_modules[nn.Linear] = GPTQLinear
+            quant_modules[nn.Linear] = GPTQLinear()
         replace_with_dynamic_ops(model, quant_modules)
 
     @classmethod
@@ -48,6 +50,10 @@ class GPTQCompressor():
     def end_init_hessian(self):
         for module in self.sparse_ops:
             module.end_init_hessian()
+    
+    def init_hessian(self, device=None):
+        for op in self.sparse_ops:
+            op.init_hessian(device=device)
 
     def keep_hessian_in_float(self):
         for op in self.sparse_ops:
@@ -65,16 +71,18 @@ class GPTQCompressor():
             try:
                 original_device = next(module.parameters()).device
                 module: GPTQMixIn = module.to(device)
-                error = module.quant(
+                tick = time.time()
+                scale, zero, g_idx, error, Q = module.quant(
                     quantizer=quantizer,
                     blocksize=blocksize,
                     percdamp=percdamp,
                     groupsize=groupsize,
                     actorder=actorder
                 )
-                print_log(f'quant {name} success \t error = {error}')
+                module.pack(scale, zero, g_idx)
+                module.print_loss(name=name, q_weight=Q, weight_error=error, timecost=(time.time() - tick))
                 module.to(original_device)
-                torch.cuda.empty_cache()
+                module.free()
             except Exception as e:
                 print_log(f'quant {name} failed as {e}')
     

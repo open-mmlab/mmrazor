@@ -382,23 +382,26 @@ class QuantLinear(nn.Module):
         out = out + self.bias if self.bias is not None else out
         return out.reshape(out_shape)
 
-class GPTQLinear(DynamicLinear, GPTQMixIn):
+class GPTQLinear(GPTQMixIn):
 
     def __init__(self,
-                 custom_kernel=True,
+                 custom_kernel=False,
                  bits=8,
-                 groupsize=128,
-                 *args, 
-                 **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+                 groupsize=128) -> None:
         self.custom_kernel = custom_kernel
         self.bits = bits
         self.groupsize = groupsize
         self._sparse_gpt_mix_in_init()
+    
+    def pack(self, scales, zeros, g_idx=None):
+        if self.custom_kernel:
+            self.layer_converted.pack(self.layer, scales, zeros, g_idx)
 
     def convert_from(self, module: nn.Linear):
+        self.layer = module
+        
         if not self.custom_kernel:
-            new_module = super().convert_from(module)
+            new_module = module
         else:
             new_module = QuantLinear(
                 self.bits, 
@@ -410,24 +413,19 @@ class GPTQLinear(DynamicLinear, GPTQMixIn):
         new_module.load_state_dict(module.state_dict(), strict=False)
         dtype = next(module.parameters()).dtype
         new_module = new_module.to(dtype)
-        
+        self.layer_converted = new_module
+
         return new_module
 
     def forward(self, input: Tensor) -> Tensor:
-        if not self.custom_kernel:
-            return super().forward(input)
-        else:
-            return QuantLinear(input)
+        self.input = input
+        return self.layer_converted(input)
 
-
-class GPTQConv2d(DynamicConv2d, GPTQMixIn):
+class GPTQConv2d(GPTQMixIn):
 
     def __init__(self,
                  bits=8,
-                 groupsize=128,
-                 *args, 
-                 **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+                 groupsize=128) -> None:
         self.bits = bits
         self.groupsize = groupsize
         self._sparse_gpt_mix_in_init()
