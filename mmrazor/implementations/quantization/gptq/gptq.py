@@ -1,4 +1,6 @@
+from typing import Protocol
 import torch
+import torch.distributed as dist
 import numpy as np
 from texttable import Texttable
 from mmrazor.implementations.pruning.sparse_gpt import SparseGptMixIn
@@ -44,21 +46,145 @@ class Observer:
     def items(self):
         return self.loss_list
 
-class GPTQMixIn(SparseGptMixIn):
+class ModuleProtocol(Protocol):
+    weight: torch.Tensor
 
-    def pack(self, linear, scales, zeros, g_idx=None):
+    def forward(self, x):
+        pass
+
+    def register_forward_hook(self, hook):
+        pass
+
+    def register_backward_hook(self, hook):
+        pass
+
+    def register_forward_pre_hook(self, hook):
+        pass
+
+    def register_buffer(self, name, tensor):
+        pass
+
+class GPTQMixIn(ModuleProtocol):
+
+    def _gptq_mix_in_init(self):
+        self.gptq_handles = []
+        self.rows = self.weight_matrix.shape[0]
+        self.columns = self.weight_matrix.shape[1]
+
+        self._hessian: torch.Tensor = None
+        self.hessian_batch = 0
+
+    # weight and input adaptive
+
+    @property
+    def weight_matrix(self):
+        """Return weight with shape (out in)"""
+        return self.weight.flatten(1)  # out in
+
+    @weight_matrix.setter
+    def weight_matrix(self, value: torch.Tensor):
+        with torch.no_grad():
+            value = value.reshape(self.weight.shape).to(self.weight.device).to(
+                self.weight.dtype)
+            self.weight.data.copy_(value)
+
+    def format_input(self, input: torch.Tensor):
+        """Return input with shape (B N C)"""
+        if len(input.shape) == 2:  # N C
+            input = input.unsqueeze(0)  # 1 N C
+        return input
+
+    # compute hessian
+
+    @property
+    def hessian(self):
+        """hessian always return float."""
+        if dist.is_initialized():
+            if dist.get_rank() == 0:
+                assert self._hessian is not None, 'hessian is not initialized.'
+                hessian = self._hessian.to(self.weight_matrix.device)
+            else:
+                hessian = torch.zeros(
+                    self.columns,
+                    self.columns,
+                    device=self.weight_matrix.device)
+            dist.broadcast(hessian, 0)
+            return hessian
+        else:
+            return self._hessian
+
+    @hessian.setter
+    def hessian(self, value: torch.Tensor):
+        with torch.no_grad():
+            if dist.is_initialized():
+                if dist.get_rank() == 0:
+                    assert self._hessian is not None, 'hessian is not initialized.'  # noqa
+                    self._hessian.data.copy_(
+                        value.data.to(self._hessian.device))
+                else:
+                    self._hessian = None
+            else:
+                self._hessian.data.copy_(value.data.to(self._hessian.device))
+
+    @torch.no_grad()
+    def update_hessian(self, input: torch.Tensor):
+        input = self.format_input(input).float()
+        H_save = self.hessian
+        H_save = H_save.to(input.device)
+
+        assert len(input.shape) == 3
+        B = input.shape[0]  # B N C
+        input = input.transpose(0, -1).flatten(1)  # C D
+
+        H = input @ input.T * 2  # C C
+
+        if dist.is_initialized():
+            dist.all_reduce(H)
+            B *= dist.get_world_size()
+        H_save = (H_save * self.hessian_batch + H) / (self.hessian_batch + B)
+        self.hessian = H_save
+        self.hessian_batch = self.hessian_batch + B
+
+    def start_init_hessian(self):
+
+        @torch.no_grad()
+        def forward_pre_hook(module: Protocol, input: tuple):
+            assert len(input) == 1
+            self.update_hessian(input[0])
+
+        handle = self.register_forward_pre_hook(forward_pre_hook)
+        self.gptq_handles.append(handle)
+
+    def end_init_hessian(self):
+        for h in self.gptq_handles:
+            h.remove()
+
+    def init_hessian(self, device=None):
+        if dist.is_initialized():
+            if dist.get_rank() == 0:
+                self._hessian = torch.zeros([self.columns, self.columns],
+                                            device=device,
+                                            dtype=torch.float)
+            else:
+                self._hessian = None
+        else:
+            self._hessian = torch.zeros([self.columns, self.columns],
+                                        device=device,
+                                        dtype=torch.float)
+
+    def pack(self, scales, zeros, g_idx=None):
         self.g_idx = g_idx.clone() if g_idx is not None else self.g_idx
 
         scales = scales.t().contiguous()
         zeros = zeros.t().contiguous()
         scale_zeros = zeros * scales
         self.scales = scales.clone().half()
-        if linear.bias is not None:
-            self.bias = linear.bias.clone().half()
+        if self.bias is not None:
+            self.bias.half()
 
         intweight = []
-        for idx in range(self.infeatures):
-            intweight.append(torch.round((linear.weight.data[:, idx] + scale_zeros[self.g_idx[idx]]) / self.scales[self.g_idx[idx]]).to(torch.int)[:, None])
+        for idx in range(self.in_features):
+            intweight.append(torch.round((self.weight.data[:, idx] + scale_zeros[self.g_idx[idx]]) / self.scales[self.g_idx[idx]]).to(torch.int)[:, None])
         intweight = torch.cat(intweight, dim=1)
         intweight = intweight.t().contiguous()
         intweight = intweight.numpy().astype(np.uint32)
@@ -97,7 +223,6 @@ class GPTQMixIn(SparseGptMixIn):
     @torch.no_grad()
     def quant(self,
               quantizer,
-              module_org=None,
               blocksize=128,
               percdamp=0.01,
               groupsize=-1,
@@ -157,6 +282,7 @@ class GPTQMixIn(SparseGptMixIn):
                             scale.append(quantizer.scale)
                             zero.append(quantizer.zero)
                             now_idx += 1
+
                     q = quantizer.quantize(w.unsqueeze(1)).flatten()
                     Q1[:, i] = q
                     Losses1[:, i] = (w - q)**2 / d**2
@@ -178,21 +304,23 @@ class GPTQMixIn(SparseGptMixIn):
             g_idx = torch.tensor(g_idx, dtype=torch.int32, device=Q.device)
             if actorder:
                 invperm = torch.argsort(perm)
+                W = W[:, invperm]
                 Q = Q[:, invperm]
                 g_idx = g_idx[invperm]
 
-            if module_org is not None:
-                if scale == []:
-                    scale.append(quantizer.scale)
-                    zero.append(quantizer.zero)
-                scale = torch.cat(scale, dim=1)
-                zero = torch.cat(zero, dim=1)
-                self.pack(module_org, scale, zero, g_idx)
-            else:
+            if scale == []:
+                scale.append(quantizer.scale)
+                zero.append(quantizer.zero)
+            scale = torch.cat(scale, dim=1)
+            zero = torch.cat(zero, dim=1)
+            if self.is_custom_kernel:
                 self.weight_matrix = Q.data
+                self.pack(scale, zero, g_idx)
+            else:
+                self.weight_matrix = W.data
+
             return error
     
     def free(self):
-        self.H = None
-        self.Losses = None
+        self._hessian = None
         torch.cuda.empty_cache()

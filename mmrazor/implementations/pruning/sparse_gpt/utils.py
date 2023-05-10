@@ -30,6 +30,7 @@ class ModuleProtocol(Protocol):
 def replace_with_dynamic_ops(model: nn.Module,
                              dynamicop_map: Dict[Type[nn.Module],
                                                  Type[DynamicMixin]],
+                             skipped_layers=[],
                              **kwargs):
     """Replace torch modules with dynamic-ops."""
 
@@ -41,7 +42,7 @@ def replace_with_dynamic_ops(model: nn.Module,
         setattr(model, names[-1], module)
 
     for name, module in model.named_modules():
-        if type(module) in dynamicop_map:
+        if type(module) in dynamicop_map and name not in skipped_layers:
             if isinstance(module, nn.Linear):
                 new_module = dynamicop_map[type(module)].convert_from(module, **kwargs)
             else:

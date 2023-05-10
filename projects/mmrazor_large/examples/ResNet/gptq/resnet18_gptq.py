@@ -55,7 +55,8 @@ def get_dataloaders(batch_size, n_workers, path=''):
 @torch.no_grad()
 def eval(model: nn.Module,
          dataloader_test: DataLoader,
-         device=torch.device('cuda:0')):
+         device=torch.device('cuda:0'),
+         is_half=True):
 
     total = 0
     correct = 0
@@ -66,9 +67,12 @@ def eval(model: nn.Module,
             x: torch.Tensor  # type: ignore
             y: torch.Tensor  # type: ignore
             x = x.to(device)
+            y = y.to(device)
+            if is_half:
+                x = x.half()
+                y = y.half()
             outputs = model(x)
             _, predicted = outputs.max(1)
-            y = y.to(device)
             correct += (y == predicted).long().sum()
             total += y.numel()
     acc = correct / total
@@ -79,12 +83,15 @@ def eval(model: nn.Module,
 def infer(model: nn.Module,
           dataloader: torch.utils.data.DataLoader,
           num_samples=256,
-          device=torch.device('cuda:0')):
+          device=torch.device('cuda:0'),
+          is_half=True):
     model.eval()
     with torch.no_grad():
         accumulate_batch = 0
         for x, _ in dataloader:
             x = x.to(device)
+            if is_half:
+                x = x.half()
             model(x)
             B = x.shape[0]
             accumulate_batch += B
@@ -110,6 +117,11 @@ if __name__ == '__main__':
         type=int,
         default=128,
         help='batch size for evaluation and inference')
+    arg_parser.add_argument(
+        '--fp16',
+        type=bool,
+        default=False,
+        help='wether to use fp16 for evaluation and inference')
     args = arg_parser.parse_args()
 
     data_path = args.data
@@ -117,23 +129,28 @@ if __name__ == '__main__':
     batch_size = args.batch_size
 
     model = torchvision.models.resnet18(pretrained=True)
+    if args.fp16:
+        model = model.half()
     train_loader, test_loader = get_dataloaders(batch_size, 4, data_path)
 
     compressor = GPTQCompressor()
     compressor.prepare(model, 
                        quant_conv=True,
-                       quant_linear=False)
+                       quant_linear=True,
+                       skipped_layers=['conv1'],
+                       bits=4,
+                       groupsize=128)
 
     model.cuda()
 
     compressor.init_hessian()
     compressor.start_init_hessian()
-    infer(model, test_loader, num_samples=num_samples)
+    infer(model, test_loader, num_samples=num_samples, is_half=args.fp16)
     compressor.end_init_hessian()
     compressor.quant_with_default_qconfig()
     model = compressor.to_static_model(model)
 
     print('start evaluation')
     model = model.cuda()
-    acc = eval(model, test_loader)
+    acc = eval(model, test_loader, is_half=args.fp16)
     print('accuracy:', acc.item())

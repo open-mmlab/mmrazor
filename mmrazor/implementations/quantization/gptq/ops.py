@@ -5,7 +5,8 @@ from torch.cuda.amp import custom_bwd, custom_fwd
 from torch import Tensor
 import torch.nn.functional as F
 
-from mmrazor.models.architectures.dynamic_ops import DynamicConv2d
+from mmrazor.models.architectures.dynamic_ops import DynamicConv2d, DynamicLinear
+# from mmrazor.implementations.pruning.sparse_gpt.utils import torch_setting
 from .gptq import GPTQMixIn
 
 try:
@@ -235,7 +236,7 @@ try:
         zeros_shifter = (offs_n % infearure_per_bits) * bits
         accumulator = tl.zeros((BLOCK_SIZE_M, BLOCK_SIZE_K), dtype=tl.float32)
 
-        for k in range(0, num_pid_n):
+        for n in range(0, num_pid_n):
             # Fetch scales and zeros; these are per-outfeature and thus reused in the inner loop
             scales = tl.load(scales_ptrs)  # (BLOCK_SIZE_K, BLOCK_SIZE_N,)
             zeros = tl.load(zeros_ptrs)  # (BLOCK_SIZE_K, BLOCK_SIZE_N,)
@@ -266,7 +267,7 @@ except:
 
 def matmul248(input, qweight, scales, qzeros, g_idx, bits, maxq):
     with torch.cuda.device(input.device):
-        output = torch.empty((input.shape[0], qweight.shape[1]), device='cuda', dtype=torch.float16)
+        output = torch.empty((input.shape[0], qweight.shape[1]), device=input.device, dtype=torch.float16)
         grid = lambda META: (triton.cdiv(input.shape[0], META['BLOCK_SIZE_M']) * triton.cdiv(qweight.shape[1], META['BLOCK_SIZE_N']), )
         matmul_248_kernel[grid](input, qweight, output, scales, qzeros, g_idx, input.shape[0], qweight.shape[1], input.shape[1], bits, maxq, input.stride(0), input.stride(1), qweight.stride(0),
                                 qweight.stride(1), output.stride(0), output.stride(1), scales.stride(0), qzeros.stride(0))
@@ -276,7 +277,7 @@ def matmul248(input, qweight, scales, qzeros, g_idx, bits, maxq):
 def transpose_matmul248(input, qweight, scales, qzeros, g_idx, bits, maxq):
     with torch.cuda.device(input.device):
         output_dim = (qweight.shape[0] * 32) // bits
-        output = torch.empty((input.shape[0], output_dim), device='cuda', dtype=torch.float16)
+        output = torch.empty((input.shape[0], output_dim), device=input.device, dtype=torch.float16)
         grid = lambda META: (triton.cdiv(input.shape[0], META['BLOCK_SIZE_M']) * triton.cdiv(output_dim, META['BLOCK_SIZE_K']), )
         transpose_matmul_248_kernel[grid](input, qweight, output, scales, qzeros, g_idx, input.shape[0], qweight.shape[1], output_dim, bits, maxq, input.stride(0), input.stride(1), qweight.stride(0),
                                           qweight.stride(1), output.stride(0), output.stride(1), scales.stride(0), qzeros.stride(0))
@@ -303,52 +304,81 @@ class QuantLinearFunction(torch.autograd.Function):
         if ctx.needs_input_grad[0]:
             grad_input = transpose_matmul248(grad_output, qweight, scales, qzeros, g_idx, bits, maxq)
         return grad_input, None, None, None, None, None, None
+ 
+class TritonGPTQLinear(nn.Module, GPTQMixIn):
 
-class GPTQLinear(nn.Module, GPTQMixIn):
-
-    def __init__(self, bits, groupsize, infeatures, outfeatures, bias):
+    def __init__(self, bits, groupsize, weight, in_features, out_features, bias):
         super().__init__()
         if bits not in [2, 4, 8]:
             raise NotImplementedError("Only 2,4,8 bits are supported.")
-        self.infeatures = infeatures
-        self.outfeatures = outfeatures
+        self.weight = weight
+        self.bias = bias
+
+        self.in_features = in_features
+        self.out_features = out_features
         self.bits = bits
         self.maxq = 2**self.bits - 1
-        self.groupsize = groupsize if groupsize != -1 else infeatures
-        self.no_group = math.ceil(infeatures / self.groupsize) == 1
+        self.groupsize = groupsize if groupsize != -1 else in_features
         
-        self.register_buffer('qweight', torch.zeros((infeatures // 32 * self.bits, outfeatures), dtype=torch.int32))
-        self.register_buffer('qzeros', torch.zeros((math.ceil(infeatures / self.groupsize), outfeatures // 32 * self.bits), dtype=torch.int32))
-        self.register_buffer('scales', torch.zeros((math.ceil(infeatures / self.groupsize), outfeatures), dtype=torch.float16))
-        self.register_buffer('g_idx', torch.tensor([i // self.groupsize for i in range(infeatures)], dtype=torch.int32))
-        if bias:
-            self.register_buffer('bias', torch.zeros((outfeatures), dtype=torch.float16))
-        else:
-            self.bias = None
-        self._sparse_gpt_mix_in_init()
+        self.register_buffer('qweight', torch.zeros((in_features // 32 * self.bits, out_features), dtype=torch.int32))
+        self.register_buffer('qzeros', torch.zeros((math.ceil(in_features / self.groupsize), out_features // 32 * self.bits), dtype=torch.int32))
+        self.register_buffer('scales', torch.zeros((math.ceil(in_features / self.groupsize), out_features), dtype=torch.float16))
+        self.register_buffer('g_idx', torch.tensor([i // self.groupsize for i in range(in_features)], dtype=torch.int32))
 
+        self._gptq_mix_in_init()
+    
+    @property
+    def is_custom_kernel(self):
+        return True
+    
     @classmethod
     def convert_from(cls, module: nn.Linear, bits, groupsize):
-        gptq_linear = cls(
+        new_module = cls(
             bits,
             groupsize,
-            infeatures=module.in_features,
-            outfeatures=module.out_features,
-            bias=True if module.bias is not None else False)
-        return gptq_linear
+            weight=module.weight,
+            in_features=module.in_features,
+            out_features=module.out_features,
+            bias=module.bias)
 
+        return new_module
+        
     def forward(self, x):
-        out_shape = x.shape[:-1] + (self.outfeatures, )
-        out = QuantLinearFunction.apply(x.reshape(-1, x.shape[-1]), self.qweight, self.scales, self.qzeros, self.g_idx, self.bits, self.maxq, self.no_group)
+        out_shape = x.shape[:-1] + (self.out_features, )
+        out = QuantLinearFunction.apply(x.reshape(-1, x.shape[-1]), self.qweight, self.scales, self.qzeros, self.g_idx, self.bits, self.maxq)
         out = out + self.bias if self.bias is not None else out
         return out.reshape(out_shape)
+    
+class GPTQLinear(DynamicLinear, GPTQMixIn):
+    
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._gptq_mix_in_init()
+
+    @property
+    def is_custom_kernel(self):
+        return False
+    
+    @classmethod
+    def convert_from(cls, module: nn.Linear) -> 'DynamicLinear':
+        new_module = super().convert_from(module)
+        new_module.load_state_dict(module.state_dict(), strict=False)
+
+        dtype = next(module.parameters()).dtype
+        new_module = new_module.to(dtype)
+
+        return new_module
 
 class GPTQConv2d(DynamicConv2d, GPTQMixIn):
     
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._sparse_gpt_mix_in_init()
+        self._gptq_mix_in_init()
 
+    @property
+    def is_custom_kernel(self):
+        return False
+    
     @classmethod
     def convert_from(cls, module: nn.Conv2d) -> 'DynamicConv2d':
         new_module = super().convert_from(module)

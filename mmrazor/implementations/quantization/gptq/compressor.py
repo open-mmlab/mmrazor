@@ -6,7 +6,7 @@ import torch.nn as nn
 
 from mmrazor.utils import print_log
 from mmrazor.implementations.pruning.sparse_gpt import replace_with_dynamic_ops
-from .ops import GPTQLinear, GPTQConv2d, GPTQMixIn
+from .ops import GPTQLinear, TritonGPTQLinear, GPTQConv2d, GPTQMixIn
 from .quantizer import Quantizer
 
 
@@ -29,14 +29,15 @@ class GPTQCompressor():
                 model: nn.Module,
                 quant_conv=True,
                 quant_linear=True,
+                skipped_layers=[],
                 **kwargs) -> None:
         self.model = model
         quant_modules: dict = {}
         if quant_conv:
             quant_modules[nn.Conv2d] = GPTQConv2d
         if quant_linear:
-            quant_modules[nn.Linear] = GPTQLinear
-        replace_with_dynamic_ops(model, quant_modules, **kwargs)
+            quant_modules[nn.Linear] = TritonGPTQLinear
+        replace_with_dynamic_ops(model, quant_modules, skipped_layers, **kwargs)
 
     @classmethod
     def to_static_model(cls, model):
@@ -58,16 +59,18 @@ class GPTQCompressor():
 
     # quant
     def quant(self,
-              quantizer,
               blocksize=128,
               percdamp=0.01,
               groupsize=-1,
               actorder=False,
-              device=torch.device('cuda')):
+              device=torch.device('cuda'),
+              **qconfig):
         for name, module in self.named_quant_ops:
             try:
                 original_device = next(module.parameters()).device
                 module: GPTQMixIn = module.to(device)
+                quantizer = Quantizer()
+                quantizer.configure(**qconfig)
                 error = module.quant(
                     quantizer=quantizer,
                     blocksize=blocksize,
@@ -81,16 +84,14 @@ class GPTQCompressor():
             except Exception as e:
                 print_log(f'quant {name} failed as {e}')
     
-    def quant_with_default_qconfig(self, device=torch.device('cuda:0')):
-        quantizer = Quantizer()
-        quantizer.configure(bits=4,
-                            perchannel=True,
-                            sym=False)
-        import pdb;pdb.set_trace()
-        self.quant(quantizer=quantizer, 
-                   groupsize=128,
+    def quant_with_default_qconfig(self, device='cpu'):
+        qconfig = dict(bits=4,
+                       perchannel=True,
+                       sym=False)
+        self.quant(groupsize=128,
                    actorder=True,
-                   device=device)
+                   device=device,
+                   **qconfig)
 
     # ops
 

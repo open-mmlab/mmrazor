@@ -63,35 +63,42 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    torch.set_default_dtype(torch.half)
     DEV = torch.device('cuda:0')
 
     model = get_model(args.model)
     model.eval()
     print_log('load model over')
 
+    # import pdb;pdb.set_trace()
+
     dataloader, testloader = get_loaders(
         args.dataset, seed=args.seed, model=args.model, seqlen=model.seqlen)
     print_log('load data for infer over')
 
-    from mmrazor.implementations.pruning import sparse_gpt
-    mutator = sparse_gpt.SparseGptMutator()
-    mutator.prepare_from_supernet(model.model.layers)
+    from mmrazor.implementations.quantization import gptq
+    compressor = gptq.GPTQCompressor()
+    compressor.prepare(model.model.layers, 
+                       quant_conv=True,
+                       quant_linear=True,
+                       bits=4,
+                       groupsize=128)
 
-    mutator.init_hessian()
+    compressor.init_hessian()
     with memory_efficient_forward(
             model, wrap_modules=[LlamaDecoderLayer], enabled=args.m):
-        mutator.start_init_hessian()
+        # import pdb;pdb.set_trace()
+        compressor.start_init_hessian()
+        # import pdb;pdb.set_trace()
         opt_infer(
             model,
             testloader,
             DEV,
             batch_size=args.batch_size,
             num_samples=args.nsamples)
-        mutator.end_init_hessian()
-        mutator.prune_24()
+        compressor.end_init_hessian()
+        compressor.quant_with_default_qconfig()
 
-    model = mutator.to_static_model(model)
+    model = compressor.to_static_model(model)
     if args.save:
         print_log(f'save model in {args.save}')
         model.save_pretrained(args.save)
@@ -99,7 +106,8 @@ if __name__ == '__main__':
     with memory_efficient_forward(
             model, wrap_modules=[LlamaDecoderLayer], enabled=args.m):
 
-        for dataset in ['wikitext2', 'ptb', 'c4']:
+        # for dataset in ['wikitext2', 'ptb', 'c4']:
+        for dataset in ['wikitext2']:
             dataloader, testloader = get_loaders(
                 dataset, seed=args.seed, model=args.model, seqlen=model.seqlen)
             print_log(dataset)
