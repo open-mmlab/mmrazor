@@ -1,10 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, Protocol, Type
+from typing import Any, Dict, Protocol, Type
 
 import torch
 import torch.nn as nn
 
-from mmrazor.models.architectures.dynamic_ops import DynamicMixin
 from mmrazor.utils import print_log
 
 
@@ -28,8 +27,7 @@ class ModuleProtocol(Protocol):
 
 
 def replace_with_dynamic_ops(model: nn.Module,
-                             dynamicop_map: Dict[Type[nn.Module],
-                                                 Type[DynamicMixin]],
+                             dynamicop_map: Dict[Type[nn.Module], Type[Any]],
                              skipped_layers=[],
                              **kwargs):
     """Replace torch modules with dynamic-ops."""
@@ -44,7 +42,8 @@ def replace_with_dynamic_ops(model: nn.Module,
     for name, module in model.named_modules():
         if type(module) in dynamicop_map and name not in skipped_layers:
             if isinstance(module, nn.Linear):
-                new_module = dynamicop_map[type(module)].convert_from(module, **kwargs)
+                new_module = dynamicop_map[type(module)].convert_from(
+                    module, **kwargs)
             else:
                 new_module = dynamicop_map[type(module)].convert_from(module)
             replace_op(model, name, new_module)

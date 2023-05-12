@@ -66,6 +66,7 @@ if __name__ == '__main__':
     DEV = torch.device('cuda:0')
 
     model = get_model(args.model)
+    model.to(DEV)
     model.eval()
     print_log('load model over')
 
@@ -77,26 +78,29 @@ if __name__ == '__main__':
 
     from mmrazor.implementations.quantization import gptq
     compressor = gptq.GPTQCompressor()
-    compressor.prepare(model.model.layers, 
-                       quant_conv=True,
-                       quant_linear=True,
-                       bits=4,
-                       groupsize=128)
+    # compressor.prepare(model.model.layers,
+    #                    quant_conv=True,
+    #                    quant_linear=True,
+    #                    bits=4,
+    #                    groupsize=128)
+    compressor.prepare(
+        model.model.layers,
+        quant_conv=True,
+        quant_linear=True,
+        use_triton_ops=False)
 
     compressor.init_hessian()
     with memory_efficient_forward(
             model, wrap_modules=[LlamaDecoderLayer], enabled=args.m):
-        # import pdb;pdb.set_trace()
-        compressor.start_init_hessian()
-        # import pdb;pdb.set_trace()
+        compressor.register_hessian_hook()
         opt_infer(
             model,
             testloader,
             DEV,
             batch_size=args.batch_size,
             num_samples=args.nsamples)
-        compressor.end_init_hessian()
-        compressor.quant_with_default_qconfig()
+        compressor.remove_hessian_hook()
+        compressor.quant_with_default_qconfig(device=DEV)
 
     model = compressor.to_static_model(model)
     if args.save:

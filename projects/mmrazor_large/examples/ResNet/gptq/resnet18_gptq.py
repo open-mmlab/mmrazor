@@ -134,19 +134,25 @@ if __name__ == '__main__':
     train_loader, test_loader = get_dataloaders(batch_size, 4, data_path)
 
     compressor = GPTQCompressor()
-    compressor.prepare(model, 
-                       quant_conv=True,
-                       quant_linear=True,
-                       skipped_layers=['conv1'],
-                       bits=4,
-                       groupsize=128)
+    # compressor.prepare(model,
+    #                    quant_conv=True,
+    #                    quant_linear=True,
+    #                    skipped_layers=['conv1'],
+    #                    bits=4,
+    #                    groupsize=128)
+    compressor.prepare(
+        model,
+        quant_conv=True,
+        quant_linear=True,
+        use_triton_ops=False,
+        skipped_layers=['conv1'])
 
     model.cuda()
 
     compressor.init_hessian()
-    compressor.start_init_hessian()
+    compressor.register_hessian_hook()
     infer(model, test_loader, num_samples=num_samples, is_half=args.fp16)
-    compressor.end_init_hessian()
+    compressor.remove_hessian_hook()
     compressor.quant_with_default_qconfig()
     model = compressor.to_static_model(model)
 

@@ -1,7 +1,6 @@
-import numpy as np
+# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
-import math
 
 
 class Quantizer(nn.Module):
@@ -12,7 +11,15 @@ class Quantizer(nn.Module):
         self.register_buffer('scale', torch.zeros(shape))
         self.register_buffer('zero', torch.zeros(shape))
 
-    def configure(self, bits, perchannel=False, sym=True, mse=False, norm=2.4, grid=100, maxshrink=.8, trits=False):
+    def configure(self,
+                  bits,
+                  perchannel=False,
+                  sym=True,
+                  mse=False,
+                  norm=2.4,
+                  grid=100,
+                  maxshrink=.8,
+                  trits=False):
 
         self.maxq = torch.tensor(2**bits - 1)
         self.perchannel = perchannel
@@ -27,7 +34,8 @@ class Quantizer(nn.Module):
 
     def _quantize(self, x, scale, zero, maxq):
         if maxq < 0:
-            return (x > scale / 2).float() * scale + (x < zero / 2).float() * zero
+            return (x > scale / 2).float() * scale + (x <
+                                                      zero / 2).float() * zero
         q = torch.clamp(torch.round(x / scale) + zero, 0, maxq)
         return scale * (q - zero)
 
@@ -80,8 +88,10 @@ class Quantizer(nn.Module):
                 xmin1 = p * xmin
                 xmax1 = p * xmax
                 scale1 = (xmax1 - xmin1) / self.maxq
-                zero1 = torch.round(-xmin1 / scale1) if not self.sym else self.zero
-                q = self._quantize(x, scale1.unsqueeze(1), zero1.unsqueeze(1), self.maxq)
+                zero1 = torch.round(-xmin1 /
+                                    scale1) if not self.sym else self.zero
+                q = self._quantize(x, scale1.unsqueeze(1), zero1.unsqueeze(1),
+                                   self.maxq)
                 q -= x
                 q.abs_()
                 q.pow_(self.norm)

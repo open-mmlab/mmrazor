@@ -1,50 +1,12 @@
+# Copyright (c) OpenMMLab. All rights reserved.
 from typing import Protocol
+
+import numpy as np
 import torch
 import torch.distributed as dist
-import numpy as np
-from texttable import Texttable
-from mmrazor.implementations.pruning.sparse_gpt import SparseGptMixIn
+
 from mmrazor.implementations.pruning.sparse_gpt.utils import torch_setting
 
-class Observer:
-
-    def __init__(self, topk=32):
-        self.loss_list = []
-        self.topk = topk
-
-    def submit(self, name: str, layerid: int, gptq, error: float):
-
-        item = (name, layerid, {'gptq': gptq, 'error': error})
-
-        if len(self.loss_list) < self.topk:
-            self.loss_list.append(item)
-            return
-
-        min_error = error
-        min_idx = -1
-        for idx, data in enumerate(self.loss_list):
-            if min_error > data[2]['error']:
-                min_idx = idx
-                min_error = data[2]['error']
-
-        if min_idx >= 0:
-            self.loss_list[min_idx] = item
-
-    def print(self):
-        self.loss_list = sorted(self.loss_list, key=lambda s: s[2]['error'], reverse=True)
-
-        table = Texttable()
-
-        table.header(['name', 'error'])
-        table.set_cols_dtype(['t', 'f'])
-
-        for item in self.loss_list:
-            table.add_row([f"{item[0]}.{item[1]}", item[2]['error']])
-        print(table.draw())
-        print('\n')
-
-    def items(self):
-        return self.loss_list
 
 class ModuleProtocol(Protocol):
     weight: torch.Tensor
@@ -63,6 +25,7 @@ class ModuleProtocol(Protocol):
 
     def register_buffer(self, name, tensor):
         pass
+
 
 class GPTQMixIn(ModuleProtocol):
 
@@ -145,7 +108,7 @@ class GPTQMixIn(ModuleProtocol):
         self.hessian = H_save
         self.hessian_batch = self.hessian_batch + B
 
-    def start_init_hessian(self):
+    def register_hessian_hook(self):
 
         @torch.no_grad()
         def forward_pre_hook(module: Protocol, input: tuple):
@@ -155,7 +118,7 @@ class GPTQMixIn(ModuleProtocol):
         handle = self.register_forward_pre_hook(forward_pre_hook)
         self.gptq_handles.append(handle)
 
-    def end_init_hessian(self):
+    def remove_hessian_hook(self):
         for h in self.gptq_handles:
             h.remove()
 
@@ -184,11 +147,16 @@ class GPTQMixIn(ModuleProtocol):
 
         intweight = []
         for idx in range(self.in_features):
-            intweight.append(torch.round((self.weight.data[:, idx] + scale_zeros[self.g_idx[idx]]) / self.scales[self.g_idx[idx]]).to(torch.int)[:, None])
+            intweight.append(
+                torch.round(
+                    (self.weight.data[:, idx] + scale_zeros[self.g_idx[idx]]) /
+                    self.scales[self.g_idx[idx]]).to(torch.int)[:, None])
         intweight = torch.cat(intweight, dim=1)
         intweight = intweight.t().contiguous()
         intweight = intweight.numpy().astype(np.uint32)
-        qweight = np.zeros((intweight.shape[0] // 32 * self.bits, intweight.shape[1]), dtype=np.uint32)
+        qweight = np.zeros(
+            (intweight.shape[0] // 32 * self.bits, intweight.shape[1]),
+            dtype=np.uint32)
         i = 0
         row = 0
         while row < qweight.shape[0]:
@@ -198,14 +166,15 @@ class GPTQMixIn(ModuleProtocol):
                 i += 32 // self.bits
                 row += 1
             else:
-                raise NotImplementedError("Only 2,4,8 bits are supported.")
+                raise NotImplementedError('Only 2,4,8 bits are supported.')
 
         qweight = qweight.astype(np.int32)
         self.qweight = torch.from_numpy(qweight)
 
         zeros -= 1
         zeros = zeros.numpy().astype(np.uint32)
-        qzeros = np.zeros((zeros.shape[0], zeros.shape[1] // 32 * self.bits), dtype=np.uint32)
+        qzeros = np.zeros((zeros.shape[0], zeros.shape[1] // 32 * self.bits),
+                          dtype=np.uint32)
         i = 0
         col = 0
         while col < qzeros.shape[1]:
@@ -215,7 +184,7 @@ class GPTQMixIn(ModuleProtocol):
                 i += 32 // self.bits
                 col += 1
             else:
-                raise NotImplementedError("Only 2,4,8 bits are supported.")
+                raise NotImplementedError('Only 2,4,8 bits are supported.')
 
         qzeros = qzeros.astype(np.int32)
         self.qzeros = torch.from_numpy(qzeros)
@@ -230,10 +199,10 @@ class GPTQMixIn(ModuleProtocol):
         with torch_setting(dtype=torch.float):
             assert self.hessian is not None
             W: torch.Tensor = self.weight_matrix.float()  # out in
-            
+
             if not quantizer.ready():
                 quantizer.find_params(W, weight=True)
-            
+
             H = self.hessian.float().to(W.device)
             dead = torch.diag(H) == 0
             H[dead, dead] = 1
@@ -276,7 +245,9 @@ class GPTQMixIn(ModuleProtocol):
 
                     if groupsize != -1:
                         if (i1 + i) % groupsize == 0:
-                            quantizer.find_params(W[:, (i1 + i):(i1 + i + groupsize)], weight=True)
+                            quantizer.find_params(
+                                W[:, (i1 + i):(i1 + i + groupsize)],
+                                weight=True)
 
                         if ((i1 + i) // groupsize) - now_idx == -1:
                             scale.append(quantizer.scale)
@@ -288,7 +259,9 @@ class GPTQMixIn(ModuleProtocol):
                     Losses1[:, i] = (w - q)**2 / d**2
 
                     err1 = (w - q) / d
-                    W1[:, i:] -= err1.unsqueeze(1).matmul(Hinv1[i, i:].unsqueeze(0))
+                    W1[:,
+                       i:] -= err1.unsqueeze(1).matmul(Hinv1[i,
+                                                             i:].unsqueeze(0))
                     Err1[:, i] = err1
 
                 Q[:, i1:i2] = Q1
@@ -313,14 +286,12 @@ class GPTQMixIn(ModuleProtocol):
                 zero.append(quantizer.zero)
             scale = torch.cat(scale, dim=1)
             zero = torch.cat(zero, dim=1)
+            self.weight_matrix = Q.data
             if self.is_custom_kernel:
-                self.weight_matrix = Q.data
                 self.pack(scale, zero, g_idx)
-            else:
-                self.weight_matrix = W.data
 
             return error
-    
+
     def free(self):
         self._hessian = None
         torch.cuda.empty_cache()

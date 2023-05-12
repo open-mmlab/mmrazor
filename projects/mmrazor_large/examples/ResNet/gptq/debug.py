@@ -1,6 +1,9 @@
-from mmrazor.implementations.quantization.gptq import GPTQMixIn
 from typing import Protocol
+
 import torch
+
+from mmrazor.implementations.quantization.gptq import GPTQMixIn
+
 
 class ModuleProtocol(Protocol):
     weight: torch.Tensor
@@ -19,6 +22,7 @@ class ModuleProtocol(Protocol):
 
     def register_buffer(self, name, tensor):
         pass
+
 
 m = ModuleProtocol
 print(hasattr(m, 'weight'))

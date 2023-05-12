@@ -1,12 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import time
-
 import torch
 import torch.nn as nn
 
-from mmrazor.utils import print_log
 from mmrazor.implementations.pruning.sparse_gpt import replace_with_dynamic_ops
-from .ops import GPTQLinear, TritonGPTQLinear, GPTQConv2d, GPTQMixIn
+from mmrazor.utils import print_log
+from .ops import GPTQConv2d, GPTQLinear, GPTQMixIn, TritonGPTQLinear
 from .quantizer import Quantizer
 
 
@@ -29,6 +27,7 @@ class GPTQCompressor():
                 model: nn.Module,
                 quant_conv=True,
                 quant_linear=True,
+                use_triton_ops=True,
                 skipped_layers=[],
                 **kwargs) -> None:
         self.model = model
@@ -36,8 +35,10 @@ class GPTQCompressor():
         if quant_conv:
             quant_modules[nn.Conv2d] = GPTQConv2d
         if quant_linear:
-            quant_modules[nn.Linear] = TritonGPTQLinear
-        replace_with_dynamic_ops(model, quant_modules, skipped_layers, **kwargs)
+            gptq_linear = TritonGPTQLinear if use_triton_ops else GPTQLinear
+            quant_modules[nn.Linear] = gptq_linear
+        replace_with_dynamic_ops(model, quant_modules, skipped_layers,
+                                 **kwargs)
 
     @classmethod
     def to_static_model(cls, model):
@@ -45,14 +46,14 @@ class GPTQCompressor():
 
     # hessian
 
-    def start_init_hessian(self):
+    def register_hessian_hook(self):
         for module in self.quant_ops:
-            module.start_init_hessian()
+            module.register_hessian_hook()
 
-    def end_init_hessian(self):
+    def remove_hessian_hook(self):
         for module in self.quant_ops:
-            module.end_init_hessian()
-    
+            module.remove_hessian_hook()
+
     def init_hessian(self, device=None):
         for op in self.quant_ops:
             op.init_hessian(device=device)
@@ -63,7 +64,7 @@ class GPTQCompressor():
               percdamp=0.01,
               groupsize=-1,
               actorder=False,
-              device=torch.device('cuda'),
+              device=torch.device('cuda:0'),
               **qconfig):
         for name, module in self.named_quant_ops:
             try:
@@ -76,22 +77,16 @@ class GPTQCompressor():
                     blocksize=blocksize,
                     percdamp=percdamp,
                     groupsize=groupsize,
-                    actorder=actorder
-                )
+                    actorder=actorder)
                 print_log(f'quant {name} success \t error = {error}')
                 module.to(original_device)
                 module.free()
             except Exception as e:
                 print_log(f'quant {name} failed as {e}')
-    
+
     def quant_with_default_qconfig(self, device='cpu'):
-        qconfig = dict(bits=4,
-                       perchannel=True,
-                       sym=False)
-        self.quant(groupsize=128,
-                   actorder=True,
-                   device=device,
-                   **qconfig)
+        qconfig = dict(bits=4, perchannel=True, sym=False)
+        self.quant(groupsize=128, actorder=True, device=device, **qconfig)
 
     # ops
 
