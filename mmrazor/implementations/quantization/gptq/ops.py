@@ -4,6 +4,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch import Tensor
 from torch.cuda.amp import custom_bwd, custom_fwd
 
 from mmrazor.models.architectures.dynamic_ops import (DynamicConv2d,
@@ -479,23 +480,39 @@ class TritonGPTQLinear(nn.Module, GPTQMixIn):
 
 class GPTQLinear(DynamicLinear, GPTQMixIn):
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, a_fakequant=None, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._gptq_mix_in_init()
+        self.a_fakequant = a_fakequant
+        self.fix_qparams = False
 
     @property
     def is_custom_kernel(self):
         return False
 
     @classmethod
-    def convert_from(cls, module: nn.Linear) -> 'DynamicLinear':
-        new_module = super().convert_from(module)
+    def convert_from(cls,
+                     module: nn.Linear,
+                     a_fakequant=None) -> 'DynamicLinear':
+        new_module = cls(
+            a_fakequant=a_fakequant,
+            in_features=module.in_features,
+            out_features=module.out_features,
+            bias=True if module.bias is not None else False)
         new_module.load_state_dict(module.state_dict(), strict=False)
 
         dtype = next(module.parameters()).dtype
         new_module = new_module.to(dtype)
 
         return new_module
+
+    def forward(self, input: Tensor) -> Tensor:
+        if self.a_fakequant:
+            dtype = self.weight.dtype
+            if not self.fix_qparams:
+                self.a_fakequant.find_params(input)
+            input = self.a_fakequant.quantize(input).to(dtype)
+        return super().forward(input)
 
 
 class GPTQConv2d(DynamicConv2d, GPTQMixIn):

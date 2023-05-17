@@ -1,11 +1,40 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+from typing import Any, Dict, Type
+
 import torch
 import torch.nn as nn
 
-from mmrazor.implementations.pruning.sparse_gpt import replace_with_dynamic_ops
 from mmrazor.utils import print_log
 from .ops import GPTQConv2d, GPTQLinear, GPTQMixIn, TritonGPTQLinear
 from .quantizer import Quantizer
+
+
+def replace_with_dynamic_ops(model: nn.Module,
+                             dynamicop_map: Dict[Type[nn.Module], Type[Any]],
+                             skipped_layers=[],
+                             a_qconfig=None,
+                             **kwargs):
+    """Replace torch modules with dynamic-ops."""
+
+    def replace_op(model: nn.Module, name: str, module: nn.Module):
+        names = name.split('.')
+        for sub_name in names[:-1]:
+            model = getattr(model, sub_name)
+
+        setattr(model, names[-1], module)
+
+    for name, module in model.named_modules():
+        if type(module) in dynamicop_map and name not in skipped_layers:
+            if isinstance(module, nn.Linear):
+                if a_qconfig:
+                    a_fakequant = Quantizer()
+                    a_fakequant.configure(**a_qconfig)
+                    kwargs.update({'a_fakequant': a_fakequant})
+                new_module = dynamicop_map[type(module)].convert_from(
+                    module, **kwargs)
+            else:
+                new_module = dynamicop_map[type(module)].convert_from(module)
+            replace_op(model, name, new_module)
 
 
 def to_static_model(model: nn.Module):
@@ -29,6 +58,7 @@ class GPTQCompressor():
                 quant_linear=True,
                 use_triton_ops=True,
                 skipped_layers=[],
+                a_qconfig=None,
                 **kwargs) -> None:
         self.model = model
         quant_modules: dict = {}
@@ -38,7 +68,7 @@ class GPTQCompressor():
             gptq_linear = TritonGPTQLinear if use_triton_ops else GPTQLinear
             quant_modules[nn.Linear] = gptq_linear
         replace_with_dynamic_ops(model, quant_modules, skipped_layers,
-                                 **kwargs)
+                                 a_qconfig, **kwargs)
 
     @classmethod
     def to_static_model(cls, model):
@@ -84,9 +114,10 @@ class GPTQCompressor():
             except Exception as e:
                 print_log(f'quant {name} failed as {e}')
 
-    def quant_with_default_qconfig(self, device='cpu'):
+    def quant_with_default_qconfig(self, groupsize=128, device='cpu'):
         qconfig = dict(bits=4, perchannel=True, sym=False)
-        self.quant(groupsize=128, actorder=True, device=device, **qconfig)
+        self.quant(
+            groupsize=groupsize, actorder=True, device=device, **qconfig)
 
     # ops
 

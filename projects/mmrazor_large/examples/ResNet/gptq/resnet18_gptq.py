@@ -9,7 +9,23 @@ import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 
-from mmrazor.implementations.quantization.gptq import GPTQCompressor
+from mmrazor.implementations.quantization.gptq import (GPTQCompressor,
+                                                       GPTQLinear, Quantizer)
+from mmrazor.utils import print_log
+
+
+def enable_observer_linear(model):
+    print_log('Enable updating qparams for GPTQLinear!')
+    for _, module in model.named_modules():
+        if isinstance(module, GPTQLinear):
+            module.fix_qparams = False
+
+
+def disable_observer_linear(model):
+    print_log('Disable updating qparams for GPTQLinear!')
+    for _, module in model.named_modules():
+        if isinstance(module, GPTQLinear):
+            module.fix_qparams = True
 
 
 def get_dataloaders(batch_size, n_workers, path=''):
@@ -121,7 +137,7 @@ if __name__ == '__main__':
         '--fp16',
         type=bool,
         default=False,
-        help='wether to use fp16 for evaluation and inference')
+        help='whether to use fp16 for evaluation and inference')
     args = arg_parser.parse_args()
 
     data_path = args.data
@@ -134,29 +150,43 @@ if __name__ == '__main__':
     train_loader, test_loader = get_dataloaders(batch_size, 4, data_path)
 
     compressor = GPTQCompressor()
+    # # use_triton_ops is True
     # compressor.prepare(model,
     #                    quant_conv=True,
     #                    quant_linear=True,
     #                    skipped_layers=['conv1'],
     #                    bits=4,
     #                    groupsize=128)
+    a_qconfig = dict(bits=4, perchannel=True, sym=False)
+    a_fakequant = Quantizer()
+    a_fakequant.configure(**a_qconfig)
     compressor.prepare(
         model,
         quant_conv=True,
         quant_linear=True,
         use_triton_ops=False,
-        skipped_layers=['conv1'])
+        skipped_layers=['conv1'],
+        a_fakequant=a_fakequant)
+    # from mmrazor.implementations.quantization.gptq import GPTQLinear
+    # for name, module in model.named_modules():
+    #     if isinstance(module, GPTQLinear):
+    #         print(name)
+    #         import pdb;pdb.set_trace()
 
     model.cuda()
 
+    enable_observer_linear(model)
     compressor.init_hessian()
     compressor.register_hessian_hook()
     infer(model, test_loader, num_samples=num_samples, is_half=args.fp16)
+    # import pdb;pdb.set_trace()
     compressor.remove_hessian_hook()
     compressor.quant_with_default_qconfig()
-    model = compressor.to_static_model(model)
+    # import pdb;pdb.set_trace()
+    # model = compressor.to_static_model(model)
 
     print('start evaluation')
+    disable_observer_linear(model)
     model = model.cuda()
     acc = eval(model, test_loader, is_half=args.fp16)
     print('accuracy:', acc.item())

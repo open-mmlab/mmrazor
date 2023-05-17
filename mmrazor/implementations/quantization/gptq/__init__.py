@@ -7,7 +7,13 @@ from .ops import GPTQConv2d, GPTQLinear, TritonGPTQLinear
 from .quantizer import Quantizer
 
 __all__ = [
-    'GPTQCompressor', 'Autotuner', 'autotune',
-    'matmul248_kernel_config_pruner', 'GPTQMixIn', 'GPTQConv2d', 'GPTQLinear',
-    'TritonGPTQLinear', 'Quantizer'
+    'GPTQCompressor',
+    'Autotuner',
+    'autotune',
+    'matmul248_kernel_config_pruner',
+    'GPTQMixIn',
+    'GPTQConv2d',
+    'GPTQLinear',
+    'TritonGPTQLinear',
+    'Quantizer',
 ]
