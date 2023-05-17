@@ -73,23 +73,23 @@ if __name__ == '__main__':
     print_log('load data for infer over')
 
     from mmrazor.implementations.pruning import sparse_gpt
-    mutator = sparse_gpt.SparseGptMutator()
-    mutator.prepare_from_supernet(model.model.decoder)
+    compressor = sparse_gpt.SparseGptCompressor()
+    compressor.prepare(model.model.decoder)
 
     with memory_efficient_forward(
             model, wrap_modules=[OPTDecoderLayer], enabled=args.m):
 
-        mutator.start_init_hessian()
+        compressor.register_hessian_hooks()
         opt_infer(
             model,
             testloader,
             DEV,
             batch_size=args.batch_size,
             num_samples=args.nsamples)
-        mutator.end_init_hessian()
-        mutator.prune_24()
+        compressor.remove_hessian_hooks()
+        compressor.prune_24()
 
-    model = mutator.to_static_model(model)
+    model = compressor.to_static_model(model)
     if args.save:
         print_log(f'save model in {args.save}')
         model.save_pretrained(args.save)

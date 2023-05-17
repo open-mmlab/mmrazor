@@ -15,17 +15,17 @@ def to_static_model(model: nn.Module):
     return model
 
 
-class SparseGptMutator():
+class SparseGptCompressor():
 
     # init
 
     def __init__(self) -> None:
         self.model: nn.Module = None
 
-    def prepare_from_supernet(self,
-                              model: nn.Module,
-                              prune_conv=True,
-                              prune_linear=True) -> None:
+    def prepare(self,
+                model: nn.Module,
+                prune_conv=True,
+                prune_linear=True) -> None:
         self.model = model
         prune_modules: dict = {}
         if prune_conv:
@@ -40,13 +40,13 @@ class SparseGptMutator():
 
     # hessian
 
-    def start_init_hessian(self):
+    def register_hessian_hooks(self):
         for module in self.sparse_ops:
-            module.start_init_hessian()
+            module.register_hessian_hook()
 
-    def end_init_hessian(self):
+    def remove_hessian_hooks(self):
         for module in self.sparse_ops:
-            module.end_init_hessian()
+            module.remove_hessian_hook()
 
     def init_hessian(self, device=None):
         for op in self.sparse_ops:

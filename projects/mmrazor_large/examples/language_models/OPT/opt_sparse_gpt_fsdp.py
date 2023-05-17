@@ -79,7 +79,7 @@ def main(rank, world_size=8, args=None):
 
         # init mutator
         mutator = sparse_gpt.SparseGptMutator()
-        mutator.prepare_from_supernet(model.model.decoder)
+        mutator.prepare(model.model.decoder)
         return model, mutator
 
     with init_on_meta(enable=True):

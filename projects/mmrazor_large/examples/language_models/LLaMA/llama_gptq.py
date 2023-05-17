@@ -7,11 +7,25 @@ from utils import opt_eval, opt_infer
 
 from mmrazor.implementations.pruning.sparse_gpt.utils import \
     memory_efficient_forward
+from mmrazor.implementations.quantization.gptq import GPTQLinear
 from mmrazor.utils import print_log
 
 
+def enable_observer_linear(model):
+    print_log('Enable updating qparams for GPTQLinear!')
+    for _, module in model.named_modules():
+        if isinstance(module, GPTQLinear):
+            module.fix_qparams = False
+
+
+def disable_observer_linear(model):
+    print_log('Disable updating qparams for GPTQLinear!')
+    for _, module in model.named_modules():
+        if isinstance(module, GPTQLinear):
+            module.fix_qparams = True
+
+
 def get_model(model):
-    import torch
 
     def skip(*args, **kwargs):
         pass
@@ -63,10 +77,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    torch.set_default_dtype(torch.half)
     DEV = torch.device('cuda:0')
 
     model = get_model(args.model)
+    model.to(DEV)
     model.eval()
     print_log('load model over')
 
@@ -74,32 +88,51 @@ if __name__ == '__main__':
         args.dataset, seed=args.seed, model=args.model, seqlen=model.seqlen)
     print_log('load data for infer over')
 
-    from mmrazor.implementations.pruning import sparse_gpt
-    mutator = sparse_gpt.SparseGptMutator()
-    mutator.prepare_from_supernet(model.model.layers)
+    from mmrazor.implementations.quantization import gptq
+    compressor = gptq.GPTQCompressor()
+    # # use_triton_ops is True
+    # compressor.prepare(model.model.layers,
+    #                    quant_conv=True,
+    #                    use_triton_ops=True,
+    #                    quant_linear=True,
+    #                    bits=4,
+    #                    groupsize=128)
 
-    mutator.init_hessian()
+    # # quantize activation for linear
+    # a_qconfig = dict(bits=4, perchannel=False, sym=False)
+    compressor.prepare(
+        model.model.layers,
+        quant_conv=True,
+        quant_linear=True,
+        use_triton_ops=False,
+        # a_qconfig=a_qconfig
+    )
+
+    compressor.init_hessian()
+    enable_observer_linear(model)
     with memory_efficient_forward(
             model, wrap_modules=[LlamaDecoderLayer], enabled=args.m):
-        mutator.start_init_hessian()
+        compressor.register_hessian_hooks()
         opt_infer(
             model,
             testloader,
             DEV,
             batch_size=args.batch_size,
             num_samples=args.nsamples)
-        mutator.end_init_hessian()
-        mutator.prune_24()
+        compressor.remove_hessian_hooks()
+        compressor.quant_with_default_qconfig(device=DEV)
 
-    model = mutator.to_static_model(model)
+    # model = compressor.to_static_model(model)
     if args.save:
         print_log(f'save model in {args.save}')
         model.save_pretrained(args.save)
 
+    disable_observer_linear(model)
     with memory_efficient_forward(
             model, wrap_modules=[LlamaDecoderLayer], enabled=args.m):
 
-        for dataset in ['wikitext2', 'ptb', 'c4']:
+        # for dataset in ['wikitext2', 'ptb', 'c4']:
+        for dataset in ['wikitext2']:
             dataloader, testloader = get_loaders(
                 dataset, seed=args.seed, model=args.model, seqlen=model.seqlen)
             print_log(dataset)

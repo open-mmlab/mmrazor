@@ -94,7 +94,7 @@ class SparseGptMixIn(ModuleProtocol):
         self.hessian = H_save
         self.hessian_batch = self.hessian_batch + B
 
-    def start_init_hessian(self):
+    def register_hessian_hook(self):
 
         @torch.no_grad()
         def forward_pre_hook(module: Protocol, input: tuple):
@@ -104,7 +104,7 @@ class SparseGptMixIn(ModuleProtocol):
         handle = self.register_forward_pre_hook(forward_pre_hook)
         self.sparse_gpt_handles.append(handle)
 
-    def end_init_hessian(self):
+    def remove_hessian_hook(self):
         for h in self.sparse_gpt_handles:
             h.remove()
 

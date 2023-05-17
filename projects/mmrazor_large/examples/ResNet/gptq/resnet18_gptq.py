@@ -10,7 +10,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 
 from mmrazor.implementations.quantization.gptq import (GPTQCompressor,
-                                                       GPTQLinear, Quantizer)
+                                                       GPTQLinear)
 from mmrazor.utils import print_log
 
 
@@ -150,40 +150,35 @@ if __name__ == '__main__':
     train_loader, test_loader = get_dataloaders(batch_size, 4, data_path)
 
     compressor = GPTQCompressor()
+
     # # use_triton_ops is True
     # compressor.prepare(model,
     #                    quant_conv=True,
     #                    quant_linear=True,
+    #                    use_triton_ops=False,
     #                    skipped_layers=['conv1'],
     #                    bits=4,
     #                    groupsize=128)
-    a_qconfig = dict(bits=4, perchannel=True, sym=False)
-    a_fakequant = Quantizer()
-    a_fakequant.configure(**a_qconfig)
+
+    # # quantize activation for linear
+    # a_qconfig = dict(bits=4, perchannel=True, sym=False)
     compressor.prepare(
         model,
         quant_conv=True,
         quant_linear=True,
         use_triton_ops=False,
         skipped_layers=['conv1'],
-        a_fakequant=a_fakequant)
-    # from mmrazor.implementations.quantization.gptq import GPTQLinear
-    # for name, module in model.named_modules():
-    #     if isinstance(module, GPTQLinear):
-    #         print(name)
-    #         import pdb;pdb.set_trace()
+        # a_qconfig=a_qconfig
+    )
 
     model.cuda()
 
     enable_observer_linear(model)
     compressor.init_hessian()
-    compressor.register_hessian_hook()
+    compressor.register_hessian_hooks()
     infer(model, test_loader, num_samples=num_samples, is_half=args.fp16)
-    # import pdb;pdb.set_trace()
-    compressor.remove_hessian_hook()
+    compressor.remove_hessian_hooks()
     compressor.quant_with_default_qconfig()
-    # import pdb;pdb.set_trace()
-    # model = compressor.to_static_model(model)
 
     print('start evaluation')
     disable_observer_linear(model)

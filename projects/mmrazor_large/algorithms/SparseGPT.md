@@ -15,20 +15,20 @@ from mmrazor.implementations.pruning import sparse_gpt
 model
 train_loader, test_loader
 
-## init sparse gpt mutator and prepare for pruning
-mutator = sparse_gpt.SparseGptMutator()
-mutator.prepare_from_supernet(model)
+## init sparse gpt compressor and prepare for pruning
+compressor = sparse_gpt.SparseGptCompressor()
+compressor.prepare(model)
 
 ## init hessian  matrix
-mutator.start_init_hessian()
+compressor.register_hessian_hooks()
 infer(model, test_loader, num_samples=num_samples)
-mutator.end_init_hessian()
+compressor.remove_hessian_hooks()
 
 ## prune
-mutator.prune_24()
+compressor.prune_24()
 
 ## to a normal torch model
-model = mutator.to_static_model(model)
+model = compressor.to_static_model(model)
 
 ```
 

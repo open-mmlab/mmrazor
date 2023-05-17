@@ -76,11 +76,11 @@ class GPTQCompressor():
 
     # hessian
 
-    def register_hessian_hook(self):
+    def register_hessian_hooks(self):
         for module in self.quant_ops:
             module.register_hessian_hook()
 
-    def remove_hessian_hook(self):
+    def remove_hessian_hooks(self):
         for module in self.quant_ops:
             module.remove_hessian_hook()
 

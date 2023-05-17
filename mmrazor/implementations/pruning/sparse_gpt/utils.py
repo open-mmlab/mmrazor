@@ -1,9 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Any, Dict, Protocol, Type
+from typing import Dict, Protocol, Type
 
 import torch
 import torch.nn as nn
 
+from mmrazor.models.architectures.dynamic_ops import DynamicMixin
 from mmrazor.utils import print_log
 
 
@@ -27,9 +28,8 @@ class ModuleProtocol(Protocol):
 
 
 def replace_with_dynamic_ops(model: nn.Module,
-                             dynamicop_map: Dict[Type[nn.Module], Type[Any]],
-                             skipped_layers=[],
-                             **kwargs):
+                             dynamicop_map: Dict[Type[nn.Module],
+                                                 Type[DynamicMixin]]):
     """Replace torch modules with dynamic-ops."""
 
     def replace_op(model: nn.Module, name: str, module: nn.Module):
@@ -40,12 +40,8 @@ def replace_with_dynamic_ops(model: nn.Module,
         setattr(model, names[-1], module)
 
     for name, module in model.named_modules():
-        if type(module) in dynamicop_map and name not in skipped_layers:
-            if isinstance(module, nn.Linear):
-                new_module = dynamicop_map[type(module)].convert_from(
-                    module, **kwargs)
-            else:
-                new_module = dynamicop_map[type(module)].convert_from(module)
+        if type(module) in dynamicop_map:
+            new_module = dynamicop_map[type(module)].convert_from(module)
             replace_op(model, name, new_module)
 
 
@@ -113,7 +109,7 @@ class memory_efficient_forward:
 class torch_setting():
 
     def __init__(self, dtype=None) -> None:
-        self.origianl_dtype = torch.get_default_dtype()
+        self.original_dtype = torch.get_default_dtype()
         self.dtype = dtype
 
     def __enter__(self):
@@ -121,4 +117,4 @@ class torch_setting():
             torch.set_default_dtype(self.dtype)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        torch.set_default_dtype(self.origianl_dtype)
+        torch.set_default_dtype(self.original_dtype)
