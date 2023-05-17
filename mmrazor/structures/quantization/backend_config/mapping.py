@@ -7,7 +7,9 @@ from .native import get_native_backend_config
 from .openvino import get_openvino_backend_config
 from .tensorrt import get_tensorrt_backend_config
 
-if digit_version(torch.__version__) >= digit_version('1.13.0'):
+if digit_version(
+        torch.__version__) >= digit_version('1.13.0') and digit_version(
+            torch.__version__) <= digit_version('1.13.1'):
     BackendConfigs = {
         'academic': get_academic_backend_config(),
         'native': get_native_backend_config(),
