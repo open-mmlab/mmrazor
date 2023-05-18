@@ -76,6 +76,7 @@ if __name__ == '__main__':
     compressor = sparse_gpt.SparseGptCompressor()
     compressor.prepare(model.model.decoder)
 
+    compressor.init_hessian()
     with memory_efficient_forward(
             model, wrap_modules=[OPTDecoderLayer], enabled=args.m):
 
