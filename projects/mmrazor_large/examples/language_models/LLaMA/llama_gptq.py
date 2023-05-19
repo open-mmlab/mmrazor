@@ -90,23 +90,23 @@ if __name__ == '__main__':
 
     from mmrazor.implementations.quantization import gptq
     compressor = gptq.GPTQCompressor()
-    # # use_triton_ops is True
-    # compressor.prepare(model.model.layers,
-    #                    quant_conv=True,
-    #                    use_triton_ops=True,
-    #                    quant_linear=True,
-    #                    bits=4,
-    #                    groupsize=128)
+    # use_triton_ops is True
+    compressor.prepare(model.model.layers,
+                       quant_conv=True,
+                       use_triton_ops=True,
+                       quant_linear=True,
+                       bits=4,
+                       groupsize=128)
 
-    # # quantize activation for linear
-    # a_qconfig = dict(bits=4, perchannel=False, sym=False)
-    compressor.prepare(
-        model.model.layers,
-        quant_conv=True,
-        quant_linear=True,
-        use_triton_ops=False,
-        # a_qconfig=a_qconfig
-    )
+    # # # quantize activation for linear
+    # # a_qconfig = dict(bits=4, perchannel=False, sym=False)
+    # compressor.prepare(
+    #     model.model.layers,
+    #     quant_conv=True,
+    #     quant_linear=True,
+    #     use_triton_ops=False,
+    #     # a_qconfig=a_qconfig
+    # )
 
     compressor.init_hessian()
     enable_observer_linear(model)
@@ -134,6 +134,7 @@ if __name__ == '__main__':
             opt_eval(model, testloader, DEV, batch_size=args.batch_size)
 
     if args.save:
-        model = compressor.to_static_model(model)
+        # model = compressor.to_static_model(model)
         print_log(f'save model in {args.save}')
-        model.save_pretrained(args.save)
+        # model.save_pretrained(args.save)
+        torch.save(model.state_dict(), args.save)
