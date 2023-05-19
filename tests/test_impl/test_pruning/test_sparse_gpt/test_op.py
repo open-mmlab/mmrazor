@@ -39,9 +39,9 @@ class TestSparseGptOps(unittest.TestCase):
 
             # prune
 
-            sparse_linear.start_init_hessian()
+            sparse_linear.register_hessian_hook()
             infer(sparse_linear, random_data)
-            sparse_linear.end_init_hessian()
+            sparse_linear.remove_hessian_hook()
 
             sparse_linear.prune()
 
@@ -55,13 +55,13 @@ class TestSparseGptOps(unittest.TestCase):
         import torchvision
         model = torchvision.models.resnet18()
 
-        mutator = sparse_gpt.SparseGptMutator()
+        mutator = sparse_gpt.SparseGptCompressor()
         mutator.prepare_from_supernet(model)
 
         x = torch.rand(10, 3, 224, 224)
-        mutator.start_init_hessian()
+        mutator.register_hessian_hooks()
         model(x)
-        mutator.end_init_hessian()
+        mutator.remove_hessian_hooks()
         mutator.prune_24()
 
         model = mutator.to_static_model(model)

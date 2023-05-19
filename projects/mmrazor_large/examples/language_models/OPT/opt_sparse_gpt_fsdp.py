@@ -78,7 +78,7 @@ def main(rank, world_size=8, args=None):
         model = get_model(model_name)
 
         # init mutator
-        mutator = sparse_gpt.SparseGptMutator()
+        mutator = sparse_gpt.SparseGptCompressor()
         mutator.prepare(model.model.decoder)
         return model, mutator
 
@@ -107,7 +107,7 @@ def main(rank, world_size=8, args=None):
     # init hessian
 
     mutator.init_hessian(device='cuda')
-    mutator.start_init_hessian()
+    mutator.register_hessian_hooks(model)
 
     _, testloader = get_loaders(
         args.dataset, seed=args.seed, model=model_name, seqlen=model.seqlen)
@@ -115,7 +115,7 @@ def main(rank, world_size=8, args=None):
         testloader, world_size, rank, model, batch_size=batch_size)
     opt_infer_fsdp(model, testloader)
 
-    mutator.end_init_hessian()
+    mutator.remove_hessian_hooks()
 
     # prune
     name2module = dict(model.named_modules())
