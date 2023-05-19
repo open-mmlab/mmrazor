@@ -1,5 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, Protocol, Type
+import sys
+from typing import Dict, Type
+
+if sys.version_info < (3, 8):
+    from typing_extensions import Protocol
+else:
+    from typing import Protocol
 
 import torch
 import torch.nn as nn
