@@ -204,7 +204,8 @@ class SparseGptMixIn(ModuleProtocol):
 
                 W[:, i2:] -= Err1.matmul(Hinv[i1:i2, i2:])
 
-            torch.cuda.synchronize()
+            if W.device.type == 'cuda':
+                torch.cuda.synchronize()
             from .sparse24_utils import is_weight_sparse_24
             if prunen == 2 and prunem == 4:
                 assert is_weight_sparse_24(
