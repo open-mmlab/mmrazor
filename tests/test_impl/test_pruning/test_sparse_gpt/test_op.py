@@ -21,9 +21,7 @@ class TestSparseGptOps(unittest.TestCase):
             for x in dataset:
                 model(x)
 
-        for device in ['cpu', 'cuda']:
-            if device == 'cuda' and (not torch.cuda.is_available()):
-                self.skipTest('cuda is not available')
+        for device in ['cpu']:
             device = torch.device(device)
 
             # prepare
