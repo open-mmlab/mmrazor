@@ -17,10 +17,10 @@ from .utils import ModuleProtocol, torch_setting
 
 
 class SparseGptMixIn(ModuleProtocol):
-
-    # init
+    """The core algorithm implementation for SparseGpt."""
 
     def _sparse_gpt_mix_in_init(self):
+        """Init mixin."""
         self.sparse_gpt_handles = []
         self.rows = self.weight_matrix.shape[0]
         self.columns = self.weight_matrix.shape[1]
@@ -37,6 +37,7 @@ class SparseGptMixIn(ModuleProtocol):
 
     @weight_matrix.setter
     def weight_matrix(self, value: torch.Tensor):
+        """Set weight."""
         with torch.no_grad():
             value = value.reshape(self.weight.shape).to(self.weight.device).to(
                 self.weight.dtype)
@@ -69,6 +70,7 @@ class SparseGptMixIn(ModuleProtocol):
 
     @hessian.setter
     def hessian(self, value: torch.Tensor):
+        """Set hessian."""
         with torch.no_grad():
             if dist.is_initialized():
                 if dist.get_rank() == 0:
@@ -82,6 +84,7 @@ class SparseGptMixIn(ModuleProtocol):
 
     @torch.no_grad()
     def update_hessian(self, input: torch.Tensor):
+        """Update hessian."""
         input = self.format_input(input).float()
         H_save = self.hessian
         H_save = H_save.to(input.device)
@@ -100,6 +103,7 @@ class SparseGptMixIn(ModuleProtocol):
         self.hessian_batch = self.hessian_batch + B
 
     def register_hessian_hook(self):
+        """Register updating hessian hook."""
 
         @torch.no_grad()
         def forward_pre_hook(module: Protocol, input: tuple):
@@ -110,10 +114,12 @@ class SparseGptMixIn(ModuleProtocol):
         self.sparse_gpt_handles.append(handle)
 
     def remove_hessian_hook(self):
+        """Remove updating hessian hook."""
         for h in self.sparse_gpt_handles:
             h.remove()
 
     def init_hessian(self, device=None):
+        """Init hessian."""
         if dist.is_initialized():
             if dist.get_rank() == 0:
                 self._hessian = torch.zeros([self.columns, self.columns],
@@ -130,6 +136,7 @@ class SparseGptMixIn(ModuleProtocol):
 
     @torch.no_grad()
     def prune(self, sparsity, prunen=0, prunem=0, blocksize=128, percdamp=.01):
+        """The implementation for SparseGPT."""
         with torch_setting(dtype=torch.float):
             # Converted from https://github.com/ist-daslab/sparsegpt
 
@@ -224,6 +231,7 @@ class SparseGptMixIn(ModuleProtocol):
 
 
 class SparseGptLinear(DynamicLinear, SparseGptMixIn):
+    """Custom Linear for SparseGpt."""
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -231,6 +239,7 @@ class SparseGptLinear(DynamicLinear, SparseGptMixIn):
 
     @classmethod
     def convert_from(cls, module: nn.Linear) -> 'DynamicConv2d':
+        """Convert to cls from torch's module."""
         if module.out_features < module.in_features:
             return module
         new_module = super().convert_from(module)
@@ -243,6 +252,7 @@ class SparseGptLinear(DynamicLinear, SparseGptMixIn):
 
 
 class SparseGptConv2d(DynamicConv2d, SparseGptMixIn):
+    """Custom Conv2d for SparseGpt."""
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -250,6 +260,7 @@ class SparseGptConv2d(DynamicConv2d, SparseGptMixIn):
 
     @classmethod
     def convert_from(cls, module: nn.Conv2d) -> 'DynamicConv2d':
+        """Convert to cls from torch's module."""
         new_module = super().convert_from(module)
         new_module.load_state_dict(module.state_dict(), strict=False)
 
@@ -259,6 +270,7 @@ class SparseGptConv2d(DynamicConv2d, SparseGptMixIn):
         return new_module
 
     def format_input(self, input: torch.Tensor):
+        """Format input shape."""
         # input B C H W
         input = F.unfold(
             input, self.kernel_size, padding=self.padding,

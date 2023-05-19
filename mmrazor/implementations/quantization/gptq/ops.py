@@ -354,6 +354,7 @@ except:  # noqa: E722
 
 
 def matmul248(input, qweight, scales, qzeros, g_idx, bits, maxq):
+    """matmul248 function with matmul_248_kernel."""
     with torch.cuda.device(input.device):
         output = torch.empty((input.shape[0], qweight.shape[1]),
                              device=input.device,
@@ -374,6 +375,7 @@ def matmul248(input, qweight, scales, qzeros, g_idx, bits, maxq):
 
 
 def transpose_matmul248(input, qweight, scales, qzeros, g_idx, bits, maxq):
+    """transpose_matmul248 function with transpose_matmul_248_kernel."""
     with torch.cuda.device(input.device):
         output_dim = (qweight.shape[0] * 32) // bits
         output = torch.empty((input.shape[0], output_dim),
@@ -394,10 +396,12 @@ def transpose_matmul248(input, qweight, scales, qzeros, g_idx, bits, maxq):
 
 
 class QuantLinearFunction(torch.autograd.Function):
+    """Custom QuantLinearFunction."""
 
     @staticmethod
     @custom_fwd(cast_inputs=torch.float16)
     def forward(ctx, input, qweight, scales, qzeros, g_idx, bits, maxq):
+        """Custom forward."""
         output = matmul248(input, qweight, scales, qzeros, g_idx, bits, maxq)
         ctx.save_for_backward(qweight, scales, qzeros, g_idx)
         ctx.bits, ctx.maxq = bits, maxq
@@ -406,6 +410,7 @@ class QuantLinearFunction(torch.autograd.Function):
     @staticmethod
     @custom_bwd
     def backward(ctx, grad_output):
+        """Custom backward."""
         qweight, scales, qzeros, g_idx = ctx.saved_tensors
         bits, maxq = ctx.bits, ctx.maxq
         grad_input = None
@@ -417,6 +422,7 @@ class QuantLinearFunction(torch.autograd.Function):
 
 
 class TritonGPTQLinear(nn.Module, GPTQMixIn):
+    """Custom Linear for GPTQ with custom triton kernel."""
 
     def __init__(self, bits, groupsize, weight, in_features, out_features,
                  bias):
@@ -455,10 +461,12 @@ class TritonGPTQLinear(nn.Module, GPTQMixIn):
 
     @property
     def is_custom_kernel(self):
+        """Whether use custom kernel."""
         return True
 
     @classmethod
     def convert_from(cls, module: nn.Linear, bits, groupsize):
+        """Convert to cls from torch's module."""
         new_module = cls(
             bits,
             groupsize,
@@ -470,6 +478,7 @@ class TritonGPTQLinear(nn.Module, GPTQMixIn):
         return new_module
 
     def forward(self, x):
+        """Custom forward."""
         out_shape = x.shape[:-1] + (self.out_features, )
         out = QuantLinearFunction.apply(
             x.reshape(-1, x.shape[-1]), self.qweight, self.scales, self.qzeros,
@@ -479,6 +488,7 @@ class TritonGPTQLinear(nn.Module, GPTQMixIn):
 
 
 class GPTQLinear(DynamicLinear, GPTQMixIn):
+    """Custom Linear for GPTQ without custom triton kernel."""
 
     def __init__(self, a_fakequant=None, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -488,12 +498,14 @@ class GPTQLinear(DynamicLinear, GPTQMixIn):
 
     @property
     def is_custom_kernel(self):
+        """Whether use custom kernel."""
         return False
 
     @classmethod
     def convert_from(cls,
                      module: nn.Linear,
                      a_fakequant=None) -> 'DynamicLinear':
+        """Convert to cls from torch's module."""
         new_module = cls(
             a_fakequant=a_fakequant,
             in_features=module.in_features,
@@ -507,6 +519,7 @@ class GPTQLinear(DynamicLinear, GPTQMixIn):
         return new_module
 
     def forward(self, input: Tensor) -> Tensor:
+        """Custom forward."""
         if self.a_fakequant:
             dtype = self.weight.dtype
             if not self.fix_qparams:
@@ -516,6 +529,7 @@ class GPTQLinear(DynamicLinear, GPTQMixIn):
 
 
 class GPTQConv2d(DynamicConv2d, GPTQMixIn):
+    """Custom Conv2d for GPTQ without custom triton kernel."""
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -523,10 +537,12 @@ class GPTQConv2d(DynamicConv2d, GPTQMixIn):
 
     @property
     def is_custom_kernel(self):
+        """Whether use custom kernel."""
         return False
 
     @classmethod
     def convert_from(cls, module: nn.Conv2d) -> 'DynamicConv2d':
+        """Convert to cls from torch's module."""
         new_module = super().convert_from(module)
         new_module.load_state_dict(module.state_dict(), strict=False)
 
@@ -536,6 +552,7 @@ class GPTQConv2d(DynamicConv2d, GPTQMixIn):
         return new_module
 
     def format_input(self, input: torch.Tensor):
+        """Format input shape."""
         # input B C H W
         input = F.unfold(
             input, self.kernel_size, padding=self.padding,

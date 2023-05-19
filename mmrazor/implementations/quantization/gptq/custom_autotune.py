@@ -12,6 +12,7 @@ import triton
 
 
 class Autotuner(triton.KernelInterface):
+    """Autotuner."""
 
     def __init__(self,
                  fn,
@@ -63,8 +64,8 @@ class Autotuner(triton.KernelInterface):
         self.fn = fn
 
     def _bench(self, *args, config, **meta):
-        # check for conflicts, i.e. meta-parameters both provided
-        # as kwargs and by the autotuner
+        """Check for conflicts, i.e. meta-parameters both provided as kwargs
+        and by the autotuner."""
         conflicts = meta.keys() & config.kwargs.keys()
         if conflicts:
             raise ValueError(
@@ -94,6 +95,7 @@ class Autotuner(triton.KernelInterface):
             return (float('inf'), float('inf'), float('inf'))
 
     def run(self, *args, **kwargs):
+        """Run."""
         self.nargs = dict(zip(self.arg_names, args))
         if len(self.configs) > 1:
             key = tuple(args[i] for i in self.key_idx)
@@ -132,6 +134,7 @@ class Autotuner(triton.KernelInterface):
             **config.kwargs)
 
     def prune_configs(self, kwargs):
+        """Prune configs."""
         pruned_configs = self.configs
         if self.early_config_prune:
             pruned_configs = self.early_config_prune(self.configs, self.nargs)
@@ -154,6 +157,7 @@ class Autotuner(triton.KernelInterface):
         return pruned_configs
 
     def warmup(self, *args, **kwargs):
+        """Warm up."""
         self.nargs = dict(zip(self.arg_names, args))
         for config in self.prune_configs(kwargs):
             self.fn.warmup(

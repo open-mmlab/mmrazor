@@ -120,11 +120,6 @@ if __name__ == '__main__':
         compressor.remove_hessian_hooks()
         compressor.quant_with_default_qconfig(device=DEV)
 
-    # model = compressor.to_static_model(model)
-    if args.save:
-        print_log(f'save model in {args.save}')
-        model.save_pretrained(args.save)
-
     disable_observer_linear(model)
     with memory_efficient_forward(
             model, wrap_modules=[OPTDecoderLayer], enabled=args.m):
@@ -135,3 +130,8 @@ if __name__ == '__main__':
                 dataset, seed=args.seed, model=args.model, seqlen=model.seqlen)
             print_log(dataset)
             opt_eval(model, testloader, DEV, batch_size=args.batch_size)
+
+    if args.save:
+        model = compressor.to_static_model(model)
+        print_log(f'save model in {args.save}')
+        model.save_pretrained(args.save)

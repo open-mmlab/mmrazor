@@ -4,6 +4,7 @@ import torch.nn as nn
 
 
 class Quantizer(nn.Module):
+    """Quantizer for some basic quantization functions."""
 
     def __init__(self, shape=1):
         super(Quantizer, self).__init__()
@@ -20,6 +21,7 @@ class Quantizer(nn.Module):
                   grid=100,
                   maxshrink=.8,
                   trits=False):
+        """Configure qconfig."""
 
         self.maxq = torch.tensor(2**bits - 1)
         self.perchannel = perchannel
@@ -33,6 +35,7 @@ class Quantizer(nn.Module):
         self.scale = torch.zeros_like(self.scale)
 
     def _quantize(self, x, scale, zero, maxq):
+        """Fakequant."""
         if maxq < 0:
             return (x > scale / 2).float() * scale + (x <
                                                       zero / 2).float() * zero
@@ -40,6 +43,7 @@ class Quantizer(nn.Module):
         return scale * (q - zero)
 
     def find_params(self, x, weight=False):
+        """Observe the specified data and calculate the qparams."""
         dev = x.device
         self.maxq = self.maxq.to(dev)
 
@@ -125,13 +129,16 @@ class Quantizer(nn.Module):
             self.zero = self.zero.unsqueeze(0)
 
     def quantize(self, x):
+        """Fakequant."""
         if self.ready():
             return self._quantize(x, self.scale, self.zero, self.maxq)
 
         return x
 
     def enabled(self):
+        """Whether is enabled."""
         return self.maxq > 0
 
     def ready(self):
+        """Whether is ready."""
         return torch.all(self.scale != 0)

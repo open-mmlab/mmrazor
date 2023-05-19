@@ -14,27 +14,35 @@ from mmrazor.implementations.pruning.sparse_gpt.utils import torch_setting
 
 
 class ModuleProtocol(Protocol):
+    """Custom module protocol for algorithm mixin."""
     weight: torch.Tensor
 
     def forward(self, x):
+        """The abstract method."""
         pass
 
     def register_forward_hook(self, hook):
+        """The abstract method."""
         pass
 
     def register_backward_hook(self, hook):
+        """The abstract method."""
         pass
 
     def register_forward_pre_hook(self, hook):
+        """The abstract method."""
         pass
 
     def register_buffer(self, name, tensor):
+        """The abstract method."""
         pass
 
 
 class GPTQMixIn(ModuleProtocol):
+    """The core algorithm implementation for GPTQ."""
 
     def _gptq_mix_in_init(self):
+        """Init mixin."""
         self.gptq_handles = []
         self.rows = self.weight_matrix.shape[0]
         self.columns = self.weight_matrix.shape[1]
@@ -51,6 +59,7 @@ class GPTQMixIn(ModuleProtocol):
 
     @weight_matrix.setter
     def weight_matrix(self, value: torch.Tensor):
+        """Set weight."""
         with torch.no_grad():
             value = value.reshape(self.weight.shape).to(self.weight.device).to(
                 self.weight.dtype)
@@ -83,6 +92,7 @@ class GPTQMixIn(ModuleProtocol):
 
     @hessian.setter
     def hessian(self, value: torch.Tensor):
+        """Set hessian."""
         with torch.no_grad():
             if dist.is_initialized():
                 if dist.get_rank() == 0:
@@ -96,6 +106,7 @@ class GPTQMixIn(ModuleProtocol):
 
     @torch.no_grad()
     def update_hessian(self, input: torch.Tensor):
+        """Update hessian."""
         input = self.format_input(input).float()
         H_save = self.hessian
         H_save = H_save.to(input.device)
@@ -114,6 +125,7 @@ class GPTQMixIn(ModuleProtocol):
         self.hessian_batch = self.hessian_batch + B
 
     def register_hessian_hook(self):
+        """Register updating hessian hook."""
 
         @torch.no_grad()
         def forward_pre_hook(module: Protocol, input: tuple):
@@ -124,10 +136,12 @@ class GPTQMixIn(ModuleProtocol):
         self.gptq_handles.append(handle)
 
     def remove_hessian_hook(self):
+        """Remove updating hessian hook."""
         for h in self.gptq_handles:
             h.remove()
 
     def init_hessian(self, device=None):
+        """Init hessian."""
         if dist.is_initialized():
             if dist.get_rank() == 0:
                 self._hessian = torch.zeros([self.columns, self.columns],
@@ -141,6 +155,7 @@ class GPTQMixIn(ModuleProtocol):
                                         dtype=torch.float)
 
     def pack(self, scales, zeros, g_idx=None):
+        """Pack and update qparams with groupsize_idx."""
         self.g_idx = g_idx.clone() if g_idx is not None else self.g_idx
 
         scales = scales.t().contiguous()
@@ -201,6 +216,7 @@ class GPTQMixIn(ModuleProtocol):
               percdamp=0.01,
               groupsize=-1,
               actorder=False):
+        """The implementation for GPTQ."""
         with torch_setting(dtype=torch.float):
             assert self.hessian is not None
             W: torch.Tensor = self.weight_matrix.float()  # out in
@@ -298,5 +314,6 @@ class GPTQMixIn(ModuleProtocol):
             return error
 
     def free(self):
+        """Free some cache and memory."""
         self._hessian = None
         torch.cuda.empty_cache()
