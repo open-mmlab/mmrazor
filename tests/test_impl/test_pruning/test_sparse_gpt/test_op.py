@@ -4,6 +4,7 @@ import unittest
 import torch
 import torch.nn as nn
 
+from mmrazor import digit_version
 from mmrazor.implementations.pruning import sparse_gpt
 
 
@@ -11,6 +12,8 @@ class TestSparseGptOps(unittest.TestCase):
 
     @torch.no_grad()
     def test_op(self):
+        if digit_version(torch.__version__) < digit_version('1.12.0'):
+            self.skipTest('torch<1.12.0')
 
         def get_loss(linear, linear1, data):
             y = linear(data)
@@ -53,6 +56,8 @@ class TestSparseGptOps(unittest.TestCase):
 
     @torch.no_grad()
     def test_model(self):
+        if digit_version(torch.__version__) < digit_version('1.12.0'):
+            self.skipTest('torch<1.12.0')
         import torchvision
         model = torchvision.models.resnet18()
 
