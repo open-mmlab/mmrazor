@@ -479,12 +479,18 @@ class TritonGPTQLinear(nn.Module, GPTQMixIn):
 
     def forward(self, x):
         """Custom forward."""
-        out_shape = x.shape[:-1] + (self.out_features, )
-        out = QuantLinearFunction.apply(
-            x.reshape(-1, x.shape[-1]), self.qweight, self.scales, self.qzeros,
-            self.g_idx, self.bits, self.maxq)
-        out = out + self.bias if self.bias is not None else out
-        return out.reshape(out_shape)
+        if torch.all(self.qweight == 0):
+            out = F.linear(x, self.weight, self.bias)
+        else:
+            # import pdb;pdb.set_trace()
+            out_shape = x.shape[:-1] + (self.out_features, )
+            out = QuantLinearFunction.apply(
+                x.reshape(-1, x.shape[-1]), self.qweight, self.scales,
+                self.qzeros, self.g_idx, self.bits, self.maxq)
+            out = out + self.bias if self.bias is not None else out
+            out = out.reshape(out_shape)
+            # import pdb;pdb.set_trace()
+        return out
 
 
 class GPTQLinear(DynamicLinear, GPTQMixIn):

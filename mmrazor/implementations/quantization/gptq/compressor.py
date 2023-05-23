@@ -108,6 +108,7 @@ class GPTQCompressor():
                 module: GPTQMixIn = module.to(device)
                 quantizer = Quantizer()
                 quantizer.configure(**qconfig)
+                # print_log(f'quant {name}...')
                 error = module.quant(
                     quantizer=quantizer,
                     blocksize=blocksize,

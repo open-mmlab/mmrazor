@@ -7,6 +7,7 @@ import torch.nn as nn
 from mmrazor import digit_version
 from mmrazor.implementations.quantization import gptq
 
+
 class TestGPTQOps(unittest.TestCase):
 
     @torch.no_grad()
@@ -30,7 +31,7 @@ class TestGPTQOps(unittest.TestCase):
 
             linear = nn.Linear(12, 20, bias=False).to(device)
             gptq_linear = gptq.GPTQLinear(
-                12, 20, bias=False).to(device)
+                in_features=12, out_features=20, bias=False).to(device)
             gptq_linear.load_state_dict(linear.state_dict(), strict=False)
 
             random_data = torch.rand([10, 5, 12]).to(
@@ -39,13 +40,13 @@ class TestGPTQOps(unittest.TestCase):
 
             self.assertTrue(get_loss(linear, gptq_linear, data_0) == 0)
 
-            # prune
+            # quant
 
             gptq_linear.init_hessian()
             gptq_linear.register_hessian_hook()
             infer(gptq_linear, random_data)
             gptq_linear.remove_hessian_hook()
-            
+
             qconfig = dict(bits=4, perchannel=True, sym=False)
             quantizer = gptq.Quantizer()
             quantizer.configure(**qconfig)

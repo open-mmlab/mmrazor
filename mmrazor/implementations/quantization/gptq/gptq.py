@@ -173,7 +173,7 @@ class GPTQMixIn(ModuleProtocol):
                     self.scales[self.g_idx[idx]]).to(torch.int)[:, None])
         intweight = torch.cat(intweight, dim=1)
         intweight = intweight.t().contiguous()
-        intweight = intweight.numpy().astype(np.uint32)
+        intweight = intweight.cpu().numpy().astype(np.uint32)
         qweight = np.zeros(
             (intweight.shape[0] // 32 * self.bits, intweight.shape[1]),
             dtype=np.uint32)
@@ -189,10 +189,10 @@ class GPTQMixIn(ModuleProtocol):
                 raise NotImplementedError('Only 2,4,8 bits are supported.')
 
         qweight = qweight.astype(np.int32)
-        self.qweight = torch.from_numpy(qweight)
+        self.qweight = torch.from_numpy(qweight).to(self.weight.device)
 
         zeros -= 1
-        zeros = zeros.numpy().astype(np.uint32)
+        zeros = zeros.cpu().numpy().astype(np.uint32)
         qzeros = np.zeros((zeros.shape[0], zeros.shape[1] // 32 * self.bits),
                           dtype=np.uint32)
         i = 0
@@ -207,7 +207,7 @@ class GPTQMixIn(ModuleProtocol):
                 raise NotImplementedError('Only 2,4,8 bits are supported.')
 
         qzeros = qzeros.astype(np.int32)
-        self.qzeros = torch.from_numpy(qzeros)
+        self.qzeros = torch.from_numpy(qzeros).to(self.weight.device)
 
     @torch.no_grad()
     def quant(self,
@@ -298,7 +298,6 @@ class GPTQMixIn(ModuleProtocol):
             g_idx = torch.tensor(g_idx, dtype=torch.int32, device=Q.device)
             if actorder:
                 invperm = torch.argsort(perm)
-                W = W[:, invperm]
                 Q = Q[:, invperm]
                 g_idx = g_idx[invperm]
 
@@ -307,10 +306,10 @@ class GPTQMixIn(ModuleProtocol):
                 zero.append(quantizer.zero)
             scale = torch.cat(scale, dim=1)
             zero = torch.cat(zero, dim=1)
-            self.weight_matrix = Q.data
+            self.weight_matrix = Q.data.to(self.weight_matrix.dtype)
             if self.is_custom_kernel:
                 self.pack(scale, zero, g_idx)
-
+                del self.weight
             return error
 
     def free(self):
