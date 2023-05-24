@@ -8,7 +8,11 @@ import math
 import time
 from typing import Dict
 
-import triton
+try:
+    import triton
+except ImportError:
+    from mmrazor.utils import get_package_placeholder
+    triton = get_package_placeholder('please install triton with pip')
 
 
 class Autotuner(triton.KernelInterface):
