@@ -1,5 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from typing import Dict, Protocol, Type
+import sys
+from typing import Dict, Type
+
+if sys.version_info < (3, 8):
+    from typing_extensions import Protocol
+else:
+    from typing import Protocol
 
 import torch
 import torch.nn as nn
@@ -9,21 +15,27 @@ from mmrazor.utils import print_log
 
 
 class ModuleProtocol(Protocol):
+    """Custom module protocol for algorithm mixin."""
     weight: torch.Tensor
 
     def forward(self, x):
+        """The abstract method."""
         pass
 
     def register_forward_hook(self, hook):
+        """The abstract method."""
         pass
 
     def register_backward_hook(self, hook):
+        """The abstract method."""
         pass
 
     def register_forward_pre_hook(self, hook):
+        """The abstract method."""
         pass
 
     def register_buffer(self, name, tensor):
+        """The abstract method."""
         pass
 
 
@@ -47,6 +59,7 @@ def replace_with_dynamic_ops(model: nn.Module,
 
 def register_efficient_forward_hook(module: nn.Module,
                                     device=torch.device('cuda:0')):
+    """Register efficient forward hook."""
 
     def forward_pre_hook(module: nn.Module, input):
         module.to(device)
@@ -63,6 +76,7 @@ def register_efficient_forward_hook(module: nn.Module,
 def enable_efficient_forward(model: nn.Module,
                              device=torch.device('cuda:0'),
                              wrap_modules=[]):
+    """Enable efficient forward."""
     handles = []
     blocks = []
     for name, module in model.named_children():
@@ -79,6 +93,7 @@ def enable_efficient_forward(model: nn.Module,
 
 
 class memory_efficient_forward:
+    """The class for Memory efficient forward."""
 
     def __init__(self,
                  model: nn.Module,
@@ -95,6 +110,7 @@ class memory_efficient_forward:
             model.to(device)
 
     def __enter__(self, ):
+        """Enter."""
         if self.enabled:
             handles, blocks = enable_efficient_forward(self.model, self.device,
                                                        self.wrap_modules)
@@ -102,19 +118,23 @@ class memory_efficient_forward:
             self.handlers = handles
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
+        """Exit."""
         for h in self.handlers:
             h.remove()
 
 
 class torch_setting():
+    """Set the default torch dtype setting."""
 
     def __init__(self, dtype=None) -> None:
-        self.origianl_dtype = torch.get_default_dtype()
+        self.original_dtype = torch.get_default_dtype()
         self.dtype = dtype
 
     def __enter__(self):
+        """Enter."""
         if self.dtype is not None:
             torch.set_default_dtype(self.dtype)
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        torch.set_default_dtype(self.origianl_dtype)
+        """Exit."""
+        torch.set_default_dtype(self.original_dtype)

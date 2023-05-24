@@ -1,4 +1,4 @@
-# Examples for OPT
+# Examples for LLaMA
 
 ## SparseGPT
 
@@ -7,14 +7,14 @@ For more details about SparseGPT, please refer to [SparseGPT](../../../algorithm
 ### Usage
 
 ```shell
-# example for facebook/opt-125m
-python projects/mmrazor_large/examples/language_models/OPT/opt_sparse_gpt.py facebook/opt-125m c4
+# example for decapoda-research/llama-7b-hf
+python projects/mmrazor_large/examples/language_models/LLaMA/llama_sparse_gpt.py decapoda-research/llama-7b-hf c4
 
 # help
-usage: opt_sparse_gpt.py [-h] [--seed SEED] [--nsamples NSAMPLES] [--batch_size BATCH_SIZE] [--save SAVE] [-m M] model {wikitext2,ptb,c4}
+usage: llama_sparse_gpt.py [-h] [--seed SEED] [--nsamples NSAMPLES] [--batch_size BATCH_SIZE] [--save SAVE] [-m M] model {wikitext2,ptb,c4}
 
 positional arguments:
-  model                 OPT model to load; pass `facebook/opt-X`.
+  model                 Llama model to load
   {wikitext2,ptb,c4}    Where to extract calibration data from.
 
 optional arguments:
@@ -34,14 +34,14 @@ For more details about GPTQ, please refer to [GPTQ](../../../algorithms/GPTQ.md)
 ### Usage
 
 ```shell
-# example for facebook/opt-125m
-python projects/mmrazor_large/examples/language_models/OPT/opt_gptq.py facebook/opt-125m c4
+# example for decapoda-research/llama-7b-hf
+python projects/mmrazor_large/examples/language_models/LLaMA/llama_gptq.py decapoda-research/llama-7b-hf c4
 
 # help
-usage: opt_gptq.py [-h] [--seed SEED] [--nsamples NSAMPLES] [--batch_size BATCH_SIZE] [--save SAVE] [-m M] model {wikitext2,ptb,c4}
+usage: llama_gptq.py [-h] [--seed SEED] [--nsamples NSAMPLES] [--batch_size BATCH_SIZE] [--save SAVE] [-m M] model {wikitext2,ptb,c4}
 
 positional arguments:
-  model                 OPT model to load; pass `facebook/opt-X`.
+  model                 Llama model to load
   {wikitext2,ptb,c4}    Where to extract calibration data from.
 
 optional arguments:

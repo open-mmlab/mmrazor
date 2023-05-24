@@ -6,22 +6,44 @@ if sys.version_info < (3, 8):
 else:
     from typing import Protocol
 
+import numpy as np
 import torch
 import torch.distributed as dist
-import torch.nn as nn
-import torch.nn.functional as F
 
-from mmrazor.models.architectures.dynamic_ops import (DynamicConv2d,
-                                                      DynamicLinear)
-from .utils import ModuleProtocol, torch_setting
+from mmrazor.implementations.pruning.sparse_gpt.utils import torch_setting
 
 
-class SparseGptMixIn(ModuleProtocol):
-    """The core algorithm implementation for SparseGpt."""
+class ModuleProtocol(Protocol):
+    """Custom module protocol for algorithm mixin."""
+    weight: torch.Tensor
 
-    def _sparse_gpt_mix_in_init(self):
+    def forward(self, x):
+        """The abstract method."""
+        pass
+
+    def register_forward_hook(self, hook):
+        """The abstract method."""
+        pass
+
+    def register_backward_hook(self, hook):
+        """The abstract method."""
+        pass
+
+    def register_forward_pre_hook(self, hook):
+        """The abstract method."""
+        pass
+
+    def register_buffer(self, name, tensor):
+        """The abstract method."""
+        pass
+
+
+class GPTQMixIn(ModuleProtocol):
+    """The core algorithm implementation for GPTQ."""
+
+    def _gptq_mix_in_init(self):
         """Init mixin."""
-        self.sparse_gpt_handles = []
+        self.gptq_handles = []
         self.rows = self.weight_matrix.shape[0]
         self.columns = self.weight_matrix.shape[1]
 
@@ -111,11 +133,11 @@ class SparseGptMixIn(ModuleProtocol):
             self.update_hessian(input[0])
 
         handle = self.register_forward_pre_hook(forward_pre_hook)
-        self.sparse_gpt_handles.append(handle)
+        self.gptq_handles.append(handle)
 
     def remove_hessian_hook(self):
         """Remove updating hessian hook."""
-        for h in self.sparse_gpt_handles:
+        for h in self.gptq_handles:
             h.remove()
 
     def init_hessian(self, device=None):
@@ -132,24 +154,88 @@ class SparseGptMixIn(ModuleProtocol):
                                         device=device,
                                         dtype=torch.float)
 
-    # prune
+    def pack(self, scales, zeros, g_idx=None):
+        """Pack and update qparams with groupsize_idx."""
+        self.g_idx = g_idx.clone() if g_idx is not None else self.g_idx
+
+        scales = scales.t().contiguous()
+        zeros = zeros.t().contiguous()
+        scale_zeros = zeros * scales
+        self.scales = scales.clone().half()
+        if self.bias is not None:
+            self.bias.half()
+
+        intweight = []
+        for idx in range(self.in_features):
+            intweight.append(
+                torch.round(
+                    (self.weight.data[:, idx] + scale_zeros[self.g_idx[idx]]) /
+                    self.scales[self.g_idx[idx]]).to(torch.int)[:, None])
+        intweight = torch.cat(intweight, dim=1)
+        intweight = intweight.t().contiguous()
+        intweight = intweight.cpu().numpy().astype(np.uint32)
+        qweight = np.zeros(
+            (intweight.shape[0] // 32 * self.bits, intweight.shape[1]),
+            dtype=np.uint32)
+        i = 0
+        row = 0
+        while row < qweight.shape[0]:
+            if self.bits in [2, 4, 8]:
+                for j in range(i, i + (32 // self.bits)):
+                    qweight[row] |= intweight[j] << (self.bits * (j - i))
+                i += 32 // self.bits
+                row += 1
+            else:
+                raise NotImplementedError('Only 2,4,8 bits are supported.')
+
+        qweight = qweight.astype(np.int32)
+        self.qweight = torch.from_numpy(qweight).to(self.weight.device)
+
+        zeros -= 1
+        zeros = zeros.cpu().numpy().astype(np.uint32)
+        qzeros = np.zeros((zeros.shape[0], zeros.shape[1] // 32 * self.bits),
+                          dtype=np.uint32)
+        i = 0
+        col = 0
+        while col < qzeros.shape[1]:
+            if self.bits in [2, 4, 8]:
+                for j in range(i, i + (32 // self.bits)):
+                    qzeros[:, col] |= zeros[:, j] << (self.bits * (j - i))
+                i += 32 // self.bits
+                col += 1
+            else:
+                raise NotImplementedError('Only 2,4,8 bits are supported.')
+
+        qzeros = qzeros.astype(np.int32)
+        self.qzeros = torch.from_numpy(qzeros).to(self.weight.device)
 
     @torch.no_grad()
-    def prune(self, sparsity, prunen=0, prunem=0, blocksize=128, percdamp=.01):
-        """The implementation for SparseGPT."""
+    def quant(self,
+              quantizer,
+              blocksize=128,
+              percdamp=0.01,
+              groupsize=-1,
+              actorder=False):
+        """The implementation for GPTQ."""
         with torch_setting(dtype=torch.float):
-            # Converted from https://github.com/ist-daslab/sparsegpt
-
             assert self.hessian is not None
             W: torch.Tensor = self.weight_matrix.float()  # out in
 
-            H = self.hessian.float().to(W.device)
+            if not quantizer.ready():
+                quantizer.find_params(W, weight=True)
 
+            H = self.hessian.float().to(W.device)
             dead = torch.diag(H) == 0
             H[dead, dead] = 1
             W[:, dead] = 0
 
-            Losses = torch.zeros(self.rows, device=W.device)
+            if actorder:
+                perm = torch.argsort(torch.diag(H), descending=True)
+                W = W[:, perm]
+                H = H[perm][:, perm]
+
+            Losses = torch.zeros_like(W)
+            Q = torch.zeros_like(W)
 
             damp = percdamp * torch.mean(torch.diag(H))
             diag = torch.arange(self.columns, device=W.device)
@@ -159,7 +245,10 @@ class SparseGptMixIn(ModuleProtocol):
             H = torch.linalg.cholesky(H, upper=True)
             Hinv = H
 
-            mask = None
+            g_idx = []
+            scale = []
+            zero = []
+            now_idx = 1
 
             for i1 in range(0, self.columns, blocksize):
                 i2 = min(i1 + blocksize, self.columns)
@@ -171,32 +260,22 @@ class SparseGptMixIn(ModuleProtocol):
                 Losses1 = torch.zeros_like(W1)
                 Hinv1 = Hinv[i1:i2, i1:i2]
 
-                if prunen == 0:
-                    if mask is not None:
-                        mask1 = mask[:, i1:i2]
-                    else:
-                        tmp = W1**2 / (torch.diag(Hinv1).reshape((1, -1)))**2
-                        thresh = torch.sort(tmp.flatten())[0][int(tmp.numel() *
-                                                                  sparsity)]
-                        mask1 = tmp <= thresh
-                else:
-                    mask1 = torch.zeros_like(W1) == 1
-
                 for i in range(count):
                     w = W1[:, i]
                     d = Hinv1[i, i]
 
-                    if prunen != 0 and i % prunem == 0:
-                        tmp = W1[:, i:(i + prunem)]**2 / (torch.diag(Hinv1)[i:(
-                            i + prunem)].reshape((1, -1)))**2
-                        mask1.scatter_(
-                            1, i +
-                            torch.topk(tmp, prunen, dim=1, largest=False)[1],
-                            True)
+                    if groupsize != -1:
+                        if (i1 + i) % groupsize == 0:
+                            quantizer.find_params(
+                                W[:, (i1 + i):(i1 + i + groupsize)],
+                                weight=True)
 
-                    q = w.clone()
-                    q[mask1[:, i]] = 0
+                        if ((i1 + i) // groupsize) - now_idx == -1:
+                            scale.append(quantizer.scale)
+                            zero.append(quantizer.zero)
+                            now_idx += 1
 
+                    q = quantizer.quantize(w.unsqueeze(1)).flatten()
                     Q1[:, i] = q
                     Losses1[:, i] = (w - q)**2 / d**2
 
@@ -206,73 +285,34 @@ class SparseGptMixIn(ModuleProtocol):
                                                              i:].unsqueeze(0))
                     Err1[:, i] = err1
 
-                W[:, i1:i2] = Q1
-                Losses += torch.sum(Losses1, 1) / 2
+                Q[:, i1:i2] = Q1
+                Losses[:, i1:i2] = Losses1 / 2
 
                 W[:, i2:] -= Err1.matmul(Hinv[i1:i2, i2:])
 
-            if W.device.type == 'cuda':
-                torch.cuda.synchronize()
-            from .sparse24_utils import is_weight_sparse_24
-            if prunen == 2 and prunem == 4:
-                assert is_weight_sparse_24(
-                    W, -1), f'Weight dose not satisfy 24 with shape {W.shape}'
-            error = torch.sum(Losses)
+            torch.cuda.synchronize()
+            error = torch.sum(Losses).item()
 
-            if torch.isnan(error).any():
-                raise Exception('get nan error')
-            else:
-                self.weight_matrix = W.data
+            groupsize = groupsize if groupsize != -1 else self.columns
+            g_idx = [i // groupsize for i in range(self.columns)]
+            g_idx = torch.tensor(g_idx, dtype=torch.int32, device=Q.device)
+            if actorder:
+                invperm = torch.argsort(perm)
+                Q = Q[:, invperm]
+                g_idx = g_idx[invperm]
 
-            return error.item()
+            if scale == []:
+                scale.append(quantizer.scale)
+                zero.append(quantizer.zero)
+            scale = torch.cat(scale, dim=1)
+            zero = torch.cat(zero, dim=1)
+            self.weight_matrix = Q.data.to(self.weight_matrix.dtype)
+            if self.is_custom_kernel:
+                self.pack(scale, zero, g_idx)
+                del self.weight
+            return error
 
-
-# SparseGpt Ops for Linear and Conv2d
-
-
-class SparseGptLinear(DynamicLinear, SparseGptMixIn):
-    """Custom Linear for SparseGpt."""
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self._sparse_gpt_mix_in_init()
-
-    @classmethod
-    def convert_from(cls, module: nn.Linear) -> 'DynamicConv2d':
-        """Convert to cls from torch's module."""
-        if module.out_features < module.in_features:
-            return module
-        new_module = super().convert_from(module)
-        new_module.load_state_dict(module.state_dict(), strict=False)
-
-        dtype = next(module.parameters()).dtype
-        new_module = new_module.to(dtype)
-
-        return new_module
-
-
-class SparseGptConv2d(DynamicConv2d, SparseGptMixIn):
-    """Custom Conv2d for SparseGpt."""
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self._sparse_gpt_mix_in_init()
-
-    @classmethod
-    def convert_from(cls, module: nn.Conv2d) -> 'DynamicConv2d':
-        """Convert to cls from torch's module."""
-        new_module = super().convert_from(module)
-        new_module.load_state_dict(module.state_dict(), strict=False)
-
-        dtype = next(module.parameters()).dtype
-        new_module = new_module.to(dtype)
-
-        return new_module
-
-    def format_input(self, input: torch.Tensor):
-        """Format input shape."""
-        # input B C H W
-        input = F.unfold(
-            input, self.kernel_size, padding=self.padding,
-            stride=self.stride)  # B C D
-        return input.transpose(-1, -2)
+    def free(self):
+        """Free some cache and memory."""
+        self._hessian = None
+        torch.cuda.empty_cache()

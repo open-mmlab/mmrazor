@@ -77,13 +77,13 @@ def main(rank, world_size=8, args=None):
     def build():
         model = get_model(model_name)
 
-        # init mutator
-        mutator = sparse_gpt.SparseGptMutator()
-        mutator.prepare_from_supernet(model.model.layers)
-        return model, mutator
+        # init compressor
+        compressor = sparse_gpt.SparseGptCompressor()
+        compressor.prepare(model.model.layers)
+        return model, compressor
 
     with init_on_meta(enable=True):
-        model, mutator = build()
+        model, compressor = build()
 
     if rank == 0:
         model_copy, _ = build()  # init on cpu
@@ -106,8 +106,8 @@ def main(rank, world_size=8, args=None):
 
     # init hessian
 
-    mutator.init_hessian(device='cuda')
-    mutator.start_init_hessian()
+    compressor.init_hessian(device='cuda')
+    compressor.register_hessian_hooks()
 
     _, testloader = get_loaders(
         args.dataset, seed=args.seed, model=model_name, seqlen=model.seqlen)
@@ -115,7 +115,7 @@ def main(rank, world_size=8, args=None):
         testloader, world_size, rank, model, batch_size=batch_size)
     opt_infer_fsdp(model, testloader)
 
-    mutator.end_init_hessian()
+    compressor.remove_hessian_hooks()
 
     # prune
     name2module = dict(model.named_modules())

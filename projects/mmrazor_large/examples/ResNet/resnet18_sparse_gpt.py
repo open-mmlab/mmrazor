@@ -119,17 +119,17 @@ if __name__ == '__main__':
     model = torchvision.models.resnet18(pretrained=True)
     train_loader, test_loader = get_dataloaders(batch_size, 4, data_path)
 
-    mutator = sparse_gpt.SparseGptMutator()
-    mutator.prepare_from_supernet(model)
+    compressor = sparse_gpt.SparseGptCompressor()
+    compressor.prepare(model)
 
     model.cuda()
 
-    mutator.init_hessian()
-    mutator.start_init_hessian()
+    compressor.init_hessian()
+    compressor.register_hessian_hooks()
     infer(model, test_loader, num_samples=num_samples)
-    mutator.end_init_hessian()
-    mutator.prune_24()
-    model = mutator.to_static_model(model)
+    compressor.remove_hessian_hooks()
+    compressor.prune_24()
+    model = compressor.to_static_model(model)
 
     print('start evaluation')
     model = model.cuda()

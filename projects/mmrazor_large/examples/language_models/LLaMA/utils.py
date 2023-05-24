@@ -71,6 +71,7 @@ def opt_infer(
     testenc: torch.Tensor = testenc.input_ids  # type: ignore # 1, N
     testenc = fold_tokens(testenc, seqlen)  # B N
 
+    use_cache = model.config.use_cache
     model.config.use_cache = False
 
     for i, batch in enumerate(torch.split(testenc, batch_size)):
@@ -80,6 +81,7 @@ def opt_infer(
 
         if (i + 1) * batch_size >= num_samples:
             break
+    model.config.use_cache = use_cache
 
 
 class init_on_meta:
