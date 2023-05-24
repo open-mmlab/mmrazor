@@ -7,6 +7,6 @@ nbformat
 numpy < 1.24.0 # A temporary solution for tests with mmdet.
 onnx
 pytest
-triton
+triton==2.0.0
 xdoctest >= 0.10.0
 yapf

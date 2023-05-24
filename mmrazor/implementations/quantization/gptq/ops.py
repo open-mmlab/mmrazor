@@ -350,7 +350,7 @@ try:
         c_mask = (offs_am[:, None] < M) & (offs_bk[None, :] < K)
         tl.store(c_ptrs, accumulator, mask=c_mask)
 except:  # noqa: E722
-    print('trioton not installed.')
+    print('triton not installed.')
 
 
 def matmul248(input, qweight, scales, qzeros, g_idx, bits, maxq):

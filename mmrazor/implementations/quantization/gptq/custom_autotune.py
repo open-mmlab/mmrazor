@@ -12,7 +12,7 @@ try:
     import triton
 except ImportError:
     from mmrazor.utils import get_package_placeholder
-    triton = get_package_placeholder('please install triton with pip')
+    triton = get_package_placeholder('triton >= 2.0.0')
 
 
 class Autotuner(triton.KernelInterface):
