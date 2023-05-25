@@ -61,6 +61,8 @@ English | [简体中文](README_zh-CN.md)
 
 </div>
 
+**:star: MMRazor for Large Models** is Available Now! Please refer to [MMRazorLarge](projects/mmrazor_large/README.md)
+
 ## Introduction
 
 MMRazor is a model compression toolkit for model slimming and AutoML, which includes 4 mainstream technologies:

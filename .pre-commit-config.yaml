@@ -69,4 +69,5 @@ repos:
               | ^docs
               | ^configs
               | ^.*/configs*
+              | ^projects
           )
