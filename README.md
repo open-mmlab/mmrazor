@@ -21,7 +21,7 @@
 <!--算法库 Badges-->
 
 [![PyPI](https://img.shields.io/pypi/v/mmrazor)](https://pypi.org/project/mmrazor)
-[![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmrazor.readthedocs.io/en/main/)
+[![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmrazor.readthedocs.io/en/latest/)
 [![badge](https://github.com/open-mmlab/mmrazor/workflows/build/badge.svg)](https://github.com/open-mmlab/mmrazor/actions)
 [![codecov](https://codecov.io/gh/open-mmlab/mmrazor/branch/master/graph/badge.svg)](https://codecov.io/gh/open-mmlab/mmrazor)
 [![license](https://img.shields.io/github/license/open-mmlab/mmrazor.svg)](https://github.com/open-mmlab/mmrazor/blob/master/LICENSE)
@@ -32,9 +32,9 @@
 
 <!--Note:请根据各算法库自身情况设置项目和链接-->
 
-[📘Documentation](https://mmrazor.readthedocs.io/en/main/) |
-[🛠️Installation](https://mmrazor.readthedocs.io/en/main/get_started/installation.html) |
-[👀Model Zoo](https://mmrazor.readthedocs.io/en/main/get_started/model_zoo.html) |
+[📘Documentation](https://mmrazor.readthedocs.io/en/latest/) |
+[🛠️Installation](https://mmrazor.readthedocs.io/en/latest/get_started/installation.html) |
+[👀Model Zoo](https://mmrazor.readthedocs.io/en/latest/get_started/model_zoo.html) |
 [🤔Reporting Issues](https://github.com/open-mmlab/mmrazor/issues/new/choose)
 
 </div>
@@ -88,7 +88,7 @@ Major features:
 
   With better modular design, developers can implement new model compression algorithms with only a few codes, or even by simply modifying config files.
 
-About MMRazor's design and implementation, please refer to [tutorials](https://mmrazor.readthedocs.io/en/main/get_started/overview.html) for more details.
+About MMRazor's design and implementation, please refer to [tutorials](https://mmrazor.readthedocs.io/en/latest/get_started/overview.html) for more details.
 
 ## Latest Updates
 
@@ -100,11 +100,11 @@ MMRazor v1.0.0 was released in 2023-4-24, Major updates from 1.0.0rc2 include:
 2. Add a new pruning algorithm named GroupFisher.
 3. Support distilling rtmdet with MMRazor.
 
-To know more about the updates in MMRazor 1.0, please refer to [Changelog](https://mmrazor.readthedocs.io/en/main/notes/changelog.html) for more details!
+To know more about the updates in MMRazor 1.0, please refer to [Changelog](https://mmrazor.readthedocs.io/en/latest/notes/changelog.html) for more details!
 
 ## Benchmark and model zoo
 
-Results and models are available in the [model zoo](https://mmrazor.readthedocs.io/en/main/get_started/model_zoo.html).
+Results and models are available in the [model zoo](https://mmrazor.readthedocs.io/en/latest/get_started/model_zoo.html).
 
 Supported algorithms:
 
@@ -180,16 +180,16 @@ Supported algorithms:
 
 MMRazor depends on [PyTorch](https://pytorch.org/), [MMCV](https://github.com/open-mmlab/mmcv) and [MMEngine](https://github.com/open-mmlab/mmengine).
 
-Please refer to [installation.md](https://mmrazor.readthedocs.io/en/main/get_started/installation.html) for more detailed instruction.
+Please refer to [installation.md](https://mmrazor.readthedocs.io/en/latest/get_started/installation.html) for more detailed instruction.
 
 ## Getting Started
 
-Please refer to [user guides](https://mmrazor.readthedocs.io/en/main/user_guides/index.html) for the basic usage of MMRazor. There are also [advanced guides](https://mmrazor.readthedocs.io/en/main/advanced_guides/index.html):
+Please refer to [user guides](https://mmrazor.readthedocs.io/en/latest/user_guides/index.html) for the basic usage of MMRazor. There are also [advanced guides](https://mmrazor.readthedocs.io/en/latest/advanced_guides/index.html):
 
 ## Contributing
 
 We appreciate all contributions to improve MMRazor.
-Please refer to [CONTRUBUTING.md](https://mmrazor.readthedocs.io/en/main/notes/contribution_guide.html) for the contributing guideline.
+Please refer to [CONTRUBUTING.md](https://mmrazor.readthedocs.io/en/latest/notes/contribution_guide.html) for the contributing guideline.
 
 ## Acknowledgement
 

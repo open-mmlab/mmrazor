@@ -21,7 +21,7 @@
 <!--算法库 Badges-->
 
 [![PyPI](https://img.shields.io/pypi/v/mmrazor)](https://pypi.org/project/mmrazor)
-[![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmrazor.readthedocs.io/en/main/)
+[![docs](https://img.shields.io/badge/docs-latest-blue)](https://mmrazor.readthedocs.io/en/latest/)
 [![badge](https://github.com/open-mmlab/mmrazor/workflows/build/badge.svg)](https://github.com/open-mmlab/mmrazor/actions)
 [![codecov](https://codecov.io/gh/open-mmlab/mmrazor/branch/master/graph/badge.svg)](https://codecov.io/gh/open-mmlab/mmrazor)
 [![license](https://img.shields.io/github/license/open-mmlab/mmrazor.svg)](https://github.com/open-mmlab/mmrazor/blob/master/LICENSE)
@@ -32,9 +32,9 @@
 
 <!--Note:请根据各算法库自身情况设置项目和链接-->
 
-[📘使用文档](https://mmrazor.readthedocs.io/en/main/) |
-[🛠️安装教程](https://mmrazor.readthedocs.io/en/main/get_started/installation.html) |
-[👀👀模型库](https://mmrazor.readthedocs.io/en/main/get_started/model_zoo.html) |
+[📘使用文档](https://mmrazor.readthedocs.io/en/latest/) |
+[🛠️安装教程](https://mmrazor.readthedocs.io/en/latest/get_started/installation.html) |
+[👀👀模型库](https://mmrazor.readthedocs.io/en/latest/get_started/model_zoo.html) |
 [🤔报告问题](https://github.com/open-mmlab/mmrazor/issues/new/choose)
 
 </div>
@@ -84,7 +84,7 @@ MMRazor v0.3.1 版本已经在 2022.5.4 发布。
 
 ## 基准测试和模型库
 
-测试结果可以在 [模型库](https://mmrazor.readthedocs.io/en/main/get_started/model_zoo.html) 中找到.
+测试结果可以在 [模型库](https://mmrazor.readthedocs.io/en/latest/get_started/model_zoo.html) 中找到.
 
 已经支持的算法：
 
@@ -151,16 +151,16 @@ Knowledge Distillation
 
 MMRazor 依赖 [PyTorch](https://pytorch.org/) 和 [MMCV](https://github.com/open-mmlab/mmcv)。
 
-请参考[安装教程](https://mmrazor.readthedocs.io/en/main/get_started/installation.html)获取更详细的安装指南。
+请参考[安装教程](https://mmrazor.readthedocs.io/en/latest/get_started/installation.html)获取更详细的安装指南。
 
 ## 快速入门
 
-请参考 [用户指引](https://mmrazor.readthedocs.io/en/main/user_guides/index.html) 学习 MMRazor 的基本使用。 我们也提供了一些[进阶教程](https://mmrazor.readthedocs.io/en/main/advanced_guides/index.html):
+请参考 [用户指引](https://mmrazor.readthedocs.io/en/latest/user_guides/index.html) 学习 MMRazor 的基本使用。 我们也提供了一些[进阶教程](https://mmrazor.readthedocs.io/en/latest/advanced_guides/index.html):
 
 ## 贡献指南
 
 我们感谢所有的贡献者为改进和提升 MMRazor 所作出的努力。
-请参考[贡献指南](https://mmrazor.readthedocs.io/en/main/notes/contribution_guide.html)来了解参与项目贡献的相关指引。
+请参考[贡献指南](https://mmrazor.readthedocs.io/en/latest/notes/contribution_guide.html)来了解参与项目贡献的相关指引。
 
 ## 致谢
 
