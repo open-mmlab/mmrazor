@@ -74,7 +74,7 @@ d. Use the algorithm component in your config file
 mutator=dict(type='mmrazor.OneShotModuleMutator')
 ```
 
-For further information, please refer to [Mutator ](https://aicarrier.feishu.cn/docx/doxcnmcie75HcbqkfBGaEoemBKg)for more details.
+For further information, please refer to [Mutator ](https://mmrazor.readthedocs.io/en/main/advanced_guides/mutator.html)for more details.
 
 3. Rewrite its `loss` function.
 
