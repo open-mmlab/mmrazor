@@ -90,7 +90,7 @@ class SingleTeacherDistill(BaseAlgorithm):
         self.distiller.prepare_from_teacher(self.teacher)
 
         # may be modified by stop distillation hook
-        self.distillation_stopped = False
+        self.register_buffer('distillation_stopped', torch.tensor([False]))
 
     @property
     def student(self) -> nn.Module:
