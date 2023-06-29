@@ -9,4 +9,7 @@ _base_.model = dict(
     mode='mutator',
     init_cfg=dict(
         type='Pretrained',
+        prefix='architecture',
         checkpoint='configs/pruning/mmpose/dcff/fix_subnet_weight.pth'))
+
+_base_.val_cfg = dict()

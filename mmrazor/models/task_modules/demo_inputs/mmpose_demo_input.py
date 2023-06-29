@@ -53,7 +53,6 @@ def demo_mmpose_inputs(model, for_training=False, batch_size=1):
             heatmap_size=model.head.decoder.heatmap_size[::-1],
             with_heatmap=True,
             with_reg_label=False)['data_samples']
-
     elif isinstance(model.head, SimCCHead):
         # bug
         batch_data_samples = get_packed_inputs(
@@ -68,31 +67,26 @@ def demo_mmpose_inputs(model, for_training=False, batch_size=1):
             batch_size,
             num_keypoints=model.head.out_channels,
         )['data_samples']
-
     elif isinstance(model.head, DSNTHead):
         batch_data_samples = get_packed_inputs(
             batch_size,
             num_keypoints=model.head.num_joints,
             with_reg_label=True)['data_samples']
-
     elif isinstance(model.head, IntegralRegressionHead):
         batch_data_samples = get_packed_inputs(
             batch_size,
             num_keypoints=model.head.num_joints,
             with_reg_label=True)['data_samples']
-
     elif isinstance(model.head, RegressionHead):
         batch_data_samples = get_packed_inputs(
             batch_size,
             num_keypoints=model.head.num_joints,
             with_reg_label=True)['data_samples']
-
     elif isinstance(model.head, RLEHead):
         batch_data_samples = get_packed_inputs(
             batch_size,
             num_keypoints=model.head.num_joints,
             with_reg_label=True)['data_samples']
-
     elif isinstance(model.head, RTMHead):
         batch_data_samples = get_packed_inputs(
             batch_size,
