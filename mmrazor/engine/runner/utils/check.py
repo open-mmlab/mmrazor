@@ -35,9 +35,9 @@ def check_subnet_resources(
 
     model_to_check = sliced_model.architecture  # type: ignore
     if isinstance(model_to_check, BaseDetector):
-        results = estimator.estimate(model=model_to_check.backbone)
+        results = estimator.estimate(model=model_to_check.backbone, measure_latency=True if 'latency' in constraints_range.keys() else False)
     else:
-        results = estimator.estimate(model=model_to_check)
+        results = estimator.estimate(model=model_to_check, measure_latency=True if 'latency' in constraints_range.keys() else False)
 
     for k, v in constraints_range.items():
         if not isinstance(v, (list, tuple)):
