@@ -92,10 +92,12 @@ class ResourceEstimator(BaseEstimator):
             self.flops_params_cfg = dict()
         self.latency_cfg = latency_cfg if latency_cfg else dict()
 
-    def estimate(self,
-                 model: torch.nn.Module,
-                 flops_params_cfg: dict = None,
-                 latency_cfg: dict = None) -> Dict[str, Union[float, str]]:
+    def estimate(
+            self,
+            model: torch.nn.Module,
+            flops_params_cfg: dict = None,
+            latency_cfg: dict = None,
+            measure_latency: bool = False) -> Dict[str, Union[float, str]]:
         """Estimate the resources(flops/params/latency) of the given model.
 
         This method will first parse the merged :attr:`self.flops_params_cfg`
@@ -106,6 +108,7 @@ class ResourceEstimator(BaseEstimator):
             flops_params_cfg (dict): Cfg for estimating FLOPs and parameters.
                 Default to None.
             latency_cfg (dict): Cfg for estimating latency. Default to None.
+            measure_latency (bool): Measure latency or not. Default to False.
 
             NOTE: If the `flops_params_cfg` and `latency_cfg` are both None,
             this method will only estimate FLOPs/params with default settings.
@@ -115,7 +118,6 @@ class ResourceEstimator(BaseEstimator):
                 results(FLOPs, params and latency).
         """
         resource_metrics = dict()
-        measure_latency = True if latency_cfg else False
 
         if flops_params_cfg:
             flops_params_cfg = {**self.flops_params_cfg, **flops_params_cfg}
