@@ -117,7 +117,6 @@ class ResourceEstimator(BaseEstimator):
                 results(FLOPs, params and latency).
         """
         resource_metrics = dict()
-        measure_latency = True if latency_cfg else False
 
         if flops_params_cfg:
             flops_params_cfg = {**self.flops_params_cfg, **flops_params_cfg}
