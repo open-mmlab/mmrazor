@@ -82,7 +82,7 @@ Major features:
 
 - **Flexibility**
 
-  Different algorithms, e.g., NAS, pruning and KD, can be incorporated in a plug-n-play manner to build a more powerful system.
+  Different algorithms, e.g., NAS, pruning, and KD, can be incorporated in a plug-n-play manner to build a more powerful system.
 
 - **Convenience**
 
@@ -98,7 +98,7 @@ MMRazor v1.0.0 was released in 2023-4-24, Major updates from 1.0.0rc2 include:
 
 1. MMRazor quantization is released.
 2. Add a new pruning algorithm named GroupFisher.
-3. Support distilling rtmdet with MMRazor.
+3. Support distilling [RTMDet](https://arxiv.org/pdf/2212.07784.pdf) with MMRazor.
 
 To know more about the updates in MMRazor 1.0, please refer to [Changelog](https://mmrazor.readthedocs.io/en/latest/notes/changelog.html) for more details!
 
@@ -180,7 +180,7 @@ Supported algorithms:
 
 MMRazor depends on [PyTorch](https://pytorch.org/), [MMCV](https://github.com/open-mmlab/mmcv) and [MMEngine](https://github.com/open-mmlab/mmengine).
 
-Please refer to [installation.md](https://mmrazor.readthedocs.io/en/latest/get_started/installation.html) for more detailed instruction.
+Please refer to [installation.md](https://mmrazor.readthedocs.io/en/latest/get_started/installation.html) for more detailed instructions.
 
 ## Getting Started
 
@@ -189,16 +189,16 @@ Please refer to [user guides](https://mmrazor.readthedocs.io/en/latest/user_guid
 ## Contributing
 
 We appreciate all contributions to improve MMRazor.
-Please refer to [CONTRUBUTING.md](https://mmrazor.readthedocs.io/en/latest/notes/contribution_guide.html) for the contributing guideline.
+Please refer to [CONTRIBUTING.md](https://mmrazor.readthedocs.io/en/latest/notes/contribution_guide.html) for the contributing guidelines.
 
 ## Acknowledgement
 
 MMRazor is an open source project that is contributed by researchers and engineers from various colleges and companies. We appreciate all the contributors who implement their methods or add new features, as well as users who give valuable feedbacks.
-We wish that the toolbox and benchmark could serve the growing research community by providing a flexible toolkit to reimplement existing methods and develop their own new model compression methods.
+We wish that the toolbox and benchmark could serve the growing research community by providing a flexible toolkit to re-implement existing methods and develop their own new model compression methods.
 
 ## Citation
 
-If you find this project useful in your research, please consider cite:
+If you find this project useful in your research, please consider citing:
 
 ```BibTeX
 @misc{2021mmrazor,
