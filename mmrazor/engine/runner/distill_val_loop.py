@@ -125,3 +125,38 @@ class SelfDistillValLoop(ValLoop):
 
         self.runner.call_hook('after_val_epoch', metrics=student_metrics)
         self.runner.call_hook('after_val')
+
+
+@LOOPS.register_module()
+class DFNDValLoop(SingleTeacherDistillValLoop):
+    """Validation loop for DFND. DFND requires different dataset for training
+    and validation.
+
+    Args:
+        runner (Runner): A reference of runner.
+        dataloader (Dataloader or dict): A dataloader object or a dict to
+            build a dataloader.
+        evaluator (Evaluator or dict or list): Used for computing metrics.
+        fp16 (bool): Whether to enable fp16 validation. Defaults to
+            False.
+    """
+
+    def __init__(self,
+                 runner,
+                 dataloader: Union[DataLoader, Dict],
+                 evaluator: Union[Evaluator, Dict, List],
+                 fp16: bool = False) -> None:
+        super().__init__(runner, dataloader, evaluator, fp16)
+        if self.runner.distributed:
+            assert hasattr(self.runner.model.module, 'teacher')
+            # TODO: remove hard code after mmcls add data_preprocessor
+            data_preprocessor = self.runner.model.module.val_data_preprocessor
+            self.teacher = self.runner.model.module.teacher
+            self.teacher.data_preprocessor = data_preprocessor
+
+        else:
+            assert hasattr(self.runner.model, 'teacher')
+            # TODO: remove hard code after mmcls add data_preprocessor
+            data_preprocessor = self.runner.model.val_data_preprocessor
+            self.teacher = self.runner.model.teacher
+            self.teacher.data_preprocessor = data_preprocessor

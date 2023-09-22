@@ -1,7 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .autoslim_greedy_search_loop import AutoSlimGreedySearchLoop
 from .darts_loop import DartsEpochBasedTrainLoop, DartsIterBasedTrainLoop
-from .distill_val_loop import SelfDistillValLoop, SingleTeacherDistillValLoop
+from .distill_val_loop import (DFNDValLoop, SelfDistillValLoop,
+                               SingleTeacherDistillValLoop)
 from .evolution_search_loop import EvolutionSearchLoop
 from .iteprune_val_loop import ItePruneValLoop
 from .quantization_loops import (LSQEpochBasedLoop, PTQLoop, QATEpochBasedLoop,
@@ -15,5 +16,5 @@ __all__ = [
     'DartsIterBasedTrainLoop', 'SlimmableValLoop', 'EvolutionSearchLoop',
     'GreedySamplerTrainLoop', 'SubnetValLoop', 'SelfDistillValLoop',
     'ItePruneValLoop', 'AutoSlimGreedySearchLoop', 'QATEpochBasedLoop',
-    'PTQLoop', 'LSQEpochBasedLoop', 'QATValLoop'
+    'PTQLoop', 'LSQEpochBasedLoop', 'QATValLoop', 'DFNDValLoop'
 ]
