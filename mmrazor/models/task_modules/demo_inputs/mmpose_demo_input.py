@@ -29,7 +29,7 @@ def demo_mmpose_inputs(model, for_training=False, batch_size=1):
     imgs = torch.randn(*input_shape)
 
     batch_data_samples = []
-    from mmpose.models.heads import RTMHead
+    from mmpose.models.heads import RTMCCHead as RTMHead
     if isinstance(model.head, HeatmapHead):
         batch_data_samples = get_packed_inputs(
             batch_size,
